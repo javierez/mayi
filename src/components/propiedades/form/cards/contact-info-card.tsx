@@ -1,5 +1,7 @@
+"use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { Card } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
 import {
@@ -15,6 +17,7 @@ import { ChevronDown } from "lucide-react";
 import { Separator } from "~/components/ui/separator";
 import { ModernSaveIndicator } from "../common/modern-save-indicator";
 import type { SaveState } from "~/types/save-state";
+import { navigateToPage } from "~/lib/navigation";
 
 interface Agent {
   id: string;
@@ -64,6 +67,7 @@ export const ContactInfoCard = React.forwardRef<HTMLDivElement, ContactInfoCardP
     setSelectedAgentId,
     getCardStyles,
   }, ref) => {
+    const router = useRouter();
     return (
       <Card
         ref={ref}
@@ -150,7 +154,7 @@ export const ContactInfoCard = React.forwardRef<HTMLDivElement, ContactInfoCardP
                   <div
                     key={ownerId}
                     className="flex cursor-pointer items-center justify-between rounded-md bg-gradient-to-r from-amber-50/50 to-rose-50/50 px-2 py-1 shadow-md transition-all duration-200 hover:from-amber-50/40 hover:to-rose-50/40"
-                    onClick={() => window.open(`/contactos/${owner.id}`, '_blank')}
+                    onClick={() => navigateToPage(`/contactos/${owner.id}`, router)}
                   >
                     <span className="text-sm">{owner.name}</span>
                     <Button

@@ -62,3 +62,20 @@ export const formatCurrency = (amount: number) => {
     maximumFractionDigits: 0,
   }).format(amount);
 };
+
+export const getPropertyTypeLabel = (type: string | null): string => {
+  switch (type) {
+    case "piso":
+      return "Piso";
+    case "casa":
+      return "Casa";
+    case "local":
+      return "Local";
+    case "solar":
+      return "Solar";
+    case "garaje":
+      return "Garaje";
+    default:
+      return type ?? "Propiedad";
+  }
+};

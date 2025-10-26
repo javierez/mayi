@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { MediaManager, type MediaType } from "./media/media-manager";
 import { PortalSelection } from "./portal-selection";
@@ -116,7 +116,9 @@ export function PropertyTabs({
 }: PropertyTabsProps) {
   const { data: session } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("general");
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const [activeTab, setActiveTab] = useState(tabParam ?? "general");
   const [selectedMediaType, setSelectedMediaType] = useState<MediaType>("images");
   const [tabData, setTabData] = useState<{
     images: PropertyImage[] | null;
@@ -450,6 +452,9 @@ export function PropertyTabs({
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
+    // Update URL with tab parameter
+    const currentPath = window.location.pathname;
+    router.push(`${currentPath}?tab=${value}`, { scroll: false });
   };
 
   // Fetch only the data that's not provided as props, and only once on mount
@@ -473,13 +478,20 @@ export function PropertyTabs({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - run once on mount only
 
+  // Update active tab when URL parameter changes
+  useEffect(() => {
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mt-8 md:mt-0">
       <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 gap-2 md:gap-0 p-1 h-auto md:h-10 bg-gray-100 rounded-lg">
         <TabsTrigger value="general" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">General</TabsTrigger>
         <TabsTrigger value="tareas" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Tareas y notas</TabsTrigger>
         <TabsTrigger value="imagenes" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Imágenes</TabsTrigger>
-        <TabsTrigger value="carteles" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Actividad</TabsTrigger>
+        <TabsTrigger value="actividad" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Actividad</TabsTrigger>
         <TabsTrigger value="portales" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Portales</TabsTrigger>
         <TabsTrigger value="documentos" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Archivos</TabsTrigger>
       </TabsList>
@@ -595,7 +607,7 @@ export function PropertyTabs({
         </div>
       </TabsContent>
 
-      <TabsContent value="carteles" className="mt-8 sm:mt-6">
+      <TabsContent value="actividad" className="mt-8 sm:mt-6">
         <div className="mx-auto max-w-7xl">
           {loading.activity ? (
             <ActivitySkeleton />
@@ -605,6 +617,7 @@ export function PropertyTabs({
               contacts={tabData.contacts}
               listingId={listing.listingId}
               listingPrice={listing.price}
+              onRefresh={fetchActivityData}
             />
           ) : (
             <div className="py-16 text-center">

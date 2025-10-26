@@ -12,7 +12,9 @@ interface ContactsKPICardProps extends ContactsKPIProps {
 }
 
 export function ContactsKPICard({
-  newContactsCount,
+  contactsWithVisitsCount,
+  contactsWithoutVisitsCount,
+  contactsInOfferStageCount,
   totalContactsCount,
   isActive,
   onClick,
@@ -51,11 +53,23 @@ export function ContactsKPICard({
         </span>
 
         {/* Breakdown Stats */}
-        <div className="flex w-full items-center justify-center gap-4">
+        <div className="flex w-full items-center justify-center gap-3">
           <div className="flex items-center gap-1.5">
-            <div className="h-2 w-2 rounded-full bg-gradient-to-r from-amber-400 to-rose-400" />
-            <span className="text-xs text-gray-600 uppercase tracking-wide">
-              {newContactsCount} nuevos (30d)
+            <div className="h-2 w-2 rounded-full bg-gradient-to-r from-rose-400 to-orange-400" />
+            <span className="text-[10px] text-gray-600 uppercase tracking-wide">
+              {contactsWithVisitsCount} en visita
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="h-2 w-2 rounded-full bg-gradient-to-r from-orange-400 to-amber-400" />
+            <span className="text-[10px] text-gray-600 uppercase tracking-wide">
+              {contactsInOfferStageCount} negociación
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="h-2 w-2 rounded-full bg-gradient-to-r from-amber-400 to-yellow-400" />
+            <span className="text-[10px] text-gray-600 uppercase tracking-wide">
+              {contactsWithoutVisitsCount} visita pendiente
             </span>
           </div>
         </div>

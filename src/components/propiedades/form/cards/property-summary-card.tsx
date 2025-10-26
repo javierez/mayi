@@ -1,4 +1,6 @@
+"use client";
 
+import { useRouter } from "next/navigation";
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { 
@@ -15,6 +17,7 @@ import {
 } from "lucide-react";
 
 import type { PropertyListing } from "~/types/property-listing";
+import { navigateToPage } from "~/lib/navigation";
 
 interface Agent {
   id: string;
@@ -59,6 +62,7 @@ export function PropertySummaryCard({
   onToggleWebsite,
   onEditOwner,
 }: PropertySummaryCardProps) {
+  const router = useRouter();
   const isGarageOrSolar = propertyType === "garaje" || propertyType === "solar";
   const shouldShowBedsAndBaths = !isGarageOrSolar;
   const isLocal = propertyType === "local";
@@ -77,7 +81,7 @@ export function PropertySummaryCard({
   const handleOwnerClick = () => {
     if (selectedOwnerIds.length > 0) {
       const ownerId = selectedOwnerIds[0];
-      window.open(`/contactos/${ownerId}`, '_blank');
+      navigateToPage(`/contactos/${ownerId}`, router);
     }
   };
   

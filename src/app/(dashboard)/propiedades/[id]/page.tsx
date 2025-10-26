@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { Suspense } from "react";
 import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-breadcrump";
 import { PropertyHeader } from "~/components/propiedades/detail/property-header";
 import { PropertyTabs } from "~/components/propiedades/detail/property-tabs";
@@ -157,20 +158,22 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
 
       {/* Property Tabs - Under Title */}
       <div className="pb-16">
-        <PropertyTabs
-          listing={tabsData}
-          convertedListing={
-            isValidRecord(fullListingDetails)
-              ? convertDbListingToPropertyListing(fullListingDetails)
-              : undefined
-          }
-          images={processedImages}
-          videos={processedVideos}
-          youtubeLinks={processedYouTubeLinks}
-          virtualTours={processedVirtualTours}
-          energyCertificate={energyCertificate}
-          canEdit={hasEditPermission}
-        />
+        <Suspense fallback={<div className="py-8 text-center">Cargando...</div>}>
+          <PropertyTabs
+            listing={tabsData}
+            convertedListing={
+              isValidRecord(fullListingDetails)
+                ? convertDbListingToPropertyListing(fullListingDetails)
+                : undefined
+            }
+            images={processedImages}
+            videos={processedVideos}
+            youtubeLinks={processedYouTubeLinks}
+            virtualTours={processedVirtualTours}
+            energyCertificate={energyCertificate}
+            canEdit={hasEditPermission}
+          />
+        </Suspense>
       </div>
     </div>
   );

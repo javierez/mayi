@@ -1,4 +1,7 @@
+"use client";
+
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
 import { Checkbox } from "~/components/ui/checkbox";
@@ -9,6 +12,7 @@ import { ChevronDown, Loader2, Lightbulb } from "lucide-react";
 import { ModernSaveIndicator } from "../common/modern-save-indicator";
 import { createListing, duplicateListingContacts } from "~/server/queries/listing";
 import type { SaveState } from "~/types/save-state";
+import { navigateToPage } from "~/lib/navigation";
 
 interface RentalPropertiesCardProps {
   listingType: string;
@@ -73,9 +77,10 @@ export function RentalPropertiesCard({
   setRentalPrice,
   getCardStyles,
 }: RentalPropertiesCardProps) {
+  const router = useRouter();
   const isSale = listingType === "Sale" || listingType === "Transfer";
   const isRent = !isSale;
-  
+
   // State for duplication process
   const [isDuplicating, setIsDuplicating] = useState(false);
   const [duplicationError, setDuplicationError] = useState<string | null>(null);
@@ -133,8 +138,8 @@ export function RentalPropertiesCard({
           await duplicateListingContacts(Number(listingId), Number(newListing.listingId));
         }
         
-        // Open new rental listing in new window
-        window.open(`/propiedades/${newListing.listingId}`, '_blank');
+        // Open new rental listing
+        navigateToPage(`/propiedades/${newListing.listingId}`, router);
       }
       
     } catch (error) {

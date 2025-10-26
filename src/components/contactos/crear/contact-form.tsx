@@ -33,6 +33,13 @@ import {
 } from "~/components/ui/popover";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -55,6 +62,7 @@ interface ContactFormData {
   email: string;
   phone: string;
   notes: string;
+  source: string;
 
   // Property Selection
   selectedListings: bigint[];
@@ -68,6 +76,7 @@ const initialFormData: ContactFormData = {
   email: "",
   phone: "",
   notes: "",
+  source: "",
   selectedListings: [],
   contactType: "owner",
 };
@@ -295,6 +304,7 @@ export default function ContactForm() {
         nif: formData.nif.trim() || undefined,
         email: formData.email.trim() || undefined,
         phone: formData.phone.trim() || undefined,
+        source: formData.source || undefined,
         additionalInfo,
         orgId: BigInt(1), // Default org ID - you might want to make this dynamic
         isActive: true,
@@ -353,8 +363,12 @@ export default function ContactForm() {
         }
       }
 
-      // Redirect to contact detail page
-      if (newContact.contactId) {
+      // Redirect based on context
+      if (listingIdParam) {
+        // If contact was created from a property page, redirect back to that property's activity tab
+        router.push(`/propiedades/${listingIdParam}?tab=actividad`);
+      } else if (newContact.contactId) {
+        // Otherwise, redirect to the contact detail page
         router.push(`/contactos/${newContact.contactId}`);
       } else {
         router.push("/contactos");
@@ -531,6 +545,32 @@ export default function ContactForm() {
                 rows={4}
                 className="resize-none border-gray-200 focus:border-amber-300 focus:ring-amber-200"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="source" className="text-sm sm:text-base font-medium text-gray-900">Origen (opcional)</Label>
+              <Select
+                value={formData.source}
+                onValueChange={(value) => updateFormData("source", value)}
+              >
+                <SelectTrigger
+                  id="source"
+                  className="border-gray-200 focus:border-amber-300 focus:ring-amber-200"
+                  isPlaceholder={!formData.source}
+                >
+                  <SelectValue placeholder="Selecciona el origen del contacto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Website">Sitio Web</SelectItem>
+                  <SelectItem value="Walk-In">Visita Presencial</SelectItem>
+                  <SelectItem value="Referral">Referido</SelectItem>
+                  <SelectItem value="Phone Call">Llamada Telefónica</SelectItem>
+                  <SelectItem value="Email">Correo Electrónico</SelectItem>
+                  <SelectItem value="Social Media">Redes Sociales</SelectItem>
+                  <SelectItem value="Portal">Portal Inmobiliario</SelectItem>
+                  <SelectItem value="Other">Otro</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
           </div>

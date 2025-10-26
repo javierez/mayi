@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import type { VisitsKPIProps } from "~/types/activity";
+import { navigateToPage } from "~/lib/navigation";
 
 interface VisitsKPICardProps extends VisitsKPIProps {
   isActive: boolean;
@@ -24,7 +25,7 @@ export function VisitsKPICard({
 
   const handleScheduleVisit = (e: React.MouseEvent) => {
     e.stopPropagation();
-    router.push(`/calendario?new=true&listingId=${listingId}`);
+    navigateToPage(`/calendario?new=true&listingId=${listingId}`, router);
   };
 
   return (

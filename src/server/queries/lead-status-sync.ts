@@ -45,6 +45,7 @@ export async function findLeadByContactAndListing(
             eq(listingContacts.contactId, contactId),
             eq(contacts.accountId, BigInt(accountId)),
             eq(listingContacts.contactType, "buyer"),
+            eq(listingContacts.isActive, true),
           ),
         )
         .limit(1);
@@ -56,7 +57,7 @@ export async function findLeadByContactAndListing(
       .select({ listingContactId: listingContacts.listingContactId })
       .from(listingContacts)
       .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
-      .where(and(...whereConditions))
+      .where(and(...whereConditions, eq(listingContacts.isActive, true)))
       .limit(1);
 
     return existingLead ?? null;

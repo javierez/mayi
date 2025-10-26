@@ -1114,7 +1114,6 @@ export default function AppointmentForm({
               </label>
               <input
                 id="tripTimeMinutes"
-                value={formData.tripTimeMinutes?.toString() ?? ""}
                 onChange={(e) =>
                   handleInputChange("tripTimeMinutes")(
                     parseInt(e.target.value) ?? 0,

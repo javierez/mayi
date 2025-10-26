@@ -35,12 +35,6 @@ import {
   RefreshCw,
   AlertCircle,
   Settings,
-  CircleDot,
-  CheckCircle,
-  Ban,
-  RotateCw,
-  UserX,
-  Trash2,
 } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
@@ -60,19 +54,14 @@ import CalendarEvent, {
 import AppointmentModal, {
   useAppointmentModal,
 } from "~/components/appointments/appointment-modal";
-import { getAgentsForFilterAction, updateAppointmentStatusAction, getBatchAppointmentTasksAction, deleteAppointmentAction } from "~/server/actions/appointments";
+import { AppointmentDetailSheet } from "~/components/appointments/appointment-detail-sheet";
+import { getAgentsForFilterAction, getBatchAppointmentTasksAction } from "~/server/actions/appointments";
 import { useGoogleCalendarIntegration } from "~/hooks/use-google-calendar-integration";
 import { GoogleCalendarSyncSettings } from "~/components/calendar/google-calendar-sync-settings";
 import { canEditCalendar, canDeleteCalendar } from "~/app/actions/permissions/check-permissions";
 import { useSession } from "~/lib/auth-client";
 import { toast } from "sonner";
 import { ExpandableSection } from "~/components/propiedades/detail/activity/expandable-section";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "~/components/ui/sheet";
 
 // Appointment types configuration
 const appointmentTypes = {
@@ -235,12 +224,6 @@ export default function AppointmentsPage() {
   // Permission states
   const [hasEditCalendarPermission, setHasEditCalendarPermission] = useState<boolean>(false);
   const [hasDeleteCalendarPermission, setHasDeleteCalendarPermission] = useState<boolean>(false);
-
-  // Status update state
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-
-  // Delete state
-  const [isDeletingAppointment, setIsDeletingAppointment] = useState(false);
 
   // Tasks state - batch loaded for all appointments
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -495,73 +478,21 @@ export default function AppointmentsPage() {
     );
   };
 
-  // Permission helper function
-  const canUserEditAppointment = (appointmentUserId: string): boolean => {
-    const isOwner = appointmentUserId === session?.user?.id;
-    const hasPermission = hasEditCalendarPermission;
-    const canEdit = isOwner || hasPermission;
-
-    console.log("🔍 [Calendar] Checking edit permission:", {
-      appointmentUserId,
-      currentUserId: session?.user?.id,
-      isOwner,
-      hasEditCalendarPermission: hasPermission,
-      canEdit,
-    });
-
-    return canEdit;
+  // Permission helper function for ownership check
+  const checkAppointmentOwnership = (appointment: any): boolean => {
+    if (!appointment.userId) return hasEditCalendarPermission;
+    const isOwner = appointment.userId === session?.user?.id;
+    return isOwner || hasEditCalendarPermission;
   };
 
-  // Handle status update
-  const handleStatusUpdate = async (
+  // Handle opening modal for editing
+  const handleEditAppointment = (
     appointmentId: bigint,
-    newStatus: "Scheduled" | "Completed" | "Cancelled" | "Rescheduled" | "NoShow",
+    initialData: Partial<Record<string, unknown>>,
   ) => {
-    setIsUpdatingStatus(true);
-    try {
-      const result = await updateAppointmentStatusAction(appointmentId, newStatus);
-
-      if (result.success) {
-        toast.success("Estado actualizado correctamente");
-        // Refetch appointments to get updated data
-        await refetch();
-      } else {
-        toast.error(result.error ?? "Error al actualizar el estado");
-      }
-    } catch (error) {
-      console.error("Error updating appointment status:", error);
-      toast.error("Error al actualizar el estado");
-    } finally {
-      setIsUpdatingStatus(false);
-    }
-  };
-
-  // Handle appointment deletion
-  const handleDeleteAppointment = async (appointmentId: bigint) => {
-    // Confirm deletion
-    if (!confirm("¿Estás seguro de que deseas eliminar esta cita?")) {
-      return;
-    }
-
-    setIsDeletingAppointment(true);
-    try {
-      const result = await deleteAppointmentAction(appointmentId);
-
-      if (result.success) {
-        toast.success("Cita eliminada correctamente");
-        // Close the detail panel
-        setSelectedEvent(null);
-        // Refetch appointments to get updated data
-        await refetch();
-      } else {
-        toast.error(result.error ?? "Error al eliminar la cita");
-      }
-    } catch (error) {
-      console.error("Error deleting appointment:", error);
-      toast.error("Error al eliminar la cita");
-    } finally {
-      setIsDeletingAppointment(false);
-    }
+    setEditMode("edit");
+    setEditingAppointmentId(appointmentId);
+    openModal(initialData);
   };
 
   return (
@@ -1420,277 +1351,51 @@ export default function AppointmentsPage() {
       )}
 
       {/* Event Detail Sheet (shows when an event is selected) */}
-      <Sheet open={selectedEvent !== null} onOpenChange={() => setSelectedEvent(null)}>
-        <SheetContent>
-          {(() => {
-            const event = realAppointments.find(
-              (a) => a.appointmentId === selectedEvent,
-            );
-            if (!event) return null;
+      <AppointmentDetailSheet
+        appointment={
+          selectedEvent
+            ? (() => {
+                const event = realAppointments.find(
+                  (a) => a.appointmentId === selectedEvent,
+                );
+                if (!event) return null;
 
-            const formatDate = (date: Date) => {
-              return new Intl.DateTimeFormat("es-ES", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              }).format(date);
-            };
-
-            const formatTime = (date: Date) => {
-              return new Intl.DateTimeFormat("es-ES", {
-                hour: "2-digit",
-                minute: "2-digit",
-              }).format(date);
-            };
-
-            const typeConfig = appointmentTypes[
-              event.type as keyof typeof appointmentTypes
-            ] || {
-              color: "bg-gray-100 text-gray-800",
-              icon: <CalendarIcon className="h-4 w-4" />,
-            };
-
-            // Log event details for debugging
-            console.log("📅 [Calendar] Event detail panel opened:", {
-              appointmentId: event.appointmentId.toString(),
-              userId: event.userId,
-              currentUserId: session?.user?.id,
-              hasEditPermission: hasEditCalendarPermission,
-              canEdit: canUserEditAppointment(event.userId),
-            });
-
-            // Check button conditions
-            const canEdit = canUserEditAppointment(event.userId);
-            const canDelete = canEdit && hasDeleteCalendarPermission;
-            const showVisitaButton = canEdit && !(event.status === "Completed" && event.type === "Visita");
-
-            console.log("🔘 [Calendar] Action button conditions:", {
-              canEdit,
-              canDelete,
-              showVisitaButton,
-              eventStatus: event.status,
-              eventType: event.type,
-              hasDeleteCalendarPermission,
-              isCompletedVisita: event.status === "Completed" && event.type === "Visita",
-            });
-
-            return (
-              <>
-                <SheetHeader>
-                  <SheetTitle className="flex items-center gap-2">
-                    {typeConfig.icon}
-                    <span>{event.type} - {event.contactName}</span>
-                  </SheetTitle>
-                </SheetHeader>
-
-                <div className="space-y-4 mt-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">{event.type}</p>
-
-                  {/* Status Dropdown */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        disabled={!canUserEditAppointment(event.userId)}
-                      >
-                        <span className={cn(
-                          "rounded-full px-2 py-0.5",
-                          event.status === "Scheduled" && "bg-gray-100 text-gray-700",
-                          event.status === "Completed" && "bg-gray-200 text-gray-800",
-                          event.status === "Cancelled" && "bg-gray-50 text-gray-400 line-through",
-                          event.status === "Rescheduled" && "bg-gray-150 text-gray-700",
-                          event.status === "NoShow" && "bg-gray-100 text-gray-500",
-                        )}>
-                          {event.status === "Scheduled" && "Programado"}
-                          {event.status === "Completed" && "Completado"}
-                          {event.status === "Cancelled" && "Cancelado"}
-                          {event.status === "Rescheduled" && "Reprogramado"}
-                          {event.status === "NoShow" && "No asistió"}
-                        </span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem
-                        onClick={() => {
-                          void handleStatusUpdate(event.appointmentId, "Scheduled");
-                        }}
-                        disabled={isUpdatingStatus || event.status === "Scheduled"}
-                      >
-                        <CircleDot className="mr-2 h-3 w-3 text-muted-foreground" />
-                        Programado
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          void handleStatusUpdate(event.appointmentId, "Completed");
-                        }}
-                        disabled={isUpdatingStatus || event.status === "Completed"}
-                      >
-                        <CheckCircle className="mr-2 h-3 w-3 text-muted-foreground" />
-                        Completado
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          void handleStatusUpdate(event.appointmentId, "Cancelled");
-                        }}
-                        disabled={isUpdatingStatus || event.status === "Cancelled"}
-                      >
-                        <Ban className="mr-2 h-3 w-3 text-muted-foreground" />
-                        Cancelado
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          void handleStatusUpdate(event.appointmentId, "Rescheduled");
-                        }}
-                        disabled={isUpdatingStatus || event.status === "Rescheduled"}
-                      >
-                        <RotateCw className="mr-2 h-3 w-3 text-muted-foreground" />
-                        Reprogramado
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          void handleStatusUpdate(event.appointmentId, "NoShow");
-                        }}
-                        disabled={isUpdatingStatus || event.status === "NoShow"}
-                      >
-                        <UserX className="mr-2 h-3 w-3 text-muted-foreground" />
-                        No asistió
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                    <span>{formatDate(event.startTime)}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      {formatTime(event.startTime)} -{" "}
-                      {formatTime(event.endTime)}
-                    </span>
-                  </div>
-                  {event.propertyAddress && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.propertyAddress)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline decoration-dotted underline-offset-2 hover:decoration-solid transition-all"
-                      >
-                        {event.propertyAddress}
-                      </a>
-                    </div>
-                  )}
-                  {event.tripTimeMinutes && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span>Tiempo de viaje: {event.tripTimeMinutes} min</span>
-                    </div>
-                  )}
-                  {event.notes && (
-                    <div className="pt-2 text-sm">
-                      <h5 className="mb-1 text-sm font-medium">Notas</h5>
-                      <p>{event.notes}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex gap-2 pt-4">
-                  {(() => {
-                    console.log("🔘 [Calendar] Rendering Edit button:", { canEdit });
-                    return canEdit && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          console.log("✏️ [Calendar] Edit button clicked");
-                          // Open the appointment modal with the event data for editing
-                          openModalWithEdit({
-                            appointmentId: event.appointmentId,
-                            initialData: {
-                              contactId: event.contactId,
-                              listingId: event.listingId ?? undefined,
-                              listingContactId: event.listingContactId ?? undefined,
-                              dealId: event.dealId ?? undefined,
-                              prospectId: event.prospectId ?? undefined,
-                              startDate: event.startTime
-                                .toISOString()
-                                .split("T")[0],
-                              startTime: event.startTime.toTimeString().slice(0, 5),
-                              endDate: event.endTime.toISOString().split("T")[0],
-                              endTime: event.endTime.toTimeString().slice(0, 5),
-                              tripTimeMinutes: event.tripTimeMinutes,
-                              notes: event.notes,
-                              appointmentType: event.type as
-                                | "Visita"
-                                | "Reunión"
-                                | "Firma"
-                                | "Cierre"
-                                | "Viaje",
-                            },
-                          });
-                          setSelectedEvent(null); // Close the detail panel
-                        }}
-                        className="flex-1"
-                      >
-                        Editar
-                      </Button>
-                    );
-                  })()}
-                  {(() => {
-                    console.log("🔘 [Calendar] Rendering Visita button:", { showVisitaButton });
-                    return showVisitaButton && (
-                      <Button
-                        size="sm"
-                        variant="default"
-                        onClick={() => {
-                          console.log("🏠 [Calendar] Visita button clicked");
-                          router.push(
-                            `/calendario/visita/${event.appointmentId}`,
-                          );
-                          setSelectedEvent(null); // Close the detail panel
-                        }}
-                        className="flex-1"
-                      >
-                        Visita
-                      </Button>
-                    );
-                  })()}
-                  {(() => {
-                    console.log("🔘 [Calendar] Rendering Delete button:", { canDelete });
-                    return canDelete && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          console.log("🗑️ [Calendar] Delete button clicked");
-                          void handleDeleteAppointment(event.appointmentId);
-                        }}
-                        disabled={isDeletingAppointment}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                        title="Eliminar"
-                      >
-                        {isDeletingAppointment ? (
-                          <Loader className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
-                    );
-                  })()}
-                </div>
-                </div>
-              </>
-            );
-          })()}
-        </SheetContent>
-      </Sheet>
+                // Map calendar event to AppointmentData with userId for ownership check
+                return {
+                  appointmentId: event.appointmentId,
+                  type: event.type,
+                  status: event.status as "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow",
+                  datetimeStart: event.startTime,
+                  datetimeEnd: event.endTime,
+                  tripTimeMinutes: event.tripTimeMinutes ?? undefined,
+                  notes: event.notes ?? undefined,
+                  contactId: event.contactId,
+                  contactName: event.contactName,
+                  propertyAddress: event.propertyAddress ?? undefined,
+                  agentName: event.agentName ?? undefined,
+                  isOptimistic: event.isOptimistic ?? false,
+                  userId: event.userId, // Include userId for ownership check
+                  listingId: event.listingId,
+                  listingContactId: event.listingContactId,
+                  dealId: event.dealId,
+                  prospectId: event.prospectId,
+                } as any;
+              })()
+            : null
+        }
+        isOpen={selectedEvent !== null}
+        onClose={() => setSelectedEvent(null)}
+        onUpdate={async () => await refetch()}
+        onEdit={handleEditAppointment}
+        permissions={{
+          canEdit: hasEditCalendarPermission,
+          canDelete: hasDeleteCalendarPermission,
+          checkOwnership: checkAppointmentOwnership,
+        }}
+        context={{
+          includeExtendedFields: true,
+        }}
+      />
 
       {/* Appointment Modal */}
       <AppointmentModal

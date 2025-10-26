@@ -114,7 +114,8 @@ export async function getOperacionesSummary(
       .leftJoin(listings, eq(listingContacts.listingId, listings.listingId))
       .where(and(
         eq(contacts.accountId, accountId),
-        eq(listingContacts.contactType, "buyer")
+        eq(listingContacts.contactType, "buyer"),
+        eq(listingContacts.isActive, true)
       ))
       .groupBy(listingContacts.status, listings.listingType);
 

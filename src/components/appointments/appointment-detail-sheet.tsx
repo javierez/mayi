@@ -1,0 +1,495 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
+import { Button } from "~/components/ui/button";
+import { cn } from "~/lib/utils";
+import {
+  CalendarIcon,
+  Clock,
+  MapPin,
+  Home,
+  Users,
+  PenTool,
+  Handshake,
+  Train,
+  CircleDot,
+  CheckCircle,
+  Ban,
+  RotateCw,
+  UserX,
+  Trash2,
+  Loader,
+  Pencil,
+} from "lucide-react";
+import { updateAppointmentStatusAction, deleteAppointmentAction } from "~/server/actions/appointments";
+import type { AppointmentData } from "./appointment-card";
+
+// Appointment types configuration
+const appointmentTypes = {
+  Visita: {
+    color: "bg-blue-100 text-blue-800",
+    icon: <Home className="h-4 w-4" />,
+  },
+  Reunión: {
+    color: "bg-purple-100 text-purple-800",
+    icon: <Users className="h-4 w-4" />,
+  },
+  Firma: {
+    color: "bg-green-100 text-green-800",
+    icon: <PenTool className="h-4 w-4" />,
+  },
+  Cierre: {
+    color: "bg-yellow-100 text-yellow-800",
+    icon: <Handshake className="h-4 w-4" />,
+  },
+  Viaje: {
+    color: "bg-emerald-100 text-emerald-800",
+    icon: <Train className="h-4 w-4" />,
+  },
+};
+
+// Status labels mapping
+type VisitStatus = "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow";
+const STATUS_LABELS: Record<VisitStatus, string> = {
+  Completed: "Completado",
+  Scheduled: "Programado",
+  Cancelled: "Cancelado",
+  Rescheduled: "Reprogramado",
+  NoShow: "No asistió",
+};
+
+// Appointment form data interface for edit modal
+interface AppointmentFormData {
+  contactId?: bigint;
+  listingId?: bigint;
+  listingContactId?: bigint;
+  dealId?: bigint;
+  prospectId?: bigint;
+  startDate?: string;
+  startTime?: string;
+  endDate?: string;
+  endTime?: string;
+  tripTimeMinutes?: number;
+  notes?: string;
+  appointmentType?: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje";
+}
+
+export interface AppointmentDetailSheetProps {
+  appointment: AppointmentData | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onUpdate?: () => void | Promise<void>;
+  onEdit?: (appointmentId: bigint, initialData: Partial<AppointmentFormData>) => void;
+  permissions: {
+    canEdit: boolean;
+    canDelete: boolean;
+    checkOwnership?: (appointment: AppointmentData) => boolean;
+  };
+  context?: {
+    listingId?: bigint;
+    contactId?: bigint;
+    includeExtendedFields?: boolean;
+  };
+}
+
+export function AppointmentDetailSheet({
+  appointment,
+  isOpen,
+  onClose,
+  onUpdate,
+  onEdit,
+  permissions,
+  context,
+}: AppointmentDetailSheetProps) {
+  const router = useRouter();
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isDeletingAppointment, setIsDeletingAppointment] = useState(false);
+  const [optimisticStatus, setOptimisticStatus] = useState<string | null>(null);
+
+  if (!appointment) return null;
+
+  // Use optimistic status if available, otherwise use actual status
+  const currentStatus = optimisticStatus ?? appointment.status;
+
+  // Determine if user can edit this specific appointment
+  const canEditAppointment = permissions.checkOwnership
+    ? permissions.checkOwnership(appointment)
+    : permissions.canEdit;
+
+  const canDeleteAppointment = canEditAppointment && permissions.canDelete;
+
+  // Check if "Visita" button should be shown
+  // Hide "Visita" button for final/non-actionable states
+  const showVisitaButton = canEditAppointment &&
+    appointment.type === "Visita" &&
+    currentStatus === "Scheduled";
+
+  // Type configuration
+  const typeConfig = appointmentTypes[
+    appointment.type as keyof typeof appointmentTypes
+  ] ?? {
+    color: "bg-gray-100 text-gray-800",
+    icon: <CalendarIcon className="h-4 w-4" />,
+  };
+
+  // Date/time formatting
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat("es-ES", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }).format(date);
+  };
+
+  const formatTime = (date: Date) => {
+    return new Intl.DateTimeFormat("es-ES", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  };
+
+  // Handle status update
+  const handleStatusUpdate = async (
+    newStatus: "Scheduled" | "Completed" | "Cancelled" | "Rescheduled" | "NoShow",
+  ) => {
+    // Optimistically update the status
+    setOptimisticStatus(newStatus);
+    setIsUpdatingStatus(true);
+
+    try {
+      const result = await updateAppointmentStatusAction(
+        appointment.appointmentId,
+        newStatus,
+        context?.listingId,
+        context?.contactId ?? appointment.contactId
+      );
+
+      if (result.success) {
+        toast.success("Estado actualizado correctamente");
+        if (onUpdate) {
+          await onUpdate();
+        }
+        // Keep the sheet open to show the new layout
+      } else {
+        // Revert optimistic update on error
+        setOptimisticStatus(null);
+        toast.error(result.error ?? "Error al actualizar el estado");
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setOptimisticStatus(null);
+      console.error("Error updating appointment status:", error);
+      toast.error("Error al actualizar el estado");
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  // Handle appointment deletion
+  const handleDeleteAppointment = async () => {
+    if (!confirm("¿Estás seguro de que deseas eliminar esta cita?")) {
+      return;
+    }
+
+    setIsDeletingAppointment(true);
+    try {
+      const result = await deleteAppointmentAction(
+        appointment.appointmentId,
+        context?.listingId,
+        context?.contactId ?? appointment.contactId
+      );
+
+      if (result.success) {
+        toast.success("Cita eliminada correctamente");
+        onClose();
+        if (onUpdate) {
+          await onUpdate();
+        }
+      } else {
+        toast.error(result.error ?? "Error al eliminar la cita");
+      }
+    } catch (error) {
+      console.error("Error deleting appointment:", error);
+      toast.error("Error al eliminar la cita");
+    } finally {
+      setIsDeletingAppointment(false);
+    }
+  };
+
+  // Handle edit button click
+  const handleEditClick = () => {
+    if (!onEdit) return;
+
+    const initialData: Partial<AppointmentFormData> = {
+      contactId: appointment.contactId,
+      startDate: appointment.datetimeStart.toISOString().split("T")[0],
+      startTime: appointment.datetimeStart.toTimeString().slice(0, 5),
+      endDate: appointment.datetimeEnd.toISOString().split("T")[0],
+      endTime: appointment.datetimeEnd.toTimeString().slice(0, 5),
+      tripTimeMinutes: appointment.tripTimeMinutes,
+      notes: appointment.notes,
+      appointmentType: appointment.type as "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje",
+    };
+
+    // Add context-specific fields
+    if (context?.listingId) {
+      initialData.listingId = context.listingId;
+    }
+
+    // Add extended fields for calendar context (if available from appointment)
+    if (context?.includeExtendedFields) {
+      // These fields might be available in the appointment object depending on the query
+      // TypeScript will allow these since initialData is Partial<AppointmentFormData>
+      const extendedAppointment = appointment as AppointmentData & {
+        listingContactId?: bigint;
+        dealId?: bigint;
+        prospectId?: bigint;
+      };
+
+      if (extendedAppointment.listingContactId) {
+        initialData.listingContactId = extendedAppointment.listingContactId;
+      }
+      if (extendedAppointment.dealId) {
+        initialData.dealId = extendedAppointment.dealId;
+      }
+      if (extendedAppointment.prospectId) {
+        initialData.prospectId = extendedAppointment.prospectId;
+      }
+    }
+
+    onEdit(appointment.appointmentId, initialData);
+    onClose();
+  };
+
+  // Handle "Visita" button click
+  const handleVisitaClick = () => {
+    router.push(`/calendario/visita/${appointment.appointmentId}`);
+    onClose();
+  };
+
+  return (
+    <Sheet open={isOpen} onOpenChange={onClose}>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            {typeConfig.icon}
+            <span>{appointment.type} - {appointment.contactName}</span>
+          </SheetTitle>
+        </SheetHeader>
+
+        <div className="space-y-4 mt-4">
+          {/* Type and Status */}
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">{appointment.type}</p>
+
+            {/* Status Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  disabled={!canEditAppointment}
+                >
+                  <span className={cn(
+                    "rounded-full px-2 py-0.5",
+                    currentStatus === "Scheduled" && "bg-gray-100 text-gray-700",
+                    currentStatus === "Completed" && "bg-gray-200 text-gray-800",
+                    currentStatus === "Cancelled" && "bg-gray-50 text-gray-400 line-through",
+                    currentStatus === "Rescheduled" && "bg-gray-150 text-gray-700",
+                    currentStatus === "NoShow" && "bg-gray-100 text-gray-500",
+                  )}>
+                    {STATUS_LABELS[currentStatus as VisitStatus]}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem
+                  onClick={() => {
+                    void handleStatusUpdate("Scheduled");
+                  }}
+                  disabled={isUpdatingStatus || currentStatus === "Scheduled"}
+                >
+                  <CircleDot className="mr-2 h-3 w-3 text-muted-foreground" />
+                  Programado
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    void handleStatusUpdate("Completed");
+                  }}
+                  disabled={isUpdatingStatus || currentStatus === "Completed"}
+                >
+                  <CheckCircle className="mr-2 h-3 w-3 text-muted-foreground" />
+                  Completado
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    void handleStatusUpdate("Cancelled");
+                  }}
+                  disabled={isUpdatingStatus || currentStatus === "Cancelled"}
+                >
+                  <Ban className="mr-2 h-3 w-3 text-muted-foreground" />
+                  Cancelado
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    void handleStatusUpdate("Rescheduled");
+                  }}
+                  disabled={isUpdatingStatus || currentStatus === "Rescheduled"}
+                >
+                  <RotateCw className="mr-2 h-3 w-3 text-muted-foreground" />
+                  Reprogramado
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    void handleStatusUpdate("NoShow");
+                  }}
+                  disabled={isUpdatingStatus || currentStatus === "NoShow"}
+                >
+                  <UserX className="mr-2 h-3 w-3 text-muted-foreground" />
+                  No asistió
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Appointment Details */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+              <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+              <span>{formatDate(appointment.datetimeStart)}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span>
+                {formatTime(appointment.datetimeStart)} -{" "}
+                {formatTime(appointment.datetimeEnd)}
+              </span>
+            </div>
+            {appointment.propertyAddress && (
+              <div className="flex items-center gap-2 text-sm">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(appointment.propertyAddress)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline decoration-dotted underline-offset-2 hover:decoration-solid transition-all"
+                >
+                  {appointment.propertyAddress}
+                </a>
+              </div>
+            )}
+            {appointment.tripTimeMinutes && (
+              <div className="flex items-center gap-2 text-sm">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span>Tiempo de viaje: {appointment.tripTimeMinutes} min</span>
+              </div>
+            )}
+          </div>
+
+          {/* Notes */}
+          {appointment.notes && (
+            <div className="mt-6 border-l-2 border-gray-300 pl-4 py-1">
+              <p className="text-sm text-gray-600 leading-relaxed italic">
+                "{appointment.notes}"
+              </p>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex gap-2 pt-4">
+            {showVisitaButton && (
+              <Button
+                size="default"
+                variant="default"
+                onClick={handleVisitaClick}
+                className="flex-1"
+              >
+                Visita
+              </Button>
+            )}
+            {!showVisitaButton && (canEditAppointment || canDeleteAppointment) ? (
+              <div className="flex items-center justify-center gap-3 w-full">
+                {canEditAppointment && onEdit && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleEditClick}
+                    className="h-10 w-10 rounded-full p-0 text-gray-600 hover:text-gray-900 hover:bg-gray-100 shadow-md hover:shadow-lg transition-shadow"
+                    title="Editar"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
+                {canDeleteAppointment && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      void handleDeleteAppointment();
+                    }}
+                    disabled={isDeletingAppointment}
+                    className="h-10 w-10 rounded-full p-0 text-red-600 hover:text-red-700 hover:bg-red-50 shadow-md hover:shadow-lg transition-shadow"
+                    title="Eliminar"
+                  >
+                    {isDeletingAppointment ? (
+                      <Loader className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <>
+                {canEditAppointment && onEdit && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleEditClick}
+                    className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    title="Editar"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
+                {canDeleteAppointment && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      void handleDeleteAppointment();
+                    }}
+                    disabled={isDeletingAppointment}
+                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    title="Eliminar"
+                  >
+                    {isDeletingAppointment ? (
+                      <Loader className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}

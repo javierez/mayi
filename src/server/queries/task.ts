@@ -202,6 +202,7 @@ export async function createTask(
           and(
             eq(listingContacts.listingContactId, data.listingContactId),
             eq(contacts.accountId, BigInt(accountId)),
+            eq(listingContacts.isActive, true),
           ),
         );
       if (!lead) throw new Error("Listing contact not found or access denied");

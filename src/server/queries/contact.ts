@@ -542,6 +542,7 @@ export async function createContact(
         nif: data.nif,
         email: data.email,
         phone: data.phone,
+        source: data.source,
         additionalInfo: data.additionalInfo ?? {},
         accountId: BigInt(accountId),
         isActive: true,
@@ -606,6 +607,7 @@ export async function createContactWithListings(
         nif: contactData.nif,
         email: contactData.email,
         phone: contactData.phone,
+        source: contactData.source,
         additionalInfo: contactData.additionalInfo ?? {},
         accountId: BigInt(accountId),
         isActive: true,
@@ -1528,6 +1530,9 @@ export async function getBuyerListings(contactId: number, accountId: number) {
           FROM users u
           WHERE u.id = ${listings.agentId}
         )`,
+        // Listing contact fields
+        listingContactId: listingContacts.listingContactId,
+        listingContactIsActive: listingContacts.isActive,
 
         // Property fields
         referenceNumber: properties.referenceNumber,
@@ -1550,34 +1555,34 @@ export async function getBuyerListings(contactId: number, accountId: number) {
 
         // Image fields
         imageUrl: sql<string | null>`(
-          SELECT image_url 
-          FROM property_images 
-          WHERE property_id = ${properties.propertyId} 
-          AND is_active = true 
+          SELECT image_url
+          FROM property_images
+          WHERE property_id = ${properties.propertyId}
+          AND is_active = true
           AND image_order = 1
           LIMIT 1
         )`,
         s3key: sql<string | null>`(
-          SELECT s3key 
-          FROM property_images 
-          WHERE property_id = ${properties.propertyId} 
-          AND is_active = true 
+          SELECT s3key
+          FROM property_images
+          WHERE property_id = ${properties.propertyId}
+          AND is_active = true
           AND image_order = 1
           LIMIT 1
         )`,
         imageUrl2: sql<string | null>`(
-          SELECT image_url 
-          FROM property_images 
-          WHERE property_id = ${properties.propertyId} 
-          AND is_active = true 
+          SELECT image_url
+          FROM property_images
+          WHERE property_id = ${properties.propertyId}
+          AND is_active = true
           AND image_order = 2
           LIMIT 1
         )`,
         s3key2: sql<string | null>`(
-          SELECT s3key 
-          FROM property_images 
-          WHERE property_id = ${properties.propertyId} 
-          AND is_active = true 
+          SELECT s3key
+          FROM property_images
+          WHERE property_id = ${properties.propertyId}
+          AND is_active = true
           AND image_order = 2
           LIMIT 1
         )`,
@@ -1599,7 +1604,6 @@ export async function getBuyerListings(contactId: number, accountId: number) {
         and(
           eq(listingContacts.contactId, BigInt(contactId)),
           eq(listingContacts.contactType, "buyer"),
-          eq(listingContacts.isActive, true),
           eq(listings.accountId, BigInt(accountId)),
         ),
       )
@@ -1741,6 +1745,74 @@ export async function removeListingContactRelationshipWithAuth(
     return { success: true };
   } catch (error) {
     console.error("Error removing listing-contact relationship:", error);
+    throw error;
+  }
+}
+
+// Deactivate listing-contact relationship (set is_active to false)
+export async function deactivateListingContactWithAuth(
+  contactId: number,
+  listingId: number,
+  contactType: "buyer" | "owner" = "buyer",
+) {
+  try {
+    const accountId = await getCurrentUserAccountId();
+
+    // Verify the contact exists and belongs to this account
+    const contact = await getContactById(contactId, accountId);
+    if (!contact) {
+      throw new Error("Contact not found or access denied");
+    }
+
+    // Verify the listing exists and belongs to this account
+    const [listing] = await db
+      .select({ listingId: listings.listingId })
+      .from(listings)
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(accountId)),
+          eq(listings.isActive, true),
+        ),
+      );
+
+    if (!listing) {
+      throw new Error("Listing not found or access denied");
+    }
+
+    // Check if active relationship exists
+    const [existingRelation] = await db
+      .select({ listingContactId: listingContacts.listingContactId })
+      .from(listingContacts)
+      .where(
+        and(
+          eq(listingContacts.contactId, BigInt(contactId)),
+          eq(listingContacts.listingId, BigInt(listingId)),
+          eq(listingContacts.contactType, contactType),
+          eq(listingContacts.isActive, true),
+        ),
+      );
+
+    if (!existingRelation) {
+      throw new Error("Active relationship not found");
+    }
+
+    // Deactivate the relationship by setting isActive to false
+    await db
+      .update(listingContacts)
+      .set({ isActive: false })
+      .where(
+        and(
+          eq(listingContacts.contactId, BigInt(contactId)),
+          eq(listingContacts.listingId, BigInt(listingId)),
+          eq(listingContacts.contactType, contactType),
+          eq(listingContacts.isActive, true),
+        ),
+      );
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error deactivating listing-contact relationship:", error);
     throw error;
   }
 }

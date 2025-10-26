@@ -12,6 +12,7 @@ import {
   getAppointmentsByDateRangeSecure,
   getListingAppointments,
   softDeleteAppointment,
+  getAppointmentByIdWithAuth,
 } from "~/server/queries/appointment";
 import {
   findOrCreateLeadForAppointment,
@@ -362,6 +363,8 @@ export async function getAgentsForFilterAction() {
 export async function updateAppointmentStatusAction(
   appointmentId: bigint,
   status: "Scheduled" | "Completed" | "Cancelled" | "Rescheduled" | "NoShow",
+  listingId?: bigint,
+  contactId?: bigint,
 ) {
   try {
     // PATTERN: Always get account ID for security
@@ -394,6 +397,16 @@ export async function updateAppointmentStatusAction(
 
     // Refresh calendar data
     revalidatePath("/calendario");
+
+    // Refresh property page if listingId is provided or available from appointment
+    if (listingId ?? appointment.listingId) {
+      revalidatePath(`/propiedades/${listingId ?? appointment.listingId}`);
+    }
+
+    // Refresh contact page if contactId is provided or available from appointment
+    if (contactId ?? appointment.contactId) {
+      revalidatePath(`/contactos/${contactId ?? appointment.contactId}`);
+    }
 
     return {
       success: true,
@@ -501,11 +514,18 @@ export async function getBatchAppointmentTasksAction(appointmentIds: number[]) {
 }
 
 // Server action to delete an appointment
-export async function deleteAppointmentAction(appointmentId: bigint) {
+export async function deleteAppointmentAction(
+  appointmentId: bigint,
+  listingId?: bigint,
+  contactId?: bigint,
+) {
   try {
     // PATTERN: Always get account ID for security
     await getCurrentUserAccountId();
     const currentUser = await getCurrentUser();
+
+    // Fetch the appointment to get listingId and contactId if not provided
+    const appointment = await getAppointmentByIdWithAuth(Number(appointmentId));
 
     // Soft delete the appointment (sets isActive = false)
     await softDeleteAppointment(Number(appointmentId));
@@ -520,6 +540,18 @@ export async function deleteAppointmentAction(appointmentId: bigint) {
 
     // Refresh calendar data
     revalidatePath("/calendario");
+
+    // Refresh property page if listingId is provided or available from appointment
+    const appointmentListingId = appointment?.appointments.listingId;
+    if (listingId ?? appointmentListingId) {
+      revalidatePath(`/propiedades/${listingId ?? appointmentListingId}`);
+    }
+
+    // Refresh contact page if contactId is provided or available from appointment
+    const appointmentContactId = appointment?.appointments.contactId;
+    if (contactId ?? appointmentContactId) {
+      revalidatePath(`/contactos/${contactId ?? appointmentContactId}`);
+    }
 
     return {
       success: true,

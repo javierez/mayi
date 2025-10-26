@@ -53,6 +53,7 @@ export interface CompactVisitCardProps {
 
 // Contact-related types
 export interface ContactWithDetails {
+  listingContactId: bigint;
   contactId: bigint;
   firstName: string;
   lastName: string | null;
@@ -69,15 +70,19 @@ export interface ContactWithDetails {
   hasCancelledVisit: boolean;
   hasOffer: boolean;
   offer: number | null;
+  offerAccepted: boolean | null;
   isNew: boolean;
 }
 
 export interface ContactsKPIProps {
-  newContactsCount: number;
+  contactsWithVisitsCount: number;
+  contactsWithoutVisitsCount: number;
+  contactsInOfferStageCount: number;
   totalContactsCount: number;
 }
 
 export interface ContactSheetData {
+  listingContactId: bigint;
   contact: {
     contactId: bigint;
     firstName: string;
@@ -92,9 +97,11 @@ export interface ContactSheetData {
   hasCancelledVisit: boolean;
   hasOffer: boolean;
   offer: number | null;
+  offerAccepted: boolean | null;
 }
 
 export interface CompactContactCardProps {
+  listingContactId: bigint;
   contact: {
     contactId: bigint;
     firstName: string;
@@ -114,9 +121,11 @@ export interface CompactContactCardProps {
   hasCancelledVisit: boolean;
   hasOffer: boolean;
   offer: number | null;
+  offerAccepted: boolean | null;
   visitCount: number;
   listingId: bigint;
   onContactClick?: (data: ContactSheetData) => void;
+  hasAcceptedOfferInList?: boolean; // Flag to indicate if any contact has accepted offer
 }
 
 // Section component types
@@ -134,6 +143,7 @@ export interface ActivityTabContentProps {
   contacts: ContactWithDetails[];
   listingId: bigint;
   listingPrice: string;
+  onRefresh?: () => void | Promise<void>;
 }
 
 // Empty state types
@@ -146,4 +156,37 @@ export interface OwnerContact {
   lastName: string | null;
   email: string | null;
   phone: string | null;
+}
+
+// Contact activity tab types
+export interface ContactVisitWithDetails extends VisitWithDetails {
+  listingId: bigint | null;
+}
+
+export interface ContactRelatedContact {
+  listingContactId: bigint;
+  contactId: bigint;
+  firstName: string;
+  lastName: string | null;
+  email: string | null;
+  phone: string | null;
+  contactType: string;
+  source: string | null;
+  status: string | null;
+  createdAt: Date;
+  offer: number | null;
+  offerAccepted: boolean | null;
+  listingId: bigint | null;
+  visitCount: number;
+  hasUpcomingVisit: boolean;
+  hasMissedVisit: boolean;
+  hasCompletedVisit: boolean;
+  hasCancelledVisit: boolean;
+  hasOffer: boolean;
+  isNew: boolean;
+  sortPriority: number;
+}
+
+export interface ContactActivityTabContentProps {
+  contactId: bigint;
 }

@@ -7,8 +7,10 @@ import { formatDistance } from "date-fns";
 import { es } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import type { CompactContactCardProps } from "~/types/activity";
+import { navigateToPage } from "~/lib/navigation";
 
 export function CompactContactCard({
+  listingContactId,
   contact,
   listingContact: _listingContact,
   hasUpcomingVisit,
@@ -17,9 +19,11 @@ export function CompactContactCard({
   hasCancelledVisit,
   hasOffer,
   offer,
+  offerAccepted,
   visitCount: _visitCount,
   listingId,
   onContactClick,
+  hasAcceptedOfferInList = false,
 }: CompactContactCardProps) {
   const router = useRouter();
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -51,12 +55,13 @@ export function CompactContactCard({
 
   const handleCreateVisit = (e: React.MouseEvent) => {
     e.stopPropagation();
-    router.push(`/calendario?new=true&contactId=${contact.contactId}&listingId=${listingId}`);
+    navigateToPage(`/calendario?new=true&contactId=${contact.contactId}&listingId=${listingId}`, router);
   };
 
   const handleCardClick = () => {
     if (onContactClick) {
       onContactClick({
+        listingContactId,
         contact,
         hasUpcomingVisit,
         hasMissedVisit,
@@ -64,6 +69,7 @@ export function CompactContactCard({
         hasCancelledVisit,
         hasOffer,
         offer,
+        offerAccepted,
       });
     }
   };
@@ -72,7 +78,11 @@ export function CompactContactCard({
     <div
       onClick={handleCardClick}
       className={cn(
-        "calendar-event relative cursor-pointer rounded-lg border bg-white p-2.5 transition-all duration-200 hover:shadow-md"
+        "calendar-event relative cursor-pointer rounded-lg border bg-white p-2.5 transition-all duration-200 hover:shadow-md",
+        // Subtle shadow for accepted offers
+        offerAccepted === true && "shadow-lg",
+        // Ghosted effect for other cards when an offer is accepted in the list
+        hasAcceptedOfferInList && offerAccepted !== true && "opacity-50 hover:opacity-75"
       )}
     >
       {/* Main content */}
@@ -182,40 +192,43 @@ export function CompactContactCard({
       <div className="absolute top-2 right-2">
         {/* Visit status badge */}
         <span
-          onClick={(!hasUpcomingVisit && !hasMissedVisit && !hasCompletedVisit && !hasCancelledVisit && !hasOffer) || (hasMissedVisit && !hasUpcomingVisit && !hasOffer) || (hasCancelledVisit && !hasUpcomingVisit && !hasOffer) ? handleCreateVisit : undefined}
+          onClick={(!hasUpcomingVisit && !hasMissedVisit && !hasCompletedVisit && !hasCancelledVisit && !hasOffer && offerAccepted === null) || (hasMissedVisit && !hasUpcomingVisit && !hasOffer && offerAccepted === null) || (hasCancelledVisit && !hasUpcomingVisit && !hasOffer && offerAccepted === null) ? handleCreateVisit : undefined}
           className={cn(
             "inline-flex items-center justify-center gap-1 rounded-full px-2 py-0 text-xs font-medium min-w-[120px] h-5",
             // Visita pendiente - upcoming visit scheduled (highest priority)
             hasUpcomingVisit &&
+              "bg-blue-100 text-blue-800",
+            // Oferta aceptada - offer accepted (deal closing!)
+            offerAccepted === true &&
+              "bg-green-100 text-green-800",
+            // Oferta rechazada - offer rejected
+            offerAccepted === false &&
+              "bg-rose-100 text-rose-800",
+            // Oferta pendiente - has pending offer (needs decision)
+            hasOffer && !hasUpcomingVisit && offerAccepted === null &&
               "bg-amber-100 text-amber-800",
-            // Oferta realizada - has offer (regardless of visit status)
-            hasOffer && !hasUpcomingVisit &&
-              "bg-orange-100 text-orange-800",
             // Visita cancelada - has cancelled visit, clickable to reschedule
-            hasCancelledVisit && !hasUpcomingVisit && !hasOffer &&
+            hasCancelledVisit && !hasUpcomingVisit && !hasOffer && offerAccepted === null &&
               "bg-white text-orange-700 border-2 border-dashed border-orange-400 cursor-pointer hover:bg-orange-50 hover:border-orange-500 transition-colors",
             // Visita perdida - missed visit, clickable to reschedule
-            hasMissedVisit && !hasUpcomingVisit && !hasCancelledVisit && !hasOffer &&
+            hasMissedVisit && !hasUpcomingVisit && !hasCancelledVisit && !hasOffer && offerAccepted === null &&
               "bg-white text-amber-700 border-2 border-dashed border-amber-400 cursor-pointer hover:bg-amber-50 hover:border-amber-500 transition-colors",
             // Visita completada - completed visit without offer yet
-            hasCompletedVisit && !hasOffer && !hasUpcomingVisit && !hasMissedVisit && !hasCancelledVisit &&
-              "bg-amber-50 text-amber-700",
-            // Crear visita - no visits at all and no offer
-            !hasUpcomingVisit && !hasMissedVisit && !hasCompletedVisit && !hasCancelledVisit && !hasOffer &&
-              "bg-white text-amber-700 border-2 border-dashed border-amber-300 cursor-pointer hover:bg-amber-50 hover:border-amber-400 transition-colors"
+            hasCompletedVisit && !hasOffer && !hasUpcomingVisit && !hasMissedVisit && !hasCancelledVisit && offerAccepted === null &&
+              "bg-gray-100 text-gray-700",
+            // Sin visitas - no visits at all and no offer
+            !hasUpcomingVisit && !hasMissedVisit && !hasCompletedVisit && !hasCancelledVisit && !hasOffer && offerAccepted === null &&
+              "bg-gray-100 text-gray-700"
           )}
         >
           {hasUpcomingVisit && "Visita pendiente"}
-          {hasOffer && !hasUpcomingVisit && "Oferta realizada"}
-          {hasCancelledVisit && !hasUpcomingVisit && !hasOffer && "Visita cancelada"}
-          {hasMissedVisit && !hasUpcomingVisit && !hasCancelledVisit && !hasOffer && "Visita perdida"}
-          {hasCompletedVisit && !hasOffer && !hasUpcomingVisit && !hasMissedVisit && !hasCancelledVisit && "Visita completada"}
-          {!hasUpcomingVisit && !hasMissedVisit && !hasCompletedVisit && !hasCancelledVisit && !hasOffer && (
-            <>
-              <CalendarPlus className="h-2.5 w-2.5" />
-              Crear visita
-            </>
-          )}
+          {offerAccepted === true && "Oferta aceptada"}
+          {offerAccepted === false && "Oferta rechazada"}
+          {hasOffer && !hasUpcomingVisit && offerAccepted === null && "Oferta pendiente"}
+          {hasCancelledVisit && !hasUpcomingVisit && !hasOffer && offerAccepted === null && "Visita cancelada"}
+          {hasMissedVisit && !hasUpcomingVisit && !hasCancelledVisit && !hasOffer && offerAccepted === null && "Visita perdida"}
+          {hasCompletedVisit && !hasOffer && !hasUpcomingVisit && !hasMissedVisit && !hasCancelledVisit && offerAccepted === null && "Visita completada"}
+          {!hasUpcomingVisit && !hasMissedVisit && !hasCompletedVisit && !hasCancelledVisit && !hasOffer && offerAccepted === null && "Sin visitas"}
         </span>
       </div>
     </div>
