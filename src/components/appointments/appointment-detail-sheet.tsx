@@ -426,31 +426,31 @@ export function AppointmentDetailSheet({
               <div className="flex items-center justify-center gap-3 w-full">
                 {canEditAppointment && onEdit && (
                   <Button
-                    size="sm"
-                    variant="ghost"
+                    size="default"
+                    variant="outline"
                     onClick={handleEditClick}
-                    className="h-10 w-10 rounded-full p-0 text-gray-600 hover:text-gray-900 hover:bg-gray-100 shadow-md hover:shadow-lg transition-shadow"
-                    title="Editar"
+                    className="flex-1 gap-2"
                   >
                     <Pencil className="h-4 w-4" />
+                    Editar cita
                   </Button>
                 )}
                 {canDeleteAppointment && (
                   <Button
-                    size="sm"
-                    variant="ghost"
+                    size="default"
+                    variant="outline"
                     onClick={() => {
                       void handleDeleteAppointment();
                     }}
                     disabled={isDeletingAppointment}
-                    className="h-10 w-10 rounded-full p-0 text-red-600 hover:text-red-700 hover:bg-red-50 shadow-md hover:shadow-lg transition-shadow"
-                    title="Eliminar"
+                    className="flex-1 gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
                   >
                     {isDeletingAppointment ? (
                       <Loader className="h-4 w-4 animate-spin" />
                     ) : (
                       <Trash2 className="h-4 w-4" />
                     )}
+                    Eliminar cita
                   </Button>
                 )}
               </div>

@@ -11,6 +11,7 @@ import {
 } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { Input } from "~/components/ui/input";
 import {
   CalendarIcon,
   Check,
@@ -25,10 +26,11 @@ import {
   Phone,
   MessageCircle,
   Loader,
+  FileText,
 } from "lucide-react";
 import type { ContactSheetData, OwnerContact } from "~/types/activity";
 import { navigateToPage } from "~/lib/navigation";
-import { deactivateListingContactAction, updateOfferStatusAction } from "~/server/actions/listing-contacts";
+import { deactivateListingContactAction, updateOfferStatusAction, addOfferToListingContactAction } from "~/server/actions/listing-contacts";
 
 interface ContactDetailSheetProps {
   contact: ContactSheetData | null;
@@ -100,6 +102,83 @@ function OfferComparisonCard({ offer, listingPrice }: OfferComparisonCardProps) 
   );
 }
 
+// Mini component for offer input
+interface OfferInputCardProps {
+  label: string;
+  onSubmit: (amount: number) => Promise<void>;
+  isSubmitting: boolean;
+}
+
+function OfferInputCard({ label, onSubmit, isSubmitting }: OfferInputCardProps) {
+  const [inputValue, setInputValue] = useState("");
+  const [rawValue, setRawValue] = useState<number>(0);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency: "EUR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Remove all non-digit characters
+    const numericValue = e.target.value.replace(/\D/g, "");
+    const numberValue = numericValue === "" ? 0 : parseInt(numericValue, 10);
+
+    setRawValue(numberValue);
+
+    // Format for display
+    if (numericValue === "") {
+      setInputValue("");
+    } else {
+      setInputValue(formatCurrency(numberValue));
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (rawValue <= 0) {
+      toast.error("Por favor, ingresa una oferta válida");
+      return;
+    }
+
+    await onSubmit(rawValue);
+
+    // Clear input on success
+    setInputValue("");
+    setRawValue(0);
+  };
+
+  return (
+    <div className="space-y-2">
+      <h4 className="text-sm font-semibold text-gray-900">{label}</h4>
+      <div className="flex items-center gap-2">
+        <Input
+          type="text"
+          placeholder="0 €"
+          value={inputValue}
+          onChange={handleInputChange}
+          disabled={isSubmitting}
+          className="flex-1 h-9 bg-gray-50 border-gray-200"
+        />
+        <Button
+          size="sm"
+          onClick={handleSubmit}
+          disabled={isSubmitting || rawValue <= 0}
+          className="h-9 w-9 p-0"
+        >
+          {isSubmitting ? (
+            <Loader className="h-4 w-4 animate-spin" />
+          ) : (
+            <Check className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function ContactDetailSheet({
   contact,
   isOpen,
@@ -113,6 +192,7 @@ export function ContactDetailSheet({
   const router = useRouter();
   const [isDeactivating, setIsDeactivating] = useState(false);
   const [isUpdatingOffer, setIsUpdatingOffer] = useState(false);
+  const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
 
   if (!contact) return null;
 
@@ -193,6 +273,36 @@ export function ContactDetailSheet({
       toast.error("Error al actualizar el estado de la oferta");
     } finally {
       setIsUpdatingOffer(false);
+    }
+  };
+
+  // Handle adding an offer
+  const handleAddOffer = async (amount: number) => {
+    setIsSubmittingOffer(true);
+
+    try {
+      const result = await addOfferToListingContactAction(
+        contact.listingContactId,
+        amount,
+        listingId,
+        contact.contact.contactId
+      );
+
+      if (result.success) {
+        toast.success("Oferta registrada correctamente");
+
+        // Refresh the contact data after successful update
+        if (onUpdate) {
+          await onUpdate();
+        }
+      } else {
+        toast.error(result.error ?? "Error al registrar la oferta");
+      }
+    } catch (error) {
+      console.error("Error adding offer:", error);
+      toast.error("Error al registrar la oferta");
+    } finally {
+      setIsSubmittingOffer(false);
     }
   };
 
@@ -282,6 +392,14 @@ export function ContactDetailSheet({
 
           {/* Content based on badge type */}
           <div className="space-y-4">
+            {/* Offer Input for Visita Pendiente (upcoming visit) */}
+            {badgeType === "upcoming" && !contact.hasOffer && permissions.canEditContacts && (
+              <OfferInputCard
+                label="Registrar Oferta"
+                onSubmit={handleAddOffer}
+                isSubmitting={isSubmittingOffer}
+              />
+            )}
 
             {badgeType === "offer" && contact.offer && (
               <OfferComparisonCard
@@ -297,7 +415,32 @@ export function ContactDetailSheet({
                   listingPrice={listingPrice}
                 />
                 {permissions.canEditContacts && (
-                  <div className="pt-3 border-t">
+                  <div className="space-y-2 pt-3 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                      onClick={() => {
+                        const calendarUrl = `/calendario?new=true&listingId=${listingId}&contactId=${contact.contact.contactId}&type=Firma`;
+                        navigateToPage(calendarUrl, router);
+                        onClose();
+                      }}
+                    >
+                      <CalendarPlus className="mr-2 h-4 w-4" />
+                      Programar Firma
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                      onClick={() => {
+                        // TODO: Implement contract generation
+                        toast.error("Funcionalidad en desarrollo");
+                      }}
+                    >
+                      <FileText className="mr-2 h-4 w-4" />
+                      Generar Contrato Arras
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -328,41 +471,49 @@ export function ContactDetailSheet({
                   listingPrice={listingPrice}
                 />
                 {permissions.canEditContacts && (
-                  <div className="space-y-2 pt-3 border-t">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-start text-gray-700 hover:text-gray-900 hover:bg-gray-100"
-                      onClick={() => {
-                        if (confirm("¿Estás seguro de que deseas revocar el rechazo de esta oferta?")) {
-                          void handleUpdateOfferStatus(null);
-                        }
-                      }}
-                      disabled={isUpdatingOffer}
-                    >
-                      {isUpdatingOffer ? (
-                        <Loader className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <X className="mr-2 h-4 w-4" />
-                      )}
-                      Revocar Decisión
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => {
-                        void handleDeactivateContact();
-                      }}
-                      disabled={isDeactivating}
-                    >
-                      {isDeactivating ? (
-                        <Loader className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <UserX className="mr-2 h-4 w-4" />
-                      )}
-                      Dar de baja
-                    </Button>
+                  <div className="space-y-3 pt-3 border-t">
+                    {/* New Offer Input for Rejected Offer */}
+                    <OfferInputCard
+                      label="Nueva Oferta"
+                      onSubmit={handleAddOffer}
+                      isSubmitting={isSubmittingOffer}
+                    />
+                    <div className="space-y-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                        onClick={() => {
+                          if (confirm("¿Estás seguro de que deseas revocar el rechazo de esta oferta?")) {
+                            void handleUpdateOfferStatus(null);
+                          }
+                        }}
+                        disabled={isUpdatingOffer}
+                      >
+                        {isUpdatingOffer ? (
+                          <Loader className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <X className="mr-2 h-4 w-4" />
+                        )}
+                        Revocar Decisión
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => {
+                          void handleDeactivateContact();
+                        }}
+                        disabled={isDeactivating}
+                      >
+                        {isDeactivating ? (
+                          <Loader className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <UserX className="mr-2 h-4 w-4" />
+                        )}
+                        Dar de baja
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -440,24 +591,36 @@ export function ContactDetailSheet({
               </div>
             )}
 
-            {badgeType === "completed" && permissions.canEditContacts && (
-              <div className="space-y-2 pt-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-                  onClick={() => {
-                    void handleDeactivateContact();
-                  }}
-                  disabled={isDeactivating}
-                >
-                  {isDeactivating ? (
-                    <Loader className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <UserX className="mr-2 h-4 w-4" />
-                  )}
-                  Dar de baja
-                </Button>
+            {badgeType === "completed" && (
+              <div className="space-y-3">
+                {/* Offer Input for Visita Completada */}
+                {!contact.hasOffer && permissions.canEditContacts && (
+                  <OfferInputCard
+                    label="Registrar Oferta"
+                    onSubmit={handleAddOffer}
+                    isSubmitting={isSubmittingOffer}
+                  />
+                )}
+                {permissions.canEditContacts && (
+                  <div className="space-y-2 pt-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                      onClick={() => {
+                        void handleDeactivateContact();
+                      }}
+                      disabled={isDeactivating}
+                    >
+                      {isDeactivating ? (
+                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <UserX className="mr-2 h-4 w-4" />
+                      )}
+                      Dar de baja
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 

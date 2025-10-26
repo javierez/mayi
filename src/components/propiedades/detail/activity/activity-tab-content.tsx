@@ -757,15 +757,8 @@ export function ActivityTabContent({
 
             {/* New Contacts Section */}
             {newContacts.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 px-1">
-                  <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                  <h3 className="text-sm font-semibold text-emerald-700 uppercase tracking-wide">
-                    Nuevos Contactos ({newContacts.length})
-                  </h3>
-                </div>
-                <div className="space-y-3">
-                  {newContacts.map((contact) => (
+              <div className="space-y-2">
+                {newContacts.map((contact) => (
                   <CompactContactCard
                     key={contact.contactId.toString()}
                     listingContactId={contact.listingContactId}
@@ -795,7 +788,6 @@ export function ActivityTabContent({
                     hasAcceptedOfferInList={hasAcceptedOffer}
                   />
                 ))}
-                </div>
               </div>
             )}
 
@@ -807,7 +799,7 @@ export function ActivityTabContent({
                 defaultExpanded={false}
                 storageKey={`activity-all-contacts-${listingId}`}
               >
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {sortedContacts.map((contact) => (
                     <CompactContactCard
                       key={contact.contactId.toString()}

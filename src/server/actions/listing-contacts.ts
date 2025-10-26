@@ -65,6 +65,73 @@ export async function deactivateListingContactAction(
 }
 
 /**
+ * Add or update offer amount for a listing contact
+ */
+export async function addOfferToListingContactAction(
+  listingContactId: bigint,
+  offerAmount: number,
+  listingId?: bigint,
+  contactId?: bigint,
+) {
+  try {
+    const accountId = await getCurrentUserAccountId();
+
+    // Verify the listing contact belongs to the current account
+    const [listingContact] = await db
+      .select({
+        listingContactId: listingContacts.listingContactId,
+        listingId: listingContacts.listingId,
+        contactId: listingContacts.contactId,
+      })
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .where(
+        and(
+          eq(listingContacts.listingContactId, listingContactId),
+          eq(contacts.accountId, BigInt(accountId))
+        )
+      )
+      .limit(1);
+
+    if (!listingContact) {
+      return {
+        success: false,
+        error: "Contacto no encontrado o acceso denegado",
+      };
+    }
+
+    // Update the listing contact offer amount and reset offerAccepted to null
+    // (new offers should always be in pending state)
+    await db
+      .update(listingContacts)
+      .set({
+        offer: offerAmount,
+        offerAccepted: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(listingContacts.listingContactId, listingContactId));
+
+    // Revalidate the property detail page if listingId is provided
+    if (listingId ?? listingContact.listingId) {
+      revalidatePath(`/propiedades/${listingId ?? listingContact.listingId}`);
+    }
+
+    // Revalidate the contact detail page if contactId is provided
+    if (contactId ?? listingContact.contactId) {
+      revalidatePath(`/contactos/${contactId ?? listingContact.contactId}`);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error adding offer to listing contact:", error);
+    return {
+      success: false,
+      error: "Error al registrar la oferta",
+    };
+  }
+}
+
+/**
  * Update offer status for a listing contact (accept, reject, or revoke)
  * Sets offerAccepted to true (accept), false (reject), or null (revoke decision)
  */

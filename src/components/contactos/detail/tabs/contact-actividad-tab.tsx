@@ -382,6 +382,20 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
         const cancelledVisits = listingVisits.filter((v) => v.status === "Cancelled");
         const newContacts = listingContacts.filter((c) => c.isNew);
 
+        // Calculate KPI metrics based on badge states
+        // Contacts with visits (En visita): hasUpcomingVisit
+        const contactsWithVisits = listingContacts.filter((c) => c.hasUpcomingVisit);
+
+        // Contacts in offer stage (Negociación): hasCompletedVisit OR hasOffer OR offerAccepted OR offerRejected
+        const contactsInOfferStage = listingContacts.filter(
+          (c) => c.hasCompletedVisit || c.hasOffer || c.offerAccepted === true || c.offerAccepted === false
+        );
+
+        // Contacts without visits (Visita pendiente): no upcoming visit, no completed visit, no offer
+        const contactsWithoutVisits = listingContacts.filter(
+          (c) => !c.hasUpcomingVisit && !c.hasCompletedVisit && !c.hasOffer && c.offerAccepted === null
+        );
+
         // Check if any offer is accepted in this listing (for ghosted effect)
         const hasAcceptedOffer = listingContacts.some((c) => c.offerAccepted === true);
 
@@ -425,7 +439,9 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
                   listingId={listing.listingId}
                 />
                 <ContactsKPICard
-                  newContactsCount={newContacts.length}
+                  contactsWithVisitsCount={contactsWithVisits.length}
+                  contactsWithoutVisitsCount={contactsWithoutVisits.length}
+                  contactsInOfferStageCount={contactsInOfferStage.length}
                   totalContactsCount={listingContacts.length}
                   isActive={activeView === "contacts"}
                   onClick={() => handleViewToggle(listing.listingId, "contacts")}
