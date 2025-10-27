@@ -7,12 +7,10 @@ import { PropertyImagePlaceholder } from "~/components/propiedades/PropertyImage
 import { ImageViewer } from "~/components/ui/image-viewer";
 import { getAllPropertyImages, getPropertyImageCount } from "~/app/actions/property-images";
 import { getProcessStages } from "~/lib/constants/process-stages";
-import type { StageStatus } from "~/lib/constants/process-stages";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { Info } from "lucide-react";
 
-// Custom scrollbar styles for this component only
 const scrollbarStyles = `
   .property-status-scrollbar::-webkit-scrollbar {
     height: 4px;
@@ -50,85 +48,6 @@ export interface PropertyStatusRowProps {
   listing?: Record<string, unknown>;
 }
 
-// Timeline node component for substages
-function TimelineNode({
-  label,
-  status,
-  labelPosition,
-  isFirst,
-  isLast,
-  showInfoButton,
-  infoTooltipContent
-}: {
-  label: string;
-  status: StageStatus;
-  labelPosition: "above" | "below";
-  isFirst: boolean;
-  isLast: boolean;
-  showInfoButton?: boolean;
-  infoTooltipContent?: string;
-}) {
-  const isFuture = status === "future";
-  const isOngoing = status === "ongoing";
-
-  const dotSize = isFirst || isLast ? "h-6 w-6 sm:h-7 sm:w-7" : "h-3 w-3 sm:h-3.5 sm:w-3.5";
-
-  // Log if this node has an info button
-  if (showInfoButton && infoTooltipContent) {
-    console.log("💡 TimelineNode with info button:", {
-      label,
-      infoTooltipContent,
-      hasInfoButton: !!showInfoButton,
-    });
-  }
-
-  return (
-    <div className="relative flex flex-col items-center">
-      {/* Label with optional info button - positioned absolutely with fixed baseline alignment */}
-      <div
-        className={cn(
-          "absolute whitespace-nowrap text-[11px] sm:text-xs font-medium flex items-center justify-center gap-1",
-          labelPosition === "above" ? "bottom-[calc(100%+0.5rem)] sm:bottom-[calc(100%+0.75rem)]" : "top-[calc(100%+0.5rem)] sm:top-[calc(100%+0.75rem)]",
-          isFuture ? "text-slate-300" : isOngoing ? "text-amber-700" : "text-slate-900"
-        )}
-        style={{
-          height: labelPosition === "above" ? "1.5rem" : "1.5rem"
-        }}
-      >
-        <span>{label}</span>
-        {showInfoButton && infoTooltipContent && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                className={cn(
-                  "inline-flex items-center justify-center rounded-full p-0.5 hover:bg-slate-200 transition-colors",
-                  isFuture ? "text-slate-300" : isOngoing ? "text-amber-600 hover:text-amber-900" : "text-slate-600 hover:text-slate-900"
-                )}
-                aria-label="Información"
-              >
-                <Info className="h-3 w-3" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{infoTooltipContent}</p>
-            </TooltipContent>
-          </Tooltip>
-        )}
-      </div>
-
-      {/* Dot */}
-      <div
-        className={cn(
-          "relative z-10 rounded-full transition-all",
-          dotSize,
-          isFuture ? "bg-slate-300" : isOngoing ? "bg-amber-500 ring-2 ring-amber-300 ring-offset-1" : "bg-slate-900"
-        )}
-      />
-    </div>
-  );
-}
-
 export function PropertyStatusRow({
   firstImageUrl,
   oportunidadStatus: _oportunidadStatus,
@@ -137,24 +56,12 @@ export function PropertyStatusRow({
   createdAt,
   listing,
 }: PropertyStatusRowProps) {
-  // Log the props to verify data
-  console.log("🔍 PropertyStatusRow props:", {
-    firstImageUrl,
-    propertyType,
-    propertyId,
-    createdAt,
-    createdAtType: typeof createdAt,
-    createdAtInstanceOfDate: createdAt instanceof Date,
-    createdAtValue: createdAt,
-  });
-
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [propertyImages, setPropertyImages] = useState<string[]>([]);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
   const [imageCount, setImageCount] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const activeStageRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch image count on mount
@@ -167,7 +74,6 @@ export function PropertyStatusRow({
       getPropertyImageCount(id)
         .then((count) => {
           setImageCount(count);
-          console.log("🖼️ Image count fetched:", count);
         })
         .catch((error) => {
           console.error("Error fetching image count:", error);
@@ -181,7 +87,6 @@ export function PropertyStatusRow({
 
     setIsLoadingImages(true);
     try {
-      // Convert propertyId to number or bigint
       const id = typeof propertyId === 'string' ? Number(propertyId) : propertyId;
       const images = await getAllPropertyImages(id);
       setPropertyImages(images);
@@ -201,12 +106,10 @@ export function PropertyStatusRow({
     const handleScroll = () => {
       setIsScrolling(true);
 
-      // Clear existing timeout
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
 
-      // Hide scrollbar after 1 second of inactivity
       scrollTimeoutRef.current = setTimeout(() => {
         setIsScrolling(false);
       }, 1000);
@@ -222,39 +125,28 @@ export function PropertyStatusRow({
     };
   }, []);
 
-  useEffect(() => {
-    if (scrollContainerRef.current && activeStageRef.current) {
-      const container = scrollContainerRef.current;
-      const activeElement = activeStageRef.current;
-
-      const containerWidth = container.offsetWidth;
-      const elementLeft = activeElement.offsetLeft;
-      const elementWidth = activeElement.offsetWidth;
-
-      const scrollPosition = elementLeft - containerWidth / 2 + elementWidth / 2;
-
-      container.scrollTo({
-        left: scrollPosition,
-        behavior: "smooth",
-      });
-    }
-  }, []);
-
   // Merge imageCount into listing before using it
   const listingWithImages = listing ? { ...listing, imageCount } : undefined;
 
-  // Get dynamic process stages based on listing completion (with image count)
+  // Get dynamic process stages based on listing completion
   const processStages = getProcessStages(listingWithImages);
 
-  // Calculate total substages for proportional width
+  // Calculate total substages for proportional width (excluding the last one)
   const totalSubstages = processStages.reduce((acc, stage) => acc + stage.subStages.length, 0);
+  const totalSubstagesForBar = totalSubstages - 1; // Exclude last cell from bar rendering
 
   const completedSubstages = processStages.reduce((acc, stage) => {
     return acc + stage.subStages.filter((sub) => sub.status === "accomplished").length;
   }, 0);
-  const progressPercent = (completedSubstages / totalSubstages) * 100;
 
-  // Format created date for tooltip - using short date format
+  const ongoingSubstages = processStages.reduce((acc, stage) => {
+    return acc + stage.subStages.filter((sub) => sub.status === "ongoing").length;
+  }, 0);
+
+  // Progress fills to the middle of ongoing cells
+  const progressPercent = ((completedSubstages + ongoingSubstages * 0.5) / totalSubstagesForBar) * 100;
+
+  // Format created date for tooltip
   const createdAtText = createdAt
     ? new Date(createdAt).toLocaleDateString("es-ES", {
         year: "numeric",
@@ -262,12 +154,6 @@ export function PropertyStatusRow({
         day: "2-digit",
       })
     : undefined;
-
-  console.log("📅 Formatted createdAt text:", {
-    createdAtText,
-    hasCreatedAt: !!createdAt,
-    willShowTooltip: !!(createdAtText),
-  });
 
   return (
     <TooltipProvider>
@@ -282,73 +168,184 @@ export function PropertyStatusRow({
               isScrolling && "scrolling"
             )}
           >
-            {/* Timeline with dots and substages */}
-            <div className="relative px-[calc((100%/${totalSubstages})/2)]">
-              {/* Progress bar background */}
-              <div
-                className="absolute top-1/2 -translate-y-1/2 h-3 bg-slate-200 rounded-full overflow-hidden shadow-sm"
-                style={{
-                  left: `calc((100% / ${totalSubstages}) / 2)`,
-                  right: `calc((100% / ${totalSubstages}) / 2)`,
-                }}
-              >
+            {/* Progress bar with milestone labels */}
+            <div className="relative">
+              {/* Progress bar */}
+              <div className="relative h-16 bg-slate-300 rounded-2xl overflow-hidden shadow-sm">
+                {/* Completed section */}
                 <div
-                  className="h-full bg-slate-800 rounded-full transition-all duration-500 ease-out shadow-md"
+                  className="absolute left-0 top-0 h-full bg-gradient-to-r from-amber-400 to-rose-400 transition-all duration-500 ease-out shadow-md"
                   style={{ width: `${progressPercent}%` }}
                 />
+
+                {/* Vertical dividers (excluding last cell) */}
+                <div className="absolute inset-0 flex">
+                  {processStages.map((stage, stageIndex) => {
+                    return stage.subStages.map((substage, subIndex) => {
+                      const globalIndex =
+                        processStages.slice(0, stageIndex).reduce((acc, s) => acc + s.subStages.length, 0) + subIndex;
+                      const isLastCell = globalIndex === totalSubstages - 1;
+                      const isSecondToLast = globalIndex === totalSubstages - 2;
+
+                      // Don't render the last cell
+                      if (isLastCell) return null;
+
+                      // Each cell has equal width
+                      const cellWidth = 100 / totalSubstagesForBar;
+
+                      return (
+                        <div
+                          key={substage.id}
+                          className="relative"
+                          style={{ width: `${cellWidth}%` }}
+                        >
+                          {/* Don't render divider for the last rendered cell */}
+                          {!isSecondToLast && (
+                            <div className="absolute right-0 top-1/2 -translate-y-1/2 h-[60%] w-[2px] bg-white" />
+                          )}
+                        </div>
+                      );
+                    });
+                  })}
+                </div>
               </div>
 
-              <div className="relative flex items-center">
-                {processStages.map((stage, stageIndex) => {
-                  const stageSubstageCount = stage.subStages.length;
-                  const widthPercent = (stageSubstageCount / totalSubstages) * 100;
+              {/* Milestone labels at dividers */}
+              <div className="absolute inset-0 pointer-events-none">
+                {/* Labels for all substages except the last */}
+                <div className="absolute inset-0 flex">
+                  {processStages.map((stage, stageIndex) => {
+                    return stage.subStages.map((substage, subIndex) => {
+                      const globalIndex =
+                        processStages.slice(0, stageIndex).reduce((acc, s) => acc + s.subStages.length, 0) + subIndex;
+                      const isFirst = globalIndex === 0;
+                      const isLast = globalIndex === totalSubstages - 1;
+                      const labelPosition = globalIndex % 2 === 0 ? "above" : "below";
+
+                      const showInfoButton = substage.id === "alta" && !!createdAtText;
+                      const infoContent = substage.id === "alta" && createdAtText
+                        ? `Creado: ${createdAtText}`
+                        : undefined;
+
+                      // Check if this milestone is reached (accounting for partial progress)
+                      const isReached = globalIndex < completedSubstages + ongoingSubstages;
+
+                      // Don't render the last label here (will be rendered at the right edge)
+                      if (isLast) return null;
+
+                      // Each cell has equal width
+                      const cellWidth = 100 / totalSubstagesForBar;
+
+                      return (
+                        <div
+                          key={substage.id}
+                          className="relative"
+                          style={{ width: `${cellWidth}%` }}
+                        >
+                          {/* First label - Alta propiedad at the beginning */}
+                          {isFirst && (
+                            <div
+                              className={cn(
+                                "absolute left-0 whitespace-nowrap text-[11px] sm:text-xs font-medium flex items-center gap-1 pointer-events-auto",
+                                labelPosition === "above"
+                                  ? "bottom-[calc(100%+0.5rem)] sm:bottom-[calc(100%+0.75rem)]"
+                                  : "top-[calc(100%+0.5rem)] sm:top-[calc(100%+0.75rem)]",
+                                isReached ? "text-slate-900" : "text-slate-400"
+                              )}
+                            >
+                              {substage.label}
+                              {showInfoButton && infoContent && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className={cn(
+                                        "inline-flex items-center justify-center rounded-full p-0.5 hover:bg-slate-200 transition-colors",
+                                        isReached
+                                          ? "text-slate-600 hover:text-slate-900"
+                                          : "text-slate-300"
+                                      )}
+                                      aria-label="Información"
+                                    >
+                                      <Info className="h-3 w-3" />
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{infoContent}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </div>
+                          )}
+
+                          {/* All other labels (except first and last) - at dividers */}
+                          {!isFirst && (
+                            <div
+                              className={cn(
+                                "absolute left-0 whitespace-nowrap text-[11px] sm:text-xs font-medium flex items-center gap-1 pointer-events-auto",
+                                labelPosition === "above"
+                                  ? "bottom-[calc(100%+0.5rem)] sm:bottom-[calc(100%+0.75rem)]"
+                                  : "top-[calc(100%+0.5rem)] sm:top-[calc(100%+0.75rem)]",
+                                isReached ? "text-slate-900" : "text-slate-400"
+                              )}
+                              style={{
+                                transform: "translateX(-50%)",
+                              }}
+                            >
+                              {substage.label}
+                              {showInfoButton && infoContent && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className={cn(
+                                        "inline-flex items-center justify-center rounded-full p-0.5 hover:bg-slate-200 transition-colors",
+                                        isReached
+                                          ? "text-slate-600 hover:text-slate-900"
+                                          : "text-slate-300"
+                                      )}
+                                      aria-label="Información"
+                                    >
+                                      <Info className="h-3 w-3" />
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{infoContent}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })}
+                </div>
+
+                {/* Last label (Cierre) at the right edge */}
+                {(() => {
+                  const lastStage = processStages[processStages.length - 1];
+                  const lastSubstage = lastStage?.subStages[lastStage.subStages.length - 1];
+                  if (!lastSubstage) return null;
+
+                  const lastGlobalIndex = totalSubstages - 1;
+                  const labelPosition = lastGlobalIndex % 2 === 0 ? "above" : "below";
+                  const isReached = lastGlobalIndex < completedSubstages + ongoingSubstages;
 
                   return (
                     <div
-                      key={stage.id}
-                      className="flex items-center justify-around"
-                      style={{ width: `${widthPercent}%` }}
+                      className={cn(
+                        "absolute right-0 whitespace-nowrap text-[11px] sm:text-xs font-medium pointer-events-auto",
+                        labelPosition === "above"
+                          ? "bottom-[calc(100%+0.5rem)] sm:bottom-[calc(100%+0.75rem)]"
+                          : "top-[calc(100%+0.5rem)] sm:top-[calc(100%+0.75rem)]",
+                        isReached ? "text-slate-900" : "text-slate-400"
+                      )}
                     >
-                      {stage.subStages.map((substage, subIndex) => {
-                        const globalIndex =
-                          processStages.slice(0, stageIndex).reduce((acc, s) => acc + s.subStages.length, 0) + subIndex;
-                        const isFirst = globalIndex === 0;
-                        const isLast = globalIndex === totalSubstages - 1;
-                        const labelPosition = globalIndex % 2 === 0 ? "above" : "below";
-
-                        // Add info button for "Alta propiedad" with created date
-                        const showInfoButton = substage.id === "alta" && !!createdAtText;
-                        const infoTooltipContent = substage.id === "alta" && createdAtText
-                          ? `Creado: ${createdAtText}`
-                          : undefined;
-
-                        // Log info button assignment
-                        if (substage.id === "alta") {
-                          console.log("🎯 Alta propiedad node:", {
-                            substageId: substage.id,
-                            substageLabel: substage.label,
-                            createdAtText,
-                            infoTooltipContent,
-                            showInfoButton,
-                          });
-                        }
-
-                        return (
-                          <TimelineNode
-                            key={substage.id}
-                            label={substage.label}
-                            status={substage.status}
-                            labelPosition={labelPosition}
-                            isFirst={isFirst}
-                            isLast={isLast}
-                            showInfoButton={showInfoButton}
-                            infoTooltipContent={infoTooltipContent}
-                          />
-                        );
-                      })}
+                      {lastSubstage.label}
                     </div>
                   );
-                })}
+                })()}
               </div>
             </div>
           </div>

@@ -486,11 +486,90 @@ export const organizations = singlestoreTable("organizations", {
 
 // Deals (potential or closed transaction)
 export const deals = singlestoreTable("deals", {
+  // Primary Key
   dealId: bigint("deal_id", { mode: "bigint" }).primaryKey().autoincrement(),
+
+  // Entity Relationships
   listingId: bigint("listing_id", { mode: "bigint" }).notNull(), // FK → listings.listing_id
   listingContactId: bigint("listing_contact_id", { mode: "bigint" }), // FK → listing_contacts.listing_contact_id (nullable)
-  status: varchar("stage", { length: 20 }).notNull(), // e.g. "Offer", "UnderContract", "Closed", "Lost"
+
+  // Deal Status & Timeline
+  status: varchar("stage", { length: 50 }).notNull(), // e.g. "Offer", "Arras Pending", "UnderContract", "Closed", "Lost"
   closeDate: timestamp("close_date"),
+
+  // Financial Fields - Pricing
+  finalPrice: decimal("final_price", { precision: 12, scale: 2 }), // Final agreed sale/rental price (may differ from listing price)
+
+  // Financial Fields - Commission
+  commissionPercentage: decimal("commission_percentage", { precision: 5, scale: 2 }), // Agency commission percentage (e.g., 3.00, 5.00)
+  commissionAmount: decimal("commission_amount", { precision: 12, scale: 2 }), // Calculated commission in euros
+  commissionPaidDate: timestamp("commission_paid_date"), // When commission was received
+
+  // Financial Fields - Arras (Deposit)
+  arrasAmount: decimal("arras_amount", { precision: 12, scale: 2 }), // Deposit amount (contrato de arras)
+  arrasType: varchar("arras_type", { length: 20 }), // Type: 'confirmatorias' | 'penitenciales'
+  arrasDate: timestamp("arras_date"), // When arras were paid
+
+  // Financial Fields - Transaction Costs
+  notaryFees: decimal("notary_fees", { precision: 10, scale: 2 }), // Estimated/actual notary costs
+  registryFees: decimal("registry_fees", { precision: 10, scale: 2 }), // Property registry fees
+  taxAmount: decimal("tax_amount", { precision: 12, scale: 2 }), // IVA or ITP (Impuesto de Transmisiones Patrimoniales)
+  mortgageAmount: decimal("mortgage_amount", { precision: 12, scale: 2 }), // Loan amount if buyer is financing
+
+  // Timeline & Milestones
+  arrasSigningDate: timestamp("arras_signing_date"), // When deposit contract was signed
+  expectedDeedDate: timestamp("expected_deed_date"), // Scheduled escritura pública date
+  actualDeedDate: timestamp("actual_deed_date"), // Actual deed signing date
+  keyHandoverDate: timestamp("key_handover_date"), // When keys were transferred
+  financingDeadline: timestamp("financing_deadline"), // Deadline for mortgage approval
+  contingencyExpirationDate: timestamp("contingency_expiration_date"), // Last date for contingencies
+
+  // Parties & Professionals - Legal
+  buyerLawyerId: bigint("buyer_lawyer_id", { mode: "bigint" }), // FK → contacts (buyer's abogado)
+  sellerLawyerId: bigint("seller_lawyer_id", { mode: "bigint" }), // FK → contacts (seller's abogado)
+  notaryId: bigint("notary_id", { mode: "bigint" }), // FK → contacts or organizations
+  notaryName: varchar("notary_name", { length: 255 }), // Notary name if not tracked as contact
+
+  // Parties & Professionals - Financing
+  bankId: bigint("bank_id", { mode: "bigint" }), // FK → organizations (mortgage bank)
+  bankName: varchar("bank_name", { length: 255 }), // Bank name
+
+  // Parties & Professionals - Agents
+  listingAgentId: varchar("listing_agent_id", { length: 36 }), // FK → users (captador)
+  sellingAgentId: varchar("selling_agent_id", { length: 36 }), // FK → users (vendedor/closer)
+  commissionSplitListingAgent: decimal("commission_split_listing_agent", { precision: 5, scale: 2 }), // % for listing agent
+  commissionSplitSellingAgent: decimal("commission_split_selling_agent", { precision: 5, scale: 2 }), // % for selling agent
+
+  // Status & Workflow
+  financingStatus: varchar("financing_status", { length: 20 }), // 'not_needed' | 'pending' | 'pre_approved' | 'approved' | 'denied'
+  inspectionStatus: varchar("inspection_status", { length: 20 }), // 'pending' | 'scheduled' | 'completed' | 'issues_found'
+  titleStatus: varchar("title_status", { length: 20 }), // 'pending_review' | 'clear' | 'issues_found'
+  contingenciesCleared: boolean("contingencies_cleared"), // All contingencies satisfied?
+  documentsComplete: boolean("documents_complete"), // All required documents received?
+  riskLevel: varchar("risk_level", { length: 20 }), // 'low' | 'medium' | 'high' - risk of deal falling through
+
+  // Required Documents Checklist (JSON)
+  requiredDocuments: json("required_documents").default({}), // Checklist of required documents with completion status
+
+  // Cancellation Tracking
+  cancellationReason: text("cancellation_reason"), // Why deal fell through
+  faultParty: varchar("fault_party", { length: 20 }), // 'buyer' | 'seller' | 'both' | 'external' | 'none'
+  arrasDisposition: varchar("arras_disposition", { length: 30 }), // 'returned_to_buyer' | 'kept_by_seller' | 'split'
+  cancelledBy: varchar("cancelled_by", { length: 36 }), // FK → users (who marked it as lost/cancelled)
+  cancellationDate: timestamp("cancellation_date"), // When deal was cancelled
+
+  // Notes & Observations
+  internalNotes: text("internal_notes"), // Private notes for agency use
+  contingencyNotes: text("contingency_notes"), // Details about pending contingencies
+  specialConditions: text("special_conditions"), // Any special terms or conditions
+
+  // Referrals
+  referralSource: varchar("referral_source", { length: 100 }), // Where deal came from
+  referralPartnerId: bigint("referral_partner_id", { mode: "bigint" }), // FK → contacts/organizations
+  referralFeePercentage: decimal("referral_fee_percentage", { precision: 5, scale: 2 }), // Fee owed to referral partner
+  referralFeePaid: boolean("referral_fee_paid"), // Whether referral fee was paid
+
+  // System Fields
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });

@@ -19,6 +19,7 @@ export interface PropertyListing {
   newConstruction?: boolean;
   publishToWebsite?: boolean;
   encargo?: boolean;
+  offerAccepted?: boolean;
 
   // Dimensions
   bedrooms?: number;
@@ -198,6 +199,7 @@ export function convertDbListingToPropertyListing(
     newConstruction: (dbListing.newConstruction as boolean) ?? undefined,
     publishToWebsite: (dbListing.publishToWebsite as boolean) ?? undefined,
     encargo: (dbListing.encargo as boolean) ?? undefined,
+    offerAccepted: (dbListing.offerAccepted as boolean) ?? undefined,
     bedrooms: (dbListing.bedrooms as number) ?? undefined,
     bathrooms: (dbListing.bathrooms as number) ?? undefined,
     squareMeter: (dbListing.squareMeter as number) ?? undefined,

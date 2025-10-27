@@ -196,7 +196,7 @@ export function getProcessStages(listing?: Record<string, unknown>): ProcessStag
         isFichaComplete,
       });
 
-      // If ficha is not complete, set all substages after it to future
+      // Step 1: If ficha is not complete, block at "Ficha completa"
       if (!isFichaComplete) {
         const fichaIndex = oportunidadStage.subStages.findIndex(sub => sub.id === "completar-info");
         // Set all substages after "completar-info" in Oportunidad to future
@@ -216,31 +216,72 @@ export function getProcessStages(listing?: Record<string, unknown>): ProcessStag
           }
         }
 
-        console.log("🚫 Blocking progress: All stages after 'Ficha completa' set to future");
+        console.log("🚫 Step 1: Blocking at 'Ficha completa' - mandatory fields incomplete");
       }
-      // If ficha is complete, check encargo status
-      else if (encargoSubstage) {
-        if (hasEncargo) {
-          // Encargo is signed - mark as accomplished
-          encargoSubstage.status = "accomplished";
-          console.log("✅ Encargo accomplished: Contract signed");
-        } else {
-          // Encargo is pending - mark as ongoing
-          encargoSubstage.status = "ongoing";
+      // Step 2: If ficha is complete but encargo is false, block at "Encargo"
+      else if (!hasEncargo && encargoSubstage) {
+        // Encargo is pending - mark as ongoing
+        encargoSubstage.status = "ongoing";
 
-          // Set all stages after Encargo to future
-          const oportunidadIndex = dynamicStages.findIndex(stage => stage.id === "oportunidad");
-          for (let i = oportunidadIndex + 1; i < dynamicStages.length; i++) {
-            const stage = dynamicStages[i];
-            if (stage) {
-              stage.status = "future";
-              stage.subStages.forEach(sub => {
-                sub.status = "future";
-              });
-            }
+        // Set all stages after Encargo to future
+        const oportunidadIndex = dynamicStages.findIndex(stage => stage.id === "oportunidad");
+        for (let i = oportunidadIndex + 1; i < dynamicStages.length; i++) {
+          const stage = dynamicStages[i];
+          if (stage) {
+            stage.status = "future";
+            stage.subStages.forEach(sub => {
+              sub.status = "future";
+            });
           }
+        }
 
-          console.log("✋ Encargo pending: Progress stops at Ficha completa (Encargo ongoing)");
+        console.log("✋ Step 2: Blocking at 'Encargo' - contract not signed");
+      }
+      // Step 3: If encargo is true but offerAccepted is false, block at "Visitas"
+      else if (hasEncargo && encargoSubstage) {
+        // Mark encargo as accomplished
+        encargoSubstage.status = "accomplished";
+
+        // Check offerAccepted status
+        const hasOfferAccepted = Boolean(listing.offerAccepted);
+
+        console.log("📋 Offer accepted status check:", {
+          hasOfferAccepted,
+          offerAcceptedValue: listing.offerAccepted,
+        });
+
+        if (!hasOfferAccepted) {
+          // Find the "Busqueda" stage and "visitas" substage
+          const busquedaStage = dynamicStages.find(stage => stage.id === "busqueda");
+          const visitasSubstage = busquedaStage?.subStages.find(sub => sub.id === "visitas");
+
+          if (visitasSubstage) {
+            // Mark visitas as ongoing
+            visitasSubstage.status = "ongoing";
+
+            // Set all stages after Busqueda to future
+            const busquedaIndex = dynamicStages.findIndex(stage => stage.id === "busqueda");
+            for (let i = busquedaIndex + 1; i < dynamicStages.length; i++) {
+              const stage = dynamicStages[i];
+              if (stage) {
+                stage.status = "future";
+                stage.subStages.forEach(sub => {
+                  sub.status = "future";
+                });
+              }
+            }
+
+            console.log("🔍 Step 3: Blocking at 'Visitas' - no offer accepted yet");
+          }
+        } else {
+          // Step 4: offerAccepted is true, mark visitas as accomplished and continue
+          const busquedaStage = dynamicStages.find(stage => stage.id === "busqueda");
+          const visitasSubstage = busquedaStage?.subStages.find(sub => sub.id === "visitas");
+
+          if (visitasSubstage) {
+            visitasSubstage.status = "accomplished";
+            console.log("✅ Step 4: Offer accepted - progressing to 'Arras' and beyond");
+          }
         }
       }
     }

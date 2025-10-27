@@ -31,6 +31,7 @@ import {
 import type { ContactSheetData, OwnerContact } from "~/types/activity";
 import { navigateToPage } from "~/lib/navigation";
 import { deactivateListingContactAction, updateOfferStatusAction, addOfferToListingContactAction } from "~/server/actions/listing-contacts";
+import { OfferComparisonCard } from "~/components/offer-comparison-card";
 
 interface ContactDetailSheetProps {
   contact: ContactSheetData | null;
@@ -43,63 +44,6 @@ interface ContactDetailSheetProps {
   permissions: {
     canEditContacts: boolean;
   };
-}
-
-// Mini component to display offer comparison
-interface OfferComparisonCardProps {
-  offer: number;
-  listingPrice: string;
-}
-
-function OfferComparisonCard({ offer, listingPrice }: OfferComparisonCardProps) {
-  const listingPriceNum = parseFloat(listingPrice);
-  const difference = offer - listingPriceNum;
-  const percentageDiff = ((difference / listingPriceNum) * 100);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("es-ES", {
-      style: "currency",
-      currency: "EUR",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const getDifferenceColor = () => {
-    if (difference < 0) return "text-green-600";
-    if (difference > 0) return "text-red-600";
-    return "text-gray-600";
-  };
-
-  const getDifferenceSign = () => {
-    if (difference > 0) return "+";
-    return "";
-  };
-
-  return (
-    <div className="space-y-3">
-      <h4 className="text-sm font-semibold text-gray-900">Comparación de Oferta</h4>
-
-      <div className="grid grid-cols-2 gap-4 text-sm">
-        <div>
-          <p className="text-muted-foreground">Oferta</p>
-          <p className="font-semibold text-gray-900">{formatCurrency(offer)}</p>
-        </div>
-
-        <div>
-          <p className="text-muted-foreground">Precio de Venta</p>
-          <p className="font-semibold text-gray-900">{formatCurrency(listingPriceNum)}</p>
-        </div>
-      </div>
-
-      <div className="text-sm">
-        <p className="text-muted-foreground">Diferencia</p>
-        <p className={`font-semibold ${getDifferenceColor()}`}>
-          {getDifferenceSign()}{formatCurrency(Math.abs(difference))} ({getDifferenceSign()}{Math.abs(percentageDiff).toFixed(2)}%)
-        </p>
-      </div>
-    </div>
-  );
 }
 
 // Mini component for offer input
@@ -662,55 +606,51 @@ export function ContactDetailSheet({
 
             {/* Owner Contact Section */}
             {ownerContact && (
-              <div className="space-y-3 pt-4 border-t">
-                <h5 className="text-sm font-medium text-muted-foreground">Contactar Propietario</h5>
+              <div className="space-y-2 pt-4 border-t">
+                <p className="text-sm font-medium text-gray-900">
+                  {ownerContact.firstName} {ownerContact.lastName ?? ""}
+                </p>
 
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-900">
-                    {ownerContact.firstName} {ownerContact.lastName ?? ""}
-                  </p>
+                {ownerContact.email && (
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => window.open(`mailto:${ownerContact.email}`, "_blank")}
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-gray-900 transition-colors"
+                      title="Enviar email"
+                    >
+                      <Mail className="h-4 w-4" />
+                      <span className="underline decoration-dotted underline-offset-2 hover:decoration-solid">
+                        {ownerContact.email}
+                      </span>
+                    </button>
+                  </div>
+                )}
 
-                  {ownerContact.email && (
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => window.open(`mailto:${ownerContact.email}`, "_blank")}
-                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-gray-900 transition-colors"
-                        title="Enviar email"
-                      >
-                        <Mail className="h-4 w-4" />
-                        <span className="underline decoration-dotted underline-offset-2 hover:decoration-solid">
-                          {ownerContact.email}
-                        </span>
-                      </button>
-                    </div>
-                  )}
-
-                  {ownerContact.phone && (
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => window.open(`tel:${ownerContact.phone}`, "_blank")}
-                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-gray-900 transition-colors"
-                        title="Llamar"
-                      >
-                        <Phone className="h-4 w-4" />
-                        <span className="underline decoration-dotted underline-offset-2 hover:decoration-solid">
-                          {ownerContact.phone}
-                        </span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          const cleanPhone = (ownerContact.phone ?? "").replace(/\D/g, "");
-                          window.open(`https://wa.me/${cleanPhone}`, "_blank");
-                        }}
-                        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-green-600 transition-colors"
-                        title="Enviar WhatsApp"
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                        <span>WhatsApp</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
+                {ownerContact.phone && (
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => window.open(`tel:${ownerContact.phone}`, "_blank")}
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-gray-900 transition-colors"
+                      title="Llamar"
+                    >
+                      <Phone className="h-4 w-4" />
+                      <span className="underline decoration-dotted underline-offset-2 hover:decoration-solid">
+                        {ownerContact.phone}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        const cleanPhone = (ownerContact.phone ?? "").replace(/\D/g, "");
+                        window.open(`https://wa.me/${cleanPhone}`, "_blank");
+                      }}
+                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-green-600 transition-colors"
+                      title="Enviar WhatsApp"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      <span>WhatsApp</span>
+                    </button>
+                  </div>
+                )}
 
                 {/* Accept/Reject Offer Buttons - Only show when there's an offer */}
                 {badgeType === "offer" && permissions.canEditContacts && (

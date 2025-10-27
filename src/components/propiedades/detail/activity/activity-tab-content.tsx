@@ -10,7 +10,7 @@ import { EmptyState } from "./empty-states";
 import type { ActivityTabContentProps, ContactSheetData, ContactWithDetails, OwnerContact } from "~/types/activity";
 import { getListingOwnerContact } from "~/server/queries/activity";
 import { Button } from "~/components/ui/button";
-import { Filter, Check, ChevronDown, X } from "lucide-react";
+import { Filter, Check, ChevronDown, X, CalendarPlus } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -23,6 +23,12 @@ import { useRouter } from "next/navigation";
 import AppointmentModal, { useAppointmentModal } from "~/components/appointments/appointment-modal";
 import { AppointmentDetailSheet } from "~/components/appointments/appointment-detail-sheet";
 import { ContactDetailSheet } from "~/components/contactos/contact-detail-sheet";
+import { updateOfferStatusAction } from "~/server/actions/listing-contacts";
+import { navigateToPage } from "~/lib/navigation";
+import { toast } from "sonner";
+import { Loader, FileText, ThumbsUp, Mail, Phone, MessageCircle } from "lucide-react";
+import { OfferComparisonCard } from "~/components/offer-comparison-card";
+import { AppointmentTimeline } from "~/components/appointment-timeline";
 
 type ActiveView = "visits" | "contacts" | null;
 type VisitStatus = "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow";
@@ -53,6 +59,236 @@ const CONTACT_FLAG_LABELS: Record<string, string> = {
   hasOffer: "Oferta Pendiente",
   noVisits: "Sin Visitas",
 };
+
+// Enhanced card component for accepted offer contact
+interface AcceptedOfferCardProps {
+  contact: ContactWithDetails;
+  listingId: bigint;
+  listingPrice: string;
+  ownerContact: OwnerContact | null;
+  onUpdate: () => void | Promise<void>;
+  permissions: {
+    canEditContacts: boolean;
+  };
+}
+
+function AcceptedOfferCard({
+  contact,
+  listingId,
+  listingPrice,
+  ownerContact,
+  onUpdate,
+  permissions,
+}: AcceptedOfferCardProps) {
+  const router = useRouter();
+  const [isUpdatingOffer, setIsUpdatingOffer] = useState(false);
+
+  const contactName = `${contact.firstName} ${contact.lastName ?? ""}`.trim();
+
+  // Handle accepting or rejecting an offer
+  const handleUpdateOfferStatus = async (accepted: boolean | null) => {
+    setIsUpdatingOffer(true);
+
+    try {
+      const result = await updateOfferStatusAction(
+        contact.listingContactId,
+        accepted,
+        listingId,
+        contact.contactId
+      );
+
+      if (result.success) {
+        const message = accepted === null
+          ? "Decisión revocada correctamente"
+          : accepted
+            ? "Oferta aceptada correctamente"
+            : "Oferta rechazada";
+        toast.success(message);
+
+        // Refresh the contact data after successful update
+        if (onUpdate) {
+          await onUpdate();
+        }
+      } else {
+        toast.error(result.error ?? "Error al actualizar el estado de la oferta");
+      }
+    } catch (error) {
+      console.error("Error updating offer status:", error);
+      toast.error("Error al actualizar el estado de la oferta");
+    } finally {
+      setIsUpdatingOffer(false);
+    }
+  };
+
+  if (!contact.offer) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-lg border bg-white p-4 transition-all hover:shadow-md space-y-4">
+      {/* Header with name and badge */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-gray-900">{contactName}</h3>
+        <Badge className="bg-green-100 text-green-800 text-xs">
+          <span className="flex items-center gap-1">
+            <ThumbsUp className="h-3 w-3" />
+            Oferta Aceptada
+          </span>
+        </Badge>
+      </div>
+
+      {/* Buyer Contact Information */}
+      <div className="space-y-1.5 pb-4 border-b">
+        {contact.email && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => window.open(`mailto:${contact.email}`, "_blank")}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-gray-900 transition-colors"
+              title="Enviar email"
+            >
+              <Mail className="h-3.5 w-3.5" />
+              <span className="underline decoration-dotted underline-offset-2 hover:decoration-solid">
+                {contact.email}
+              </span>
+            </button>
+          </div>
+        )}
+
+        {contact.phone && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => window.open(`tel:${contact.phone}`, "_blank")}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-gray-900 transition-colors"
+              title="Llamar"
+            >
+              <Phone className="h-3.5 w-3.5" />
+              <span className="underline decoration-dotted underline-offset-2 hover:decoration-solid">
+                {contact.phone}
+              </span>
+            </button>
+            <button
+              onClick={() => {
+                const cleanPhone = (contact.phone ?? "").replace(/\D/g, "");
+                window.open(`https://wa.me/${cleanPhone}`, "_blank");
+              }}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-green-600 transition-colors"
+              title="Enviar WhatsApp"
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              <span className="text-xs">WhatsApp</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Offer Comparison with Bars */}
+      <div className="pb-4 border-b">
+        <OfferComparisonCard
+          offer={contact.offer}
+          listingPrice={listingPrice}
+        />
+      </div>
+
+      {/* Action Buttons */}
+      {permissions.canEditContacts && (
+        <div className="space-y-2 pb-4 border-b">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start text-gray-700 hover:text-gray-900 hover:bg-gray-100 h-9"
+            onClick={() => {
+              const calendarUrl = `/calendario?new=true&listingId=${listingId}&contactId=${contact.contactId}&type=Firma`;
+              navigateToPage(calendarUrl, router);
+            }}
+          >
+            <CalendarPlus className="mr-2 h-4 w-4" />
+            Programar Firma
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start text-gray-700 hover:text-gray-900 hover:bg-gray-100 h-9"
+            onClick={() => {
+              // TODO: Implement contract generation
+              toast.error("Funcionalidad en desarrollo");
+            }}
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            Generar Contrato Arras
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start text-gray-700 hover:text-gray-900 hover:bg-gray-100 h-9"
+            onClick={() => {
+              if (confirm("¿Estás seguro de que deseas revocar la aceptación de esta oferta?")) {
+                void handleUpdateOfferStatus(null);
+              }
+            }}
+            disabled={isUpdatingOffer}
+          >
+            {isUpdatingOffer ? (
+              <Loader className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <X className="mr-2 h-4 w-4" />
+            )}
+            Revocar Decisión
+          </Button>
+        </div>
+      )}
+
+      {/* Owner Contact Section */}
+      {ownerContact && (
+        <div className="space-y-1.5">
+          <p className="text-sm font-medium text-gray-900">
+            {ownerContact.firstName} {ownerContact.lastName ?? ""}
+          </p>
+
+          {ownerContact.email && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => window.open(`mailto:${ownerContact.email}`, "_blank")}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-gray-900 transition-colors"
+                title="Enviar email"
+              >
+                <Mail className="h-3.5 w-3.5" />
+                <span className="underline decoration-dotted underline-offset-2 hover:decoration-solid">
+                  {ownerContact.email}
+                </span>
+              </button>
+            </div>
+          )}
+
+          {ownerContact.phone && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => window.open(`tel:${ownerContact.phone}`, "_blank")}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-gray-900 transition-colors"
+                title="Llamar"
+              >
+                <Phone className="h-3.5 w-3.5" />
+                <span className="underline decoration-dotted underline-offset-2 hover:decoration-solid">
+                  {ownerContact.phone}
+                </span>
+              </button>
+              <button
+                onClick={() => {
+                  const cleanPhone = (ownerContact.phone ?? "").replace(/\D/g, "");
+                  window.open(`https://wa.me/${cleanPhone}`, "_blank");
+                }}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-green-600 transition-colors"
+                title="Enviar WhatsApp"
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+                <span className="text-xs">WhatsApp</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function ActivityTabContent({
   visits,
@@ -101,6 +337,12 @@ export function ActivityTabContent({
   const [selectedContactFlags, setSelectedContactFlags] = useState<Set<string>>(
     new Set(["hasUpcomingVisit", "hasMissedVisit", "hasCancelledVisit", "hasCompletedVisit", "offerAccepted", "offerRejected", "hasOffer", "noVisits"])
   );
+
+  // Contact view mode - switch between accepted offer view and all contacts
+  const [contactViewMode, setContactViewMode] = useState<"accepted" | "all">("all");
+
+  // Visit view mode - switch between all visits and timeline view for accepted offer
+  const [visitViewMode, setVisitViewMode] = useState<"all" | "timeline">("all");
 
   // Sync local contacts with prop changes
   useEffect(() => {
@@ -281,6 +523,27 @@ export function ActivityTabContent({
   // Check if any offer is accepted in the list (for ghosted effect)
   const hasAcceptedOffer = sortedContacts.some((c) => c.offerAccepted === true);
 
+  // Find the contact with accepted offer (there will only be one)
+  const acceptedOfferContact = sortedContacts.find((c) => c.offerAccepted === true);
+
+  // Set default view mode based on whether there's an accepted offer
+  useEffect(() => {
+    if (hasAcceptedOffer) {
+      setContactViewMode("accepted");
+      setVisitViewMode("timeline"); // Default to timeline view when there's an accepted offer
+    } else {
+      setContactViewMode("all");
+      setVisitViewMode("all");
+    }
+  }, [hasAcceptedOffer]);
+
+  // Filter visits for accepted offer contact timeline
+  const acceptedOfferVisits = acceptedOfferContact
+    ? visits
+        .filter((v) => v.contactId?.toString() === acceptedOfferContact.contactId.toString())
+        .sort((a, b) => new Date(a.datetimeStart).getTime() - new Date(b.datetimeStart).getTime()) // Chronological order
+    : [];
+
   const handleVisitsClick = () => {
     setActiveView(activeView === "visits" ? null : "visits");
   };
@@ -384,8 +647,35 @@ export function ActivityTabContent({
       {/* Visits Content - shown when visits card is active */}
       {activeView === "visits" && (
         <div className="space-y-4 animate-in fade-in duration-300">
-          {/* Filter Button */}
-          <div className="flex justify-end">
+          {/* Toggle between all visits and timeline view */}
+          {hasAcceptedOffer && acceptedOfferContact && (
+            <div className="flex items-center gap-2 border-b border-gray-200 mb-4">
+              <button
+                onClick={() => setVisitViewMode("all")}
+                className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+                  visitViewMode === "all"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Todas las Visitas
+              </button>
+              <button
+                onClick={() => setVisitViewMode("timeline")}
+                className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+                  visitViewMode === "timeline"
+                    ? "border-green-600 text-green-700"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Oferta Aceptada
+              </button>
+            </div>
+          )}
+
+          {/* Filter Button - Only show in "all" visits view */}
+          {visitViewMode === "all" && (
+            <div className="flex justify-end">
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="h-8 relative">
@@ -495,12 +785,30 @@ export function ActivityTabContent({
               </PopoverContent>
             </Popover>
           </div>
+          )}
 
-          <div className="space-y-6">
-            {/* No visits at all */}
-            {filteredVisits.length === 0 && (
-              <EmptyState type="completed-visits" />
-            )}
+          {/* Timeline view for accepted offer */}
+          {visitViewMode === "timeline" && acceptedOfferContact && (
+            <div>
+              <div className="mb-4">
+                <h3 className="text-sm font-medium text-gray-900 mb-1">
+                  Timeline de {acceptedOfferContact.firstName} {acceptedOfferContact.lastName}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {acceptedOfferVisits.length} {acceptedOfferVisits.length === 1 ? "visita" : "visitas"} registradas
+                </p>
+              </div>
+              <AppointmentTimeline appointments={acceptedOfferVisits} />
+            </div>
+          )}
+
+          {/* All visits view */}
+          {visitViewMode === "all" && (
+            <div className="space-y-6">
+              {/* No visits at all */}
+              {filteredVisits.length === 0 && (
+                <EmptyState type="completed-visits" />
+              )}
 
             {/* 🔴 Urgent/Action Required Section */}
             {urgentVisits.length > 0 && (
@@ -667,15 +975,43 @@ export function ActivityTabContent({
                 </div>
               </ExpandableSection>
             )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Contacts Content - shown when contacts card is active */}
       {activeView === "contacts" && (
         <div className="space-y-4 animate-in fade-in duration-300">
-          {/* Contact Filter Button */}
-          <div className="flex justify-end">
+          {/* Tab Toggle - Only show when there's an accepted offer */}
+          {hasAcceptedOffer && (
+            <div className="flex items-center gap-2 border-b border-gray-200">
+              <button
+                onClick={() => setContactViewMode("accepted")}
+                className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+                  contactViewMode === "accepted"
+                    ? "border-green-600 text-green-700"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Oferta Aceptada
+              </button>
+              <button
+                onClick={() => setContactViewMode("all")}
+                className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+                  contactViewMode === "all"
+                    ? "border-primary text-primary"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Todos los Contactos
+              </button>
+            </div>
+          )}
+
+          {/* Contact Filter Button - Only show in "all" view */}
+          {contactViewMode === "all" && (
+            <div className="flex justify-end">
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="h-8 relative">
@@ -748,12 +1084,29 @@ export function ActivityTabContent({
               </PopoverContent>
             </Popover>
           </div>
+          )}
 
-          <div className="space-y-6">
-            {/* No contacts at all */}
-            {filteredContacts.length === 0 && (
-              <EmptyState type="new-contacts" />
-            )}
+          {/* Accepted Offer View */}
+          {contactViewMode === "accepted" && acceptedOfferContact && (
+            <AcceptedOfferCard
+              contact={acceptedOfferContact}
+              listingId={listingId}
+              listingPrice={listingPrice}
+              ownerContact={ownerContact}
+              onUpdate={handleContactUpdate}
+              permissions={{
+                canEditContacts: hasEditContactsPermission,
+              }}
+            />
+          )}
+
+          {/* All Contacts View */}
+          {contactViewMode === "all" && (
+            <div className="space-y-6">
+              {/* No contacts at all */}
+              {filteredContacts.length === 0 && (
+                <EmptyState type="new-contacts" />
+              )}
 
             {/* New Contacts Section */}
             {newContacts.length > 0 && (
@@ -833,7 +1186,8 @@ export function ActivityTabContent({
               </div>
             </ExpandableSection>
           )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -1124,6 +1124,14 @@ export async function getListingDetails(listingId: number, accountId: number) {
 
         // Owner information - optimized with JOIN
         owner: sql<string>`CONCAT(owner_contact.first_name, ' ', owner_contact.last_name)`,
+
+        // Offer accepted status - check if ANY listing_contact has offer_accepted = true
+        offerAccepted: sql<boolean>`EXISTS(
+          SELECT 1 FROM listing_contacts
+          WHERE listing_contacts.listing_id = ${listings.listingId}
+            AND listing_contacts.offer_accepted = true
+            AND listing_contacts.is_active = true
+        )`,
       })
       .from(listings)
       .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
