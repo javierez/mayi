@@ -60,8 +60,7 @@ const AVAILABLE_ICONS = [
   { value: "mail", label: "Correo", icon: Mail },
 ];
 
-function ServicesConfiguration({ form }: { form: any }) {
-  // eslint-disable-line @typescript-eslint/no-explicit-any
+function ServicesConfiguration({ form }: Pick<AboutSectionProps, "form">) {
   const { fields, append, remove } = useFieldArray({
     control: form.control, // eslint-disable-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     name: "aboutProps.services",

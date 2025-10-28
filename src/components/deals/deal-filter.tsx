@@ -23,7 +23,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   DEAL_STATUSES,
   DEAL_STATUS_LABELS,
-  type DealStatus,
 } from "~/lib/constants/deal-statuses";
 
 // Convert statuses to filter options
