@@ -62,7 +62,7 @@ const AVAILABLE_ICONS = [
 
 function ServicesConfiguration({ form }: Pick<AboutSectionProps, "form">) {
   const { fields, append, remove } = useFieldArray({
-    control: form.control, // eslint-disable-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    control: form.control,
     name: "aboutProps.services",
   });
 
@@ -129,7 +129,7 @@ function ServicesConfiguration({ form }: Pick<AboutSectionProps, "form">) {
                 {/* Service Title */}
                 <div className="md:col-span-7">
                   <FormField
-                    control={form.control} // eslint-disable-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+                    control={form.control}
                     name={`aboutProps.services.${index}.title`}
                     render={({ field }) => (
                       <FormItem>
@@ -139,7 +139,7 @@ function ServicesConfiguration({ form }: Pick<AboutSectionProps, "form">) {
                         <FormControl>
                           <Input
                             {...field}
-                            value={field.value ?? ""} // eslint-disable-line @typescript-eslint/no-unsafe-assignment
+                            value={field.value ?? ""}
                             placeholder="Ej: Asesoramiento personalizado"
                             className="bg-white"
                           />
@@ -152,14 +152,14 @@ function ServicesConfiguration({ form }: Pick<AboutSectionProps, "form">) {
                 {/* Icon Selection */}
                 <div className="md:col-span-4">
                   <FormField
-                    control={form.control} // eslint-disable-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+                    control={form.control}
                     name={`aboutProps.services.${index}.icon`}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs">Icono</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          value={field.value ?? ""} // eslint-disable-line @typescript-eslint/no-unsafe-assignment
+                          value={field.value ?? ""}
                         >
                           <FormControl>
                             <SelectTrigger className="bg-white">
@@ -232,7 +232,7 @@ function ServicesConfiguration({ form }: Pick<AboutSectionProps, "form">) {
       )}
 
       <FormField
-        control={form.control} // eslint-disable-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+        control={form.control}
         name="aboutProps.maxServicesDisplayed"
         render={({ field }) => (
           <FormItem>
