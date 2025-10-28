@@ -16,11 +16,12 @@ import {
   Search,
   CalendarIcon,
   Clock,
-  MapPin,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Check,
   Filter,
+  FilterX,
   X,
   TableIcon,
   Link as LinkIcon,
@@ -45,6 +46,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
+import {
+  Collapsible,
+  CollapsibleContent,
+} from "~/components/ui/collapsible";
 import Image from "next/image"; // Add Image import for optimized images
 import { useWeeklyAppointments } from "~/hooks/use-cached-calendar";
 import CalendarEvent, {
@@ -55,12 +60,12 @@ import AppointmentModal, {
   useAppointmentModal,
 } from "~/components/appointments/appointment-modal";
 import { AppointmentDetailSheet } from "~/components/appointments/appointment-detail-sheet";
+import type { AppointmentData } from "~/components/appointments/appointment-card";
 import { getAgentsForFilterAction, getBatchAppointmentTasksAction } from "~/server/actions/appointments";
 import { useGoogleCalendarIntegration } from "~/hooks/use-google-calendar-integration";
 import { GoogleCalendarSyncSettings } from "~/components/calendar/google-calendar-sync-settings";
 import { canEditCalendar, canDeleteCalendar } from "~/app/actions/permissions/check-permissions";
 import { useSession } from "~/lib/auth-client";
-import { toast } from "sonner";
 import { ExpandableSection } from "~/components/propiedades/detail/activity/expandable-section";
 
 // Appointment types configuration
@@ -175,6 +180,7 @@ export default function AppointmentsPage() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [expandedFilterSections, setExpandedFilterSections] = useState<{
     type: boolean;
     status: boolean;
@@ -226,8 +232,7 @@ export default function AppointmentsPage() {
   const [hasDeleteCalendarPermission, setHasDeleteCalendarPermission] = useState<boolean>(false);
 
   // Tasks state - batch loaded for all appointments
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [appointmentTasksMap, setAppointmentTasksMap] = useState<Record<number, any[]>>({});
+  const [appointmentTasksMap, setAppointmentTasksMap] = useState<Record<number, unknown[]>>({});
 
   // Fetch user permissions on component mount
   useEffect(() => {
@@ -431,19 +436,6 @@ export default function AppointmentsPage() {
     openModal({});
   };
 
-  // Handle opening modal for editing
-  const openModalWithEdit = ({
-    appointmentId,
-    initialData,
-  }: {
-    appointmentId: bigint;
-    initialData: Partial<Record<string, unknown>>;
-  }) => {
-    setEditMode("edit");
-    setEditingAppointmentId(appointmentId);
-    openModal(initialData);
-  };
-
   // Handle click on empty time slot for appointment creation
   const handleTimeSlotClick = (date: Date, hour: number, minute = 0) => {
     const clickedDate = new Date(date);
@@ -479,9 +471,10 @@ export default function AppointmentsPage() {
   };
 
   // Permission helper function for ownership check
-  const checkAppointmentOwnership = (appointment: any): boolean => {
-    if (!appointment.userId) return hasEditCalendarPermission;
-    const isOwner = appointment.userId === session?.user?.id;
+  const checkAppointmentOwnership = (appointment: AppointmentData & { userId?: string | null }): boolean => {
+    const userId = (appointment as AppointmentData & { userId?: string | null }).userId;
+    if (!userId) return hasEditCalendarPermission;
+    const isOwner = userId === session?.user?.id;
     return isOwner || hasEditCalendarPermission;
   };
 
@@ -511,18 +504,20 @@ export default function AppointmentsPage() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-        <div className="relative flex-1 lg:max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Buscar citas..."
-            className="w-full pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 items-center gap-2">
+          <div className="relative flex-1 lg:max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Buscar citas..."
+              className="w-full pl-8"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
+        <div className="flex items-center gap-1.5">
           {/* Agent Filter - Multi-select */}
           <Popover>
             <PopoverTrigger asChild>
@@ -751,143 +746,149 @@ export default function AppointmentsPage() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="relative h-8 text-xs">
-                <Filter className="mr-1.5 h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Filtros</span>
-                {(typeFilter !== "all" ||
-                  statusFilter !== "all" ||
-                  selectedAgents.length > 0) && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-1.5 h-4 min-w-4 rounded-full px-1 text-[12px] font-normal"
-                  >
-                    {[typeFilter, statusFilter].filter((f) => f !== "all")
-                      .length + (selectedAgents.length > 0 ? 1 : 0)}
-                  </Badge>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-72 p-0 sm:w-80" align="end">
-              <div className="flex flex-col">
-                <ScrollArea className="h-[300px] sm:h-[400px]">
-                  <div className="space-y-6 p-4">
-                    <div className="space-y-2">
-                      <div
-                        className="flex cursor-pointer items-center justify-between"
-                        onClick={() =>
-                          setExpandedFilterSections((prev) => ({
-                            ...prev,
-                            type: !prev.type,
-                          }))
-                        }
-                      >
-                        <h5 className="text-sm font-medium text-muted-foreground">
-                          Tipo
-                        </h5>
-                        {expandedFilterSections.type ? (
-                          <ChevronLeft className="h-4 w-4 rotate-90 text-muted-foreground" />
-                        ) : (
-                          <ChevronLeft className="h-4 w-4 -rotate-90 text-muted-foreground" />
-                        )}
-                      </div>
-                      {expandedFilterSections.type && (
-                        <div className="space-y-1">
-                          {Object.keys(appointmentTypes).map((type) => (
-                            <div
-                              key={type}
-                              className="flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
-                              onClick={() => {
-                                setTypeFilter(typeFilter === type ? "all" : type);
-                              }}
-                            >
-                              <div
-                                className={`flex h-4 w-4 items-center justify-center rounded border ${typeFilter === type ? "border-primary bg-primary" : "border-input"}`}
-                              >
-                                {typeFilter === type && (
-                                  <Check className="h-3 w-3 text-primary-foreground" />
-                                )}
-                              </div>
-                              <span className="text-sm">{type}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <div
-                        className="flex cursor-pointer items-center justify-between"
-                        onClick={() =>
-                          setExpandedFilterSections((prev) => ({
-                            ...prev,
-                            status: !prev.status,
-                          }))
-                        }
-                      >
-                        <h5 className="text-sm font-medium text-muted-foreground">
-                          Estado
-                        </h5>
-                        {expandedFilterSections.status ? (
-                          <ChevronLeft className="h-4 w-4 rotate-90 text-muted-foreground" />
-                        ) : (
-                          <ChevronLeft className="h-4 w-4 -rotate-90 text-muted-foreground" />
-                        )}
-                      </div>
-                      {expandedFilterSections.status && (
-                        <div className="space-y-1">
-                          {["Programado", "Completado", "Cancelado", "Reprogramado", "No asistió"].map(
-                            (status) => (
-                              <div
-                                key={status}
-                                className="flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
-                                onClick={() => {
-                                  setStatusFilter(
-                                    statusFilter === status ? "all" : status,
-                                  );
-                                }}
-                              >
-                                <div
-                                  className={`flex h-4 w-4 items-center justify-center rounded border ${statusFilter === status ? "border-primary bg-primary" : "border-input"}`}
-                                >
-                                  {statusFilter === status && (
-                                    <Check className="h-3 w-3 text-primary-foreground" />
-                                  )}
-                                </div>
-                                <span className="text-sm">{status}</span>
-                              </div>
-                            ),
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </ScrollArea>
-                {(typeFilter !== "all" ||
-                  statusFilter !== "all" ||
-                  selectedAgents.length > 0) && (
-                  <div className="border-t p-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setTypeFilter("all");
-                        setStatusFilter("all");
-                        setSelectedAgents([]);
-                      }}
-                      className="h-7 w-full text-xs"
-                    >
-                      <X className="mr-1.5 h-3.5 w-3.5" />
-                      Borrar filtros
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </PopoverContent>
-          </Popover>
+          <Button
+            variant="outline"
+            size="sm"
+            className="relative h-8 text-xs"
+            onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+          >
+            <Filter className="mr-1.5 h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Filtros</span>
+            {(typeFilter !== "all" ||
+              statusFilter !== "all") && (
+              <Badge
+                variant="secondary"
+                className="ml-1.5 h-4 min-w-4 rounded-full px-1 text-[12px] font-normal"
+              >
+                {[typeFilter, statusFilter].filter((f) => f !== "all").length}
+              </Badge>
+            )}
+            <ChevronDown
+              className={`ml-1 h-3 w-3 transition-transform ${
+                isFiltersOpen ? "rotate-180 transform" : ""
+              }`}
+            />
+          </Button>
         </div>
       </div>
+
+      <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
+        <CollapsibleContent className="space-y-2">
+          <div className="rounded-lg shadow-md bg-card p-2">
+            <div className="space-y-2">
+              <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <div
+                    className="flex cursor-pointer items-center gap-1 group"
+                    onClick={() =>
+                      setExpandedFilterSections((prev) => ({
+                        ...prev,
+                        type: !prev.type,
+                      }))
+                    }
+                  >
+                    <h5 className="text-[12px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                      Tipo
+                    </h5>
+                    <ChevronDown
+                      className={`h-3 w-3 text-muted-foreground transition-transform ${
+                        expandedFilterSections.type ? "rotate-180" : ""
+                      }`}
+                    />
+                  </div>
+                  {expandedFilterSections.type && (
+                    <div className="space-y-0.5">
+                      {Object.keys(appointmentTypes).map((type) => (
+                        <div
+                          key={type}
+                          className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 hover:bg-accent transition-colors"
+                          onClick={() => {
+                            setTypeFilter(typeFilter === type ? "all" : type);
+                          }}
+                        >
+                          <div
+                            className={`flex h-3 w-3 items-center justify-center rounded border ${typeFilter === type ? "border-primary bg-primary" : "border-input"}`}
+                          >
+                            {typeFilter === type && (
+                              <Check className="h-2 w-2 text-primary-foreground" />
+                            )}
+                          </div>
+                          <span className={`text-[12px] ${typeFilter === type ? "font-medium" : ""}`}>{type}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <div
+                    className="flex cursor-pointer items-center gap-1 group"
+                    onClick={() =>
+                      setExpandedFilterSections((prev) => ({
+                        ...prev,
+                        status: !prev.status,
+                      }))
+                    }
+                  >
+                    <h5 className="text-[12px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                      Estado
+                    </h5>
+                    <ChevronDown
+                      className={`h-3 w-3 text-muted-foreground transition-transform ${
+                        expandedFilterSections.status ? "rotate-180" : ""
+                      }`}
+                    />
+                  </div>
+                  {expandedFilterSections.status && (
+                    <div className="space-y-0.5">
+                      {["Programado", "Completado", "Cancelado", "Reprogramado", "No asistió"].map(
+                        (status) => (
+                          <div
+                            key={status}
+                            className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 hover:bg-accent transition-colors"
+                            onClick={() => {
+                              setStatusFilter(
+                                statusFilter === status ? "all" : status,
+                              );
+                            }}
+                          >
+                            <div
+                              className={`flex h-3 w-3 items-center justify-center rounded border ${statusFilter === status ? "border-primary bg-primary" : "border-input"}`}
+                            >
+                              {statusFilter === status && (
+                                <Check className="h-2 w-2 text-primary-foreground" />
+                              )}
+                            </div>
+                            <span className={`text-[12px] ${statusFilter === status ? "font-medium" : ""}`}>{status}</span>
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Clear Filters Button */}
+          {(typeFilter !== "all" || statusFilter !== "all") && (
+            <div className="flex items-center justify-end px-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setTypeFilter("all");
+                  setStatusFilter("all");
+                }}
+                className="h-auto py-1 px-2 text-[12px]"
+              >
+                <FilterX className="mr-1 h-3 w-3" />
+                Borrar filtros
+              </Button>
+            </div>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
 
       {view === "list" && (
         <div className="space-y-6">
@@ -1364,7 +1365,7 @@ export default function AppointmentsPage() {
                 return {
                   appointmentId: event.appointmentId,
                   type: event.type,
-                  status: event.status as "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow",
+                  status: event.status,
                   datetimeStart: event.startTime,
                   datetimeEnd: event.endTime,
                   tripTimeMinutes: event.tripTimeMinutes ?? undefined,
@@ -1379,7 +1380,7 @@ export default function AppointmentsPage() {
                   listingContactId: event.listingContactId,
                   dealId: event.dealId,
                   prospectId: event.prospectId,
-                } as any;
+                };
               })()
             : null
         }

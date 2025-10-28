@@ -76,7 +76,15 @@ function buildSearchProspectSummary(prospect: SearchProspect): ProspectSummary {
     parts.push(moreCount > 0 ? `${areas} (+${moreCount} más)` : areas);
   }
 
-  const title = `Busca ${prospect.listingType === "Sale" ? "comprar" : "alquilar"}`;
+  // Build title with city if available
+  const operation = prospect.listingType === "Sale" ? "comprar" : "alquilar";
+  let title = `Busca ${operation}`;
+
+  // Add city to title if available
+  if (prospect.preferredCities && prospect.preferredCities.length > 0) {
+    title += ` en ${prospect.preferredCities[0]}`;
+  }
+
   const description = parts.join(" • ") || "Sin criterios específicos";
 
   return {
@@ -301,7 +309,7 @@ function formatBudgetRange(
 }
 
 function formatPreferredAreas(
-  areas?: Array<{ neighborhoodId: bigint; name: string }>,
+  areas?: Array<{ name: string }>,
 ): string | undefined {
   if (!areas || areas.length === 0) return undefined;
 
@@ -432,4 +440,167 @@ export function filterProspects<T extends DualProspect>(
 
     return true;
   });
+}
+
+// ============================================================================
+// Contact Solicitudes Form Transformation Utilities
+// ============================================================================
+
+// ProspectData interface matching database schema
+export interface ProspectData {
+  id: bigint;
+  contactId: bigint;
+  status: string;
+  listingType: string | null;
+  propertyType: string | null;
+  maxPrice: string | null;
+  preferredCities: string[] | null;
+  preferredAreas: Array<{ neighborhoodId?: number; name?: string }> | null;
+  minBedrooms: number | null;
+  minBathrooms: number | null;
+  minSquareMeters: number | null;
+  moveInBy: Date | null;
+  extras: Record<string, unknown> | null;
+  urgencyLevel: number | null;
+  fundingReady: boolean | null;
+  notesInternal: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// InterestFormData interface for form editing
+export interface InterestFormData {
+  id: string;
+  demandType: string;
+  maxPrice: number;
+  preferredArea: string;
+  selectedCities: string[];
+  selectedNeighborhoods: Array<{
+    neighborhoodId: bigint;
+    neighborhood: string;
+    city: string;
+    municipality: string;
+    province: string;
+  }>;
+  propertyTypes: string[];
+  minBedrooms: number;
+  minBathrooms: number;
+  minSquareMeters: number;
+  urgencyLevel: number;
+  fundingReady: boolean;
+  moveInBy: string;
+  extras: Record<string, boolean>;
+  notes: string;
+}
+
+/**
+ * Convert ProspectData (from database) to InterestFormData (for editing)
+ * Requires location lookup function to fetch full neighborhood details
+ */
+export async function convertProspectToFormData(
+  prospect: ProspectData,
+  getLocationByNeighborhoodId: (
+    id: number | bigint,
+  ) => Promise<
+    | {
+        neighborhoodId: bigint;
+        neighborhood: string;
+        city: string;
+        municipality: string;
+        province: string;
+      }
+    | null
+    | undefined
+  >,
+): Promise<InterestFormData> {
+  // Convert preferredAreas back to selectedNeighborhoods format
+  let selectedNeighborhoods: Array<{
+    neighborhoodId: bigint;
+    neighborhood: string;
+    city: string;
+    municipality: string;
+    province: string;
+  }> = [];
+
+  if (
+    Array.isArray(prospect.preferredAreas) &&
+    prospect.preferredAreas.length > 0
+  ) {
+    // Fetch full location data for each neighborhood ID
+    const locationPromises = prospect.preferredAreas.map(
+      async (area: { neighborhoodId?: number; name?: string }) => {
+        try {
+          if (typeof area.neighborhoodId !== "number") return null;
+          const location = await getLocationByNeighborhoodId(area.neighborhoodId);
+          return location
+            ? {
+                neighborhoodId: location.neighborhoodId,
+                neighborhood: location.neighborhood,
+                city: location.city,
+                municipality: location.municipality,
+                province: location.province,
+              }
+            : null;
+        } catch (error) {
+          console.error("Error fetching location:", error);
+          return null;
+        }
+      },
+    );
+
+    const locations = await Promise.all(locationPromises);
+    selectedNeighborhoods = locations.filter(
+      (loc: unknown): loc is NonNullable<typeof loc> => loc !== null,
+    ) as Array<{
+      neighborhoodId: bigint;
+      neighborhood: string;
+      city: string;
+      municipality: string;
+      province: string;
+    }>;
+  }
+
+  // Convert prospect to InterestFormData format
+  return {
+    id: `prospect-${prospect.id.toString()}`,
+    demandType: prospect.listingType ?? "",
+    maxPrice: prospect.maxPrice ? Number(prospect.maxPrice) : 200000,
+    preferredArea: selectedNeighborhoods.map((n) => n.neighborhood).join(", "),
+    selectedCities: prospect.preferredCities ?? [],
+    selectedNeighborhoods: selectedNeighborhoods,
+    propertyTypes: prospect.propertyType ? [prospect.propertyType] : [],
+    minBedrooms: prospect.minBedrooms ?? 0,
+    minBathrooms: prospect.minBathrooms ?? 0,
+    minSquareMeters: prospect.minSquareMeters ?? 80,
+    urgencyLevel: prospect.urgencyLevel ?? 3,
+    fundingReady: prospect.fundingReady ?? false,
+    moveInBy: prospect.moveInBy
+      ? prospect.moveInBy.toISOString().split("T")[0]!
+      : "",
+    extras: (prospect.extras as Record<string, boolean>) ?? {},
+    notes: prospect.notesInternal ?? "",
+  };
+}
+
+/**
+ * Create a new empty InterestFormData with default values
+ */
+export function createNewInterestFormData(): InterestFormData {
+  return {
+    id: `form-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+    demandType: "Sale", // Default to "Compra"
+    maxPrice: 150000,
+    preferredArea: "",
+    selectedCities: [],
+    selectedNeighborhoods: [],
+    propertyTypes: ["piso"], // Default to "Piso"
+    minBedrooms: 2, // Default minimum bedrooms
+    minBathrooms: 1, // Default minimum bathrooms
+    minSquareMeters: 80,
+    urgencyLevel: 3,
+    fundingReady: false,
+    moveInBy: "",
+    extras: {},
+    notes: "",
+  };
 }

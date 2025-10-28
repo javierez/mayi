@@ -38,7 +38,7 @@ export default function LeadsPage() {
         // Get all filter parameters from URL
         const page = parseInt(searchParams.get("page") ?? "1");
         const search = searchParams.get("search") ?? "";
-        const statusFilters = searchParams.get("status")?.split(",") ?? [];
+        const badgeStatusFilters = searchParams.get("badgeStatus")?.split(",") ?? [];
         const sourceFilters = searchParams.get("source")?.split(",") ?? [];
 
         setCurrentPage(page);
@@ -48,7 +48,7 @@ export default function LeadsPage() {
           page,
           ITEMS_PER_PAGE,
           search || undefined,
-          statusFilters.length > 0 ? statusFilters : undefined,
+          badgeStatusFilters.length > 0 ? badgeStatusFilters : undefined,
           sourceFilters.length > 0 ? sourceFilters : undefined,
         );
 
@@ -64,8 +64,16 @@ export default function LeadsPage() {
               prospectId: item.prospectId ?? null,
               source: item.source,
               status: item.status as LeadStatus,
+              offer: item.offer ?? null,
+              offerAccepted: item.offerAccepted ?? null,
               createdAt: item.createdAt,
               updatedAt: item.updatedAt,
+              visitCount: item.visitCount ?? 0,
+              hasUpcomingVisit: item.hasUpcomingVisit ?? false,
+              hasMissedVisit: item.hasMissedVisit ?? false,
+              hasCompletedVisit: item.hasCompletedVisit ?? false,
+              hasCancelledVisit: item.hasCancelledVisit ?? false,
+              hasOffer: item.hasOffer ?? false,
               contact: item.contact,
               listing: item.listing?.listingId
                 ? {
@@ -128,14 +136,14 @@ export default function LeadsPage() {
     try {
       console.log(`Prefetching page ${page}`);
       const search = searchParams.get("search") ?? "";
-      const statusFilters = searchParams.get("status")?.split(",") ?? [];
+      const badgeStatusFilters = searchParams.get("badgeStatus")?.split(",") ?? [];
       const sourceFilters = searchParams.get("source")?.split(",") ?? [];
 
       const result = await listLeadsWithAuth(
         page,
         ITEMS_PER_PAGE,
         search || undefined,
-        statusFilters.length > 0 ? statusFilters : undefined,
+        badgeStatusFilters.length > 0 ? badgeStatusFilters : undefined,
         sourceFilters.length > 0 ? sourceFilters : undefined,
       );
 
@@ -148,8 +156,16 @@ export default function LeadsPage() {
           prospectId: item.prospectId ?? null,
           source: item.source,
           status: item.status as LeadStatus,
+          offer: item.offer ?? null,
+          offerAccepted: item.offerAccepted ?? null,
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
+          visitCount: item.visitCount ?? 0,
+          hasUpcomingVisit: item.hasUpcomingVisit ?? false,
+          hasMissedVisit: item.hasMissedVisit ?? false,
+          hasCompletedVisit: item.hasCompletedVisit ?? false,
+          hasCancelledVisit: item.hasCancelledVisit ?? false,
+          hasOffer: item.hasOffer ?? false,
           contact: item.contact,
           listing: item.listing?.listingId
             ? {

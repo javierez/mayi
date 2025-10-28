@@ -2,9 +2,10 @@
 
 import React, { useState } from "react";
 // import Image from "next/image";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "~/components/ui/badge";
-import { Card, CardContent, CardFooter } from "~/components/ui/card";
+import { Card, CardFooter } from "~/components/ui/card";
 // import { Button } from "~/components/ui/button";
 // import { Skeleton } from "~/components/ui/skeleton";
 import {
@@ -17,12 +18,12 @@ import {
   // Mail,
   CheckCircle,
   AlertCircle,
-  KeyRound,
   Euro,
   Link as LinkIcon,
+  Share2,
 } from "lucide-react";
 import type { ProspectMatch, MatchAction } from "~/types/connection-matches";
-import { formatPrice } from "~/lib/utils";
+import { navigateToPage } from "~/lib/navigation";
 // import { PropertyImagePlaceholder } from "~/components/propiedades/PropertyImagePlaceholder";
 
 interface MatchCardProps {
@@ -36,13 +37,17 @@ export const MatchCard = React.memo(function MatchCard({
   onAction,
   showActions = true,
 }: MatchCardProps) {
+  const router = useRouter();
   // const [imageLoaded, setImageLoaded] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState<MatchAction | null>(
     null,
   );
 
-  const { listing, matchType, toleranceReasons, isCrossAccount, canContact, hasExistingLead } =
+  const { listing, matchType, isCrossAccount, canContact, hasExistingLead } =
     match;
+
+  // Extract contact ID for use in footer link
+  const contactId = match.prospect.contacts.contactId;
 
   // Debug logs
   console.log('🔍 MatchCard - Full listing object:', listing);
@@ -52,21 +57,6 @@ export const MatchCard = React.memo(function MatchCard({
 
   // const defaultPlaceholder = "";
   // const imageSrc = defaultPlaceholder; // TODO: Add imageUrl when available in ListingWithDetails type
-
-  const getPropertyTypeLabel = (type: string | null) => {
-    switch (type) {
-      case "piso":
-        return "Piso";
-      case "casa":
-        return "Casa";
-      case "local":
-        return "Local";
-      case "garaje":
-        return "Garaje";
-      default:
-        return type ?? "Propiedad";
-    }
-  };
 
   const getListingTypeLabel = (type: string) => {
     switch (type) {
@@ -85,26 +75,23 @@ export const MatchCard = React.memo(function MatchCard({
     // Show lead status if lead exists
     if (hasExistingLead) {
       return (
-        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">
-          <CheckCircle className="mr-1 h-3 w-3" />
-          Lead Creado
+        <Badge className="bg-transparent border-0 p-1 h-5 w-5" title="Lead Creado">
+          <CheckCircle className="h-3 w-3 text-blue-700" />
         </Badge>
       );
     }
-    
+
     // Otherwise show match type
     if (matchType === "strict") {
       return (
-        <Badge className="bg-green-100 text-green-800 hover:bg-green-200">
-          <CheckCircle className="mr-1 h-3 w-3" />
-          Coincidencia Exacta
+        <Badge className="bg-transparent border-0 p-1 h-5 w-5" title="Coincidencia Exacta">
+          <CheckCircle className="h-3 w-3 text-green-700" />
         </Badge>
       );
     } else {
       return (
-        <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-200">
-          <AlertCircle className="mr-1 h-3 w-3" />
-          Coincidencia Aproximada
+        <Badge className="bg-transparent border-0 p-1 h-5 w-5" title="Coincidencia Aproximada">
+          <AlertCircle className="h-3 w-3 text-orange-700" />
         </Badge>
       );
     }
@@ -121,52 +108,66 @@ export const MatchCard = React.memo(function MatchCard({
     }
   };
 
+  const truncateName = (firstName: string, lastName: string, maxLength = 14) => {
+    const fullName = `${firstName} ${lastName}`;
+    if (fullName.length <= maxLength) {
+      return fullName;
+    }
+    return `${fullName.substring(0, maxLength - 1)}…`;
+  };
+
+  const truncateTitle = (text: string, maxLength = 35) => {
+    if (text.length <= maxLength) {
+      return text;
+    }
+    return `${text.substring(0, maxLength - 1)}…`;
+  };
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Only navigate if user can contact and not clicking on action buttons
+    if (canContact && !(e.target as HTMLElement).closest('button')) {
+      navigateToPage(`/propiedades/${listing.listings.id.toString()}`, router);
+    }
+  };
+
   const renderContent = () => (
-    <Card className="overflow-hidden border-0 shadow-md transition-all hover:shadow-lg">
+    <Card
+      className={`overflow-hidden shadow-md transition-all hover:shadow-lg relative cursor-pointer ${
+        hasExistingLead
+          ? "opacity-50 border-2 border-green-200 bg-green-50/30 hover:opacity-70"
+          : "border-0"
+      }`}
+      onClick={handleCardClick}
+    >
+      {/* Lead Created Band - Left Side */}
+      {hasExistingLead && (
+        <div className="absolute top-0 left-0 bottom-0 w-8 bg-green-600 z-20" />
+      )}
+
+      {/* Match Type Badge - Top Right Corner */}
+      <div className="absolute top-1 right-1 z-10">
+        {!hasExistingLead && getMatchTypeBadge()}
+      </div>
+
       {/* Centered Content */}
       <div className="p-2 text-center">
         {/* First Row - Property Title (Highest Importance) */}
-        <div className="mt-2 mb-2">
-          <h3 className="text-lg font-bold text-gray-900 leading-tight line-clamp-2">
-            {listing.properties.title ?? "Propiedad sin título"}
+        <div className="mt-2 mb-4">
+          <h3 className="text-sm font-bold text-gray-900 leading-tight line-clamp-2">
+            {truncateTitle(`${getListingTypeLabel(listing.listings.listingType)} de ${listing.properties.title ?? "Propiedad sin título"}`)}
           </h3>
         </div>
         
-        {/* Second Row - Price and Property Labels */}
-        <div className="flex items-center justify-center gap-2 mb-1">
-          {/* Price */}
-          <p className="text-base font-semibold text-gray-800">
-            {formatPrice(listing.listings.price)}€
-            {listing.listings.listingType === "Rent" ? "/mes" : ""}
-          </p>
-          
-          {/* Property Type Badges */}
-          <div className="flex gap-1">
-            {/* Property Type */}
-            <Badge variant="outline" className="text-xs px-1 py-0">
-              {getPropertyTypeLabel(listing.properties.propertyType)}
+        {/* Second Row - Cross-account indicator only */}
+        {isCrossAccount && (
+          <div className="flex items-center justify-center gap-2 mb-1">
+            <Badge variant="secondary" className="bg-blue-500 text-xs text-white px-1 py-0">
+              Externa
             </Badge>
-            
-            {/* Listing Type */}
-            <Badge className="text-xs px-1 py-0">
-              {getListingTypeLabel(listing.listings.listingType)}
-            </Badge>
-            
-            {/* Cross-account indicator */}
-            {isCrossAccount && (
-              <Badge variant="secondary" className="bg-blue-500 text-xs text-white px-1 py-0">
-                Externa
-              </Badge>
-            )}
           </div>
-        </div>
-        
-        {/* Third Row - Match Type */}
-        <div className="mb-2">
-          {getMatchTypeBadge()}
-        </div>
-        
-        {/* Fourth Row - Properties Box */}
+        )}
+
+        {/* Properties Box */}
         <div className="group relative mx-auto w-4/5 rounded-md bg-gradient-to-br from-slate-50 to-gray-100 p-1 shadow-sm mb-2">
           <div className="grid grid-cols-2 gap-0 text-xs">
             {/* Price */}
@@ -229,119 +230,82 @@ export const MatchCard = React.memo(function MatchCard({
           {/* Hover Action Buttons - Overlay on Properties Box */}
           {showActions && (
             <div className="absolute inset-0 flex items-center justify-center gap-4 bg-black/20 backdrop-blur-sm opacity-0 transition-all duration-300 group-hover:opacity-100 rounded-md">
-              <button
-                className={`h-8 w-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center border ${
-                  hasExistingLead 
-                    ? "bg-blue-100 border-blue-200 cursor-not-allowed" 
-                    : "bg-white/95 hover:bg-white border-gray-100"
-                }`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (!hasExistingLead) {
-                    void handleAction("create-lead");
-                  }
-                }}
-                disabled={isActionLoading !== null || hasExistingLead}
-                title={hasExistingLead ? "Lead ya existe" : "Crear Lead"}
-              >
-                <LinkIcon className={`h-3.5 w-3.5 ${
-                  hasExistingLead ? "text-blue-600" : "text-gray-600"
-                }`} />
-              </button>
-              
-              <button
-                className={`h-8 w-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center border ${
-                  hasExistingLead 
-                    ? "bg-red-100 border-red-200 hover:bg-red-200" 
-                    : "bg-white/95 hover:bg-white border-gray-100"
-                }`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  void handleAction("dismiss");
-                }}
-                disabled={isActionLoading !== null}
-                title={hasExistingLead ? "Eliminar Lead" : "Descartar"}
-              >
-                <X className={`h-3.5 w-3.5 ${
-                  hasExistingLead ? "text-red-600" : "text-gray-600"
-                }`} />
-              </button>
+              {!hasExistingLead ? (
+                <>
+                  {/* Create Lead Button */}
+                  <button
+                    className="h-8 w-8 rounded-full bg-white/95 hover:bg-white border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      void handleAction("create-lead");
+                    }}
+                    disabled={isActionLoading !== null}
+                    title="Crear Lead"
+                  >
+                    <LinkIcon className="h-3.5 w-3.5 text-gray-600" />
+                  </button>
+
+                  {/* Share Button */}
+                  <button
+                    className="h-8 w-8 rounded-full bg-white/95 hover:bg-white border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      void handleAction("share");
+                    }}
+                    disabled={isActionLoading !== null}
+                    title="Compartir propiedad"
+                  >
+                    <Share2 className="h-3.5 w-3.5 text-gray-600" />
+                  </button>
+                </>
+              ) : (
+                /* Dismiss/Remove Lead Button (shown when lead exists) */
+                <button
+                  className="h-8 w-8 rounded-full bg-red-100 border-red-200 hover:bg-red-200 border shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void handleAction("dismiss");
+                  }}
+                  disabled={isActionLoading !== null}
+                  title="Eliminar Lead"
+                >
+                  <X className="h-3.5 w-3.5 text-red-600" />
+                </button>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Tolerance Reasons */}
-      <CardContent className="px-2 pt-0 pb-2">
-        {toleranceReasons.length > 0 && (
-          <div className="text-center space-y-1">
-            <p className="text-xs font-medium text-muted-foreground">
-              Tolerancias aplicadas:
-            </p>
-            <div className="flex flex-wrap justify-center gap-1">
-              {toleranceReasons.map((reason, index) => (
-                <Badge key={index} variant="outline" className="text-xs px-1 py-0">
-                  {reason}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-      </CardContent>
-
-      {/* Footer with Contact Connection */}
+      {/* Footer with Owner Contact */}
       <CardFooter className="border-t border-border/40 p-2 pt-1.5">
-        <div className="flex w-full items-center justify-between">
-          {/* Left - Property Owner Contact */}
-          <div className="flex items-center gap-1">
-            <KeyRound className="h-3 w-3 text-muted-foreground/80" />
+        <div className="flex w-full items-center justify-end">
+          {/* Property Owner Contact */}
+          {listing.ownerContact && contactId ? (
+            <Link
+              href={`/contactos/${contactId.toString()}`}
+              className="flex items-center gap-1 text-xs text-muted-foreground/80 hover:text-primary transition-colors hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <User className="h-3 w-3" />
+              <span>
+                {truncateName(listing.ownerContact.firstName, listing.ownerContact.lastName)}
+              </span>
+            </Link>
+          ) : (
             <span className="text-xs text-muted-foreground/80">
               {isCrossAccount && !canContact
                 ? "Contacto disponible tras solicitud"
-                : listing.ownerContact
-                  ? `${listing.ownerContact.firstName} ${listing.ownerContact.lastName}`
-                  : "Sin contacto"}
+                : "Sin contacto"}
             </span>
-          </div>
-
-          {/* Center - Connection Arrow */}
-          <div className="flex items-center">
-            <div className="relative flex items-center">
-              {/* Arrow line */}
-              <div className="h-0.5 w-6 animate-pulse bg-gray-400"></div>
-              {/* Left arrowhead */}
-              <div className="absolute -left-1 h-0 w-0 border-b-[3px] border-r-[4px] border-t-[3px] border-b-transparent border-r-gray-400 border-t-transparent"></div>
-              {/* Right arrowhead */}
-              <div className="absolute -right-1 h-0 w-0 border-b-[3px] border-l-[4px] border-t-[3px] border-b-transparent border-l-gray-400 border-t-transparent"></div>
-            </div>
-          </div>
-
-          {/* Right - Prospect Contact */}
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-muted-foreground/80">
-              {match.prospect.contacts.firstName}{" "}
-              {match.prospect.contacts.lastName}
-            </span>
-            <User className="h-3 w-3 text-muted-foreground/80" />
-          </div>
+          )}
         </div>
       </CardFooter>
     </Card>
   );
-
-  // Wrap in link only if not cross-account or if user can access
-  if (canContact) {
-    return (
-      <Link
-        href={`/propiedades/${listing.listings.id.toString()}`}
-        className="block"
-      >
-        {renderContent()}
-      </Link>
-    );
-  }
 
   return renderContent();
 });

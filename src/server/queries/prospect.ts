@@ -57,7 +57,8 @@ export type CreateProspectInput = {
   propertyType?: string;
   minPrice?: string;
   maxPrice?: string;
-  preferredAreas?: Array<{ neighborhoodId: number; name: string }>;
+  preferredCities?: string[]; // City names: ["León", "Alicante"]
+  preferredAreas?: Array<{ name: string }>; // Neighborhood names: [{name: "Moisés de León"}]
   minBedrooms?: number;
   minBathrooms?: number;
   minSquareMeters?: number;
@@ -109,6 +110,7 @@ export async function createProspect(
         propertyType: prospects.propertyType,
         minPrice: prospects.minPrice,
         maxPrice: prospects.maxPrice,
+        preferredCities: prospects.preferredCities,
         preferredAreas: prospects.preferredAreas,
         minBedrooms: prospects.minBedrooms,
         minBathrooms: prospects.minBathrooms,
@@ -162,6 +164,7 @@ export async function getProspect(id: bigint, accountId: number) {
         propertyType: prospects.propertyType,
         minPrice: prospects.minPrice,
         maxPrice: prospects.maxPrice,
+        preferredCities: prospects.preferredCities,
         preferredAreas: prospects.preferredAreas,
         minBedrooms: prospects.minBedrooms,
         minBathrooms: prospects.minBathrooms,
@@ -209,6 +212,7 @@ export async function getAllProspects(accountId: number) {
         propertyType: prospects.propertyType,
         minPrice: prospects.minPrice,
         maxPrice: prospects.maxPrice,
+        preferredCities: prospects.preferredCities,
         preferredAreas: prospects.preferredAreas,
         minBedrooms: prospects.minBedrooms,
         minBathrooms: prospects.minBathrooms,
@@ -303,6 +307,7 @@ export async function getProspectsByStatus(status: string, accountId: number) {
         propertyType: prospects.propertyType,
         minPrice: prospects.minPrice,
         maxPrice: prospects.maxPrice,
+        preferredCities: prospects.preferredCities,
         preferredAreas: prospects.preferredAreas,
         minBedrooms: prospects.minBedrooms,
         minBathrooms: prospects.minBathrooms,
@@ -355,6 +360,7 @@ export async function getProspectsByPropertyType(
         propertyType: prospects.propertyType,
         minPrice: prospects.minPrice,
         maxPrice: prospects.maxPrice,
+        preferredCities: prospects.preferredCities,
         preferredAreas: prospects.preferredAreas,
         minBedrooms: prospects.minBedrooms,
         minBathrooms: prospects.minBathrooms,
@@ -423,6 +429,7 @@ export async function getProspectsByContact(
         propertyType: prospects.propertyType,
         minPrice: prospects.minPrice,
         maxPrice: prospects.maxPrice,
+        preferredCities: prospects.preferredCities,
         preferredAreas: prospects.preferredAreas,
         minBedrooms: prospects.minBedrooms,
         minBathrooms: prospects.minBathrooms,

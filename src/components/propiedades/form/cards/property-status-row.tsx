@@ -37,6 +37,32 @@ const scrollbarStyles = `
   .property-status-scrollbar.scrolling::-webkit-scrollbar-thumb:active {
     background: hsl(var(--muted-foreground) / 0.4);
   }
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .progress-shimmer {
+    animation: shimmer 5s infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(251, 191, 36, 0.3), 0 0 40px rgba(251, 113, 133, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 30px rgba(251, 191, 36, 0.5), 0 0 60px rgba(251, 113, 133, 0.4);
+    }
+  }
+
+  .progress-pulse {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
 `;
 
 export interface PropertyStatusRowProps {
@@ -61,6 +87,7 @@ export function PropertyStatusRow({
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
   const [imageCount, setImageCount] = useState(0);
+  const [isInfoTooltipOpen, setIsInfoTooltipOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -143,8 +170,21 @@ export function PropertyStatusRow({
     return acc + stage.subStages.filter((sub) => sub.status === "ongoing").length;
   }, 0);
 
-  // Progress fills to the middle of ongoing cells
-  const progressPercent = ((completedSubstages + ongoingSubstages * 0.5) / totalSubstagesForBar) * 100;
+  // Progress fills to the middle of the previous cell to current process
+  // If there's an ongoing process, fill to the middle of the last completed cell
+  // If all are completed or none are completed, fill to the end of completed cells
+  const progressPercent = ongoingSubstages > 0 && completedSubstages > 0
+    ? ((completedSubstages - 0.5) / totalSubstagesForBar) * 100
+    : ((completedSubstages) / totalSubstagesForBar) * 100;
+
+  console.log("📊 Progress Bar Debug:", {
+    totalSubstages,
+    totalSubstagesForBar,
+    completedSubstages,
+    ongoingSubstages,
+    progressPercent,
+    formula: ongoingSubstages > 0 && completedSubstages > 0 ? "completedSubstages - 0.5" : "completedSubstages",
+  });
 
   // Format created date for tooltip
   const createdAtText = createdAt
@@ -164,19 +204,28 @@ export function PropertyStatusRow({
           <div
             ref={scrollContainerRef}
             className={cn(
-              "px-4 pt-[2.625rem] pb-8 sm:px-6 sm:pt-[3.125rem] sm:pb-10 md:px-8 md:pt-[3.625rem] md:pb-12 overflow-x-auto property-status-scrollbar",
+              "px-4 pt-8 pb-6 sm:px-6 sm:pt-10 sm:pb-8 md:px-8 md:pt-12 md:pb-10 overflow-x-auto property-status-scrollbar",
               isScrolling && "scrolling"
             )}
           >
             {/* Progress bar with milestone labels */}
             <div className="relative">
               {/* Progress bar */}
-              <div className="relative h-16 bg-slate-300 rounded-2xl overflow-hidden shadow-sm">
+              <div className="relative h-14 bg-gradient-to-br from-gray-100 to-gray-50 rounded-full overflow-hidden shadow-inner border border-gray-200/50">
                 {/* Completed section */}
                 <div
-                  className="absolute left-0 top-0 h-full bg-gradient-to-r from-amber-400 to-rose-400 transition-all duration-500 ease-out shadow-md"
-                  style={{ width: `${progressPercent}%` }}
-                />
+                  className="absolute left-0 top-0 h-full bg-gradient-to-r from-amber-400 via-amber-500 to-rose-400 transition-all duration-700 ease-out progress-pulse"
+                  style={{
+                    width: `${progressPercent}%`,
+                  }}
+                >
+                  {/* Shimmer overlay */}
+                  {progressPercent > 0 && (
+                    <div className="absolute inset-0 overflow-hidden">
+                      <div className="progress-shimmer absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                    </div>
+                  )}
+                </div>
 
                 {/* Vertical dividers (excluding last cell) */}
                 <div className="absolute inset-0 flex">
@@ -246,28 +295,31 @@ export function PropertyStatusRow({
                           {isFirst && (
                             <div
                               className={cn(
-                                "absolute left-0 whitespace-nowrap text-[11px] sm:text-xs font-medium flex items-center gap-1 pointer-events-auto",
+                                "absolute left-0 whitespace-nowrap text-[9px] sm:text-[11px] font-semibold flex items-center gap-1.5 pointer-events-auto tracking-wider uppercase",
                                 labelPosition === "above"
-                                  ? "bottom-[calc(100%+0.5rem)] sm:bottom-[calc(100%+0.75rem)]"
-                                  : "top-[calc(100%+0.5rem)] sm:top-[calc(100%+0.75rem)]",
-                                isReached ? "text-slate-900" : "text-slate-400"
+                                  ? "bottom-[calc(100%+0.5rem)] sm:bottom-[calc(100%+0.625rem)]"
+                                  : "top-[calc(100%+0.5rem)] sm:top-[calc(100%+0.625rem)]",
+                                isReached
+                                  ? "text-gray-800"
+                                  : "text-gray-400"
                               )}
                             >
                               {substage.label}
                               {showInfoButton && infoContent && (
-                                <Tooltip>
+                                <Tooltip open={isInfoTooltipOpen} onOpenChange={setIsInfoTooltipOpen}>
                                   <TooltipTrigger asChild>
                                     <button
                                       type="button"
+                                      onClick={() => setIsInfoTooltipOpen(!isInfoTooltipOpen)}
                                       className={cn(
-                                        "inline-flex items-center justify-center rounded-full p-0.5 hover:bg-slate-200 transition-colors",
+                                        "inline-flex items-center justify-center rounded-full p-1 hover:bg-gray-200 transition-all duration-200 hover:scale-110",
                                         isReached
-                                          ? "text-slate-600 hover:text-slate-900"
-                                          : "text-slate-300"
+                                          ? "text-gray-600 hover:text-gray-900"
+                                          : "text-gray-300"
                                       )}
                                       aria-label="Información"
                                     >
-                                      <Info className="h-3 w-3" />
+                                      <Info className="h-3.5 w-3.5" />
                                     </button>
                                   </TooltipTrigger>
                                   <TooltipContent>
@@ -282,38 +334,19 @@ export function PropertyStatusRow({
                           {!isFirst && (
                             <div
                               className={cn(
-                                "absolute left-0 whitespace-nowrap text-[11px] sm:text-xs font-medium flex items-center gap-1 pointer-events-auto",
+                                "absolute left-0 whitespace-nowrap text-[9px] sm:text-[11px] font-semibold flex items-center gap-1.5 pointer-events-auto tracking-wider uppercase",
                                 labelPosition === "above"
-                                  ? "bottom-[calc(100%+0.5rem)] sm:bottom-[calc(100%+0.75rem)]"
-                                  : "top-[calc(100%+0.5rem)] sm:top-[calc(100%+0.75rem)]",
-                                isReached ? "text-slate-900" : "text-slate-400"
+                                  ? "bottom-[calc(100%+0.5rem)] sm:bottom-[calc(100%+0.625rem)]"
+                                  : "top-[calc(100%+0.5rem)] sm:top-[calc(100%+0.625rem)]",
+                                isReached
+                                  ? "text-gray-800"
+                                  : "text-gray-400"
                               )}
                               style={{
                                 transform: "translateX(-50%)",
                               }}
                             >
                               {substage.label}
-                              {showInfoButton && infoContent && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      type="button"
-                                      className={cn(
-                                        "inline-flex items-center justify-center rounded-full p-0.5 hover:bg-slate-200 transition-colors",
-                                        isReached
-                                          ? "text-slate-600 hover:text-slate-900"
-                                          : "text-slate-300"
-                                      )}
-                                      aria-label="Información"
-                                    >
-                                      <Info className="h-3 w-3" />
-                                    </button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>{infoContent}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
                             </div>
                           )}
                         </div>
@@ -335,11 +368,13 @@ export function PropertyStatusRow({
                   return (
                     <div
                       className={cn(
-                        "absolute right-0 whitespace-nowrap text-[11px] sm:text-xs font-medium pointer-events-auto",
+                        "absolute right-0 whitespace-nowrap text-[9px] sm:text-[11px] font-semibold pointer-events-auto tracking-wider uppercase",
                         labelPosition === "above"
-                          ? "bottom-[calc(100%+0.5rem)] sm:bottom-[calc(100%+0.75rem)]"
-                          : "top-[calc(100%+0.5rem)] sm:top-[calc(100%+0.75rem)]",
-                        isReached ? "text-slate-900" : "text-slate-400"
+                          ? "bottom-[calc(100%+0.75rem)] sm:bottom-[calc(100%+1rem)]"
+                          : "top-[calc(100%+0.75rem)] sm:top-[calc(100%+1rem)]",
+                        isReached
+                          ? "text-gray-800"
+                          : "text-gray-400"
                       )}
                     >
                       {lastSubstage.label}

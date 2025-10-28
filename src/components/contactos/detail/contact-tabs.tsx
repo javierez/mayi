@@ -7,7 +7,6 @@ import { canEditContacts } from "~/app/actions/permissions/check-permissions";
 import { ContactInformationTab } from "./tabs/contact-information-tab";
 import { ContactTareasTab } from "./tabs/contact-tareas-tab";
 import { ContactSolicitudesTab } from "./tabs/contact-solicitudes-tab";
-import { ContactPropiedadesTab } from "./tabs/contact-propiedades-tab";
 import { ContactActividadTab } from "./tabs/contact-actividad-tab";
 
 interface ContactTabsProps {
@@ -63,10 +62,6 @@ export function ContactTabs({ contact }: ContactTabsProps) {
   const [canEditContact, setCanEditContact] = useState(true);
 
   // Derive role flags using actual data (flags/counts) and fall back to contactType if present
-  const isOwner =
-    contact.isOwner === true ||
-    (contact.ownerCount ?? 0) > 0 ||
-    contact.contactType === "propietario";
   const isBuyer =
     contact.isBuyer === true ||
     (contact.buyerCount ?? 0) > 0 ||
@@ -75,10 +70,13 @@ export function ContactTabs({ contact }: ContactTabsProps) {
     contact.isInteresado === true ||
     (contact.prospectCount ?? 0) > 0 ||
     contact.contactType === "interesado";
+  const isOwner =
+    contact.isOwner === true ||
+    (contact.ownerCount ?? 0) > 0 ||
+    contact.contactType === "propietario";
 
   // Determine which tabs to show based on derived flags
   const showSolicitudes = isBuyer || isInteresado || isOwner;
-  const showPropiedades = isOwner || isBuyer;
   const showActividad = isBuyer; // Show activity tab for buyers (they have visits)
 
   // Active tab state with URL parameter support
@@ -90,9 +88,6 @@ export function ContactTabs({ contact }: ContactTabsProps) {
     { value: "tareas", label: "Tareas" },
     ...(showSolicitudes
       ? [{ value: "solicitudes", label: "Solicitudes" }]
-      : []),
-    ...(showPropiedades
-      ? [{ value: "propiedades", label: "Propiedades" }]
       : []),
     ...(showActividad
       ? [{ value: "actividad", label: "Actividad" }]
@@ -131,7 +126,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-      <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 gap-2 md:gap-0 p-1 h-auto md:h-10 bg-gray-100 rounded-lg">
+      <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-2 md:gap-0 p-1 h-auto md:h-10 bg-gray-100 rounded-lg">
         {tabs.map((tab) => (
           <TabsTrigger
             key={tab.value}
@@ -155,13 +150,6 @@ export function ContactTabs({ contact }: ContactTabsProps) {
       {showSolicitudes && (
         <TabsContent value="solicitudes" className="mt-6">
           <ContactSolicitudesTab contactId={contact.contactId} />
-        </TabsContent>
-      )}
-
-      {/* Propiedades Tab - Show for propietario and demandante */}
-      {showPropiedades && (
-        <TabsContent value="propiedades" className="mt-6">
-          <ContactPropiedadesTab contact={contact} canEdit={canEditContact} />
         </TabsContent>
       )}
 

@@ -184,8 +184,6 @@ export default function ProspectsPage() {
         </div>
       </div>
 
-      <ProspectFilter view={view} onViewChange={handleViewChange} />
-
       {isLoading ? (
         view === "kanban" ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -239,6 +237,10 @@ export default function ProspectsPage() {
         />
       ) : (
         <div className="space-y-6">
+          <ConexionesPotenciales />
+
+          <ProspectFilter view={view} onViewChange={handleViewChange} />
+
           <ProspectTable
             prospects={prospects}
             listings={listings}
@@ -263,8 +265,6 @@ export default function ProspectsPage() {
               void fetchData();
             }}
           />
-
-          <ConexionesPotenciales />
         </div>
       )}
     </div>

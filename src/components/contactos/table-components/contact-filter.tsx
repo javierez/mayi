@@ -8,7 +8,6 @@ import {
   CollapsibleContent,
 } from "~/components/ui/collapsible";
 import { Badge } from "~/components/ui/badge";
-import { ScrollArea } from "~/components/ui/scroll-area";
 import {
   Search,
   Filter,
@@ -524,7 +523,7 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
 
                 <FilterCategory title="Origen" category="sources" icon={TagIcon}>
                   <div className="pt-1">
-                    <ScrollArea className="max-h-[150px]">
+                    <div className="max-h-[110px] overflow-y-auto custom-scrollbar pr-1">
                       <div className="grid grid-cols-1 gap-y-0.5">
                         {CONTACT_SOURCES.map((source) => (
                           <FilterOption
@@ -536,7 +535,7 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
                           />
                         ))}
                       </div>
-                    </ScrollArea>
+                    </div>
                   </div>
                 </FilterCategory>
 

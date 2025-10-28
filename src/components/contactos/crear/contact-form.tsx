@@ -48,7 +48,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { cn } from "~/lib/utils";
-import { CompactPropertyCard } from "./compact-property-card";
+// import { CompactPropertyCard } from "~/components/propiedades/compact-property-card";
 import { DuplicateWarningDialog } from "../duplicate-warning-dialog";
 import type { DuplicateContact } from "~/lib/contact-duplicate-detection";
 import type { Contact } from "~/lib/data";
@@ -743,16 +743,15 @@ export default function ContactForm() {
                         listing.listingId,
                       );
                       return (
-                        <CompactPropertyCard
+                        <div
                           key={listing.listingId.toString()}
-                          listing={listing}
-                          isSelected={isSelected}
-                          onClick={handleListingSelection}
-                          statusColors={statusColors}
-                          statusLabels={statusLabels}
-                          getPropertyTypeLabel={getPropertyTypeLabel}
-                          formatPrice={formatPrice}
-                        />
+                          className="p-4 border rounded cursor-pointer"
+                          onClick={() => handleListingSelection(listing.listingId, !isSelected)}
+                        >
+                          {/* TODO: Replace with proper CompactPropertyCard component */}
+                          <div className="text-sm">{listing.referenceNumber}</div>
+                          <div className="text-xs text-gray-500">{listing.title}</div>
+                        </div>
                       );
                     })
                   ) : (

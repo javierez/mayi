@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
-import { Badge } from "~/components/ui/badge";
-import { ScrollArea } from "~/components/ui/scroll-area";
 import {
   Filter,
   Check,
@@ -16,10 +16,24 @@ import {
   Search,
   LayoutGrid,
   List,
+  Tag,
+  Package,
+  FilterX,
 } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { useRouter, useSearchParams } from "next/navigation";
-import { LEAD_STATUSES } from "~/lib/constants/lead-statuses";
+
+// Badge statuses matching the activity tab
+const BADGE_STATUSES = [
+  { value: "hasUpcomingVisit", label: "Visita pendiente" },
+  { value: "offerAccepted", label: "Oferta aceptada" },
+  { value: "offerRejected", label: "Oferta rechazada" },
+  { value: "offerPending", label: "Oferta pendiente" },
+  { value: "hasCancelledVisit", label: "Visita cancelada" },
+  { value: "hasMissedVisit", label: "Visita perdida" },
+  { value: "hasCompletedVisit", label: "Visita completada" },
+  { value: "noVisits", label: "Sin visitas" },
+];
 
 interface LeadFilterProps {
   view: "kanban" | "list";
@@ -31,13 +45,13 @@ export function LeadFilter({ view, onViewChange }: LeadFilterProps) {
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [leadFilters, setLeadFilters] = useState({
-    status: [] as string[],
+    badgeStatus: [] as string[],
     source: [] as string[],
   });
   const [expandedCategories, setExpandedCategories] = useState<
     Record<string, boolean>
   >({
-    status: true,
+    badgeStatus: true,
     source: true,
   });
 
@@ -53,12 +67,12 @@ export function LeadFilter({ view, onViewChange }: LeadFilterProps) {
 
   // Initialize filters from URL on mount
   useEffect(() => {
-    const status = searchParams.get("status");
+    const badgeStatus = searchParams.get("badgeStatus");
     const source = searchParams.get("source");
     const q = searchParams.get("search");
 
     setLeadFilters({
-      status: status ? status.split(",") : [],
+      badgeStatus: badgeStatus ? badgeStatus.split(",") : [],
       source: source ? source.split(",") : [],
     });
     setSearchQuery(q ?? "");
@@ -112,7 +126,7 @@ export function LeadFilter({ view, onViewChange }: LeadFilterProps) {
 
   const clearAllFilters = () => {
     const newFilters = {
-      status: [],
+      badgeStatus: [],
       source: [],
     };
     setLeadFilters(newFilters);
@@ -147,13 +161,51 @@ export function LeadFilter({ view, onViewChange }: LeadFilterProps) {
     onClick: () => void;
   }) => (
     <div
-      className="flex cursor-pointer items-center space-x-2 rounded-md px-2 py-1.5 hover:bg-gray-50"
+      className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 hover:bg-accent transition-colors"
       onClick={onClick}
     >
-      <div className="flex h-4 w-4 items-center">
-        {isSelected && <Check className="h-3 w-3 text-blue-600" />}
+      <div
+        className={`flex h-3 w-3 items-center justify-center rounded border ${
+          isSelected ? "border-primary bg-primary" : "border-input"
+        }`}
+      >
+        {isSelected && <Check className="h-2 w-2 text-primary-foreground" />}
       </div>
-      <span className="text-sm">{label}</span>
+      <span className={`text-[12px] ${isSelected ? "font-medium" : ""}`}>
+        {label}
+      </span>
+    </div>
+  );
+
+  const FilterCategory = ({
+    title,
+    category,
+    icon: Icon,
+    children,
+  }: {
+    title: string;
+    category: string;
+    icon: React.ComponentType<{ className?: string }>;
+    children: React.ReactNode;
+  }) => (
+    <div className="space-y-1">
+      <div
+        className="flex cursor-pointer items-center gap-1 group"
+        onClick={() => toggleCategory(category)}
+      >
+        <Icon className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
+        <h5 className="text-[12px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+          {title}
+        </h5>
+        <ChevronDown
+          className={`h-3 w-3 text-muted-foreground transition-transform ${
+            expandedCategories[category] ? "rotate-180" : ""
+          }`}
+        />
+      </div>
+      {expandedCategories[category] && (
+        <div className="space-y-0.5">{children}</div>
+      )}
     </div>
   );
 
@@ -177,77 +229,39 @@ export function LeadFilter({ view, onViewChange }: LeadFilterProps) {
         {/* Filters */}
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Filter className="mr-2 h-4 w-4" />
-              Filtros
+            <Button variant="outline" size="sm" className="h-8 text-xs">
+              <Filter className="mr-1.5 h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Filtros</span>
               {activeFiltersCount > 0 && (
-                <Badge variant="secondary" className="ml-2">
+                <Badge variant="secondary" className="ml-1.5 h-4 min-w-4 rounded-full px-1 text-[12px] font-normal">
                   {activeFiltersCount}
                 </Badge>
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80" align="start">
-            <ScrollArea className="h-96">
-              <div className="space-y-4 p-2">
-                {/* Clear all */}
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium">Filtros</h4>
-                  {activeFiltersCount > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={clearAllFilters}
-                      className="h-auto p-0 text-xs"
-                    >
-                      Limpiar todo
-                    </Button>
-                  )}
-                </div>
-
-                {/* Status Filter */}
-                <div>
-                  <button
-                    onClick={() => toggleCategory("status")}
-                    className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left hover:bg-gray-50"
-                  >
-                    <span className="text-sm font-medium">Estado</span>
-                    <ChevronDown
-                      className={`h-4 w-4 transition-transform ${
-                        expandedCategories.status ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-                  {expandedCategories.status && (
-                    <div className="ml-2 mt-2 space-y-1">
-                      {LEAD_STATUSES.map((status) => (
+          <PopoverContent className="w-[400px] p-0" align="start">
+            <ScrollArea className="max-h-[400px]">
+              <div className="space-y-2 p-3">
+                {/* Grid layout for filters */}
+                <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
+                  {/* Badge Status Filter */}
+                  <FilterCategory title="Estado" category="badgeStatus" icon={Tag}>
+                    <div className="grid grid-cols-1 gap-x-2">
+                      {BADGE_STATUSES.map((status) => (
                         <FilterOption
-                          key={status}
-                          value={status}
-                          label={status}
-                          isSelected={leadFilters.status.includes(status)}
-                          onClick={() => toggleFilter("status", status)}
+                          key={status.value}
+                          value={status.value}
+                          label={status.label}
+                          isSelected={leadFilters.badgeStatus.includes(status.value)}
+                          onClick={() => toggleFilter("badgeStatus", status.value)}
                         />
                       ))}
                     </div>
-                  )}
-                </div>
+                  </FilterCategory>
 
-                {/* Source Filter */}
-                <div>
-                  <button
-                    onClick={() => toggleCategory("source")}
-                    className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left hover:bg-gray-50"
-                  >
-                    <span className="text-sm font-medium">Fuente</span>
-                    <ChevronDown
-                      className={`h-4 w-4 transition-transform ${
-                        expandedCategories.source ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-                  {expandedCategories.source && (
-                    <div className="ml-2 mt-2 space-y-1">
+                  {/* Source Filter */}
+                  <FilterCategory title="Fuente" category="source" icon={Package}>
+                    <div className="grid grid-cols-1 gap-x-2">
                       {leadSources.map((source) => (
                         <FilterOption
                           key={source}
@@ -258,34 +272,48 @@ export function LeadFilter({ view, onViewChange }: LeadFilterProps) {
                         />
                       ))}
                     </div>
-                  )}
+                  </FilterCategory>
                 </div>
               </div>
             </ScrollArea>
+
+            {/* Clear filters button at bottom */}
+            {activeFiltersCount > 0 && (
+              <div className="border-t p-1.5">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="h-6 w-full text-[12px]"
+                >
+                  <FilterX className="mr-1 h-3 w-3" />
+                  Borrar filtros
+                </Button>
+              </div>
+            )}
           </PopoverContent>
         </Popover>
       </div>
 
       {/* View toggle */}
-      <div className="flex items-center space-x-2">
+      <div className="flex items-center gap-0.5 rounded-md bg-white p-0.5 shadow">
         <Button
-          variant={view === "list" ? "default" : "outline"}
+          variant={view === "list" ? "secondary" : "ghost"}
           size="sm"
           onClick={onViewChange}
-          className="flex items-center"
+          title="Lista"
+          className="h-7 w-7 p-0"
         >
-          <List className="mr-2 h-4 w-4" />
-          Lista
+          <List className="h-3.5 w-3.5" />
         </Button>
         <Button
-          variant={view === "kanban" ? "default" : "outline"}
+          variant={view === "kanban" ? "secondary" : "ghost"}
           size="sm"
           disabled={true}
-          className="flex items-center opacity-50"
           title="Kanban disponible próximamente"
+          className="h-7 w-7 p-0 opacity-50"
         >
-          <LayoutGrid className="mr-2 h-4 w-4" />
-          Kanban
+          <LayoutGrid className="h-3.5 w-3.5" />
         </Button>
       </div>
     </div>

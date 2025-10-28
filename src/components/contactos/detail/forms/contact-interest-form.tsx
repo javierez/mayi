@@ -23,10 +23,6 @@ import { useState, useEffect } from "react";
 import { X, Save, Check, Loader2, Trash2 } from "lucide-react";
 import { Textarea } from "~/components/ui/textarea";
 import { Slider } from "~/components/ui/slider";
-import {
-  getAllCities,
-  getNeighborhoodsByCity,
-} from "~/server/queries/locations";
 import { Separator } from "~/components/ui/separator";
 import { motion } from "framer-motion";
 import { RoomSelector } from "~/components/crear/pages/elements/room_selector";
@@ -38,14 +34,17 @@ import {
   type UpdateProspectInput,
 } from "~/server/queries/prospect";
 import { toast } from "sonner";
+import { CityAutocomplete } from "./city-autocomplete";
+import { formatCityName } from "~/lib/city-name-formatter";
+import { fetchNeighborhoodsByCity } from "~/lib/nominatim-service";
 
 export interface InterestFormData {
   id: string;
   demandType: string;
   maxPrice: number;
   preferredArea: string;
+  selectedCities: string[];
   selectedNeighborhoods: Array<{
-    neighborhoodId: bigint;
     neighborhood: string;
     city: string;
     municipality: string;
@@ -78,7 +77,7 @@ export function ContactInterestForm({
   onUpdate,
   onRemove,
   isRemovable = false,
-  index,
+  index: _index,
   contactId,
   onSaved,
   onDeleted,
@@ -91,52 +90,58 @@ export function ContactInterestForm({
   const [characteristicsSearch, setCharacteristicsSearch] = useState("");
 
   // Location selection states
-  const [cities, setCities] = useState<string[]>([]);
   const [selectedCity, setSelectedCity] = useState("");
   const [neighborhoods, setNeighborhoods] = useState<
     Array<{
-      neighborhoodId: bigint;
       neighborhood: string;
+      city: string;
       municipality: string;
       province: string;
     }>
   >([]);
   const [neighborhoodSearch, setNeighborhoodSearch] = useState("");
+  const [loadingNeighborhoods, setLoadingNeighborhoods] = useState(false);
 
-  // Initialize selectedNeighborhoods if not present
+  // Initialize selectedNeighborhoods and selectedCities if not present
   useEffect(() => {
-    if (!localData.selectedNeighborhoods) {
-      setLocalData({ ...localData, selectedNeighborhoods: [] });
+    if (!localData.selectedNeighborhoods || !localData.selectedCities) {
+      setLocalData({
+        ...localData,
+        selectedNeighborhoods: localData.selectedNeighborhoods ?? [],
+        selectedCities: localData.selectedCities ?? [],
+      });
     }
   }, [localData]);
 
-  // Load cities on component mount
-  useEffect(() => {
-    const loadCities = async () => {
-      try {
-        const citiesList = await getAllCities();
-        setCities(citiesList);
-      } catch (error) {
-        console.error("Error loading cities:", error);
-      }
-    };
-    void loadCities();
-  }, []);
-
-  // Load neighborhoods when city changes
+  // Load neighborhoods when city changes with debouncing to prevent API spam
   useEffect(() => {
     if (selectedCity) {
-      const loadNeighborhoods = async () => {
-        try {
-          const neighborhoodsList = await getNeighborhoodsByCity(selectedCity);
-          setNeighborhoods(neighborhoodsList);
-        } catch (error) {
-          console.error("Error loading neighborhoods:", error);
-        }
+      setLoadingNeighborhoods(true);
+
+      // Debounce the API call to avoid rate limiting
+      const timeoutId = setTimeout(() => {
+        const loadNeighborhoods = async () => {
+          try {
+            const neighborhoodsList = await fetchNeighborhoodsByCity(selectedCity, "es");
+            setNeighborhoods(neighborhoodsList);
+          } catch (error) {
+            console.error("Error loading neighborhoods:", error);
+            setNeighborhoods([]);
+            toast.error("Error al cargar los barrios. Por favor, espera unos segundos e intenta de nuevo.");
+          } finally {
+            setLoadingNeighborhoods(false);
+          }
+        };
+        void loadNeighborhoods();
+      }, 1000); // Wait 1 second after user stops typing
+
+      return () => {
+        clearTimeout(timeoutId);
+        setLoadingNeighborhoods(false);
       };
-      void loadNeighborhoods();
     } else {
       setNeighborhoods([]);
+      setLoadingNeighborhoods(false);
     }
   }, [selectedCity]);
 
@@ -160,10 +165,9 @@ export function ContactInterestForm({
   const handleSave = async () => {
     setSaveStatus("saving");
     try {
-      // Convert selectedNeighborhoods to preferredAreas format
+      // Convert selectedNeighborhoods to preferredAreas format (just neighborhood names)
       const preferredAreas =
         localData.selectedNeighborhoods?.map((neighborhood) => ({
-          neighborhoodId: Number(neighborhood.neighborhoodId),
           name: neighborhood.neighborhood,
         })) || [];
 
@@ -174,6 +178,7 @@ export function ContactInterestForm({
         listingType: localData.demandType || undefined,
         propertyType: localData.propertyTypes[0] ?? "",
         maxPrice: localData.maxPrice.toString(),
+        preferredCities: localData.selectedCities ?? [],
         preferredAreas: preferredAreas,
         minBedrooms: localData.minBedrooms ?? 0,
         minBathrooms: localData.minBathrooms ?? 0,
@@ -247,77 +252,8 @@ export function ContactInterestForm({
     }
   };
 
-  const getFormTitle = () => {
-    if (localData.id.startsWith("prospect-")) {
-      // For existing prospects, show operation + property type
-      const operation = localData.demandType === "Sale" ? "Compra" : "Alquiler";
-      const propertyType = localData.propertyTypes[0] ?? "Propiedad";
-      return `${operation} de ${propertyType}`;
-    }
-    // For new forms, show generic title
-    return `Solicitud #${index + 1}`;
-  };
-
   return (
     <Card className="border-gray-200 bg-white p-4">
-      <div className="mb-4 flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-gray-700">
-          {getFormTitle()}
-        </h4>
-        <div className="flex items-center space-x-2">
-          {/* Save button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleSave}
-            disabled={saveStatus === "saving"}
-            className={cn(
-              "h-6 w-6 p-0 transition-colors",
-              saveStatus === "saving" &&
-                "text-amber-600 hover:bg-amber-50 hover:text-amber-700",
-              saveStatus === "saved" &&
-                "text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700",
-              saveStatus === "error" &&
-                "text-red-600 hover:bg-red-50 hover:text-red-700",
-              saveStatus === "idle" &&
-                "text-gray-500 hover:bg-gray-100 hover:text-gray-700",
-            )}
-          >
-            {saveStatus === "saving" && (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            )}
-            {saveStatus === "saved" && <Check className="h-3 w-3" />}
-            {(saveStatus === "idle" || saveStatus === "error") && (
-              <Save className="h-3 w-3" />
-            )}
-          </Button>
-
-          {/* Delete button for existing prospects */}
-          {localData.id.startsWith("prospect-") && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDelete}
-              className="h-6 w-6 p-0 text-red-500 hover:bg-red-50 hover:text-red-700"
-            >
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          )}
-
-          {/* Close button */}
-          {isRemovable && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onRemove}
-              className="h-6 w-6 p-0 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* Transaction Details */}
         <Card className="border-gray-100 bg-gray-50/50 p-4">
@@ -334,7 +270,13 @@ export function ContactInterestForm({
                 />
                 <div className="relative flex h-full">
                   <button
-                    onClick={() => updateLocalData({ demandType: "Sale" })}
+                    onClick={() => {
+                      // Always set default sale price when switching to Compra
+                      updateLocalData({
+                        demandType: "Sale",
+                        maxPrice: 200000
+                      });
+                    }}
                     className={cn(
                       "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
                       localData.demandType === "Sale"
@@ -345,7 +287,13 @@ export function ContactInterestForm({
                     Compra
                   </button>
                   <button
-                    onClick={() => updateLocalData({ demandType: "Rent" })}
+                    onClick={() => {
+                      // Always set default rent price when switching to Alquiler
+                      updateLocalData({
+                        demandType: "Rent",
+                        maxPrice: 500
+                      });
+                    }}
                     className={cn(
                       "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
                       localData.demandType === "Rent"
@@ -376,8 +324,8 @@ export function ContactInterestForm({
                     minLimit = 300;
                     maxLimit = 5000;
                     step = 50;
-                    defaultValue = 1200;
-                    placeholder = "€1.200";
+                    defaultValue = 500;
+                    placeholder = "€500";
                   } else {
                     // Sale properties: original logic
                     minLimit = isPisoOrCasa ? 50000 : 0;
@@ -442,7 +390,7 @@ export function ContactInterestForm({
                           ? "100%"
                           : localData.propertyTypes[0] === "local"
                             ? "200%"
-                            : localData.propertyTypes[0] === "terreno"
+                            : localData.propertyTypes[0] === "solar"
                               ? "300%"
                               : "400%",
                   }}
@@ -486,16 +434,16 @@ export function ContactInterestForm({
                   </button>
                   <button
                     onClick={() =>
-                      updateLocalData({ propertyTypes: ["terreno"] })
+                      updateLocalData({ propertyTypes: ["solar"] })
                     }
                     className={cn(
                       "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
-                      localData.propertyTypes[0] === "terreno"
+                      localData.propertyTypes[0] === "solar"
                         ? "text-gray-900"
                         : "text-gray-600",
                     )}
                   >
-                    Terreno
+                    Solar
                   </button>
                   <button
                     onClick={() =>
@@ -518,7 +466,6 @@ export function ContactInterestForm({
               const propertyType = localData.propertyTypes[0] ?? "";
               const shouldShowRooms =
                 propertyType !== "garaje" &&
-                propertyType !== "terreno" &&
                 propertyType !== "solar";
 
               if (shouldShowRooms) {
@@ -596,24 +543,64 @@ export function ContactInterestForm({
 
               {/* City Selection */}
               <div className="space-y-2">
-                <Select
+                <CityAutocomplete
                   value={selectedCity}
-                  onValueChange={(value) => {
-                    setSelectedCity(value);
+                  onChange={(city) => {
+                    // This now only fires when user selects from Google dropdown
                     setNeighborhoodSearch("");
+
+                    // Auto-add city to selectedCities if not empty and not already added
+                    if (city?.trim()) {
+                      const formattedCity = formatCityName(city);
+                      const alreadyAdded = localData.selectedCities?.some(
+                        (c) => c.toLowerCase() === formattedCity.toLowerCase()
+                      );
+
+                      if (!alreadyAdded) {
+                        updateLocalData({
+                          selectedCities: [...(localData.selectedCities ?? []), formattedCity],
+                        });
+                      }
+
+                      // Set selectedCity for neighborhood loading
+                      setSelectedCity(city);
+                    }
                   }}
-                >
-                  <SelectTrigger className="h-9 text-gray-500">
-                    <SelectValue placeholder="Seleccionar ciudad" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cities.map((city) => (
-                      <SelectItem key={city} value={city}>
-                        {city}
-                      </SelectItem>
+                  placeholder="Buscar ciudad..."
+                  className="h-9 text-gray-500"
+                />
+
+                {/* Display selected cities */}
+                {localData.selectedCities && localData.selectedCities.length > 0 && (
+                  <div className="space-y-1">
+                    {localData.selectedCities.map((city) => (
+                      <div
+                        key={city}
+                        className="flex items-center justify-between rounded-md bg-blue-50 px-2 py-1"
+                      >
+                        <span className="text-sm font-medium text-blue-900">
+                          {city} (toda la ciudad)
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => {
+                            const updatedCities = localData.selectedCities?.filter(
+                              (c) => c !== city,
+                            ) ?? [];
+                            updateLocalData({
+                              selectedCities: updatedCities,
+                            });
+                          }}
+                        >
+                          ×
+                        </Button>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </div>
+                )}
 
                 {/* Neighborhood Selection */}
                 {selectedCity && (
@@ -622,13 +609,14 @@ export function ContactInterestForm({
                       value=""
                       onValueChange={(value) => {
                         const neighborhood = neighborhoods.find(
-                          (n) => n.neighborhoodId.toString() === value,
+                          (n) => n.neighborhood === value,
                         );
                         if (
                           neighborhood &&
                           !localData.selectedNeighborhoods?.some(
                             (n) =>
-                              n.neighborhoodId === neighborhood.neighborhoodId,
+                              n.neighborhood === neighborhood.neighborhood &&
+                              n.city === selectedCity,
                           )
                         ) {
                           const newNeighborhood = {
@@ -644,35 +632,50 @@ export function ContactInterestForm({
                         }
                       }}
                     >
-                      <SelectTrigger className="h-9 text-gray-500">
-                        <SelectValue placeholder="Añadir barrio" />
+                      <SelectTrigger className="h-9 text-gray-500" disabled={loadingNeighborhoods}>
+                        <SelectValue placeholder={loadingNeighborhoods ? "Cargando barrios..." : "Añadir barrio"} />
                       </SelectTrigger>
                       <SelectContent>
-                        <div className="flex items-center px-3 pb-2">
-                          <input
-                            className="flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                            placeholder="Buscar barrio..."
-                            value={neighborhoodSearch}
-                            onChange={(e) =>
-                              setNeighborhoodSearch(e.target.value)
-                            }
-                          />
-                        </div>
-                        <Separator className="mb-2" />
-                        {filteredNeighborhoods.map((neighborhood) => (
+                        {loadingNeighborhoods ? (
+                          <div className="flex items-center justify-center py-4">
+                            <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                            <span className="ml-2 text-sm text-gray-500">Cargando barrios...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center px-3 pb-2">
+                              <input
+                                className="flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                                placeholder="Buscar barrio..."
+                                value={neighborhoodSearch}
+                                onChange={(e) =>
+                                  setNeighborhoodSearch(e.target.value)
+                                }
+                              />
+                            </div>
+                            <Separator className="mb-2" />
+                            {filteredNeighborhoods.length === 0 ? (
+                              <div className="py-4 text-center text-sm text-gray-500">
+                                No se encontraron barrios
+                              </div>
+                            ) : (
+                              filteredNeighborhoods.map((neighborhood) => (
                           <SelectItem
-                            key={neighborhood.neighborhoodId.toString()}
-                            value={neighborhood.neighborhoodId.toString()}
+                            key={neighborhood.neighborhood}
+                            value={neighborhood.neighborhood}
                             disabled={localData.selectedNeighborhoods?.some(
                               (n) =>
-                                n.neighborhoodId ===
-                                neighborhood.neighborhoodId,
+                                n.neighborhood === neighborhood.neighborhood &&
+                                n.city === selectedCity,
                             )}
                           >
                             {neighborhood.neighborhood} (
                             {neighborhood.municipality})
                           </SelectItem>
-                        ))}
+                              ))
+                            )}
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -684,7 +687,7 @@ export function ContactInterestForm({
                     <div className="mt-2 space-y-1">
                       {localData.selectedNeighborhoods.map((neighborhood) => (
                         <div
-                          key={neighborhood.neighborhoodId.toString()}
+                          key={`${neighborhood.neighborhood}-${neighborhood.city}`}
                           className="flex items-center justify-between rounded-md px-2 py-1"
                         >
                           <span className="text-sm">
@@ -699,8 +702,8 @@ export function ContactInterestForm({
                               const updatedNeighborhoods =
                                 localData.selectedNeighborhoods?.filter(
                                   (n) =>
-                                    n.neighborhoodId !==
-                                    neighborhood.neighborhoodId,
+                                    n.neighborhood !== neighborhood.neighborhood ||
+                                    n.city !== neighborhood.city,
                                 ) || [];
                               updateLocalData({
                                 selectedNeighborhoods: updatedNeighborhoods,
@@ -905,6 +908,68 @@ export function ContactInterestForm({
             </div>
           </div>
         </Card>
+      </div>
+
+      {/* Action Buttons Footer */}
+      <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
+        {/* Close/Cancel button */}
+        {isRemovable && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onRemove}
+            className="flex items-center gap-2"
+          >
+            <X className="h-4 w-4" />
+            Cancelar
+          </Button>
+        )}
+
+        {/* Delete button for existing prospects */}
+        {localData.id.startsWith("prospect-") && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleDelete}
+            className="flex items-center gap-2"
+          >
+            <Trash2 className="h-4 w-4" />
+            Eliminar solicitud
+          </Button>
+        )}
+
+        {/* Save button */}
+        <Button
+          variant="default"
+          size="sm"
+          onClick={handleSave}
+          disabled={saveStatus === "saving"}
+          className={cn(
+            "flex items-center gap-2 transition-all",
+            saveStatus === "saving" && "bg-amber-600 hover:bg-amber-700",
+            saveStatus === "saved" && "bg-emerald-600 hover:bg-emerald-700",
+            saveStatus === "error" && "bg-red-600 hover:bg-red-700",
+          )}
+        >
+          {saveStatus === "saving" && (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Guardando...
+            </>
+          )}
+          {saveStatus === "saved" && (
+            <>
+              <Check className="h-4 w-4" />
+              Guardado
+            </>
+          )}
+          {(saveStatus === "idle" || saveStatus === "error") && (
+            <>
+              <Save className="h-4 w-4" />
+              Guardar solicitud
+            </>
+          )}
+        </Button>
       </div>
 
       {/* Delete Confirmation Dialog */}

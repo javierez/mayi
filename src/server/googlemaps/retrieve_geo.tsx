@@ -104,6 +104,8 @@ export async function retrieveGeocodingData(
           province: province,
           municipality: municipality,
           neighborhood: neighborhood,
+          latitude: result.lat,
+          longitude: result.lon,
         });
       } catch {
         // Continue without neighborhood ID if there's an error

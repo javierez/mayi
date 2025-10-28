@@ -11,3 +11,4 @@ export {
   OperacionesQuickActionsCardSkeleton,
   WorkQueueCardSkeleton
 } from './operaciones-skeleton';
+export { SolicitudesSkeleton, SolicitudesCardSkeleton } from './solicitudes-skeleton';

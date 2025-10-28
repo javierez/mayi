@@ -10,6 +10,8 @@ interface LocationData {
   province: string;
   municipality: string;
   neighborhood: string;
+  latitude?: string;
+  longitude?: string;
 }
 
 // Find existing location or create new one and return neighborhood ID
@@ -31,16 +33,18 @@ export async function findOrCreateLocation(
       .limit(1);
 
     if (existingLocation.length > 0 && existingLocation[0]) {
-      // Update the existing location with new province/municipality data
+      // Update the existing location with new province/municipality/coordinates data
       await db
         .update(locations)
         .set({
           province: locationData.province,
           municipality: locationData.municipality,
+          ...(locationData.latitude && { latitude: locationData.latitude }),
+          ...(locationData.longitude && { longitude: locationData.longitude }),
           updatedAt: new Date(),
         })
         .where(eq(locations.neighborhoodId, existingLocation[0].neighborhoodId));
-      
+
       console.log("🔄 Updated existing location:", existingLocation[0].neighborhoodId);
       return Number(existingLocation[0].neighborhoodId);
     }
@@ -51,6 +55,8 @@ export async function findOrCreateLocation(
       province: locationData.province,
       municipality: locationData.municipality,
       neighborhood: locationData.neighborhood,
+      ...(locationData.latitude && { latitude: locationData.latitude }),
+      ...(locationData.longitude && { longitude: locationData.longitude }),
       isActive: true,
     });
 

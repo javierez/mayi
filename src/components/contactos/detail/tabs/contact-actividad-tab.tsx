@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { VisitsKPICard } from "~/components/propiedades/detail/activity/visits-kpi-card";
 import { ContactsKPICard } from "~/components/propiedades/detail/activity/contacts-kpi-card";
@@ -136,8 +136,8 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
     void fetchPermissions();
   }, []);
 
-  // Fetch activity data based on selected role (matches contact-propiedades-tab pattern)
-  const fetchActivityData = async () => {
+  // Fetch activity data based on selected role
+  const fetchActivityData = useCallback(async () => {
     try {
       let listingsData, visitsData, contactsData;
 
@@ -167,14 +167,14 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
       setVisits([]);
       setRelatedContacts([]);
     }
-  };
+  }, [contactId, selectedRole]);
 
   useEffect(() => {
     setIsLoading(true);
     void fetchActivityData().finally(() => setIsLoading(false));
-  }, [contactId, selectedRole]);
+  }, [contactId, selectedRole, fetchActivityData]);
 
-  // Fetch buyer listings for "Intereses" tab (reuses getBuyerListingsWithAuth from contact-propiedades-tab)
+  // Fetch buyer listings for "Intereses" tab
   useEffect(() => {
     if (selectedRole === "intereses") {
       const fetchBuyerListings = async () => {
@@ -324,23 +324,9 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
     );
   }
 
-  if (listings.length === 0) {
-    return (
-      <Card className="p-12">
-        <div className="text-center">
-          <Building className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Sin propiedades de interés</h3>
-          <p className="text-muted-foreground">
-            Este contacto no tiene propiedades registradas como interés.
-          </p>
-        </div>
-      </Card>
-    );
-  }
-
   return (
     <div className="space-y-4">
-      {/* Role Toggle */}
+      {/* Role Toggle - Always visible */}
       <div className="flex justify-center">
         <div className="inline-flex rounded-lg bg-gray-50 p-1">
           <button
@@ -372,6 +358,17 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
 
       {/* Content based on selected role */}
       {selectedRole === "propiedades" ? (
+        listings.length === 0 ? (
+          <Card className="p-12">
+            <div className="text-center">
+              <Building className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Sin propiedades</h3>
+              <p className="text-muted-foreground">
+                Este contacto no tiene propiedades registradas.
+              </p>
+            </div>
+          </Card>
+        ) : (
         <>
           {listingGroups.map((group) => {
         const { listing, visits: listingVisits, contacts: listingContacts, activeView } = group;
@@ -380,7 +377,6 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
         const completedVisits = listingVisits.filter((v) => v.status === "Completed");
         const scheduledVisits = listingVisits.filter((v) => v.status === "Scheduled");
         const cancelledVisits = listingVisits.filter((v) => v.status === "Cancelled");
-        const newContacts = listingContacts.filter((c) => c.isNew);
 
         // Calculate KPI metrics based on badge states
         // Contacts with visits (En visita): hasUpcomingVisit
@@ -654,7 +650,7 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
                       <div className="space-y-3">
                         {listingContacts.map((contact) => (
                           <CompactContactCard
-                            key={contact.contactId.toString()}
+                            key={contact.listingContactId.toString()}
                             listingContactId={contact.listingContactId}
                             contact={{
                               contactId: contact.contactId,
@@ -692,6 +688,7 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
         );
       })}
         </>
+        )
       ) : (
         // Intereses section with compact property cards
         <>
@@ -723,10 +720,11 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
                   return aActive ? -1 : 1;
                 })
                 .map((listing) => {
+                  const listingContactId = (listing as Record<string, unknown>).listingContactId as bigint | undefined;
+                  const listingContactIdStr = listingContactId?.toString() ?? "unknown";
                   const listingIdStr = listing.listingId?.toString() ?? "unknown";
                   const isExpanded = expandedListings[listingIdStr] ?? false;
                   const isActive = (listing as Record<string, unknown>).listingContactIsActive ?? true;
-                  const listingContactId = (listing as Record<string, unknown>).listingContactId as bigint | undefined;
 
                   // Convert PropertyListing (from getBuyerListingsWithAuth) to CompactPropertyCard props
                   const listingForCard = {
@@ -752,7 +750,7 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
                   );
 
                   return (
-                    <Card key={listingIdStr} className={cn("overflow-hidden", isExpanded && "shadow-none")}>
+                    <Card key={listingContactIdStr} className={cn("overflow-hidden", isExpanded && "shadow-none")}>
                       <CompactPropertyCard
                         listing={listingForCard}
                         isExpanded={isExpanded}

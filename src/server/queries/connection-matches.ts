@@ -9,8 +9,10 @@ import {
   listingContacts,
   contacts,
 } from "~/server/db/schema";
-import { eq, and, gte, lte, ne, isNull, or, sql } from "drizzle-orm";
+import { eq, and, gte, lte, ne, isNull, or, sql, inArray } from "drizzle-orm";
 import { getCurrentUserAccountId } from "~/lib/dal";
+import { distance as levenshteinDistance } from "fastest-levenshtein";
+import { isNearAnyTarget, type Coordinates } from "~/lib/distance-utils";
 import type {
   MatchQueryParams,
   MatchResults,
@@ -74,36 +76,34 @@ function calculateTolerance(
   };
 }
 
-// Helper function to parse preferred areas JSON
+// Helper function to parse preferred areas JSON (new format: [{name: "..."}])
 function parsePreferredAreas(
   preferredAreas: unknown,
-): Array<{ neighborhoodId: number; name: string }> {
+): Array<{ name: string }> {
   if (!preferredAreas) return [];
 
   try {
     if (Array.isArray(preferredAreas)) {
-      return (
-        preferredAreas as Array<{ neighborhoodId: number; name: string }>
-      ).filter(
+      return (preferredAreas as Array<{ name: string }>).filter(
         (area) =>
           area &&
           typeof area === "object" &&
-          "neighborhoodId" in area &&
-          "name" in area,
+          "name" in area &&
+          typeof area.name === "string" &&
+          area.name.trim() !== "",
       );
     }
 
     if (typeof preferredAreas === "string") {
       const parsed = JSON.parse(preferredAreas) as unknown;
       if (Array.isArray(parsed)) {
-        return (
-          parsed as Array<{ neighborhoodId: number; name: string }>
-        ).filter(
+        return (parsed as Array<{ name: string }>).filter(
           (area) =>
             area &&
             typeof area === "object" &&
-            "neighborhoodId" in area &&
-            "name" in area,
+            "name" in area &&
+            typeof area.name === "string" &&
+            area.name.trim() !== "",
         );
       }
     }
@@ -112,6 +112,138 @@ function parsePreferredAreas(
   }
 
   return [];
+}
+
+// Helper function to parse preferred cities JSON (format: ["León", "Alicante"])
+function parsePreferredCities(preferredCities: unknown): string[] {
+  if (!preferredCities) return [];
+
+  try {
+    if (Array.isArray(preferredCities)) {
+      return (preferredCities as string[]).filter(
+        (city) => typeof city === "string" && city.trim() !== "",
+      );
+    }
+
+    if (typeof preferredCities === "string") {
+      const parsed = JSON.parse(preferredCities) as unknown;
+      if (Array.isArray(parsed)) {
+        return (parsed as string[]).filter(
+          (city) => typeof city === "string" && city.trim() !== "",
+        );
+      }
+    }
+  } catch (error) {
+    console.error("Error parsing preferred cities:", error);
+  }
+
+  return [];
+}
+
+// Helper function to calculate string similarity percentage using Levenshtein distance
+function calculateStringSimilarity(str1: string, str2: string): number {
+  if (!str1 || !str2) return 0;
+
+  // Normalize strings: lowercase and trim
+  const normalized1 = str1.toLowerCase().trim();
+  const normalized2 = str2.toLowerCase().trim();
+
+  // Handle exact match
+  if (normalized1 === normalized2) return 100;
+
+  // Calculate Levenshtein distance
+  const distance = levenshteinDistance(normalized1, normalized2);
+  const maxLength = Math.max(normalized1.length, normalized2.length);
+
+  // Convert to similarity percentage
+  const similarity = ((maxLength - distance) / maxLength) * 100;
+
+  return similarity;
+}
+
+// Helper function to check if location matches with 80% similarity threshold
+function isLocationSimilar(
+  targetLocation: string,
+  candidateLocation: string | null,
+  threshold = 80,
+): boolean {
+  if (!candidateLocation) return false;
+  const similarity = calculateStringSimilarity(targetLocation, candidateLocation);
+  return similarity >= threshold;
+}
+
+// Helper function to get coordinates for preferred neighborhoods
+async function getNeighborhoodCoordinates(
+  preferredAreas: Array<{ name: string }>,
+  preferredCities: string[],
+): Promise<Map<string, Coordinates>> {
+  const coordinatesMap = new Map<string, Coordinates>();
+
+  // If no location preferences, return empty map
+  if (preferredAreas.length === 0 && preferredCities.length === 0) {
+    return coordinatesMap;
+  }
+
+  try {
+    let locationResults;
+
+    // Query neighborhoods by name or by city
+    if (preferredAreas.length > 0) {
+      // Get coordinates for specific neighborhoods
+      const neighborhoodNames = preferredAreas.map((area) => area.name);
+      locationResults = await db
+        .select({
+          neighborhood: locations.neighborhood,
+          city: locations.city,
+          latitude: locations.latitude,
+          longitude: locations.longitude,
+        })
+        .from(locations)
+        .where(
+          and(
+            inArray(locations.neighborhood, neighborhoodNames),
+            eq(locations.isActive, true),
+          ),
+        );
+    } else if (preferredCities.length > 0) {
+      // Get coordinates for all neighborhoods in preferred cities
+      locationResults = await db
+        .select({
+          neighborhood: locations.neighborhood,
+          city: locations.city,
+          latitude: locations.latitude,
+          longitude: locations.longitude,
+        })
+        .from(locations)
+        .where(
+          and(
+            inArray(locations.city, preferredCities),
+            eq(locations.isActive, true),
+          ),
+        );
+    } else {
+      return coordinatesMap;
+    }
+
+    // Build map of neighborhood -> coordinates
+    for (const location of locationResults) {
+      if (location.latitude && location.longitude) {
+        const key = `${location.neighborhood}-${location.city}`;
+        coordinatesMap.set(key, {
+          latitude: parseFloat(location.latitude),
+          longitude: parseFloat(location.longitude),
+        });
+      }
+    }
+
+    console.log(
+      `📍 Found coordinates for ${coordinatesMap.size} neighborhoods`,
+    );
+  } catch (error) {
+    console.error("Error fetching neighborhood coordinates:", error);
+  }
+
+  return coordinatesMap;
 }
 
 // Helper function to check feature requirements
@@ -187,6 +319,7 @@ export async function getMatchesForProspects(
         prospectMinBathrooms: prospects.minBathrooms,
         prospectMinSquareMeters: prospects.minSquareMeters,
         prospectMaxSquareMeters: prospects.maxSquareMeters,
+        prospectPreferredCities: prospects.preferredCities,
         prospectPreferredAreas: prospects.preferredAreas,
         prospectExtras: prospects.extras,
         prospectUrgencyLevel: prospects.urgencyLevel,
@@ -224,12 +357,16 @@ export async function getMatchesForProspects(
         propertyBathrooms: properties.bathrooms,
         propertySquareMeters: properties.squareMeter,
         propertyNeighborhoodId: properties.neighborhoodId,
+        propertyLatitude: properties.latitude,
+        propertyLongitude: properties.longitude,
 
         // Location fields
         neighborhoodName: locations.neighborhood,
         municipality: locations.municipality,
         city: locations.city,
         province: locations.province,
+        locationLatitude: locations.latitude,
+        locationLongitude: locations.longitude,
 
         // Owner contact fields
         ownerContactId: contacts.contactId,
@@ -422,15 +559,88 @@ export async function getMatchesForProspects(
     // CRITICAL: Post-process for location and feature matching, tolerance classification
     const processedMatches: ProspectMatch[] = [];
 
+    // Get unique prospect location preferences from all results for coordinate lookup
+    const allPreferredAreas = new Set<string>();
+    const allPreferredCities = new Set<string>();
+
     for (const result of rawResults) {
-      // Check location matching
+      const preferredCities = parsePreferredCities(result.prospectPreferredCities);
       const preferredAreas = parsePreferredAreas(result.prospectPreferredAreas);
-      const isLocationMatch =
-        preferredAreas.length === 0 ||
-        preferredAreas.some(
-          (area) =>
-            area.neighborhoodId === Number(result.propertyNeighborhoodId),
+
+      preferredCities.forEach(city => allPreferredCities.add(city));
+      preferredAreas.forEach(area => allPreferredAreas.add(area.name));
+    }
+
+    // Fetch coordinates for all preferred neighborhoods once
+    const neighborhoodCoordinates = await getNeighborhoodCoordinates(
+      Array.from(allPreferredAreas).map(name => ({ name })),
+      Array.from(allPreferredCities),
+    );
+
+    for (const result of rawResults) {
+      // Check location matching with string similarity AND distance-based matching
+      const preferredCities = parsePreferredCities(result.prospectPreferredCities);
+      const preferredAreas = parsePreferredAreas(result.prospectPreferredAreas);
+
+      let isLocationMatch = false;
+
+      // If no location preferences at all, match everything
+      if (preferredCities.length === 0 && preferredAreas.length === 0) {
+        isLocationMatch = true;
+      }
+      // If prospect has preferredAreas, match against neighborhood names OR distance
+      else if (preferredAreas.length > 0) {
+        // First try string similarity matching (exact or fuzzy)
+        const stringSimilarityMatch = preferredAreas.some((area) =>
+          isLocationSimilar(area.name, result.neighborhoodName, 80),
         );
+
+        if (stringSimilarityMatch) {
+          isLocationMatch = true;
+        } else {
+          // If no string match, try distance-based matching (ONLY if we have coordinates)
+          // Get coordinates for all preferred neighborhoods
+          const preferredCoordinates: Coordinates[] = [];
+          for (const area of preferredAreas) {
+            const key = `${area.name}-${result.city}`;
+            const coords = neighborhoodCoordinates.get(key);
+            if (coords) {
+              preferredCoordinates.push(coords);
+            }
+          }
+
+          // Only do distance matching if BOTH property AND neighborhoods have coordinates
+          if (
+            result.propertyLatitude &&
+            result.propertyLongitude &&
+            preferredCoordinates.length > 0
+          ) {
+            const propertyCoords: Coordinates = {
+              latitude: parseFloat(result.propertyLatitude),
+              longitude: parseFloat(result.propertyLongitude),
+            };
+
+            isLocationMatch = isNearAnyTarget(
+              propertyCoords,
+              preferredCoordinates,
+              0.5, // 0.5km radius as requested
+            );
+
+            if (isLocationMatch) {
+              console.log(
+                `📍 Distance match: Property in ${result.neighborhoodName} is within 0.5km of preferred areas`,
+              );
+            }
+          }
+          // If no coordinates available, isLocationMatch stays false (no match)
+        }
+      }
+      // If prospect has preferredCities but NO preferredAreas, match against city names
+      else if (preferredCities.length > 0) {
+        isLocationMatch = preferredCities.some((city) =>
+          isLocationSimilar(city, result.city, 80),
+        );
+      }
 
       if (!isLocationMatch) continue;
 

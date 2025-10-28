@@ -10,9 +10,18 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
 import {
   ChevronDown,
   MapPin,
+  CalendarIcon,
+  Check,
+  Clock,
+  X,
+  Handshake,
+  CalendarPlus,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
@@ -33,6 +42,8 @@ import { LEAD_STATUSES, type LeadStatus } from "~/lib/constants/lead-statuses";
 import { updateLeadWithAuth } from "~/server/queries/lead";
 import { toast } from "~/components/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { ContactDetailSheet } from "~/components/contactos/contact-detail-sheet";
+import type { ContactSheetData, OwnerContact } from "~/types/activity";
 
 // Lead type with joined data (based on what we expect from queries)
 export type LeadWithDetails = {
@@ -42,8 +53,17 @@ export type LeadWithDetails = {
   prospectId?: bigint | null;
   source: string;
   status: LeadStatus;
+  offer?: string | null;
+  offerAccepted?: boolean | null;
   createdAt: Date;
   updatedAt: Date;
+  // Visit status flags
+  visitCount?: number;
+  hasUpcomingVisit?: boolean;
+  hasMissedVisit?: boolean;
+  hasCompletedVisit?: boolean;
+  hasCancelledVisit?: boolean;
+  hasOffer?: boolean;
   // Joined contact data
   contact: {
     contactId: bigint;
@@ -98,6 +118,7 @@ export function LeadTable({
   >({});
   const [visibleRows, setVisibleRows] = useState<Set<string>>(new Set());
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const [selectedContact, setSelectedContact] = useState<ContactSheetData | null>(null);
 
   // Memoize unique leads to prevent infinite re-renders
   const uniqueLeads = useMemo(() => {
@@ -167,6 +188,84 @@ export function LeadTable({
   const handleViewListing = (listingId: bigint | null | undefined) => {
     if (listingId) {
       router.push(`/propiedades/${listingId.toString()}`);
+    }
+  };
+
+  const handleRowClick = (lead: LeadWithDetails) => {
+    // Convert offer from string to number if it exists
+    const offerAmount = lead.offer ? parseFloat(lead.offer) : null;
+
+    const contactSheet: ContactSheetData = {
+      listingContactId: lead.leadId,
+      contact: {
+        contactId: lead.contact.contactId,
+        firstName: lead.contact.firstName,
+        lastName: lead.contact.lastName ?? null,
+        email: lead.contact.email ?? null,
+        phone: lead.contact.phone ?? null,
+        createdAt: lead.createdAt,
+      },
+      hasUpcomingVisit: lead.hasUpcomingVisit ?? false,
+      hasMissedVisit: lead.hasMissedVisit ?? false,
+      hasCompletedVisit: lead.hasCompletedVisit ?? false,
+      hasCancelledVisit: lead.hasCancelledVisit ?? false,
+      hasOffer: lead.hasOffer ?? false,
+      offer: offerAmount,
+      offerAccepted: lead.offerAccepted ?? null,
+    };
+    setSelectedContact(contactSheet);
+  };
+
+  const getBadgeConfig = (lead: LeadWithDetails) => {
+    // Priority matching activity tab exactly
+    if (lead.hasUpcomingVisit) {
+      return {
+        color: "bg-blue-100 text-blue-800",
+        icon: <CalendarIcon className="h-3 w-3" />,
+        title: "Visita pendiente",
+      };
+    } else if (lead.offerAccepted === true) {
+      return {
+        color: "bg-green-100 text-green-800",
+        icon: <ThumbsUp className="h-3 w-3" />,
+        title: "Oferta aceptada",
+      };
+    } else if (lead.offerAccepted === false) {
+      return {
+        color: "bg-rose-100 text-rose-800",
+        icon: <ThumbsDown className="h-3 w-3" />,
+        title: "Oferta rechazada",
+      };
+    } else if (lead.hasOffer && lead.offerAccepted === null) {
+      return {
+        color: "bg-amber-100 text-amber-800",
+        icon: <Handshake className="h-3 w-3" />,
+        title: "Oferta pendiente",
+      };
+    } else if (lead.hasCancelledVisit && !lead.hasUpcomingVisit && !lead.hasOffer) {
+      return {
+        color: "bg-white text-orange-700 border-2 border-dashed border-orange-400",
+        icon: <X className="h-3 w-3" />,
+        title: "Visita cancelada",
+      };
+    } else if (lead.hasMissedVisit && !lead.hasUpcomingVisit && !lead.hasCancelledVisit && !lead.hasOffer) {
+      return {
+        color: "bg-white text-amber-700 border-2 border-dashed border-amber-400",
+        icon: <Clock className="h-3 w-3" />,
+        title: "Visita perdida",
+      };
+    } else if (lead.hasCompletedVisit && !lead.hasOffer && !lead.hasUpcomingVisit && !lead.hasMissedVisit && !lead.hasCancelledVisit) {
+      return {
+        color: "bg-gray-100 text-gray-700",
+        icon: <Check className="h-3 w-3" />,
+        title: "Visita completada",
+      };
+    } else {
+      return {
+        color: "bg-gray-100 text-gray-700",
+        icon: <CalendarPlus className="h-3 w-3" />,
+        title: "Sin visitas",
+      };
     }
   };
 
@@ -324,10 +423,14 @@ export function LeadTable({
               const isUpdating = updatingStatus === leadId;
               const isVisible = visibleRows.has(leadId);
 
+              const badgeConfig = getBadgeConfig(lead);
+
               return (
                 <TableRow
                   key={leadId}
                   ref={getRefCallback(leadId)}
+                  className="cursor-pointer hover:bg-gray-50"
+                  onClick={() => handleRowClick(lead)}
                 >
                   {/* Contact */}
                   <TableCell>
@@ -367,7 +470,10 @@ export function LeadTable({
                       lead.listing ? (
                         <div
                           className="cursor-pointer rounded-lg bg-gray-50 p-2 shadow-sm transition-all hover:bg-gray-100 hover:shadow-md"
-                          onClick={() => handleViewListing(lead.listingId)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewListing(lead.listingId);
+                          }}
                         >
                           <div className="flex items-center justify-between">
                             <div className="min-w-0 flex-1">
@@ -446,33 +552,16 @@ export function LeadTable({
 
                   {/* Status */}
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="group h-8 px-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
-                          disabled={isUpdating}
-                        >
-                          <span className="truncate">{currentStatus}</span>
-                          <ChevronDown className="ml-1 h-3 w-3 opacity-40 transition-opacity group-hover:opacity-70" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="center">
-                        {LEAD_STATUSES.map((status) => (
-                          <DropdownMenuItem
-                            key={status}
-                            onClick={() => handleStatusUpdate(leadId, status)}
-                            disabled={isUpdating}
-                            className={cn(
-                              currentStatus === status && "bg-gray-100",
-                            )}
-                          >
-                            {status}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {isVisible ? (
+                      <Badge className={badgeConfig.color}>
+                        <span className="flex items-center gap-1">
+                          {badgeConfig.icon}
+                          {badgeConfig.title}
+                        </span>
+                      </Badge>
+                    ) : (
+                      <Skeleton className="h-6 w-32" />
+                    )}
                   </TableCell>
 
                   {/* Created */}
@@ -496,6 +585,20 @@ export function LeadTable({
         />
       )}
     </div>
+
+    {/* Contact Detail Sheet */}
+    <ContactDetailSheet
+      contact={selectedContact}
+      isOpen={selectedContact !== null}
+      onClose={() => setSelectedContact(null)}
+      onUpdate={onLeadUpdate}
+      listingId={selectedContact?.contact ? leads.find(l => l.contact.contactId === selectedContact.contact.contactId)?.listingId ?? BigInt(0) : BigInt(0)}
+      listingPrice={selectedContact?.contact ? leads.find(l => l.contact.contactId === selectedContact.contact.contactId)?.listing?.price ?? "0" : "0"}
+      ownerContact={selectedContact?.contact ? (leads.find(l => l.contact.contactId === selectedContact.contact.contactId)?.owner as OwnerContact | null ?? null) : null}
+      permissions={{
+        canEditContacts: true, // TODO: Add proper permission check
+      }}
+    />
     </TooltipProvider>
   );
 }

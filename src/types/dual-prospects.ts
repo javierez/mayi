@@ -24,7 +24,8 @@ export interface SearchProspect extends BaseProspect {
   propertyType?: string;
   minPrice?: number;
   maxPrice?: number;
-  preferredAreas?: Array<{ neighborhoodId: bigint; name: string }>;
+  preferredCities?: string[]; // City names: ["León", "Alicante"]
+  preferredAreas?: Array<{ name: string }>; // Neighborhood names: [{name: "Moisés de León"}]
   minBedrooms?: number;
   minBathrooms?: number;
   minSquareMeters?: number;
@@ -115,10 +116,10 @@ export const CreateSearchProspectSchema = z.object({
   propertyType: z.string().optional(),
   minPrice: z.number().optional(),
   maxPrice: z.number().optional(),
+  preferredCities: z.array(z.string()).optional(),
   preferredAreas: z
     .array(
       z.object({
-        neighborhoodId: z.number().transform((val) => BigInt(val)),
         name: z.string(),
       }),
     )

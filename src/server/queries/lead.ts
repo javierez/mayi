@@ -6,8 +6,9 @@ import {
   contacts,
   listings,
   properties,
+  appointments,
 } from "../db/schema";
-import { eq, and, like, or, aliasedTable, countDistinct, desc, asc } from "drizzle-orm";
+import { eq, and, like, or, aliasedTable, countDistinct, desc, asc, sql, inArray } from "drizzle-orm";
 import type { Lead } from "../../lib/data";
 import { getCurrentUserAccountId } from "../../lib/dal";
 
@@ -62,7 +63,7 @@ export async function listLeadsWithAuth(
   page = 1,
   limit = 10,
   search?: string,
-  statusFilters?: string[],
+  badgeStatusFilters?: string[],
   sourceFilters?: string[],
 ) {
   const accountId = await getCurrentUserAccountId();
@@ -72,7 +73,7 @@ export async function listLeadsWithAuth(
     limit,
     accountId,
     search,
-    statusFilters,
+    badgeStatusFilters,
     sourceFilters,
   );
 }
@@ -372,7 +373,7 @@ export async function listLeadsWithDetails(
   limit = 10,
   accountId: number,
   search?: string,
-  statusFilters?: string[],
+  badgeStatusFilters?: string[],
   sourceFilters?: string[],
 ) {
   try {
@@ -390,22 +391,6 @@ export async function listLeadsWithDetails(
       );
       if (searchCondition) {
         whereConditions.push(searchCondition);
-      }
-    }
-
-    // Add status filters
-    if (statusFilters && statusFilters.length > 0) {
-      const statusConditions = statusFilters.map((status) =>
-        eq(listingContacts.status, status),
-      );
-      if (statusConditions.length > 0) {
-        const statusCondition =
-          statusConditions.length === 1
-            ? statusConditions[0]!
-            : or(...statusConditions);
-        if (statusCondition) {
-          whereConditions.push(statusCondition);
-        }
       }
     }
 
@@ -439,6 +424,8 @@ export async function listLeadsWithDetails(
         prospectId: listingContacts.prospectId,
         source: listingContacts.source,
         status: listingContacts.status,
+        offer: listingContacts.offer,
+        offerAccepted: listingContacts.offerAccepted,
         createdAt: listingContacts.createdAt,
         updatedAt: listingContacts.updatedAt,
 
@@ -530,11 +517,188 @@ export async function listLeadsWithDetails(
 
     const deduplicatedLeads = Array.from(uniqueLeads.values());
 
+    // Get visit counts for each contact-listing pair
+    const contactListingPairs = deduplicatedLeads
+      .filter(lead => {
+        // Access listingId from the lead structure
+        const leadObj = lead as { contactId: bigint | null; listingId: bigint | null };
+        return leadObj.contactId !== null && leadObj.listingId !== null;
+      })
+      .map(lead => {
+        const leadObj = lead as { contactId: bigint; listingId: bigint };
+        return {
+          contactId: leadObj.contactId,
+          listingId: leadObj.listingId,
+        };
+      });
+
+    let visitCounts: Array<{
+      contactId: bigint;
+      listingId: bigint;
+      totalVisits: number;
+      upcomingVisits: number;
+      missedVisits: number;
+      completedVisits: number;
+      cancelledVisits: number;
+    }> = [];
+
+    if (contactListingPairs.length > 0) {
+      const contactIds = [...new Set(contactListingPairs.map(p => p.contactId))];
+      const listingIds = [...new Set(contactListingPairs.map(p => p.listingId))];
+
+      console.log(`🔍 [Leads] Checking appointments for ${contactIds.length} contacts and ${listingIds.length} listings`);
+
+      const visitCountResults = await db
+        .select({
+          contactId: appointments.contactId,
+          listingId: appointments.listingId,
+          totalVisits: sql<number>`COUNT(*)`.as('totalVisits'),
+          upcomingVisits: sql<number>`SUM(CASE WHEN ${appointments.datetimeStart} > NOW() AND ${appointments.status} = 'Scheduled' THEN 1 ELSE 0 END)`.as('upcomingVisits'),
+          missedVisits: sql<number>`SUM(CASE WHEN (${appointments.datetimeStart} < NOW() AND ${appointments.status} = 'Scheduled') OR ${appointments.status} = 'NoShow' THEN 1 ELSE 0 END)`.as('missedVisits'),
+          completedVisits: sql<number>`SUM(CASE WHEN ${appointments.status} = 'Completed' THEN 1 ELSE 0 END)`.as('completedVisits'),
+          cancelledVisits: sql<number>`SUM(CASE WHEN ${appointments.status} = 'Cancelled' THEN 1 ELSE 0 END)`.as('cancelledVisits'),
+        })
+        .from(appointments)
+        .where(
+          and(
+            inArray(appointments.contactId, contactIds),
+            inArray(appointments.listingId, listingIds),
+            eq(appointments.isActive, true)
+          )
+        )
+        .groupBy(appointments.contactId, appointments.listingId);
+
+      console.log(`📊 [Leads] Found ${visitCountResults.length} appointment records`);
+
+      visitCounts = visitCountResults
+        .filter((v): v is { contactId: bigint; listingId: bigint; totalVisits: number; upcomingVisits: number; missedVisits: number; completedVisits: number; cancelledVisits: number } =>
+          v.contactId !== null && v.listingId !== null
+        )
+        .map((v) => ({
+          contactId: v.contactId,
+          listingId: v.listingId,
+          totalVisits: Number(v.totalVisits),
+          upcomingVisits: Number(v.upcomingVisits),
+          missedVisits: Number(v.missedVisits),
+          completedVisits: Number(v.completedVisits),
+          cancelledVisits: Number(v.cancelledVisits),
+        }));
+    }
+
+    const visitMap = new Map(
+      visitCounts.map((v) => [`${v.contactId.toString()}-${v.listingId.toString()}`, v])
+    );
+
+    console.log(`🗺️ [Leads] Visit map has ${visitMap.size} entries`);
+
+    // Merge visit data with leads
+    const leadsWithVisits = deduplicatedLeads.map((lead) => {
+      const leadObj = lead as { contactId: bigint | null; listingId: bigint | null; offer?: string | null };
+      const key = `${leadObj.contactId?.toString() ?? ''}-${leadObj.listingId?.toString() ?? ''}`;
+      const visitStats = visitMap.get(key);
+
+      if (visitStats) {
+        console.log(`✅ [Leads] Found visit stats for lead ${key}:`, visitStats);
+      }
+      const hasUpcomingVisit = (visitStats?.upcomingVisits ?? 0) > 0;
+      const hasMissedVisit = (visitStats?.missedVisits ?? 0) > 0;
+      const hasCompletedVisit = (visitStats?.completedVisits ?? 0) > 0;
+      const hasCancelledVisit = (visitStats?.cancelledVisits ?? 0) > 0;
+      const hasOffer = leadObj.offer !== null && leadObj.offer !== undefined;
+
+      return {
+        ...(lead as Record<string, unknown>),
+        visitCount: visitStats?.totalVisits ?? 0,
+        hasUpcomingVisit,
+        hasMissedVisit,
+        hasCompletedVisit,
+        hasCancelledVisit,
+        hasOffer,
+      };
+    });
+
+    // Filter by badge status if provided
+    let filteredLeads = leadsWithVisits;
+    if (badgeStatusFilters && badgeStatusFilters.length > 0) {
+      filteredLeads = leadsWithVisits.filter((lead) => {
+        const leadObj = lead as {
+          hasUpcomingVisit?: boolean;
+          offerAccepted?: boolean | null;
+          hasOffer?: boolean;
+          hasCancelledVisit?: boolean;
+          hasMissedVisit?: boolean;
+          hasCompletedVisit?: boolean;
+        };
+
+        return badgeStatusFilters.some((filter) => {
+          switch (filter) {
+            case "hasUpcomingVisit":
+              return leadObj.hasUpcomingVisit === true;
+            case "offerAccepted":
+              return leadObj.offerAccepted === true;
+            case "offerRejected":
+              return leadObj.offerAccepted === false;
+            case "offerPending":
+              return leadObj.hasOffer === true && leadObj.offerAccepted === null;
+            case "hasCancelledVisit":
+              return leadObj.hasCancelledVisit === true && !leadObj.hasUpcomingVisit && !leadObj.hasOffer;
+            case "hasMissedVisit":
+              return leadObj.hasMissedVisit === true && !leadObj.hasUpcomingVisit && !leadObj.hasCancelledVisit && !leadObj.hasOffer;
+            case "hasCompletedVisit":
+              return leadObj.hasCompletedVisit === true && !leadObj.hasOffer && !leadObj.hasUpcomingVisit && !leadObj.hasMissedVisit && !leadObj.hasCancelledVisit;
+            case "noVisits":
+              return !leadObj.hasUpcomingVisit && !leadObj.hasMissedVisit && !leadObj.hasCompletedVisit && !leadObj.hasCancelledVisit && !leadObj.hasOffer && leadObj.offerAccepted === null;
+            default:
+              return false;
+          }
+        });
+      });
+    }
+
+    // Sort by priority (same as activity tab)
+    const sortedLeads = filteredLeads.sort((a, b) => {
+      const aLead = a as Record<string, unknown> & { offerAccepted?: boolean | null; hasOffer?: boolean; hasUpcomingVisit?: boolean; hasMissedVisit?: boolean; hasCancelledVisit?: boolean; visitCount?: number; createdAt?: Date };
+      const bLead = b as Record<string, unknown> & { offerAccepted?: boolean | null; hasOffer?: boolean; hasUpcomingVisit?: boolean; hasMissedVisit?: boolean; hasCancelledVisit?: boolean; visitCount?: number; createdAt?: Date };
+
+      // 1. HIGHEST: Offer accepted (deal closing - highest priority)
+      const aOfferAccepted = aLead.offerAccepted === true;
+      const bOfferAccepted = bLead.offerAccepted === true;
+      if (aOfferAccepted !== bOfferAccepted) return aOfferAccepted ? -1 : 1;
+
+      // 2. HIGH: Has pending offer (potential deal in progress)
+      const aHasPendingOffer = aLead.hasOffer && aLead.offerAccepted === null;
+      const bHasPendingOffer = bLead.hasOffer && bLead.offerAccepted === null;
+      if (aHasPendingOffer !== bHasPendingOffer) return aHasPendingOffer ? -1 : 1;
+
+      // 3. IMPORTANT: Offer rejected (needs follow-up or re-engagement)
+      const aOfferRejected = aLead.offerAccepted === false;
+      const bOfferRejected = bLead.offerAccepted === false;
+      if (aOfferRejected !== bOfferRejected) return aOfferRejected ? -1 : 1;
+
+      // 4. URGENT: Has upcoming visit (scheduled, needs preparation)
+      if (aLead.hasUpcomingVisit !== bLead.hasUpcomingVisit) return aLead.hasUpcomingVisit ? -1 : 1;
+
+      // 5. ATTENTION: Has missed visit (needs immediate follow-up)
+      if (aLead.hasMissedVisit !== bLead.hasMissedVisit) return aLead.hasMissedVisit ? -1 : 1;
+
+      // 6. ATTENTION: Has cancelled visit (needs rescheduling)
+      if (aLead.hasCancelledVisit !== bLead.hasCancelledVisit) return aLead.hasCancelledVisit ? -1 : 1;
+
+      // 7. ENGAGEMENT: Visit count (more visits = warmer lead)
+      if (aLead.visitCount !== bLead.visitCount) return (bLead.visitCount ?? 0) - (aLead.visitCount ?? 0);
+
+      // 8. RECENCY: Most recent first (fresher leads)
+      return bLead.createdAt.getTime() - aLead.createdAt.getTime();
+    });
+
+    // Use filtered count if badge filters are applied
+    const finalCount = badgeStatusFilters && badgeStatusFilters.length > 0 ? sortedLeads.length : totalCount;
+
     return {
-      leads: deduplicatedLeads,
-      total: totalCount,
+      leads: sortedLeads,
+      total: finalCount,
       page,
-      totalPages: Math.ceil(totalCount / limit),
+      totalPages: Math.ceil(finalCount / limit),
     };
   } catch (error) {
     console.error("Error listing leads with details:", error);

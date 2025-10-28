@@ -5,11 +5,12 @@ import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { PaginationControls } from "~/components/ui/pagination-controls";
 import { Skeleton } from "~/components/ui/skeleton";
 import { RefreshCw, Search, AlertCircle, Users } from "lucide-react";
-import { MatchCard } from "./match-card";
 import { ExternalAccountCard } from "./external-account-card";
+import { ContactMatchGroup } from "./contact-match-group";
+import { ProspectMatchGroup } from "./prospect-match-group";
+import { ShareListingModal } from "./share-listing-modal";
 import {
   getMatchesForProspectsWithAuth,
   saveMatchWithAuth,
@@ -17,6 +18,7 @@ import {
   contactMatchWithAuth,
   createLeadFromMatchWithAuth,
 } from "~/server/queries/connection-matches";
+import { getAccountWebsiteWithAuth } from "~/server/queries/listing";
 import type {
   MatchResults,
   MatchFilters as MatchFiltersType,
@@ -28,8 +30,6 @@ interface ConexionesPotencialesProps {
   // Props can be extended based on requirements
   className?: string;
 }
-
-const ITEMS_PER_PAGE = 12;
 
 export function ConexionesPotenciales({
   className,
@@ -44,7 +44,6 @@ export function ConexionesPotenciales({
   const [isLoading, setIsLoading] = useState(true);
   const [isExternalLoading, setIsExternalLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState<MatchFiltersType>({
     accountScope: "current",
     includeNearStrict: true,
@@ -59,6 +58,9 @@ export function ConexionesPotenciales({
   const [selectedView, setSelectedView] = useState<
     "internal" | "external" | null
   >("internal");
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState<ProspectMatch | null>(null);
+  const [accountWebsite, setAccountWebsite] = useState<string | null>(null);
 
   // Statistics state
   const [stats, setStats] = useState({
@@ -66,13 +68,25 @@ export function ConexionesPotenciales({
     externalMatches: 0,
   });
 
+  // Fetch account website
+  useEffect(() => {
+    const fetchAccountWebsite = async () => {
+      try {
+        const website = await getAccountWebsiteWithAuth();
+        setAccountWebsite(website);
+      } catch (error) {
+        console.error("Error fetching account website:", error);
+      }
+    };
+    void fetchAccountWebsite();
+  }, []);
+
   // Initialize filters from URL parameters
   useEffect(() => {
     const prospectType = searchParams.get("prospectType");
     const listingType = searchParams.get("listingType");
     const status = searchParams.get("status");
     const urgencyLevel = searchParams.get("urgencyLevel");
-    const page = searchParams.get("page");
 
     setFilters((prev) => ({
       ...prev,
@@ -83,10 +97,6 @@ export function ConexionesPotenciales({
       statuses: status ? status.split(",") : [],
       urgencyLevels: urgencyLevel ? urgencyLevel.split(",") : [],
     }));
-
-    if (page) {
-      setCurrentPage(parseInt(page, 10) || 1);
-    }
   }, [searchParams]);
 
   // Fetch internal matches data
@@ -98,8 +108,8 @@ export function ConexionesPotenciales({
       const result = await getMatchesForProspectsWithAuth({
         filters: { ...filters, accountScope: "current" },
         pagination: {
-          offset: (currentPage - 1) * ITEMS_PER_PAGE,
-          limit: ITEMS_PER_PAGE,
+          offset: 0,
+          limit: 1000,
         },
       });
 
@@ -114,7 +124,7 @@ export function ConexionesPotenciales({
     } finally {
       setIsLoading(false);
     }
-  }, [filters, currentPage]);
+  }, [filters]);
 
   // Fetch external matches data
   const fetchExternalMatches = useCallback(async () => {
@@ -124,8 +134,8 @@ export function ConexionesPotenciales({
       const result = await getMatchesForProspectsWithAuth({
         filters: { ...filters, accountScope: "cross-account" },
         pagination: {
-          offset: (currentPage - 1) * ITEMS_PER_PAGE,
-          limit: ITEMS_PER_PAGE,
+          offset: 0,
+          limit: 1000,
         },
       });
 
@@ -140,7 +150,7 @@ export function ConexionesPotenciales({
     } finally {
       setIsExternalLoading(false);
     }
-  }, [filters, currentPage]);
+  }, [filters]);
 
   // Effect to fetch data when filters or page change
   useEffect(() => {
@@ -151,18 +161,13 @@ export function ConexionesPotenciales({
   // Update stats when matches change
   useEffect(() => {
     const internalMatches = matches?.totalCount ?? 0;
-    const externalMatchesCount = externalMatches?.totalCount ?? 0;
+    const externalMatchesCount = (externalMatches?.matches ?? []).filter((match) => match.isCrossAccount).length;
 
     setStats({
       internalMatches,
       externalMatches: externalMatchesCount,
     });
   }, [matches, externalMatches]);
-
-  // Handle page changes
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
 
   // Handle match actions
   const handleMatchAction = async (
@@ -198,6 +203,12 @@ export function ConexionesPotenciales({
             match.listingId,
           );
           break;
+        case "share":
+          // Open share modal instead of direct action
+          setSelectedMatch(match);
+          setShareModalOpen(true);
+          setActionLoading(null);
+          return; // Early return, don't process as server action
         default:
           throw new Error(`Acción no soportada: ${String(action)}`);
       }
@@ -222,12 +233,13 @@ export function ConexionesPotenciales({
       console.error(`Error executing action ${action}:`, err);
       const actionMessages: Record<string, string> = {
         save: "guardar",
-        dismiss: "descartar", 
+        dismiss: "descartar",
         contact: "contactar",
         "request-contact": "contactar",
         "create-lead": "crear lead para",
+        share: "compartir",
       };
-      
+
       setError(
         `Error al ${actionMessages[action] ?? action} la coincidencia`,
       );
@@ -236,6 +248,7 @@ export function ConexionesPotenciales({
     }
   };
 
+
   // Group external matches by account
   const groupMatchesByAccount = (matches: ProspectMatch[]) => {
     const grouped = matches.reduce(
@@ -243,6 +256,34 @@ export function ConexionesPotenciales({
         const accountId = match.listingAccountId?.toString() || "unknown";
         acc[accountId] ??= [];
         acc[accountId].push(match);
+        return acc;
+      },
+      {} as Record<string, ProspectMatch[]>,
+    );
+    return grouped;
+  };
+
+  // Group internal matches by contact
+  const groupMatchesByContact = (matches: ProspectMatch[]) => {
+    const grouped = matches.reduce(
+      (acc, match) => {
+        const contactId = match.prospect.contacts.contactId.toString();
+        acc[contactId] ??= [];
+        acc[contactId].push(match);
+        return acc;
+      },
+      {} as Record<string, ProspectMatch[]>,
+    );
+    return grouped;
+  };
+
+  // Group matches by prospect within a contact's matches
+  const groupMatchesByProspect = (matches: ProspectMatch[]) => {
+    const grouped = matches.reduce(
+      (acc, match) => {
+        const prospectId = match.prospectId.toString();
+        acc[prospectId] ??= [];
+        acc[prospectId].push(match);
         return acc;
       },
       {} as Record<string, ProspectMatch[]>,
@@ -302,7 +343,7 @@ export function ConexionesPotenciales({
         <CardContent className="p-3">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-lg font-semibold text-gray-900">
                 {stats.internalMatches}
               </p>
               <p className="text-xs text-muted-foreground">Internas</p>
@@ -321,7 +362,7 @@ export function ConexionesPotenciales({
         <CardContent className="p-3">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-lg font-semibold text-gray-900">
                 {stats.externalMatches}
               </p>
               <p className="text-xs text-muted-foreground">Externas</p>
@@ -347,10 +388,6 @@ export function ConexionesPotenciales({
       </CardContent>
     </Card>
   );
-
-  const totalPages = matches
-    ? Math.ceil(matches.totalCount / ITEMS_PER_PAGE)
-    : 0;
 
   return (
     <Card className={`w-full ${className}`}>
@@ -407,38 +444,98 @@ export function ConexionesPotenciales({
             matches &&
             matches.matches.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {matches.matches
-                    .filter((match) => !match.isCrossAccount)
-                    .map((match) => (
-                      <MatchCard
-                        key={`${match.prospectId}-${match.listingId}`}
-                        match={match}
-                        onAction={handleMatchAction}
-                        showActions={true}
-                      />
-                    ))}
-                </div>
+                <div className="space-y-4">
+                  {Object.entries(
+                    groupMatchesByContact(
+                      matches.matches.filter((match) => !match.isCrossAccount)
+                    ),
+                  ).map(([contactId, contactMatches]) => {
+                    const contact = contactMatches[0]?.prospect.contacts;
+                    if (!contact) return null;
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex justify-center">
-                    <PaginationControls
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      onPageChange={handlePageChange}
-                    />
-                  </div>
-                )}
+                    const contactName = `${contact.firstName} ${contact.lastName}`;
+
+                    return (
+                      <ContactMatchGroup
+                        key={contactId}
+                        contactId={contactId}
+                        contactName={contactName}
+                        matches={contactMatches}
+                      >
+                        {Object.entries(groupMatchesByProspect(contactMatches)).map(
+                          ([prospectId, prospectMatches]) => {
+                            const prospect = prospectMatches[0]?.prospect.prospects;
+                            if (!prospect) return null;
+
+                            // Build prospect type display
+                            const listingTypeText =
+                              prospect.listingType === "Sale"
+                                ? "Demanda de Venta"
+                                : "Búsqueda de Alquiler";
+                            const propertyTypeText = prospect.propertyType
+                              ? ` de ${prospect.propertyType.charAt(0).toUpperCase()}${prospect.propertyType.slice(1).toLowerCase()}`
+                              : "";
+                            const prospectType = `${listingTypeText}${propertyTypeText}`;
+
+                            // Parse preferred areas
+                            const parsePreferredAreas = (
+                              preferredAreas: unknown,
+                            ): string[] => {
+                              if (!preferredAreas) return [];
+                              try {
+                                if (Array.isArray(preferredAreas)) {
+                                  return (
+                                    preferredAreas as Array<{ name: string }>
+                                  ).map((area) => area.name);
+                                }
+                                if (typeof preferredAreas === "string") {
+                                  const parsed = JSON.parse(preferredAreas) as unknown;
+                                  if (Array.isArray(parsed)) {
+                                    return (parsed as Array<{ name: string }>).map(
+                                      (area) => area.name,
+                                    );
+                                  }
+                                }
+                              } catch {
+                                return [];
+                              }
+                              return [];
+                            };
+
+                            return (
+                              <ProspectMatchGroup
+                                key={prospectId}
+                                prospectType={prospectType}
+                                prospectDetails={{
+                                  minPrice: prospect.minPrice,
+                                  maxPrice: prospect.maxPrice,
+                                  minBedrooms: prospect.minBedrooms,
+                                  minBathrooms: prospect.minBathrooms,
+                                  preferredAreas: parsePreferredAreas(
+                                    prospect.preferredAreas,
+                                  ),
+                                }}
+                                matches={prospectMatches}
+                                onAction={handleMatchAction}
+                              />
+                            );
+                          },
+                        )}
+                      </ContactMatchGroup>
+                    );
+                  })}
+                </div>
               </>
             ) : selectedView === "external" ? (
               isExternalLoading ? (
                 renderLoadingSkeleton()
-              ) : externalMatches && externalMatches.matches.length > 0 ? (
+              ) : externalMatches && externalMatches.matches.filter((match) => match.isCrossAccount).length > 0 ? (
                 <>
                   <div className="space-y-4">
                     {Object.entries(
-                      groupMatchesByAccount(externalMatches.matches),
+                      groupMatchesByAccount(
+                        externalMatches.matches.filter((match) => match.isCrossAccount)
+                      ),
                     ).map(([accountId, matches]) => (
                       <ExternalAccountCard
                         key={accountId}
@@ -448,21 +545,6 @@ export function ConexionesPotenciales({
                       />
                     ))}
                   </div>
-
-                  {/* Pagination for external matches */}
-                  {Math.ceil(
-                    (externalMatches.totalCount || 0) / ITEMS_PER_PAGE,
-                  ) > 1 && (
-                    <div className="flex justify-center">
-                      <PaginationControls
-                        currentPage={currentPage}
-                        totalPages={Math.ceil(
-                          (externalMatches.totalCount || 0) / ITEMS_PER_PAGE,
-                        )}
-                        onPageChange={handlePageChange}
-                      />
-                    </div>
-                  )}
                 </>
               ) : (
                 <div className="py-12 text-center">
@@ -493,6 +575,16 @@ export function ConexionesPotenciales({
               <span className="text-sm">Procesando acción...</span>
             </div>
           </div>
+        )}
+
+        {/* Share Listing Modal */}
+        {selectedMatch && (
+          <ShareListingModal
+            open={shareModalOpen}
+            onOpenChange={setShareModalOpen}
+            match={selectedMatch}
+            accountWebsite={accountWebsite}
+          />
         )}
       </CardContent>
     </Card>

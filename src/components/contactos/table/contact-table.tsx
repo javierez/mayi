@@ -9,13 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
 import { useRouter } from "next/navigation";
 import { cn } from "~/lib/utils";
 import { Nombre } from "../table-components/list-elements/nombre";

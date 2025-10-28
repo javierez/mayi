@@ -173,6 +173,8 @@ export const locations = singlestoreTable("locations", {
   municipality: varchar("municipality", { length: 100 }).notNull(),
   neighborhood: varchar("neighborhood", { length: 100 }).notNull(),
   neighborhoodClean: varchar("neighborhood_clean", { length: 100 }),
+  latitude: decimal("latitude", { precision: 10, scale: 8 }),
+  longitude: decimal("longitude", { precision: 11, scale: 8 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
@@ -700,6 +702,7 @@ export const prospects = singlestoreTable("prospects", {
   propertyType: varchar("property_type", { length: 20 }), // ENUM('piso','casa','garaje','local','terreno')
   minPrice: decimal("min_price", { precision: 12, scale: 2 }),
   maxPrice: decimal("max_price", { precision: 12, scale: 2 }),
+  preferredCities: json("preferred_cities"), // Array of city names: ["Madrid", "Barcelona"]
   preferredAreas: json("preferred_areas"), // Array of neighborhood objects: [{"neighborhoodId": 1, "name": "Salamanca"}, {"neighborhoodId": 2, "name": "Retiro"}]
   minBedrooms: smallint("min_bedrooms"), // 0-10 is enough
   minBathrooms: smallint("min_bathrooms"), // Same

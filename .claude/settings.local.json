@@ -38,7 +38,10 @@
       "WebFetch(domain:ovc.catastro.meh.es)",
       "WebFetch(domain:www.fotocasa.pro)",
       "mcp__google-maps-platform-code-assist__retrieve-instructions",
-      "Bash(git checkout src/components/propiedades/property-filter.tsx)"
+      "Bash(git checkout src/components/propiedades/property-filter.tsx)",
+      "WebFetch(domain:nominatim.org)",
+      "WebFetch(domain:wiki.openstreetmap.org)",
+      "WebFetch(domain:overpass-api.de)"
     ],
     "deny": [],
     "ask": []

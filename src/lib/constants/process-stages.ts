@@ -89,7 +89,7 @@ const rawProcessStages: ProcessStage[] = [
     label: "Oportunidad",
     status: "accomplished",
     subStages: [
-      { id: "alta", label: "Alta propiedad", status: "accomplished" },
+      { id: "alta", label: "Alta", status: "accomplished" },
       { id: "completar-info", label: "Ficha completa", status: "accomplished" },
       { id: "firma-encargo", label: "Encargo", status: "future" },
     ],
@@ -280,7 +280,15 @@ export function getProcessStages(listing?: Record<string, unknown>): ProcessStag
 
           if (visitasSubstage) {
             visitasSubstage.status = "accomplished";
-            console.log("✅ Step 4: Offer accepted - progressing to 'Arras' and beyond");
+
+            // Mark the next stage (Arras) as ongoing
+            const cierreStage = dynamicStages.find(stage => stage.id === "cierre");
+            const arrasSubstage = cierreStage?.subStages.find(sub => sub.id === "arras");
+            if (arrasSubstage) {
+              arrasSubstage.status = "ongoing";
+            }
+
+            console.log("✅ Step 4: Offer accepted - progressing to 'Arras' (ongoing)");
           }
         }
       }

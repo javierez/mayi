@@ -148,12 +148,14 @@ export const prospectUtils = {
    * @param listingType - 'Sale' or 'Rent'
    * @param propertyType - Property type (piso, casa, etc.)
    * @param locations - Array of location data
+   * @param preferredCities - Array of city names
    * @returns Formatted title string
    */
   generateProspectTitle: (
     listingType: string | null,
     propertyType: string | null,
     locations: LocationData[],
+    preferredCities?: string[] | null,
   ): string => {
     const operation = listingType === "Sale" ? "Compra" : "Alquiler";
     const propertyTypeText = propertyType ?? "Propiedad";
@@ -166,6 +168,9 @@ export const prospectUtils = {
     } else if (locations.length > 1 && locations[0]) {
       // Multiple neighborhoods: show city name
       locationText = ` en ${locations[0].city}`;
+    } else if (preferredCities && preferredCities.length > 0) {
+      // No neighborhoods but has preferred cities: show first city
+      locationText = ` en ${preferredCities[0]}`;
     }
 
     return `${operation} de ${propertyTypeText}${locationText}`;

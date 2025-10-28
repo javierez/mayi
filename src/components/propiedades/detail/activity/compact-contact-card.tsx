@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail, Phone, CalendarPlus, Copy, Check, MessageCircle } from "lucide-react";
+import { Mail, Phone, Copy, Check, MessageCircle } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { useState } from "react";
 import { formatDistance } from "date-fns";

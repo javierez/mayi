@@ -405,7 +405,7 @@ export function AppointmentDetailSheet({
           {appointment.notes && (
             <div className="mt-6 border-l-2 border-gray-300 pl-4 py-1">
               <p className="text-sm text-gray-600 leading-relaxed italic">
-                "{appointment.notes}"
+                &ldquo;{appointment.notes}&rdquo;
               </p>
             </div>
           )}

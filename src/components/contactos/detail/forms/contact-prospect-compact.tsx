@@ -14,6 +14,7 @@ interface ProspectData {
   listingType: string | null;
   propertyType: string | null;
   maxPrice: string | null;
+  preferredCities: string[] | null;
   preferredAreas: Array<{ neighborhoodId?: number; name?: string }> | null;
   minBedrooms: number | null;
   minBathrooms: number | null;
@@ -55,11 +56,12 @@ export function ContactProspectCompact({
         prospect.listingType,
         prospect.propertyType,
         locations,
+        prospect.preferredCities,
       );
       setTitle(generatedTitle);
       return generatedTitle;
     },
-    [prospect.listingType, prospect.propertyType],
+    [prospect.listingType, prospect.propertyType, prospect.preferredCities],
   );
 
   useEffect(() => {
