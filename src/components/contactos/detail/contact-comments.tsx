@@ -93,16 +93,16 @@ function UserCommentItem({
   setDeleteConfirmOpen,
 }: UserCommentItemProps) {
   return (
-    <div className={`${isReply ? "ml-12 pl-4" : ""}`}>
-      <div className="flex space-x-3">
-        <Avatar className={`${isReply ? "h-8 w-8" : "h-10 w-10"}`}>
+    <div className={`max-w-full ${isReply ? "ml-12 pl-4" : ""}`}>
+      <div className="flex space-x-3 max-w-full">
+        <Avatar className={`flex-shrink-0 ${isReply ? "h-8 w-8" : "h-10 w-10"}`}>
           <AvatarImage src={comment.user.image ?? undefined} />
           <AvatarFallback className={`${isReply ? "text-xs" : "text-sm"}`}>
             {comment.user.initials}
           </AvatarFallback>
         </Avatar>
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 max-w-full overflow-hidden">
           <div
             className={`group relative rounded-2xl px-4 py-3 ${
               comment.userId === "temp"
@@ -212,7 +212,7 @@ function UserCommentItem({
               </div>
             ) : (
               <p
-                className={`mt-1 text-gray-900 ${isReply ? "text-xs" : "text-sm"}`}
+                className={`mt-1 text-gray-900 break-words whitespace-pre-wrap ${isReply ? "text-xs" : "text-sm"}`}
               >
                 {comment.content}
               </p>
@@ -220,8 +220,8 @@ function UserCommentItem({
           </div>
 
           {replyingTo === comment.commentId && (
-            <div className="mt-3 flex space-x-3">
-              <div className="flex-1">
+            <div className="mt-3 flex space-x-3 max-w-full">
+              <div className="flex-1 min-w-0 max-w-full">
                 <Textarea
                   placeholder={`Responder a ${comment.user.name}...`}
                   value={replyContents[comment.commentId.toString()] ?? ""}

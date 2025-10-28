@@ -470,31 +470,31 @@ export function ContactDetailSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="flex flex-col">
-        <SheetHeader>
+      <SheetContent className="flex flex-col max-w-2xl p-0">
+        <SheetHeader className="px-6 pt-6">
           <SheetTitle className="flex items-center gap-2">
             <span>{contactName}</span>
           </SheetTitle>
         </SheetHeader>
 
         <ScrollArea className="flex-1 mt-4">
-          <div className="space-y-4 pr-4">
-          {/* Badge Status - Only show if not "none" */}
-          {badgeType !== "none" && (
-            <div className="flex items-center justify-between">
-              <Badge className={badgeConfig.color}>
-                <span className="flex items-center gap-1">
-                  {badgeConfig.icon}
-                  {badgeConfig.title}
-                </span>
-              </Badge>
-            </div>
-          )}
+          <div className="space-y-4 px-6 pb-6">
+            {/* Badge Status - Only show if not "none" */}
+            {badgeType !== "none" && (
+              <div className="flex items-center justify-between">
+                <Badge className={badgeConfig.color}>
+                  <span className="flex items-center gap-1">
+                    {badgeConfig.icon}
+                    {badgeConfig.title}
+                  </span>
+                </Badge>
+              </div>
+            )}
 
-          {/* Content based on badge type */}
-          <div className="space-y-4">
-            {/* Inactive Contact - Show only reactivate option */}
-            {badgeType === "inactive" && (
+            {/* Content based on badge type */}
+            <div className="space-y-4">
+              {/* Inactive Contact - Show only reactivate option */}
+              {badgeType === "inactive" && (
               <div className="space-y-3">
                 <div className="rounded-lg border border-gray-300 bg-gray-50 p-4">
                   <p className="text-sm text-gray-600">
@@ -898,7 +898,6 @@ export function ContactDetailSheet({
 
             {/* Listing Contact Comments Section */}
             <div className="border-t pt-4 mt-4">
-              <h4 className="text-sm font-semibold text-gray-900 mb-3">Notas del Contacto</h4>
               {isLoadingComments ? (
                 <div className="flex justify-center py-8">
                   <Loader className="h-6 w-6 animate-spin text-gray-400" />
@@ -918,6 +917,7 @@ export function ContactDetailSheet({
                   onDeleteComment={handleDeleteComment}
                 />
               )}
+            </div>
             </div>
           </div>
         </ScrollArea>

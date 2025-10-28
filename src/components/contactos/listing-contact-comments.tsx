@@ -5,21 +5,12 @@ import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Card, CardContent } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
 import { MessageCircle, Reply, Edit2, Trash2, Loader2, CheckCircle2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import type { ListingContactCommentWithUser } from "~/types/listing-contact-comments";
-import { LISTING_CONTACT_COMMENT_CATEGORIES } from "~/types/listing-contact-comments";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
 
 // Extended Comment type with status
 interface CommentWithStatus extends ListingContactCommentWithUser {
@@ -89,26 +80,19 @@ function CommentItem({
   setCommentToDelete,
   setDeleteConfirmOpen,
 }: CommentItemProps) {
-  // Get category label
-  const getCategoryLabel = (category: string | null | undefined) => {
-    if (!category) return null;
-    const cat = LISTING_CONTACT_COMMENT_CATEGORIES.find(c => c.value === category);
-    return cat?.label ?? category;
-  };
-
   return (
-    <div className={`${isReply ? "ml-8 pl-2" : ""}`}>
-      <div className="flex space-x-3">
-        <Avatar className={`${isReply ? "h-8 w-8" : "h-10 w-10"}`}>
+    <div className={`max-w-full ${isReply ? "ml-2 sm:ml-6 md:ml-8" : ""}`}>
+      <div className="flex gap-2 sm:gap-3 max-w-full">
+        <Avatar className={`flex-shrink-0 ${isReply ? "h-7 w-7 sm:h-8 sm:w-8" : "h-8 w-8 sm:h-10 sm:w-10"}`}>
           <AvatarImage src={comment.user?.image ?? undefined} />
-          <AvatarFallback className={`${isReply ? "text-xs" : "text-sm"}`}>
+          <AvatarFallback className={`${isReply ? "text-xs" : "text-xs sm:text-sm"}`}>
             {comment.user?.initials ?? "?"}
           </AvatarFallback>
         </Avatar>
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 max-w-full overflow-hidden">
           <div
-            className={`group relative rounded-2xl px-4 py-3 ${
+            className={`group relative rounded-2xl px-3 py-2 sm:px-4 sm:py-3 ${
               comment.userId === "temp"
                 ? "bg-blue-50 opacity-70 shadow-sm"
                 : isReply
@@ -116,74 +100,21 @@ function CommentItem({
                   : "bg-gray-50 shadow-md"
             }`}
           >
-            {/* Action buttons - top right */}
-            <div className="absolute right-2 top-2 flex items-center space-x-1 opacity-0 transition-opacity group-hover:opacity-100">
-              {!isReply && (
-                <button
-                  onClick={() => {
-                    if (replyingTo === comment.commentId) {
-                      setReplyingTo(null);
-                      setReplyContents((prev) => ({
-                        ...prev,
-                        [comment.commentId.toString()]: "",
-                      }));
-                    } else {
-                      setReplyingTo(comment.commentId);
-                    }
-                  }}
-                  className="rounded p-1 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-500"
-                  title="Responder"
-                >
-                  <Reply className="h-3 w-3" />
-                </button>
-              )}
-
-              {currentUserId === comment.userId &&
-                editingComment !== comment.commentId && (
-                  <>
-                    <button
-                      onClick={() => startEditingComment(comment)}
-                      className="rounded p-1 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-500"
-                      title="Editar"
-                    >
-                      <Edit2 className="h-3 w-3" />
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setCommentToDelete(comment.commentId);
-                        setDeleteConfirmOpen(true);
-                      }}
-                      className="rounded p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
-                      title="Eliminar"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </>
-                )}
-            </div>
-
-            <div className="flex items-center space-x-2 pr-16">
+            {/* Header with user info and timestamp */}
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
               <span className={`font-semibold ${isReply ? "text-xs" : "text-sm"}`}>
                 {comment.user?.name}
               </span>
 
-              {/* Category badge */}
-              {comment.category && (
-                <Badge variant="secondary" className="text-xs">
-                  {getCategoryLabel(comment.category)}
-                </Badge>
-              )}
-
               {/* Status indicator */}
               {comment.status === 'sending' && (
-                <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
+                <Loader2 className="h-3 w-3 animate-spin text-gray-400 flex-shrink-0" />
               )}
               {comment.status === 'sent' && currentUserId === comment.userId && (
-                <CheckCircle2 className="h-3 w-3 text-green-500" />
+                <CheckCircle2 className="h-3 w-3 text-green-500 flex-shrink-0" />
               )}
               {comment.status === 'error' && (
-                <div className="h-3 w-3 rounded-full bg-red-500" title="Error al enviar" />
+                <div className="h-3 w-3 rounded-full bg-red-500 flex-shrink-0" title="Error al enviar" />
               )}
 
               <span className={`text-gray-500 ${isReply ? "text-xs" : "text-xs"}`}>
@@ -194,29 +125,13 @@ function CommentItem({
               </span>
             </div>
             {editingComment === comment.commentId ? (
-              <div className="mt-2 space-y-2">
-                <Select
-                  value={editCategory ?? "none"}
-                  onValueChange={(value) => setEditCategory(value === "none" ? null : value)}
-                >
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue placeholder="Categoría (opcional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Sin categoría</SelectItem>
-                    {LISTING_CONTACT_COMMENT_CATEGORIES.map((cat) => (
-                      <SelectItem key={cat.value} value={cat.value}>
-                        {cat.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-2">
                 <Textarea
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
-                  className="min-h-[60px] resize-none"
+                  className="min-h-[50px] sm:min-h-[60px] w-full resize-none text-sm"
                 />
-                <div className="mt-2 flex justify-end space-x-2">
+                <div className="mt-2 flex flex-wrap justify-end gap-2">
                   <Button size="sm" variant="outline" onClick={cancelEditing}>
                     Cancelar
                   </Button>
@@ -230,15 +145,64 @@ function CommentItem({
                 </div>
               </div>
             ) : (
-              <p className={`mt-1 text-gray-900 ${isReply ? "text-xs" : "text-sm"}`}>
-                {comment.content}
-              </p>
+              <>
+                <p className={`text-gray-900 break-words whitespace-pre-wrap ${isReply ? "text-xs" : "text-xs sm:text-sm"}`}>
+                  {comment.content}
+                </p>
+
+                {/* Action buttons - bottom right, visible on mobile, hover on desktop */}
+                <div className="mt-2 flex justify-end items-center gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+                  {!isReply && (
+                    <button
+                      onClick={() => {
+                        if (replyingTo === comment.commentId) {
+                          setReplyingTo(null);
+                          setReplyContents((prev) => ({
+                            ...prev,
+                            [comment.commentId.toString()]: "",
+                          }));
+                        } else {
+                          setReplyingTo(comment.commentId);
+                        }
+                      }}
+                      className="rounded p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-500"
+                      title="Responder"
+                    >
+                      <Reply className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+
+                  {currentUserId === comment.userId &&
+                    editingComment !== comment.commentId && (
+                      <>
+                        <button
+                          onClick={() => startEditingComment(comment)}
+                          className="rounded p-1.5 text-gray-400 transition-colors hover:bg-blue-50 hover:text-blue-500"
+                          title="Editar"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setCommentToDelete(comment.commentId);
+                            setDeleteConfirmOpen(true);
+                          }}
+                          className="rounded p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                          title="Eliminar"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </>
+                    )}
+                </div>
+              </>
             )}
           </div>
 
           {replyingTo === comment.commentId && (
-            <div className="mt-3 flex space-x-3">
-              <div className="flex-1">
+            <div className="mt-2 sm:mt-3 flex w-full max-w-full gap-2 sm:gap-3">
+              <div className="flex-1 min-w-0 max-w-full">
                 <Textarea
                   placeholder={`Responder a ${comment.user?.name}...`}
                   value={replyContents[comment.commentId.toString()] ?? ""}
@@ -248,9 +212,9 @@ function CommentItem({
                       [comment.commentId.toString()]: e.target.value,
                     }))
                   }
-                  className="min-h-[60px] resize-none border-gray-200"
+                  className="min-h-[50px] sm:min-h-[60px] w-full resize-none border-gray-200 text-sm"
                 />
-                <div className="mt-2 flex justify-end space-x-2">
+                <div className="mt-2 flex flex-wrap justify-end gap-2">
                   <Button
                     size="sm"
                     variant="outline"
@@ -279,7 +243,7 @@ function CommentItem({
           )}
 
           {comment.replies.length > 0 && (
-            <div className="mt-3 space-y-3">
+            <div className="mt-2 sm:mt-3 space-y-2 sm:space-y-3">
               {comment.replies.map((reply) => (
                 <CommentItem
                   key={reply.commentId.toString()}
@@ -646,38 +610,22 @@ export function ListingContactComments({
   };
 
   return (
-    <div className="space-y-3">
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex space-x-3">
-            <Avatar className="h-10 w-10">
+    <div className="w-full max-w-full space-y-2 sm:space-y-3">
+      <Card className="w-full max-w-full">
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex w-full max-w-full gap-2 sm:gap-3">
+            <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
               <AvatarImage src={currentUser?.image ?? undefined} />
-              <AvatarFallback>{getCurrentUserInitials()}</AvatarFallback>
+              <AvatarFallback className="text-xs sm:text-sm">{getCurrentUserInitials()}</AvatarFallback>
             </Avatar>
-            <div className="flex-1 space-y-2">
-              <Select
-                value={newCommentCategory ?? "none"}
-                onValueChange={(value) => setNewCommentCategory(value === "none" ? null : value)}
-              >
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Categoría (opcional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sin categoría</SelectItem>
-                  {LISTING_CONTACT_COMMENT_CATEGORIES.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex-1 min-w-0 space-y-2">
               <Textarea
                 placeholder="Escribe una nota..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                className="min-h-[80px] resize-none border-gray-200"
+                className="min-h-[60px] sm:min-h-[80px] w-full resize-none border-gray-200 text-sm"
               />
-              <div className="flex justify-end">
+              <div className="flex flex-wrap justify-end gap-2">
                 <Button
                   onClick={handleAddComment}
                   disabled={!newComment.trim()}
@@ -693,10 +641,10 @@ export function ListingContactComments({
         </CardContent>
       </Card>
 
-      <div className="space-y-3">
+      <div className="w-full max-w-full space-y-2 sm:space-y-3">
         {optimisticComments.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center">
+          <Card className="w-full max-w-full">
+            <CardContent className="py-6 sm:py-8 text-center">
               <p className="text-gray-500 text-sm">
                 No hay notas aún. ¡Añade la primera nota!
               </p>
@@ -704,8 +652,8 @@ export function ListingContactComments({
           </Card>
         ) : (
           optimisticComments.map((comment) => (
-            <Card key={comment.commentId.toString()}>
-              <CardContent className="p-4">
+            <Card key={comment.commentId.toString()} className="w-full max-w-full">
+              <CardContent className="p-3 sm:p-4">
                 <CommentItem
                   comment={comment}
                   currentUserId={currentUserId}
