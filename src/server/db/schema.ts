@@ -425,6 +425,16 @@ export const listings = singlestoreTable("listings", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
+// Listing Activity (track important listing changes)
+export const listingActivity = singlestoreTable("listing_activity", {
+  id: bigint("id", { mode: "bigint" }).primaryKey().autoincrement(),
+  listingId: bigint("listing_id", { mode: "bigint" }).notNull(), // FK → listings.listing_id
+  userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id (WHO changed it)
+  action: varchar("action", { length: 50 }).notNull(), // 'price_changed', 'status_changed', 'portal_published', 'portal_unpublished'
+  details: json("details").notNull(), // { field: 'price', oldValue: 150000, newValue: 145000, reason: 'Market adjustment' }
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Contacts (external people: buyers, sellers, etc.)
 export const contacts = singlestoreTable("contacts", {
   contactId: bigint("contact_id", { mode: "bigint" })
@@ -473,6 +483,19 @@ export const listingContacts = singlestoreTable("listing_contacts", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
 });
+
+// Listing Contact Activity (track lead/contact changes)
+export const listingContactActivity = singlestoreTable(
+  "listing_contact_activity",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().autoincrement(),
+    listingContactId: bigint("listing_contact_id", { mode: "bigint" }).notNull(), // FK → listing_contacts.listing_contact_id
+    userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id (WHO changed it)
+    action: varchar("action", { length: 50 }).notNull(), // 'status_changed', 'offer_received', 'offer_accepted', 'offer_rejected', 'appointment_scheduled'
+    details: json("details").notNull(), // Flexible for different action types: { oldStatus, newStatus, reason } or { amount, notes }
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+);
 
 // Organizations (companies, law firms, banks)
 export const organizations = singlestoreTable("organizations", {
