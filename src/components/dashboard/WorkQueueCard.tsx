@@ -34,7 +34,11 @@ import type {
   UrgentTask,
   TodayAppointment,
 } from "~/server/queries/operaciones-dashboard";
-import { type getMostUrgentTasksWithAuth, updateTaskWithAuth, deleteTaskWithAuth } from "~/server/queries/task";
+import {
+  type getMostUrgentTasksWithAuth,
+  updateTaskWithAuth,
+  deleteTaskWithAuth,
+} from "~/server/queries/task";
 import DaysDropdown from "~/components/ui/DaysDropdown";
 
 type DetailedTask = Awaited<ReturnType<typeof getMostUrgentTasksWithAuth>>[0];
@@ -56,11 +60,16 @@ export default function WorkQueueCard({
   className = "",
   onDaysChange,
 }: WorkQueueCardProps) {
-  const [taskStates, setTaskStates] = useState<Record<string, 'saving' | 'saved' | 'error'>>({});
+  const [taskStates, setTaskStates] = useState<
+    Record<string, "saving" | "saved" | "error">
+  >({});
   const [selectedDays, setSelectedDays] = useState(7);
   const [optimisticTasks, setOptimisticTasks] = useState<DetailedTask[]>([]);
   const [draggingTask, setDraggingTask] = useState<string | null>(null);
-  const [taskToDelete, setTaskToDelete] = useState<{ id: number; title: string } | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
 
   // Update optimistic tasks when detailed tasks change
   useEffect(() => {
@@ -68,13 +77,17 @@ export default function WorkQueueCard({
   }, [detailedTasks]);
 
   // Use optimistic tasks or detailed tasks, sorted with completed tasks at the bottom
-  const tasksToDisplay = (optimisticTasks.length > 0 ? optimisticTasks : detailedTasks).sort((a, b) => {
+  const tasksToDisplay = (
+    optimisticTasks.length > 0 ? optimisticTasks : detailedTasks
+  ).sort((a, b) => {
     // Completed tasks go to the bottom
     if ((a.completed ?? false) !== (b.completed ?? false)) {
       return (a.completed ?? false) ? 1 : -1;
     }
     // Otherwise sort by due date
-    return new Date(a.dueDate ?? 0).getTime() - new Date(b.dueDate ?? 0).getTime();
+    return (
+      new Date(a.dueDate ?? 0).getTime() - new Date(b.dueDate ?? 0).getTime()
+    );
   });
 
   const formatTime = (date: Date) => {
@@ -169,129 +182,143 @@ export default function WorkQueueCard({
   const getAppointmentTypeInSpanish = (appointmentType: string) => {
     // Map English appointment types to Spanish
     const typeMap: Record<string, string> = {
-      "viewing": "visita",
-      "visit": "visita", 
-      "Visita": "visita",
-      "meeting": "reunión",
-      "reunion": "reunión",
-      "Reunión": "reunión",
-      "signing": "firma",
-      "sign": "firma",
-      "Firma": "firma",
-      "closing": "cierre",
-      "close": "cierre", 
-      "Cierre": "cierre",
-      "travel": "viaje",
-      "trip": "viaje",
-      "Viaje": "viaje",
+      viewing: "visita",
+      visit: "visita",
+      Visita: "visita",
+      meeting: "reunión",
+      reunion: "reunión",
+      Reunión: "reunión",
+      signing: "firma",
+      sign: "firma",
+      Firma: "firma",
+      closing: "cierre",
+      close: "cierre",
+      Cierre: "cierre",
+      travel: "viaje",
+      trip: "viaje",
+      Viaje: "viaje",
     };
-    
+
     return typeMap[appointmentType] ?? appointmentType?.toLowerCase() ?? "cita";
   };
 
-  const getInitials = (firstName?: string, lastName?: string, name?: string) => {
+  const getInitials = (
+    firstName?: string,
+    lastName?: string,
+    name?: string,
+  ) => {
     if (firstName && lastName) {
       return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
     }
     if (name) {
-      const parts = name.split(' ').filter(p => p.length > 0);
+      const parts = name.split(" ").filter((p) => p.length > 0);
       if (parts.length >= 2 && parts[0] && parts[1]) {
         return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
       } else if (parts[0]) {
         return parts[0].charAt(0).toUpperCase();
       }
     }
-    return 'U';
+    return "U";
   };
 
   const getRemainingTime = (dueDate?: Date | null) => {
     if (!dueDate) return null;
-    
+
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const taskDate = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-    
-    const fullDueDateTime = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate(), 23, 59);
-    
+    const taskDate = new Date(
+      dueDate.getFullYear(),
+      dueDate.getMonth(),
+      dueDate.getDate(),
+    );
+
+    const fullDueDateTime = new Date(
+      dueDate.getFullYear(),
+      dueDate.getMonth(),
+      dueDate.getDate(),
+      23,
+      59,
+    );
+
     const diffMs = fullDueDateTime.getTime() - now.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
-    
+
     if (diffMs < 0) {
       const overdueDays = Math.abs(diffDays);
       const overdueHours = Math.abs(diffHours);
       if (overdueDays > 0) {
-        return `${overdueDays} día${overdueDays !== 1 ? 's' : ''} vencido`;
+        return `${overdueDays} día${overdueDays !== 1 ? "s" : ""} vencido`;
       } else if (overdueHours > 0) {
-        return `${overdueHours} hora${overdueHours !== 1 ? 's' : ''} vencido`;
+        return `${overdueHours} hora${overdueHours !== 1 ? "s" : ""} vencido`;
       } else {
-        return 'Vencido';
+        return "Vencido";
       }
     }
-    
+
     if (taskDate.getTime() === today.getTime()) {
       if (diffHours > 0) {
-        return `${diffHours} hora${diffHours !== 1 ? 's' : ''} restantes`;
+        return `${diffHours} hora${diffHours !== 1 ? "s" : ""} restantes`;
       } else if (diffMinutes > 0) {
-        return `${diffMinutes} minuto${diffMinutes !== 1 ? 's' : ''} restantes`;
+        return `${diffMinutes} minuto${diffMinutes !== 1 ? "s" : ""} restantes`;
       } else {
-        return 'Vence ahora';
+        return "Vence ahora";
       }
     } else {
-      return `${diffDays} día${diffDays !== 1 ? 's' : ''} restantes`;
+      return `${diffDays} día${diffDays !== 1 ? "s" : ""} restantes`;
     }
   };
 
-  const handleToggleCompleted = async (taskId: number, currentCompleted: boolean) => {
+  const handleToggleCompleted = async (
+    taskId: number,
+    currentCompleted: boolean,
+  ) => {
     const taskIdStr = taskId.toString();
     const newCompleted = !currentCompleted;
-    
+
     // Optimistic update - immediately update the UI
-    setOptimisticTasks(prev => 
-      prev.map(task => 
-        task.taskId === taskId 
-          ? { ...task, completed: newCompleted }
-          : task
-      )
+    setOptimisticTasks((prev) =>
+      prev.map((task) =>
+        task.taskId === taskId ? { ...task, completed: newCompleted } : task,
+      ),
     );
-    
-    setTaskStates(prev => ({ ...prev, [taskIdStr]: 'saving' }));
-    
+
+    setTaskStates((prev) => ({ ...prev, [taskIdStr]: "saving" }));
+
     try {
       // Use the general task update function
       await updateTaskWithAuth(taskId, {
         completed: newCompleted,
       });
-      
-      setTaskStates(prev => ({ ...prev, [taskIdStr]: 'saved' }));
-      
+
+      setTaskStates((prev) => ({ ...prev, [taskIdStr]: "saved" }));
+
       // Clear the saved state after 2 seconds
       setTimeout(() => {
-        setTaskStates(prev => {
+        setTaskStates((prev) => {
           const newStates = { ...prev };
           delete newStates[taskIdStr];
           return newStates;
         });
       }, 2000);
-      
     } catch (error) {
-      console.error('Error updating task:', error);
-      
+      console.error("Error updating task:", error);
+
       // Revert optimistic update on error
-      setOptimisticTasks(prev => 
-        prev.map(task => 
-          task.taskId === taskId 
+      setOptimisticTasks((prev) =>
+        prev.map((task) =>
+          task.taskId === taskId
             ? { ...task, completed: currentCompleted }
-            : task
-        )
+            : task,
+        ),
       );
-      
-      setTaskStates(prev => ({ ...prev, [taskIdStr]: 'error' }));
-      
+
+      setTaskStates((prev) => ({ ...prev, [taskIdStr]: "error" }));
+
       // Clear error state after 5 seconds
       setTimeout(() => {
-        setTaskStates(prev => {
+        setTaskStates((prev) => {
           const newStates = { ...prev };
           delete newStates[taskIdStr];
           return newStates;
@@ -308,43 +335,46 @@ export default function WorkQueueCard({
     const taskIdStr = taskId.toString();
 
     // Store the task for potential reversion
-    const taskToDeleteData = optimisticTasks.find(t => t.taskId === taskId);
+    const taskToDeleteData = optimisticTasks.find((t) => t.taskId === taskId);
     if (!taskToDeleteData) return;
 
     // Close the confirmation dialog
     setTaskToDelete(null);
 
     // Optimistic update - immediately remove from UI
-    setOptimisticTasks(prev => prev.filter(task => task.taskId !== taskId));
-    setTaskStates(prev => ({ ...prev, [taskIdStr]: 'saving' }));
+    setOptimisticTasks((prev) => prev.filter((task) => task.taskId !== taskId));
+    setTaskStates((prev) => ({ ...prev, [taskIdStr]: "saving" }));
 
     try {
       // Use the general task delete function
       await deleteTaskWithAuth(taskId);
-      setTaskStates(prev => ({ ...prev, [taskIdStr]: 'saved' }));
+      setTaskStates((prev) => ({ ...prev, [taskIdStr]: "saved" }));
 
       // Clear the saved state after 1 second
       setTimeout(() => {
-        setTaskStates(prev => {
+        setTaskStates((prev) => {
           const newStates = { ...prev };
           delete newStates[taskIdStr];
           return newStates;
         });
       }, 1000);
-
     } catch (error) {
-      console.error('Error deleting task:', error);
+      console.error("Error deleting task:", error);
 
       // Revert optimistic update on error - restore the task
-      setOptimisticTasks(prev => [...prev, taskToDeleteData].sort((a, b) =>
-        new Date(a.dueDate ?? 0).getTime() - new Date(b.dueDate ?? 0).getTime()
-      ));
+      setOptimisticTasks((prev) =>
+        [...prev, taskToDeleteData].sort(
+          (a, b) =>
+            new Date(a.dueDate ?? 0).getTime() -
+            new Date(b.dueDate ?? 0).getTime(),
+        ),
+      );
 
-      setTaskStates(prev => ({ ...prev, [taskIdStr]: 'error' }));
+      setTaskStates((prev) => ({ ...prev, [taskIdStr]: "error" }));
 
       // Clear error state after 5 seconds
       setTimeout(() => {
-        setTaskStates(prev => {
+        setTaskStates((prev) => {
           const newStates = { ...prev };
           delete newStates[taskIdStr];
           return newStates;
@@ -352,7 +382,6 @@ export default function WorkQueueCard({
       }, 5000);
     }
   };
-
 
   // Legacy handler for old task format
   const handleCompleteTask = async (taskId: bigint) => {
@@ -385,37 +414,36 @@ export default function WorkQueueCard({
             {loading ? (
               <div className="space-y-1.5">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="animate-pulse rounded-lg shadow-md p-2.5">
+                  <div
+                    key={i}
+                    className="animate-pulse rounded-lg p-2.5 shadow-md"
+                  >
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-gray-200 rounded"></div>
-                      <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                      <div className="h-4 w-4 rounded bg-gray-200"></div>
+                      <div className="h-3 w-3/4 rounded bg-gray-200"></div>
                     </div>
                   </div>
                 ))}
               </div>
-            ) : (tasksToDisplay.length > 0 ? tasksToDisplay : tasks).length === 0 ? (
+            ) : (tasksToDisplay.length > 0 ? tasksToDisplay : tasks).length ===
+              0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <CheckCircle2 className="mb-2 h-12 w-12 text-green-500" />
                 <p className="text-sm font-medium text-gray-900">
                   ¡Todo al día!
                 </p>
-                <p className="text-xs text-gray-500">
-                  No hay tareas urgentes
-                </p>
+                <p className="text-xs text-gray-500">No hay tareas urgentes</p>
               </div>
             ) : tasksToDisplay.length > 0 ? (
-              <div className="space-y-1.5 max-h-80 overflow-y-auto custom-scrollbar pr-1">
+              <div className="custom-scrollbar max-h-80 space-y-1.5 overflow-y-auto pr-1">
                 {tasksToDisplay.slice(0, 10).map((task) => {
                   const taskIdStr = task.taskId.toString();
 
                   return (
-                    <div
-                      key={taskIdStr}
-                      className="relative rounded-lg"
-                    >
+                    <div key={taskIdStr} className="relative rounded-lg">
                       {/* Red delete background - only shown when actively swiping this task */}
                       {draggingTask === taskIdStr && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-red-600 flex items-center justify-end px-4 rounded-lg">
+                        <div className="absolute inset-0 flex items-center justify-end rounded-lg bg-gradient-to-r from-red-500 to-red-600 px-4">
                           <Trash2 className="h-5 w-5 text-white" />
                         </div>
                       )}
@@ -442,103 +470,139 @@ export default function WorkQueueCard({
                             confirmDeleteTask(task.taskId, task.title);
                           }
                         }}
-                        className={`relative z-10 cursor-pointer p-2 sm:p-3 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 ${
-                          task.completed ?? false ? 'bg-gray-50 opacity-75' : 'bg-white'
-                        } ${taskStates[taskIdStr] === 'saving' ? 'opacity-70' : ''}`}
-                        onClick={() => handleToggleCompleted(task.taskId, task.completed ?? false)}
+                        className={`relative z-10 cursor-pointer rounded-lg p-2 shadow-md transition-shadow duration-200 hover:shadow-lg sm:p-3 ${
+                          (task.completed ?? false)
+                            ? "bg-gray-50 opacity-75"
+                            : "bg-white"
+                        } ${taskStates[taskIdStr] === "saving" ? "opacity-70" : ""}`}
+                        onClick={() =>
+                          handleToggleCompleted(
+                            task.taskId,
+                            task.completed ?? false,
+                          )
+                        }
                       >
-                      {/* Avatar badge - top right */}
-                      <Avatar className="absolute top-2 right-2 h-4 w-4 sm:h-5 sm:w-5 ring-1 ring-gray-100" title={task.userName ?? (`${task.userFirstName ?? ''} ${task.userLastName ?? ''}`.trim() || 'Usuario')}>
-                        <AvatarFallback className="text-[9px] sm:text-xs font-medium">
-                          {getInitials(task.userFirstName, task.userLastName ?? undefined, task.userName)}
-                        </AvatarFallback>
-                      </Avatar>
+                        {/* Avatar badge - top right */}
+                        <Avatar
+                          className="absolute right-2 top-2 h-4 w-4 ring-1 ring-gray-100 sm:h-5 sm:w-5"
+                          title={
+                            task.userName ??
+                            (`${task.userFirstName ?? ""} ${task.userLastName ?? ""}`.trim() ||
+                              "Usuario")
+                          }
+                        >
+                          <AvatarFallback className="text-[9px] font-medium sm:text-xs">
+                            {getInitials(
+                              task.userFirstName,
+                              task.userLastName ?? undefined,
+                              task.userName,
+                            )}
+                          </AvatarFallback>
+                        </Avatar>
 
-                      {/* Days remaining badge - bottom right on mobile, top right stacked on desktop */}
-                      {task.dueDate && (
-                        <span className={`absolute bottom-2 right-2 sm:top-8 sm:bottom-auto text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full font-medium leading-none border whitespace-nowrap ${
-                          getRemainingTime(task.dueDate)?.includes('vencido') || getRemainingTime(task.dueDate) === 'Vencido'
-                            ? 'text-rose-600 bg-rose-50 border-rose-200'
-                            : 'text-amber-600 bg-amber-50 border-amber-200'
-                        }`}>
-                          {getRemainingTime(task.dueDate)}
-                        </span>
-                      )}
-
-                      {/* Mobile: Compact layout, Desktop: Original layout */}
-                      <div className="flex flex-col gap-1.5">
-                        {/* Header row: Checkbox and Title */}
-                        <div className="flex items-start gap-1.5 sm:gap-2">
-                          {/* Checkbox */}
-                          <div
-                            className={`flex-shrink-0 w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-2 flex items-center justify-center transition-all duration-200 mt-0.5 ${
-                              task.completed ?? false
-                                ? 'bg-emerald-500 border-emerald-500 text-white shadow-sm'
-                                : 'border-gray-300 hover:border-gray-400'
+                        {/* Days remaining badge - bottom right on mobile, top right stacked on desktop */}
+                        {task.dueDate && (
+                          <span
+                            className={`absolute bottom-2 right-2 whitespace-nowrap rounded-full border px-1.5 py-0.5 text-[10px] font-medium leading-none sm:bottom-auto sm:top-8 sm:text-xs ${
+                              getRemainingTime(task.dueDate)?.includes(
+                                "vencido",
+                              ) || getRemainingTime(task.dueDate) === "Vencido"
+                                ? "border-rose-200 bg-rose-50 text-rose-600"
+                                : "border-amber-200 bg-amber-50 text-amber-600"
                             }`}
                           >
-                            {(task.completed ?? false) && <Check className="w-2 h-2 sm:w-2.5 sm:h-2.5" />}
-                          </div>
+                            {getRemainingTime(task.dueDate)}
+                          </span>
+                        )}
 
-                          {/* Title and status icons */}
-                          <div className="flex-1 min-w-0 pr-20 sm:pr-24">
-                            <div className="flex items-start gap-1.5 justify-between">
-                              <h3 className={`font-semibold text-xs sm:text-sm leading-tight flex-1 min-w-0 break-words ${task.completed ?? false ? 'line-through text-gray-500' : 'text-gray-900'}`}>
-                                {task.title.length > 45 ? `${task.title.substring(0, 45)}...` : task.title}
-                              </h3>
+                        {/* Mobile: Compact layout, Desktop: Original layout */}
+                        <div className="flex flex-col gap-1.5">
+                          {/* Header row: Checkbox and Title */}
+                          <div className="flex items-start gap-1.5 sm:gap-2">
+                            {/* Checkbox */}
+                            <div
+                              className={`mt-0.5 flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center rounded border-2 transition-all duration-200 sm:h-4 sm:w-4 ${
+                                (task.completed ?? false)
+                                  ? "border-emerald-500 bg-emerald-500 text-white shadow-sm"
+                                  : "border-gray-300 hover:border-gray-400"
+                              }`}
+                            >
+                              {(task.completed ?? false) && (
+                                <Check className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
+                              )}
+                            </div>
 
-                              {/* Status icons */}
-                              <div className="flex items-center gap-1 flex-shrink-0">
-                                {taskStates[taskIdStr] === 'saving' && (
-                                  <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
-                                )}
-                                {taskStates[taskIdStr] === 'saved' && (
-                                  <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                                )}
+                            {/* Title and status icons */}
+                            <div className="min-w-0 flex-1 pr-20 sm:pr-24">
+                              <div className="flex items-start justify-between gap-1.5">
+                                <h3
+                                  className={`min-w-0 flex-1 break-words text-xs font-semibold leading-tight sm:text-sm ${(task.completed ?? false) ? "text-gray-500 line-through" : "text-gray-900"}`}
+                                >
+                                  {task.title.length > 45
+                                    ? `${task.title.substring(0, 45)}...`
+                                    : task.title}
+                                </h3>
+
+                                {/* Status icons */}
+                                <div className="flex flex-shrink-0 items-center gap-1">
+                                  {taskStates[taskIdStr] === "saving" && (
+                                    <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
+                                  )}
+                                  {taskStates[taskIdStr] === "saved" && (
+                                    <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
+
+                          {/* Property and Contact links - more compact on mobile */}
+                          {(Boolean(task.listingId && task.propertyTitle) ||
+                            Boolean(
+                              task.contactId &&
+                                (task.contactFirstName ?? task.contactLastName),
+                            )) && (
+                            <div className="ml-5 flex flex-wrap items-center gap-1.5 sm:ml-6">
+                              {/* Property Link */}
+                              {task.listingId && task.propertyTitle && (
+                                <Link
+                                  href={`/propiedades/${task.listingId}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-all duration-300 sm:px-2.5 sm:py-1 sm:text-xs ${
+                                    (task.completed ?? false)
+                                      ? "bg-gray-50/50 text-gray-400 shadow-sm hover:bg-gray-100/60 hover:shadow-md"
+                                      : "bg-white text-gray-700 shadow-sm hover:-translate-y-0.5 hover:shadow-md"
+                                  }`}
+                                >
+                                  <Home className="h-2.5 w-2.5 flex-shrink-0 opacity-60 sm:h-3 sm:w-3" />
+                                  <span className="break-words">
+                                    {task.propertyTitle}
+                                  </span>
+                                </Link>
+                              )}
+
+                              {/* Contact Link */}
+                              {task.contactId &&
+                                (task.contactFirstName ??
+                                  task.contactLastName) && (
+                                  <Link
+                                    href={`/contactos/${task.contactId}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-all duration-300 sm:px-2.5 sm:py-1 sm:text-xs ${
+                                      (task.completed ?? false)
+                                        ? "bg-gray-50/50 text-gray-400 shadow-sm hover:bg-gray-100/60 hover:shadow-md"
+                                        : "bg-white text-gray-700 shadow-sm hover:-translate-y-0.5 hover:shadow-md"
+                                    }`}
+                                  >
+                                    <User className="h-2.5 w-2.5 flex-shrink-0 opacity-60 sm:h-3 sm:w-3" />
+                                    <span className="break-words">
+                                      {`${task.contactFirstName ?? ""} ${task.contactLastName ?? ""}`.trim()}
+                                    </span>
+                                  </Link>
+                                )}
+                            </div>
+                          )}
                         </div>
-
-                        {/* Property and Contact links - more compact on mobile */}
-                        {(Boolean(task.listingId && task.propertyTitle) || Boolean(task.contactId && (task.contactFirstName ?? task.contactLastName))) && (
-                          <div className="ml-5 sm:ml-6 flex flex-wrap items-center gap-1.5">
-                            {/* Property Link */}
-                            {task.listingId && task.propertyTitle && (
-                              <Link
-                                href={`/propiedades/${task.listingId}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className={`inline-flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium transition-all duration-300 ${
-                                  task.completed ?? false
-                                    ? 'text-gray-400 bg-gray-50/50 shadow-sm hover:shadow-md hover:bg-gray-100/60'
-                                    : 'text-gray-700 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5'
-                                }`}
-                              >
-                                <Home className="h-2.5 w-2.5 sm:h-3 sm:w-3 opacity-60 flex-shrink-0" />
-                                <span className="break-words">{task.propertyTitle}</span>
-                              </Link>
-                            )}
-
-                            {/* Contact Link */}
-                            {task.contactId && (task.contactFirstName ?? task.contactLastName) && (
-                              <Link
-                                href={`/contactos/${task.contactId}`}
-                                onClick={(e) => e.stopPropagation()}
-                                className={`inline-flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium transition-all duration-300 ${
-                                  task.completed ?? false
-                                    ? 'text-gray-400 bg-gray-50/50 shadow-sm hover:shadow-md hover:bg-gray-100/60'
-                                    : 'text-gray-700 bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5'
-                                }`}
-                              >
-                                <User className="h-2.5 w-2.5 sm:h-3 sm:w-3 opacity-60 flex-shrink-0" />
-                                <span className="break-words">
-                                  {`${task.contactFirstName ?? ''} ${task.contactLastName ?? ''}`.trim()}
-                                </span>
-                              </Link>
-                            )}
-                          </div>
-                        )}
-                      </div>
                       </motion.div>
                     </div>
                   );
@@ -553,7 +617,7 @@ export default function WorkQueueCard({
                 )}
               </div>
             ) : (
-              <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar pr-1">
+              <div className="custom-scrollbar max-h-80 space-y-3 overflow-y-auto pr-1">
                 {tasks.slice(0, 10).map((task, index) => (
                   <motion.div
                     key={task.taskId.toString()}
@@ -657,7 +721,9 @@ export default function WorkQueueCard({
                         {/* Appointments for this date */}
                         <div className="space-y-2">
                           {dayAppointments.map((appointment, index) => {
-                            const { icon: Icon, color } = getAppointmentIcon(appointment.appointmentType);
+                            const { icon: Icon, color } = getAppointmentIcon(
+                              appointment.appointmentType,
+                            );
 
                             return (
                               <motion.div
@@ -668,11 +734,15 @@ export default function WorkQueueCard({
                                 className="group relative cursor-pointer rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100 transition-all duration-200 hover:shadow-md hover:ring-gray-200"
                               >
                                 {/* Icon and Type Badge */}
-                                <div className="absolute top-3 right-3 flex items-center gap-2">
-                                  <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wide">
-                                    {getAppointmentTypeInSpanish(appointment.appointmentType)}
+                                <div className="absolute right-3 top-3 flex items-center gap-2">
+                                  <span className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
+                                    {getAppointmentTypeInSpanish(
+                                      appointment.appointmentType,
+                                    )}
                                   </span>
-                                  <div className={`rounded-full p-1.5 bg-gray-50 ${color}`}>
+                                  <div
+                                    className={`rounded-full bg-gray-50 p-1.5 ${color}`}
+                                  >
                                     <Icon className="h-3 w-3" />
                                   </div>
                                 </div>
@@ -680,16 +750,16 @@ export default function WorkQueueCard({
                                 {/* Main content */}
                                 <div className="pr-16">
                                   {/* Contact name */}
-                                  <h3 className="font-semibold text-sm text-gray-900 mb-1">
+                                  <h3 className="mb-1 text-sm font-semibold text-gray-900">
                                     {appointment.contactName}
                                   </h3>
 
                                   {/* Time */}
-                                  <div className="flex items-center gap-1 mb-2">
+                                  <div className="mb-2 flex items-center gap-1">
                                     <div className="text-xs font-medium text-gray-600">
                                       {formatTime(appointment.startTime)}
                                     </div>
-                                    <div className="w-3 h-px bg-gray-300"></div>
+                                    <div className="h-px w-3 bg-gray-300"></div>
                                     <div className="text-xs text-gray-500">
                                       {formatTime(appointment.endTime)}
                                     </div>
@@ -698,8 +768,8 @@ export default function WorkQueueCard({
                                   {/* Address */}
                                   {appointment.propertyAddress && (
                                     <div className="flex items-start gap-1.5">
-                                      <MapPin className="h-3 w-3 text-gray-400 mt-0.5 flex-shrink-0" />
-                                      <span className="text-xs text-gray-600 leading-relaxed line-clamp-2">
+                                      <MapPin className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400" />
+                                      <span className="line-clamp-2 text-xs leading-relaxed text-gray-600">
                                         {appointment.propertyAddress}
                                       </span>
                                     </div>
@@ -720,7 +790,10 @@ export default function WorkQueueCard({
       </CardContent>
 
       {/* Delete confirmation dialog */}
-      <Dialog open={taskToDelete !== null} onOpenChange={(open) => !open && setTaskToDelete(null)}>
+      <Dialog
+        open={taskToDelete !== null}
+        onOpenChange={(open) => !open && setTaskToDelete(null)}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Eliminar tarea</DialogTitle>
@@ -731,17 +804,14 @@ export default function WorkQueueCard({
 
           {taskToDelete && (
             <div className="py-4">
-              <p className="text-sm font-medium text-gray-900 line-clamp-2">
+              <p className="line-clamp-2 text-sm font-medium text-gray-900">
                 {taskToDelete.title}
               </p>
             </div>
           )}
 
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={() => setTaskToDelete(null)}
-            >
+            <Button variant="outline" onClick={() => setTaskToDelete(null)}>
               Cancelar
             </Button>
             <Button

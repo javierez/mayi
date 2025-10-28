@@ -55,7 +55,10 @@ export function CompactContactCard({
 
   const handleCreateVisit = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigateToPage(`/calendario?new=true&contactId=${contact.contactId}&listingId=${listingId}`, router);
+    navigateToPage(
+      `/calendario?new=true&contactId=${contact.contactId}&listingId=${listingId}`,
+      router,
+    );
   };
 
   const handleCardClick = () => {
@@ -82,24 +85,29 @@ export function CompactContactCard({
         // Subtle shadow for accepted offers
         offerAccepted === true && "shadow-lg",
         // Ghosted effect for other cards when an offer is accepted in the list
-        hasAcceptedOfferInList && offerAccepted !== true && "opacity-50 hover:opacity-75"
+        hasAcceptedOfferInList &&
+          offerAccepted !== true &&
+          "opacity-50 hover:opacity-75",
       )}
     >
       {/* Main content */}
-      <div className="pr-28"> {/* Add right padding to avoid overlap with badges */}
+      <div className="pr-28">
+        {" "}
+        {/* Add right padding to avoid overlap with badges */}
         {/* Contact name */}
-        <div className="font-medium text-sm text-gray-900 mb-1">
+        <div className="mb-1 text-sm font-medium text-gray-900">
           {contact.firstName} {contact.lastName ?? ""}
           <span className="ml-2 text-xs font-normal text-gray-500">
-            ({formatDistance(contact.createdAt, new Date(), {
+            (
+            {formatDistance(contact.createdAt, new Date(), {
               addSuffix: true,
               locale: es,
-            })})
+            })}
+            )
           </span>
         </div>
-
         {/* Contact Info - Email and Phone */}
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
+        <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
           {contact.email && (
             <div className="group flex items-center">
               <div className="mr-1 flex items-center">
@@ -119,7 +127,10 @@ export function CompactContactCard({
                     style={{ transitionDelay: "200ms" }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      void copyToClipboard(contact.email!, `email-${contact.contactId}`);
+                      void copyToClipboard(
+                        contact.email!,
+                        `email-${contact.contactId}`,
+                      );
                     }}
                     title="Copiar email"
                   >
@@ -167,7 +178,10 @@ export function CompactContactCard({
                     style={{ transitionDelay: "300ms" }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      void copyToClipboard(contact.phone!, `phone-${contact.contactId}`);
+                      void copyToClipboard(
+                        contact.phone!,
+                        `phone-${contact.contactId}`,
+                      );
                     }}
                     title="Copiar teléfono"
                   >
@@ -185,50 +199,106 @@ export function CompactContactCard({
             </div>
           )}
         </div>
-
       </div>
 
       {/* Badge - Top right */}
-      <div className="absolute top-2 right-2">
+      <div className="absolute right-2 top-2">
         {/* Visit status badge */}
         <span
-          onClick={(!hasUpcomingVisit && !hasMissedVisit && !hasCompletedVisit && !hasCancelledVisit && !hasOffer && offerAccepted === null) || (hasMissedVisit && !hasUpcomingVisit && !hasOffer && offerAccepted === null) || (hasCancelledVisit && !hasUpcomingVisit && !hasOffer && offerAccepted === null) ? handleCreateVisit : undefined}
+          onClick={
+            (!hasUpcomingVisit &&
+              !hasMissedVisit &&
+              !hasCompletedVisit &&
+              !hasCancelledVisit &&
+              !hasOffer &&
+              offerAccepted === null) ||
+            (hasMissedVisit &&
+              !hasUpcomingVisit &&
+              !hasOffer &&
+              offerAccepted === null) ||
+            (hasCancelledVisit &&
+              !hasUpcomingVisit &&
+              !hasOffer &&
+              offerAccepted === null)
+              ? handleCreateVisit
+              : undefined
+          }
           className={cn(
-            "inline-flex items-center justify-center gap-1 rounded-full px-2 py-0 text-xs font-medium min-w-[120px] h-5",
+            "inline-flex h-5 min-w-[120px] items-center justify-center gap-1 rounded-full px-2 py-0 text-xs font-medium",
             // Visita pendiente - upcoming visit scheduled (highest priority)
-            hasUpcomingVisit &&
-              "bg-blue-100 text-blue-800",
+            hasUpcomingVisit && "bg-blue-100 text-blue-800",
             // Oferta aceptada - offer accepted (deal closing!)
-            offerAccepted === true &&
-              "bg-green-100 text-green-800",
+            offerAccepted === true && "bg-green-100 text-green-800",
             // Oferta rechazada - offer rejected
-            offerAccepted === false &&
-              "bg-rose-100 text-rose-800",
+            offerAccepted === false && "bg-rose-100 text-rose-800",
             // Oferta pendiente - has pending offer (needs decision)
-            hasOffer && !hasUpcomingVisit && offerAccepted === null &&
+            hasOffer &&
+              !hasUpcomingVisit &&
+              offerAccepted === null &&
               "bg-amber-100 text-amber-800",
             // Visita cancelada - has cancelled visit, clickable to reschedule
-            hasCancelledVisit && !hasUpcomingVisit && !hasOffer && offerAccepted === null &&
-              "bg-white text-orange-700 border-2 border-dashed border-orange-400 cursor-pointer hover:bg-orange-50 hover:border-orange-500 transition-colors",
+            hasCancelledVisit &&
+              !hasUpcomingVisit &&
+              !hasOffer &&
+              offerAccepted === null &&
+              "cursor-pointer border-2 border-dashed border-orange-400 bg-white text-orange-700 transition-colors hover:border-orange-500 hover:bg-orange-50",
             // Visita perdida - missed visit, clickable to reschedule
-            hasMissedVisit && !hasUpcomingVisit && !hasCancelledVisit && !hasOffer && offerAccepted === null &&
-              "bg-white text-amber-700 border-2 border-dashed border-amber-400 cursor-pointer hover:bg-amber-50 hover:border-amber-500 transition-colors",
+            hasMissedVisit &&
+              !hasUpcomingVisit &&
+              !hasCancelledVisit &&
+              !hasOffer &&
+              offerAccepted === null &&
+              "cursor-pointer border-2 border-dashed border-amber-400 bg-white text-amber-700 transition-colors hover:border-amber-500 hover:bg-amber-50",
             // Visita completada - completed visit without offer yet
-            hasCompletedVisit && !hasOffer && !hasUpcomingVisit && !hasMissedVisit && !hasCancelledVisit && offerAccepted === null &&
+            hasCompletedVisit &&
+              !hasOffer &&
+              !hasUpcomingVisit &&
+              !hasMissedVisit &&
+              !hasCancelledVisit &&
+              offerAccepted === null &&
               "bg-gray-100 text-gray-700",
             // Sin visitas - no visits at all and no offer
-            !hasUpcomingVisit && !hasMissedVisit && !hasCompletedVisit && !hasCancelledVisit && !hasOffer && offerAccepted === null &&
-              "bg-gray-100 text-gray-700"
+            !hasUpcomingVisit &&
+              !hasMissedVisit &&
+              !hasCompletedVisit &&
+              !hasCancelledVisit &&
+              !hasOffer &&
+              offerAccepted === null &&
+              "bg-gray-100 text-gray-700",
           )}
         >
           {hasUpcomingVisit && "Visita pendiente"}
           {offerAccepted === true && "Oferta aceptada"}
           {offerAccepted === false && "Oferta rechazada"}
-          {hasOffer && !hasUpcomingVisit && offerAccepted === null && "Oferta pendiente"}
-          {hasCancelledVisit && !hasUpcomingVisit && !hasOffer && offerAccepted === null && "Visita cancelada"}
-          {hasMissedVisit && !hasUpcomingVisit && !hasCancelledVisit && !hasOffer && offerAccepted === null && "Visita perdida"}
-          {hasCompletedVisit && !hasOffer && !hasUpcomingVisit && !hasMissedVisit && !hasCancelledVisit && offerAccepted === null && "Visita completada"}
-          {!hasUpcomingVisit && !hasMissedVisit && !hasCompletedVisit && !hasCancelledVisit && !hasOffer && offerAccepted === null && "Sin visitas"}
+          {hasOffer &&
+            !hasUpcomingVisit &&
+            offerAccepted === null &&
+            "Oferta pendiente"}
+          {hasCancelledVisit &&
+            !hasUpcomingVisit &&
+            !hasOffer &&
+            offerAccepted === null &&
+            "Visita cancelada"}
+          {hasMissedVisit &&
+            !hasUpcomingVisit &&
+            !hasCancelledVisit &&
+            !hasOffer &&
+            offerAccepted === null &&
+            "Visita perdida"}
+          {hasCompletedVisit &&
+            !hasOffer &&
+            !hasUpcomingVisit &&
+            !hasMissedVisit &&
+            !hasCancelledVisit &&
+            offerAccepted === null &&
+            "Visita completada"}
+          {!hasUpcomingVisit &&
+            !hasMissedVisit &&
+            !hasCompletedVisit &&
+            !hasCancelledVisit &&
+            !hasOffer &&
+            offerAccepted === null &&
+            "Sin visitas"}
         </span>
       </div>
     </div>

@@ -37,10 +37,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!session?.user) {
-      return NextResponse.json(
-        { error: "No autorizado" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
     // Get accountId from session
@@ -48,12 +45,12 @@ export async function POST(request: NextRequest) {
     if (!accountId) {
       return NextResponse.json(
         { error: "No se encontró la cuenta del usuario" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Parse request body
-    const formData = await request.json() as OnboardingFormData;
+    const formData = (await request.json()) as OnboardingFormData;
 
     console.log("📝 [Onboarding API] Received data for accountId:", accountId);
     console.log("📋 [Onboarding API] Form data:", formData);
@@ -62,7 +59,10 @@ export async function POST(request: NextRequest) {
     const onboardingData = {
       completed: true,
       completedAt: new Date().toISOString(),
-      previousCrm: formData.previousCrm === "other" ? formData.previousCrmOther : formData.previousCrm,
+      previousCrm:
+        formData.previousCrm === "other"
+          ? formData.previousCrmOther
+          : formData.previousCrm,
       referralSource: formData.referralSource,
       teamSize: formData.teamSize,
       businessFocus: formData.businessFocus,
@@ -115,8 +115,7 @@ export async function POST(request: NextRequest) {
         error: "Error al guardar los datos de onboarding",
         details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-

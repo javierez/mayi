@@ -4,10 +4,18 @@ import { useState, useEffect } from "react";
 import { VisitsKPICard } from "./visits-kpi-card";
 import { ContactsKPICard } from "./contacts-kpi-card";
 import { ExpandableSection } from "./expandable-section";
-import { AppointmentCard, type AppointmentData } from "~/components/appointments/appointment-card";
+import {
+  AppointmentCard,
+  type AppointmentData,
+} from "~/components/appointments/appointment-card";
 import { CompactContactCard } from "./compact-contact-card";
 import { EmptyState } from "./empty-states";
-import type { ActivityTabContentProps, ContactSheetData, ContactWithDetails, OwnerContact } from "~/types/activity";
+import type {
+  ActivityTabContentProps,
+  ContactSheetData,
+  ContactWithDetails,
+  OwnerContact,
+} from "~/types/activity";
 import { getListingOwnerContact } from "~/server/queries/activity";
 import { Button } from "~/components/ui/button";
 import { Filter, Check, ChevronDown, X, CalendarPlus } from "lucide-react";
@@ -18,20 +26,38 @@ import {
 } from "~/components/ui/popover";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { canEditCalendar, canDeleteCalendar, canEditContacts } from "~/app/actions/permissions/check-permissions";
+import {
+  canEditCalendar,
+  canDeleteCalendar,
+  canEditContacts,
+} from "~/app/actions/permissions/check-permissions";
 import { useRouter } from "next/navigation";
-import AppointmentModal, { useAppointmentModal } from "~/components/appointments/appointment-modal";
+import AppointmentModal, {
+  useAppointmentModal,
+} from "~/components/appointments/appointment-modal";
 import { AppointmentDetailSheet } from "~/components/appointments/appointment-detail-sheet";
 import { ContactDetailSheet } from "~/components/contactos/contact-detail-sheet";
 import { updateOfferStatusAction } from "~/server/actions/listing-contacts";
 import { navigateToPage } from "~/lib/navigation";
 import { toast } from "sonner";
-import { Loader, FileText, ThumbsUp, Mail, Phone, MessageCircle } from "lucide-react";
+import {
+  Loader,
+  FileText,
+  ThumbsUp,
+  Mail,
+  Phone,
+  MessageCircle,
+} from "lucide-react";
 import { OfferComparisonCard } from "~/components/offer-comparison-card";
 import { AppointmentTimeline } from "~/components/appointment-timeline";
 
 type ActiveView = "visits" | "contacts" | null;
-type VisitStatus = "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow";
+type VisitStatus =
+  | "Completed"
+  | "Scheduled"
+  | "Cancelled"
+  | "Rescheduled"
+  | "NoShow";
 
 const STATUS_LABELS: Record<VisitStatus, string> = {
   Completed: "Completado",
@@ -94,15 +120,16 @@ function AcceptedOfferCard({
         contact.listingContactId,
         accepted,
         listingId,
-        contact.contactId
+        contact.contactId,
       );
 
       if (result.success) {
-        const message = accepted === null
-          ? "Decisión revocada correctamente"
-          : accepted
-            ? "Oferta aceptada correctamente"
-            : "Oferta rechazada";
+        const message =
+          accepted === null
+            ? "Decisión revocada correctamente"
+            : accepted
+              ? "Oferta aceptada correctamente"
+              : "Oferta rechazada";
         toast.success(message);
 
         // Refresh the contact data after successful update
@@ -110,7 +137,9 @@ function AcceptedOfferCard({
           await onUpdate();
         }
       } else {
-        toast.error(result.error ?? "Error al actualizar el estado de la oferta");
+        toast.error(
+          result.error ?? "Error al actualizar el estado de la oferta",
+        );
       }
     } catch (error) {
       console.error("Error updating offer status:", error);
@@ -125,11 +154,11 @@ function AcceptedOfferCard({
   }
 
   return (
-    <div className="rounded-lg border bg-white p-4 transition-all hover:shadow-md space-y-4">
+    <div className="space-y-4 rounded-lg border bg-white p-4 transition-all hover:shadow-md">
       {/* Header with name and badge */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">{contactName}</h3>
-        <Badge className="bg-green-100 text-green-800 text-xs">
+        <Badge className="bg-green-100 text-xs text-green-800">
           <span className="flex items-center gap-1">
             <ThumbsUp className="h-3 w-3" />
             Oferta Aceptada
@@ -138,12 +167,12 @@ function AcceptedOfferCard({
       </div>
 
       {/* Buyer Contact Information */}
-      <div className="space-y-1.5 pb-4 border-b">
+      <div className="space-y-1.5 border-b pb-4">
         {contact.email && (
           <div className="flex items-center gap-2">
             <button
               onClick={() => window.open(`mailto:${contact.email}`, "_blank")}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-gray-900 transition-colors"
+              className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gray-900"
               title="Enviar email"
             >
               <Mail className="h-3.5 w-3.5" />
@@ -158,7 +187,7 @@ function AcceptedOfferCard({
           <div className="flex items-center gap-2">
             <button
               onClick={() => window.open(`tel:${contact.phone}`, "_blank")}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-gray-900 transition-colors"
+              className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gray-900"
               title="Llamar"
             >
               <Phone className="h-3.5 w-3.5" />
@@ -171,7 +200,7 @@ function AcceptedOfferCard({
                 const cleanPhone = (contact.phone ?? "").replace(/\D/g, "");
                 window.open(`https://wa.me/${cleanPhone}`, "_blank");
               }}
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-green-600 transition-colors"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-green-600"
               title="Enviar WhatsApp"
             >
               <MessageCircle className="h-3.5 w-3.5" />
@@ -182,7 +211,7 @@ function AcceptedOfferCard({
       </div>
 
       {/* Offer Comparison with Bars */}
-      <div className="pb-4 border-b">
+      <div className="border-b pb-4">
         <OfferComparisonCard
           offer={contact.offer}
           listingPrice={listingPrice}
@@ -191,11 +220,11 @@ function AcceptedOfferCard({
 
       {/* Action Buttons */}
       {permissions.canEditContacts && (
-        <div className="space-y-2 pb-4 border-b">
+        <div className="space-y-2 border-b pb-4">
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start text-gray-700 hover:text-gray-900 hover:bg-gray-100 h-9"
+            className="h-9 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
             onClick={() => {
               const calendarUrl = `/calendario?new=true&listingId=${listingId}&contactId=${contact.contactId}&type=Firma`;
               navigateToPage(calendarUrl, router);
@@ -207,7 +236,7 @@ function AcceptedOfferCard({
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start text-gray-700 hover:text-gray-900 hover:bg-gray-100 h-9"
+            className="h-9 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
             onClick={() => {
               // TODO: Implement contract generation
               toast.error("Funcionalidad en desarrollo");
@@ -219,9 +248,13 @@ function AcceptedOfferCard({
           <Button
             variant="ghost"
             size="sm"
-            className="w-full justify-start text-gray-700 hover:text-gray-900 hover:bg-gray-100 h-9"
+            className="h-9 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
             onClick={() => {
-              if (confirm("¿Estás seguro de que deseas revocar la aceptación de esta oferta?")) {
+              if (
+                confirm(
+                  "¿Estás seguro de que deseas revocar la aceptación de esta oferta?",
+                )
+              ) {
                 void handleUpdateOfferStatus(null);
               }
             }}
@@ -247,8 +280,10 @@ function AcceptedOfferCard({
           {ownerContact.email && (
             <div className="flex items-center gap-2">
               <button
-                onClick={() => window.open(`mailto:${ownerContact.email}`, "_blank")}
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-gray-900 transition-colors"
+                onClick={() =>
+                  window.open(`mailto:${ownerContact.email}`, "_blank")
+                }
+                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gray-900"
                 title="Enviar email"
               >
                 <Mail className="h-3.5 w-3.5" />
@@ -262,8 +297,10 @@ function AcceptedOfferCard({
           {ownerContact.phone && (
             <div className="flex items-center gap-2">
               <button
-                onClick={() => window.open(`tel:${ownerContact.phone}`, "_blank")}
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-gray-900 transition-colors"
+                onClick={() =>
+                  window.open(`tel:${ownerContact.phone}`, "_blank")
+                }
+                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gray-900"
                 title="Llamar"
               >
                 <Phone className="h-3.5 w-3.5" />
@@ -273,10 +310,13 @@ function AcceptedOfferCard({
               </button>
               <button
                 onClick={() => {
-                  const cleanPhone = (ownerContact.phone ?? "").replace(/\D/g, "");
+                  const cleanPhone = (ownerContact.phone ?? "").replace(
+                    /\D/g,
+                    "",
+                  );
                   window.open(`https://wa.me/${cleanPhone}`, "_blank");
                 }}
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-green-600 transition-colors"
+                className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-green-600"
                 title="Enviar WhatsApp"
               >
                 <MessageCircle className="h-3.5 w-3.5" />
@@ -300,28 +340,36 @@ export function ActivityTabContent({
   const router = useRouter();
 
   const [activeView, setActiveView] = useState<ActiveView>("visits");
-  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentData | null>(null);
-  const [selectedContact, setSelectedContact] = useState<ContactSheetData | null>(null);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<AppointmentData | null>(null);
+  const [selectedContact, setSelectedContact] =
+    useState<ContactSheetData | null>(null);
   const [ownerContact, setOwnerContact] = useState<OwnerContact | null>(null);
 
   // Local state for contacts to enable optimistic updates
-  const [localContacts, setLocalContacts] = useState<ContactWithDetails[]>(contacts);
+  const [localContacts, setLocalContacts] =
+    useState<ContactWithDetails[]>(contacts);
   const [selectedStatuses, setSelectedStatuses] = useState<Set<VisitStatus>>(
-    new Set(["Completed", "Scheduled", "Cancelled", "Rescheduled", "NoShow"])
+    new Set(["Completed", "Scheduled", "Cancelled", "Rescheduled", "NoShow"]),
   );
   const [selectedTypes, setSelectedTypes] = useState<Set<string>>(
-    new Set(["Visita", "Reunión", "Firma", "Cierre", "Viaje"])
+    new Set(["Visita", "Reunión", "Firma", "Cierre", "Viaje"]),
   );
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
+  const [expandedCategories, setExpandedCategories] = useState<
+    Record<string, boolean>
+  >({
     status: true,
     type: true,
     contactStatus: true,
   });
 
   // Permission states
-  const [hasEditCalendarPermission, setHasEditCalendarPermission] = useState<boolean>(false);
-  const [hasDeleteCalendarPermission, setHasDeleteCalendarPermission] = useState<boolean>(false);
-  const [hasEditContactsPermission, setHasEditContactsPermission] = useState<boolean>(false);
+  const [hasEditCalendarPermission, setHasEditCalendarPermission] =
+    useState<boolean>(false);
+  const [hasDeleteCalendarPermission, setHasDeleteCalendarPermission] =
+    useState<boolean>(false);
+  const [hasEditContactsPermission, setHasEditContactsPermission] =
+    useState<boolean>(false);
 
   // Appointment modal state
   const {
@@ -331,15 +379,28 @@ export function ActivityTabContent({
     initialData: modalInitialData,
   } = useAppointmentModal();
   const [editMode, setEditMode] = useState<"create" | "edit">("create");
-  const [editingAppointmentId, setEditingAppointmentId] = useState<bigint | null>(null);
+  const [editingAppointmentId, setEditingAppointmentId] = useState<
+    bigint | null
+  >(null);
 
   // Contact filters - using badge flags instead of status
   const [selectedContactFlags, setSelectedContactFlags] = useState<Set<string>>(
-    new Set(["hasUpcomingVisit", "hasMissedVisit", "hasCancelledVisit", "hasCompletedVisit", "offerAccepted", "offerRejected", "hasOffer", "noVisits"])
+    new Set([
+      "hasUpcomingVisit",
+      "hasMissedVisit",
+      "hasCancelledVisit",
+      "hasCompletedVisit",
+      "offerAccepted",
+      "offerRejected",
+      "hasOffer",
+      "noVisits",
+    ]),
   );
 
   // Contact view mode - switch between accepted offer view and all contacts
-  const [contactViewMode, setContactViewMode] = useState<"accepted" | "all">("all");
+  const [contactViewMode, setContactViewMode] = useState<"accepted" | "all">(
+    "all",
+  );
 
   // Visit view mode - switch between all visits and timeline view for accepted offer
   const [visitViewMode, setVisitViewMode] = useState<"all" | "timeline">("all");
@@ -365,11 +426,12 @@ export function ActivityTabContent({
     const fetchPermissions = async () => {
       console.log("🔐 [Activity] Fetching permissions...");
       try {
-        const [editCalendarPerm, deleteCalendarPerm, editContactsPerm] = await Promise.all([
-          canEditCalendar(),
-          canDeleteCalendar(),
-          canEditContacts(),
-        ]);
+        const [editCalendarPerm, deleteCalendarPerm, editContactsPerm] =
+          await Promise.all([
+            canEditCalendar(),
+            canDeleteCalendar(),
+            canEditContacts(),
+          ]);
         console.log("🔐 [Activity] Permissions fetched:", {
           editCalendar: editCalendarPerm,
           deleteCalendar: deleteCalendarPerm,
@@ -405,38 +467,52 @@ export function ActivityTabContent({
   }, [listingId]);
 
   // Filter visits based on selected statuses and types
-  const filteredVisits = visits.filter((v) =>
-    selectedStatuses.has(v.status as VisitStatus) && selectedTypes.has(v.type ?? "")
+  const filteredVisits = visits.filter(
+    (v) =>
+      selectedStatuses.has(v.status as VisitStatus) &&
+      selectedTypes.has(v.type ?? ""),
   );
 
   // Group visits by category
-  const urgentVisits = filteredVisits.filter(
-    (v) => v.status === "NoShow" || v.status === "Rescheduled"
-  ).sort((a, b) => {
-    // Most recent first for urgent items
-    return new Date(b.datetimeStart).getTime() - new Date(a.datetimeStart).getTime();
-  });
+  const urgentVisits = filteredVisits
+    .filter((v) => v.status === "NoShow" || v.status === "Rescheduled")
+    .sort((a, b) => {
+      // Most recent first for urgent items
+      return (
+        new Date(b.datetimeStart).getTime() -
+        new Date(a.datetimeStart).getTime()
+      );
+    });
 
-  const activeVisits = filteredVisits.filter(
-    (v) => v.status === "Scheduled"
-  ).sort((a, b) => {
-    // Soonest first for upcoming visits
-    return new Date(a.datetimeStart).getTime() - new Date(b.datetimeStart).getTime();
-  });
+  const activeVisits = filteredVisits
+    .filter((v) => v.status === "Scheduled")
+    .sort((a, b) => {
+      // Soonest first for upcoming visits
+      return (
+        new Date(a.datetimeStart).getTime() -
+        new Date(b.datetimeStart).getTime()
+      );
+    });
 
-  const completedVisits = filteredVisits.filter(
-    (v) => v.status === "Completed"
-  ).sort((a, b) => {
-    // Most recent first for completed
-    return new Date(b.datetimeStart).getTime() - new Date(a.datetimeStart).getTime();
-  });
+  const completedVisits = filteredVisits
+    .filter((v) => v.status === "Completed")
+    .sort((a, b) => {
+      // Most recent first for completed
+      return (
+        new Date(b.datetimeStart).getTime() -
+        new Date(a.datetimeStart).getTime()
+      );
+    });
 
-  const cancelledVisits = filteredVisits.filter(
-    (v) => v.status === "Cancelled"
-  ).sort((a, b) => {
-    // Most recent first for cancelled
-    return new Date(b.datetimeStart).getTime() - new Date(a.datetimeStart).getTime();
-  });
+  const cancelledVisits = filteredVisits
+    .filter((v) => v.status === "Cancelled")
+    .sort((a, b) => {
+      // Most recent first for cancelled
+      return (
+        new Date(b.datetimeStart).getTime() -
+        new Date(a.datetimeStart).getTime()
+      );
+    });
 
   // KPI counts (unfiltered - show total counts)
   const allCompletedVisits = visits.filter((v) => v.status === "Completed");
@@ -488,13 +564,15 @@ export function ActivityTabContent({
     if (aOfferRejected !== bOfferRejected) return aOfferRejected ? -1 : 1;
 
     // 4. URGENT: Has upcoming visit (scheduled, needs preparation)
-    if (a.hasUpcomingVisit !== b.hasUpcomingVisit) return a.hasUpcomingVisit ? -1 : 1;
+    if (a.hasUpcomingVisit !== b.hasUpcomingVisit)
+      return a.hasUpcomingVisit ? -1 : 1;
 
     // 5. ATTENTION: Has missed visit (needs immediate follow-up)
     if (a.hasMissedVisit !== b.hasMissedVisit) return a.hasMissedVisit ? -1 : 1;
 
     // 6. ATTENTION: Has cancelled visit (needs rescheduling)
-    if (a.hasCancelledVisit !== b.hasCancelledVisit) return a.hasCancelledVisit ? -1 : 1;
+    if (a.hasCancelledVisit !== b.hasCancelledVisit)
+      return a.hasCancelledVisit ? -1 : 1;
 
     // 7. ENGAGEMENT: Visit count (more visits = warmer lead)
     if (a.visitCount !== b.visitCount) return b.visitCount - a.visitCount;
@@ -509,12 +587,20 @@ export function ActivityTabContent({
 
   // Contacts in offer stage (En Negociación): hasCompletedVisit OR hasOffer OR offerAccepted OR offerRejected
   const contactsInOfferStage = localContacts.filter(
-    (c) => c.hasCompletedVisit || c.hasOffer || c.offerAccepted === true || c.offerAccepted === false
+    (c) =>
+      c.hasCompletedVisit ||
+      c.hasOffer ||
+      c.offerAccepted === true ||
+      c.offerAccepted === false,
   );
 
   // Contacts without visits (Sin Actividad): hasCancelledVisit OR hasMissedVisit OR (no visits at all)
   const contactsWithoutVisits = localContacts.filter(
-    (c) => !c.hasUpcomingVisit && !c.hasCompletedVisit && !c.hasOffer && c.offerAccepted === null
+    (c) =>
+      !c.hasUpcomingVisit &&
+      !c.hasCompletedVisit &&
+      !c.hasOffer &&
+      c.offerAccepted === null,
   );
 
   // New contacts with same sorting
@@ -524,7 +610,9 @@ export function ActivityTabContent({
   const hasAcceptedOffer = sortedContacts.some((c) => c.offerAccepted === true);
 
   // Find the contact with accepted offer (there will only be one)
-  const acceptedOfferContact = sortedContacts.find((c) => c.offerAccepted === true);
+  const acceptedOfferContact = sortedContacts.find(
+    (c) => c.offerAccepted === true,
+  );
 
   // Set default view mode based on whether there's an accepted offer
   useEffect(() => {
@@ -540,8 +628,16 @@ export function ActivityTabContent({
   // Filter visits for accepted offer contact timeline
   const acceptedOfferVisits = acceptedOfferContact
     ? visits
-        .filter((v) => v.contactId?.toString() === acceptedOfferContact.contactId.toString())
-        .sort((a, b) => new Date(a.datetimeStart).getTime() - new Date(b.datetimeStart).getTime()) // Chronological order
+        .filter(
+          (v) =>
+            v.contactId?.toString() ===
+            acceptedOfferContact.contactId.toString(),
+        )
+        .sort(
+          (a, b) =>
+            new Date(a.datetimeStart).getTime() -
+            new Date(b.datetimeStart).getTime(),
+        ) // Chronological order
     : [];
 
   const handleVisitsClick = () => {
@@ -590,25 +686,50 @@ export function ActivityTabContent({
   };
 
   const clearFilters = () => {
-    setSelectedStatuses(new Set(["Completed", "Scheduled", "Cancelled", "Rescheduled", "NoShow"]));
-    setSelectedTypes(new Set(["Visita", "Reunión", "Firma", "Cierre", "Viaje"]));
+    setSelectedStatuses(
+      new Set(["Completed", "Scheduled", "Cancelled", "Rescheduled", "NoShow"]),
+    );
+    setSelectedTypes(
+      new Set(["Visita", "Reunión", "Firma", "Cierre", "Viaje"]),
+    );
   };
 
   const clearContactFilters = () => {
-    setSelectedContactFlags(new Set(["hasUpcomingVisit", "hasMissedVisit", "hasCancelledVisit", "hasCompletedVisit", "offerAccepted", "offerRejected", "hasOffer", "noVisits"]));
+    setSelectedContactFlags(
+      new Set([
+        "hasUpcomingVisit",
+        "hasMissedVisit",
+        "hasCancelledVisit",
+        "hasCompletedVisit",
+        "offerAccepted",
+        "offerRejected",
+        "hasOffer",
+        "noVisits",
+      ]),
+    );
   };
 
   const activeFilterCount =
-    (5 - selectedStatuses.size) + (5 - selectedTypes.size); // Count deselected items
+    5 - selectedStatuses.size + (5 - selectedTypes.size); // Count deselected items
 
-  const activeContactFilterCount =
-    (8 - selectedContactFlags.size); // Count deselected items (8 total flags now)
+  const activeContactFilterCount = 8 - selectedContactFlags.size; // Count deselected items (8 total flags now)
 
   // Get unique types from visits
-  const availableTypes = Array.from(new Set(visits.map((v) => v.type).filter((t): t is string => t !== null)));
+  const availableTypes = Array.from(
+    new Set(visits.map((v) => v.type).filter((t): t is string => t !== null)),
+  );
 
   // All available contact flags (static list)
-  const availableContactFlags = ["hasUpcomingVisit", "hasMissedVisit", "hasCancelledVisit", "hasCompletedVisit", "offerAccepted", "offerRejected", "hasOffer", "noVisits"];
+  const availableContactFlags = [
+    "hasUpcomingVisit",
+    "hasMissedVisit",
+    "hasCancelledVisit",
+    "hasCompletedVisit",
+    "offerAccepted",
+    "offerRejected",
+    "hasOffer",
+    "noVisits",
+  ];
 
   // Handle opening modal for editing
   const handleEditAppointment = (
@@ -623,7 +744,7 @@ export function ActivityTabContent({
   return (
     <div className="space-y-6">
       {/* KPI Navigation Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
         <VisitsKPICard
           completedCount={allCompletedVisits.length}
           scheduledCount={allScheduledVisits.length}
@@ -646,13 +767,13 @@ export function ActivityTabContent({
 
       {/* Visits Content - shown when visits card is active */}
       {activeView === "visits" && (
-        <div className="space-y-4 animate-in fade-in duration-300">
+        <div className="animate-in fade-in space-y-4 duration-300">
           {/* Toggle between all visits and timeline view */}
           {hasAcceptedOffer && acceptedOfferContact && (
-            <div className="flex items-center gap-2 border-b border-gray-200 mb-4">
+            <div className="mb-4 flex items-center gap-2 border-b border-gray-200">
               <button
                 onClick={() => setVisitViewMode("all")}
-                className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+                className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
                   visitViewMode === "all"
                     ? "border-primary text-primary"
                     : "border-transparent text-gray-500 hover:text-gray-700"
@@ -662,7 +783,7 @@ export function ActivityTabContent({
               </button>
               <button
                 onClick={() => setVisitViewMode("timeline")}
-                className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+                className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
                   visitViewMode === "timeline"
                     ? "border-green-600 text-green-700"
                     : "border-transparent text-gray-500 hover:text-gray-700"
@@ -676,42 +797,46 @@ export function ActivityTabContent({
           {/* Filter Button - Only show in "all" visits view */}
           {visitViewMode === "all" && (
             <div className="flex justify-end">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="h-8 relative">
-                  <Filter className="mr-2 h-4 w-4" />
-                  Filtros
-                  {activeFilterCount > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="ml-2 rounded-sm px-1 font-normal"
-                    >
-                      {activeFilterCount}
-                    </Badge>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="w-72 p-0">
-                <div className="flex flex-col">
-                  <ScrollArea className="h-[300px]">
-                    <div className="space-y-6 p-4">
-                      {/* Status Filter Category */}
-                      <div className="space-y-2">
-                        <div
-                          className="flex cursor-pointer items-center justify-between"
-                          onClick={() => toggleCategory("status")}
-                        >
-                          <h5 className="text-sm font-medium text-muted-foreground">
-                            Estado
-                          </h5>
-                          <ChevronDown
-                            className={`h-4 w-4 text-muted-foreground transition-transform ${expandedCategories.status ? "rotate-180 transform" : ""}`}
-                          />
-                        </div>
-                        {expandedCategories.status && (
-                          <div className="space-y-1">
-                            {(Object.entries(STATUS_LABELS) as [VisitStatus, string][]).map(
-                              ([status, label]) => (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="relative h-8">
+                    <Filter className="mr-2 h-4 w-4" />
+                    Filtros
+                    {activeFilterCount > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="ml-2 rounded-sm px-1 font-normal"
+                      >
+                        {activeFilterCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-72 p-0">
+                  <div className="flex flex-col">
+                    <ScrollArea className="h-[300px]">
+                      <div className="space-y-6 p-4">
+                        {/* Status Filter Category */}
+                        <div className="space-y-2">
+                          <div
+                            className="flex cursor-pointer items-center justify-between"
+                            onClick={() => toggleCategory("status")}
+                          >
+                            <h5 className="text-sm font-medium text-muted-foreground">
+                              Estado
+                            </h5>
+                            <ChevronDown
+                              className={`h-4 w-4 text-muted-foreground transition-transform ${expandedCategories.status ? "rotate-180 transform" : ""}`}
+                            />
+                          </div>
+                          {expandedCategories.status && (
+                            <div className="space-y-1">
+                              {(
+                                Object.entries(STATUS_LABELS) as [
+                                  VisitStatus,
+                                  string,
+                                ][]
+                              ).map(([status, label]) => (
                                 <div
                                   key={status}
                                   className="flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
@@ -726,76 +851,80 @@ export function ActivityTabContent({
                                   </div>
                                   <span className="text-sm">{label}</span>
                                 </div>
-                              )
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Type Filter Category */}
-                      <div className="space-y-2">
-                        <div
-                          className="flex cursor-pointer items-center justify-between"
-                          onClick={() => toggleCategory("type")}
-                        >
-                          <h5 className="text-sm font-medium text-muted-foreground">
-                            Tipo
-                          </h5>
-                          <ChevronDown
-                            className={`h-4 w-4 text-muted-foreground transition-transform ${expandedCategories.type ? "rotate-180 transform" : ""}`}
-                          />
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        {expandedCategories.type && (
-                          <div className="space-y-1">
-                            {availableTypes.map((type) => (
-                              <div
-                                key={type}
-                                className="flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
-                                onClick={() => toggleType(type)}
-                              >
-                                <div
-                                  className={`flex h-4 w-4 items-center justify-center rounded border ${selectedTypes.has(type) ? "border-primary bg-primary" : "border-input"}`}
-                                >
-                                  {selectedTypes.has(type) && (
-                                    <Check className="h-3 w-3 text-primary-foreground" />
-                                  )}
-                                </div>
-                                <span className="text-sm">{TYPE_LABELS[type] ?? type}</span>
-                              </div>
-                            ))}
+
+                        {/* Type Filter Category */}
+                        <div className="space-y-2">
+                          <div
+                            className="flex cursor-pointer items-center justify-between"
+                            onClick={() => toggleCategory("type")}
+                          >
+                            <h5 className="text-sm font-medium text-muted-foreground">
+                              Tipo
+                            </h5>
+                            <ChevronDown
+                              className={`h-4 w-4 text-muted-foreground transition-transform ${expandedCategories.type ? "rotate-180 transform" : ""}`}
+                            />
                           </div>
-                        )}
+                          {expandedCategories.type && (
+                            <div className="space-y-1">
+                              {availableTypes.map((type) => (
+                                <div
+                                  key={type}
+                                  className="flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
+                                  onClick={() => toggleType(type)}
+                                >
+                                  <div
+                                    className={`flex h-4 w-4 items-center justify-center rounded border ${selectedTypes.has(type) ? "border-primary bg-primary" : "border-input"}`}
+                                  >
+                                    {selectedTypes.has(type) && (
+                                      <Check className="h-3 w-3 text-primary-foreground" />
+                                    )}
+                                  </div>
+                                  <span className="text-sm">
+                                    {TYPE_LABELS[type] ?? type}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </ScrollArea>
-                  {activeFilterCount > 0 && (
-                    <div className="border-t p-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={clearFilters}
-                        className="h-7 w-full text-xs"
-                      >
-                        <X className="mr-1.5 h-3.5 w-3.5" />
-                        Borrar filtros
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
+                    </ScrollArea>
+                    {activeFilterCount > 0 && (
+                      <div className="border-t p-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={clearFilters}
+                          className="h-7 w-full text-xs"
+                        >
+                          <X className="mr-1.5 h-3.5 w-3.5" />
+                          Borrar filtros
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
           )}
 
           {/* Timeline view for accepted offer */}
           {visitViewMode === "timeline" && acceptedOfferContact && (
             <div>
               <div className="mb-4">
-                <h3 className="text-sm font-medium text-gray-900 mb-1">
-                  Timeline de {acceptedOfferContact.firstName} {acceptedOfferContact.lastName}
+                <h3 className="mb-1 text-sm font-medium text-gray-900">
+                  Timeline de {acceptedOfferContact.firstName}{" "}
+                  {acceptedOfferContact.lastName}
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  {acceptedOfferVisits.length} {acceptedOfferVisits.length === 1 ? "visita" : "visitas"} registradas
+                  {acceptedOfferVisits.length}{" "}
+                  {acceptedOfferVisits.length === 1 ? "visita" : "visitas"}{" "}
+                  registradas
                 </p>
               </div>
               <AppointmentTimeline appointments={acceptedOfferVisits} />
@@ -810,171 +939,207 @@ export function ActivityTabContent({
                 <EmptyState type="completed-visits" />
               )}
 
-            {/* 🔴 Urgent/Action Required Section */}
-            {urgentVisits.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 px-1">
-                  <div className="h-2 w-2 rounded-full bg-rose-500" />
-                  <h3 className="text-sm font-semibold text-rose-700 uppercase tracking-wide">
-                    Requieren Atención ({urgentVisits.length})
-                  </h3>
-                </div>
-                <div className="space-y-3 pl-4">
-                  {urgentVisits.map((visit) => {
-                    const appointmentData: AppointmentData = {
-                      appointmentId: visit.appointmentId,
-                      type: visit.type ?? "",
-                      status: (visit.status ?? "Completed") as "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow",
-                      datetimeStart: visit.datetimeStart,
-                      datetimeEnd: visit.datetimeEnd,
-                      tripTimeMinutes: visit.tripTimeMinutes ?? undefined,
-                      notes: visit.notes ?? undefined,
-                      contactId: visit.contactId ?? undefined,
-                      contactName: `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
-                      propertyAddress: undefined,
-                      agentName: visit.agentName ?? undefined,
-                      isOptimistic: false,
-                    };
-
-                    return (
-                      <AppointmentCard
-                        key={visit.appointmentId.toString()}
-                        appointment={appointmentData}
-                        onClick={(appointment) => {
-                          console.log("🔍 [Activity] Appointment clicked:", appointment.appointmentId.toString());
-                          setSelectedAppointment(appointment);
-                        }}
-                        navigateToVisit={false}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* 🟢 Active/Upcoming Visits Section */}
-            {activeVisits.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 px-1">
-                  <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                  <h3 className="text-sm font-semibold text-emerald-700 uppercase tracking-wide">
-                    Próximas Visitas ({activeVisits.length})
-                  </h3>
-                </div>
-                <div className="space-y-3 pl-4">
-                  {activeVisits.map((visit) => {
-                    const appointmentData: AppointmentData = {
-                      appointmentId: visit.appointmentId,
-                      type: visit.type ?? "",
-                      status: (visit.status ?? "Completed") as "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow",
-                      datetimeStart: visit.datetimeStart,
-                      datetimeEnd: visit.datetimeEnd,
-                      tripTimeMinutes: visit.tripTimeMinutes ?? undefined,
-                      notes: visit.notes ?? undefined,
-                      contactId: visit.contactId ?? undefined,
-                      contactName: `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
-                      propertyAddress: undefined,
-                      agentName: visit.agentName ?? undefined,
-                      isOptimistic: false,
-                    };
-
-                    return (
-                      <AppointmentCard
-                        key={visit.appointmentId.toString()}
-                        appointment={appointmentData}
-                        onClick={(appointment) => {
-                          console.log("🔍 [Activity] Appointment clicked:", appointment.appointmentId.toString());
-                          setSelectedAppointment(appointment);
-                        }}
-                        navigateToVisit={false}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* ✓ Completed Visits Section - Collapsible */}
-            {completedVisits.length > 0 && (
-              <ExpandableSection
-                title="Completadas"
-                count={completedVisits.length}
-                defaultExpanded={false}
-                storageKey={`activity-completed-visits-${listingId}`}
-              >
+              {/* 🔴 Urgent/Action Required Section */}
+              {urgentVisits.length > 0 && (
                 <div className="space-y-3">
-                  {completedVisits.map((visit) => {
-                    const appointmentData: AppointmentData = {
-                      appointmentId: visit.appointmentId,
-                      type: visit.type ?? "",
-                      status: (visit.status ?? "Completed") as "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow",
-                      datetimeStart: visit.datetimeStart,
-                      datetimeEnd: visit.datetimeEnd,
-                      tripTimeMinutes: visit.tripTimeMinutes ?? undefined,
-                      notes: visit.notes ?? undefined,
-                      contactId: visit.contactId ?? undefined,
-                      contactName: `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
-                      propertyAddress: undefined,
-                      agentName: visit.agentName ?? undefined,
-                      isOptimistic: false,
-                    };
+                  <div className="flex items-center gap-2 px-1">
+                    <div className="h-2 w-2 rounded-full bg-rose-500" />
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-rose-700">
+                      Requieren Atención ({urgentVisits.length})
+                    </h3>
+                  </div>
+                  <div className="space-y-3 pl-4">
+                    {urgentVisits.map((visit) => {
+                      const appointmentData: AppointmentData = {
+                        appointmentId: visit.appointmentId,
+                        type: visit.type ?? "",
+                        status: (visit.status ?? "Completed") as
+                          | "Completed"
+                          | "Scheduled"
+                          | "Cancelled"
+                          | "Rescheduled"
+                          | "NoShow",
+                        datetimeStart: visit.datetimeStart,
+                        datetimeEnd: visit.datetimeEnd,
+                        tripTimeMinutes: visit.tripTimeMinutes ?? undefined,
+                        notes: visit.notes ?? undefined,
+                        contactId: visit.contactId ?? undefined,
+                        contactName:
+                          `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
+                        propertyAddress: undefined,
+                        agentName: visit.agentName ?? undefined,
+                        isOptimistic: false,
+                      };
 
-                    return (
-                      <AppointmentCard
-                        key={visit.appointmentId.toString()}
-                        appointment={appointmentData}
-                        onClick={(appointment) => {
-                          console.log("🔍 [Activity] Appointment clicked:", appointment.appointmentId.toString());
-                          setSelectedAppointment(appointment);
-                        }}
-                        navigateToVisit={false}
-                      />
-                    );
-                  })}
+                      return (
+                        <AppointmentCard
+                          key={visit.appointmentId.toString()}
+                          appointment={appointmentData}
+                          onClick={(appointment) => {
+                            console.log(
+                              "🔍 [Activity] Appointment clicked:",
+                              appointment.appointmentId.toString(),
+                            );
+                            setSelectedAppointment(appointment);
+                          }}
+                          navigateToVisit={false}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
-              </ExpandableSection>
-            )}
+              )}
 
-            {/* ✕ Cancelled Visits Section - Collapsible */}
-            {cancelledVisits.length > 0 && (
-              <ExpandableSection
-                title="Canceladas"
-                count={cancelledVisits.length}
-                defaultExpanded={false}
-                storageKey={`activity-cancelled-visits-${listingId}`}
-              >
+              {/* 🟢 Active/Upcoming Visits Section */}
+              {activeVisits.length > 0 && (
                 <div className="space-y-3">
-                  {cancelledVisits.map((visit) => {
-                    const appointmentData: AppointmentData = {
-                      appointmentId: visit.appointmentId,
-                      type: visit.type ?? "",
-                      status: (visit.status ?? "Completed") as "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow",
-                      datetimeStart: visit.datetimeStart,
-                      datetimeEnd: visit.datetimeEnd,
-                      tripTimeMinutes: visit.tripTimeMinutes ?? undefined,
-                      notes: visit.notes ?? undefined,
-                      contactId: visit.contactId ?? undefined,
-                      contactName: `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
-                      propertyAddress: undefined,
-                      agentName: visit.agentName ?? undefined,
-                      isOptimistic: false,
-                    };
+                  <div className="flex items-center gap-2 px-1">
+                    <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-emerald-700">
+                      Próximas Visitas ({activeVisits.length})
+                    </h3>
+                  </div>
+                  <div className="space-y-3 pl-4">
+                    {activeVisits.map((visit) => {
+                      const appointmentData: AppointmentData = {
+                        appointmentId: visit.appointmentId,
+                        type: visit.type ?? "",
+                        status: (visit.status ?? "Completed") as
+                          | "Completed"
+                          | "Scheduled"
+                          | "Cancelled"
+                          | "Rescheduled"
+                          | "NoShow",
+                        datetimeStart: visit.datetimeStart,
+                        datetimeEnd: visit.datetimeEnd,
+                        tripTimeMinutes: visit.tripTimeMinutes ?? undefined,
+                        notes: visit.notes ?? undefined,
+                        contactId: visit.contactId ?? undefined,
+                        contactName:
+                          `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
+                        propertyAddress: undefined,
+                        agentName: visit.agentName ?? undefined,
+                        isOptimistic: false,
+                      };
 
-                    return (
-                      <AppointmentCard
-                        key={visit.appointmentId.toString()}
-                        appointment={appointmentData}
-                        onClick={(appointment) => {
-                          console.log("🔍 [Activity] Appointment clicked:", appointment.appointmentId.toString());
-                          setSelectedAppointment(appointment);
-                        }}
-                        navigateToVisit={false}
-                      />
-                    );
-                  })}
+                      return (
+                        <AppointmentCard
+                          key={visit.appointmentId.toString()}
+                          appointment={appointmentData}
+                          onClick={(appointment) => {
+                            console.log(
+                              "🔍 [Activity] Appointment clicked:",
+                              appointment.appointmentId.toString(),
+                            );
+                            setSelectedAppointment(appointment);
+                          }}
+                          navigateToVisit={false}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
-              </ExpandableSection>
-            )}
+              )}
+
+              {/* ✓ Completed Visits Section - Collapsible */}
+              {completedVisits.length > 0 && (
+                <ExpandableSection
+                  title="Completadas"
+                  count={completedVisits.length}
+                  defaultExpanded={false}
+                  storageKey={`activity-completed-visits-${listingId}`}
+                >
+                  <div className="space-y-3">
+                    {completedVisits.map((visit) => {
+                      const appointmentData: AppointmentData = {
+                        appointmentId: visit.appointmentId,
+                        type: visit.type ?? "",
+                        status: (visit.status ?? "Completed") as
+                          | "Completed"
+                          | "Scheduled"
+                          | "Cancelled"
+                          | "Rescheduled"
+                          | "NoShow",
+                        datetimeStart: visit.datetimeStart,
+                        datetimeEnd: visit.datetimeEnd,
+                        tripTimeMinutes: visit.tripTimeMinutes ?? undefined,
+                        notes: visit.notes ?? undefined,
+                        contactId: visit.contactId ?? undefined,
+                        contactName:
+                          `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
+                        propertyAddress: undefined,
+                        agentName: visit.agentName ?? undefined,
+                        isOptimistic: false,
+                      };
+
+                      return (
+                        <AppointmentCard
+                          key={visit.appointmentId.toString()}
+                          appointment={appointmentData}
+                          onClick={(appointment) => {
+                            console.log(
+                              "🔍 [Activity] Appointment clicked:",
+                              appointment.appointmentId.toString(),
+                            );
+                            setSelectedAppointment(appointment);
+                          }}
+                          navigateToVisit={false}
+                        />
+                      );
+                    })}
+                  </div>
+                </ExpandableSection>
+              )}
+
+              {/* ✕ Cancelled Visits Section - Collapsible */}
+              {cancelledVisits.length > 0 && (
+                <ExpandableSection
+                  title="Canceladas"
+                  count={cancelledVisits.length}
+                  defaultExpanded={false}
+                  storageKey={`activity-cancelled-visits-${listingId}`}
+                >
+                  <div className="space-y-3">
+                    {cancelledVisits.map((visit) => {
+                      const appointmentData: AppointmentData = {
+                        appointmentId: visit.appointmentId,
+                        type: visit.type ?? "",
+                        status: (visit.status ?? "Completed") as
+                          | "Completed"
+                          | "Scheduled"
+                          | "Cancelled"
+                          | "Rescheduled"
+                          | "NoShow",
+                        datetimeStart: visit.datetimeStart,
+                        datetimeEnd: visit.datetimeEnd,
+                        tripTimeMinutes: visit.tripTimeMinutes ?? undefined,
+                        notes: visit.notes ?? undefined,
+                        contactId: visit.contactId ?? undefined,
+                        contactName:
+                          `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
+                        propertyAddress: undefined,
+                        agentName: visit.agentName ?? undefined,
+                        isOptimistic: false,
+                      };
+
+                      return (
+                        <AppointmentCard
+                          key={visit.appointmentId.toString()}
+                          appointment={appointmentData}
+                          onClick={(appointment) => {
+                            console.log(
+                              "🔍 [Activity] Appointment clicked:",
+                              appointment.appointmentId.toString(),
+                            );
+                            setSelectedAppointment(appointment);
+                          }}
+                          navigateToVisit={false}
+                        />
+                      );
+                    })}
+                  </div>
+                </ExpandableSection>
+              )}
             </div>
           )}
         </div>
@@ -982,13 +1147,13 @@ export function ActivityTabContent({
 
       {/* Contacts Content - shown when contacts card is active */}
       {activeView === "contacts" && (
-        <div className="space-y-4 animate-in fade-in duration-300">
+        <div className="animate-in fade-in space-y-4 duration-300">
           {/* Tab Toggle - Only show when there's an accepted offer */}
           {hasAcceptedOffer && (
             <div className="flex items-center gap-2 border-b border-gray-200">
               <button
                 onClick={() => setContactViewMode("accepted")}
-                className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+                className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
                   contactViewMode === "accepted"
                     ? "border-green-600 text-green-700"
                     : "border-transparent text-gray-500 hover:text-gray-700"
@@ -998,7 +1163,7 @@ export function ActivityTabContent({
               </button>
               <button
                 onClick={() => setContactViewMode("all")}
-                className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+                className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
                   contactViewMode === "all"
                     ? "border-primary text-primary"
                     : "border-transparent text-gray-500 hover:text-gray-700"
@@ -1012,78 +1177,80 @@ export function ActivityTabContent({
           {/* Contact Filter Button - Only show in "all" view */}
           {contactViewMode === "all" && (
             <div className="flex justify-end">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="h-8 relative">
-                  <Filter className="mr-2 h-4 w-4" />
-                  Filtros
-                  {activeContactFilterCount > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="ml-2 rounded-sm px-1 font-normal"
-                    >
-                      {activeContactFilterCount}
-                    </Badge>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="w-72 p-0">
-                <div className="flex flex-col">
-                  <ScrollArea className="h-[300px]">
-                    <div className="space-y-6 p-4">
-                      {/* Contact Badge Filters */}
-                      <div className="space-y-2">
-                        <div
-                          className="flex cursor-pointer items-center justify-between"
-                          onClick={() => toggleCategory("contactStatus")}
-                        >
-                          <h5 className="text-sm font-medium text-muted-foreground">
-                            Estado de Visita
-                          </h5>
-                          <ChevronDown
-                            className={`h-4 w-4 text-muted-foreground transition-transform ${expandedCategories.contactStatus ? "rotate-180 transform" : ""}`}
-                          />
-                        </div>
-                        {expandedCategories.contactStatus && (
-                          <div className="space-y-1">
-                            {availableContactFlags.map((flag) => (
-                              <div
-                                key={flag}
-                                className="flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
-                                onClick={() => toggleContactFlag(flag)}
-                              >
-                                <div
-                                  className={`flex h-4 w-4 items-center justify-center rounded border ${selectedContactFlags.has(flag) ? "border-primary bg-primary" : "border-input"}`}
-                                >
-                                  {selectedContactFlags.has(flag) && (
-                                    <Check className="h-3 w-3 text-primary-foreground" />
-                                  )}
-                                </div>
-                                <span className="text-sm">{CONTACT_FLAG_LABELS[flag]}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </ScrollArea>
-                  {activeContactFilterCount > 0 && (
-                    <div className="border-t p-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={clearContactFilters}
-                        className="h-7 w-full text-xs"
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="relative h-8">
+                    <Filter className="mr-2 h-4 w-4" />
+                    Filtros
+                    {activeContactFilterCount > 0 && (
+                      <Badge
+                        variant="secondary"
+                        className="ml-2 rounded-sm px-1 font-normal"
                       >
-                        <X className="mr-1.5 h-3.5 w-3.5" />
-                        Borrar filtros
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
-          </div>
+                        {activeContactFilterCount}
+                      </Badge>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-72 p-0">
+                  <div className="flex flex-col">
+                    <ScrollArea className="h-[300px]">
+                      <div className="space-y-6 p-4">
+                        {/* Contact Badge Filters */}
+                        <div className="space-y-2">
+                          <div
+                            className="flex cursor-pointer items-center justify-between"
+                            onClick={() => toggleCategory("contactStatus")}
+                          >
+                            <h5 className="text-sm font-medium text-muted-foreground">
+                              Estado de Visita
+                            </h5>
+                            <ChevronDown
+                              className={`h-4 w-4 text-muted-foreground transition-transform ${expandedCategories.contactStatus ? "rotate-180 transform" : ""}`}
+                            />
+                          </div>
+                          {expandedCategories.contactStatus && (
+                            <div className="space-y-1">
+                              {availableContactFlags.map((flag) => (
+                                <div
+                                  key={flag}
+                                  className="flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
+                                  onClick={() => toggleContactFlag(flag)}
+                                >
+                                  <div
+                                    className={`flex h-4 w-4 items-center justify-center rounded border ${selectedContactFlags.has(flag) ? "border-primary bg-primary" : "border-input"}`}
+                                  >
+                                    {selectedContactFlags.has(flag) && (
+                                      <Check className="h-3 w-3 text-primary-foreground" />
+                                    )}
+                                  </div>
+                                  <span className="text-sm">
+                                    {CONTACT_FLAG_LABELS[flag]}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </ScrollArea>
+                    {activeContactFilterCount > 0 && (
+                      <div className="border-t p-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={clearContactFilters}
+                          className="h-7 w-full text-xs"
+                        >
+                          <X className="mr-1.5 h-3.5 w-3.5" />
+                          Borrar filtros
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
           )}
 
           {/* Accepted Offer View */}
@@ -1108,52 +1275,10 @@ export function ActivityTabContent({
                 <EmptyState type="new-contacts" />
               )}
 
-            {/* New Contacts Section */}
-            {newContacts.length > 0 && (
-              <div className="space-y-2">
-                {newContacts.map((contact) => (
-                  <CompactContactCard
-                    key={contact.contactId.toString()}
-                    listingContactId={contact.listingContactId}
-                    contact={{
-                      contactId: contact.contactId,
-                      firstName: contact.firstName,
-                      lastName: contact.lastName,
-                      email: contact.email,
-                      phone: contact.phone,
-                      createdAt: contact.createdAt,
-                    }}
-                    listingContact={{
-                      source: contact.source,
-                      status: contact.status,
-                      contactType: contact.contactType as "buyer" | "owner" | "viewer",
-                    }}
-                    hasUpcomingVisit={contact.hasUpcomingVisit}
-                    hasMissedVisit={contact.hasMissedVisit}
-                    hasCompletedVisit={contact.hasCompletedVisit}
-                    hasCancelledVisit={contact.hasCancelledVisit}
-                    hasOffer={contact.hasOffer}
-                    offer={contact.offer}
-                    offerAccepted={contact.offerAccepted}
-                    visitCount={contact.visitCount}
-                    listingId={listingId}
-                    onContactClick={setSelectedContact}
-                    hasAcceptedOfferInList={hasAcceptedOffer}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* All Contacts Section */}
-            {sortedContacts.length > newContacts.length && (
-              <ExpandableSection
-                title="Todos los Contactos"
-                count={sortedContacts.length}
-                defaultExpanded={false}
-                storageKey={`activity-all-contacts-${listingId}`}
-              >
+              {/* New Contacts Section */}
+              {newContacts.length > 0 && (
                 <div className="space-y-2">
-                  {sortedContacts.map((contact) => (
+                  {newContacts.map((contact) => (
                     <CompactContactCard
                       key={contact.contactId.toString()}
                       listingContactId={contact.listingContactId}
@@ -1168,7 +1293,10 @@ export function ActivityTabContent({
                       listingContact={{
                         source: contact.source,
                         status: contact.status,
-                        contactType: contact.contactType as "buyer" | "owner" | "viewer",
+                        contactType: contact.contactType as
+                          | "buyer"
+                          | "owner"
+                          | "viewer",
                       }}
                       hasUpcomingVisit={contact.hasUpcomingVisit}
                       hasMissedVisit={contact.hasMissedVisit}
@@ -1183,9 +1311,54 @@ export function ActivityTabContent({
                       hasAcceptedOfferInList={hasAcceptedOffer}
                     />
                   ))}
-              </div>
-            </ExpandableSection>
-          )}
+                </div>
+              )}
+
+              {/* All Contacts Section */}
+              {sortedContacts.length > newContacts.length && (
+                <ExpandableSection
+                  title="Todos los Contactos"
+                  count={sortedContacts.length}
+                  defaultExpanded={false}
+                  storageKey={`activity-all-contacts-${listingId}`}
+                >
+                  <div className="space-y-2">
+                    {sortedContacts.map((contact) => (
+                      <CompactContactCard
+                        key={contact.contactId.toString()}
+                        listingContactId={contact.listingContactId}
+                        contact={{
+                          contactId: contact.contactId,
+                          firstName: contact.firstName,
+                          lastName: contact.lastName,
+                          email: contact.email,
+                          phone: contact.phone,
+                          createdAt: contact.createdAt,
+                        }}
+                        listingContact={{
+                          source: contact.source,
+                          status: contact.status,
+                          contactType: contact.contactType as
+                            | "buyer"
+                            | "owner"
+                            | "viewer",
+                        }}
+                        hasUpcomingVisit={contact.hasUpcomingVisit}
+                        hasMissedVisit={contact.hasMissedVisit}
+                        hasCompletedVisit={contact.hasCompletedVisit}
+                        hasCancelledVisit={contact.hasCancelledVisit}
+                        hasOffer={contact.hasOffer}
+                        offer={contact.offer}
+                        offerAccepted={contact.offerAccepted}
+                        visitCount={contact.visitCount}
+                        listingId={listingId}
+                        onContactClick={setSelectedContact}
+                        hasAcceptedOfferInList={hasAcceptedOffer}
+                      />
+                    ))}
+                  </div>
+                </ExpandableSection>
+              )}
             </div>
           )}
         </div>

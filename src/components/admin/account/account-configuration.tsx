@@ -561,7 +561,8 @@ export function AccountConfiguration() {
                       <FormItem>
                         <FormLabel>Número de Colegiado</FormLabel>
                         <FormDescription>
-                          Número de colegiado API (Agente de la Propiedad Inmobiliaria)
+                          Número de colegiado API (Agente de la Propiedad
+                          Inmobiliaria)
                         </FormDescription>
                         <FormControl>
                           <Input {...field} placeholder="API-12345" />
@@ -677,7 +678,7 @@ export function AccountConfiguration() {
                     <p className="mb-6 text-sm text-gray-600">
                       Configuración de términos y condiciones para contratos
                     </p>
-                    
+
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <FormField
@@ -696,7 +697,11 @@ export function AccountConfiguration() {
                                   max="100"
                                   step="0.1"
                                   {...field}
-                                  onChange={(e) => field.onChange(parseFloat(e.target.value) ?? 0)}
+                                  onChange={(e) =>
+                                    field.onChange(
+                                      parseFloat(e.target.value) ?? 0,
+                                    )
+                                  }
                                   value={field.value ?? 0}
                                 />
                               </FormControl>
@@ -720,7 +725,11 @@ export function AccountConfiguration() {
                                   min="0"
                                   step="1"
                                   {...field}
-                                  onChange={(e) => field.onChange(parseInt(e.target.value) ?? 0)}
+                                  onChange={(e) =>
+                                    field.onChange(
+                                      parseInt(e.target.value) ?? 0,
+                                    )
+                                  }
                                   value={field.value ?? 0}
                                 />
                               </FormControl>
@@ -745,7 +754,9 @@ export function AccountConfiguration() {
                                 min="1"
                                 step="1"
                                 {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) ?? 12)}
+                                onChange={(e) =>
+                                  field.onChange(parseInt(e.target.value) ?? 12)
+                                }
                                 value={field.value ?? 12}
                               />
                             </FormControl>
@@ -788,7 +799,8 @@ export function AccountConfiguration() {
                                   Comunicaciones
                                 </FormLabel>
                                 <FormDescription>
-                                  Permitir comunicaciones comerciales por defecto
+                                  Permitir comunicaciones comerciales por
+                                  defecto
                                 </FormDescription>
                               </div>
                               <FormControl>

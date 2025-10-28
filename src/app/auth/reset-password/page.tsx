@@ -87,7 +87,7 @@ const ResetPasswordPage: FC = () => {
       }
 
       setSuccess(true);
-      
+
       // Redirect to signin after 3 seconds
       setTimeout(() => {
         router.push("/auth/signin?message=password-reset-success");
@@ -118,7 +118,9 @@ const ResetPasswordPage: FC = () => {
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
           <Card>
             <CardHeader>
-              <CardTitle className="text-center text-red-600">Enlace no válido</CardTitle>
+              <CardTitle className="text-center text-red-600">
+                Enlace no válido
+              </CardTitle>
               <CardDescription className="text-center">
                 El enlace de restablecimiento no es válido o ha expirado
               </CardDescription>
@@ -135,7 +137,7 @@ const ResetPasswordPage: FC = () => {
 
               <div className="space-y-3">
                 <Link href="/auth/forgot-password">
-                  <Button className="w-full bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500 border-0">
+                  <Button className="w-full border-0 bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500">
                     Solicitar nuevo enlace
                   </Button>
                 </Link>
@@ -178,7 +180,9 @@ const ResetPasswordPage: FC = () => {
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
                 <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
-              <CardTitle className="text-center">¡Contraseña actualizada!</CardTitle>
+              <CardTitle className="text-center">
+                ¡Contraseña actualizada!
+              </CardTitle>
               <CardDescription className="text-center">
                 Tu contraseña ha sido restablecida exitosamente
               </CardDescription>
@@ -189,7 +193,8 @@ const ResetPasswordPage: FC = () => {
                   <CheckCircle className="h-5 w-5 text-green-400" />
                   <div className="ml-3">
                     <p className="text-sm text-green-800">
-                      Tu contraseña ha sido actualizada correctamente. Serás redirigido al inicio de sesión en unos segundos.
+                      Tu contraseña ha sido actualizada correctamente. Serás
+                      redirigido al inicio de sesión en unos segundos.
                     </p>
                   </div>
                 </div>
@@ -197,7 +202,7 @@ const ResetPasswordPage: FC = () => {
 
               <div className="text-center">
                 <Link href="/auth/signin">
-                  <Button className="bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500 border-0">
+                  <Button className="border-0 bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500">
                     Ir al inicio de sesión
                   </Button>
                 </Link>
@@ -307,27 +312,41 @@ const ResetPasswordPage: FC = () => {
                 </div>
               </div>
 
-              <div className="bg-gray-50 p-3 rounded text-xs text-gray-600">
-                <p className="font-medium mb-2">Requisitos de la contraseña:</p>
+              <div className="rounded bg-gray-50 p-3 text-xs text-gray-600">
+                <p className="mb-2 font-medium">Requisitos de la contraseña:</p>
                 <ul className="space-y-1">
-                  <li className={newPassword.length >= 8 ? "text-green-600" : ""}>
+                  <li
+                    className={newPassword.length >= 8 ? "text-green-600" : ""}
+                  >
                     • Al menos 8 caracteres
                   </li>
-                  <li className={/(?=.*[a-z])/.test(newPassword) ? "text-green-600" : ""}>
+                  <li
+                    className={
+                      /(?=.*[a-z])/.test(newPassword) ? "text-green-600" : ""
+                    }
+                  >
                     • Una letra minúscula
                   </li>
-                  <li className={/(?=.*[A-Z])/.test(newPassword) ? "text-green-600" : ""}>
+                  <li
+                    className={
+                      /(?=.*[A-Z])/.test(newPassword) ? "text-green-600" : ""
+                    }
+                  >
                     • Una letra mayúscula
                   </li>
-                  <li className={/(?=.*\d)/.test(newPassword) ? "text-green-600" : ""}>
+                  <li
+                    className={
+                      /(?=.*\d)/.test(newPassword) ? "text-green-600" : ""
+                    }
+                  >
                     • Al menos un número
                   </li>
                 </ul>
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500 border-0" 
+              <Button
+                type="submit"
+                className="w-full border-0 bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500"
                 disabled={isLoading || !newPassword || !confirmPassword}
               >
                 {isLoading ? "Actualizando..." : "Actualizar contraseña"}

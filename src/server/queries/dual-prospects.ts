@@ -165,10 +165,17 @@ export async function getDualProspectsForKanban(
       } as SearchProspect;
     } else {
       // Parse listing fields from notesInternal JSON
-      const notesData = typeof row.notesInternal === 'string' 
-        ? (() => { try { return JSON.parse(row.notesInternal) as Record<string, unknown>; } catch { return null; } })()
-        : row.notesInternal as Record<string, unknown> | null;
-      
+      const notesData =
+        typeof row.notesInternal === "string"
+          ? (() => {
+              try {
+                return JSON.parse(row.notesInternal) as Record<string, unknown>;
+              } catch {
+                return null;
+              }
+            })()
+          : (row.notesInternal as Record<string, unknown> | null);
+
       return {
         ...baseProspect,
         prospectType: "listing" as const,
@@ -326,10 +333,17 @@ export async function getDualProspect(
   }
 
   // Parse listing fields from notesInternal JSON
-  const notesData = typeof result.notesInternal === 'string' 
-    ? (() => { try { return JSON.parse(result.notesInternal) as Record<string, unknown>; } catch { return null; } })()
-    : result.notesInternal as Record<string, unknown> | null;
-  
+  const notesData =
+    typeof result.notesInternal === "string"
+      ? (() => {
+          try {
+            return JSON.parse(result.notesInternal) as Record<string, unknown>;
+          } catch {
+            return null;
+          }
+        })()
+      : (result.notesInternal as Record<string, unknown> | null);
+
   return {
     ...baseProspect,
     prospectType: "listing" as const,
@@ -484,10 +498,17 @@ export async function getAllDualProspects(
     }
 
     // Parse listing fields from notesInternal JSON
-    const notesData = typeof row.notesInternal === 'string' 
-      ? (() => { try { return JSON.parse(row.notesInternal) as Record<string, unknown>; } catch { return null; } })()
-      : row.notesInternal as Record<string, unknown> | null;
-    
+    const notesData =
+      typeof row.notesInternal === "string"
+        ? (() => {
+            try {
+              return JSON.parse(row.notesInternal) as Record<string, unknown>;
+            } catch {
+              return null;
+            }
+          })()
+        : (row.notesInternal as Record<string, unknown> | null);
+
     return {
       ...baseProspect,
       prospectType: "listing" as const,

@@ -6,7 +6,11 @@ import usePlacesAutocomplete, {
   getLatLng,
 } from "use-places-autocomplete";
 import { Input } from "~/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 import { MapPin, Loader2 } from "lucide-react";
 import { loadGoogleMapsApi } from "~/lib/google-maps-loader";
 import { cn } from "~/lib/utils";
@@ -166,15 +170,27 @@ export function AddressAutocomplete({
         // eslint-disable-next-line @typescript-eslint/await-thenable
         const { lat, lng } = await getLatLng(results[0]!);
 
-        console.log("🗺️ [GOOGLE MAPS] Full geocoding result:", JSON.stringify(results[0], null, 2));
-        console.log("🗺️ [GOOGLE MAPS] Address components:", JSON.stringify(results[0]!.address_components, null, 2));
+        console.log(
+          "🗺️ [GOOGLE MAPS] Full geocoding result:",
+          JSON.stringify(results[0], null, 2),
+        );
+        console.log(
+          "🗺️ [GOOGLE MAPS] Address components:",
+          JSON.stringify(results[0]!.address_components, null, 2),
+        );
 
         const parsedComponents = parseAddressComponents(
           results[0]!.address_components,
         );
 
-        console.log("🗺️ [GOOGLE MAPS] Parsed components:", JSON.stringify(parsedComponents, null, 2));
-        console.log("🏘️ [GOOGLE MAPS] Neighborhood (sublocality):", parsedComponents.sublocality);
+        console.log(
+          "🗺️ [GOOGLE MAPS] Parsed components:",
+          JSON.stringify(parsedComponents, null, 2),
+        );
+        console.log(
+          "🏘️ [GOOGLE MAPS] Neighborhood (sublocality):",
+          parsedComponents.sublocality,
+        );
 
         const locationData: LocationData = {
           address: selectedAddress,

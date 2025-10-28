@@ -1,6 +1,10 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { uploadAudioToS3, validateAudioBlob, getAudioInfo } from "~/lib/audio-upload";
+import {
+  uploadAudioToS3,
+  validateAudioBlob,
+  getAudioInfo,
+} from "~/lib/audio-upload";
 import { getSecureSession } from "~/lib/dal";
 
 export async function POST(request: NextRequest) {
@@ -12,7 +16,7 @@ export async function POST(request: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Usuario no autenticado" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -24,14 +28,14 @@ export async function POST(request: NextRequest) {
     if (!audioFile) {
       return NextResponse.json(
         { error: "No se encontró archivo de audio" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!referenceNumber) {
       return NextResponse.json(
         { error: "Número de referencia requerido" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -40,10 +44,7 @@ export async function POST(request: NextRequest) {
     // Validate audio file
     const validation = validateAudioBlob(audioFile);
     if (!validation.isValid) {
-      return NextResponse.json(
-        { error: validation.error },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
     // Upload to S3
@@ -56,16 +57,15 @@ export async function POST(request: NextRequest) {
       ...uploadResult,
       fileInfo: getAudioInfo(audioFile),
     });
-
   } catch (error) {
     console.error("❌ [UPLOAD-API] Audio upload error:", error);
-    
+
     return NextResponse.json(
-      { 
+      {
         error: "Error al subir el archivo de audio",
-        details: error instanceof Error ? error.message : "Unknown error"
+        details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

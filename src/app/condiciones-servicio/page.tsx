@@ -18,7 +18,7 @@ import {
   Copyright,
   CheckCircle,
   AlertCircle,
-  Gavel
+  Gavel,
 } from "lucide-react";
 import Navbar from "~/components/navbar";
 import { Footer } from "~/components/landing/Footer";
@@ -36,7 +36,7 @@ const sections = [
       <p class="mt-3 text-sm bg-amber-50 p-3 rounded-lg border border-amber-200">
         <strong>Importante:</strong> Si no está de acuerdo con estos Términos, le rogamos que no utilice la Plataforma. El acceso y uso continuado del Servicio implica su aceptación incondicional.
       </p>
-    `
+    `,
   },
   {
     id: "responsable",
@@ -51,7 +51,7 @@ const sections = [
       <p><strong>Teléfono:</strong> +34 636 036 116</p>
 
       <p class="mt-4">Vesta CRM está sujeto a la legislación española y a las normas que regulan la prestación de servicios de la sociedad de la información, incluida la Ley 34/2002, de 11 de julio, de Servicios de la Sociedad de la Información y de Comercio Electrónico (LSSI-CE).</p>
-    `
+    `,
   },
   {
     id: "aceptacion",
@@ -68,7 +68,7 @@ const sections = [
       </ul>
 
       <p class="mt-4">Nos reservamos el derecho de modificar estos Términos en cualquier momento. Las modificaciones entrarán en vigor desde su publicación en la Plataforma. El uso continuado del Servicio tras la publicación de cambios constituye la aceptación de los mismos.</p>
-    `
+    `,
   },
   {
     id: "servicio",
@@ -99,7 +99,7 @@ const sections = [
       <p class="mt-4 text-sm bg-blue-50 p-3 rounded-lg border border-blue-200">
         <strong>Nota:</strong> Las funcionalidades disponibles pueden variar según el plan contratado. Nos reservamos el derecho de modificar, suspender o discontinuar cualquier aspecto del Servicio en cualquier momento.
       </p>
-    `
+    `,
   },
   {
     id: "registro",
@@ -128,7 +128,7 @@ const sections = [
       <p class="mt-4 text-sm bg-amber-50 p-3 rounded-lg border border-amber-200">
         <strong>Advertencia:</strong> Nos reservamos el derecho de rechazar o cancelar cualquier registro sin necesidad de justificación, especialmente en casos de suplantación de identidad, datos falsos o incumplimiento de estos Términos.
       </p>
-    `
+    `,
   },
   {
     id: "obligaciones",
@@ -170,7 +170,7 @@ const sections = [
       <p class="mt-4 text-sm bg-red-50 p-3 rounded-lg border border-red-200">
         <strong>Consecuencias del Incumplimiento:</strong> El incumplimiento de estas obligaciones puede resultar en la suspensión o cancelación inmediata de la cuenta, sin derecho a reembolso, y en la adopción de las medidas legales que correspondan.
       </p>
-    `
+    `,
   },
   {
     id: "propiedad-intelectual",
@@ -205,7 +205,7 @@ const sections = [
       <p class="mt-4 text-sm bg-blue-50 p-3 rounded-lg border border-blue-200">
         El usuario garantiza que posee todos los derechos necesarios sobre el contenido que sube y que no infringe derechos de terceros.
       </p>
-    `
+    `,
   },
   {
     id: "proteccion-datos",
@@ -233,7 +233,7 @@ const sections = [
       <p class="mt-4 text-sm bg-amber-50 p-3 rounded-lg border border-amber-200">
         <strong>Importante:</strong> El usuario exime a Vesta CRM de cualquier responsabilidad derivada del tratamiento ilícito de datos personales de terceros por parte del usuario.
       </p>
-    `
+    `,
   },
   {
     id: "precios",
@@ -277,7 +277,7 @@ const sections = [
       <p class="mt-4 text-sm bg-blue-50 p-3 rounded-lg border border-blue-200">
         <strong>Política de Reembolsos:</strong> No se realizan reembolsos por cancelaciones anticipadas de suscripciones de pago. El servicio permanecerá activo hasta el final del período ya abonado.
       </p>
-    `
+    `,
   },
   {
     id: "duracion",
@@ -317,7 +317,7 @@ const sections = [
       <p class="mt-4 text-sm bg-amber-50 p-3 rounded-lg border border-amber-200">
         <strong>Advertencia:</strong> Recomendamos realizar copias de seguridad periódicas de sus datos. Vesta CRM no se hace responsable de la pérdida de datos tras la terminación del servicio.
       </p>
-    `
+    `,
   },
   {
     id: "responsabilidad",
@@ -354,7 +354,7 @@ const sections = [
       <p class="mt-4 text-sm bg-blue-50 p-3 rounded-lg border border-blue-200">
         <strong>Indemnización:</strong> El usuario se compromete a mantener indemne a Vesta CRM frente a cualquier reclamación de terceros derivada del uso ilícito o incumplidor de la Plataforma por parte del usuario.
       </p>
-    `
+    `,
   },
   {
     id: "garantias",
@@ -397,7 +397,7 @@ const sections = [
       <p class="mt-4 text-sm bg-amber-50 p-3 rounded-lg border border-amber-200">
         <strong>Disclaimer:</strong> El Servicio se proporciona "tal cual" y "según disponibilidad". Vesta CRM no garantiza que el Servicio sea ininterrumpido, libre de errores o completamente seguro.
       </p>
-    `
+    `,
   },
   {
     id: "modificaciones",
@@ -432,7 +432,7 @@ const sections = [
       </ul>
 
       <p class="mt-4">Las modificaciones sustanciales que afecten negativamente a las funcionalidades principales se notificarán con antelación razonable.</p>
-    `
+    `,
   },
   {
     id: "legislacion",
@@ -477,7 +477,7 @@ const sections = [
       <p class="mt-4 text-sm bg-blue-50 p-3 rounded-lg border border-blue-200">
         Antes de iniciar cualquier procedimiento judicial o de mediación, le invitamos a contactarnos para intentar resolver amistosamente cualquier controversia.
       </p>
-    `
+    `,
   },
   {
     id: "contacto",
@@ -522,8 +522,8 @@ const sections = [
       <p class="mt-4 text-sm bg-green-50 p-3 rounded-lg border border-green-200">
         <strong>Agradecimiento:</strong> Gracias por confiar en Vesta CRM para la gestión de su negocio inmobiliario. Estamos comprometidos en ofrecerle el mejor servicio posible.
       </p>
-    `
-  }
+    `,
+  },
 ];
 
 export default function CondicionesServicioPage() {
@@ -549,8 +549,8 @@ export default function CondicionesServicioPage() {
               Condiciones de Servicio
             </h1>
             <p className="text-xl text-gray-600">
-              Términos y condiciones que regulan el uso de la plataforma Vesta CRM.
-              Le recomendamos leer detenidamente este documento.
+              Términos y condiciones que regulan el uso de la plataforma Vesta
+              CRM. Le recomendamos leer detenidamente este documento.
             </p>
             <div className="mt-6 flex items-center justify-center gap-2 text-sm text-gray-500">
               <Clock className="h-4 w-4" />
@@ -563,7 +563,9 @@ export default function CondicionesServicioPage() {
       {/* Table of Contents */}
       <section className="border-b border-gray-200 bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
-          <h2 className="mb-6 text-lg font-semibold text-gray-900">Índice de Contenidos</h2>
+          <h2 className="mb-6 text-lg font-semibold text-gray-900">
+            Índice de Contenidos
+          </h2>
           <nav className="grid gap-2 sm:grid-cols-2">
             {sections.map((section, index) => (
               <motion.a
@@ -620,7 +622,8 @@ export default function CondicionesServicioPage() {
             ¿Tiene alguna pregunta sobre estos términos?
           </h2>
           <p className="mb-8 text-xl text-white/90">
-            Nuestro equipo está disponible para resolver cualquier duda que pueda tener
+            Nuestro equipo está disponible para resolver cualquier duda que
+            pueda tener
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <a

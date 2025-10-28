@@ -1,8 +1,28 @@
 "use server";
 
 import { db } from "../db";
-import { deals, listings, properties, listingContacts } from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import {
+  deals,
+  listings,
+  properties,
+  listingContacts,
+  contacts,
+  dealParticipants,
+  users,
+} from "../db/schema";
+import {
+  eq,
+  and,
+  like,
+  or,
+  aliasedTable,
+  countDistinct,
+  desc,
+  inArray,
+  gte,
+  lte,
+  between,
+} from "drizzle-orm";
 import type { Deal } from "../../lib/data";
 import { getCurrentUserAccountId } from "../../lib/dal";
 
@@ -18,7 +38,6 @@ export async function getDealByIdWithAuth(dealId: number) {
   const accountId = await getCurrentUserAccountId();
   return getDealById(dealId, accountId);
 }
-
 
 export async function getDealsByStatusWithAuth(status: Deal["status"]) {
   const accountId = await getCurrentUserAccountId();
@@ -114,7 +133,6 @@ export async function getDealById(dealId: number, accountId: number) {
     throw error;
   }
 }
-
 
 // Get deals by status
 export async function getDealsByStatus(
@@ -270,4 +288,327 @@ export async function listDeals(page = 1, limit = 10, accountId: number) {
     console.error("Error listing deals:", error);
     throw error;
   }
+}
+
+// Enhanced function with complete joins and filtering
+export async function listDealsWithDetails(
+  page = 1,
+  limit = 10,
+  accountId: number,
+  search?: string,
+  statusFilters?: string[],
+  agentFilters?: string[],
+  closeDateFrom?: Date,
+  closeDateTo?: Date,
+  minAmount?: number,
+  maxAmount?: number,
+) {
+  try {
+    const offset = (page - 1) * limit;
+
+    // Create aliases for owner and buyer tables to avoid naming conflicts
+    const buyerListingContacts = aliasedTable(
+      listingContacts,
+      "buyerListingContacts",
+    );
+    const buyerContacts = aliasedTable(contacts, "buyerContacts");
+    const ownerListingContacts = aliasedTable(
+      listingContacts,
+      "ownerListingContacts",
+    );
+    const ownerContacts = aliasedTable(contacts, "ownerContacts");
+
+    // Build where conditions
+    const whereConditions = [eq(properties.accountId, BigInt(accountId))];
+
+    // Add search condition
+    if (search) {
+      const searchCondition = or(
+        // Buyer contact fields
+        like(buyerContacts.firstName, `%${search}%`),
+        like(buyerContacts.lastName, `%${search}%`),
+        like(buyerContacts.email, `%${search}%`),
+        // Owner fields
+        like(ownerContacts.firstName, `%${search}%`),
+        like(ownerContacts.lastName, `%${search}%`),
+        // Property fields
+        like(properties.title, `%${search}%`),
+        like(properties.referenceNumber, `%${search}%`),
+      );
+      if (searchCondition) {
+        whereConditions.push(searchCondition);
+      }
+    }
+
+    // Add status filters
+    if (statusFilters && statusFilters.length > 0) {
+      const statusConditions = statusFilters.map((status) =>
+        eq(deals.status, status),
+      );
+      if (statusConditions.length > 0) {
+        const statusCondition =
+          statusConditions.length === 1
+            ? statusConditions[0]!
+            : or(...statusConditions);
+        if (statusCondition) {
+          whereConditions.push(statusCondition);
+        }
+      }
+    }
+
+    // Add agent filters
+    if (agentFilters && agentFilters.length > 0) {
+      whereConditions.push(inArray(listings.agentId, agentFilters));
+    }
+
+    // Add close date range filters
+    if (closeDateFrom && closeDateTo) {
+      whereConditions.push(between(deals.closeDate, closeDateFrom, closeDateTo));
+    } else if (closeDateFrom) {
+      whereConditions.push(gte(deals.closeDate, closeDateFrom));
+    } else if (closeDateTo) {
+      whereConditions.push(lte(deals.closeDate, closeDateTo));
+    }
+
+    // Add final price range filters
+    if (minAmount !== undefined && maxAmount !== undefined) {
+      whereConditions.push(between(deals.finalPrice, minAmount.toString(), maxAmount.toString()));
+    } else if (minAmount !== undefined) {
+      whereConditions.push(gte(deals.finalPrice, minAmount.toString()));
+    } else if (maxAmount !== undefined) {
+      whereConditions.push(lte(deals.finalPrice, maxAmount.toString()));
+    }
+
+    // Main query with all joins
+    const allDeals = await db
+      .select({
+        // Deal data
+        dealId: deals.dealId,
+        listingId: deals.listingId,
+        listingContactId: deals.listingContactId,
+        status: deals.status,
+        closeDate: deals.closeDate,
+        finalPrice: deals.finalPrice,
+        commissionPercentage: deals.commissionPercentage,
+        commissionAmount: deals.commissionAmount,
+        arrasAmount: deals.arrasAmount,
+        createdAt: deals.createdAt,
+        updatedAt: deals.updatedAt,
+
+        // Listing/Property data
+        listing: {
+          listingId: listings.listingId,
+          referenceNumber: properties.referenceNumber,
+          title: properties.title,
+          street: properties.street,
+          price: listings.price,
+          listingType: listings.listingType,
+          propertyType: properties.propertyType,
+          bedrooms: properties.bedrooms,
+          squareMeter: properties.squareMeter,
+          neighborhood: properties.neighborhoodId,
+        },
+
+        // Buyer data (optional, from listing_contacts junction table)
+        buyer: {
+          contactId: buyerContacts.contactId,
+          firstName: buyerContacts.firstName,
+          lastName: buyerContacts.lastName,
+          email: buyerContacts.email,
+          phone: buyerContacts.phone,
+        },
+
+        // Owner data (optional, from listing_contacts junction table)
+        owner: {
+          contactId: ownerContacts.contactId,
+          firstName: ownerContacts.firstName,
+          lastName: ownerContacts.lastName,
+          email: ownerContacts.email,
+          phone: ownerContacts.phone,
+        },
+
+        // Agent data (from users table)
+        agent: {
+          id: users.id,
+          name: users.name,
+        },
+      })
+      .from(deals)
+      .innerJoin(listings, eq(deals.listingId, listings.listingId))
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      // Join buyer data via listing_contacts with contactType="buyer"
+      .leftJoin(
+        buyerListingContacts,
+        eq(deals.listingContactId, buyerListingContacts.listingContactId),
+      )
+      .leftJoin(
+        buyerContacts,
+        eq(buyerListingContacts.contactId, buyerContacts.contactId),
+      )
+      // Join owner data via listing_contacts with contactType="owner"
+      .leftJoin(
+        ownerListingContacts,
+        and(
+          eq(listings.listingId, ownerListingContacts.listingId),
+          eq(ownerListingContacts.contactType, "owner"),
+        ),
+      )
+      .leftJoin(
+        ownerContacts,
+        eq(ownerListingContacts.contactId, ownerContacts.contactId),
+      )
+      // Join agent data via listings.agentId
+      .leftJoin(users, eq(listings.agentId, users.id))
+      .where(and(...whereConditions))
+      .orderBy(desc(deals.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    // Get total count for pagination
+    const totalResults = await db
+      .select({ count: countDistinct(deals.dealId) })
+      .from(deals)
+      .innerJoin(listings, eq(deals.listingId, listings.listingId))
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      // Add same joins to maintain consistency
+      .leftJoin(
+        buyerListingContacts,
+        eq(deals.listingContactId, buyerListingContacts.listingContactId),
+      )
+      .leftJoin(
+        buyerContacts,
+        eq(buyerListingContacts.contactId, buyerContacts.contactId),
+      )
+      .leftJoin(
+        ownerListingContacts,
+        and(
+          eq(listings.listingId, ownerListingContacts.listingId),
+          eq(ownerListingContacts.contactType, "owner"),
+        ),
+      )
+      .leftJoin(
+        ownerContacts,
+        eq(ownerListingContacts.contactId, ownerContacts.contactId),
+      )
+      .leftJoin(users, eq(listings.agentId, users.id))
+      .where(and(...whereConditions));
+
+    const totalCount =
+      totalResults[0] && "count" in totalResults[0]
+        ? Number((totalResults[0] as { count: unknown }).count)
+        : 0;
+
+    // Deduplicate results by dealId in case of duplicate rows from joins
+    const uniqueDeals = allDeals.reduce((acc, deal) => {
+      const key = String((deal as Record<string, unknown>).dealId);
+      if (!acc.has(key)) {
+        acc.set(key, deal);
+      }
+      return acc;
+    }, new Map());
+
+    const deduplicatedDeals = Array.from(uniqueDeals.values());
+
+    // Get participants for each deal
+    const dealIds = deduplicatedDeals.map(
+      (deal) => (deal as { dealId: bigint }).dealId,
+    );
+
+    let participantsData: Array<{
+      dealId: bigint;
+      contactId: bigint;
+      role: string;
+      firstName: string;
+      lastName: string;
+    }> = [];
+
+    if (dealIds.length > 0) {
+      participantsData = await db
+        .select({
+          dealId: dealParticipants.dealId,
+          contactId: dealParticipants.contactId,
+          role: dealParticipants.role,
+          firstName: contacts.firstName,
+          lastName: contacts.lastName,
+        })
+        .from(dealParticipants)
+        .innerJoin(
+          contacts,
+          eq(dealParticipants.contactId, contacts.contactId),
+        )
+        .where(inArray(dealParticipants.dealId, dealIds));
+    }
+
+    // Group participants by dealId
+    const participantsMap = new Map<
+      string,
+      Array<{
+        contactId: bigint;
+        firstName: string;
+        lastName: string;
+        role: string;
+      }>
+    >();
+
+    participantsData.forEach((p) => {
+      const key = p.dealId.toString();
+      if (!participantsMap.has(key)) {
+        participantsMap.set(key, []);
+      }
+      participantsMap.get(key)!.push({
+        contactId: p.contactId,
+        firstName: p.firstName,
+        lastName: p.lastName,
+        role: p.role,
+      });
+    });
+
+    // Merge participants with deals
+    const dealsWithParticipants = deduplicatedDeals.map((deal) => {
+      const dealObj = deal as { dealId: bigint };
+      const participants = participantsMap.get(dealObj.dealId.toString()) ?? [];
+
+      return {
+        ...(deal as Record<string, unknown>),
+        participants,
+      };
+    });
+
+    return {
+      deals: dealsWithParticipants,
+      total: totalCount,
+      page,
+      totalPages: Math.ceil(totalCount / limit),
+    };
+  } catch (error) {
+    console.error("Error listing deals with details:", error);
+    throw error;
+  }
+}
+
+// Wrapper for listDealsWithDetails that gets accountId from session
+export async function listDealsWithDetailsAuth(
+  page = 1,
+  limit = 10,
+  search?: string,
+  statusFilters?: string[],
+  agentFilters?: string[],
+  closeDateFrom?: Date,
+  closeDateTo?: Date,
+  minAmount?: number,
+  maxAmount?: number,
+) {
+  const accountId = await getCurrentUserAccountId();
+  return listDealsWithDetails(
+    page,
+    limit,
+    accountId,
+    search,
+    statusFilters,
+    agentFilters,
+    closeDateFrom,
+    closeDateTo,
+    minAmount,
+    maxAmount,
+  );
 }

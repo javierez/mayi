@@ -20,10 +20,7 @@ interface EighthPageProps {
   onBack?: () => void;
 }
 
-export default function EighthPage({
-  onNext,
-  onBack,
-}: EighthPageProps) {
+export default function EighthPage({ onNext, onBack }: EighthPageProps) {
   const { state, updateFormData } = useFormContext();
 
   // Get current form data from context (following first.tsx pattern)
@@ -55,11 +52,10 @@ export default function EighthPage({
   const handleNext = () => {
     // Add validation like first.tsx
     // Note: All fields are optional for this page, so no required field validation needed
-    
+
     // Navigate immediately - no saves, completely instant!
     onNext();
   };
-
 
   return (
     <motion.div

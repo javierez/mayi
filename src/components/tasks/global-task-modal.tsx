@@ -19,13 +19,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Label } from "~/components/ui/label";
-import {
-  Mic,
-  AlertCircle,
-  Loader2,
-  User,
-  Building,
-} from "lucide-react";
+import { Mic, AlertCircle, Loader2, User, Building } from "lucide-react";
 import { createTaskWithAuth } from "~/server/queries/task";
 import { searchContactsWithAuth } from "~/server/queries/contact";
 import { getContactListingsForTasksWithAuth } from "~/server/queries/user-comments";
@@ -67,7 +61,11 @@ const useDebounce = (value: string, delay: number) => {
   return debouncedValue;
 };
 
-export function GlobalTaskModal({ open, onOpenChange, onSuccess }: GlobalTaskModalProps) {
+export function GlobalTaskModal({
+  open,
+  onOpenChange,
+  onSuccess,
+}: GlobalTaskModalProps) {
   const { data: session } = useSession();
   const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState({
@@ -75,7 +73,7 @@ export function GlobalTaskModal({ open, onOpenChange, onSuccess }: GlobalTaskMod
     saving: false,
     searching: false,
   });
-  
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -85,7 +83,7 @@ export function GlobalTaskModal({ open, onOpenChange, onSuccess }: GlobalTaskMod
     listingId: "",
     agentId: "",
   });
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Contact[]>([]);
   const [contactListings, setContactListings] = useState<ContactListing[]>([]);
@@ -96,12 +94,16 @@ export function GlobalTaskModal({ open, onOpenChange, onSuccess }: GlobalTaskMod
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // Agents list - simplified to just current user
-  const agents = session?.user ? [{
-    id: session.user.id,
-    name: session.user.name || "",
-    firstName: session.user.name?.split(" ")[0] ?? undefined,
-    lastName: session.user.name?.split(" ")[1] ?? undefined,
-  }] : [];
+  const agents = session?.user
+    ? [
+        {
+          id: session.user.id,
+          name: session.user.name || "",
+          firstName: session.user.name?.split(" ")[0] ?? undefined,
+          lastName: session.user.name?.split(" ")[1] ?? undefined,
+        },
+      ]
+    : [];
 
   // Reset form when modal opens
   useEffect(() => {
@@ -138,17 +140,17 @@ export function GlobalTaskModal({ open, onOpenChange, onSuccess }: GlobalTaskMod
       setSearchResults([]);
       return;
     }
-    
-    setLoading(prev => ({ ...prev, searching: true }));
+
+    setLoading((prev) => ({ ...prev, searching: true }));
     try {
       const contactsData = await searchContactsWithAuth(query);
       // Transform the data to match our interface
       const formattedContacts: Contact[] = contactsData.map((contact) => {
-        const [firstName, ...lastNameParts] = contact.name.split(' ');
+        const [firstName, ...lastNameParts] = contact.name.split(" ");
         return {
           contactId: contact.id,
-          firstName: firstName ?? '',
-          lastName: lastNameParts.join(' ') ?? '',
+          firstName: firstName ?? "",
+          lastName: lastNameParts.join(" ") ?? "",
           email: undefined,
         };
       });
@@ -157,12 +159,12 @@ export function GlobalTaskModal({ open, onOpenChange, onSuccess }: GlobalTaskMod
       console.error("Error searching contacts:", error);
       setSearchResults([]);
     } finally {
-      setLoading(prev => ({ ...prev, searching: false }));
+      setLoading((prev) => ({ ...prev, searching: false }));
     }
   };
 
   const loadContactListings = async (contactId: bigint) => {
-    setLoading(prev => ({ ...prev, listings: true }));
+    setLoading((prev) => ({ ...prev, listings: true }));
     try {
       const listings = await getContactListingsForTasksWithAuth(contactId);
       setContactListings(listings);
@@ -170,32 +172,38 @@ export function GlobalTaskModal({ open, onOpenChange, onSuccess }: GlobalTaskMod
       console.error("Error loading contact listings:", error);
       setContactListings([]);
     } finally {
-      setLoading(prev => ({ ...prev, listings: false }));
+      setLoading((prev) => ({ ...prev, listings: false }));
     }
   };
 
   const handleContactSelect = async (contactId: string) => {
-    const contact = searchResults.find(c => c.contactId.toString() === contactId);
+    const contact = searchResults.find(
+      (c) => c.contactId.toString() === contactId,
+    );
     if (contact) {
       setSelectedContact(contact);
-      setFormData(prev => ({ ...prev, contactId }));
+      setFormData((prev) => ({ ...prev, contactId }));
       await loadContactListings(contact.contactId);
       setStep(2);
     }
   };
 
   const handleSubmit = async () => {
-    if (!formData.title.trim() || !formData.description.trim() || !formData.contactId) {
+    if (
+      !formData.title.trim() ||
+      !formData.description.trim() ||
+      !formData.contactId
+    ) {
       setSaveError("Por favor completa todos los campos requeridos");
       return;
     }
 
-    setLoading(prev => ({ ...prev, saving: true }));
+    setLoading((prev) => ({ ...prev, saving: true }));
     setSaveError(null);
 
     try {
       const selectedUserId = formData.agentId ?? session?.user?.id ?? "";
-      
+
       const taskData = {
         userId: selectedUserId,
         title: formData.title,
@@ -203,12 +211,17 @@ export function GlobalTaskModal({ open, onOpenChange, onSuccess }: GlobalTaskMod
         completed: false,
         isActive: true,
         dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
-        dueTime: formData.dueDate ? (formData.dueTime || "00:00") : undefined,
+        dueTime: formData.dueDate ? formData.dueTime || "00:00" : undefined,
         // Entity associations
         contactId: BigInt(formData.contactId),
         listingId: formData.listingId ? BigInt(formData.listingId) : undefined,
-        listingContactId: formData.listingId ? 
-          BigInt(contactListings.find(l => l.listingId.toString() === formData.listingId)?.listingContactId ?? 0) : undefined,
+        listingContactId: formData.listingId
+          ? BigInt(
+              contactListings.find(
+                (l) => l.listingId.toString() === formData.listingId,
+              )?.listingContactId ?? 0,
+            )
+          : undefined,
         dealId: undefined,
         appointmentId: undefined,
         prospectId: undefined,
@@ -217,25 +230,26 @@ export function GlobalTaskModal({ open, onOpenChange, onSuccess }: GlobalTaskMod
       const savedTask = await createTaskWithAuth(taskData);
 
       if (!savedTask) {
-        throw new Error('Failed to save task');
+        throw new Error("Failed to save task");
       }
 
       // Success - close modal and call success callback
       onOpenChange(false);
       onSuccess?.();
-      
     } catch (error) {
       console.error("Error saving task:", error);
-      setSaveError(error instanceof Error ? error.message : "Failed to save task");
+      setSaveError(
+        error instanceof Error ? error.message : "Failed to save task",
+      );
     } finally {
-      setLoading(prev => ({ ...prev, saving: false }));
+      setLoading((prev) => ({ ...prev, saving: false }));
     }
   };
 
   const handleBack = () => {
     if (step === 2) {
       setStep(1);
-      setFormData(prev => ({ ...prev, listingId: "" }));
+      setFormData((prev) => ({ ...prev, listingId: "" }));
     }
   };
 
@@ -249,16 +263,17 @@ export function GlobalTaskModal({ open, onOpenChange, onSuccess }: GlobalTaskMod
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {step === 1 ? "Crear Tarea - Seleccionar Contacto" : "Crear Tarea - Detalles"}
+            {step === 1
+              ? "Crear Tarea - Seleccionar Contacto"
+              : "Crear Tarea - Detalles"}
           </DialogTitle>
           <DialogDescription>
-            {step === 1 
+            {step === 1
               ? "Selecciona el contacto para quien quieres crear la tarea"
-              : "Completa los detalles de la tarea"
-            }
+              : "Completa los detalles de la tarea"}
           </DialogDescription>
         </DialogHeader>
 
@@ -275,50 +290,56 @@ export function GlobalTaskModal({ open, onOpenChange, onSuccess }: GlobalTaskMod
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full"
                 />
-                
+
                 {/* Search Results */}
                 {searchQuery.length >= 2 && (
-                  <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-md bg-white shadow-sm">
+                  <div className="max-h-64 overflow-y-auto rounded-md border border-gray-200 bg-white shadow-sm">
                     {loading.searching && (
                       <div className="flex items-center justify-center p-4">
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        <span className="text-sm text-gray-500">Buscando contactos...</span>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <span className="text-sm text-gray-500">
+                          Buscando contactos...
+                        </span>
                       </div>
                     )}
-                    
+
                     {!loading.searching && searchResults.length === 0 && (
                       <div className="p-4 text-center">
-                        <User className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                        <User className="mx-auto mb-2 h-8 w-8 text-gray-300" />
                         <p className="text-sm text-gray-500">
-                          No se encontraron contactos para &quot;{searchQuery}&quot;
+                          No se encontraron contactos para &quot;{searchQuery}
+                          &quot;
                         </p>
                       </div>
                     )}
-                    
-                    {!loading.searching && searchResults.map((contact) => (
-                      <div
-                        key={contact.contactId.toString()}
-                        onClick={() => handleContactSelect(contact.contactId.toString())}
-                        className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0 transition-colors"
-                      >
-                        <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm text-gray-900">
-                            {contact.firstName} {contact.lastName}
-                          </div>
-                          {contact.email && (
-                            <div className="text-xs text-gray-500 truncate">
-                              {contact.email}
+
+                    {!loading.searching &&
+                      searchResults.map((contact) => (
+                        <div
+                          key={contact.contactId.toString()}
+                          onClick={() =>
+                            handleContactSelect(contact.contactId.toString())
+                          }
+                          className="flex cursor-pointer items-center gap-3 border-b p-3 transition-colors last:border-b-0 hover:bg-gray-50"
+                        >
+                          <User className="h-4 w-4 flex-shrink-0 text-gray-400" />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium text-gray-900">
+                              {contact.firstName} {contact.lastName}
                             </div>
-                          )}
+                            {contact.email && (
+                              <div className="truncate text-xs text-gray-500">
+                                {contact.email}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 )}
-                
+
                 {searchQuery.length > 0 && searchQuery.length < 2 && (
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="mt-1 text-xs text-gray-500">
                     Escribe al menos 2 caracteres para buscar
                   </div>
                 )}
@@ -330,7 +351,7 @@ export function GlobalTaskModal({ open, onOpenChange, onSuccess }: GlobalTaskMod
             <div className="space-y-4">
               {/* Selected contact info */}
               {selectedContact && (
-                <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center gap-2 rounded-lg bg-gray-50 p-3">
                   <User className="h-4 w-4 text-gray-600" />
                   <span className="font-medium">
                     {selectedContact.firstName} {selectedContact.lastName}
@@ -344,31 +365,40 @@ export function GlobalTaskModal({ open, onOpenChange, onSuccess }: GlobalTaskMod
               <Input
                 placeholder="Título de la tarea *"
                 value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, title: e.target.value }))
+                }
               />
 
               <div className="relative">
                 <Textarea
                   placeholder="Descripción de la tarea *"
                   value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   className="min-h-[80px] pr-10"
                 />
                 <button
                   type="button"
-                  className="absolute right-2 top-2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-2 top-2 p-1 text-gray-400 transition-colors hover:text-gray-600"
                   title="Próximamente: Grabación de voz"
                 >
                   <Mic className="h-4 w-4" />
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="agent-select">Asignar a</Label>
                   <Select
                     value={formData.agentId}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, agentId: value }))}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({ ...prev, agentId: value }))
+                    }
                   >
                     <SelectTrigger className="h-8 text-gray-500">
                       <SelectValue placeholder="Seleccionar agente" />
@@ -387,15 +417,19 @@ export function GlobalTaskModal({ open, onOpenChange, onSuccess }: GlobalTaskMod
                   <Label htmlFor="listing-select">Propiedad (opcional)</Label>
                   <Select
                     value={formData.listingId}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, listingId: value }))}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({ ...prev, listingId: value }))
+                    }
                     disabled={loading.listings}
                   >
                     <SelectTrigger className="h-8 text-gray-500">
-                      <SelectValue placeholder={
-                        loading.listings 
-                          ? "Cargando propiedades..." 
-                          : "Sin propiedad específica"
-                      } />
+                      <SelectValue
+                        placeholder={
+                          loading.listings
+                            ? "Cargando propiedades..."
+                            : "Sin propiedad específica"
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {contactListings.length === 0 ? (
@@ -404,15 +438,16 @@ export function GlobalTaskModal({ open, onOpenChange, onSuccess }: GlobalTaskMod
                         </SelectItem>
                       ) : (
                         contactListings.map((listing) => (
-                          <SelectItem 
-                            key={listing.listingContactId} 
+                          <SelectItem
+                            key={listing.listingContactId}
                             value={listing.listingId.toString()}
                           >
                             <div className="flex items-center gap-2">
                               <Building className="h-4 w-4 opacity-60" />
                               <div className="flex flex-col">
                                 <span>
-                                  {listing.street ?? 'Sin dirección'} - {listing.city}, {listing.province}
+                                  {listing.street ?? "Sin dirección"} -{" "}
+                                  {listing.city}, {listing.province}
                                 </span>
                                 <span className="text-xs text-gray-500">
                                   ({listing.contactType})
@@ -434,7 +469,12 @@ export function GlobalTaskModal({ open, onOpenChange, onSuccess }: GlobalTaskMod
                     id="due-date"
                     type="date"
                     value={formData.dueDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        dueDate: e.target.value,
+                      }))
+                    }
                     className="h-8 text-gray-500"
                   />
                 </div>
@@ -444,38 +484,49 @@ export function GlobalTaskModal({ open, onOpenChange, onSuccess }: GlobalTaskMod
                     id="due-time"
                     type="time"
                     value={formData.dueTime}
-                    onChange={(e) => setFormData(prev => ({ ...prev, dueTime: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        dueTime: e.target.value,
+                      }))
+                    }
                     className="h-8 text-gray-500"
                   />
                 </div>
               </div>
 
               {saveError && (
-                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 p-3">
                   <AlertCircle className="h-4 w-4 text-red-500" />
                   <span className="text-sm text-red-700">{saveError}</span>
                 </div>
               )}
 
               <div className="flex items-center justify-between pt-4">
-                <div className="text-xs text-gray-500">
-                  * Campos requeridos
-                </div>
+                <div className="text-xs text-gray-500">* Campos requeridos</div>
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={handleClose} disabled={loading.saving}>
+                  <Button
+                    variant="outline"
+                    onClick={handleClose}
+                    disabled={loading.saving}
+                  >
                     Cancelar
                   </Button>
-                  <Button 
-                    onClick={handleSubmit} 
-                    disabled={loading.saving || !formData.title.trim() || !formData.description.trim()}
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={
+                      loading.saving ||
+                      !formData.title.trim() ||
+                      !formData.description.trim()
+                    }
                   >
                     {loading.saving ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Guardando...
                       </>
                     ) : (
-                      'Guardar Tarea'
+                      "Guardar Tarea"
                     )}
                   </Button>
                 </div>
@@ -508,7 +559,10 @@ interface GlobalTaskModalTriggerProps {
   onSuccess?: () => void;
 }
 
-export function GlobalTaskModalTrigger({ children, onSuccess }: GlobalTaskModalTriggerProps) {
+export function GlobalTaskModalTrigger({
+  children,
+  onSuccess,
+}: GlobalTaskModalTriggerProps) {
   const { isOpen, openModal, closeModal } = useGlobalTaskModal();
 
   return (
@@ -516,8 +570,8 @@ export function GlobalTaskModalTrigger({ children, onSuccess }: GlobalTaskModalT
       <div onClick={openModal} className="cursor-pointer">
         {children}
       </div>
-      <GlobalTaskModal 
-        open={isOpen} 
+      <GlobalTaskModal
+        open={isOpen}
         onOpenChange={closeModal}
         onSuccess={onSuccess}
       />

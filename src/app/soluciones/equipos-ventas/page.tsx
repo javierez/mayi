@@ -6,7 +6,8 @@ import Navbar from "~/components/navbar";
 
 export const metadata: Metadata = {
   title: "Solución para Equipos de Ventas - Vesta",
-  description: "Optimiza tu proceso de ventas inmobiliarias. CRM completo, seguimiento de leads, y herramientas de productividad.",
+  description:
+    "Optimiza tu proceso de ventas inmobiliarias. CRM completo, seguimiento de leads, y herramientas de productividad.",
 };
 
 export default function EquiposVentasPage() {
@@ -17,15 +18,25 @@ export default function EquiposVentasPage() {
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
             <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
-              Solución para <span className="bg-gradient-to-r from-amber-400 to-rose-400 bg-clip-text text-transparent">Equipos de Ventas</span>
+              Solución para{" "}
+              <span className="bg-gradient-to-r from-amber-400 to-rose-400 bg-clip-text text-transparent">
+                Equipos de Ventas
+              </span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-xl text-gray-600">
-              Cierra más ventas con herramientas diseñadas para agentes inmobiliarios. 
-              Gestión de leads, seguimiento automatizado y análisis de rendimiento.
+              Cierra más ventas con herramientas diseñadas para agentes
+              inmobiliarios. Gestión de leads, seguimiento automatizado y
+              análisis de rendimiento.
             </p>
             <div className="mt-10">
-              <Button size="lg" className="bg-gradient-to-r from-amber-400 to-rose-400 text-white hover:from-amber-500 hover:to-rose-500" asChild>
-                <Link href="/dashboard">Empezar Ahora <ArrowRight className="ml-2 h-5 w-5" /></Link>
+              <Button
+                size="lg"
+                className="bg-gradient-to-r from-amber-400 to-rose-400 text-white hover:from-amber-500 hover:to-rose-500"
+                asChild
+              >
+                <Link href="/dashboard">
+                  Empezar Ahora <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
               </Button>
             </div>
           </div>

@@ -1,7 +1,11 @@
 import type { NextRequest } from "next/server";
 import { getSecureSession } from "~/lib/dal";
 import { freepikClient } from "~/lib/freepik-client";
-import { imageUrlToBase64, validateImageSize, getImageSizeInMB } from "~/lib/image-utils";
+import {
+  imageUrlToBase64,
+  validateImageSize,
+  getImageSizeInMB,
+} from "~/lib/image-utils";
 import { getListingHeaderData } from "~/server/queries/listing";
 
 /**
@@ -12,48 +16,63 @@ export async function POST(
   { params: _params }: { params: Promise<{ id: string }> },
 ) {
   const resolvedParams = await _params;
-  
+
   try {
     // 1. Use optimized DAL function for authentication
     const session = await getSecureSession();
-    
+
     if (!session?.user?.id) {
-      console.error('Unauthorized access to enhancement API');
+      console.error("Unauthorized access to enhancement API");
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // 2. Get request data
-    const data = await request.json() as { imageUrl: string; referenceNumber: string; currentImageOrder: number };
+    const data = (await request.json()) as {
+      imageUrl: string;
+      referenceNumber: string;
+      currentImageOrder: number;
+    };
     const propertyId = BigInt(resolvedParams.id);
 
-    if (!data.imageUrl || !data.referenceNumber || data.currentImageOrder === undefined) {
-      console.error('Missing required fields for enhancement');
+    if (
+      !data.imageUrl ||
+      !data.referenceNumber ||
+      data.currentImageOrder === undefined
+    ) {
+      console.error("Missing required fields for enhancement");
       return Response.json(
-        { error: "imageUrl, referenceNumber, and currentImageOrder are required" },
-        { status: 400 }
+        {
+          error:
+            "imageUrl, referenceNumber, and currentImageOrder are required",
+        },
+        { status: 400 },
       );
     }
 
     // 3. Validate property ownership
-    const propertyData = await getListingHeaderData(parseInt(resolvedParams.id));
+    const propertyData = await getListingHeaderData(
+      parseInt(resolvedParams.id),
+    );
     if (!propertyData) {
-      console.error('Property not found for enhancement');
-      return Response.json(
-        { error: "Property not found" },
-        { status: 404 }
-      );
+      console.error("Property not found for enhancement");
+      return Response.json({ error: "Property not found" }, { status: 404 });
     }
 
     // 4. Download and validate image
     const imageBase64 = await imageUrlToBase64(data.imageUrl);
-    
+
     // Validate size (max 10MB)
     if (!validateImageSize(imageBase64, 10)) {
       const sizeMB = getImageSizeInMB(imageBase64);
-      console.error('Image too large for enhancement:', `${sizeMB.toFixed(2)}MB`);
+      console.error(
+        "Image too large for enhancement:",
+        `${sizeMB.toFixed(2)}MB`,
+      );
       return Response.json(
-        { error: `Image too large (${sizeMB.toFixed(2)}MB). Maximum size is 10MB` },
-        { status: 400 }
+        {
+          error: `Image too large (${sizeMB.toFixed(2)}MB). Maximum size is 10MB`,
+        },
+        { status: 400 },
       );
     }
 
@@ -69,29 +88,31 @@ export async function POST(
       currentImageOrder: data.currentImageOrder,
       propertyId: propertyId.toString(),
     });
-
   } catch (error) {
     console.error("Freepik enhancement API error:", error);
-    
+
     // Return specific error messages for common issues
     if (error instanceof Error) {
-      if (error.message.includes('fetch')) {
+      if (error.message.includes("fetch")) {
         return Response.json(
           { error: "Failed to download image. Please check the image URL." },
-          { status: 400 }
+          { status: 400 },
         );
       }
-      if (error.message.includes('API error')) {
+      if (error.message.includes("API error")) {
         return Response.json(
-          { error: "Enhancement service temporarily unavailable. Please try again." },
-          { status: 503 }
+          {
+            error:
+              "Enhancement service temporarily unavailable. Please try again.",
+          },
+          { status: 503 },
         );
       }
     }
-    
+
     return Response.json(
       { error: "Failed to start image enhancement" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -112,14 +133,16 @@ export async function GET(
 
     // 2. Get query parameters
     const { searchParams } = new URL(request.url);
-    const taskId = searchParams.get('taskId');
-    const referenceNumber = searchParams.get('referenceNumber');
-    const currentImageOrder = searchParams.get('currentImageOrder');
+    const taskId = searchParams.get("taskId");
+    const referenceNumber = searchParams.get("referenceNumber");
+    const currentImageOrder = searchParams.get("currentImageOrder");
 
     if (!taskId || !referenceNumber || !currentImageOrder) {
       return Response.json(
-        { error: "taskId, referenceNumber, and currentImageOrder are required" },
-        { status: 400 }
+        {
+          error: "taskId, referenceNumber, and currentImageOrder are required",
+        },
+        { status: 400 },
       );
     }
 
@@ -127,28 +150,28 @@ export async function GET(
     const status = await freepikClient.checkStatus(taskId);
 
     // 4. If still processing, return status
-    if (status.status === 'IN_PROGRESS' || status.status === 'CREATED') {
-      return Response.json({ 
-        status: 'IN_PROGRESS',
+    if (status.status === "IN_PROGRESS" || status.status === "CREATED") {
+      return Response.json({
+        status: "IN_PROGRESS",
         progress: status.progress ?? 0,
       });
     }
 
     // 5. If failed, return error
-    if (status.status === 'FAILED') {
+    if (status.status === "FAILED") {
       return Response.json({
-        status: 'FAILED',
-        error: status.error ?? 'Enhancement failed',
+        status: "FAILED",
+        error: status.error ?? "Enhancement failed",
       });
     }
 
     // 6. If successful, return temporary Freepik URL (don't save to S3 yet)
-    if (status.status === 'COMPLETED' && status.result?.generated?.[0]) {
+    if (status.status === "COMPLETED" && status.result?.generated?.[0]) {
       const enhancedImageUrl = status.result.generated[0];
-      
+
       // Return the temporary Freepik URL and metadata needed for saving later
       return Response.json({
-        status: 'SUCCESS',
+        status: "SUCCESS",
         enhancedImageUrl: enhancedImageUrl, // Freepik's temporary URL
         referenceNumber: referenceNumber,
         currentImageOrder: currentImageOrder,
@@ -160,12 +183,11 @@ export async function GET(
       status: status.status,
       error: "Unexpected enhancement status",
     });
-
   } catch (error) {
     console.error("Enhancement status check error:", error);
     return Response.json(
       { error: "Failed to check enhancement status" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

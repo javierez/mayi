@@ -148,12 +148,12 @@ export async function updateUserAccountId(userId: string, accountId: number) {
       .update(users)
       .set({ accountId: BigInt(accountId) })
       .where(eq(users.id, userId));
-    
+
     const [updatedUser] = await db
       .select()
       .from(users)
       .where(eq(users.id, userId));
-    
+
     return updatedUser;
   } catch (error) {
     console.error("Error updating user accountId:", error);
@@ -263,20 +263,20 @@ export async function getAllUsersWithRoles(options?: {
   search?: string;
   accountId?: number;
   roleFilter?: number;
-  statusFilter?: 'active' | 'inactive' | 'all';
-  sortBy?: 'name' | 'email' | 'createdAt' | 'lastLogin';
-  sortOrder?: 'asc' | 'desc';
+  statusFilter?: "active" | "inactive" | "all";
+  sortBy?: "name" | "email" | "createdAt" | "lastLogin";
+  sortOrder?: "asc" | "desc";
 }) {
   try {
     const {
       page = 1,
       limit = 10,
-      search = '',
+      search = "",
       accountId,
       roleFilter,
-      statusFilter = 'active',
-      sortBy = 'createdAt',
-      sortOrder = 'desc'
+      statusFilter = "active",
+      sortBy = "createdAt",
+      sortOrder = "desc",
     } = options ?? {};
 
     const offset = (page - 1) * limit;
@@ -308,14 +308,14 @@ export async function getAllUsersWithRoles(options?: {
       })
       .from(users)
       .leftJoin(accounts, eq(users.accountId, accounts.accountId))
-      .leftJoin(userRoles, and(
-        eq(users.id, userRoles.userId),
-        eq(userRoles.isActive, true)
-      ))
-      .leftJoin(roles, and(
-        eq(userRoles.roleId, roles.roleId),
-        eq(roles.isActive, true)
-      ));
+      .leftJoin(
+        userRoles,
+        and(eq(users.id, userRoles.userId), eq(userRoles.isActive, true)),
+      )
+      .leftJoin(
+        roles,
+        and(eq(userRoles.roleId, roles.roleId), eq(roles.isActive, true)),
+      );
 
     // Build where conditions
     const conditions = [];
@@ -332,8 +332,8 @@ export async function getAllUsersWithRoles(options?: {
           like(users.name, `%${search}%`),
           like(users.email, `%${search}%`),
           like(users.firstName, `%${search}%`),
-          like(users.lastName, `%${search}%`)
-        )
+          like(users.lastName, `%${search}%`),
+        ),
       );
     }
 
@@ -343,25 +343,25 @@ export async function getAllUsersWithRoles(options?: {
     }
 
     // Status filter
-    if (statusFilter !== 'all') {
-      conditions.push(eq(users.isActive, statusFilter === 'active'));
+    if (statusFilter !== "all") {
+      conditions.push(eq(users.isActive, statusFilter === "active"));
     }
 
     // Apply filters
-    const filteredQuery = conditions.length > 0
-      ? baseQuery.where(and(...conditions))
-      : baseQuery;
+    const filteredQuery =
+      conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
 
     // Add sorting
-    const sortField = {
-      name: users.name,
-      email: users.email,
-      createdAt: users.createdAt,
-      lastLogin: users.lastLogin
-    }[sortBy] || users.createdAt;
+    const sortField =
+      {
+        name: users.name,
+        email: users.email,
+        createdAt: users.createdAt,
+        lastLogin: users.lastLogin,
+      }[sortBy] || users.createdAt;
 
     const sortedQuery = filteredQuery.orderBy(
-      sortOrder === 'desc' ? desc(sortField) : asc(sortField)
+      sortOrder === "desc" ? desc(sortField) : asc(sortField),
     );
 
     // Add pagination
@@ -369,10 +369,10 @@ export async function getAllUsersWithRoles(options?: {
 
     // Group results by user (since users can have multiple roles)
     const usersMap = new Map<string, UserWithRoles>();
-    
-    results.forEach(row => {
+
+    results.forEach((row) => {
       const userId = row.id;
-      
+
       if (!usersMap.has(userId)) {
         usersMap.set(userId, {
           id: row.id,
@@ -389,10 +389,10 @@ export async function getAllUsersWithRoles(options?: {
           updatedAt: row.updatedAt,
           accountId: row.accountId,
           accountName: row.accountName,
-          roles: []
+          roles: [],
         });
       }
-      
+
       // Add role if it exists
       if (row.roleId && row.roleName) {
         const user = usersMap.get(userId);
@@ -401,7 +401,7 @@ export async function getAllUsersWithRoles(options?: {
             roleId: Number(row.roleId),
             name: row.roleName,
             description: row.roleDescription,
-            assignedAt: row.roleAssignedAt ?? new Date()
+            assignedAt: row.roleAssignedAt ?? new Date(),
           });
         }
       }
@@ -414,14 +414,15 @@ export async function getAllUsersWithRoles(options?: {
       .select({ count: sql<number>`count(*)` })
       .from(users)
       .leftJoin(accounts, eq(users.accountId, accounts.accountId))
-      .leftJoin(userRoles, and(
-        eq(users.id, userRoles.userId),
-        eq(userRoles.isActive, true)
-      ));
+      .leftJoin(
+        userRoles,
+        and(eq(users.id, userRoles.userId), eq(userRoles.isActive, true)),
+      );
 
-    const countResult = conditions.length > 0
-      ? await countQuery.where(and(...conditions))
-      : await countQuery;
+    const countResult =
+      conditions.length > 0
+        ? await countQuery.where(and(...conditions))
+        : await countQuery;
 
     const totalCount = countResult[0]?.count ?? 0;
 
@@ -431,17 +432,20 @@ export async function getAllUsersWithRoles(options?: {
         page,
         limit,
         totalCount,
-        totalPages: Math.ceil(totalCount / limit)
-      }
+        totalPages: Math.ceil(totalCount / limit),
+      },
     };
   } catch (error) {
-    console.error('Error fetching users with roles:', error);
+    console.error("Error fetching users with roles:", error);
     throw error;
   }
 }
 
 // Get single user with full details including roles and permissions
-export async function getUserWithFullDetails(userId: string, requestingAccountId?: number) {
+export async function getUserWithFullDetails(
+  userId: string,
+  requestingAccountId?: number,
+) {
   try {
     // Get user basic info
     const [user] = await db
@@ -463,7 +467,7 @@ export async function getUserWithFullDetails(userId: string, requestingAccountId
         updatedAt: users.updatedAt,
         accountId: users.accountId,
         accountName: accounts.name,
-        accountPlan: accounts.plan
+        accountPlan: accounts.plan,
       })
       .from(users)
       .leftJoin(accounts, eq(users.accountId, accounts.accountId))
@@ -475,7 +479,7 @@ export async function getUserWithFullDetails(userId: string, requestingAccountId
 
     // Security check - if requestingAccountId is provided, ensure user belongs to that account
     if (requestingAccountId && user.accountId !== BigInt(requestingAccountId)) {
-      throw new Error('Access denied: User belongs to different account');
+      throw new Error("Access denied: User belongs to different account");
     }
 
     // Get user roles
@@ -486,35 +490,38 @@ export async function getUserWithFullDetails(userId: string, requestingAccountId
         roleDescription: roles.description,
         assignedAt: userRoles.createdAt,
         // Get account-specific permissions if available
-        accountPermissions: accountRoles.permissions
+        accountPermissions: accountRoles.permissions,
       })
       .from(userRoles)
       .innerJoin(roles, eq(userRoles.roleId, roles.roleId))
-      .leftJoin(accountRoles, and(
-        eq(accountRoles.roleId, roles.roleId),
-        eq(accountRoles.accountId, user.accountId!)
-      ))
+      .leftJoin(
+        accountRoles,
+        and(
+          eq(accountRoles.roleId, roles.roleId),
+          eq(accountRoles.accountId, user.accountId!),
+        ),
+      )
       .where(
         and(
           eq(userRoles.userId, userId),
           eq(userRoles.isActive, true),
-          eq(roles.isActive, true)
-        )
+          eq(roles.isActive, true),
+        ),
       );
 
     return {
       ...user,
       accountId: user.accountId ? Number(user.accountId) : null,
-      roles: userRolesList.map(role => ({
+      roles: userRolesList.map((role) => ({
         roleId: Number(role.roleId),
         name: role.roleName,
         description: role.roleDescription,
         assignedAt: role.assignedAt,
-        permissions: role.accountPermissions
-      }))
+        permissions: role.accountPermissions,
+      })),
     };
   } catch (error) {
-    console.error('Error fetching user with full details:', error);
+    console.error("Error fetching user with full details:", error);
     throw error;
   }
 }
@@ -543,12 +550,12 @@ export async function createUserWithRole(userData: {
         email: userData.email,
         accountId: userData.accountId,
         firstName: userData.firstName,
-        lastName: userData.lastName ?? '',
+        lastName: userData.lastName ?? "",
         phone: userData.phone,
-        timezone: userData.timezone ?? 'UTC',
-        language: userData.language ?? 'es',
+        timezone: userData.timezone ?? "UTC",
+        language: userData.language ?? "es",
         isVerified: userData.isVerified ?? false,
-        isActive: userData.isActive ?? true
+        isActive: userData.isActive ?? true,
       });
 
       // Assign role if provided
@@ -556,24 +563,30 @@ export async function createUserWithRole(userData: {
         await tx.insert(userRoles).values({
           userId: userData.id,
           roleId: BigInt(userData.roleId),
-          isActive: true
+          isActive: true,
         });
       }
 
       // Get the created user with role details
       const newUser = await getUserWithFullDetails(userData.id);
-      
-      console.log(`✅ Created user ${userData.id} with role ${userData.roleId ?? 'none'}`);
+
+      console.log(
+        `✅ Created user ${userData.id} with role ${userData.roleId ?? "none"}`,
+      );
       return { success: true, user: newUser };
     } catch (error) {
-      console.error('Error creating user with role:', error);
+      console.error("Error creating user with role:", error);
       throw error;
     }
   });
 }
 
 // Update user role assignment
-export async function updateUserRole(userId: string, newRoleId: number, requestingAccountId?: number) {
+export async function updateUserRole(
+  userId: string,
+  newRoleId: number,
+  requestingAccountId?: number,
+) {
   return await db.transaction(async (tx) => {
     try {
       // Security check
@@ -584,7 +597,7 @@ export async function updateUserRole(userId: string, newRoleId: number, requesti
           .where(eq(users.id, userId));
 
         if (!user || user.accountId !== BigInt(requestingAccountId)) {
-          throw new Error('Access denied: User belongs to different account');
+          throw new Error("Access denied: User belongs to different account");
         }
       }
 
@@ -602,7 +615,7 @@ export async function updateUserRole(userId: string, newRoleId: number, requesti
           .set({
             roleId: BigInt(newRoleId),
             isActive: true,
-            updatedAt: new Date()
+            updatedAt: new Date(),
           })
           .where(eq(userRoles.userRoleId, existingRole.userRoleId));
       } else {
@@ -610,14 +623,14 @@ export async function updateUserRole(userId: string, newRoleId: number, requesti
         await tx.insert(userRoles).values({
           userId: userId,
           roleId: BigInt(newRoleId),
-          isActive: true
+          isActive: true,
         });
       }
 
       console.log(`✅ Updated user ${userId} role to ${newRoleId}`);
       return { success: true };
     } catch (error) {
-      console.error('Error updating user role:', error);
+      console.error("Error updating user role:", error);
       throw error;
     }
   });
@@ -644,14 +657,14 @@ export async function searchUsersWithFilters(filters: {
         isActive: users.isActive,
         createdAt: users.createdAt,
         accountName: accounts.name,
-        roleName: roles.name
+        roleName: roles.name,
       })
       .from(users)
       .leftJoin(accounts, eq(users.accountId, accounts.accountId))
-      .leftJoin(userRoles, and(
-        eq(users.id, userRoles.userId),
-        eq(userRoles.isActive, true)
-      ))
+      .leftJoin(
+        userRoles,
+        and(eq(users.id, userRoles.userId), eq(userRoles.isActive, true)),
+      )
       .leftJoin(roles, eq(userRoles.roleId, roles.roleId));
 
     const conditions = [];
@@ -661,8 +674,8 @@ export async function searchUsersWithFilters(filters: {
         or(
           like(users.name, `%${filters.search}%`),
           like(users.email, `%${filters.search}%`),
-          like(users.firstName, `%${filters.search}%`)
-        )
+          like(users.firstName, `%${filters.search}%`),
+        ),
       );
     }
 
@@ -672,7 +685,11 @@ export async function searchUsersWithFilters(filters: {
 
     if (filters.roleIds && filters.roleIds.length > 0) {
       conditions.push(
-        or(...filters.roleIds.map(roleId => eq(userRoles.roleId, BigInt(roleId))))
+        or(
+          ...filters.roleIds.map((roleId) =>
+            eq(userRoles.roleId, BigInt(roleId)),
+          ),
+        ),
       );
     }
 
@@ -688,21 +705,24 @@ export async function searchUsersWithFilters(filters: {
       conditions.push(eq(users.createdAt, filters.createdBefore)); // Note: You might want lte here
     }
 
-    const filteredQuery = conditions.length > 0
-      ? baseQuery.where(and(...conditions))
-      : baseQuery;
+    const filteredQuery =
+      conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
 
     const results = await filteredQuery.orderBy(desc(users.createdAt));
-    
+
     return results;
   } catch (error) {
-    console.error('Error searching users with filters:', error);
+    console.error("Error searching users with filters:", error);
     throw error;
   }
 }
 
 // Bulk user operations
-export async function bulkUserOperations(operation: 'activate' | 'deactivate' | 'delete', userIds: string[], requestingAccountId?: number) {
+export async function bulkUserOperations(
+  operation: "activate" | "deactivate" | "delete",
+  userIds: string[],
+  requestingAccountId?: number,
+) {
   return await db.transaction(async (tx) => {
     try {
       // Security check - ensure all users belong to requesting account
@@ -712,26 +732,28 @@ export async function bulkUserOperations(operation: 'activate' | 'deactivate' | 
           .from(users)
           .where(
             and(
-              or(...userIds.map(id => eq(users.id, id))),
-              eq(users.accountId, BigInt(requestingAccountId))
-            )
+              or(...userIds.map((id) => eq(users.id, id))),
+              eq(users.accountId, BigInt(requestingAccountId)),
+            ),
           );
 
         if (usersCheck.length !== userIds.length) {
-          throw new Error('Access denied: Some users belong to different accounts');
+          throw new Error(
+            "Access denied: Some users belong to different accounts",
+          );
         }
       }
 
       let updateData: { updatedAt: Date; isActive?: boolean };
 
       switch (operation) {
-        case 'activate':
+        case "activate":
           updateData = { updatedAt: new Date(), isActive: true };
           break;
-        case 'deactivate':
+        case "deactivate":
           updateData = { updatedAt: new Date(), isActive: false };
           break;
-        case 'delete':
+        case "delete":
           updateData = { updatedAt: new Date(), isActive: false };
           // Could also set a deletedAt timestamp
           break;
@@ -742,9 +764,11 @@ export async function bulkUserOperations(operation: 'activate' | 'deactivate' | 
       await tx
         .update(users)
         .set(updateData)
-        .where(or(...userIds.map(id => eq(users.id, id))));
+        .where(or(...userIds.map((id) => eq(users.id, id))));
 
-      console.log(`✅ Bulk ${operation} operation completed for ${userIds.length} users`);
+      console.log(
+        `✅ Bulk ${operation} operation completed for ${userIds.length} users`,
+      );
       return { success: true, affectedCount: userIds.length };
     } catch (error) {
       console.error(`Error in bulk ${operation} operation:`, error);
@@ -757,7 +781,9 @@ export async function bulkUserOperations(operation: 'activate' | 'deactivate' | 
 export async function getUsersForRoleManagement() {
   try {
     const accountId = await getCurrentUserAccountId();
-    console.log(`🔍 [getUsersForRoleManagement] Fetching users for accountId: ${accountId}`);
+    console.log(
+      `🔍 [getUsersForRoleManagement] Fetching users for accountId: ${accountId}`,
+    );
 
     // First, get all users for this account
     const allUsers = await db
@@ -773,14 +799,13 @@ export async function getUsersForRoleManagement() {
       })
       .from(users)
       .where(
-        and(
-          eq(users.accountId, BigInt(accountId)),
-          eq(users.isActive, true)
-        )
+        and(eq(users.accountId, BigInt(accountId)), eq(users.isActive, true)),
       )
       .orderBy(users.name);
 
-    console.log(`📊 [getUsersForRoleManagement] Found ${allUsers.length} users`);
+    console.log(
+      `📊 [getUsersForRoleManagement] Found ${allUsers.length} users`,
+    );
 
     // For each user, get their most recent role assignment (active or not)
     const usersWithRoles = await Promise.all(
@@ -794,10 +819,7 @@ export async function getUsersForRoleManagement() {
           })
           .from(userRoles)
           .where(
-            and(
-              eq(userRoles.userId, user.id),
-              eq(userRoles.isActive, true)
-            )
+            and(eq(userRoles.userId, user.id), eq(userRoles.isActive, true)),
           )
           .orderBy(desc(userRoles.updatedAt))
           .limit(1);
@@ -833,11 +855,17 @@ export async function getUsersForRoleManagement() {
           .orderBy(desc(userRoles.updatedAt));
 
         console.log(`   - User: ${user.name} (${user.id})`);
-        console.log(`      Current role: roleId=${currentRole?.roleId ?? 'null'}, userRoleId=${currentRole?.userRoleId ?? 'null'}, assignmentActive=${currentRole?.isActive ?? 'null'}`);
+        console.log(
+          `      Current role: roleId=${currentRole?.roleId ?? "null"}, userRoleId=${currentRole?.userRoleId ?? "null"}, assignmentActive=${currentRole?.isActive ?? "null"}`,
+        );
         if (allUserRoles.length > 0) {
-          console.log(`      🔍 All role assignments (${allUserRoles.length}):`);
-          allUserRoles.forEach(role => {
-            console.log(`         - userRoleId: ${role.userRoleId}, roleId: ${role.roleId}, isActive: ${role.isActive}, updated: ${role.updatedAt?.toISOString() ?? 'null'}`);
+          console.log(
+            `      🔍 All role assignments (${allUserRoles.length}):`,
+          );
+          allUserRoles.forEach((role) => {
+            console.log(
+              `         - userRoleId: ${role.userRoleId}, roleId: ${role.roleId}, isActive: ${role.isActive}, updated: ${role.updatedAt?.toISOString() ?? "null"}`,
+            );
           });
         }
 
@@ -846,44 +874,58 @@ export async function getUsersForRoleManagement() {
           roleId: currentRole?.roleId ?? null,
           userRoleId: currentRole?.userRoleId ?? null,
         };
-      })
+      }),
     );
 
     // Filter out users with role 1 (Superadmin - internal only) or role 3 (Account Admin - protected)
-    const filteredUsers = usersWithRoles.filter(user => {
+    const filteredUsers = usersWithRoles.filter((user) => {
       const roleId = user.roleId ? Number(user.roleId) : null;
       const shouldInclude = roleId !== 1 && roleId !== 3;
       if (!shouldInclude) {
-        console.log(`   ⚠️  Filtering out user ${user.name} with protected role ${roleId}`);
+        console.log(
+          `   ⚠️  Filtering out user ${user.name} with protected role ${roleId}`,
+        );
       }
       return shouldInclude;
     });
 
-    console.log(`✅ [getUsersForRoleManagement] Returning ${filteredUsers.length} filtered users`);
+    console.log(
+      `✅ [getUsersForRoleManagement] Returning ${filteredUsers.length} filtered users`,
+    );
 
-    const result = filteredUsers.map(user => ({
+    const result = filteredUsers.map((user) => ({
       ...user,
       isActive: user.isActive ?? true,
       roleId: user.roleId ? Number(user.roleId) : null,
       userRoleId: user.userRoleId ? Number(user.userRoleId) : null,
     }));
 
-    result.forEach(user => {
-      console.log(`   📤 Final user: ${user.name} | roleId: ${user.roleId} | userRoleId: ${user.userRoleId}`);
+    result.forEach((user) => {
+      console.log(
+        `   📤 Final user: ${user.name} | roleId: ${user.roleId} | userRoleId: ${user.userRoleId}`,
+      );
     });
 
     return result;
   } catch (error) {
-    console.error('❌ [getUsersForRoleManagement] Error fetching users for role management:', error);
+    console.error(
+      "❌ [getUsersForRoleManagement] Error fetching users for role management:",
+      error,
+    );
     throw error;
   }
 }
 
 // Update user role with auth
-export async function updateUserRoleWithAuth(userId: string, newRoleId: number) {
+export async function updateUserRoleWithAuth(
+  userId: string,
+  newRoleId: number,
+) {
   try {
     const accountId = await getCurrentUserAccountId();
-    console.log(`🔄 [updateUserRoleWithAuth] Starting role update for userId: ${userId}, newRoleId: ${newRoleId}, accountId: ${accountId}`);
+    console.log(
+      `🔄 [updateUserRoleWithAuth] Starting role update for userId: ${userId}, newRoleId: ${newRoleId}, accountId: ${accountId}`,
+    );
 
     // Verify user belongs to the account
     const [user] = await db
@@ -892,21 +934,34 @@ export async function updateUserRoleWithAuth(userId: string, newRoleId: number) 
       .where(eq(users.id, userId));
 
     if (!user || user.accountId !== BigInt(accountId)) {
-      console.log(`❌ [updateUserRoleWithAuth] Access denied: User ${userId} does not belong to account ${accountId}`);
-      throw new Error('Access denied: User belongs to different account');
+      console.log(
+        `❌ [updateUserRoleWithAuth] Access denied: User ${userId} does not belong to account ${accountId}`,
+      );
+      throw new Error("Access denied: User belongs to different account");
     }
 
-    console.log(`✅ [updateUserRoleWithAuth] User verified, belongs to account ${accountId}`);
+    console.log(
+      `✅ [updateUserRoleWithAuth] User verified, belongs to account ${accountId}`,
+    );
 
     return await db.transaction(async (tx) => {
       // Check if user already has a role assignment
       const [existingRole] = await tx
-        .select({ userRoleId: userRoles.userRoleId, roleId: userRoles.roleId, isActive: userRoles.isActive })
+        .select({
+          userRoleId: userRoles.userRoleId,
+          roleId: userRoles.roleId,
+          isActive: userRoles.isActive,
+        })
         .from(userRoles)
         .where(eq(userRoles.userId, userId))
         .limit(1);
 
-      console.log(`📋 [updateUserRoleWithAuth] Existing role:`, existingRole ? `userRoleId=${existingRole.userRoleId}, roleId=${existingRole.roleId}, isActive=${existingRole.isActive}` : 'None');
+      console.log(
+        `📋 [updateUserRoleWithAuth] Existing role:`,
+        existingRole
+          ? `userRoleId=${existingRole.userRoleId}, roleId=${existingRole.roleId}, isActive=${existingRole.isActive}`
+          : "None",
+      );
 
       if (existingRole) {
         // UPDATE the existing role assignment
@@ -915,11 +970,13 @@ export async function updateUserRoleWithAuth(userId: string, newRoleId: number) 
           .set({
             roleId: BigInt(newRoleId),
             isActive: true,
-            updatedAt: new Date()
+            updatedAt: new Date(),
           })
           .where(eq(userRoles.userRoleId, existingRole.userRoleId));
 
-        console.log(`✅ [updateUserRoleWithAuth] Updated existing role assignment ${existingRole.userRoleId} from role ${existingRole.roleId} to ${newRoleId}`);
+        console.log(
+          `✅ [updateUserRoleWithAuth] Updated existing role assignment ${existingRole.userRoleId} from role ${existingRole.roleId} to ${newRoleId}`,
+        );
       } else {
         // INSERT a new role assignment (first time user gets a role)
         await tx.insert(userRoles).values({
@@ -928,21 +985,32 @@ export async function updateUserRoleWithAuth(userId: string, newRoleId: number) 
           isActive: true,
         });
 
-        console.log(`✅ [updateUserRoleWithAuth] Created new role assignment for user ${userId} with role ${newRoleId}`);
+        console.log(
+          `✅ [updateUserRoleWithAuth] Created new role assignment for user ${userId} with role ${newRoleId}`,
+        );
       }
 
       // Verify the final state
       const [finalRole] = await tx
-        .select({ userRoleId: userRoles.userRoleId, roleId: userRoles.roleId, isActive: userRoles.isActive })
+        .select({
+          userRoleId: userRoles.userRoleId,
+          roleId: userRoles.roleId,
+          isActive: userRoles.isActive,
+        })
         .from(userRoles)
         .where(eq(userRoles.userId, userId));
 
-      console.log(`🔍 [updateUserRoleWithAuth] Final state: userRoleId=${finalRole?.userRoleId}, roleId=${finalRole?.roleId}, isActive=${finalRole?.isActive}`);
+      console.log(
+        `🔍 [updateUserRoleWithAuth] Final state: userRoleId=${finalRole?.userRoleId}, roleId=${finalRole?.roleId}, isActive=${finalRole?.isActive}`,
+      );
 
       return { success: true };
     });
   } catch (error) {
-    console.error('❌ [updateUserRoleWithAuth] Error updating user role:', error);
+    console.error(
+      "❌ [updateUserRoleWithAuth] Error updating user role:",
+      error,
+    );
     throw error;
   }
 }

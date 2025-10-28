@@ -10,8 +10,8 @@ export const fadeInUp: Variants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: "easeOut" }
-  }
+    transition: { duration: 0.5, ease: "easeOut" },
+  },
 };
 
 export const fadeInDown: Variants = {
@@ -19,8 +19,8 @@ export const fadeInDown: Variants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: "easeOut" }
-  }
+    transition: { duration: 0.5, ease: "easeOut" },
+  },
 };
 
 export const fadeInLeft: Variants = {
@@ -28,8 +28,8 @@ export const fadeInLeft: Variants = {
   visible: {
     opacity: 1,
     x: 0,
-    transition: { duration: 0.5, ease: "easeOut" }
-  }
+    transition: { duration: 0.5, ease: "easeOut" },
+  },
 };
 
 export const fadeInRight: Variants = {
@@ -37,8 +37,8 @@ export const fadeInRight: Variants = {
   visible: {
     opacity: 1,
     x: 0,
-    transition: { duration: 0.5, ease: "easeOut" }
-  }
+    transition: { duration: 0.5, ease: "easeOut" },
+  },
 };
 
 export const fadeInScale: Variants = {
@@ -46,8 +46,8 @@ export const fadeInScale: Variants = {
   visible: {
     opacity: 1,
     scale: 1,
-    transition: { duration: 0.5, ease: "easeOut" }
-  }
+    transition: { duration: 0.5, ease: "easeOut" },
+  },
 };
 
 export const scaleIn: Variants = {
@@ -55,8 +55,8 @@ export const scaleIn: Variants = {
   visible: {
     opacity: 1,
     scale: 1,
-    transition: { duration: 0.4, ease: "easeOut" }
-  }
+    transition: { duration: 0.4, ease: "easeOut" },
+  },
 };
 
 export const staggerContainer: Variants = {
@@ -65,9 +65,9 @@ export const staggerContainer: Variants = {
     opacity: 1,
     transition: {
       staggerChildren: 0.1,
-      delayChildren: 0.1
-    }
-  }
+      delayChildren: 0.1,
+    },
+  },
 };
 
 export const staggerItem: Variants = {
@@ -75,8 +75,8 @@ export const staggerItem: Variants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, ease: "easeOut" }
-  }
+    transition: { duration: 0.4, ease: "easeOut" },
+  },
 };
 
 // Reusable animation components
@@ -86,7 +86,11 @@ interface AnimationWrapperProps {
   delay?: number;
 }
 
-export const FadeInUp = ({ children, className = "", delay = 0 }: AnimationWrapperProps) => (
+export const FadeInUp = ({
+  children,
+  className = "",
+  delay = 0,
+}: AnimationWrapperProps) => (
   <motion.div
     initial="hidden"
     whileInView="visible"
@@ -99,7 +103,11 @@ export const FadeInUp = ({ children, className = "", delay = 0 }: AnimationWrapp
   </motion.div>
 );
 
-export const FadeInDown = ({ children, className = "", delay = 0 }: AnimationWrapperProps) => (
+export const FadeInDown = ({
+  children,
+  className = "",
+  delay = 0,
+}: AnimationWrapperProps) => (
   <motion.div
     initial="hidden"
     whileInView="visible"
@@ -112,7 +120,11 @@ export const FadeInDown = ({ children, className = "", delay = 0 }: AnimationWra
   </motion.div>
 );
 
-export const FadeInLeft = ({ children, className = "", delay = 0 }: AnimationWrapperProps) => (
+export const FadeInLeft = ({
+  children,
+  className = "",
+  delay = 0,
+}: AnimationWrapperProps) => (
   <motion.div
     initial="hidden"
     whileInView="visible"
@@ -125,7 +137,11 @@ export const FadeInLeft = ({ children, className = "", delay = 0 }: AnimationWra
   </motion.div>
 );
 
-export const FadeInRight = ({ children, className = "", delay = 0 }: AnimationWrapperProps) => (
+export const FadeInRight = ({
+  children,
+  className = "",
+  delay = 0,
+}: AnimationWrapperProps) => (
   <motion.div
     initial="hidden"
     whileInView="visible"
@@ -138,7 +154,11 @@ export const FadeInRight = ({ children, className = "", delay = 0 }: AnimationWr
   </motion.div>
 );
 
-export const FadeInScale = ({ children, className = "", delay = 0 }: AnimationWrapperProps) => (
+export const FadeInScale = ({
+  children,
+  className = "",
+  delay = 0,
+}: AnimationWrapperProps) => (
   <motion.div
     initial="hidden"
     whileInView="visible"
@@ -151,7 +171,11 @@ export const FadeInScale = ({ children, className = "", delay = 0 }: AnimationWr
   </motion.div>
 );
 
-export const ScaleIn = ({ children, className = "", delay = 0 }: AnimationWrapperProps) => (
+export const ScaleIn = ({
+  children,
+  className = "",
+  delay = 0,
+}: AnimationWrapperProps) => (
   <motion.div
     initial="hidden"
     whileInView="visible"
@@ -165,7 +189,10 @@ export const ScaleIn = ({ children, className = "", delay = 0 }: AnimationWrappe
 );
 
 // Stagger animation container
-export const StaggerContainer = ({ children, className = "" }: AnimationWrapperProps) => (
+export const StaggerContainer = ({
+  children,
+  className = "",
+}: AnimationWrapperProps) => (
   <motion.div
     initial="hidden"
     whileInView="visible"
@@ -178,11 +205,11 @@ export const StaggerContainer = ({ children, className = "" }: AnimationWrapperP
 );
 
 // Stagger animation item
-export const StaggerItem = ({ children, className = "" }: AnimationWrapperProps) => (
-  <motion.div
-    variants={staggerItem}
-    className={className}
-  >
+export const StaggerItem = ({
+  children,
+  className = "",
+}: AnimationWrapperProps) => (
+  <motion.div variants={staggerItem} className={className}>
     {children}
   </motion.div>
 );
@@ -203,7 +230,7 @@ export const AnimatedCounter = ({
   duration: _duration = 2,
   prefix = "",
   suffix = "",
-  className = ""
+  className = "",
 }: CounterProps) => {
   return (
     <motion.div

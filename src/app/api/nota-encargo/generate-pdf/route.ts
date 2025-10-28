@@ -77,25 +77,25 @@ export async function POST(request: NextRequest) {
     const { getAccountById } = await import("~/server/queries/accounts");
     const account = await getAccountById(accountId);
     const logo = account?.logo;
-    
+
     console.log("📊 PDF Generation - Logo info:", {
       accountId: accountId.toString(),
       logo,
-      hasLogo: !!logo
+      hasLogo: !!logo,
     });
-    
+
     // Add logo to the data
     const dataWithLogo = {
       ...data,
       agency: {
         ...data.agency,
-        logo: logo
-      }
+        logo: logo,
+      },
     };
-    
+
     console.log("📊 PDF Generation - Data with logo:", {
       agencyLogo: dataWithLogo.agency.logo,
-      agencyName: dataWithLogo.agency.agentName
+      agencyName: dataWithLogo.agency.agentName,
     });
 
     // Launch browser with optimized settings for PDF generation
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
 
     // Set viewport to match A4 print dimensions
     await page.setViewport({
-      width: 794,  // A4 width in pixels at 96 DPI
+      width: 794, // A4 width in pixels at 96 DPI
       height: 1123, // A4 height in pixels at 96 DPI
       deviceScaleFactor: 1,
     });
@@ -128,7 +128,10 @@ export async function POST(request: NextRequest) {
     // Pass configuration as URL parameters
     templateUrl.searchParams.set("data", JSON.stringify(dataWithLogo));
 
-    console.log("📄 Navigating to nota encargo template URL:", templateUrl.toString());
+    console.log(
+      "📄 Navigating to nota encargo template URL:",
+      templateUrl.toString(),
+    );
 
     // Navigate to the template page
     const response = await page.goto(templateUrl.toString(), {
@@ -153,17 +156,19 @@ export async function POST(request: NextRequest) {
         "Nota encargo document container not found. Page content:",
         await page.content(),
       );
-      throw new Error("Nota encargo document container not found after 10 seconds");
+      throw new Error(
+        "Nota encargo document container not found after 10 seconds",
+      );
     }
 
     // Wait for images to load
     try {
       await page.waitForFunction(
         () => {
-          const images = Array.from(document.querySelectorAll('img'));
-          return images.every(img => img.complete);
+          const images = Array.from(document.querySelectorAll("img"));
+          return images.every((img) => img.complete);
         },
-        { timeout: 10000 }
+        { timeout: 10000 },
       );
       console.log("✅ All images loaded successfully");
     } catch {
@@ -194,7 +199,7 @@ export async function POST(request: NextRequest) {
       printBackground: true,
       margin: {
         top: "5mm",
-        right: "0mm", 
+        right: "0mm",
         bottom: "10mm",
         left: "0mm",
       },

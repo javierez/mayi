@@ -12,7 +12,6 @@ import { ChevronLeft, ChevronRight, Square, Wind } from "lucide-react";
 import { motion } from "framer-motion";
 import { useFormContext } from "../form-context";
 
-
 interface NinethPageProps {
   listingId: string;
   onNext: () => void;
@@ -26,10 +25,7 @@ interface NinethPageFormData {
   windowType: string;
 }
 
-export default function NinethPage({
-  onNext,
-  onBack,
-}: NinethPageProps) {
+export default function NinethPage({ onNext, onBack }: NinethPageProps) {
   const { state, updateFormData } = useFormContext();
 
   // Get current form data from context
@@ -41,10 +37,7 @@ export default function NinethPage({
   };
 
   // Update form data helper
-  const updateField = (
-    field: keyof NinethPageFormData,
-    value: string,
-  ) => {
+  const updateField = (field: keyof NinethPageFormData, value: string) => {
     updateFormData({ [field]: value });
   };
 
@@ -63,11 +56,10 @@ export default function NinethPage({
   const handleNext = () => {
     // Validate required fields (if any are required in the future)
     // Currently all fields are optional for materials and finishes
-    
+
     // Navigate IMMEDIATELY - no saves, completely instant!
     onNext();
   };
-
 
   return (
     <motion.div
@@ -192,7 +184,6 @@ export default function NinethPage({
           </div>
         </div>
       </motion.div>
-
 
       <motion.div
         className="flex justify-between border-t pt-4"

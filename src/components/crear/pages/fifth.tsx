@@ -19,10 +19,7 @@ interface FifthPageFormData {
   orientation: string;
 }
 
-export default function FifthPage({
-  onNext,
-  onBack,
-}: FifthPageProps) {
+export default function FifthPage({ onNext, onBack }: FifthPageProps) {
   const { state, updateFormData } = useFormContext();
 
   // Get current form data from context (like first.tsx pattern)
@@ -54,7 +51,6 @@ export default function FifthPage({
     // Navigate immediately - no saves, completely instant! (like first.tsx)
     onNext();
   };
-
 
   return (
     <motion.div
@@ -171,7 +167,6 @@ export default function FifthPage({
           />
         </div>
       </motion.div>
-
 
       <motion.div
         className="flex justify-between border-t pt-4"

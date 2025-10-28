@@ -171,28 +171,79 @@ export async function saveExtractedDataToDatabase(
 
           // Type-safe assignment with proper conversion for regular fields
           const key = field.dbColumn;
-          
+
           // Define valid property fields from the database schema
           const validPropertyFields = [
-            'title', 'description', 'propertyType', 'propertySubtype', 'bedrooms', 
-            'bathrooms', 'squareMeter', 'yearBuilt', 'cadastralReference', 'builtSurfaceArea',
-            'conservationStatus', 'street', 'addressDetails', 'postalCode', 'neighborhoodId',
-            'latitude', 'longitude', 'energyCertification', 'energyCertificateStatus',
-            'energyConsumptionScale', 'energyConsumptionValue', 'emissionsScale', 'emissionsValue',
-            'hasHeating', 'heatingType', 'hasElevator', 'hasGarage', 'hasStorageRoom',
-            'garageType', 'garageSpaces', 'garageInBuilding', 'elevatorToGarage', 'garageNumber',
-            'pantry', 'terrace', 'terraceSize', 'buildingFloors', 'builtInWardrobes',
-            'mainFloorType', 'shutterType', 'carpentryType', 'orientation', 'airConditioningType',
-            'windowType', 'exterior', 'bright', 'views', 'mountainViews', 'seaViews', 'beachfront',
-            'jacuzzi', 'hydromassage', 'garden', 'pool', 'homeAutomation', 'musicSystem',
-            'laundryRoom', 'coveredClothesline', 'fireplace'
+            "title",
+            "description",
+            "propertyType",
+            "propertySubtype",
+            "bedrooms",
+            "bathrooms",
+            "squareMeter",
+            "yearBuilt",
+            "cadastralReference",
+            "builtSurfaceArea",
+            "conservationStatus",
+            "street",
+            "addressDetails",
+            "postalCode",
+            "neighborhoodId",
+            "latitude",
+            "longitude",
+            "energyCertification",
+            "energyCertificateStatus",
+            "energyConsumptionScale",
+            "energyConsumptionValue",
+            "emissionsScale",
+            "emissionsValue",
+            "hasHeating",
+            "heatingType",
+            "hasElevator",
+            "hasGarage",
+            "hasStorageRoom",
+            "garageType",
+            "garageSpaces",
+            "garageInBuilding",
+            "elevatorToGarage",
+            "garageNumber",
+            "pantry",
+            "terrace",
+            "terraceSize",
+            "buildingFloors",
+            "builtInWardrobes",
+            "mainFloorType",
+            "shutterType",
+            "carpentryType",
+            "orientation",
+            "airConditioningType",
+            "windowType",
+            "exterior",
+            "bright",
+            "views",
+            "mountainViews",
+            "seaViews",
+            "beachfront",
+            "jacuzzi",
+            "hydromassage",
+            "garden",
+            "pool",
+            "homeAutomation",
+            "musicSystem",
+            "laundryRoom",
+            "coveredClothesline",
+            "fireplace",
           ];
-          
+
           if (validPropertyFields.includes(key)) {
             (propertyUpdateData as Record<string, unknown>)[key] = field.value;
-            console.log(`✅ [DATABASE] Property field prepared: ${key} = ${String(field.value)} (${field.confidence.toFixed(1)}% confidence)`);
+            console.log(
+              `✅ [DATABASE] Property field prepared: ${key} = ${String(field.value)} (${field.confidence.toFixed(1)}% confidence)`,
+            );
           } else {
-            console.warn(`⚠️ [DATABASE] Unknown property field skipped: ${key}`);
+            console.warn(
+              `⚠️ [DATABASE] Unknown property field skipped: ${key}`,
+            );
           }
         } catch (error) {
           const errorMsg = `Failed to prepare property field ${field.dbColumn}: ${String(error)}`;
@@ -231,34 +282,51 @@ export async function saveExtractedDataToDatabase(
     // Auto-complete address before saving if we have street data but no cadastral reference
     if (Object.keys(propertyUpdateData).length > 0) {
       const streetValue = propertyUpdateData.street!;
-      const hasAddressInfo = streetValue && streetValue !== "Dirección a completar";
-      const hasCadastralRef = propertyUpdateData.cadastralReference && 
+      const hasAddressInfo =
+        streetValue && streetValue !== "Dirección a completar";
+      const hasCadastralRef =
+        propertyUpdateData.cadastralReference &&
         String(propertyUpdateData.cadastralReference).trim() !== "";
 
       // Only auto-complete if we have street info but no cadastral reference
       if (hasAddressInfo && !hasCadastralRef) {
-        console.log(`🌍 [DATABASE] Auto-completing address before save: ${streetValue}`);
-        
+        console.log(
+          `🌍 [DATABASE] Auto-completing address before save: ${streetValue}`,
+        );
+
         try {
           // Build city from extracted location data if available
-          const cityToUse = extractedLocationData.city ?? 
-                           extractedLocationData.municipality ?? 
-                           undefined;
+          const cityToUse =
+            extractedLocationData.city ??
+            extractedLocationData.municipality ??
+            undefined;
 
-          const addressResult = await autoCompleteAddress(streetValue, cityToUse);
-          
+          const addressResult = await autoCompleteAddress(
+            streetValue,
+            cityToUse,
+          );
+
           if (addressResult.success) {
             console.log(`✅ [DATABASE] Address auto-completion successful`);
-            
+
             // Update property data with enriched address info
-            if (addressResult.street) propertyUpdateData.street = addressResult.street;
-            if (addressResult.addressDetails) propertyUpdateData.addressDetails = addressResult.addressDetails;
-            if (addressResult.postalCode) propertyUpdateData.postalCode = addressResult.postalCode;
-            if (addressResult.latitude) propertyUpdateData.latitude = String(addressResult.latitude);
-            if (addressResult.longitude) propertyUpdateData.longitude = String(addressResult.longitude);
-            
+            if (addressResult.street)
+              propertyUpdateData.street = addressResult.street;
+            if (addressResult.addressDetails)
+              propertyUpdateData.addressDetails = addressResult.addressDetails;
+            if (addressResult.postalCode)
+              propertyUpdateData.postalCode = addressResult.postalCode;
+            if (addressResult.latitude)
+              propertyUpdateData.latitude = String(addressResult.latitude);
+            if (addressResult.longitude)
+              propertyUpdateData.longitude = String(addressResult.longitude);
+
             // Create location if we have complete location data
-            if (addressResult.city && addressResult.province && addressResult.municipality) {
+            if (
+              addressResult.city &&
+              addressResult.province &&
+              addressResult.municipality
+            ) {
               try {
                 const neighborhoodId = await findOrCreateLocation({
                   city: addressResult.city,
@@ -267,9 +335,13 @@ export async function saveExtractedDataToDatabase(
                   neighborhood: addressResult.neighborhood ?? "Unknown",
                 });
                 propertyUpdateData.neighborhoodId = BigInt(neighborhoodId);
-                console.log(`🏛️ [DATABASE] Location created/found with neighborhoodId: ${neighborhoodId}`);
+                console.log(
+                  `🏛️ [DATABASE] Location created/found with neighborhoodId: ${neighborhoodId}`,
+                );
               } catch (locationError) {
-                console.error(`❌ [DATABASE] Failed to create/find location: ${String(locationError)}`);
+                console.error(
+                  `❌ [DATABASE] Failed to create/find location: ${String(locationError)}`,
+                );
               }
             }
 
@@ -279,34 +351,47 @@ export async function saveExtractedDataToDatabase(
             console.log(`   └─ Postal Code: ${addressResult.postalCode}`);
             console.log(`   └─ Neighborhood: ${addressResult.neighborhood}`);
             if (addressResult.latitude && addressResult.longitude) {
-              console.log(`   └─ Coordinates: ${addressResult.latitude}, ${addressResult.longitude}`);
+              console.log(
+                `   └─ Coordinates: ${addressResult.latitude}, ${addressResult.longitude}`,
+              );
             }
           } else {
-            console.warn(`⚠️ [DATABASE] Address auto-completion failed: ${addressResult.error}`);
+            console.warn(
+              `⚠️ [DATABASE] Address auto-completion failed: ${addressResult.error}`,
+            );
           }
         } catch (error) {
-          console.error(`❌ [DATABASE] Error during address auto-completion: ${String(error)}`);
+          console.error(
+            `❌ [DATABASE] Error during address auto-completion: ${String(error)}`,
+          );
           // Don't fail the entire operation if address completion fails
         }
       }
     }
 
     // Generate title if we have property data but no existing title
-    if (Object.keys(propertyUpdateData).length > 0 && !propertyUpdateData.title) {
+    if (
+      Object.keys(propertyUpdateData).length > 0 &&
+      !propertyUpdateData.title
+    ) {
       const propertyType = propertyUpdateData.propertyType! ?? "piso";
       const street = propertyUpdateData.street! ?? "";
-      
+
       // Try to get neighborhood from the enriched address data
       const neighborhood = "";
       if (propertyUpdateData.neighborhoodId) {
         // In a real scenario, you might want to fetch the neighborhood name from the database
         // For now, we'll use empty string and let the address be the main identifier
       }
-      
+
       // Auto-generate title using the standard function with enriched data
-      const generatedTitle = generatePropertyTitle(propertyType, street, neighborhood);
+      const generatedTitle = generatePropertyTitle(
+        propertyType,
+        street,
+        neighborhood,
+      );
       propertyUpdateData.title = generatedTitle;
-      
+
       console.log(`🏷️ [DATABASE] Generated title: ${generatedTitle}`);
     }
 
@@ -404,11 +489,13 @@ export async function saveExtractedDataToDatabase(
               const cadastralTitle = generatePropertyTitle(
                 cadastralData.propertyType ?? "piso",
                 cadastralData.street ?? "",
-                cadastralData.neighborhood ?? ""
+                cadastralData.neighborhood ?? "",
               );
               cadastralUpdateData.title = cadastralTitle;
-              
-              console.log(`🏷️ [DATABASE] Generated title from cadastral data: ${cadastralTitle}`);
+
+              console.log(
+                `🏷️ [DATABASE] Generated title from cadastral data: ${cadastralTitle}`,
+              );
 
               await updateProperty(
                 propertyId,
@@ -448,7 +535,9 @@ export async function saveExtractedDataToDatabase(
           }
         } else {
           // Address auto-completion was already handled synchronously above before the initial save
-          console.log(`ℹ️ [DATABASE] Address completion was handled synchronously before save`);
+          console.log(
+            `ℹ️ [DATABASE] Address completion was handled synchronously before save`,
+          );
         }
       } catch (error) {
         const errorMsg = `Failed to update property ${propertyId}: ${String(error)}`;
@@ -482,8 +571,10 @@ export async function saveExtractedDataToDatabase(
         // Log detailed field updates
         Object.entries(listingUpdateData).forEach(([key, value]) => {
           const field = listingFields.find((f) => f.dbColumn === key);
-          if (key === 'agentId') {
-            console.log(`   └─ ${key}: ${String(value)} (source: current user)`);
+          if (key === "agentId") {
+            console.log(
+              `   └─ ${key}: ${String(value)} (source: current user)`,
+            );
           } else {
             console.log(
               `   └─ ${key}: ${String(value)} (source: ${field?.extractionSource}, confidence: ${field?.confidence.toFixed(1)}%)`,
@@ -498,20 +589,19 @@ export async function saveExtractedDataToDatabase(
     } else {
       // Even if no listing fields were extracted, ensure agent_id is set
       try {
-        console.log(`🔄 [DATABASE] Setting agent ID for listing ${listingId}...`);
-        
-        await updateListing(
-          listingId,
-          accountId,
-          { agentId: currentUser.id } as Omit<
-            Partial<Listing>,
-            "listingId" | "createdAt" | "updatedAt"
-          >,
+        console.log(
+          `🔄 [DATABASE] Setting agent ID for listing ${listingId}...`,
         );
+
+        await updateListing(listingId, accountId, {
+          agentId: currentUser.id,
+        } as Omit<Partial<Listing>, "listingId" | "createdAt" | "updatedAt">);
 
         result.listingUpdated = true;
         result.fieldsSaved += 1; // Count agent_id as a saved field
-        console.log(`✅ [DATABASE] Listing ${listingId} agent ID set successfully`);
+        console.log(
+          `✅ [DATABASE] Listing ${listingId} agent ID set successfully`,
+        );
         console.log(`   └─ agentId: ${currentUser.id} (source: current user)`);
       } catch (error) {
         const errorMsg = `Failed to set agent ID for listing ${listingId}: ${String(error)}`;
@@ -529,7 +619,7 @@ export async function saveExtractedDataToDatabase(
         );
 
         // Build contact data object
-        const contactData: { 
+        const contactData: {
           firstName?: string;
           lastName?: string;
           email?: string;
@@ -537,8 +627,12 @@ export async function saveExtractedDataToDatabase(
         } = {};
 
         for (const field of contactFields) {
-          if (field.dbColumn === 'firstName' || field.dbColumn === 'lastName' || 
-              field.dbColumn === 'email' || field.dbColumn === 'phone') {
+          if (
+            field.dbColumn === "firstName" ||
+            field.dbColumn === "lastName" ||
+            field.dbColumn === "email" ||
+            field.dbColumn === "phone"
+          ) {
             contactData[field.dbColumn] = String(field.value);
             console.log(
               `✅ [DATABASE] Contact field prepared: ${field.dbColumn} = ${String(field.value)} (${field.confidence.toFixed(1)}% confidence)`,
@@ -551,21 +645,23 @@ export async function saveExtractedDataToDatabase(
           const firstName = contactData.firstName ?? "Propietario";
           const lastName = contactData.lastName ?? "";
 
-          console.log(`🔍 [DATABASE] Checking for similar contacts: "${firstName} ${lastName}"`);
+          console.log(
+            `🔍 [DATABASE] Checking for similar contacts: "${firstName} ${lastName}"`,
+          );
 
           // Check for similar existing contacts
           const similarContact = await findContactBySimilarName(
             firstName,
             lastName,
             accountId,
-            0.8 // 80% similarity threshold
+            0.8, // 80% similarity threshold
           );
 
           if (similarContact) {
             console.log(
               `⚠️ [DATABASE] Found similar contact (${(similarContact.similarity * 100).toFixed(1)}% similarity): ${similarContact.contact.firstName} ${similarContact.contact.lastName}`,
             );
-            
+
             // Link existing contact to this listing as an owner
             const existingContactId = Number(similarContact.contact.contactId);
             const linkResult = await linkContactToListing(
@@ -574,11 +670,13 @@ export async function saveExtractedDataToDatabase(
               "owner",
               accountId,
             );
-            
+
             if (linkResult.success) {
               result.fieldsSaved += contactFields.length; // Count contact fields as processed
-              console.log(`✅ [DATABASE] Existing contact linked to listing: contact ${existingContactId} ↔ listing ${listingId}`);
-              
+              console.log(
+                `✅ [DATABASE] Existing contact linked to listing: contact ${existingContactId} ↔ listing ${listingId}`,
+              );
+
               // Log detailed field updates
               contactFields.forEach((field) => {
                 console.log(
@@ -586,13 +684,19 @@ export async function saveExtractedDataToDatabase(
                 );
               });
             } else {
-              console.error(`❌ [DATABASE] Failed to link existing contact: ${linkResult.error}`);
-              result.propertyErrors.push(`Failed to link existing contact: ${linkResult.error}`);
+              console.error(
+                `❌ [DATABASE] Failed to link existing contact: ${linkResult.error}`,
+              );
+              result.propertyErrors.push(
+                `Failed to link existing contact: ${linkResult.error}`,
+              );
             }
           } else {
             // Create new contact
-            console.log(`👤 [DATABASE] Creating new contact: "${firstName} ${lastName}"`);
-            
+            console.log(
+              `👤 [DATABASE] Creating new contact: "${firstName} ${lastName}"`,
+            );
+
             const newContact = await createContact({
               firstName,
               lastName: lastName ?? "",
@@ -604,10 +708,12 @@ export async function saveExtractedDataToDatabase(
               isActive: true,
             });
 
-            if (newContact && 'contactId' in newContact) {
+            if (newContact && "contactId" in newContact) {
               contactCreated = true;
               result.fieldsSaved += contactFields.length;
-              console.log(`✅ [DATABASE] Contact created successfully: ID ${newContact.contactId}`);
+              console.log(
+                `✅ [DATABASE] Contact created successfully: ID ${newContact.contactId}`,
+              );
 
               // Link new contact to this listing as an owner
               const newContactId = Number(newContact.contactId);
@@ -617,14 +723,20 @@ export async function saveExtractedDataToDatabase(
                 "owner",
                 accountId,
               );
-              
+
               if (linkResult.success) {
-                console.log(`✅ [DATABASE] New contact linked to listing: contact ${newContactId} ↔ listing ${listingId}`);
+                console.log(
+                  `✅ [DATABASE] New contact linked to listing: contact ${newContactId} ↔ listing ${listingId}`,
+                );
               } else {
-                console.error(`❌ [DATABASE] Failed to link new contact: ${linkResult.error}`);
-                result.propertyErrors.push(`Failed to link new contact: ${linkResult.error}`);
+                console.error(
+                  `❌ [DATABASE] Failed to link new contact: ${linkResult.error}`,
+                );
+                result.propertyErrors.push(
+                  `Failed to link new contact: ${linkResult.error}`,
+                );
               }
-              
+
               // Log detailed field updates
               contactFields.forEach((field) => {
                 console.log(
@@ -634,7 +746,9 @@ export async function saveExtractedDataToDatabase(
             }
           }
         } else {
-          console.log(`⚠️ [DATABASE] Insufficient contact data to create contact (no name found)`);
+          console.log(
+            `⚠️ [DATABASE] Insufficient contact data to create contact (no name found)`,
+          );
         }
       } catch (error) {
         const errorMsg = `Failed to process contact data: ${String(error)}`;
@@ -649,7 +763,8 @@ export async function saveExtractedDataToDatabase(
     // Determine overall success
     const hasErrors =
       result.propertyErrors.length > 0 || result.listingErrors.length > 0;
-    const hasUpdates = result.propertyUpdated || result.listingUpdated || contactCreated;
+    const hasUpdates =
+      result.propertyUpdated || result.listingUpdated || contactCreated;
 
     result.success =
       !hasErrors && (hasUpdates || highConfidenceFields.length === 0);
@@ -659,7 +774,7 @@ export async function saveExtractedDataToDatabase(
       console.log("=== CREATING DEFAULT TASKS ===");
       console.log("Agent ID:", currentUser.id);
       console.log("Listing ID:", listingId);
-      
+
       // Create tasks asynchronously (don't wait for completion)
       await createPropertyTasksAsync({
         userId: currentUser.id,
@@ -672,7 +787,9 @@ export async function saveExtractedDataToDatabase(
     console.log(`   - Property updated: ${result.propertyUpdated}`);
     console.log(`   - Listing updated: ${result.listingUpdated}`);
     console.log(`   - Contact created: ${contactCreated}`);
-    console.log(`   - Contact-listing relationship: ${contactFields.length > 0 ? 'Processed' : 'None'}`);
+    console.log(
+      `   - Contact-listing relationship: ${contactFields.length > 0 ? "Processed" : "None"}`,
+    );
     console.log(
       `   - Fields saved: ${result.fieldsSaved}/${result.fieldsProcessed}`,
     );
@@ -706,8 +823,10 @@ async function linkContactToListing(
   _accountId: number,
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    console.log(`🔗 [DATABASE] Creating contact-listing relationship: contact ${contactId} → listing ${listingId} (${contactType})`);
-    
+    console.log(
+      `🔗 [DATABASE] Creating contact-listing relationship: contact ${contactId} → listing ${listingId} (${contactType})`,
+    );
+
     // Dynamic imports to avoid circular dependencies
     const { db } = await import("../db");
     const { listingContacts } = await import("../db/schema");
@@ -727,7 +846,9 @@ async function linkContactToListing(
       );
 
     if (existingRelation) {
-      console.log(`ℹ️ [DATABASE] Contact-listing relationship already exists: contact ${contactId} ↔ listing ${listingId} (${contactType})`);
+      console.log(
+        `ℹ️ [DATABASE] Contact-listing relationship already exists: contact ${contactId} ↔ listing ${listingId} (${contactType})`,
+      );
       return { success: true };
     }
 
@@ -739,7 +860,9 @@ async function linkContactToListing(
       isActive: true,
     });
 
-    console.log(`✅ [DATABASE] Contact-listing relationship created successfully: contact ${contactId} ↔ listing ${listingId} (${contactType})`);
+    console.log(
+      `✅ [DATABASE] Contact-listing relationship created successfully: contact ${contactId} ↔ listing ${listingId} (${contactType})`,
+    );
     return { success: true };
   } catch (error) {
     const errorMsg = `Failed to link contact ${contactId} to listing ${listingId}: ${String(error)}`;
@@ -776,7 +899,7 @@ export async function getPropertyAndListingIds(documentKey: string): Promise<{
       );
       return null;
     }
-    
+
     console.log(`📋 [DATABASE] Extracted reference number: ${referenceNumber}`);
 
     // Import here to avoid circular dependencies

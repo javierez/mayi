@@ -1,8 +1,8 @@
-import { 
-  LIGHT_ENHANCEMENT_SETTINGS, 
-  type FreepikEnhanceResponse, 
-  type FreepikTaskStatus 
-} from '~/types/freepik';
+import {
+  LIGHT_ENHANCEMENT_SETTINGS,
+  type FreepikEnhanceResponse,
+  type FreepikTaskStatus,
+} from "~/types/freepik";
 
 // Environment validation function (called at runtime, not module load)
 function validateEnvironment() {
@@ -23,7 +23,7 @@ function validateEnvironment() {
 
 class FreepikClient {
   private apiKey: string;
-  private baseUrl = 'https://api.freepik.com/v1/ai/image-upscaler-precision';
+  private baseUrl = "https://api.freepik.com/v1/ai/image-upscaler-precision";
 
   constructor() {
     validateEnvironment();
@@ -42,33 +42,35 @@ class FreepikClient {
       ultra_detail: LIGHT_ENHANCEMENT_SETTINGS.ultraDetail,
     };
 
-    console.log('Freepik API request details:', {
+    console.log("Freepik API request details:", {
       url: this.baseUrl,
       headers: {
-        'x-freepik-api-key': this.apiKey ? `${this.apiKey.substring(0, 8)}...` : 'MISSING',
-        'Content-Type': 'application/json',
+        "x-freepik-api-key": this.apiKey
+          ? `${this.apiKey.substring(0, 8)}...`
+          : "MISSING",
+        "Content-Type": "application/json",
       },
       bodySize: JSON.stringify(requestBody).length,
       imageDataLength: imageBase64.length,
-      imageDataPrefix: imageBase64.substring(0, 50) + '...',
+      imageDataPrefix: imageBase64.substring(0, 50) + "...",
       settings: {
         sharpen: LIGHT_ENHANCEMENT_SETTINGS.sharpen,
         smart_grain: LIGHT_ENHANCEMENT_SETTINGS.smartGrain,
         ultra_detail: LIGHT_ENHANCEMENT_SETTINGS.ultraDetail,
-      }
+      },
     });
 
-    const response = await this.fetchWithRetry('', {
-      method: 'POST',
+    const response = (await this.fetchWithRetry("", {
+      method: "POST",
       headers: {
-        'x-freepik-api-key': this.apiKey,
-        'Content-Type': 'application/json',
+        "x-freepik-api-key": this.apiKey,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(requestBody),
-    }) as {
+    })) as {
       data: {
         task_id: string;
-        status: 'CREATED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+        status: "CREATED" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
         generated?: string[];
         error?: string;
       };
@@ -86,14 +88,14 @@ class FreepikClient {
    * Check the status of an enhancement task
    */
   async checkStatus(taskId: string): Promise<FreepikTaskStatus> {
-    const response = await this.fetchWithRetry(`/${taskId}`, {
-      method: 'GET',
+    const response = (await this.fetchWithRetry(`/${taskId}`, {
+      method: "GET",
       headers: {
-        'x-freepik-api-key': this.apiKey,
+        "x-freepik-api-key": this.apiKey,
       },
-    }) as {
+    })) as {
       data: {
-        status: 'CREATED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+        status: "CREATED" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
         progress?: number;
         generated?: string[]; // Freepik returns images directly here
         error?: string;
@@ -102,9 +104,12 @@ class FreepikClient {
     };
 
     // Fix: Freepik returns generated images directly in data.generated, not data.result.generated
-    const result = response.data.generated && response.data.generated.length > 0 ? {
-      generated: response.data.generated
-    } : undefined;
+    const result =
+      response.data.generated && response.data.generated.length > 0
+        ? {
+            generated: response.data.generated,
+          }
+        : undefined;
 
     return {
       id: taskId,
@@ -119,32 +124,36 @@ class FreepikClient {
    * Fetch with exponential backoff retry logic
    */
   private async fetchWithRetry(
-    endpoint: string, 
-    options: RequestInit, 
-    retries = 3
+    endpoint: string,
+    options: RequestInit,
+    retries = 3,
   ): Promise<unknown> {
     for (let i = 0; i < retries; i++) {
       try {
         const response = await fetch(`${this.baseUrl}${endpoint}`, options);
-        
+
         if (!response.ok) {
           if (response.status === 429) {
             // Rate limited - wait and retry
             const waitTime = Math.pow(2, i) * 1000;
-            await new Promise(resolve => setTimeout(resolve, waitTime));
+            await new Promise((resolve) => setTimeout(resolve, waitTime));
             continue;
           }
-          
+
           // Try to get error message from response
           let errorMessage = `API error: ${response.status}`;
           try {
-            const errorData = await response.json() as { error?: string; message?: string; details?: string };
-            console.error('Freepik API error details:', {
+            const errorData = (await response.json()) as {
+              error?: string;
+              message?: string;
+              details?: string;
+            };
+            console.error("Freepik API error details:", {
               status: response.status,
               statusText: response.statusText,
-              errorData
+              errorData,
             });
-            
+
             if (errorData.error) {
               errorMessage = `API error: ${response.status} - ${errorData.error}`;
             } else if (errorData.message) {
@@ -153,29 +162,32 @@ class FreepikClient {
               errorMessage = `API error: ${response.status} - ${errorData.details}`;
             }
           } catch (parseError) {
-            console.error('Failed to parse Freepik error response:', parseError);
+            console.error(
+              "Failed to parse Freepik error response:",
+              parseError,
+            );
             // If we can't parse the error response, use the status code
           }
-          
+
           throw new Error(errorMessage);
         }
-        
+
         return await response.json();
       } catch (error) {
         if (i === retries - 1) {
           // Last retry failed, throw the error
-          console.error('Freepik API error after all retries:', error);
+          console.error("Freepik API error after all retries:", error);
           throw error;
         }
-        
+
         // Wait before retrying with exponential backoff
         const waitTime = Math.pow(2, i) * 1000;
-        await new Promise(resolve => setTimeout(resolve, waitTime));
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
       }
     }
-    
+
     // This shouldn't be reached, but TypeScript requires it
-    throw new Error('Max retries exceeded');
+    throw new Error("Max retries exceeded");
   }
 }
 
@@ -187,7 +199,7 @@ export const freepikClient = {
     clientInstance ??= new FreepikClient();
     return clientInstance;
   },
-  
+
   // Proxy methods to the actual client
   enhance: (imageBase64: string) => freepikClient.instance.enhance(imageBase64),
   checkStatus: (taskId: string) => freepikClient.instance.checkStatus(taskId),

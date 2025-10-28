@@ -12,7 +12,6 @@ import { FloatingLabelInput } from "~/components/ui/floating-label-input";
 import { cn } from "~/lib/utils";
 import { CONSERVATION_STATUS_LABELS } from "~/lib/constants/conservation-status";
 
-
 interface SecondPageProps {
   listingId?: string;
   onNext: () => void;
@@ -21,10 +20,7 @@ interface SecondPageProps {
 
 // Removed SecondPageFormData interface - using direct global state reading like first.tsx
 
-export default function SecondPage({
-  onNext,
-  onBack,
-}: SecondPageProps) {
+export default function SecondPage({ onNext, onBack }: SecondPageProps) {
   const { state, updateFormData } = useFormContext();
 
   // Get current form data from context (direct reading like first.tsx)
@@ -48,22 +44,35 @@ export default function SecondPage({
 
     // Only set defaults for non-solar and non-garaje properties
     if (propertyType !== "solar" && propertyType !== "garaje") {
-      if (state.formData.bedrooms === undefined || state.formData.bedrooms === null) {
+      if (
+        state.formData.bedrooms === undefined ||
+        state.formData.bedrooms === null
+      ) {
         defaults.bedrooms = 2;
       }
-      if (state.formData.bathrooms === undefined || state.formData.bathrooms === null) {
+      if (
+        state.formData.bathrooms === undefined ||
+        state.formData.bathrooms === null
+      ) {
         defaults.bathrooms = 1;
       }
     }
 
     // Set conservation status default for all property types if not set
-    if (state.formData.conservationStatus === undefined || state.formData.conservationStatus === null) {
+    if (
+      state.formData.conservationStatus === undefined ||
+      state.formData.conservationStatus === null
+    ) {
       defaults.conservationStatus = 3;
     }
 
     // Set build year default for non-solar properties if not set
     if (propertyType !== "solar") {
-      if (state.formData.buildYear === undefined || state.formData.buildYear === null || state.formData.buildYear === 0) {
+      if (
+        state.formData.buildYear === undefined ||
+        state.formData.buildYear === null ||
+        state.formData.buildYear === 0
+      ) {
         defaults.buildYear = 1980;
       }
     }
@@ -72,7 +81,14 @@ export default function SecondPage({
     if (Object.keys(defaults).length > 0) {
       updateFormData(defaults);
     }
-  }, [propertyType, state.formData.bedrooms, state.formData.bathrooms, state.formData.conservationStatus, state.formData.buildYear, updateFormData])
+  }, [
+    propertyType,
+    state.formData.bedrooms,
+    state.formData.bathrooms,
+    state.formData.conservationStatus,
+    state.formData.buildYear,
+    updateFormData,
+  ]);
 
   // Update form data helper (direct like first.tsx)
   const updateField = (
@@ -180,7 +196,11 @@ export default function SecondPage({
       <div className="space-y-2">
         <FloatingLabelInput
           id="totalSurface"
-          value={formData.totalSurface ? formFormatters.formatAreaInput(formData.totalSurface.toString()) : ""}
+          value={
+            formData.totalSurface
+              ? formFormatters.formatAreaInput(formData.totalSurface.toString())
+              : ""
+          }
           onChange={handleTotalSurfaceChange}
           placeholder={
             propertyType === "garaje"
@@ -197,7 +217,13 @@ export default function SecondPage({
         <div className="space-y-2">
           <FloatingLabelInput
             id="usefulSurface"
-            value={formData.usefulSurface ? formFormatters.formatAreaInput(formData.usefulSurface.toString()) : ""}
+            value={
+              formData.usefulSurface
+                ? formFormatters.formatAreaInput(
+                    formData.usefulSurface.toString(),
+                  )
+                : ""
+            }
             onChange={handleUsefulSurfaceChange}
             placeholder="Superficie construida (m²)"
             type="text"
@@ -229,7 +255,7 @@ export default function SecondPage({
               Estado de Conservación
             </h3>
             {/* Desktop: Single row with animation */}
-            <div className="hidden sm:block relative h-10 rounded-lg bg-gray-100 p-1">
+            <div className="relative hidden h-10 rounded-lg bg-gray-100 p-1 sm:block">
               <motion.div
                 className="absolute left-1 top-1 h-8 w-[calc(20%-2px)] rounded-md bg-white shadow-sm"
                 animate={{
@@ -353,7 +379,7 @@ export default function SecondPage({
               <button
                 onClick={() => updateField("conservationStatus", 6)}
                 className={cn(
-                  "h-10 rounded-lg text-xs font-medium transition-all duration-200 col-span-2",
+                  "col-span-2 h-10 rounded-lg text-xs font-medium transition-all duration-200",
                   formData.conservationStatus === 6
                     ? "bg-white text-gray-900 shadow-md"
                     : "bg-gray-100 text-gray-600",
@@ -365,13 +391,14 @@ export default function SecondPage({
           </div>
 
           {/* Renovation Year - Show only when conservation status is "A reformar" (4) or "Reformado" (6) */}
-          {(formData.conservationStatus === 4 || formData.conservationStatus === 6) && (
+          {(formData.conservationStatus === 4 ||
+            formData.conservationStatus === 6) && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-medium text-gray-900">
                   Año de Reforma
                 </h3>
-                <label className="flex items-center space-x-2 cursor-pointer">
+                <label className="flex cursor-pointer items-center space-x-2">
                   <input
                     type="checkbox"
                     checked={formData.renovationYearUnknown}

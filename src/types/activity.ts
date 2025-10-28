@@ -98,6 +98,7 @@ export interface ContactSheetData {
   hasOffer: boolean;
   offer: number | null;
   offerAccepted: boolean | null;
+  isActive?: boolean;
 }
 
 export interface CompactContactCardProps {
@@ -147,7 +148,10 @@ export interface ActivityTabContentProps {
 }
 
 // Empty state types
-export type EmptyStateType = "completed-visits" | "scheduled-visits" | "new-contacts";
+export type EmptyStateType =
+  | "completed-visits"
+  | "scheduled-visits"
+  | "new-contacts";
 
 // Owner contact type
 export interface OwnerContact {

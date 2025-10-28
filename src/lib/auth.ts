@@ -42,7 +42,9 @@ export interface UserRolesAndPermissions {
  * Merge multiple permission objects using OR logic
  * If any role grants a permission, the user gets it
  */
-function mergePermissions(permissionsArray: PermissionsObject[]): PermissionsObject {
+function mergePermissions(
+  permissionsArray: PermissionsObject[],
+): PermissionsObject {
   const merged: PermissionsObject = {};
 
   permissionsArray.forEach((perms) => {
@@ -54,16 +56,14 @@ function mergePermissions(permissionsArray: PermissionsObject[]): PermissionsObj
       Object.entries(permissions!).forEach(([permission, value]) => {
         const currentValue =
           merged[category as keyof PermissionsObject]?.[permission] ?? false;
-          // OR logic: if any role grants permission (true or 1), user gets it
-          // Normalize: 1 and true are truthy, false is falsy
-          const normalizedValue = Boolean(value);
-          const normalizedCurrent = Boolean(currentValue);
-          (merged[category as keyof PermissionsObject] as Record<
-            string,
-            boolean
-          >)[permission] = normalizedCurrent || normalizedValue;
-        },
-      );
+        // OR logic: if any role grants permission (true or 1), user gets it
+        // Normalize: 1 and true are truthy, false is falsy
+        const normalizedValue = Boolean(value);
+        const normalizedCurrent = Boolean(currentValue);
+        (
+          merged[category as keyof PermissionsObject] as Record<string, boolean>
+        )[permission] = normalizedCurrent || normalizedValue;
+      });
     });
   });
 
@@ -172,14 +172,14 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url, token: _token }, _request) => {
       try {
         const { html, text } = generatePasswordResetEmail(url, user.email);
-        
+
         await sendEmail({
           to: user.email,
           subject: "Restablecer tu contraseña - Vesta CRM",
           html,
           text,
         });
-        
+
         console.log(`🔐 Password reset email sent to ${user.email}`);
       } catch (error) {
         console.error("❌ Failed to send password reset email:", error);

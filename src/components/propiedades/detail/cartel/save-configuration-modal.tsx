@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "~/components/ui/button";
 import {
@@ -14,10 +13,10 @@ import { Label } from "~/components/ui/label";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
-import type { 
-  SaveConfigurationRequest, 
+import type {
+  SaveConfigurationRequest,
   TemplateConfiguration,
-  ExtendedTemplatePropertyData 
+  ExtendedTemplatePropertyData,
 } from "~/types/template-data";
 
 interface SaveConfigurationModalProps {
@@ -92,7 +91,8 @@ export function SaveConfigurationModal({
         <DialogHeader>
           <DialogTitle>Guardar Configuración</DialogTitle>
           <DialogDescription>
-            Guarda la configuración actual del cartel para reutilizarla más adelante.
+            Guarda la configuración actual del cartel para reutilizarla más
+            adelante.
           </DialogDescription>
         </DialogHeader>
 
@@ -138,18 +138,14 @@ export function SaveConfigurationModal({
           </div>
 
           {!isGlobal && propertyId && (
-            <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
+            <div className="rounded bg-muted p-2 text-xs text-muted-foreground">
               Esta configuración solo se aplicará a la propiedad actual.
             </div>
           )}
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={isSaving}
-          >
+          <Button variant="outline" onClick={handleClose} disabled={isSaving}>
             Cancelar
           </Button>
           <Button

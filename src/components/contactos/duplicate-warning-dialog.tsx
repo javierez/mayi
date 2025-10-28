@@ -65,7 +65,8 @@ export function DuplicateWarningDialog({
           <DialogDescription className="pt-2">
             Se encontraron {duplicates.length}{" "}
             {duplicates.length === 1 ? "contacto" : "contactos"} con información
-            similar. Puedes usar uno existente o crear uno nuevo de todas formas.
+            similar. Puedes usar uno existente o crear uno nuevo de todas
+            formas.
           </DialogDescription>
         </DialogHeader>
 
@@ -155,4 +156,3 @@ export function DuplicateWarningDialog({
     </Dialog>
   );
 }
-

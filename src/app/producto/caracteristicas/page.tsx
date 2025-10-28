@@ -1,29 +1,36 @@
 import { type Metadata } from "next";
-import { 
-  Home, 
-  Users, 
-  Globe, 
-  Brain, 
-  Calendar, 
-  FileText, 
-  UserCheck, 
-  Wrench, 
-  Shield, 
+import {
+  Home,
+  Users,
+  Globe,
+  Brain,
+  Calendar,
+  FileText,
+  UserCheck,
+  Wrench,
+  Shield,
   Code,
   Check,
   ArrowRight,
   Zap,
   Cloud,
-  Sparkles
+  Sparkles,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import Link from "next/link";
 import Navbar from "~/components/navbar";
 
 export const metadata: Metadata = {
   title: "Características - Vesta Real Estate Platform",
-  description: "Descubre todas las características y funcionalidades de Vesta, la plataforma más completa para la gestión inmobiliaria en España.",
+  description:
+    "Descubre todas las características y funcionalidades de Vesta, la plataforma más completa para la gestión inmobiliaria en España.",
 };
 
 export default function CaracteristicasPage() {
@@ -31,7 +38,8 @@ export default function CaracteristicasPage() {
     {
       icon: Home,
       title: "Gestión Completa de Propiedades",
-      description: "Sistema integral para administrar todo tu portfolio inmobiliario",
+      description:
+        "Sistema integral para administrar todo tu portfolio inmobiliario",
       details: [
         "Sistema de creación paso a paso con más de 100 campos configurables",
         "Soporte completo para todos los tipos: casa, piso, ático, dúplex, chalet, local, terreno",
@@ -40,9 +48,9 @@ export default function CaracteristicasPage() {
         "Sistema de watermarking personalizable por agencia",
         "Estados y workflow: borrador, activo, reservado, vendido",
         "Integración directa con Catastro para datos oficiales",
-        "Histórico completo de cambios y versiones"
+        "Histórico completo de cambios y versiones",
       ],
-      highlight: true
+      highlight: true,
     },
     {
       icon: Users,
@@ -56,8 +64,8 @@ export default function CaracteristicasPage() {
         "Lead scoring y probabilidad de conversión",
         "Gestión multi-empresa con aislamiento total de datos",
         "Importación masiva desde Excel/CSV",
-        "Etiquetas y categorías personalizables"
-      ]
+        "Etiquetas y categorías personalizables",
+      ],
     },
     {
       icon: Globe,
@@ -71,9 +79,9 @@ export default function CaracteristicasPage() {
         "Optimización automática según requisitos de cada portal",
         "Programación de publicaciones",
         "Analytics de rendimiento por plataforma",
-        "Control de presupuesto y límites de publicación"
+        "Control de presupuesto y límites de publicación",
       ],
-      highlight: true
+      highlight: true,
     },
     {
       icon: Brain,
@@ -87,8 +95,8 @@ export default function CaracteristicasPage() {
         "Traducción automática a múltiples idiomas",
         "Sugerencias de precio basadas en mercado",
         "Detección automática de duplicados",
-        "Análisis de calidad de listings"
-      ]
+        "Análisis de calidad de listings",
+      ],
     },
     {
       icon: Calendar,
@@ -102,8 +110,8 @@ export default function CaracteristicasPage() {
         "Gestión de estados: programada, realizada, cancelada",
         "Rutas optimizadas para múltiples visitas",
         "Disponibilidad online para clientes",
-        "Informes de actividad y conversión"
-      ]
+        "Informes de actividad y conversión",
+      ],
     },
     {
       icon: FileText,
@@ -117,8 +125,8 @@ export default function CaracteristicasPage() {
         "Plantillas personalizables",
         "Firma digital integrada",
         "Versionado y control de cambios",
-        "Almacenamiento seguro en AWS S3"
-      ]
+        "Almacenamiento seguro en AWS S3",
+      ],
     },
     {
       icon: UserCheck,
@@ -132,8 +140,8 @@ export default function CaracteristicasPage() {
         "Colaboración en tiempo real",
         "Notificaciones y menciones",
         "Log de actividad completo",
-        "Gestión de comisiones y objetivos"
-      ]
+        "Gestión de comisiones y objetivos",
+      ],
     },
     {
       icon: Wrench,
@@ -147,8 +155,8 @@ export default function CaracteristicasPage() {
         "Tareas y recordatorios",
         "Calculadoras hipotecarias",
         "Comparador de propiedades",
-        "Exportación masiva de datos"
-      ]
+        "Exportación masiva de datos",
+      ],
     },
     {
       icon: Shield,
@@ -162,8 +170,8 @@ export default function CaracteristicasPage() {
         "Logs de auditoría detallados",
         "Control de acceso por IP",
         "Autenticación de dos factores (2FA)",
-        "Certificación de protección de datos"
-      ]
+        "Certificación de protección de datos",
+      ],
     },
     {
       icon: Code,
@@ -177,16 +185,16 @@ export default function CaracteristicasPage() {
         "AWS S3 para almacenamiento ilimitado",
         "OpenAI GPT-4 para IA",
         "Integración con sistemas de contabilidad",
-        "Conectores para herramientas de marketing"
-      ]
-    }
+        "Conectores para herramientas de marketing",
+      ],
+    },
   ];
 
   const metrics = [
     { value: "10,000+", label: "Propiedades Gestionadas" },
     { value: "500+", label: "Agencias Activas" },
     { value: "99.9%", label: "Uptime Garantizado" },
-    { value: "24/7", label: "Soporte Técnico" }
+    { value: "24/7", label: "Soporte Técnico" },
   ];
 
   return (
@@ -203,12 +211,12 @@ export default function CaracteristicasPage() {
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-xl text-gray-600">
-              La plataforma más completa para la gestión inmobiliaria en España. 
+              La plataforma más completa para la gestión inmobiliaria en España.
               Descubre todo lo que puedes hacer con Vesta.
             </p>
             <div className="mt-10 flex items-center justify-center gap-4">
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 className="bg-gradient-to-r from-amber-400 to-rose-400 text-white hover:from-amber-500 hover:to-rose-500"
                 asChild
               >
@@ -218,9 +226,7 @@ export default function CaracteristicasPage() {
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/#contact">
-                  Solicitar Demo
-                </Link>
+                <Link href="/#contact">Solicitar Demo</Link>
               </Button>
             </div>
           </div>
@@ -234,25 +240,33 @@ export default function CaracteristicasPage() {
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
-                <Card 
-                  key={index} 
+                <Card
+                  key={index}
                   className={`overflow-hidden transition-all hover:shadow-lg ${
-                    feature.highlight ? 'border-amber-200 bg-gradient-to-br from-amber-50/50 to-rose-50/50' : ''
+                    feature.highlight
+                      ? "border-amber-200 bg-gradient-to-br from-amber-50/50 to-rose-50/50"
+                      : ""
                   }`}
                 >
                   <CardHeader>
                     <div className="flex items-start gap-4">
-                      <div className={`rounded-lg p-2 ${
-                        feature.highlight 
-                          ? 'bg-gradient-to-r from-amber-400 to-rose-400' 
-                          : 'bg-gray-100'
-                      }`}>
-                        <Icon className={`h-6 w-6 ${
-                          feature.highlight ? 'text-white' : 'text-gray-700'
-                        }`} />
+                      <div
+                        className={`rounded-lg p-2 ${
+                          feature.highlight
+                            ? "bg-gradient-to-r from-amber-400 to-rose-400"
+                            : "bg-gray-100"
+                        }`}
+                      >
+                        <Icon
+                          className={`h-6 w-6 ${
+                            feature.highlight ? "text-white" : "text-gray-700"
+                          }`}
+                        />
                       </div>
                       <div className="flex-1">
-                        <CardTitle className="text-xl">{feature.title}</CardTitle>
+                        <CardTitle className="text-xl">
+                          {feature.title}
+                        </CardTitle>
                         <CardDescription className="mt-2">
                           {feature.description}
                         </CardDescription>
@@ -264,7 +278,9 @@ export default function CaracteristicasPage() {
                       {feature.details.map((detail, idx) => (
                         <li key={idx} className="flex items-start gap-2">
                           <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
-                          <span className="text-sm text-gray-600">{detail}</span>
+                          <span className="text-sm text-gray-600">
+                            {detail}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -284,21 +300,24 @@ export default function CaracteristicasPage() {
               Además, disfruta de estas ventajas
             </h2>
             <p className="mt-4 text-lg text-gray-600">
-              Vesta incluye todo lo necesario para impulsar tu negocio inmobiliario
+              Vesta incluye todo lo necesario para impulsar tu negocio
+              inmobiliario
             </p>
           </div>
-          
+
           <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             <div className="text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
                 <Zap className="h-6 w-6 text-amber-600" />
               </div>
-              <h3 className="mt-4 text-lg font-semibold">Configuración Rápida</h3>
+              <h3 className="mt-4 text-lg font-semibold">
+                Configuración Rápida
+              </h3>
               <p className="mt-2 text-gray-600">
                 Empieza a usar Vesta en minutos, sin complicaciones técnicas
               </p>
             </div>
-            
+
             <div className="text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
                 <Cloud className="h-6 w-6 text-blue-600" />
@@ -308,12 +327,14 @@ export default function CaracteristicasPage() {
                 Accede desde cualquier lugar, sin instalaciones ni mantenimiento
               </p>
             </div>
-            
+
             <div className="text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
                 <Sparkles className="h-6 w-6 text-green-600" />
               </div>
-              <h3 className="mt-4 text-lg font-semibold">Actualizaciones Constantes</h3>
+              <h3 className="mt-4 text-lg font-semibold">
+                Actualizaciones Constantes
+              </h3>
               <p className="mt-2 text-gray-600">
                 Nuevas funcionalidades y mejoras cada mes sin coste adicional
               </p>
@@ -333,11 +354,13 @@ export default function CaracteristicasPage() {
               La confianza de cientos de profesionales inmobiliarios nos avala
             </p>
           </div>
-          
+
           <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {metrics.map((metric, index) => (
               <div key={index} className="text-center">
-                <div className="text-4xl font-bold text-gray-900">{metric.value}</div>
+                <div className="text-4xl font-bold text-gray-900">
+                  {metric.value}
+                </div>
                 <div className="mt-2 text-gray-600">{metric.label}</div>
               </div>
             ))}
@@ -352,12 +375,12 @@ export default function CaracteristicasPage() {
             ¿Listo para transformar tu negocio inmobiliario?
           </h2>
           <p className="mt-4 text-lg text-gray-600">
-            Únete a los cientos de profesionales que ya confían en Vesta para gestionar 
-            sus propiedades y hacer crecer su negocio.
+            Únete a los cientos de profesionales que ya confían en Vesta para
+            gestionar sus propiedades y hacer crecer su negocio.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="bg-gradient-to-r from-amber-400 to-rose-400 px-8 text-white hover:from-amber-500 hover:to-rose-500"
               asChild
             >
@@ -367,9 +390,7 @@ export default function CaracteristicasPage() {
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <Link href="/#contact">
-                Hablar con Ventas
-              </Link>
+              <Link href="/#contact">Hablar con Ventas</Link>
             </Button>
           </div>
           <p className="mt-6 text-sm text-gray-500">

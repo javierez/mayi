@@ -25,15 +25,17 @@ export const accountConfigurationSchema = z.object({
 
   // Settings
   preferences: z.record(z.any()).optional(),
-  terms: z.object({
-    commission: z.number().min(0).max(100).optional(),
-    min_commission: z.number().min(0).optional(),
-    duration: z.number().min(1).optional(),
-    exclusivity: z.boolean().optional(),
-    communications: z.boolean().optional(),
-    allowSignage: z.boolean().optional(),
-    allowVisits: z.boolean().optional(),
-  }).optional(),
+  terms: z
+    .object({
+      commission: z.number().min(0).max(100).optional(),
+      min_commission: z.number().min(0).optional(),
+      duration: z.number().min(1).optional(),
+      exclusivity: z.boolean().optional(),
+      communications: z.boolean().optional(),
+      allowSignage: z.boolean().optional(),
+      allowVisits: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 export type AccountConfigurationInput = z.infer<

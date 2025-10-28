@@ -57,12 +57,12 @@ const getOverlayClass = (overlayType: string) => {
     dark: "bg-gray-800",
     light: "bg-gray-200",
   };
-  
+
   // If it's a hex color, return empty string (we'll handle it with inline styles)
-  if (overlayType.startsWith('#')) {
+  if (overlayType.startsWith("#")) {
     return "";
   }
-  
+
   return overlayMap[overlayType] ?? "bg-gray-400";
 };
 
@@ -71,20 +71,20 @@ const getTextColor = (overlayType: string) => {
   if (overlayType === "light") {
     return "text-gray-900";
   }
-  
+
   // For hex colors, determine brightness and choose appropriate text color
-  if (overlayType.startsWith('#')) {
+  if (overlayType.startsWith("#")) {
     // Simple brightness check - convert hex to RGB and calculate luminance
-    const hex = overlayType.replace('#', '');
+    const hex = overlayType.replace("#", "");
     const r = parseInt(hex.substr(0, 2), 16);
     const g = parseInt(hex.substr(2, 2), 16);
     const b = parseInt(hex.substr(4, 2), 16);
     const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-    
+
     // If bright color (>125), use dark text, else white text
     return brightness > 125 ? "text-gray-900" : "text-white";
   }
-  
+
   // Default: white text for all other colors
   return "text-white";
 };
@@ -185,20 +185,21 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
   // Get element style based on selection and interactive state
   const getElementStyle = (elementType: string) => {
     const baseStyle: React.CSSProperties = {};
-    
+
     if (isInteractive) {
-      baseStyle.cursor = 'pointer';
-      baseStyle.transition = 'all 0.2s ease';
-      
+      baseStyle.cursor = "pointer";
+      baseStyle.transition = "all 0.2s ease";
+
       if (selectedElement === elementType) {
-        baseStyle.boxShadow = '0 0 0 2px #3b82f6, 0 0 0 4px rgba(59, 130, 246, 0.3)';
-        baseStyle.borderRadius = '4px';
+        baseStyle.boxShadow =
+          "0 0 0 2px #3b82f6, 0 0 0 4px rgba(59, 130, 246, 0.3)";
+        baseStyle.borderRadius = "4px";
       } else {
-        baseStyle.boxShadow = 'inset 0 0 0 1px rgba(59, 130, 246, 0.2)';
-        baseStyle.borderRadius = '2px';
+        baseStyle.boxShadow = "inset 0 0 0 1px rgba(59, 130, 246, 0.2)";
+        baseStyle.borderRadius = "2px";
       }
     }
-    
+
     return baseStyle;
   };
 
@@ -281,9 +282,10 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
   );
 
   // Get images based on configuration - use data.images if available, fallback to template images
-  const templateImages = data.images && data.images.length > 0 
-    ? data.images.slice(0, config.imageCount)
-    : getTemplateImages(config.imageCount);
+  const templateImages =
+    data.images && data.images.length > 0
+      ? data.images.slice(0, config.imageCount)
+      : getTemplateImages(config.imageCount);
 
   // Debug logging for template images
   React.useEffect(() => {
@@ -292,7 +294,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
       templateImages: templateImages.length,
       imageCount: config.imageCount,
       usingDataImages: data.images && data.images.length > 0,
-      firstImage: templateImages[0]
+      firstImage: templateImages[0],
     });
   }, [data.images, templateImages, config.imageCount]);
 
@@ -855,9 +857,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
           borderRadius: "0px",
           backdropFilter: "blur(4px)",
           // Use inline background color for hex values
-          ...(config.overlayColor.startsWith('#') && {
-            backgroundColor: config.overlayColor
-          })
+          ...(config.overlayColor.startsWith("#") && {
+            backgroundColor: config.overlayColor,
+          }),
         }}
       >
         <div
@@ -883,23 +885,32 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                 className={cn(
                   "font-bold",
                   // Only apply uppercase if title matches the default pattern (auto-generated)
-                  (safeData.title === `${config.listingType.toUpperCase()} ${safeData.propertyType.toUpperCase()}` || 
-                   safeData.title === `${config.listingType === "venta" ? "VENTA" : "ALQUILER"} ${safeData.propertyType.toUpperCase()}`) && "uppercase",
+                  (safeData.title ===
+                    `${config.listingType.toUpperCase()} ${safeData.propertyType.toUpperCase()}` ||
+                    safeData.title ===
+                      `${config.listingType === "venta" ? "VENTA" : "ALQUILER"} ${safeData.propertyType.toUpperCase()}`) &&
+                    "uppercase",
                   !config.titleColor && modernColors.text,
                   getFontClass(config.titleFont),
                 )}
                 style={{
-                  fontSize: `${config.titleSize || getTypographySize("title", {
-                    isCompact: locationNeedsLineBreak,
-                    isRental: config.listingType === "alquiler",
-                  })}px`,
+                  fontSize: `${
+                    config.titleSize ||
+                    getTypographySize("title", {
+                      isCompact: locationNeedsLineBreak,
+                      isRental: config.listingType === "alquiler",
+                    })
+                  }px`,
                   lineHeight: "1.2",
                   margin: 0,
                   transform: `translateY(${config.titlePositionY ?? 0}px)`,
                   color: config.titleColor || undefined,
-                  ...getElementStyle('title'),
+                  ...getElementStyle("title"),
                 }}
-                onClick={createClickHandler('title', { type: 'title', value: safeData.title })}
+                onClick={createClickHandler("title", {
+                  type: "title",
+                  value: safeData.title,
+                })}
               >
                 {safeData.title}
               </h2>
@@ -928,13 +939,21 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                   paddingTop: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
                   paddingBottom: `${PRINT_DIMENSIONS.SPACING.locationBadgePadding}px`,
                   transform: `translate(${config.locationPositionX ?? 0}px, ${config.locationPositionY ?? 0}px)`,
-                  justifyContent: config.locationAlignment === "center" ? "center" : config.locationAlignment === "right" ? "flex-end" : "flex-start",
+                  justifyContent:
+                    config.locationAlignment === "center"
+                      ? "center"
+                      : config.locationAlignment === "right"
+                        ? "flex-end"
+                        : "flex-start",
                   color: config.locationColor || undefined,
-                  ...getElementStyle('location'),
+                  ...getElementStyle("location"),
                   // Apply border radius after getElementStyle to prevent override
                   borderRadius: `${config.locationBorderRadius || 8}px`,
                 }}
-                onClick={createClickHandler('location', { neighborhood: data.location.neighborhood, city: data.location.city })}
+                onClick={createClickHandler("location", {
+                  neighborhood: data.location.neighborhood,
+                  city: data.location.city,
+                })}
               >
                 <MapPin
                   style={{
@@ -998,7 +1017,12 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                 totalFeatures > 4
                   ? `${PRINT_DIMENSIONS.SPACING.iconsToPrice * 2}px`
                   : `${PRINT_DIMENSIONS.SPACING.iconsToPrice}px`,
-              textAlign: config.priceAlignment === "center" ? "center" : config.priceAlignment === "right" ? "right" : "left",
+              textAlign:
+                config.priceAlignment === "center"
+                  ? "center"
+                  : config.priceAlignment === "right"
+                    ? "right"
+                    : "left",
               transform: `translate(${config.pricePositionX ?? 0}px, ${config.pricePositionY ?? 0}px)`,
             }}
           >
@@ -1009,15 +1033,21 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
                 getFontClass(config.priceFont),
               )}
               style={{
-                fontSize: `${config.priceSize || getTypographySize("price", {
-                  isRental: config.listingType === "alquiler",
-                  priceDigits: data.price.toString().length,
-                })}px`,
+                fontSize: `${
+                  config.priceSize ||
+                  getTypographySize("price", {
+                    isRental: config.listingType === "alquiler",
+                    priceDigits: data.price.toString().length,
+                  })
+                }px`,
                 lineHeight: "1.2",
                 color: config.priceColor || undefined,
-                ...getElementStyle('price'),
+                ...getElementStyle("price"),
               }}
-              onClick={createClickHandler('price', { value: data.price, type: config.listingType })}
+              onClick={createClickHandler("price", {
+                value: data.price,
+                type: config.listingType,
+              })}
             >
               {config.listingType === "alquiler" ? (
                 <>
@@ -1046,7 +1076,10 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
         ((config.showEmail ?? false) && (data.contact.email ?? false)) ||
         ((config.showWebsite ?? false) && (data.contact.website ?? false))) && (
         <div
-          className={cn("no-break", config.contactBackgroundColor === "default" && modernColors.overlay)}
+          className={cn(
+            "no-break",
+            config.contactBackgroundColor === "default" && modernColors.overlay,
+          )}
           style={{
             position: "absolute",
             bottom: `${PRINT_DIMENSIONS.OVERLAY.contact.position.bottom}px`,
@@ -1057,15 +1090,20 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
             transform: `translate(${config.contactPositionX ?? 0}px, ${config.contactPositionY ?? 0}px)`,
             // Use inline background color for non-default colors
             ...(config.contactBackgroundColor !== "default" && {
-              backgroundColor: config.contactBackgroundColor.startsWith('#') 
-                ? config.contactBackgroundColor 
-                : config.contactBackgroundColor === "white" ? "white"
-                : config.contactBackgroundColor === "black" ? "black"
-                : config.contactBackgroundColor === "gray" ? "#6B7280"
-                : config.contactBackgroundColor === "light" ? "#E5E7EB"
-                : config.contactBackgroundColor === "dark" ? "#1F2937"
-                : config.contactBackgroundColor // Use as-is for account colors (hex values)
-            })
+              backgroundColor: config.contactBackgroundColor.startsWith("#")
+                ? config.contactBackgroundColor
+                : config.contactBackgroundColor === "white"
+                  ? "white"
+                  : config.contactBackgroundColor === "black"
+                    ? "black"
+                    : config.contactBackgroundColor === "gray"
+                      ? "#6B7280"
+                      : config.contactBackgroundColor === "light"
+                        ? "#E5E7EB"
+                        : config.contactBackgroundColor === "dark"
+                          ? "#1F2937"
+                          : config.contactBackgroundColor, // Use as-is for account colors (hex values)
+            }),
           }}
         >
           <div

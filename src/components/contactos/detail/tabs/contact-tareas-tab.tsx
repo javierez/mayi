@@ -10,7 +10,10 @@ import {
   updateContactTaskWithAuth,
   deleteContactTaskWithAuth,
 } from "~/server/queries/task";
-import { getUserCommentsByContactIdWithAuth, getContactTasksWithAuth } from "~/server/queries/user-comments";
+import {
+  getUserCommentsByContactIdWithAuth,
+  getContactTasksWithAuth,
+} from "~/server/queries/user-comments";
 import {
   createUserCommentAction,
   updateUserCommentAction,
@@ -49,7 +52,9 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
   const { data: session } = useSession();
 
   // State for contact comments
-  const [contactComments, setContactComments] = useState<UserCommentWithUser[]>([]);
+  const [contactComments, setContactComments] = useState<UserCommentWithUser[]>(
+    [],
+  );
   const [, setIsLoadingComments] = useState(false);
 
   // State for tasks
@@ -113,16 +118,14 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
   const handleUpdateTaskAfterSave = (optimisticId: string, savedTask: Task) => {
     // Update with server response
     setContactTasks((prevTasks) =>
-      prevTasks.map((task) =>
-        task.id === optimisticId ? savedTask : task
-      )
+      prevTasks.map((task) => (task.id === optimisticId ? savedTask : task)),
     );
   };
 
   const handleRemoveOptimisticTask = (optimisticId: string) => {
     // Remove optimistic task on error
     setContactTasks((prevTasks) =>
-      prevTasks.filter((task) => task.id !== optimisticId)
+      prevTasks.filter((task) => task.id !== optimisticId),
     );
   };
 
@@ -141,7 +144,8 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
 
       if (result.success) {
         // Refetch comments to get server data
-        const freshComments = await getUserCommentsByContactIdWithAuth(contactId);
+        const freshComments =
+          await getUserCommentsByContactIdWithAuth(contactId);
         setContactComments(freshComments);
       }
 
@@ -149,7 +153,7 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
     } catch (error) {
       // Remove optimistic comment on error
       setContactComments((prev) =>
-        prev.filter((c) => c.commentId !== tempComment.commentId)
+        prev.filter((c) => c.commentId !== tempComment.commentId),
       );
       throw error;
     }
@@ -157,7 +161,10 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
 
   const handleEditComment = async (commentId: bigint, content: string) => {
     // Find original comment
-    const findCommentById = (comments: UserCommentWithUser[], id: bigint): UserCommentWithUser | null => {
+    const findCommentById = (
+      comments: UserCommentWithUser[],
+      id: bigint,
+    ): UserCommentWithUser | null => {
       for (const comment of comments) {
         if (comment.commentId === id) return comment;
         const replyFound = findCommentById(comment.replies, id);
@@ -170,7 +177,9 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
     if (!originalComment) return { success: false, error: "Comment not found" };
 
     // Optimistic update
-    const updateComment = (comments: UserCommentWithUser[]): UserCommentWithUser[] => {
+    const updateComment = (
+      comments: UserCommentWithUser[],
+    ): UserCommentWithUser[] => {
       return comments.map((comment) => {
         if (comment.commentId === commentId) {
           return { ...comment, content };
@@ -192,7 +201,28 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
 
       if (!result.success) {
         // Revert on failure
-        setContactComments((prev) => updateComment(prev).map((comment) => {
+        setContactComments((prev) =>
+          updateComment(prev).map((comment) => {
+            if (comment.commentId === commentId) {
+              return { ...comment, content: originalComment.content };
+            }
+            return {
+              ...comment,
+              replies: comment.replies.map((reply) =>
+                reply.commentId === commentId
+                  ? { ...reply, content: originalComment.content }
+                  : reply,
+              ),
+            };
+          }),
+        );
+      }
+
+      return result;
+    } catch (error) {
+      // Revert on error
+      setContactComments((prev) =>
+        updateComment(prev).map((comment) => {
           if (comment.commentId === commentId) {
             return { ...comment, content: originalComment.content };
           }
@@ -201,28 +231,11 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
             replies: comment.replies.map((reply) =>
               reply.commentId === commentId
                 ? { ...reply, content: originalComment.content }
-                : reply
+                : reply,
             ),
           };
-        }));
-      }
-
-      return result;
-    } catch (error) {
-      // Revert on error
-      setContactComments((prev) => updateComment(prev).map((comment) => {
-        if (comment.commentId === commentId) {
-          return { ...comment, content: originalComment.content };
-        }
-        return {
-          ...comment,
-          replies: comment.replies.map((reply) =>
-            reply.commentId === commentId
-              ? { ...reply, content: originalComment.content }
-              : reply
-          ),
-        };
-      }));
+        }),
+      );
       throw error;
     }
   };
@@ -232,7 +245,9 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
     const previousComments = contactComments;
 
     // Optimistic delete
-    const deleteComment = (comments: UserCommentWithUser[]): UserCommentWithUser[] => {
+    const deleteComment = (
+      comments: UserCommentWithUser[],
+    ): UserCommentWithUser[] => {
       return comments
         .filter((c) => c.commentId !== commentId)
         .map((comment) => ({
@@ -248,7 +263,8 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
 
       if (result.success) {
         // Refetch to ensure consistency
-        const freshComments = await getUserCommentsByContactIdWithAuth(contactId);
+        const freshComments =
+          await getUserCommentsByContactIdWithAuth(contactId);
         setContactComments(freshComments);
       } else {
         // Revert on failure
@@ -271,7 +287,7 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
       try {
         const [comments, tasks] = await Promise.all([
           getUserCommentsByContactIdWithAuth(contactId),
-          getContactTasksWithAuth(contactId)
+          getContactTasksWithAuth(contactId),
         ]);
 
         setContactComments(comments);
@@ -286,9 +302,13 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
           dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
           completed: task.completed ?? false,
           listingId: task.listingId ? BigInt(task.listingId) : undefined,
-          leadId: task.listingContactId ? BigInt(task.listingContactId) : undefined,
+          leadId: task.listingContactId
+            ? BigInt(task.listingContactId)
+            : undefined,
           dealId: task.dealId ? BigInt(task.dealId) : undefined,
-          appointmentId: task.appointmentId ? BigInt(task.appointmentId) : undefined,
+          appointmentId: task.appointmentId
+            ? BigInt(task.appointmentId)
+            : undefined,
           prospectId: task.prospectId ? BigInt(task.prospectId) : undefined,
           contactId: contactId,
           isActive: task.isActive ?? true,
@@ -314,7 +334,7 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
 
   return (
     <div className="mx-auto max-w-7xl">
-      <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex flex-col gap-6 lg:flex-row">
         {/* Left side - Tasks */}
         <div className="flex-1 lg:w-1/2">
           <ContactTareas
@@ -331,16 +351,20 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
 
         {/* Right side - Comments */}
         <div className="flex-1 lg:w-1/2">
-          <h3 className="text-lg sm:text-xl font-semibold mb-2">Notas</h3>
+          <h3 className="mb-2 text-lg font-semibold sm:text-xl">Notas</h3>
           <ContactComments
             contactId={contactId}
             initialComments={contactComments}
             currentUserId={session?.user?.id}
-            currentUser={session?.user ? {
-              id: session.user.id,
-              name: session.user.name ?? undefined,
-              image: session.user.image ?? undefined,
-            } : undefined}
+            currentUser={
+              session?.user
+                ? {
+                    id: session.user.id,
+                    name: session.user.name ?? undefined,
+                    image: session.user.image ?? undefined,
+                  }
+                : undefined
+            }
             onAddComment={handleAddComment}
             onEditComment={handleEditComment}
             onDeleteComment={handleDeleteComment}

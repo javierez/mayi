@@ -47,7 +47,7 @@ async function uploadBrandAssetToS3(
     // inmobiliariaacropolis/[accountId]/branding/logo_[type]_[timestamp].[ext]
     // Get dynamic bucket name
     const bucketName = await getDynamicBucketName();
-    
+
     const imageKey = `branding/logo_${fileType}_${timestamp}_${nanoid(6)}.${fileExtension}`;
     const s3key = `s3://${bucketName}/${imageKey}`;
 

@@ -1,5 +1,3 @@
-
-
 import { useEffect } from "react";
 import {
   Dialog,
@@ -20,7 +18,8 @@ interface OnboardingModalProps {
 }
 
 function OnboardingModalContent({ onComplete }: { onComplete: () => void }) {
-  const { state, nextStep, previousStep, setSubmitting } = useOnboardingContext();
+  const { state, nextStep, previousStep, setSubmitting } =
+    useOnboardingContext();
   const { currentStep, formData } = state;
 
   const handleSubmit = async () => {
@@ -38,11 +37,14 @@ function OnboardingModalContent({ onComplete }: { onComplete: () => void }) {
       });
 
       if (!response.ok) {
-        const error = await response.json() as { error?: string };
+        const error = (await response.json()) as { error?: string };
         throw new Error(error.error ?? "Error al guardar los datos");
       }
 
-      const result = await response.json() as { success: boolean; message: string };
+      const result = (await response.json()) as {
+        success: boolean;
+        message: string;
+      };
       console.log("✅ Onboarding saved successfully:", result);
 
       toast.success("¡Bienvenido a Vesta!", {
@@ -56,7 +58,9 @@ function OnboardingModalContent({ onComplete }: { onComplete: () => void }) {
       console.error("❌ Error submitting onboarding:", error);
       toast.error("Error al guardar", {
         description:
-          error instanceof Error ? error.message : "No se pudo guardar la configuración.",
+          error instanceof Error
+            ? error.message
+            : "No se pudo guardar la configuración.",
       });
     } finally {
       setSubmitting(false);
@@ -94,14 +98,21 @@ function OnboardingModalContent({ onComplete }: { onComplete: () => void }) {
       {/* Step Content */}
       <div className="flex-1">
         {currentStep === 1 && <StepOne onNext={nextStep} />}
-        {currentStep === 2 && <StepTwo onNext={nextStep} onBack={previousStep} />}
-        {currentStep === 3 && <StepThree onBack={previousStep} onSubmit={handleSubmit} />}
+        {currentStep === 2 && (
+          <StepTwo onNext={nextStep} onBack={previousStep} />
+        )}
+        {currentStep === 3 && (
+          <StepThree onBack={previousStep} onSubmit={handleSubmit} />
+        )}
       </div>
     </div>
   );
 }
 
-export default function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
+export default function OnboardingModal({
+  open,
+  onComplete,
+}: OnboardingModalProps) {
   // Prevent body scroll when modal is open
   useEffect(() => {
     if (open) {
@@ -115,20 +126,26 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
   }, [open]);
 
   return (
-    <Dialog open={open} onOpenChange={() => { /* Prevent closing */ }} modal>
+    <Dialog
+      open={open}
+      onOpenChange={() => {
+        /* Prevent closing */
+      }}
+      modal
+    >
       <DialogContent
-        className="flex h-[90vh] max-h-[90vh] max-w-3xl flex-col overflow-hidden [&>button]:hidden p-0 m-4"
+        className="m-4 flex h-[90vh] max-h-[90vh] max-w-3xl flex-col overflow-hidden p-0 [&>button]:hidden"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
-        <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0">
+        <DialogHeader className="flex-shrink-0 px-6 pb-4 pt-6">
           <DialogTitle className="text-2xl">Configuración Inicial</DialogTitle>
           <DialogDescription>
             Completa estos pasos para personalizar tu experiencia en Vesta.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-6 pb-6">
+        <div className="custom-scrollbar flex-1 overflow-y-auto px-6 pb-6">
           <OnboardingProvider>
             <OnboardingModalContent onComplete={onComplete} />
           </OnboardingProvider>
@@ -137,4 +154,3 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
     </Dialog>
   );
 }
-

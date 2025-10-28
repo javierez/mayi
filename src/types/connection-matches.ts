@@ -149,7 +149,13 @@ export interface MatchActionResult {
 }
 
 // Actions available for each match
-export type MatchAction = "save" | "dismiss" | "contact" | "request-contact" | "create-lead" | "share";
+export type MatchAction =
+  | "save"
+  | "dismiss"
+  | "contact"
+  | "request-contact"
+  | "create-lead"
+  | "share";
 
 // Match preferences for user settings
 export interface MatchPreferences {

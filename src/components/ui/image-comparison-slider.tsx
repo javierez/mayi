@@ -30,50 +30,59 @@ export function ImageComparisonSlider({
 }: ImageComparisonSliderProps) {
   const [sliderPosition, setSliderPosition] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
-  const [isImageLoaded, setIsImageLoaded] = useState({ original: false, enhanced: false });
-  
+  const [isImageLoaded, setIsImageLoaded] = useState({
+    original: false,
+    enhanced: false,
+  });
+
   const containerRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number | undefined>(undefined);
 
   const updateSliderPosition = useCallback((clientX: number) => {
     if (!containerRef.current) return;
-    
+
     const rect = containerRef.current.getBoundingClientRect();
     const x = clientX - rect.left;
     const percentage = Math.min(100, Math.max(0, (x / rect.width) * 100));
-    
+
     setSliderPosition(percentage);
   }, []);
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDragging) return;
-    
-    if (animationFrameRef.current !== undefined) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-    
-    animationFrameRef.current = requestAnimationFrame(() => {
-      updateSliderPosition(e.clientX);
-    });
-  }, [isDragging, updateSliderPosition]);
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isDragging) return;
+
+      if (animationFrameRef.current !== undefined) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+
+      animationFrameRef.current = requestAnimationFrame(() => {
+        updateSliderPosition(e.clientX);
+      });
+    },
+    [isDragging, updateSliderPosition],
+  );
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
   }, []);
 
-  const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (!isDragging || !e.touches[0]) return;
-    
-    e.preventDefault();
-    
-    if (animationFrameRef.current !== undefined) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-    
-    animationFrameRef.current = requestAnimationFrame(() => {
-      updateSliderPosition(e.touches[0]!.clientX);
-    });
-  }, [isDragging, updateSliderPosition]);
+  const handleTouchMove = useCallback(
+    (e: TouchEvent) => {
+      if (!isDragging || !e.touches[0]) return;
+
+      e.preventDefault();
+
+      if (animationFrameRef.current !== undefined) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+
+      animationFrameRef.current = requestAnimationFrame(() => {
+        updateSliderPosition(e.touches[0]!.clientX);
+      });
+    },
+    [isDragging, updateSliderPosition],
+  );
 
   const handleTouchEnd = useCallback(() => {
     setIsDragging(false);
@@ -82,51 +91,59 @@ export function ImageComparisonSlider({
   // Event listeners
   useEffect(() => {
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.addEventListener('touchmove', handleTouchMove, { passive: false });
-      document.addEventListener('touchend', handleTouchEnd);
-      document.body.style.userSelect = 'none';
-      document.body.style.cursor = 'col-resize';
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.addEventListener("touchmove", handleTouchMove, {
+        passive: false,
+      });
+      document.addEventListener("touchend", handleTouchEnd);
+      document.body.style.userSelect = "none";
+      document.body.style.cursor = "col-resize";
     }
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
-      
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handleTouchEnd);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+
       if (animationFrameRef.current !== undefined) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
+  }, [
+    isDragging,
+    handleMouseMove,
+    handleMouseUp,
+    handleTouchMove,
+    handleTouchEnd,
+  ]);
 
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isVisible) return;
-      
-      if (e.key === 'ArrowLeft') {
+
+      if (e.key === "ArrowLeft") {
         e.preventDefault();
-        setSliderPosition(prev => Math.max(0, prev - 5));
-      } else if (e.key === 'ArrowRight') {
+        setSliderPosition((prev) => Math.max(0, prev - 5));
+      } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        setSliderPosition(prev => Math.min(100, prev + 5));
-      } else if (e.key === 'Escape') {
+        setSliderPosition((prev) => Math.min(100, prev + 5));
+      } else if (e.key === "Escape") {
         e.preventDefault();
         onDiscard();
       }
     };
 
     if (isVisible) {
-      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener("keydown", handleKeyDown);
     }
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isVisible, onDiscard]);
 
@@ -135,26 +152,30 @@ export function ImageComparisonSlider({
     if (isVisible) {
       setSliderPosition(50);
       setIsImageLoaded({ original: false, enhanced: false });
-      
+
       // Debug log the image URLs
-      console.log('🖼️ [ImageComparisonSlider] Images changed', {
+      console.log("🖼️ [ImageComparisonSlider] Images changed", {
         originalImage,
         enhancedImage,
         originalImageValid: !!originalImage && originalImage !== "",
         enhancedImageValid: !!enhancedImage && enhancedImage !== "",
-        isVisible
+        isVisible,
       });
 
       // Set a shorter fallback timer to hide loading state after 1 second
       // This handles cases where images load but onLoad doesn't fire (cached images)
       const fallbackTimer = setTimeout(() => {
-        console.log('⏰ [ImageComparisonSlider] Fallback timer - marking images as loaded');
+        console.log(
+          "⏰ [ImageComparisonSlider] Fallback timer - marking images as loaded",
+        );
         setIsImageLoaded({ original: true, enhanced: true });
       }, 1000);
 
       // Also set an immediate check after a short delay for cached images
       const immediateCheck = setTimeout(() => {
-        console.log('⚡ [ImageComparisonSlider] Immediate check - marking images as loaded for cached images');
+        console.log(
+          "⚡ [ImageComparisonSlider] Immediate check - marking images as loaded for cached images",
+        );
         setIsImageLoaded({ original: true, enhanced: true });
       }, 100);
 
@@ -168,42 +189,48 @@ export function ImageComparisonSlider({
   if (!isVisible) return null;
 
   // Check if both image URLs are valid
-  const hasValidImages = originalImage && originalImage !== "" && enhancedImage && enhancedImage !== "";
+  const hasValidImages =
+    originalImage &&
+    originalImage !== "" &&
+    enhancedImage &&
+    enhancedImage !== "";
   const bothImagesLoaded = isImageLoaded.original && isImageLoaded.enhanced;
-  
+
   if (!hasValidImages) {
-    console.warn('⚠️ [ImageComparisonSlider] Invalid image URLs provided', {
+    console.warn("⚠️ [ImageComparisonSlider] Invalid image URLs provided", {
       originalImage,
       enhancedImage,
       hasOriginal: !!originalImage && originalImage !== "",
-      hasEnhanced: !!enhancedImage && enhancedImage !== ""
+      hasEnhanced: !!enhancedImage && enhancedImage !== "",
     });
     return null;
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+    <div className="animate-in fade-in fixed inset-0 z-50 bg-black/80 backdrop-blur-sm duration-300">
       {/* Header */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
-        <div className="bg-white/90 backdrop-blur-sm rounded-xl px-6 py-3 shadow-lg border border-white/20">
+      <div className="absolute left-1/2 top-4 z-10 -translate-x-1/2">
+        <div className="rounded-xl border border-white/20 bg-white/90 px-6 py-3 shadow-lg backdrop-blur-sm">
           <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-          <p className="text-sm text-gray-600">Arrastra la línea para comparar</p>
+          <p className="text-sm text-gray-600">
+            Arrastra la línea para comparar
+          </p>
         </div>
       </div>
 
       {/* Close button */}
       <button
         onClick={onDiscard}
-        className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-lg border border-white/20 flex items-center justify-center transition-all hover:scale-105"
+        className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/90 shadow-lg transition-all hover:scale-105 hover:bg-white"
         aria-label="Cerrar comparación"
       >
-        <X className="w-5 h-5 text-gray-700" />
+        <X className="h-5 w-5 text-gray-700" />
       </button>
 
       {/* Main comparison container */}
-      <div 
+      <div
         ref={containerRef}
-        className="relative h-full w-full overflow-hidden cursor-col-resize"
+        className="relative h-full w-full cursor-col-resize overflow-hidden"
         onClick={(e) => {
           if (!isDragging) {
             updateSliderPosition(e.clientX);
@@ -219,23 +246,25 @@ export function ImageComparisonSlider({
             className="object-contain"
             priority
             onLoad={() => {
-              console.log('🖼️ [ImageComparisonSlider] Original image loaded');
-              setIsImageLoaded(prev => ({ ...prev, original: true }));
+              console.log("🖼️ [ImageComparisonSlider] Original image loaded");
+              setIsImageLoaded((prev) => ({ ...prev, original: true }));
             }}
             onError={() => {
-              console.error('❌ [ImageComparisonSlider] Original image failed to load');
+              console.error(
+                "❌ [ImageComparisonSlider] Original image failed to load",
+              );
               // Still mark as loaded to prevent infinite loading
-              setIsImageLoaded(prev => ({ ...prev, original: true }));
+              setIsImageLoaded((prev) => ({ ...prev, original: true }));
             }}
           />
           {/* Original image label */}
-          <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded-lg text-sm font-medium backdrop-blur-sm">
+          <div className="absolute left-4 top-4 rounded-lg bg-black/50 px-3 py-1 text-sm font-medium text-white backdrop-blur-sm">
             Original
           </div>
         </div>
-        
+
         {/* Enhanced Image (Clipped) */}
-        <div 
+        <div
           className="absolute inset-0 overflow-hidden transition-all duration-75 ease-out"
           style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
         >
@@ -246,31 +275,35 @@ export function ImageComparisonSlider({
             className="object-contain"
             priority
             onLoad={() => {
-              console.log('🖼️ [ImageComparisonSlider] Enhanced image loaded');
-              setIsImageLoaded(prev => ({ ...prev, enhanced: true }));
+              console.log("🖼️ [ImageComparisonSlider] Enhanced image loaded");
+              setIsImageLoaded((prev) => ({ ...prev, enhanced: true }));
             }}
             onError={() => {
-              console.error('❌ [ImageComparisonSlider] Enhanced image failed to load');
+              console.error(
+                "❌ [ImageComparisonSlider] Enhanced image failed to load",
+              );
               // Still mark as loaded to prevent infinite loading
-              setIsImageLoaded(prev => ({ ...prev, enhanced: true }));
+              setIsImageLoaded((prev) => ({ ...prev, enhanced: true }));
             }}
           />
           {/* Enhanced image label */}
-          <div className="absolute top-4 right-4 bg-gradient-to-r from-amber-500 to-rose-500 text-white px-3 py-1 rounded-lg text-sm font-medium shadow-lg">
+          <div className="absolute right-4 top-4 rounded-lg bg-gradient-to-r from-amber-500 to-rose-500 px-3 py-1 text-sm font-medium text-white shadow-lg">
             Mejorada con IA
           </div>
         </div>
-        
+
         {/* Slider Handle */}
         <div
-          className="absolute top-0 bottom-0 w-1 bg-white shadow-lg transition-all duration-75 ease-out"
+          className="absolute bottom-0 top-0 w-1 bg-white shadow-lg transition-all duration-75 ease-out"
           style={{ left: `${sliderPosition}%` }}
         >
           {/* Draggable handle */}
           <div
             className={cn(
-              "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-12 h-12 bg-white rounded-full shadow-xl border-2 border-gray-200 flex items-center justify-center cursor-grab transition-all duration-200",
-              isDragging ? "scale-110 cursor-grabbing shadow-2xl border-amber-400" : "hover:scale-105 hover:shadow-xl"
+              "absolute top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 cursor-grab items-center justify-center rounded-full border-2 border-gray-200 bg-white shadow-xl transition-all duration-200",
+              isDragging
+                ? "scale-110 cursor-grabbing border-amber-400 shadow-2xl"
+                : "hover:scale-105 hover:shadow-xl",
             )}
             onMouseDown={(e) => {
               e.preventDefault();
@@ -286,50 +319,52 @@ export function ImageComparisonSlider({
             aria-valuemin={0}
             aria-valuemax={100}
           >
-            <Move className="w-5 h-5 text-gray-600" />
+            <Move className="h-5 w-5 text-gray-600" />
           </div>
-          
+
           {/* Arrows for keyboard users */}
-          <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-60">
-            <ArrowLeft className="w-4 h-4 text-white" />
-            <span className="text-white text-xs">Arrastra</span>
-            <ArrowRight className="w-4 h-4 text-white" />
+          <div className="absolute -bottom-16 left-1/2 flex -translate-x-1/2 items-center gap-2 opacity-60">
+            <ArrowLeft className="h-4 w-4 text-white" />
+            <span className="text-xs text-white">Arrastra</span>
+            <ArrowRight className="h-4 w-4 text-white" />
           </div>
         </div>
-        
+
         {/* Loading overlay */}
         {!bothImagesLoaded && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <div className="bg-white/90 backdrop-blur-sm rounded-xl p-6 text-center">
-              <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p className="text-gray-700 font-medium">Cargando comparación...</p>
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+            <div className="rounded-xl bg-white/90 p-6 text-center backdrop-blur-sm">
+              <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent"></div>
+              <p className="font-medium text-gray-700">
+                Cargando comparación...
+              </p>
             </div>
           </div>
         )}
       </div>
 
       {/* Action Buttons */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-4 z-10">
+      <div className="absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 gap-4">
         <Button
           onClick={onSave}
-          className="bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500 text-white border-0 shadow-lg hover:shadow-xl transition-all px-6 py-3"
+          className="border-0 bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-3 text-white shadow-lg transition-all hover:from-amber-500 hover:to-rose-500 hover:shadow-xl"
           disabled={!bothImagesLoaded}
         >
-          <Save className="w-4 h-4 mr-2" />
+          <Save className="mr-2 h-4 w-4" />
           Guardar versión mejorada
         </Button>
         <Button
           onClick={onDiscard}
           variant="outline"
-          className="bg-white/10 backdrop-blur border-white/20 text-white hover:bg-white/20 shadow-lg hover:shadow-xl transition-all px-6 py-3"
+          className="border-white/20 bg-white/10 px-6 py-3 text-white shadow-lg backdrop-blur transition-all hover:bg-white/20 hover:shadow-xl"
         >
-          <X className="w-4 h-4 mr-2" />
+          <X className="mr-2 h-4 w-4" />
           Descartar
         </Button>
       </div>
 
       {/* Keyboard hints */}
-      <div className="absolute bottom-4 right-4 bg-black/50 text-white px-3 py-2 rounded-lg text-xs backdrop-blur-sm">
+      <div className="absolute bottom-4 right-4 rounded-lg bg-black/50 px-3 py-2 text-xs text-white backdrop-blur-sm">
         <div>← → Mover slider</div>
         <div>Esc Cerrar</div>
       </div>

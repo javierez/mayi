@@ -1,10 +1,23 @@
-
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { cn } from "~/lib/utils";
-import { MessageSquare, Send, X, Frown, Meh, Smile, Heart, CheckCircle } from "lucide-react";
+import {
+  MessageSquare,
+  Send,
+  X,
+  Frown,
+  Meh,
+  Smile,
+  Heart,
+  CheckCircle,
+} from "lucide-react";
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -31,7 +44,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     try {
       const currentUrl = window.location.pathname + window.location.search;
       console.log("Sending feedback with URL:", currentUrl);
-      
+
       const response = await fetch("/api/feedback", {
         method: "POST",
         headers: {
@@ -77,7 +90,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
         {isSuccess ? (
           // Success State
           <div className="py-12 text-center">
-            <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
+            <CheckCircle className="mx-auto mb-4 h-12 w-12 text-green-600" />
             <p className="text-lg font-medium text-gray-900">
               ¡Gracias por tu feedback!
             </p>
@@ -95,7 +108,10 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
             <div className="space-y-6 py-4">
               {/* Comment Section */}
               <div className="space-y-3">
-                <label htmlFor="feedback-comment" className="text-sm font-medium text-gray-700">
+                <label
+                  htmlFor="feedback-comment"
+                  className="text-sm font-medium text-gray-700"
+                >
                   Cuéntanos tu experiencia...
                 </label>
                 <Textarea
@@ -103,10 +119,10 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                   placeholder="Comparte tus comentarios, sugerencias o problemas que hayas encontrado..."
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
-                  className="min-h-[100px] resize-none focus:ring-gray-400 focus:border-gray-400"
+                  className="min-h-[100px] resize-none focus:border-gray-400 focus:ring-gray-400"
                   maxLength={500}
                 />
-                <div className="text-xs text-gray-500 text-right">
+                <div className="text-right text-xs text-gray-500">
                   {comment.length}/500 caracteres
                 </div>
               </div>
@@ -124,16 +140,20 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                         key={item.value}
                         onClick={() => setRating(item.value)}
                         className={cn(
-                          "flex items-center justify-center p-3 rounded-lg border transition-all duration-200",
+                          "flex items-center justify-center rounded-lg border p-3 transition-all duration-200",
                           rating === item.value
                             ? "border-gray-900 bg-gray-50"
-                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50",
                         )}
                       >
-                        <IconComponent className={cn(
-                          "h-5 w-5",
-                          rating === item.value ? "text-gray-900" : "text-gray-500"
-                        )} />
+                        <IconComponent
+                          className={cn(
+                            "h-5 w-5",
+                            rating === item.value
+                              ? "text-gray-900"
+                              : "text-gray-500",
+                          )}
+                        />
                       </button>
                     );
                   })}
@@ -149,7 +169,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                 className="flex-1"
                 disabled={isSubmitting}
               >
-                <X className="h-4 w-4 mr-2" />
+                <X className="mr-2 h-4 w-4" />
                 Cancelar
               </Button>
               <Button
@@ -157,7 +177,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                 disabled={!rating || !comment.trim() || isSubmitting}
                 className="flex-1"
               >
-                <Send className="h-4 w-4 mr-2" />
+                <Send className="mr-2 h-4 w-4" />
                 {isSubmitting ? "Enviando..." : "Enviar"}
               </Button>
             </div>

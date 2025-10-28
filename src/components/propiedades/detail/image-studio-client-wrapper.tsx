@@ -15,10 +15,13 @@ interface ImageStudioClientWrapperProps {
   title: string;
 }
 
-export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWrapperProps) {
+export function ImageStudioClientWrapper({
+  images,
+  title,
+}: ImageStudioClientWrapperProps) {
   const params = useParams();
   const propertyId = params.id as string;
-  
+
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [allImages, setAllImages] = useState<PropertyImage[]>(images);
   const [isComparisonVisible, setIsComparisonVisible] = useState(false);
@@ -44,29 +47,36 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
   } = useImageEnhancement({
     propertyId,
     onSuccess: (newImage) => {
-      console.log('🎉 Enhancement success - adding new image to gallery:', {
+      console.log("🎉 Enhancement success - adding new image to gallery:", {
         newImageId: newImage.propertyImageId.toString(),
         imageOrder: newImage.imageOrder,
-        currentImagesCount: allImages.length
+        currentImagesCount: allImages.length,
       });
 
       // Add the new image to the gallery (this happens after user confirms save)
-      setAllImages(currentImages => {
+      setAllImages((currentImages) => {
         const newImages = [...currentImages, newImage];
-        const sortedImages = newImages.sort((a, b) => a.imageOrder - b.imageOrder);
-        console.log('📸 Updated gallery images:', sortedImages.map(img => ({
-          id: img.propertyImageId.toString(),
-          order: img.imageOrder,
-          tag: img.imageTag
-        })));
+        const sortedImages = newImages.sort(
+          (a, b) => a.imageOrder - b.imageOrder,
+        );
+        console.log(
+          "📸 Updated gallery images:",
+          sortedImages.map((img) => ({
+            id: img.propertyImageId.toString(),
+            order: img.imageOrder,
+            tag: img.imageTag,
+          })),
+        );
         return sortedImages;
       });
 
       // Hide comparison slider and reset
       setIsComparisonVisible(false);
       resetEnhancement();
-      
-      console.log('✅ Enhancement complete - mini gallery should now be visible');
+
+      console.log(
+        "✅ Enhancement complete - mini gallery should now be visible",
+      );
     },
     onComparisonReady: () => {
       // Show comparison slider when enhancement completes
@@ -89,21 +99,26 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
   } = useImageRenovation({
     propertyId,
     onSuccess: (newImage) => {
-      console.log('🎉 Renovation success - adding new image to gallery:', {
+      console.log("🎉 Renovation success - adding new image to gallery:", {
         newImageId: newImage.propertyImageId.toString(),
         imageOrder: newImage.imageOrder,
-        currentImagesCount: allImages.length
+        currentImagesCount: allImages.length,
       });
 
       // Add the new renovated image to the gallery
-      setAllImages(currentImages => {
+      setAllImages((currentImages) => {
         const newImages = [...currentImages, newImage];
-        const sortedImages = newImages.sort((a, b) => a.imageOrder - b.imageOrder);
-        console.log('📸 Updated gallery images:', sortedImages.map(img => ({
-          id: img.propertyImageId.toString(),
-          order: img.imageOrder,
-          tag: img.imageTag
-        })));
+        const sortedImages = newImages.sort(
+          (a, b) => a.imageOrder - b.imageOrder,
+        );
+        console.log(
+          "📸 Updated gallery images:",
+          sortedImages.map((img) => ({
+            id: img.propertyImageId.toString(),
+            order: img.imageOrder,
+            tag: img.imageTag,
+          })),
+        );
         return sortedImages;
       });
 
@@ -111,8 +126,10 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
       setIsComparisonVisible(false);
       setIsRenovationComparison(false);
       resetRenovation();
-      
-      console.log('✅ Renovation complete - mini gallery should now be visible');
+
+      console.log(
+        "✅ Renovation complete - mini gallery should now be visible",
+      );
     },
     onComparisonReady: () => {
       // Show comparison slider when renovation completes
@@ -124,7 +141,6 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
       toast.error("Error al renovar la imagen");
     },
   });
-  
 
   // Handle enhancement request from tools
   const handleEnhanceImage = useCallback(async () => {
@@ -133,7 +149,7 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
       return;
     }
 
-    if (enhancementStatus === 'processing') {
+    if (enhancementStatus === "processing") {
       toast.warning("Ya hay una mejora en progreso");
       return;
     }
@@ -142,7 +158,7 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
       await enhance(
         selectedImage.imageUrl,
         selectedImage.referenceNumber,
-        selectedImage.imageOrder
+        selectedImage.imageOrder,
       );
     } catch (error) {
       console.error("Failed to start enhancement:", error);
@@ -157,7 +173,7 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
       return;
     }
 
-    if (renovationStatus === 'processing') {
+    if (renovationStatus === "processing") {
       toast.warning("Ya hay una renovación en progreso");
       return;
     }
@@ -166,7 +182,7 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
       await renovate(
         selectedImage.imageUrl,
         selectedImage.referenceNumber,
-        selectedImage.imageOrder
+        selectedImage.imageOrder,
       );
     } catch (error) {
       console.error("Failed to start renovation:", error);
@@ -184,7 +200,7 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
     try {
       await saveEnhanced();
     } catch (error) {
-      console.error('Save enhanced image failed:', error);
+      console.error("Save enhanced image failed:", error);
     }
   }, [enhancedImageUrl, enhancementMetadata, saveEnhanced]);
 
@@ -198,7 +214,7 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
     try {
       await saveRenovated();
     } catch (error) {
-      console.error('Save renovated image failed:', error);
+      console.error("Save renovated image failed:", error);
     }
   }, [renovatedImageUrl, renovationMetadata, saveRenovated]);
 
@@ -207,7 +223,7 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
     // Hide comparison and reset all enhancement state
     setIsComparisonVisible(false);
     resetEnhancement();
-    
+
     // Since we're using defer storage pattern:
     // - The enhanced image was never saved to S3 or database
     // - Only the temporary Freepik URL existed
@@ -222,25 +238,29 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
     setIsComparisonVisible(false);
     setIsRenovationComparison(false);
     resetRenovation();
-    
+
     // Similar to enhancement, renovation images are only saved on user confirmation
     // Discarding simply clears the temporary state
     toast.success("Imagen renovada descartada");
   }, [resetRenovation]);
 
-
   // Determine if AI is processing
-  const isProcessing = enhancementStatus === 'processing' || renovationStatus === 'processing';
-  const processingType = renovationStatus === 'processing' ? 'renovación' : 'mejora';
+  const isProcessing =
+    enhancementStatus === "processing" || renovationStatus === "processing";
+  const processingType =
+    renovationStatus === "processing" ? "renovación" : "mejora";
 
   // Debug mini gallery visibility
-  const shouldShowMiniGallery = enhancementStatus !== 'processing' && renovationStatus !== 'processing' && !isComparisonVisible;
-  console.log('🔍 Mini gallery visibility check:', {
+  const shouldShowMiniGallery =
+    enhancementStatus !== "processing" &&
+    renovationStatus !== "processing" &&
+    !isComparisonVisible;
+  console.log("🔍 Mini gallery visibility check:", {
     enhancementStatus,
     renovationStatus,
     isComparisonVisible,
     shouldShow: shouldShowMiniGallery,
-    imagesCount: allImages.length
+    imagesCount: allImages.length,
   });
 
   return (
@@ -248,7 +268,7 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
       <div className="space-y-16">
         {/* Image Selection (thumbnails only) - Hidden when AI is processing or during comparison */}
         {shouldShowMiniGallery && (
-          <section className="animate-in slide-in-from-bottom-8 duration-700 delay-300">
+          <section className="animate-in slide-in-from-bottom-8 delay-300 duration-700">
             <ImageStudioGallery
               images={allImages}
               title={title}
@@ -258,9 +278,9 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
             />
           </section>
         )}
-        
+
         {/* Tools Section */}
-        <ImageStudioTools 
+        <ImageStudioTools
           onEnhanceImage={handleEnhanceImage}
           enhancementStatus={enhancementStatus}
           _enhancementProgress={enhancementProgress}
@@ -270,9 +290,12 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
           onRenovateImage={handleRenovateImage}
           renovationStatus={renovationStatus}
         />
-        
+
         {/* Results Section (big image) */}
-        <section className="animate-in slide-in-from-bottom-8 duration-700 delay-500" id="main-image-section">
+        <section
+          className="animate-in slide-in-from-bottom-8 delay-500 duration-700"
+          id="main-image-section"
+        >
           <ImageStudioGallery
             images={allImages}
             title={title}
@@ -280,16 +303,28 @@ export function ImageStudioClientWrapper({ images, title }: ImageStudioClientWra
             selectedIndex={selectedIndex}
             onImageSelect={setSelectedIndex}
             isComparisonMode={isComparisonVisible}
-            enhancedImageUrl={isRenovationComparison ? (renovatedImageUrl ?? "") : (enhancedImageUrl ?? "")}
-            enhancementStatus={isRenovationComparison ? renovationStatus : enhancementStatus}
-            onSave={isRenovationComparison ? handleSaveRenovated : handleSaveEnhanced}
-            onDiscard={isRenovationComparison ? handleDiscardRenovated : handleDiscardEnhanced}
+            enhancedImageUrl={
+              isRenovationComparison
+                ? (renovatedImageUrl ?? "")
+                : (enhancedImageUrl ?? "")
+            }
+            enhancementStatus={
+              isRenovationComparison ? renovationStatus : enhancementStatus
+            }
+            onSave={
+              isRenovationComparison ? handleSaveRenovated : handleSaveEnhanced
+            }
+            onDiscard={
+              isRenovationComparison
+                ? handleDiscardRenovated
+                : handleDiscardEnhanced
+            }
           />
         </section>
       </div>
 
       {/* AI Processing Overlay */}
-      <ProcessingOverlay 
+      <ProcessingOverlay
         isVisible={isProcessing}
         processingType={processingType}
       />

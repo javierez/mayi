@@ -12,39 +12,46 @@ export async function POST(request: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Usuario no autenticado" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     // Parse request body
-    const body = await request.json() as { audioUrl?: string; referenceNumber?: string };
+    const body = (await request.json()) as {
+      audioUrl?: string;
+      referenceNumber?: string;
+    };
     const { audioUrl, referenceNumber } = body;
 
     if (!audioUrl) {
       return NextResponse.json(
         { error: "URL de audio requerida" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     console.log(`🎤 [TRANSCRIBE-API] Transcribing audio: ${audioUrl}`);
 
     // Transcribe audio using OpenAI Whisper
-    const transcriptionResult = await transcribeRealEstateAudio(audioUrl, referenceNumber);
+    const transcriptionResult = await transcribeRealEstateAudio(
+      audioUrl,
+      referenceNumber,
+    );
 
     console.log("✅ [TRANSCRIBE-API] Transcription completed successfully");
-    console.log(`📝 [TRANSCRIBE-API] Transcript length: ${transcriptionResult.transcript.length} characters`);
+    console.log(
+      `📝 [TRANSCRIBE-API] Transcript length: ${transcriptionResult.transcript.length} characters`,
+    );
 
     return NextResponse.json({
       success: true,
       ...transcriptionResult,
     });
-
   } catch (error) {
     console.error("❌ [TRANSCRIBE-API] Transcription error:", error);
-    
+
     let errorMessage = "Error al transcribir el audio";
-    
+
     if (error instanceof Error) {
       if (error.message.includes("fetch")) {
         errorMessage = "Error al descargar el audio desde el almacenamiento";
@@ -56,13 +63,13 @@ export async function POST(request: NextRequest) {
         errorMessage = error.message;
       }
     }
-    
+
     return NextResponse.json(
-      { 
+      {
         error: errorMessage,
-        details: error instanceof Error ? error.message : "Unknown error"
+        details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

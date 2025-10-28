@@ -62,7 +62,10 @@ export function CookieConsentBanner() {
       ...consentData,
       timestamp: Date.now(),
     };
-    localStorage.setItem("vesta-cookie-consent", JSON.stringify(consentWithTimestamp));
+    localStorage.setItem(
+      "vesta-cookie-consent",
+      JSON.stringify(consentWithTimestamp),
+    );
     setConsent(consentWithTimestamp);
     applyConsent(consentWithTimestamp);
     setShowBanner(false);
@@ -119,8 +122,9 @@ export function CookieConsentBanner() {
                           Este sitio utiliza cookies
                         </h3>
                         <p className="text-sm text-gray-600">
-                          Utilizamos cookies propias y de terceros para mejorar su experiencia de navegación
-                          y analizar el tráfico del sitio. Puede aceptar todas las cookies, rechazarlas o
+                          Utilizamos cookies propias y de terceros para mejorar
+                          su experiencia de navegación y analizar el tráfico del
+                          sitio. Puede aceptar todas las cookies, rechazarlas o
                           personalizar sus preferencias.{" "}
                           <Link
                             href="/cookies"
@@ -190,8 +194,10 @@ export function CookieConsentBanner() {
                               </span>
                             </div>
                             <p className="text-sm text-gray-600">
-                              Estas cookies son esenciales para el funcionamiento del sitio web
-                              y no pueden ser desactivadas. Incluyen cookies de autenticación y seguridad.
+                              Estas cookies son esenciales para el
+                              funcionamiento del sitio web y no pueden ser
+                              desactivadas. Incluyen cookies de autenticación y
+                              seguridad.
                             </p>
                           </div>
                           <div className="ml-4">
@@ -210,13 +216,20 @@ export function CookieConsentBanner() {
                               Cookies Analíticas
                             </h4>
                             <p className="text-sm text-gray-600">
-                              Estas cookies nos ayudan a entender cómo los visitantes interactúan
-                              con el sitio web, recopilando información de forma anónima (Vercel Analytics).
+                              Estas cookies nos ayudan a entender cómo los
+                              visitantes interactúan con el sitio web,
+                              recopilando información de forma anónima (Vercel
+                              Analytics).
                             </p>
                           </div>
                           <div className="ml-4">
                             <button
-                              onClick={() => setConsent({ ...consent, analytics: !consent.analytics })}
+                              onClick={() =>
+                                setConsent({
+                                  ...consent,
+                                  analytics: !consent.analytics,
+                                })
+                              }
                               className={`relative h-6 w-11 rounded-full transition-colors ${
                                 consent.analytics
                                   ? "bg-gradient-to-r from-amber-400 to-rose-400"
@@ -241,13 +254,19 @@ export function CookieConsentBanner() {
                               Cookies de Marketing
                             </h4>
                             <p className="text-sm text-gray-600">
-                              Estas cookies se utilizan para mostrar anuncios relevantes.
-                              Actualmente no utilizamos cookies de marketing.
+                              Estas cookies se utilizan para mostrar anuncios
+                              relevantes. Actualmente no utilizamos cookies de
+                              marketing.
                             </p>
                           </div>
                           <div className="ml-4">
                             <button
-                              onClick={() => setConsent({ ...consent, marketing: !consent.marketing })}
+                              onClick={() =>
+                                setConsent({
+                                  ...consent,
+                                  marketing: !consent.marketing,
+                                })
+                              }
                               className={`relative h-6 w-11 rounded-full transition-colors ${
                                 consent.marketing
                                   ? "bg-gradient-to-r from-amber-400 to-rose-400"

@@ -35,7 +35,10 @@ const ForgotPasswordPage: FC = () => {
       });
 
       if (result.error) {
-        setError(result.error.message ?? "Error al enviar el email de restablecimiento");
+        setError(
+          result.error.message ??
+            "Error al enviar el email de restablecimiento",
+        );
         return;
       }
 
@@ -93,16 +96,17 @@ const ForgotPasswordPage: FC = () => {
                 <p>
                   <strong>¿Qué hacer ahora?</strong>
                 </p>
-                <ol className="list-decimal list-inside space-y-2">
+                <ol className="list-inside list-decimal space-y-2">
                   <li>Revisa tu bandeja de entrada</li>
                   <li>Busca un email de &ldquo;Vesta CRM&rdquo;</li>
                   <li>Haz clic en el enlace para restablecer tu contraseña</li>
                   <li>Si no lo encuentras, revisa tu carpeta de spam</li>
                 </ol>
 
-                <div className="bg-amber-50 border border-amber-200 rounded p-3 mt-4">
-                  <p className="text-amber-800 text-xs">
-                    <strong>⏰ Importante:</strong> El enlace expira en 1 hora por seguridad.
+                <div className="mt-4 rounded border border-amber-200 bg-amber-50 p-3">
+                  <p className="text-xs text-amber-800">
+                    <strong>⏰ Importante:</strong> El enlace expira en 1 hora
+                    por seguridad.
                   </p>
                 </div>
               </div>
@@ -161,7 +165,8 @@ const ForgotPasswordPage: FC = () => {
           <CardHeader>
             <CardTitle>Restablecer Contraseña</CardTitle>
             <CardDescription>
-              Introduce tu email y te enviaremos un enlace para crear una nueva contraseña
+              Introduce tu email y te enviaremos un enlace para crear una nueva
+              contraseña
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -191,12 +196,14 @@ const ForgotPasswordPage: FC = () => {
                 />
               </div>
 
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500 border-0" 
+              <Button
+                type="submit"
+                className="w-full border-0 bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500"
                 disabled={isLoading}
               >
-                {isLoading ? "Enviando..." : "Enviar enlace de restablecimiento"}
+                {isLoading
+                  ? "Enviando..."
+                  : "Enviar enlace de restablecimiento"}
               </Button>
             </form>
 

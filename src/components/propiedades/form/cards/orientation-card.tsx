@@ -1,5 +1,3 @@
-
-
 import React from "react";
 import { Card } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
@@ -56,10 +54,7 @@ export function OrientationCard({
         getCardStyles("orientation"),
       )}
     >
-      <ModernSaveIndicator
-        state={saveState}
-        onSave={onSave}
-      />
+      <ModernSaveIndicator state={saveState} onSave={onSave} />
       <div className="mb-3 flex items-center justify-between">
         <button
           type="button"

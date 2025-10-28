@@ -23,10 +23,10 @@ export default function StepThree({ onBack, onSubmit }: StepThreeProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <h3 className="mb-4 text-lg font-semibold text-gray-900">
           Portales y Lanzamiento
         </h3>
-        <p className="text-sm text-gray-600 mb-6">
+        <p className="mb-6 text-sm text-gray-600">
           Últimos detalles sobre tus herramientas actuales.
         </p>
       </div>
@@ -36,7 +36,9 @@ export default function StepThree({ onBack, onSubmit }: StepThreeProps) {
         <label className="text-sm font-medium text-gray-900">
           Uso actual de portales inmobiliarios
         </label>
-        <p className="text-xs text-gray-500">Selecciona los portales que utilizas actualmente</p>
+        <p className="text-xs text-gray-500">
+          Selecciona los portales que utilizas actualmente
+        </p>
         <div className="space-y-3 rounded-lg bg-gray-50 p-4">
           <div className="flex items-center space-x-2">
             <Checkbox
@@ -90,7 +92,10 @@ export default function StepThree({ onBack, onSubmit }: StepThreeProps) {
 
       {/* Additional Notes */}
       <div className="space-y-2">
-        <label htmlFor="additionalNotes" className="text-sm font-medium text-gray-900">
+        <label
+          htmlFor="additionalNotes"
+          className="text-sm font-medium text-gray-900"
+        >
           Notas adicionales
         </label>
         <p className="text-xs text-gray-500">
@@ -104,8 +109,8 @@ export default function StepThree({ onBack, onSubmit }: StepThreeProps) {
           className="min-h-[120px] resize-none border border-gray-200 shadow-md"
           maxLength={500}
         />
-        <p className="text-xs text-gray-400 text-right">
-          {(formData.additionalNotes?.length ?? 0)}/500
+        <p className="text-right text-xs text-gray-400">
+          {formData.additionalNotes?.length ?? 0}/500
         </p>
       </div>
 
@@ -148,4 +153,3 @@ export default function StepThree({ onBack, onSubmit }: StepThreeProps) {
     </div>
   );
 }
-

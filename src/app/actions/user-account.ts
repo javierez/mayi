@@ -13,25 +13,25 @@ export async function updateUserAccount(userId: string, accountId: number) {
     const session = await getCurrentUserWithoutAccountCheck();
 
     if (!session?.user) {
-      return { 
-        success: false, 
-        error: "No authenticated session found" 
+      return {
+        success: false,
+        error: "No authenticated session found",
       };
     }
 
     // Ensure user can only update their own accountId
     if (session.user.id !== userId) {
-      return { 
-        success: false, 
-        error: "Unauthorized: Cannot update another user's account" 
+      return {
+        success: false,
+        error: "Unauthorized: Cannot update another user's account",
       };
     }
 
     // Don't allow updating if user already has an accountId
     if (session.user.accountId) {
-      return { 
-        success: false, 
-        error: "User already belongs to an account" 
+      return {
+        success: false,
+        error: "User already belongs to an account",
       };
     }
 
@@ -39,21 +39,21 @@ export async function updateUserAccount(userId: string, accountId: number) {
     const updatedUser = await updateUserAccountId(userId, accountId);
 
     if (!updatedUser) {
-      return { 
-        success: false, 
-        error: "Failed to update user account" 
+      return {
+        success: false,
+        error: "Failed to update user account",
       };
     }
 
-    return { 
-      success: true, 
-      data: updatedUser 
+    return {
+      success: true,
+      data: updatedUser,
     };
   } catch (error) {
     console.error("Error updating user account:", error);
-    return { 
-      success: false, 
-      error: "An unexpected error occurred while updating the account" 
+    return {
+      success: false,
+      error: "An unexpected error occurred while updating the account",
     };
   }
 }

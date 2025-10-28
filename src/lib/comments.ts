@@ -8,7 +8,9 @@ import type { CommentWithUser } from "~/types/comments";
  * Convert bigint IDs to strings for JSON serialization
  * Following pattern from existing codebase for BigInt handling
  */
-export function serializeComment(comment: CommentWithUser): Record<string, unknown> {
+export function serializeComment(
+  comment: CommentWithUser,
+): Record<string, unknown> {
   return {
     ...comment,
     commentId: comment.commentId.toString(),
@@ -31,12 +33,12 @@ export function generateUserInitials(user: {
   if (user.firstName && user.lastName) {
     return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
   }
-  
-  const nameParts = user.name.trim().split(' ');
+
+  const nameParts = user.name.trim().split(" ");
   if (nameParts.length >= 2) {
     return `${nameParts[0]!.charAt(0)}${nameParts[1]!.charAt(0)}`.toUpperCase();
   }
-  
+
   return user.name.substring(0, 2).toUpperCase();
 }
 
@@ -44,7 +46,9 @@ export function generateUserInitials(user: {
  * Build hierarchical comment structure from flat array
  * Useful when fetching all comments at once and organizing them
  */
-export function buildCommentHierarchy(flatComments: CommentWithUser[]): CommentWithUser[] {
+export function buildCommentHierarchy(
+  flatComments: CommentWithUser[],
+): CommentWithUser[] {
   const commentMap = new Map<string, CommentWithUser>();
   const topLevelComments: CommentWithUser[] = [];
 
@@ -59,7 +63,7 @@ export function buildCommentHierarchy(flatComments: CommentWithUser[]): CommentW
   // Second pass: build hierarchy
   for (const comment of flatComments) {
     const mappedComment = commentMap.get(comment.commentId.toString())!;
-    
+
     if (comment.parentId) {
       const parentComment = commentMap.get(comment.parentId.toString());
       if (parentComment) {
@@ -81,21 +85,21 @@ export function validateCommentContent(content: string): {
   error?: string;
 } {
   const trimmedContent = content.trim();
-  
+
   if (!trimmedContent) {
     return {
       isValid: false,
       error: "El comentario no puede estar vacío",
     };
   }
-  
+
   if (trimmedContent.length > 2000) {
     return {
       isValid: false,
       error: "El comentario no puede exceder 2000 caracteres",
     };
   }
-  
+
   return { isValid: true };
 }
 
@@ -105,7 +109,7 @@ export function validateCommentContent(content: string): {
  */
 export function canUserModifyComment(
   comment: CommentWithUser,
-  currentUserId?: string
+  currentUserId?: string,
 ): boolean {
   return !!(currentUserId && comment.userId === currentUserId);
 }
@@ -122,7 +126,10 @@ export function formatCommentCount(count: number): string {
 /**
  * Sort comments by creation date (newest first for top-level, oldest first for replies)
  */
-export function sortComments(comments: CommentWithUser[], isReplies = false): CommentWithUser[] {
+export function sortComments(
+  comments: CommentWithUser[],
+  isReplies = false,
+): CommentWithUser[] {
   const sorted = [...comments].sort((a, b) => {
     if (isReplies) {
       // Replies: chronological order (oldest first)
@@ -134,7 +141,7 @@ export function sortComments(comments: CommentWithUser[], isReplies = false): Co
   });
 
   // Sort replies for each comment
-  return sorted.map(comment => ({
+  return sorted.map((comment) => ({
     ...comment,
     replies: sortComments(comment.replies, true),
   }));

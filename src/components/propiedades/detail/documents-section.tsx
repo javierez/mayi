@@ -29,14 +29,17 @@ interface DocumentsSectionProps {
   folderType: "documentacion-inicial" | "visitas" | "otros" | "planos";
 }
 
-export function DocumentsSection({ listing, folderType }: DocumentsSectionProps) {
+export function DocumentsSection({
+  listing,
+  folderType,
+}: DocumentsSectionProps) {
   const [refreshKey, setRefreshKey] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDocumentsUploaded = useCallback((_newDocuments: Document[]) => {
     // Trigger a refresh of the documents list
-    setRefreshKey(prev => prev + 1);
+    setRefreshKey((prev) => prev + 1);
   }, []);
 
   // Map folder types for API calls
@@ -60,7 +63,7 @@ export function DocumentsSection({ listing, folderType }: DocumentsSectionProps)
 
     try {
       const apiFolderType = folderTypeMap[folderType];
-      
+
       // Upload all files
       const uploadPromises = Array.from(files).map(async (file) => {
         const formData = new FormData();
@@ -84,7 +87,9 @@ export function DocumentsSection({ listing, folderType }: DocumentsSectionProps)
 
       const uploadedDocuments = await Promise.all(uploadPromises);
       handleDocumentsUploaded(uploadedDocuments);
-      toast.success(`${uploadedDocuments.length} documento(s) subido(s) correctamente`);
+      toast.success(
+        `${uploadedDocuments.length} documento(s) subido(s) correctamente`,
+      );
     } catch (error) {
       console.error("Error uploading files:", error);
       toast.error("Error al subir los archivos");
@@ -124,22 +129,26 @@ export function DocumentsSection({ listing, folderType }: DocumentsSectionProps)
     <>
       {folderType === "documentacion-inicial" ? (
         /* Documentación Inicial: Keep original card layout */
-        <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+        <div className="mb-8 rounded-xl border bg-white p-6 shadow-sm">
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
             {/* Left: Upload Area */}
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Subir Documentos</h4>
+              <h4 className="mb-3 font-medium text-gray-900">
+                Subir Documentos
+              </h4>
               <DocumentUploadCard
                 listingId={listing.listingId}
                 folderType={folderType}
                 onDocumentsUploaded={handleDocumentsUploaded}
               />
             </div>
-            
+
             {/* Right: Generate Document */}
             <div>
-              <h4 className="font-medium text-gray-900 mb-3">Generar Documentos</h4>
-              <HojaEncargoButton 
+              <h4 className="mb-3 font-medium text-gray-900">
+                Generar Documentos
+              </h4>
+              <HojaEncargoButton
                 propertyId={listing.propertyId}
                 onDocumentGenerated={handleDocumentsUploaded}
               />
@@ -148,8 +157,8 @@ export function DocumentsSection({ listing, folderType }: DocumentsSectionProps)
         </div>
       ) : (
         /* Other folder types: Show button in top right */
-        <div className="flex justify-end mb-6">
-          <Button 
+        <div className="mb-6 flex justify-end">
+          <Button
             onClick={handleFileUpload}
             disabled={isUploading}
             className="flex items-center gap-2"
@@ -166,7 +175,7 @@ export function DocumentsSection({ listing, folderType }: DocumentsSectionProps)
               </>
             )}
           </Button>
-          
+
           {/* Hidden file input */}
           <input
             type="file"
@@ -189,17 +198,20 @@ export function DocumentsSection({ listing, folderType }: DocumentsSectionProps)
       ) : (
         <div
           className={cn(
-            "transition-all duration-200 rounded-lg",
-            isDragOver && "bg-blue-50 border-2 border-dashed border-blue-300 p-4"
+            "rounded-lg transition-all duration-200",
+            isDragOver &&
+              "border-2 border-dashed border-blue-300 bg-blue-50 p-4",
           )}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
           {isDragOver && (
-            <div className="text-center py-8 text-blue-600">
-              <Upload className="h-8 w-8 mx-auto mb-2" />
-              <p className="text-sm font-medium">Suelta los archivos aquí para subirlos</p>
+            <div className="py-8 text-center text-blue-600">
+              <Upload className="mx-auto mb-2 h-8 w-8" />
+              <p className="text-sm font-medium">
+                Suelta los archivos aquí para subirlos
+              </p>
             </div>
           )}
           <DocumentsPage

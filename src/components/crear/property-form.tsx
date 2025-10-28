@@ -9,10 +9,12 @@ import {
   getListingDetailsWithAuth,
   getAllAgentsWithAuth,
 } from "~/server/queries/listing";
+import { getCurrentListingOwnersWithAuth } from "~/server/queries/contact";
 import {
-  getCurrentListingOwnersWithAuth,
-} from "~/server/queries/contact";
-import { FormProvider, useFormContext, type CompleteFormData } from "./form-context";
+  FormProvider,
+  useFormContext,
+  type CompleteFormData,
+} from "./form-context";
 import { FormSaveService } from "./save-service";
 import ProgressBar from "./progress-bar";
 import CloseConfirmationDialog from "./close-confirmation-dialog";
@@ -52,7 +54,7 @@ interface ListingDetailsData {
   petsAllowed?: boolean | null;
   appliancesIncluded?: boolean | null;
   internet?: boolean | null;
-  
+
   // Property fields
   referenceNumber?: string | null;
   title?: string | null;
@@ -71,7 +73,7 @@ interface ListingDetailsData {
   energyCertificate?: string | null;
   emissions?: string | null;
   cadastralReference?: string | null;
-  
+
   // Location fields
   address?: string | null;
   city?: string | null;
@@ -80,7 +82,7 @@ interface ListingDetailsData {
   neighborhood?: string | null;
   latitude?: string | null;
   longitude?: string | null;
-  
+
   // Equipment and features
   heating?: string | null;
   airConditioning?: string | null;
@@ -91,43 +93,43 @@ interface ListingDetailsData {
   hasSwimmingPool?: boolean | null;
   hasTerrace?: boolean | null;
   hasBalcony?: boolean | null;
-  
+
   // Orientation
   orientation?: string | null;
   views?: boolean | null;
   luminosity?: boolean | null;
-  
+
   // Additional features
   accessibility?: boolean | null;
   securitySystem?: boolean | null;
   doorman?: boolean | null;
   builtInWardrobes?: boolean | null;
-  
+
   // Luxury features
   luxuryFeatures?: string[] | null;
   highEndFinishes?: boolean | null;
   designerKitchen?: boolean | null;
   smartHome?: boolean | null;
-  
+
   // Spaces
   hasAttic?: boolean | null;
   hasBasement?: boolean | null;
   hasLaundryRoom?: boolean | null;
   hasOffice?: boolean | null;
   hasDressingRoom?: boolean | null;
-  
+
   // Materials
   mainFloorType?: string | null;
   wallMaterial?: string | null;
   kitchenMaterial?: string | null;
   bathroomMaterial?: string | null;
-  
+
   // Description
   highlights?: string | null;
-  
+
   // Form meta
   formPosition?: number;
-  
+
   // Allow for additional properties from database
   [key: string]: unknown;
 }
@@ -152,30 +154,36 @@ const steps: Step[] = [
   { id: "rent", title: "Alquiler" },
 ];
 
-
-
 // Convert fetched database data to CompleteFormData format
-function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null): CompleteFormData {
+function convertFetchedDataToFormData(
+  listingDetails: ListingDetailsData | null,
+): CompleteFormData {
   if (!listingDetails) return {};
-  
+
   return {
     // Meta data
     formPosition: listingDetails.formPosition ?? 1,
-    
+
     // Page 1 - Basic Info & IDs
-    propertyId: listingDetails.propertyId ? Number(listingDetails.propertyId) : undefined,
-    listingId: listingDetails.listingId ? Number(listingDetails.listingId) : undefined,
+    propertyId: listingDetails.propertyId
+      ? Number(listingDetails.propertyId)
+      : undefined,
+    listingId: listingDetails.listingId
+      ? Number(listingDetails.listingId)
+      : undefined,
     price: listingDetails.price?.toString() ?? "",
-    listingType: listingDetails.listingType ?? "Sale", 
+    listingType: listingDetails.listingType ?? "Sale",
     propertyType: listingDetails.propertyType ?? "piso",
     propertySubtype: listingDetails.propertySubtype ?? "",
     agentId: listingDetails.agentId?.toString() ?? "",
-    
-    // Page 2 - Details  
+
+    // Page 2 - Details
     bedrooms: listingDetails.bedrooms ?? 2,
     bathrooms: listingDetails.bathrooms ? Number(listingDetails.bathrooms) : 1,
     totalSurface: listingDetails.totalSurface ?? undefined,
-    usefulSurface: listingDetails.usefulSurface ? Number(listingDetails.usefulSurface) : undefined,
+    usefulSurface: listingDetails.usefulSurface
+      ? Number(listingDetails.usefulSurface)
+      : undefined,
     plotSurface: listingDetails.plotSurface ?? undefined,
     floor: listingDetails.floor ?? undefined,
     totalFloors: listingDetails.totalFloors?.toString() ?? undefined,
@@ -184,19 +192,25 @@ function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null)
     energyCertificate: listingDetails.energyCertificate ?? undefined,
     emissions: listingDetails.emissions ?? undefined,
     cadastralReference: listingDetails.cadastralReference ?? "",
-    
+
     // Page 3 - Address
     address: listingDetails.address ?? "",
     city: listingDetails.city ?? "",
     province: listingDetails.province ?? "",
     postalCode: listingDetails.postalCode ?? "",
     neighborhood: listingDetails.neighborhood ?? "",
-    latitude: listingDetails.latitude ? Number(listingDetails.latitude) : undefined,
-    longitude: listingDetails.longitude ? Number(listingDetails.longitude) : undefined,
-    
+    latitude: listingDetails.latitude
+      ? Number(listingDetails.latitude)
+      : undefined,
+    longitude: listingDetails.longitude
+      ? Number(listingDetails.longitude)
+      : undefined,
+
     // Page 4 - Equipment
     heating: listingDetails.heating ?? "",
-    airConditioning: listingDetails.airConditioning ? [listingDetails.airConditioning] : [],
+    airConditioning: listingDetails.airConditioning
+      ? [listingDetails.airConditioning]
+      : [],
     hasElevator: listingDetails.hasElevator ?? false,
     hasGarage: listingDetails.hasGarage ?? false,
     hasStorageRoom: listingDetails.hasStorageRoom ?? false,
@@ -204,41 +218,41 @@ function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null)
     hasSwimmingPool: listingDetails.hasSwimmingPool ?? false,
     hasTerrace: listingDetails.hasTerrace ?? false,
     hasBalcony: listingDetails.hasBalcony ?? false,
-    
+
     // Page 5 - Orientation
     orientation: listingDetails.orientation ?? "",
     views: !!listingDetails.views,
     luminosity: listingDetails.luminosity ? "good" : "",
-    
+
     // Page 6 - Additional
     accessibility: listingDetails.accessibility ?? false,
     securitySystem: listingDetails.securitySystem ?? false,
     doorman: listingDetails.doorman ?? false,
     builtInWardrobes: listingDetails.builtInWardrobes ?? false,
-    
+
     // Page 7 - Luxury
     luxuryFeatures: listingDetails.luxuryFeatures ?? [],
     highEndFinishes: listingDetails.highEndFinishes ?? false,
     designerKitchen: listingDetails.designerKitchen ?? false,
     smartHome: listingDetails.smartHome ?? false,
-    
+
     // Page 8 - Spaces
     hasAttic: listingDetails.hasAttic ?? false,
     hasBasement: listingDetails.hasBasement ?? false,
     hasLaundryRoom: listingDetails.hasLaundryRoom ?? false,
     hasOffice: listingDetails.hasOffice ?? false,
     hasDressingRoom: listingDetails.hasDressingRoom ?? false,
-    
+
     // Page 9 - Materials
     mainFloorType: listingDetails.mainFloorType ?? "",
     wallMaterial: listingDetails.wallMaterial ?? "",
     kitchenMaterial: listingDetails.kitchenMaterial ?? "",
     bathroomMaterial: listingDetails.bathroomMaterial ?? "",
-    
+
     // Page 10 - Description
     description: listingDetails.description ?? "",
     highlights: listingDetails.highlights ? [listingDetails.highlights] : [],
-    
+
     // Page 11 - Rent
     hasKeys: listingDetails.hasKeys ?? false,
     studentFriendly: listingDetails.studentFriendly ?? false,
@@ -246,8 +260,12 @@ function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null)
     appliancesIncluded: listingDetails.appliancesIncluded ?? false,
     isFurnished: listingDetails.isFurnished ?? false,
     furnitureQuality: listingDetails.furnitureQuality ?? "",
-    optionalGaragePrice: listingDetails.optionalGaragePrice ? Number(listingDetails.optionalGaragePrice) : 0,
-    optionalStorageRoomPrice: listingDetails.optionalStorageRoomPrice ? Number(listingDetails.optionalStorageRoomPrice) : 0,
+    optionalGaragePrice: listingDetails.optionalGaragePrice
+      ? Number(listingDetails.optionalGaragePrice)
+      : 0,
+    optionalStorageRoomPrice: listingDetails.optionalStorageRoomPrice
+      ? Number(listingDetails.optionalStorageRoomPrice)
+      : 0,
     internet: listingDetails.internet ?? false,
   };
 }
@@ -278,15 +296,15 @@ function PropertyFormInner({ listingId }: PropertyFormProps) {
         agentId: state.formData.agentId,
         price: state.formData.price,
       };
-      
+
       await FormSaveService.saveAllFormData(
         listingId,
         state.formData,
         listingDetails,
-        { showLoading: false } // Don't show loading for close action
+        { showLoading: false }, // Don't show loading for close action
       );
     }
-    
+
     router.push("/propiedades");
   };
 
@@ -341,12 +359,14 @@ function PropertyFormInner({ listingId }: PropertyFormProps) {
       try {
         // Load agents after form is already displayed
         const agents = await getAllAgentsWithAuth();
-        
+
         // Update form context with agents
-        updateAgents(agents.map((agent) => ({
-          id: agent.id,
-          name: agent.name,
-        })));
+        updateAgents(
+          agents.map((agent) => ({
+            id: agent.id,
+            name: agent.name,
+          })),
+        );
       } catch (error) {
         console.error("Error loading agents in background:", error);
       }
@@ -354,13 +374,12 @@ function PropertyFormInner({ listingId }: PropertyFormProps) {
 
     // Fetch essential data first
     void fetchEssentialData();
-    
+
     // Load agents in background after a small delay
     setTimeout(() => {
       void loadAgentsInBackground();
     }, 100);
   }, [listingId, setInitialData, setLoading, updateAgents]);
-
 
   // Sync currentStep with formPosition when listingDetails updates
   // useEffect(() => {
@@ -466,7 +485,7 @@ function PropertyFormInner({ listingId }: PropertyFormProps) {
     setDirection("forward");
     const nextStepIndex = getNextNonSkippedStep(currentStep);
     setCurrentStep(nextStepIndex);
-    
+
     // No save operations - purely local state navigation
   }, [currentStep, getNextNonSkippedStep]);
 
@@ -477,12 +496,7 @@ function PropertyFormInner({ listingId }: PropertyFormProps) {
       onNext: navigateToNextStep,
       onBack: currentStep > 0 ? prevStep : undefined,
     }),
-    [
-      listingId,
-      navigateToNextStep,
-      currentStep,
-      prevStep,
-    ],
+    [listingId, navigateToNextStep, currentStep, prevStep],
   );
 
   const renderStepContent = useCallback(() => {

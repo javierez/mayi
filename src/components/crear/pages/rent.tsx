@@ -17,7 +17,6 @@ import { Input } from "~/components/ui/input";
 import { useFormContext } from "../form-context";
 import FinalizationPopup from "../finalization-popup";
 
-
 interface RentPageProps {
   listingId?: string;
   onNext?: () => void;
@@ -38,7 +37,6 @@ interface RentPageFormData {
   internet: boolean;
 }
 
-
 const initialFormData: RentPageFormData = {
   hasKeys: false,
   studentFriendly: false,
@@ -53,12 +51,10 @@ const initialFormData: RentPageFormData = {
   internet: false,
 };
 
-export default function RentPage({
-  listingId,
-  onBack,
-}: RentPageProps) {
+export default function RentPage({ listingId, onBack }: RentPageProps) {
   const { state, updateFormData } = useFormContext();
-  const [showFinalizationPopup, setShowFinalizationPopup] = useState<boolean>(false);
+  const [showFinalizationPopup, setShowFinalizationPopup] =
+    useState<boolean>(false);
 
   const propertyType = state.formData.propertyType ?? "";
   const isSaleListing = state.formData.listingType === "Sale";
@@ -66,15 +62,22 @@ export default function RentPage({
   // Get current form data from context with fallbacks (following first.tsx pattern)
   const formData = {
     hasKeys: state.formData.hasKeys ?? initialFormData.hasKeys,
-    studentFriendly: state.formData.studentFriendly ?? initialFormData.studentFriendly,
+    studentFriendly:
+      state.formData.studentFriendly ?? initialFormData.studentFriendly,
     petsAllowed: state.formData.petsAllowed ?? initialFormData.petsAllowed,
-    appliancesIncluded: state.formData.appliancesIncluded ?? initialFormData.appliancesIncluded,
+    appliancesIncluded:
+      state.formData.appliancesIncluded ?? initialFormData.appliancesIncluded,
     isFurnished: state.formData.isFurnished ?? initialFormData.isFurnished,
-    furnitureQuality: state.formData.furnitureQuality ?? initialFormData.furnitureQuality,
-    optionalGaragePrice: state.formData.optionalGaragePrice ?? initialFormData.optionalGaragePrice,
-    optionalStorageRoomPrice: state.formData.optionalStorageRoomPrice ?? initialFormData.optionalStorageRoomPrice,
+    furnitureQuality:
+      state.formData.furnitureQuality ?? initialFormData.furnitureQuality,
+    optionalGaragePrice:
+      state.formData.optionalGaragePrice ?? initialFormData.optionalGaragePrice,
+    optionalStorageRoomPrice:
+      state.formData.optionalStorageRoomPrice ??
+      initialFormData.optionalStorageRoomPrice,
     rentalPrice: state.formData.rentalPrice ?? initialFormData.rentalPrice,
-    duplicateForRent: state.formData.duplicateForRent ?? initialFormData.duplicateForRent,
+    duplicateForRent:
+      state.formData.duplicateForRent ?? initialFormData.duplicateForRent,
     internet: state.formData.internet ?? initialFormData.internet,
   };
 
@@ -82,7 +85,6 @@ export default function RentPage({
   const updateField = (field: keyof RentPageFormData, value: unknown) => {
     updateFormData({ [field]: value });
   };
-
 
   // Handle price input with formatting for garage and storage room
   const handleGaragePriceChange = formFormatters.handleNumericPriceInputChange(
@@ -116,7 +118,6 @@ export default function RentPage({
   const handleClosePopup = () => {
     setShowFinalizationPopup(false);
   };
-
 
   // If it's a sale listing, show the Apple-like UI
   if (isSaleListing) {
@@ -358,10 +359,7 @@ export default function RentPage({
             </Button>
           </motion.div>
 
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Button
               onClick={handleNext}
               className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
@@ -377,12 +375,13 @@ export default function RentPage({
           onClose={handleClosePopup}
           listingDetails={{
             listingId: listingId ?? state.formData.listingId,
-            propertyId: typeof state.formData.propertyId === 'string' 
-              ? parseInt(state.formData.propertyId, 10) 
-              : state.formData.propertyId,
+            propertyId:
+              typeof state.formData.propertyId === "string"
+                ? parseInt(state.formData.propertyId, 10)
+                : state.formData.propertyId,
             agentId: state.formData.agentId,
             listingType: state.formData.listingType,
-            propertyType: state.formData.propertyType
+            propertyType: state.formData.propertyType,
           }}
           formData={formData}
           completeFormData={state.formData}
@@ -529,10 +528,7 @@ export default function RentPage({
           </Button>
         </motion.div>
 
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
           <Button
             onClick={handleNext}
             className="flex items-center space-x-1 bg-gray-900 hover:bg-gray-800"
@@ -548,12 +544,13 @@ export default function RentPage({
         onClose={handleClosePopup}
         listingDetails={{
           listingId: listingId ?? state.formData.listingId,
-          propertyId: typeof state.formData.propertyId === 'string' 
-            ? parseInt(state.formData.propertyId, 10) 
-            : state.formData.propertyId,
+          propertyId:
+            typeof state.formData.propertyId === "string"
+              ? parseInt(state.formData.propertyId, 10)
+              : state.formData.propertyId,
           agentId: state.formData.agentId,
           listingType: state.formData.listingType,
-          propertyType: state.formData.propertyType
+          propertyType: state.formData.propertyType,
         }}
         formData={formData}
         completeFormData={state.formData}

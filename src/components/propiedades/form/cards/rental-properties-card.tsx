@@ -10,7 +10,10 @@ import { Input } from "~/components/ui/input";
 import { cn } from "~/lib/utils";
 import { ChevronDown, Loader2, Lightbulb } from "lucide-react";
 import { ModernSaveIndicator } from "../common/modern-save-indicator";
-import { createListing, duplicateListingContacts } from "~/server/queries/listing";
+import {
+  createListing,
+  duplicateListingContacts,
+} from "~/server/queries/listing";
 import type { SaveState } from "~/types/save-state";
 import { navigateToPage } from "~/lib/navigation";
 
@@ -84,26 +87,26 @@ export function RentalPropertiesCard({
   // State for duplication process
   const [isDuplicating, setIsDuplicating] = useState(false);
   const [duplicationError, setDuplicationError] = useState<string | null>(null);
-  
+
   // Check if rental data is configured but duplicate not created yet
   const isRentalConfigured = duplicateForRent && rentalPrice > 0;
   const shouldShowHint = isSale && isRentalConfigured;
-  
+
   // Handle rental duplication (similar to FinalizationPopup)
   const handleApplyDuplication = async () => {
     if (!propertyId || !agentId) {
       setDuplicationError("Missing property or agent information");
       return;
     }
-    
+
     if (!rentalPrice || rentalPrice <= 0) {
       setDuplicationError("Please set a valid rental price");
       return;
     }
-    
+
     setIsDuplicating(true);
     setDuplicationError(null);
-    
+
     try {
       const rentListingData = {
         propertyId: BigInt(propertyId),
@@ -129,25 +132,27 @@ export function RentalPropertiesCard({
         viewCount: 0,
         inquiryCount: 0,
       };
-      
+
       const newListing = await createListing(rentListingData);
-      
+
       if (newListing?.listingId) {
         // Duplicate listing_contacts from the original listing to the new rental listing
         if (listingId) {
-          await duplicateListingContacts(Number(listingId), Number(newListing.listingId));
+          await duplicateListingContacts(
+            Number(listingId),
+            Number(newListing.listingId),
+          );
         }
-        
+
         // Open new rental listing
         navigateToPage(`/propiedades/${newListing.listingId}`, router);
       }
-      
     } catch (error) {
       console.error("Error creating rental listing:", error);
       setDuplicationError(
-        error instanceof Error 
-          ? error.message 
-          : "Error al crear el duplicado para alquiler"
+        error instanceof Error
+          ? error.message
+          : "Error al crear el duplicado para alquiler",
       );
     } finally {
       setIsDuplicating(false);
@@ -162,12 +167,7 @@ export function RentalPropertiesCard({
       )}
     >
       {/* Only show save indicator for rental listings */}
-      {isRent && (
-        <ModernSaveIndicator
-          state={saveState}
-          onSave={onSave}
-        />
-      )}
+      {isRent && <ModernSaveIndicator state={saveState} onSave={onSave} />}
       <div className="mb-3 flex items-center justify-between">
         <button
           type="button"
@@ -199,8 +199,8 @@ export function RentalPropertiesCard({
             <div className="relative h-11 w-full max-w-md rounded-xl bg-gray-200 p-1 shadow-inner">
               <div
                 className={cn(
-                  "absolute left-1 top-1 h-9 w-[calc(50%-2px)] rounded-lg bg-gradient-to-r from-gray-700 to-gray-900 shadow-md transition-all duration-400 ease-out",
-                  duplicateForRent && "translate-x-[calc(100%-4px)]"
+                  "duration-400 absolute left-1 top-1 h-9 w-[calc(50%-2px)] rounded-lg bg-gradient-to-r from-gray-700 to-gray-900 shadow-md transition-all ease-out",
+                  duplicateForRent && "translate-x-[calc(100%-4px)]",
                 )}
               />
               <div className="relative flex h-full">
@@ -212,7 +212,9 @@ export function RentalPropertiesCard({
                   }}
                   className={cn(
                     "relative z-10 flex-1 rounded-lg text-sm font-semibold transition-all duration-200",
-                    !duplicateForRent ? "text-white drop-shadow-sm" : "text-slate-600 hover:text-slate-800",
+                    !duplicateForRent
+                      ? "text-white drop-shadow-sm"
+                      : "text-slate-600 hover:text-slate-800",
                   )}
                 >
                   Solo Venta
@@ -225,7 +227,9 @@ export function RentalPropertiesCard({
                   }}
                   className={cn(
                     "relative z-10 flex-1 rounded-lg text-sm font-semibold transition-all duration-200",
-                    duplicateForRent ? "text-white drop-shadow-sm" : "text-slate-600 hover:text-slate-800",
+                    duplicateForRent
+                      ? "text-white drop-shadow-sm"
+                      : "text-slate-600 hover:text-slate-800",
                   )}
                 >
                   También Alquiler
@@ -281,7 +285,7 @@ export function RentalPropertiesCard({
                       Internet
                     </Label>
                   </div>
-                  
+
                   {/* Student Friendly - Hide for local properties */}
                   {propertyType !== "local" && (
                     <div className="flex items-center space-x-2">
@@ -299,7 +303,7 @@ export function RentalPropertiesCard({
                       </Label>
                     </div>
                   )}
-                  
+
                   {/* Pets Allowed - Hide for local properties */}
                   {propertyType !== "local" && (
                     <div className="flex items-center space-x-2">
@@ -317,7 +321,7 @@ export function RentalPropertiesCard({
                       </Label>
                     </div>
                   )}
-                  
+
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       id="appliancesIncluded"
@@ -338,21 +342,22 @@ export function RentalPropertiesCard({
           </div>
         )}
 
-
         {/* Apply button for sale listings */}
         {isSale && duplicateForRent && (
-          <div className="flex flex-col items-center justify-center pt-4 border-t border-border">
+          <div className="flex flex-col items-center justify-center border-t border-border pt-4">
             {duplicationError && (
               <div className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">
                 {duplicationError}
               </div>
             )}
-            
+
             <div className="flex items-center gap-3">
               <Button
                 type="button"
                 onClick={handleApplyDuplication}
-                disabled={!canEdit || isDuplicating || !rentalPrice || rentalPrice <= 0}
+                disabled={
+                  !canEdit || isDuplicating || !rentalPrice || rentalPrice <= 0
+                }
                 className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-2.5 font-medium text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-amber-500 hover:to-rose-500 hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
               >
                 {isDuplicating ? (
@@ -367,15 +372,19 @@ export function RentalPropertiesCard({
                   </>
                 )}
               </Button>
-              
+
               {/* Simple lightbulb icon with tooltip */}
               {shouldShowHint && (
                 <div className="group/hint relative">
-                  <Lightbulb className="h-5 w-5 text-amber-500 animate-pulse cursor-help" />
-                  <div className="absolute -right-4 bottom-full mb-2 w-72 rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 shadow-lg opacity-0 pointer-events-none transition-all duration-200 group-hover/hint:opacity-100 group-hover/hint:pointer-events-auto z-50">
-                    <div className="absolute -bottom-1 right-8 h-2 w-2 rotate-45 bg-amber-50 border-b border-r border-amber-200"></div>
-                    <strong className="block mb-1">💡 Recomendación</strong>
-                    <span className="text-justify leading-relaxed">Configura todos los datos del inmueble antes de crear el duplicado para alquiler. Así tendrás toda la información completa en ambos anuncios.</span>
+                  <Lightbulb className="h-5 w-5 animate-pulse cursor-help text-amber-500" />
+                  <div className="pointer-events-none absolute -right-4 bottom-full z-50 mb-2 w-72 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 opacity-0 shadow-lg transition-all duration-200 group-hover/hint:pointer-events-auto group-hover/hint:opacity-100">
+                    <div className="absolute -bottom-1 right-8 h-2 w-2 rotate-45 border-b border-r border-amber-200 bg-amber-50"></div>
+                    <strong className="mb-1 block">💡 Recomendación</strong>
+                    <span className="text-justify leading-relaxed">
+                      Configura todos los datos del inmueble antes de crear el
+                      duplicado para alquiler. Así tendrás toda la información
+                      completa en ambos anuncios.
+                    </span>
                   </div>
                 </div>
               )}

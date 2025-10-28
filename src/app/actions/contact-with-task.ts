@@ -1,8 +1,8 @@
 "use server";
 
-import { 
-  createContact, 
-  createContactWithListings 
+import {
+  createContact,
+  createContactWithListings,
 } from "~/server/queries/contact";
 import { createTaskWithAuth } from "~/server/queries/task";
 import { getCurrentUser } from "~/lib/dal";
@@ -29,7 +29,7 @@ export async function createContactWithTaskAction(
   selectedListings: bigint[] = [],
   contactType: "owner" | "buyer",
   ownershipAction?: "change" | "add",
-  notes?: string
+  notes?: string,
 ): Promise<CreateContactWithTaskResult> {
   try {
     let newContact;
@@ -43,33 +43,34 @@ export async function createContactWithTaskAction(
         contactData,
         selectedListings,
         contactType,
-        ownershipAction
+        ownershipAction,
       );
     }
 
     // If contact is a demandante (buyer), automatically create appointment task
     let newTask = null;
-    if (newContact && 'contactId' in newContact && contactType === "buyer") {
+    if (newContact && "contactId" in newContact && contactType === "buyer") {
       try {
         // Get current user for task assignment
         const currentUser = await getCurrentUser();
-        
+
         // Calculate due date (3 days from now)
         const dueDate = new Date();
         dueDate.setDate(dueDate.getDate() + 3);
-        
+
         // Prepare task description with contact info
-        const contactName = `${contactData.firstName} ${contactData.lastName}`.trim();
+        const contactName =
+          `${contactData.firstName} ${contactData.lastName}`.trim();
         let description = `Configurar cita para mostrar propiedades a ${contactName}`;
-        
+
         if (selectedListings.length > 0) {
           description += `\n\nPropiedades de interés: ${selectedListings.length} propiedades seleccionadas`;
         }
-        
+
         if (notes?.trim()) {
           description += `\n\nNotas del contacto: ${notes.trim()}`;
         }
-        
+
         // Create the task
         const taskData = {
           userId: currentUser.id,
@@ -80,7 +81,7 @@ export async function createContactWithTaskAction(
           contactId: newContact.contactId,
           isActive: true,
         };
-        
+
         newTask = await createTaskWithAuth(taskData);
       } catch (taskError) {
         console.error("Error creating appointment task:", taskError);

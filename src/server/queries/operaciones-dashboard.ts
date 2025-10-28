@@ -100,7 +100,10 @@ export async function getOperacionesSummary(
           ne(listings.status, "Draft"),
         ),
       )
-      .groupBy(sql`COALESCE(${listings.prospectStatus}, ${listings.status})`, listings.listingType);
+      .groupBy(
+        sql`COALESCE(${listings.prospectStatus}, ${listings.status})`,
+        listings.listingType,
+      );
 
     // Get leads summary by status and listing type (through listings)
     const leadsData = await db
@@ -112,11 +115,13 @@ export async function getOperacionesSummary(
       .from(listingContacts)
       .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
       .leftJoin(listings, eq(listingContacts.listingId, listings.listingId))
-      .where(and(
-        eq(contacts.accountId, accountId),
-        eq(listingContacts.contactType, "buyer"),
-        eq(listingContacts.isActive, true)
-      ))
+      .where(
+        and(
+          eq(contacts.accountId, accountId),
+          eq(listingContacts.contactType, "buyer"),
+          eq(listingContacts.isActive, true),
+        ),
+      )
       .groupBy(listingContacts.status, listings.listingType);
 
     // Get deals summary by status and listing type (through listings)
@@ -228,10 +233,13 @@ export async function getUrgentTasks(
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
       .leftJoin(contacts, eq(prospects.contactId, contacts.contactId))
       // Join for lead contact names
-      .leftJoin(listingContacts, and(
-        eq(tasks.listingContactId, listingContacts.listingContactId),
-        eq(listingContacts.contactType, "buyer")
-      ))
+      .leftJoin(
+        listingContacts,
+        and(
+          eq(tasks.listingContactId, listingContacts.listingContactId),
+          eq(listingContacts.contactType, "buyer"),
+        ),
+      )
       // Join for property addresses (through listings or deals)
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(deals, eq(tasks.dealId, deals.dealId))

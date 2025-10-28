@@ -45,8 +45,8 @@ export function MediaTypeSelector({
             className={cn(
               "inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-medium transition-all duration-300 ease-out",
               selectedType === type
-                ? "bg-gradient-to-r from-amber-400 to-rose-400 text-white shadow-md hover:shadow-lg hover:from-amber-500 hover:to-rose-500"
-                : "text-gray-600 hover:bg-white/50 hover:text-gray-900 hover:shadow-sm"
+                ? "bg-gradient-to-r from-amber-400 to-rose-400 text-white shadow-md hover:from-amber-500 hover:to-rose-500 hover:shadow-lg"
+                : "text-gray-600 hover:bg-white/50 hover:text-gray-900 hover:shadow-sm",
             )}
           >
             <Icon className="h-4 w-4" />

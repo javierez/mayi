@@ -21,7 +21,8 @@ export function PropertyTitle({
   onTitleChange,
   editable = false,
 }: PropertyTitleProps) {
-  const titleValue = overrideTitle ?? generatePropertyTitle(propertyType, street, neighborhood);
+  const titleValue =
+    overrideTitle ?? generatePropertyTitle(propertyType, street, neighborhood);
 
   return (
     <div className="space-y-1.5">

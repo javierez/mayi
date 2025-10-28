@@ -71,15 +71,18 @@ export interface NotaEncargoPDFData {
  * @param value - Energy consumption value
  * @returns Formatted energy certificate string
  */
-export function formatEnergyCertificate(scale: string | null, value: number | null): string {
+export function formatEnergyCertificate(
+  scale: string | null,
+  value: number | null,
+): string {
   if (!scale) {
     return "Pendiente";
   }
-  
+
   if (value) {
     return `Disponible - Certificación ${scale} (${value} kWh/m² año)`;
   }
-  
+
   return `Disponible - Certificación ${scale}`;
 }
 
@@ -90,12 +93,12 @@ export function formatEnergyCertificate(scale: string | null, value: number | nu
  * @returns Formatted price string
  */
 export function formatPrice(amount: number, listingType: string): string {
-  const formattedAmount = new Intl.NumberFormat('es-ES').format(amount);
-  
+  const formattedAmount = new Intl.NumberFormat("es-ES").format(amount);
+
   if (listingType === "Rent") {
     return `${formattedAmount} €/mes`;
   }
-  
+
   return `${formattedAmount} €`;
 }
 
@@ -106,13 +109,13 @@ export function formatPrice(amount: number, listingType: string): string {
  */
 export function translateListingType(listingType: string): string {
   const translations: Record<string, string> = {
-    "Sale": "Venta",
-    "Rent": "Alquiler",
-    "Transfer": "Traspaso",
-    "RentWithOption": "Alquiler con opción a compra",
-    "RoomSharing": "Habitación compartida",
+    Sale: "Venta",
+    Rent: "Alquiler",
+    Transfer: "Traspaso",
+    RentWithOption: "Alquiler con opción a compra",
+    RoomSharing: "Habitación compartida",
   };
-  
+
   return translations[listingType] ?? listingType;
 }
 
@@ -123,10 +126,10 @@ export function translateListingType(listingType: string): string {
  */
 export function generateDocumentNumber(listingId: bigint): string {
   const now = new Date();
-  const month = (now.getMonth() + 1).toString().padStart(2, '0'); // 01-12
+  const month = (now.getMonth() + 1).toString().padStart(2, "0"); // 01-12
   const year = now.getFullYear(); // 2025
   const timestamp = `${month}${year}`; // 012025
-  
+
   return `Hoja-Encargo-${listingId}-${timestamp}`;
 }
 
@@ -136,16 +139,19 @@ export function generateDocumentNumber(listingId: bigint): string {
  * @param accountType - Type of account (company/person)
  * @returns Properly formatted agent name
  */
-export function formatAgentName(accountName: string, accountType: string): string {
+export function formatAgentName(
+  accountName: string,
+  accountType: string,
+): string {
   if (accountType === "company") {
     return accountName;
   }
-  
+
   // For person accounts, add "Dª" prefix if not already present
   if (!accountName.startsWith("Dª") && !accountName.startsWith("D.")) {
     return `Dª ${accountName}`;
   }
-  
+
   return accountName;
 }
 
@@ -169,17 +175,19 @@ export function formatClientData(
     addressDetails: string | null;
     postalCode: string | null;
     city: string | null;
-  }
-): NotaEncargoPDFData['client'] {
+  },
+): NotaEncargoPDFData["client"] {
   // Build complete address from property information
   const addressParts = [
     propertyAddress.street,
-    propertyAddress.addressDetails
+    propertyAddress.addressDetails,
   ].filter(Boolean);
-  const fullAddress = addressParts.join(', ') || "";
-  
+  const fullAddress = addressParts.join(", ") || "";
+
   return {
-    fullName: `${contactData.contactFirstName ?? ''} ${contactData.contactLastName ?? ''}`.trim() || "No especificado",
+    fullName:
+      `${contactData.contactFirstName ?? ""} ${contactData.contactLastName ?? ""}`.trim() ||
+      "No especificado",
     nif: contactData.contactNif ?? "",
     address: fullAddress,
     city: propertyAddress.city ?? "", // Use the property's city from locations table
@@ -210,80 +218,86 @@ export function extractListingIdFromPathname(pathname: string): bigint | null {
  */
 export function transformToNotaEncargoPDF(
   rawData: NotaEncargoRawData,
-  termsData: TermsData
+  termsData: TermsData,
 ): NotaEncargoPDFData {
   const documentNumber = generateDocumentNumber(rawData.listingId);
-  const currentDate = new Date().toLocaleDateString('es-ES');
+  const currentDate = new Date().toLocaleDateString("es-ES");
   const city = rawData.city ?? "León"; // Default fallback
-  
+
   // Format client data
-  const clientData = formatClientData({
-    contactFirstName: rawData.contactFirstName,
-    contactLastName: rawData.contactLastName,
-    contactNif: rawData.contactNif,
-    contactPhone: rawData.contactPhone,
-    contactEmail: rawData.contactEmail,
-    contactAdditionalInfo: rawData.contactAdditionalInfo ?? {},
-  }, {
-    street: rawData.street,
-    addressDetails: rawData.addressDetails,
-    postalCode: rawData.postalCode,
-    city: rawData.city,
-  });
-  
+  const clientData = formatClientData(
+    {
+      contactFirstName: rawData.contactFirstName,
+      contactLastName: rawData.contactLastName,
+      contactNif: rawData.contactNif,
+      contactPhone: rawData.contactPhone,
+      contactEmail: rawData.contactEmail,
+      contactAdditionalInfo: rawData.contactAdditionalInfo ?? {},
+    },
+    {
+      street: rawData.street,
+      addressDetails: rawData.addressDetails,
+      postalCode: rawData.postalCode,
+      city: rawData.city,
+    },
+  );
+
   return {
     documentNumber,
-    
+
     agency: {
       agentName: formatAgentName(rawData.accountName, rawData.accountType),
       collegiateNumber: rawData.accountCollegiateNumber ?? "",
       agentNIF: rawData.accountTaxId ?? "",
       website: rawData.accountWebsite ?? "",
       email: rawData.accountEmail ?? "",
-      offices: [{
-        address: rawData.accountAddress ?? "",
-        city: city,
-        postalCode: "", // TODO: Extract from address if needed
-        phone: rawData.accountPhone ?? "",
-      }],
+      offices: [
+        {
+          address: rawData.accountAddress ?? "",
+          city: city,
+          postalCode: "", // TODO: Extract from address if needed
+          phone: rawData.accountPhone ?? "",
+        },
+      ],
     },
-    
+
     client: clientData,
-    
+
     property: {
-      description: rawData.shortDescription ?? rawData.description ?? "No especificado",
+      description:
+        rawData.shortDescription ?? rawData.description ?? "No especificado",
       allowSignage: termsData.allowSignage ? "Sí" : "No",
       energyCertificate: formatEnergyCertificate(
         rawData.energyConsumptionScale,
-        rawData.energyConsumptionValue
+        rawData.energyConsumptionValue,
       ),
       keyDelivery: rawData.hasKeys ? "Sí" : "No",
       allowVisits: termsData.allowVisits ? "Sí" : "No",
     },
-    
+
     operation: {
       type: translateListingType(rawData.listingType),
       price: formatPrice(rawData.price, rawData.listingType),
     },
-    
+
     commission: {
       percentage: termsData.commission,
       minimum: termsData.min_commission.toString(),
     },
-    
+
     duration: {
       months: termsData.duration,
     },
-    
+
     signatures: {
       location: city,
       date: currentDate,
     },
-    
+
     jurisdiction: {
       city: city,
     },
-    
+
     observations: "",
     hasOtherAgency: !termsData.exclusivity,
     gdprConsent: termsData.communications,

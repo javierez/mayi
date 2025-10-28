@@ -1,24 +1,31 @@
 import { type Metadata } from "next";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import Link from "next/link";
-import { 
-  Shield, 
-  Lock, 
-  FileCheck, 
-  Server, 
+import {
+  Shield,
+  Lock,
+  FileCheck,
+  Server,
   UserCheck,
   ShieldCheck,
   Eye,
   AlertTriangle,
   Check,
-  ArrowRight
+  ArrowRight,
 } from "lucide-react";
 import Navbar from "~/components/navbar";
 
 export const metadata: Metadata = {
   title: "Seguridad - Vesta Real Estate Platform",
-  description: "Máxima protección para tus datos. Cumplimiento GDPR, cifrado de extremo a extremo, y certificaciones de seguridad.",
+  description:
+    "Máxima protección para tus datos. Cumplimiento GDPR, cifrado de extremo a extremo, y certificaciones de seguridad.",
 };
 
 export default function SeguridadPage() {
@@ -26,35 +33,38 @@ export default function SeguridadPage() {
     {
       icon: Lock,
       title: "Cifrado de Extremo a Extremo",
-      description: "Todos los datos se cifran tanto en tránsito como en reposo usando AES-256",
+      description:
+        "Todos los datos se cifran tanto en tránsito como en reposo usando AES-256",
       features: [
         "Certificados SSL/TLS",
         "Cifrado de base de datos",
         "Almacenamiento seguro de archivos",
-        "Tokens de sesión encriptados"
-      ]
+        "Tokens de sesión encriptados",
+      ],
     },
     {
       icon: UserCheck,
       title: "Autenticación Avanzada",
-      description: "Múltiples capas de seguridad para proteger el acceso a las cuentas",
+      description:
+        "Múltiples capas de seguridad para proteger el acceso a las cuentas",
       features: [
         "Autenticación de dos factores (2FA)",
         "Single Sign-On (SSO)",
         "Control de acceso por IP",
-        "Detección de intentos de acceso sospechosos"
-      ]
+        "Detección de intentos de acceso sospechosos",
+      ],
     },
     {
       icon: FileCheck,
       title: "Cumplimiento GDPR/LOPD",
-      description: "Cumplimos con todas las normativas europeas de protección de datos",
+      description:
+        "Cumplimos con todas las normativas europeas de protección de datos",
       features: [
         "Derecho al olvido",
         "Portabilidad de datos",
         "Consentimiento explícito",
-        "Registro de actividades de tratamiento"
-      ]
+        "Registro de actividades de tratamiento",
+      ],
     },
     {
       icon: Server,
@@ -64,19 +74,20 @@ export default function SeguridadPage() {
         "Centros de datos certificados ISO 27001",
         "Redundancia geográfica",
         "Backups automáticos diarios",
-        "Monitorización 24/7"
-      ]
+        "Monitorización 24/7",
+      ],
     },
     {
       icon: Eye,
       title: "Auditoría y Logs",
-      description: "Registro completo de todas las actividades para máxima transparencia",
+      description:
+        "Registro completo de todas las actividades para máxima transparencia",
       features: [
         "Logs de acceso detallados",
         "Historial de cambios",
         "Alertas de seguridad",
-        "Informes de cumplimiento"
-      ]
+        "Informes de cumplimiento",
+      ],
     },
     {
       icon: ShieldCheck,
@@ -86,23 +97,23 @@ export default function SeguridadPage() {
         "Roles personalizables",
         "Permisos por funcionalidad",
         "Segregación de datos por cuenta",
-        "Control de acceso a documentos"
-      ]
-    }
+        "Control de acceso a documentos",
+      ],
+    },
   ];
 
   const certifications = [
     "ISO 27001",
     "GDPR Compliant",
     "SOC 2 Type II",
-    "PCI DSS"
+    "PCI DSS",
   ];
 
   const securityMetrics = [
     { value: "99.99%", label: "Uptime Garantizado" },
     { value: "256-bit", label: "Cifrado AES" },
     { value: "24/7", label: "Monitorización" },
-    { value: "0", label: "Brechas de Seguridad" }
+    { value: "0", label: "Brechas de Seguridad" },
   ];
 
   return (
@@ -122,8 +133,9 @@ export default function SeguridadPage() {
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-xl text-gray-600">
-              Protegemos tus datos y los de tus clientes con los más altos estándares 
-              de seguridad. Cumplimiento total con GDPR y certificaciones internacionales.
+              Protegemos tus datos y los de tus clientes con los más altos
+              estándares de seguridad. Cumplimiento total con GDPR y
+              certificaciones internacionales.
             </p>
           </div>
         </div>
@@ -136,14 +148,19 @@ export default function SeguridadPage() {
             {securityFeatures.map((feature) => {
               const Icon = feature.icon;
               return (
-                <Card key={feature.title} className="overflow-hidden hover:shadow-lg transition-all">
+                <Card
+                  key={feature.title}
+                  className="overflow-hidden transition-all hover:shadow-lg"
+                >
                   <CardHeader>
                     <div className="flex items-start gap-4">
                       <div className="rounded-lg bg-amber-100 p-2">
                         <Icon className="h-6 w-6 text-amber-600" />
                       </div>
                       <div className="flex-1">
-                        <CardTitle className="text-lg">{feature.title}</CardTitle>
+                        <CardTitle className="text-lg">
+                          {feature.title}
+                        </CardTitle>
                       </div>
                     </div>
                     <CardDescription className="mt-2">
@@ -170,16 +187,21 @@ export default function SeguridadPage() {
       {/* Certifications */}
       <section className="border-t border-gray-200 bg-gray-50 px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900">Certificaciones y Cumplimiento</h2>
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-bold text-gray-900">
+              Certificaciones y Cumplimiento
+            </h2>
             <p className="mt-4 text-lg text-gray-600">
               Cumplimos con los estándares internacionales más exigentes
             </p>
           </div>
-          
+
           <div className="flex flex-wrap justify-center gap-8">
             {certifications.map((cert) => (
-              <div key={cert} className="flex items-center gap-2 rounded-lg bg-white px-6 py-3 shadow-sm">
+              <div
+                key={cert}
+                className="flex items-center gap-2 rounded-lg bg-white px-6 py-3 shadow-sm"
+              >
                 <ShieldCheck className="h-5 w-5 text-green-600" />
                 <span className="font-medium text-gray-900">{cert}</span>
               </div>
@@ -194,7 +216,9 @@ export default function SeguridadPage() {
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {securityMetrics.map((metric) => (
               <div key={metric.label} className="text-center">
-                <div className="text-4xl font-bold text-gray-900">{metric.value}</div>
+                <div className="text-4xl font-bold text-gray-900">
+                  {metric.value}
+                </div>
                 <div className="mt-2 text-gray-600">{metric.label}</div>
               </div>
             ))}
@@ -214,16 +238,15 @@ export default function SeguridadPage() {
             </CardHeader>
             <CardContent>
               <p className="text-gray-700">
-                En Vesta, la seguridad y privacidad de tus datos es nuestra máxima prioridad. 
-                Nunca compartimos información con terceros sin tu consentimiento explícito. 
-                Todos nuestros empleados están sujetos a estrictos acuerdos de confidencialidad 
-                y reciben formación continua en protección de datos.
+                En Vesta, la seguridad y privacidad de tus datos es nuestra
+                máxima prioridad. Nunca compartimos información con terceros sin
+                tu consentimiento explícito. Todos nuestros empleados están
+                sujetos a estrictos acuerdos de confidencialidad y reciben
+                formación continua en protección de datos.
               </p>
               <div className="mt-6 flex flex-col gap-4 sm:flex-row">
                 <Button asChild>
-                  <Link href="/empresa/contacto">
-                    Contactar con DPO
-                  </Link>
+                  <Link href="/empresa/contacto">Contactar con DPO</Link>
                 </Button>
                 <Button variant="outline" asChild>
                   <Link href="/recursos/documentacion">
@@ -243,12 +266,13 @@ export default function SeguridadPage() {
             ¿Tienes preguntas sobre seguridad?
           </h2>
           <p className="mt-4 text-lg text-gray-600">
-            Nuestro equipo de seguridad está disponible para responder todas tus dudas 
-            y proporcionarte información detallada sobre nuestras medidas de protección.
+            Nuestro equipo de seguridad está disponible para responder todas tus
+            dudas y proporcionarte información detallada sobre nuestras medidas
+            de protección.
           </p>
           <div className="mt-10">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="bg-gradient-to-r from-amber-400 to-rose-400 text-white hover:from-amber-500 hover:to-rose-500"
               asChild
             >

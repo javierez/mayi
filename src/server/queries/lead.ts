@@ -7,8 +7,20 @@ import {
   listings,
   properties,
   appointments,
+  users,
 } from "../db/schema";
-import { eq, and, like, or, aliasedTable, countDistinct, desc, asc, sql, inArray } from "drizzle-orm";
+import {
+  eq,
+  and,
+  like,
+  or,
+  aliasedTable,
+  countDistinct,
+  desc,
+  asc,
+  sql,
+  inArray,
+} from "drizzle-orm";
 import type { Lead } from "../../lib/data";
 import { getCurrentUserAccountId } from "../../lib/dal";
 
@@ -65,6 +77,8 @@ export async function listLeadsWithAuth(
   search?: string,
   badgeStatusFilters?: string[],
   sourceFilters?: string[],
+  agentFilters?: string[],
+  isActiveFilter?: boolean,
 ) {
   const accountId = await getCurrentUserAccountId();
   // Always use the detailed query to include listing and owner information
@@ -75,6 +89,8 @@ export async function listLeadsWithAuth(
     search,
     badgeStatusFilters,
     sourceFilters,
+    agentFilters,
+    isActiveFilter,
   );
 }
 
@@ -107,10 +123,13 @@ export async function createLead(
       prospectId: data.prospectId,
       source: data.source,
       status: data.status,
-      isActive: true
+      isActive: true,
     };
 
-    const [result] = await db.insert(listingContacts).values(leadData).$returningId();
+    const [result] = await db
+      .insert(listingContacts)
+      .values(leadData)
+      .$returningId();
     if (!result) throw new Error("Failed to create lead");
     const [newLead] = await db
       .select()
@@ -338,7 +357,9 @@ export async function deleteLead(listingContactId: number, accountId: number) {
       throw new Error("Lead not found or access denied");
     }
 
-    await db.delete(listingContacts).where(eq(listingContacts.listingContactId, BigInt(listingContactId)));
+    await db
+      .delete(listingContacts)
+      .where(eq(listingContacts.listingContactId, BigInt(listingContactId)));
     return { success: true };
   } catch (error) {
     console.error("Error deleting lead:", error);
@@ -354,10 +375,12 @@ export async function listLeads(page = 1, limit = 10, accountId: number) {
       .select()
       .from(listingContacts)
       .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
-      .where(and(
-        eq(contacts.accountId, BigInt(accountId)),
-        eq(listingContacts.contactType, "buyer")
-      ))
+      .where(
+        and(
+          eq(contacts.accountId, BigInt(accountId)),
+          eq(listingContacts.contactType, "buyer"),
+        ),
+      )
       .limit(limit)
       .offset(offset);
     return allLeads;
@@ -375,19 +398,42 @@ export async function listLeadsWithDetails(
   search?: string,
   badgeStatusFilters?: string[],
   sourceFilters?: string[],
+  agentFilters?: string[],
+  isActiveFilter?: boolean,
 ) {
   try {
     const offset = (page - 1) * limit;
 
+    // Create aliases for owner tables to avoid naming conflicts
+    const ownerListingContacts = aliasedTable(
+      listingContacts,
+      "ownerListingContacts",
+    );
+    const ownerContacts = aliasedTable(contacts, "ownerContacts");
+
     // Build where conditions
     const whereConditions = [eq(contacts.accountId, BigInt(accountId))];
+
+    // Add isActive filter - default to true if not explicitly provided
+    if (isActiveFilter !== undefined) {
+      whereConditions.push(eq(listingContacts.isActive, isActiveFilter));
+    } else {
+      // Default: show only active leads
+      whereConditions.push(eq(listingContacts.isActive, true));
+    }
 
     // Add search condition
     if (search) {
       const searchCondition = or(
+        // Contact fields
         like(contacts.firstName, `%${search}%`),
         like(contacts.lastName, `%${search}%`),
         like(contacts.email, `%${search}%`),
+        // Owner fields
+        like(ownerContacts.firstName, `%${search}%`),
+        like(ownerContacts.lastName, `%${search}%`),
+        // Property title
+        like(properties.title, `%${search}%`),
       );
       if (searchCondition) {
         whereConditions.push(searchCondition);
@@ -410,9 +456,10 @@ export async function listLeadsWithDetails(
       }
     }
 
-    // Create aliases for owner tables to avoid naming conflicts
-    const ownerListingContacts = aliasedTable(listingContacts, "ownerListingContacts");
-    const ownerContacts = aliasedTable(contacts, "ownerContacts");
+    // Add agent filters
+    if (agentFilters && agentFilters.length > 0) {
+      whereConditions.push(inArray(listings.agentId, agentFilters));
+    }
 
     // Main query with all joins
     const allLeads = await db
@@ -428,6 +475,7 @@ export async function listLeadsWithDetails(
         offerAccepted: listingContacts.offerAccepted,
         createdAt: listingContacts.createdAt,
         updatedAt: listingContacts.updatedAt,
+        isActive: listingContacts.isActive,
 
         // Contact data (lead contact)
         contact: {
@@ -459,6 +507,12 @@ export async function listLeadsWithDetails(
           email: ownerContacts.email,
           phone: ownerContacts.phone,
         },
+
+        // Agent data (optional, from users table)
+        agent: {
+          id: users.id,
+          name: users.name,
+        },
       })
       .from(listingContacts)
       .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
@@ -469,14 +523,16 @@ export async function listLeadsWithDetails(
         ownerListingContacts,
         and(
           eq(listings.listingId, ownerListingContacts.listingId),
-          eq(ownerListingContacts.contactType, "owner")
-        )
+          eq(ownerListingContacts.contactType, "owner"),
+        ),
       )
-      .leftJoin(ownerContacts, eq(ownerListingContacts.contactId, ownerContacts.contactId))
-      .where(and(
-        eq(listingContacts.contactType, "buyer"),
-        ...whereConditions
-      ))
+      .leftJoin(
+        ownerContacts,
+        eq(ownerListingContacts.contactId, ownerContacts.contactId),
+      )
+      // Join agent data via listings.agentId
+      .leftJoin(users, eq(listings.agentId, users.id))
+      .where(and(eq(listingContacts.contactType, "buyer"), ...whereConditions))
       .orderBy(desc(listingContacts.createdAt), asc(listingContacts.status))
       .limit(limit)
       .offset(offset);
@@ -493,18 +549,21 @@ export async function listLeadsWithDetails(
         ownerListingContacts,
         and(
           eq(listings.listingId, ownerListingContacts.listingId),
-          eq(ownerListingContacts.contactType, "owner")
-        )
+          eq(ownerListingContacts.contactType, "owner"),
+        ),
       )
-      .leftJoin(ownerContacts, eq(ownerListingContacts.contactId, ownerContacts.contactId))
-      .where(and(
-        eq(listingContacts.contactType, "buyer"),
-        ...whereConditions
-      ));
+      .leftJoin(
+        ownerContacts,
+        eq(ownerListingContacts.contactId, ownerContacts.contactId),
+      )
+      // Add same agent join to maintain consistency
+      .leftJoin(users, eq(listings.agentId, users.id))
+      .where(and(eq(listingContacts.contactType, "buyer"), ...whereConditions));
 
-    const totalCount = totalResults[0] && 'count' in totalResults[0]
-      ? Number((totalResults[0] as {count: unknown}).count)
-      : 0;
+    const totalCount =
+      totalResults[0] && "count" in totalResults[0]
+        ? Number((totalResults[0] as { count: unknown }).count)
+        : 0;
 
     // Deduplicate results by listingContactId in case of duplicate rows from joins
     const uniqueLeads = allLeads.reduce((acc, lead) => {
@@ -519,12 +578,15 @@ export async function listLeadsWithDetails(
 
     // Get visit counts for each contact-listing pair
     const contactListingPairs = deduplicatedLeads
-      .filter(lead => {
+      .filter((lead) => {
         // Access listingId from the lead structure
-        const leadObj = lead as { contactId: bigint | null; listingId: bigint | null };
+        const leadObj = lead as {
+          contactId: bigint | null;
+          listingId: bigint | null;
+        };
         return leadObj.contactId !== null && leadObj.listingId !== null;
       })
-      .map(lead => {
+      .map((lead) => {
         const leadObj = lead as { contactId: bigint; listingId: bigint };
         return {
           contactId: leadObj.contactId,
@@ -543,36 +605,66 @@ export async function listLeadsWithDetails(
     }> = [];
 
     if (contactListingPairs.length > 0) {
-      const contactIds = [...new Set(contactListingPairs.map(p => p.contactId))];
-      const listingIds = [...new Set(contactListingPairs.map(p => p.listingId))];
+      const contactIds = [
+        ...new Set(contactListingPairs.map((p) => p.contactId)),
+      ];
+      const listingIds = [
+        ...new Set(contactListingPairs.map((p) => p.listingId)),
+      ];
 
-      console.log(`🔍 [Leads] Checking appointments for ${contactIds.length} contacts and ${listingIds.length} listings`);
+      console.log(
+        `🔍 [Leads] Checking appointments for ${contactIds.length} contacts and ${listingIds.length} listings`,
+      );
 
       const visitCountResults = await db
         .select({
           contactId: appointments.contactId,
           listingId: appointments.listingId,
-          totalVisits: sql<number>`COUNT(*)`.as('totalVisits'),
-          upcomingVisits: sql<number>`SUM(CASE WHEN ${appointments.datetimeStart} > NOW() AND ${appointments.status} = 'Scheduled' THEN 1 ELSE 0 END)`.as('upcomingVisits'),
-          missedVisits: sql<number>`SUM(CASE WHEN (${appointments.datetimeStart} < NOW() AND ${appointments.status} = 'Scheduled') OR ${appointments.status} = 'NoShow' THEN 1 ELSE 0 END)`.as('missedVisits'),
-          completedVisits: sql<number>`SUM(CASE WHEN ${appointments.status} = 'Completed' THEN 1 ELSE 0 END)`.as('completedVisits'),
-          cancelledVisits: sql<number>`SUM(CASE WHEN ${appointments.status} = 'Cancelled' THEN 1 ELSE 0 END)`.as('cancelledVisits'),
+          totalVisits: sql<number>`COUNT(*)`.as("totalVisits"),
+          upcomingVisits:
+            sql<number>`SUM(CASE WHEN ${appointments.datetimeStart} > NOW() AND ${appointments.status} = 'Scheduled' THEN 1 ELSE 0 END)`.as(
+              "upcomingVisits",
+            ),
+          missedVisits:
+            sql<number>`SUM(CASE WHEN (${appointments.datetimeStart} < NOW() AND ${appointments.status} = 'Scheduled') OR ${appointments.status} = 'NoShow' THEN 1 ELSE 0 END)`.as(
+              "missedVisits",
+            ),
+          completedVisits:
+            sql<number>`SUM(CASE WHEN ${appointments.status} = 'Completed' THEN 1 ELSE 0 END)`.as(
+              "completedVisits",
+            ),
+          cancelledVisits:
+            sql<number>`SUM(CASE WHEN ${appointments.status} = 'Cancelled' THEN 1 ELSE 0 END)`.as(
+              "cancelledVisits",
+            ),
         })
         .from(appointments)
         .where(
           and(
             inArray(appointments.contactId, contactIds),
             inArray(appointments.listingId, listingIds),
-            eq(appointments.isActive, true)
-          )
+            eq(appointments.isActive, true),
+          ),
         )
         .groupBy(appointments.contactId, appointments.listingId);
 
-      console.log(`📊 [Leads] Found ${visitCountResults.length} appointment records`);
+      console.log(
+        `📊 [Leads] Found ${visitCountResults.length} appointment records`,
+      );
 
       visitCounts = visitCountResults
-        .filter((v): v is { contactId: bigint; listingId: bigint; totalVisits: number; upcomingVisits: number; missedVisits: number; completedVisits: number; cancelledVisits: number } =>
-          v.contactId !== null && v.listingId !== null
+        .filter(
+          (
+            v,
+          ): v is {
+            contactId: bigint;
+            listingId: bigint;
+            totalVisits: number;
+            upcomingVisits: number;
+            missedVisits: number;
+            completedVisits: number;
+            cancelledVisits: number;
+          } => v.contactId !== null && v.listingId !== null,
         )
         .map((v) => ({
           contactId: v.contactId,
@@ -586,19 +678,29 @@ export async function listLeadsWithDetails(
     }
 
     const visitMap = new Map(
-      visitCounts.map((v) => [`${v.contactId.toString()}-${v.listingId.toString()}`, v])
+      visitCounts.map((v) => [
+        `${v.contactId.toString()}-${v.listingId.toString()}`,
+        v,
+      ]),
     );
 
     console.log(`🗺️ [Leads] Visit map has ${visitMap.size} entries`);
 
     // Merge visit data with leads
     const leadsWithVisits = deduplicatedLeads.map((lead) => {
-      const leadObj = lead as { contactId: bigint | null; listingId: bigint | null; offer?: string | null };
-      const key = `${leadObj.contactId?.toString() ?? ''}-${leadObj.listingId?.toString() ?? ''}`;
+      const leadObj = lead as {
+        contactId: bigint | null;
+        listingId: bigint | null;
+        offer?: string | null;
+      };
+      const key = `${leadObj.contactId?.toString() ?? ""}-${leadObj.listingId?.toString() ?? ""}`;
       const visitStats = visitMap.get(key);
 
       if (visitStats) {
-        console.log(`✅ [Leads] Found visit stats for lead ${key}:`, visitStats);
+        console.log(
+          `✅ [Leads] Found visit stats for lead ${key}:`,
+          visitStats,
+        );
       }
       const hasUpcomingVisit = (visitStats?.upcomingVisits ?? 0) > 0;
       const hasMissedVisit = (visitStats?.missedVisits ?? 0) > 0;
@@ -639,15 +741,39 @@ export async function listLeadsWithDetails(
             case "offerRejected":
               return leadObj.offerAccepted === false;
             case "offerPending":
-              return leadObj.hasOffer === true && leadObj.offerAccepted === null;
+              return (
+                leadObj.hasOffer === true && leadObj.offerAccepted === null
+              );
             case "hasCancelledVisit":
-              return leadObj.hasCancelledVisit === true && !leadObj.hasUpcomingVisit && !leadObj.hasOffer;
+              return (
+                leadObj.hasCancelledVisit === true &&
+                !leadObj.hasUpcomingVisit &&
+                !leadObj.hasOffer
+              );
             case "hasMissedVisit":
-              return leadObj.hasMissedVisit === true && !leadObj.hasUpcomingVisit && !leadObj.hasCancelledVisit && !leadObj.hasOffer;
+              return (
+                leadObj.hasMissedVisit === true &&
+                !leadObj.hasUpcomingVisit &&
+                !leadObj.hasCancelledVisit &&
+                !leadObj.hasOffer
+              );
             case "hasCompletedVisit":
-              return leadObj.hasCompletedVisit === true && !leadObj.hasOffer && !leadObj.hasUpcomingVisit && !leadObj.hasMissedVisit && !leadObj.hasCancelledVisit;
+              return (
+                leadObj.hasCompletedVisit === true &&
+                !leadObj.hasOffer &&
+                !leadObj.hasUpcomingVisit &&
+                !leadObj.hasMissedVisit &&
+                !leadObj.hasCancelledVisit
+              );
             case "noVisits":
-              return !leadObj.hasUpcomingVisit && !leadObj.hasMissedVisit && !leadObj.hasCompletedVisit && !leadObj.hasCancelledVisit && !leadObj.hasOffer && leadObj.offerAccepted === null;
+              return (
+                !leadObj.hasUpcomingVisit &&
+                !leadObj.hasMissedVisit &&
+                !leadObj.hasCompletedVisit &&
+                !leadObj.hasCancelledVisit &&
+                !leadObj.hasOffer &&
+                leadObj.offerAccepted === null
+              );
             default:
               return false;
           }
@@ -657,8 +783,24 @@ export async function listLeadsWithDetails(
 
     // Sort by priority (same as activity tab)
     const sortedLeads = filteredLeads.sort((a, b) => {
-      const aLead = a as Record<string, unknown> & { offerAccepted?: boolean | null; hasOffer?: boolean; hasUpcomingVisit?: boolean; hasMissedVisit?: boolean; hasCancelledVisit?: boolean; visitCount?: number; createdAt?: Date };
-      const bLead = b as Record<string, unknown> & { offerAccepted?: boolean | null; hasOffer?: boolean; hasUpcomingVisit?: boolean; hasMissedVisit?: boolean; hasCancelledVisit?: boolean; visitCount?: number; createdAt?: Date };
+      const aLead = a as Record<string, unknown> & {
+        offerAccepted?: boolean | null;
+        hasOffer?: boolean;
+        hasUpcomingVisit?: boolean;
+        hasMissedVisit?: boolean;
+        hasCancelledVisit?: boolean;
+        visitCount?: number;
+        createdAt?: Date;
+      };
+      const bLead = b as Record<string, unknown> & {
+        offerAccepted?: boolean | null;
+        hasOffer?: boolean;
+        hasUpcomingVisit?: boolean;
+        hasMissedVisit?: boolean;
+        hasCancelledVisit?: boolean;
+        visitCount?: number;
+        createdAt?: Date;
+      };
 
       // 1. HIGHEST: Offer accepted (deal closing - highest priority)
       const aOfferAccepted = aLead.offerAccepted === true;
@@ -668,7 +810,8 @@ export async function listLeadsWithDetails(
       // 2. HIGH: Has pending offer (potential deal in progress)
       const aHasPendingOffer = aLead.hasOffer && aLead.offerAccepted === null;
       const bHasPendingOffer = bLead.hasOffer && bLead.offerAccepted === null;
-      if (aHasPendingOffer !== bHasPendingOffer) return aHasPendingOffer ? -1 : 1;
+      if (aHasPendingOffer !== bHasPendingOffer)
+        return aHasPendingOffer ? -1 : 1;
 
       // 3. IMPORTANT: Offer rejected (needs follow-up or re-engagement)
       const aOfferRejected = aLead.offerAccepted === false;
@@ -676,23 +819,32 @@ export async function listLeadsWithDetails(
       if (aOfferRejected !== bOfferRejected) return aOfferRejected ? -1 : 1;
 
       // 4. URGENT: Has upcoming visit (scheduled, needs preparation)
-      if (aLead.hasUpcomingVisit !== bLead.hasUpcomingVisit) return aLead.hasUpcomingVisit ? -1 : 1;
+      if (aLead.hasUpcomingVisit !== bLead.hasUpcomingVisit)
+        return aLead.hasUpcomingVisit ? -1 : 1;
 
       // 5. ATTENTION: Has missed visit (needs immediate follow-up)
-      if (aLead.hasMissedVisit !== bLead.hasMissedVisit) return aLead.hasMissedVisit ? -1 : 1;
+      if (aLead.hasMissedVisit !== bLead.hasMissedVisit)
+        return aLead.hasMissedVisit ? -1 : 1;
 
       // 6. ATTENTION: Has cancelled visit (needs rescheduling)
-      if (aLead.hasCancelledVisit !== bLead.hasCancelledVisit) return aLead.hasCancelledVisit ? -1 : 1;
+      if (aLead.hasCancelledVisit !== bLead.hasCancelledVisit)
+        return aLead.hasCancelledVisit ? -1 : 1;
 
       // 7. ENGAGEMENT: Visit count (more visits = warmer lead)
-      if (aLead.visitCount !== bLead.visitCount) return (bLead.visitCount ?? 0) - (aLead.visitCount ?? 0);
+      if (aLead.visitCount !== bLead.visitCount)
+        return (bLead.visitCount ?? 0) - (aLead.visitCount ?? 0);
 
       // 8. RECENCY: Most recent first (fresher leads)
-      return bLead.createdAt.getTime() - aLead.createdAt.getTime();
+      return (
+        (bLead.createdAt?.getTime() ?? 0) - (aLead.createdAt?.getTime() ?? 0)
+      );
     });
 
     // Use filtered count if badge filters are applied
-    const finalCount = badgeStatusFilters && badgeStatusFilters.length > 0 ? sortedLeads.length : totalCount;
+    const finalCount =
+      badgeStatusFilters && badgeStatusFilters.length > 0
+        ? sortedLeads.length
+        : totalCount;
 
     return {
       leads: sortedLeads,

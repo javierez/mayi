@@ -107,11 +107,11 @@ export const PropertyCard = React.memo(function PropertyCard({
   const isValidImageUrl = (url: string | null | undefined): boolean => {
     if (!url) return false;
     // Exclude YouTube videos
-    if (url.includes('youtube.com') || url.includes('youtu.be')) return false;
+    if (url.includes("youtube.com") || url.includes("youtu.be")) return false;
     // Exclude video files
     if (/\.(mp4|mov|avi|webm|mkv|flv|wmv)(\?|$)/i.exec(url)) return false;
     // Exclude URLs with /videos/ path
-    if (url.includes('/videos/')) return false;
+    if (url.includes("/videos/")) return false;
     return true;
   };
   const [imageSrc, setImageSrc] = useState(
@@ -168,8 +168,9 @@ export const PropertyCard = React.memo(function PropertyCard({
         <div className="relative aspect-[4/3] overflow-hidden">
           <div className="relative h-full w-full">
             {/* Show placeholder if no valid images are available */}
-            {(!isValidImageUrl(listing.imageUrl) && !isValidImageUrl(listing.imageUrl2)) ? (
-              <PropertyImagePlaceholder 
+            {!isValidImageUrl(listing.imageUrl) &&
+            !isValidImageUrl(listing.imageUrl2) ? (
+              <PropertyImagePlaceholder
                 propertyType={listing.propertyType}
                 className="h-full w-full"
               />
@@ -189,7 +190,9 @@ export const PropertyCard = React.memo(function PropertyCard({
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     className={cn(
                       "object-cover transition-opacity duration-300",
-                      isHovered && image2Loaded && listing.imageUrl2 ? "opacity-0" : "opacity-100",
+                      isHovered && image2Loaded && listing.imageUrl2
+                        ? "opacity-0"
+                        : "opacity-100",
                       listing.status === "Sold" || listing.status === "Vendido"
                         ? "grayscale"
                         : "",
@@ -244,11 +247,11 @@ export const PropertyCard = React.memo(function PropertyCard({
               size="icon"
               className={cn(
                 "absolute left-1/2 top-2 z-30 h-10 w-10 -translate-x-1/2 rounded-full transition-all duration-200",
-                "!bg-red-600 backdrop-blur-sm !text-white",
+                "!bg-red-600 !text-white backdrop-blur-sm",
                 "opacity-0 group-hover:opacity-100",
                 "!hover:bg-red-800 hover:scale-110 hover:shadow-lg",
-                isDeleteButtonHovered && "!bg-red-800 scale-110 shadow-lg",
-                isRemoving && "opacity-50 pointer-events-none"
+                isDeleteButtonHovered && "scale-110 !bg-red-800 shadow-lg",
+                isRemoving && "pointer-events-none opacity-50",
               )}
               onClick={handleRemoveClick}
               onMouseEnter={() => setIsDeleteButtonHovered(true)}
@@ -341,7 +344,7 @@ export const PropertyCard = React.memo(function PropertyCard({
           <Button
             variant="ghost"
             size="icon"
-            className="absolute bottom-1 right-1 mr-2 h-8 w-8 text-muted-foreground/80 hover:bg-transparent group"
+            className="group absolute bottom-1 right-1 mr-2 h-8 w-8 text-muted-foreground/80 hover:bg-transparent"
             onClick={handleWhatsAppClick}
           >
             <Image

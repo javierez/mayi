@@ -59,7 +59,9 @@ export function ConexionesPotenciales({
     "internal" | "external" | null
   >("internal");
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [selectedMatch, setSelectedMatch] = useState<ProspectMatch | null>(null);
+  const [selectedMatch, setSelectedMatch] = useState<ProspectMatch | null>(
+    null,
+  );
   const [accountWebsite, setAccountWebsite] = useState<string | null>(null);
 
   // Statistics state
@@ -161,7 +163,9 @@ export function ConexionesPotenciales({
   // Update stats when matches change
   useEffect(() => {
     const internalMatches = matches?.totalCount ?? 0;
-    const externalMatchesCount = (externalMatches?.matches ?? []).filter((match) => match.isCrossAccount).length;
+    const externalMatchesCount = (externalMatches?.matches ?? []).filter(
+      (match) => match.isCrossAccount,
+    ).length;
 
     setStats({
       internalMatches,
@@ -240,14 +244,11 @@ export function ConexionesPotenciales({
         share: "compartir",
       };
 
-      setError(
-        `Error al ${actionMessages[action] ?? action} la coincidencia`,
-      );
+      setError(`Error al ${actionMessages[action] ?? action} la coincidencia`);
     } finally {
       setActionLoading(null);
     }
   };
-
 
   // Group external matches by account
   const groupMatchesByAccount = (matches: ProspectMatch[]) => {
@@ -447,7 +448,7 @@ export function ConexionesPotenciales({
                 <div className="space-y-4">
                   {Object.entries(
                     groupMatchesByContact(
-                      matches.matches.filter((match) => !match.isCrossAccount)
+                      matches.matches.filter((match) => !match.isCrossAccount),
                     ),
                   ).map(([contactId, contactMatches]) => {
                     const contact = contactMatches[0]?.prospect.contacts;
@@ -462,65 +463,68 @@ export function ConexionesPotenciales({
                         contactName={contactName}
                         matches={contactMatches}
                       >
-                        {Object.entries(groupMatchesByProspect(contactMatches)).map(
-                          ([prospectId, prospectMatches]) => {
-                            const prospect = prospectMatches[0]?.prospect.prospects;
-                            if (!prospect) return null;
+                        {Object.entries(
+                          groupMatchesByProspect(contactMatches),
+                        ).map(([prospectId, prospectMatches]) => {
+                          const prospect =
+                            prospectMatches[0]?.prospect.prospects;
+                          if (!prospect) return null;
 
-                            // Build prospect type display
-                            const listingTypeText =
-                              prospect.listingType === "Sale"
-                                ? "Demanda de Venta"
-                                : "Búsqueda de Alquiler";
-                            const propertyTypeText = prospect.propertyType
-                              ? ` de ${prospect.propertyType.charAt(0).toUpperCase()}${prospect.propertyType.slice(1).toLowerCase()}`
-                              : "";
-                            const prospectType = `${listingTypeText}${propertyTypeText}`;
+                          // Build prospect type display
+                          const listingTypeText =
+                            prospect.listingType === "Sale"
+                              ? "Demanda de Venta"
+                              : "Búsqueda de Alquiler";
+                          const propertyTypeText = prospect.propertyType
+                            ? ` de ${prospect.propertyType.charAt(0).toUpperCase()}${prospect.propertyType.slice(1).toLowerCase()}`
+                            : "";
+                          const prospectType = `${listingTypeText}${propertyTypeText}`;
 
-                            // Parse preferred areas
-                            const parsePreferredAreas = (
-                              preferredAreas: unknown,
-                            ): string[] => {
-                              if (!preferredAreas) return [];
-                              try {
-                                if (Array.isArray(preferredAreas)) {
+                          // Parse preferred areas
+                          const parsePreferredAreas = (
+                            preferredAreas: unknown,
+                          ): string[] => {
+                            if (!preferredAreas) return [];
+                            try {
+                              if (Array.isArray(preferredAreas)) {
+                                return (
+                                  preferredAreas as Array<{ name: string }>
+                                ).map((area) => area.name);
+                              }
+                              if (typeof preferredAreas === "string") {
+                                const parsed = JSON.parse(
+                                  preferredAreas,
+                                ) as unknown;
+                                if (Array.isArray(parsed)) {
                                   return (
-                                    preferredAreas as Array<{ name: string }>
+                                    parsed as Array<{ name: string }>
                                   ).map((area) => area.name);
                                 }
-                                if (typeof preferredAreas === "string") {
-                                  const parsed = JSON.parse(preferredAreas) as unknown;
-                                  if (Array.isArray(parsed)) {
-                                    return (parsed as Array<{ name: string }>).map(
-                                      (area) => area.name,
-                                    );
-                                  }
-                                }
-                              } catch {
-                                return [];
                               }
+                            } catch {
                               return [];
-                            };
+                            }
+                            return [];
+                          };
 
-                            return (
-                              <ProspectMatchGroup
-                                key={prospectId}
-                                prospectType={prospectType}
-                                prospectDetails={{
-                                  minPrice: prospect.minPrice,
-                                  maxPrice: prospect.maxPrice,
-                                  minBedrooms: prospect.minBedrooms,
-                                  minBathrooms: prospect.minBathrooms,
-                                  preferredAreas: parsePreferredAreas(
-                                    prospect.preferredAreas,
-                                  ),
-                                }}
-                                matches={prospectMatches}
-                                onAction={handleMatchAction}
-                              />
-                            );
-                          },
-                        )}
+                          return (
+                            <ProspectMatchGroup
+                              key={prospectId}
+                              prospectType={prospectType}
+                              prospectDetails={{
+                                minPrice: prospect.minPrice,
+                                maxPrice: prospect.maxPrice,
+                                minBedrooms: prospect.minBedrooms,
+                                minBathrooms: prospect.minBathrooms,
+                                preferredAreas: parsePreferredAreas(
+                                  prospect.preferredAreas,
+                                ),
+                              }}
+                              matches={prospectMatches}
+                              onAction={handleMatchAction}
+                            />
+                          );
+                        })}
                       </ContactMatchGroup>
                     );
                   })}
@@ -529,12 +533,16 @@ export function ConexionesPotenciales({
             ) : selectedView === "external" ? (
               isExternalLoading ? (
                 renderLoadingSkeleton()
-              ) : externalMatches && externalMatches.matches.filter((match) => match.isCrossAccount).length > 0 ? (
+              ) : externalMatches &&
+                externalMatches.matches.filter((match) => match.isCrossAccount)
+                  .length > 0 ? (
                 <>
                   <div className="space-y-4">
                     {Object.entries(
                       groupMatchesByAccount(
-                        externalMatches.matches.filter((match) => match.isCrossAccount)
+                        externalMatches.matches.filter(
+                          (match) => match.isCrossAccount,
+                        ),
                       ),
                     ).map(([accountId, matches]) => (
                       <ExternalAccountCard

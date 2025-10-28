@@ -49,11 +49,8 @@ export async function getListingVisitsSummary(listingId: bigint) {
           eq(appointments.listingId, listingId),
           eq(appointments.isActive, true),
           eq(contacts.accountId, BigInt(accountId)),
-          or(
-            eq(appointments.type, "Visita"),
-            isNull(appointments.type)
-          )
-        )
+          or(eq(appointments.type, "Visita"), isNull(appointments.type)),
+        ),
       )
       .orderBy(desc(appointments.datetimeStart));
 
@@ -66,20 +63,23 @@ export async function getListingVisitsSummary(listingId: bigint) {
       const signatureResults = await db
         .select({
           appointmentId: documents.appointmentId,
-          count: sql<number>`COUNT(*)`.as('count'),
+          count: sql<number>`COUNT(*)`.as("count"),
         })
         .from(documents)
         .where(
           and(
             inArray(documents.appointmentId, appointmentIds),
             eq(documents.documentTag, "firma-visita"),
-            eq(documents.isActive, true)
-          )
+            eq(documents.isActive, true),
+          ),
         )
         .groupBy(documents.appointmentId);
 
       signatures = signatureResults
-        .filter((s): s is { appointmentId: bigint; count: number } => s.appointmentId !== null)
+        .filter(
+          (s): s is { appointmentId: bigint; count: number } =>
+            s.appointmentId !== null,
+        )
         .map((s) => ({
           appointmentId: s.appointmentId,
           count: Number(s.count),
@@ -87,12 +87,13 @@ export async function getListingVisitsSummary(listingId: bigint) {
     }
 
     const signatureMap = new Map(
-      signatures.map((s) => [s.appointmentId.toString(), s.count])
+      signatures.map((s) => [s.appointmentId.toString(), s.count]),
     );
 
     return allVisits.map((visit) => ({
       ...visit,
-      hasSignatures: (signatureMap.get(visit.appointmentId.toString()) ?? 0) >= 2,
+      hasSignatures:
+        (signatureMap.get(visit.appointmentId.toString()) ?? 0) >= 2,
     }));
   } catch (error) {
     console.error("Error fetching listing visits summary:", error);
@@ -135,9 +136,9 @@ export async function getListingContactsSummary(listingId: bigint) {
           eq(contacts.accountId, BigInt(accountId)),
           or(
             eq(listingContacts.contactType, "buyer"),
-            eq(listingContacts.contactType, "viewer")
-          )
-        )
+            eq(listingContacts.contactType, "viewer"),
+          ),
+        ),
       )
       .orderBy(desc(listingContacts.createdAt));
 
@@ -156,24 +157,47 @@ export async function getListingContactsSummary(listingId: bigint) {
       const visitCountResults = await db
         .select({
           contactId: appointments.contactId,
-          totalVisits: sql<number>`COUNT(*)`.as('totalVisits'),
-          upcomingVisits: sql<number>`SUM(CASE WHEN ${appointments.datetimeStart} > NOW() AND ${appointments.status} = 'Scheduled' THEN 1 ELSE 0 END)`.as('upcomingVisits'),
-          missedVisits: sql<number>`SUM(CASE WHEN (${appointments.datetimeStart} < NOW() AND ${appointments.status} = 'Scheduled') OR ${appointments.status} = 'NoShow' THEN 1 ELSE 0 END)`.as('missedVisits'),
-          completedVisits: sql<number>`SUM(CASE WHEN ${appointments.status} = 'Completed' THEN 1 ELSE 0 END)`.as('completedVisits'),
-          cancelledVisits: sql<number>`SUM(CASE WHEN ${appointments.status} = 'Cancelled' THEN 1 ELSE 0 END)`.as('cancelledVisits'),
+          totalVisits: sql<number>`COUNT(*)`.as("totalVisits"),
+          upcomingVisits:
+            sql<number>`SUM(CASE WHEN ${appointments.datetimeStart} > NOW() AND ${appointments.status} = 'Scheduled' THEN 1 ELSE 0 END)`.as(
+              "upcomingVisits",
+            ),
+          missedVisits:
+            sql<number>`SUM(CASE WHEN (${appointments.datetimeStart} < NOW() AND ${appointments.status} = 'Scheduled') OR ${appointments.status} = 'NoShow' THEN 1 ELSE 0 END)`.as(
+              "missedVisits",
+            ),
+          completedVisits:
+            sql<number>`SUM(CASE WHEN ${appointments.status} = 'Completed' THEN 1 ELSE 0 END)`.as(
+              "completedVisits",
+            ),
+          cancelledVisits:
+            sql<number>`SUM(CASE WHEN ${appointments.status} = 'Cancelled' THEN 1 ELSE 0 END)`.as(
+              "cancelledVisits",
+            ),
         })
         .from(appointments)
         .where(
           and(
             inArray(appointments.contactId, contactIds),
             eq(appointments.listingId, listingId),
-            eq(appointments.isActive, true)
-          )
+            eq(appointments.isActive, true),
+          ),
         )
         .groupBy(appointments.contactId);
 
       visitCounts = visitCountResults
-        .filter((v): v is { contactId: bigint; totalVisits: number; upcomingVisits: number; missedVisits: number; completedVisits: number; cancelledVisits: number } => v.contactId !== null)
+        .filter(
+          (
+            v,
+          ): v is {
+            contactId: bigint;
+            totalVisits: number;
+            upcomingVisits: number;
+            missedVisits: number;
+            completedVisits: number;
+            cancelledVisits: number;
+          } => v.contactId !== null,
+        )
         .map((v) => ({
           contactId: v.contactId,
           totalVisits: Number(v.totalVisits),
@@ -185,7 +209,7 @@ export async function getListingContactsSummary(listingId: bigint) {
     }
 
     const visitMap = new Map(
-      visitCounts.map((v) => [v.contactId.toString(), v])
+      visitCounts.map((v) => [v.contactId.toString(), v]),
     );
 
     const contactsWithVisitStatus = allContacts.map((contact) => {
@@ -259,8 +283,8 @@ export async function getListingOwnerContact(listingId: bigint) {
           eq(listingContacts.listingId, listingId),
           eq(listingContacts.contactType, "owner"),
           eq(listingContacts.isActive, true),
-          eq(contacts.accountId, BigInt(accountId))
-        )
+          eq(contacts.accountId, BigInt(accountId)),
+        ),
       )
       .limit(1);
 
@@ -307,11 +331,8 @@ export async function getContactVisitsSummaryAsBuyer(contactId: bigint) {
           eq(appointments.contactId, contactId),
           eq(appointments.isActive, true),
           eq(contacts.accountId, BigInt(accountId)),
-          or(
-            eq(appointments.type, "Visita"),
-            isNull(appointments.type)
-          )
-        )
+          or(eq(appointments.type, "Visita"), isNull(appointments.type)),
+        ),
       )
       .orderBy(desc(appointments.datetimeStart));
 
@@ -324,20 +345,23 @@ export async function getContactVisitsSummaryAsBuyer(contactId: bigint) {
       const signatureResults = await db
         .select({
           appointmentId: documents.appointmentId,
-          count: sql<number>`COUNT(*)`.as('count'),
+          count: sql<number>`COUNT(*)`.as("count"),
         })
         .from(documents)
         .where(
           and(
             inArray(documents.appointmentId, appointmentIds),
             eq(documents.documentTag, "firma-visita"),
-            eq(documents.isActive, true)
-          )
+            eq(documents.isActive, true),
+          ),
         )
         .groupBy(documents.appointmentId);
 
       signatures = signatureResults
-        .filter((s): s is { appointmentId: bigint; count: number } => s.appointmentId !== null)
+        .filter(
+          (s): s is { appointmentId: bigint; count: number } =>
+            s.appointmentId !== null,
+        )
         .map((s) => ({
           appointmentId: s.appointmentId,
           count: Number(s.count),
@@ -345,17 +369,21 @@ export async function getContactVisitsSummaryAsBuyer(contactId: bigint) {
     }
 
     const signatureMap = new Map(
-      signatures.map((s) => [s.appointmentId.toString(), s.count])
+      signatures.map((s) => [s.appointmentId.toString(), s.count]),
     );
 
     const visitsWithSignatures = allVisits.map((visit) => ({
       ...visit,
-      hasSignatures: (signatureMap.get(visit.appointmentId.toString()) ?? 0) >= 2,
+      hasSignatures:
+        (signatureMap.get(visit.appointmentId.toString()) ?? 0) >= 2,
     }));
 
     return visitsWithSignatures;
   } catch (error) {
-    console.error("❌ [Activity] Error fetching contact visits summary as buyer:", error);
+    console.error(
+      "❌ [Activity] Error fetching contact visits summary as buyer:",
+      error,
+    );
     return []; // Return empty array instead of throwing
   }
 }
@@ -364,7 +392,9 @@ export async function getContactVisitsSummaryAsBuyer(contactId: bigint) {
  * Get contacts interested in the same properties as this contact
  * Returns other buyers/viewers for properties this contact is interested in
  */
-export async function getContactRelatedContactsForBuyerListings(contactId: bigint) {
+export async function getContactRelatedContactsForBuyerListings(
+  contactId: bigint,
+) {
   try {
     const accountId = await getCurrentUserAccountId();
     const thirtyDaysAgo = new Date();
@@ -381,10 +411,10 @@ export async function getContactRelatedContactsForBuyerListings(contactId: bigin
           eq(listingContacts.contactId, contactId),
           or(
             eq(listingContacts.contactType, "buyer"),
-            eq(listingContacts.contactType, "viewer")
+            eq(listingContacts.contactType, "viewer"),
           ),
-          eq(listingContacts.isActive, true)
-        )
+          eq(listingContacts.isActive, true),
+        ),
       );
 
     const listingIds = interestedListings
@@ -422,11 +452,11 @@ export async function getContactRelatedContactsForBuyerListings(contactId: bigin
           eq(contacts.accountId, BigInt(accountId)),
           or(
             eq(listingContacts.contactType, "buyer"),
-            eq(listingContacts.contactType, "viewer")
+            eq(listingContacts.contactType, "viewer"),
           ),
           // Exclude the current contact
-          sql`${contacts.contactId} != ${contactId}`
-        )
+          sql`${contacts.contactId} != ${contactId}`,
+        ),
       )
       .orderBy(desc(listingContacts.createdAt));
 
@@ -445,24 +475,47 @@ export async function getContactRelatedContactsForBuyerListings(contactId: bigin
       const visitCountResults = await db
         .select({
           contactId: appointments.contactId,
-          totalVisits: sql<number>`COUNT(*)`.as('totalVisits'),
-          upcomingVisits: sql<number>`SUM(CASE WHEN ${appointments.datetimeStart} > NOW() AND ${appointments.status} = 'Scheduled' THEN 1 ELSE 0 END)`.as('upcomingVisits'),
-          missedVisits: sql<number>`SUM(CASE WHEN (${appointments.datetimeStart} < NOW() AND ${appointments.status} = 'Scheduled') OR ${appointments.status} = 'NoShow' THEN 1 ELSE 0 END)`.as('missedVisits'),
-          completedVisits: sql<number>`SUM(CASE WHEN ${appointments.status} = 'Completed' THEN 1 ELSE 0 END)`.as('completedVisits'),
-          cancelledVisits: sql<number>`SUM(CASE WHEN ${appointments.status} = 'Cancelled' THEN 1 ELSE 0 END)`.as('cancelledVisits'),
+          totalVisits: sql<number>`COUNT(*)`.as("totalVisits"),
+          upcomingVisits:
+            sql<number>`SUM(CASE WHEN ${appointments.datetimeStart} > NOW() AND ${appointments.status} = 'Scheduled' THEN 1 ELSE 0 END)`.as(
+              "upcomingVisits",
+            ),
+          missedVisits:
+            sql<number>`SUM(CASE WHEN (${appointments.datetimeStart} < NOW() AND ${appointments.status} = 'Scheduled') OR ${appointments.status} = 'NoShow' THEN 1 ELSE 0 END)`.as(
+              "missedVisits",
+            ),
+          completedVisits:
+            sql<number>`SUM(CASE WHEN ${appointments.status} = 'Completed' THEN 1 ELSE 0 END)`.as(
+              "completedVisits",
+            ),
+          cancelledVisits:
+            sql<number>`SUM(CASE WHEN ${appointments.status} = 'Cancelled' THEN 1 ELSE 0 END)`.as(
+              "cancelledVisits",
+            ),
         })
         .from(appointments)
         .where(
           and(
             inArray(appointments.contactId, contactIds),
             inArray(appointments.listingId, listingIds),
-            eq(appointments.isActive, true)
-          )
+            eq(appointments.isActive, true),
+          ),
         )
         .groupBy(appointments.contactId);
 
       visitCounts = visitCountResults
-        .filter((v): v is { contactId: bigint; totalVisits: number; upcomingVisits: number; missedVisits: number; completedVisits: number; cancelledVisits: number } => v.contactId !== null)
+        .filter(
+          (
+            v,
+          ): v is {
+            contactId: bigint;
+            totalVisits: number;
+            upcomingVisits: number;
+            missedVisits: number;
+            completedVisits: number;
+            cancelledVisits: number;
+          } => v.contactId !== null,
+        )
         .map((v) => ({
           contactId: v.contactId,
           totalVisits: Number(v.totalVisits),
@@ -474,7 +527,7 @@ export async function getContactRelatedContactsForBuyerListings(contactId: bigin
     }
 
     const visitMap = new Map(
-      visitCounts.map((v) => [v.contactId.toString(), v])
+      visitCounts.map((v) => [v.contactId.toString(), v]),
     );
 
     const contactsWithVisitStatus = allContacts.map((contact) => {
@@ -522,7 +575,10 @@ export async function getContactRelatedContactsForBuyerListings(contactId: bigin
 
     return sortedContacts;
   } catch (error) {
-    console.error("❌ [Activity] Error fetching related contacts for buyer listings:", error);
+    console.error(
+      "❌ [Activity] Error fetching related contacts for buyer listings:",
+      error,
+    );
     return []; // Return empty array instead of throwing
   }
 }
@@ -576,46 +632,53 @@ export async function getContactActivityByListing(contactId: bigint) {
       .from(listingContacts)
       .innerJoin(listings, eq(listingContacts.listingId, listings.listingId))
       .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
       .leftJoin(users, eq(listings.agentId, users.id))
       .where(
         and(
           eq(listingContacts.contactId, contactId),
           or(
             eq(listingContacts.contactType, "buyer"),
-            eq(listingContacts.contactType, "viewer")
+            eq(listingContacts.contactType, "viewer"),
           ),
           eq(listingContacts.isActive, true),
-          eq(listings.accountId, BigInt(accountId))
-        )
+          eq(listings.accountId, BigInt(accountId)),
+        ),
       );
 
     // Get property IDs for image fetching
     const propertyIds = listingsDataRaw.map((l) => l.propertyId);
 
     // Fetch first 2 images for each property (excluding videos, YouTube links, and tours)
-    const imagesData = propertyIds.length > 0
-      ? await db
-          .select({
-            propertyId: propertyImages.propertyId,
-            imageUrl: propertyImages.imageUrl,
-            s3key: propertyImages.s3key,
-            imageOrder: propertyImages.imageOrder,
-          })
-          .from(propertyImages)
-          .where(
-            and(
-              inArray(propertyImages.propertyId, propertyIds),
-              eq(propertyImages.isActive, true),
-              // Only get actual images, not videos, YouTube links, or virtual tours
-              sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`
+    const imagesData =
+      propertyIds.length > 0
+        ? await db
+            .select({
+              propertyId: propertyImages.propertyId,
+              imageUrl: propertyImages.imageUrl,
+              s3key: propertyImages.s3key,
+              imageOrder: propertyImages.imageOrder,
+            })
+            .from(propertyImages)
+            .where(
+              and(
+                inArray(propertyImages.propertyId, propertyIds),
+                eq(propertyImages.isActive, true),
+                // Only get actual images, not videos, YouTube links, or virtual tours
+                sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`,
+              ),
             )
-          )
-          .orderBy(propertyImages.imageOrder)
-      : [];
+            .orderBy(propertyImages.imageOrder)
+        : [];
 
     // Group images by property
-    const imagesByProperty = new Map<string, Array<{ imageUrl: string; s3key: string }>>();
+    const imagesByProperty = new Map<
+      string,
+      Array<{ imageUrl: string; s3key: string }>
+    >();
     for (const img of imagesData) {
       const propertyIdStr = img.propertyId.toString();
       if (!imagesByProperty.has(propertyIdStr)) {
@@ -643,10 +706,12 @@ export async function getContactActivityByListing(contactId: bigint) {
 
       // Convert latitude/longitude decimals to strings
       const latStr = listing.latitude != null ? String(listing.latitude) : null;
-      const lngStr = listing.longitude != null ? String(listing.longitude) : null;
+      const lngStr =
+        listing.longitude != null ? String(listing.longitude) : null;
 
       // Get images for this property
-      const propertyImgs = imagesByProperty.get(listing.propertyId.toString()) ?? [];
+      const propertyImgs =
+        imagesByProperty.get(listing.propertyId.toString()) ?? [];
 
       return {
         // Listing fields
@@ -691,7 +756,10 @@ export async function getContactActivityByListing(contactId: bigint) {
 
     return formattedListings;
   } catch (error) {
-    console.error("❌ [Activity] Error fetching contact activity by listing:", error);
+    console.error(
+      "❌ [Activity] Error fetching contact activity by listing:",
+      error,
+    );
     return []; // Return empty array instead of throwing
   }
 }
@@ -745,43 +813,50 @@ export async function getContactActivityByListingAsOwner(contactId: bigint) {
       .from(listingContacts)
       .innerJoin(listings, eq(listingContacts.listingId, listings.listingId))
       .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
       .leftJoin(users, eq(listings.agentId, users.id))
       .where(
         and(
           eq(listingContacts.contactId, contactId),
           eq(listingContacts.contactType, "owner"),
           eq(listingContacts.isActive, true),
-          eq(listings.accountId, BigInt(accountId))
-        )
+          eq(listings.accountId, BigInt(accountId)),
+        ),
       );
 
     // Get property IDs for image fetching
     const propertyIds = listingsDataRaw.map((l) => l.propertyId);
 
     // Fetch first 2 images for each property (excluding videos, YouTube links, and tours)
-    const imagesData = propertyIds.length > 0
-      ? await db
-          .select({
-            propertyId: propertyImages.propertyId,
-            imageUrl: propertyImages.imageUrl,
-            s3key: propertyImages.s3key,
-            imageOrder: propertyImages.imageOrder,
-          })
-          .from(propertyImages)
-          .where(
-            and(
-              inArray(propertyImages.propertyId, propertyIds),
-              eq(propertyImages.isActive, true),
-              // Only get actual images, not videos, YouTube links, or virtual tours
-              sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`
+    const imagesData =
+      propertyIds.length > 0
+        ? await db
+            .select({
+              propertyId: propertyImages.propertyId,
+              imageUrl: propertyImages.imageUrl,
+              s3key: propertyImages.s3key,
+              imageOrder: propertyImages.imageOrder,
+            })
+            .from(propertyImages)
+            .where(
+              and(
+                inArray(propertyImages.propertyId, propertyIds),
+                eq(propertyImages.isActive, true),
+                // Only get actual images, not videos, YouTube links, or virtual tours
+                sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`,
+              ),
             )
-          )
-          .orderBy(propertyImages.imageOrder)
-      : [];
+            .orderBy(propertyImages.imageOrder)
+        : [];
 
     // Group images by property
-    const imagesByProperty = new Map<string, Array<{ imageUrl: string; s3key: string }>>();
+    const imagesByProperty = new Map<
+      string,
+      Array<{ imageUrl: string; s3key: string }>
+    >();
     for (const img of imagesData) {
       const propertyIdStr = img.propertyId.toString();
       if (!imagesByProperty.has(propertyIdStr)) {
@@ -809,10 +884,12 @@ export async function getContactActivityByListingAsOwner(contactId: bigint) {
 
       // Convert latitude/longitude decimals to strings
       const latStr = listing.latitude != null ? String(listing.latitude) : null;
-      const lngStr = listing.longitude != null ? String(listing.longitude) : null;
+      const lngStr =
+        listing.longitude != null ? String(listing.longitude) : null;
 
       // Get images for this property
-      const propertyImgs = imagesByProperty.get(listing.propertyId.toString()) ?? [];
+      const propertyImgs =
+        imagesByProperty.get(listing.propertyId.toString()) ?? [];
 
       return {
         // Listing fields
@@ -857,7 +934,10 @@ export async function getContactActivityByListingAsOwner(contactId: bigint) {
 
     return formattedListings;
   } catch (error) {
-    console.error("❌ [Activity] Error fetching contact activity by listing as owner:", error);
+    console.error(
+      "❌ [Activity] Error fetching contact activity by listing as owner:",
+      error,
+    );
     return []; // Return empty array instead of throwing
   }
 }
@@ -880,8 +960,8 @@ export async function getContactVisitsSummaryAsOwner(contactId: bigint) {
         and(
           eq(listingContacts.contactId, contactId),
           eq(listingContacts.contactType, "owner"),
-          eq(listingContacts.isActive, true)
-        )
+          eq(listingContacts.isActive, true),
+        ),
       );
 
     const ownedListingIds = ownedListings
@@ -920,11 +1000,8 @@ export async function getContactVisitsSummaryAsOwner(contactId: bigint) {
           inArray(appointments.listingId, ownedListingIds),
           eq(appointments.isActive, true),
           eq(contacts.accountId, BigInt(accountId)),
-          or(
-            eq(appointments.type, "Visita"),
-            isNull(appointments.type)
-          )
-        )
+          or(eq(appointments.type, "Visita"), isNull(appointments.type)),
+        ),
       )
       .orderBy(desc(appointments.datetimeStart));
 
@@ -937,20 +1014,23 @@ export async function getContactVisitsSummaryAsOwner(contactId: bigint) {
       const signatureResults = await db
         .select({
           appointmentId: documents.appointmentId,
-          count: sql<number>`COUNT(*)`.as('count'),
+          count: sql<number>`COUNT(*)`.as("count"),
         })
         .from(documents)
         .where(
           and(
             inArray(documents.appointmentId, appointmentIds),
             eq(documents.documentTag, "firma-visita"),
-            eq(documents.isActive, true)
-          )
+            eq(documents.isActive, true),
+          ),
         )
         .groupBy(documents.appointmentId);
 
       signatures = signatureResults
-        .filter((s): s is { appointmentId: bigint; count: number } => s.appointmentId !== null)
+        .filter(
+          (s): s is { appointmentId: bigint; count: number } =>
+            s.appointmentId !== null,
+        )
         .map((s) => ({
           appointmentId: s.appointmentId,
           count: Number(s.count),
@@ -958,17 +1038,21 @@ export async function getContactVisitsSummaryAsOwner(contactId: bigint) {
     }
 
     const signatureMap = new Map(
-      signatures.map((s) => [s.appointmentId.toString(), s.count])
+      signatures.map((s) => [s.appointmentId.toString(), s.count]),
     );
 
     const visitsWithSignatures = allVisits.map((visit) => ({
       ...visit,
-      hasSignatures: (signatureMap.get(visit.appointmentId.toString()) ?? 0) >= 2,
+      hasSignatures:
+        (signatureMap.get(visit.appointmentId.toString()) ?? 0) >= 2,
     }));
 
     return visitsWithSignatures;
   } catch (error) {
-    console.error("❌ [Activity] Error fetching contact visits summary as owner:", error);
+    console.error(
+      "❌ [Activity] Error fetching contact visits summary as owner:",
+      error,
+    );
     return []; // Return empty array instead of throwing
   }
 }
@@ -993,8 +1077,8 @@ export async function getContactRelatedContactsAsOwner(contactId: bigint) {
         and(
           eq(listingContacts.contactId, contactId),
           eq(listingContacts.contactType, "owner"),
-          eq(listingContacts.isActive, true)
-        )
+          eq(listingContacts.isActive, true),
+        ),
       );
 
     const ownedListingIds = ownedProperties
@@ -1032,9 +1116,9 @@ export async function getContactRelatedContactsAsOwner(contactId: bigint) {
           eq(contacts.accountId, BigInt(accountId)),
           or(
             eq(listingContacts.contactType, "buyer"),
-            eq(listingContacts.contactType, "viewer")
-          )
-        )
+            eq(listingContacts.contactType, "viewer"),
+          ),
+        ),
       )
       .orderBy(desc(listingContacts.createdAt));
 
@@ -1053,24 +1137,47 @@ export async function getContactRelatedContactsAsOwner(contactId: bigint) {
       const visitCountResults = await db
         .select({
           contactId: appointments.contactId,
-          totalVisits: sql<number>`COUNT(*)`.as('totalVisits'),
-          upcomingVisits: sql<number>`SUM(CASE WHEN ${appointments.datetimeStart} > NOW() AND ${appointments.status} = 'Scheduled' THEN 1 ELSE 0 END)`.as('upcomingVisits'),
-          missedVisits: sql<number>`SUM(CASE WHEN (${appointments.datetimeStart} < NOW() AND ${appointments.status} = 'Scheduled') OR ${appointments.status} = 'NoShow' THEN 1 ELSE 0 END)`.as('missedVisits'),
-          completedVisits: sql<number>`SUM(CASE WHEN ${appointments.status} = 'Completed' THEN 1 ELSE 0 END)`.as('completedVisits'),
-          cancelledVisits: sql<number>`SUM(CASE WHEN ${appointments.status} = 'Cancelled' THEN 1 ELSE 0 END)`.as('cancelledVisits'),
+          totalVisits: sql<number>`COUNT(*)`.as("totalVisits"),
+          upcomingVisits:
+            sql<number>`SUM(CASE WHEN ${appointments.datetimeStart} > NOW() AND ${appointments.status} = 'Scheduled' THEN 1 ELSE 0 END)`.as(
+              "upcomingVisits",
+            ),
+          missedVisits:
+            sql<number>`SUM(CASE WHEN (${appointments.datetimeStart} < NOW() AND ${appointments.status} = 'Scheduled') OR ${appointments.status} = 'NoShow' THEN 1 ELSE 0 END)`.as(
+              "missedVisits",
+            ),
+          completedVisits:
+            sql<number>`SUM(CASE WHEN ${appointments.status} = 'Completed' THEN 1 ELSE 0 END)`.as(
+              "completedVisits",
+            ),
+          cancelledVisits:
+            sql<number>`SUM(CASE WHEN ${appointments.status} = 'Cancelled' THEN 1 ELSE 0 END)`.as(
+              "cancelledVisits",
+            ),
         })
         .from(appointments)
         .where(
           and(
             inArray(appointments.contactId, contactIds),
             inArray(appointments.listingId, ownedListingIds),
-            eq(appointments.isActive, true)
-          )
+            eq(appointments.isActive, true),
+          ),
         )
         .groupBy(appointments.contactId);
 
       visitCounts = visitCountResults
-        .filter((v): v is { contactId: bigint; totalVisits: number; upcomingVisits: number; missedVisits: number; completedVisits: number; cancelledVisits: number } => v.contactId !== null)
+        .filter(
+          (
+            v,
+          ): v is {
+            contactId: bigint;
+            totalVisits: number;
+            upcomingVisits: number;
+            missedVisits: number;
+            completedVisits: number;
+            cancelledVisits: number;
+          } => v.contactId !== null,
+        )
         .map((v) => ({
           contactId: v.contactId,
           totalVisits: Number(v.totalVisits),
@@ -1082,7 +1189,7 @@ export async function getContactRelatedContactsAsOwner(contactId: bigint) {
     }
 
     const visitMap = new Map(
-      visitCounts.map((v) => [v.contactId.toString(), v])
+      visitCounts.map((v) => [v.contactId.toString(), v]),
     );
 
     const contactsWithVisitStatus = allContacts.map((contact) => {

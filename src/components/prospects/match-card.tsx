@@ -50,10 +50,10 @@ export const MatchCard = React.memo(function MatchCard({
   const contactId = match.prospect.contacts.contactId;
 
   // Debug logs
-  console.log('🔍 MatchCard - Full listing object:', listing);
-  console.log('🏠 MatchCard - Properties object:', listing.properties);
-  console.log('📝 MatchCard - Property title:', listing.properties.title);
-  console.log('🏷️ MatchCard - Property type:', listing.properties.propertyType);
+  console.log("🔍 MatchCard - Full listing object:", listing);
+  console.log("🏠 MatchCard - Properties object:", listing.properties);
+  console.log("📝 MatchCard - Property title:", listing.properties.title);
+  console.log("🏷️ MatchCard - Property type:", listing.properties.propertyType);
 
   // const defaultPlaceholder = "";
   // const imageSrc = defaultPlaceholder; // TODO: Add imageUrl when available in ListingWithDetails type
@@ -75,7 +75,10 @@ export const MatchCard = React.memo(function MatchCard({
     // Show lead status if lead exists
     if (hasExistingLead) {
       return (
-        <Badge className="bg-transparent border-0 p-1 h-5 w-5" title="Lead Creado">
+        <Badge
+          className="h-5 w-5 border-0 bg-transparent p-1"
+          title="Lead Creado"
+        >
           <CheckCircle className="h-3 w-3 text-blue-700" />
         </Badge>
       );
@@ -84,13 +87,19 @@ export const MatchCard = React.memo(function MatchCard({
     // Otherwise show match type
     if (matchType === "strict") {
       return (
-        <Badge className="bg-transparent border-0 p-1 h-5 w-5" title="Coincidencia Exacta">
+        <Badge
+          className="h-5 w-5 border-0 bg-transparent p-1"
+          title="Coincidencia Exacta"
+        >
           <CheckCircle className="h-3 w-3 text-green-700" />
         </Badge>
       );
     } else {
       return (
-        <Badge className="bg-transparent border-0 p-1 h-5 w-5" title="Coincidencia Aproximada">
+        <Badge
+          className="h-5 w-5 border-0 bg-transparent p-1"
+          title="Coincidencia Aproximada"
+        >
           <AlertCircle className="h-3 w-3 text-orange-700" />
         </Badge>
       );
@@ -108,7 +117,11 @@ export const MatchCard = React.memo(function MatchCard({
     }
   };
 
-  const truncateName = (firstName: string, lastName: string, maxLength = 14) => {
+  const truncateName = (
+    firstName: string,
+    lastName: string,
+    maxLength = 14,
+  ) => {
     const fullName = `${firstName} ${lastName}`;
     if (fullName.length <= maxLength) {
       return fullName;
@@ -125,50 +138,55 @@ export const MatchCard = React.memo(function MatchCard({
 
   const handleCardClick = (e: React.MouseEvent) => {
     // Only navigate if user can contact and not clicking on action buttons
-    if (canContact && !(e.target as HTMLElement).closest('button')) {
+    if (canContact && !(e.target as HTMLElement).closest("button")) {
       navigateToPage(`/propiedades/${listing.listings.id.toString()}`, router);
     }
   };
 
   const renderContent = () => (
     <Card
-      className={`overflow-hidden shadow-md transition-all hover:shadow-lg relative cursor-pointer ${
+      className={`relative cursor-pointer overflow-hidden shadow-md transition-all hover:shadow-lg ${
         hasExistingLead
-          ? "opacity-50 border-2 border-green-200 bg-green-50/30 hover:opacity-70"
+          ? "border-2 border-green-200 bg-green-50/30 opacity-50 hover:opacity-70"
           : "border-0"
       }`}
       onClick={handleCardClick}
     >
       {/* Lead Created Band - Left Side */}
       {hasExistingLead && (
-        <div className="absolute top-0 left-0 bottom-0 w-8 bg-green-600 z-20" />
+        <div className="absolute bottom-0 left-0 top-0 z-20 w-8 bg-green-600" />
       )}
 
       {/* Match Type Badge - Top Right Corner */}
-      <div className="absolute top-1 right-1 z-10">
+      <div className="absolute right-1 top-1 z-10">
         {!hasExistingLead && getMatchTypeBadge()}
       </div>
 
       {/* Centered Content */}
       <div className="p-2 text-center">
         {/* First Row - Property Title (Highest Importance) */}
-        <div className="mt-2 mb-4">
-          <h3 className="text-sm font-bold text-gray-900 leading-tight line-clamp-2">
-            {truncateTitle(`${getListingTypeLabel(listing.listings.listingType)} de ${listing.properties.title ?? "Propiedad sin título"}`)}
+        <div className="mb-4 mt-2">
+          <h3 className="line-clamp-2 text-sm font-bold leading-tight text-gray-900">
+            {truncateTitle(
+              `${getListingTypeLabel(listing.listings.listingType)} de ${listing.properties.title ?? "Propiedad sin título"}`,
+            )}
           </h3>
         </div>
-        
+
         {/* Second Row - Cross-account indicator only */}
         {isCrossAccount && (
-          <div className="flex items-center justify-center gap-2 mb-1">
-            <Badge variant="secondary" className="bg-blue-500 text-xs text-white px-1 py-0">
+          <div className="mb-1 flex items-center justify-center gap-2">
+            <Badge
+              variant="secondary"
+              className="bg-blue-500 px-1 py-0 text-xs text-white"
+            >
               Externa
             </Badge>
           </div>
         )}
 
         {/* Properties Box */}
-        <div className="group relative mx-auto w-4/5 rounded-md bg-gradient-to-br from-slate-50 to-gray-100 p-1 shadow-sm mb-2">
+        <div className="group relative mx-auto mb-2 w-4/5 rounded-md bg-gradient-to-br from-slate-50 to-gray-100 p-1 shadow-sm">
           <div className="grid grid-cols-2 gap-0 text-xs">
             {/* Price */}
             <div className="flex items-center justify-center gap-0.5 text-gray-700">
@@ -188,7 +206,7 @@ export const MatchCard = React.memo(function MatchCard({
                   <span>{listing.properties.bedrooms ?? "-"}</span>
                 </div>
               )}
-            
+
             {/* For garaje/local, show a dash for bedrooms */}
             {(listing.properties.propertyType === "garaje" ||
               listing.properties.propertyType === "local") && (
@@ -210,7 +228,7 @@ export const MatchCard = React.memo(function MatchCard({
                   </span>
                 </div>
               )}
-            
+
             {/* For garaje/local, show a dash for bathrooms */}
             {(listing.properties.propertyType === "garaje" ||
               listing.properties.propertyType === "local") && (
@@ -226,15 +244,15 @@ export const MatchCard = React.memo(function MatchCard({
               <span>{listing.properties.squareMeter ?? "-"}m²</span>
             </div>
           </div>
-          
+
           {/* Hover Action Buttons - Overlay on Properties Box */}
           {showActions && (
-            <div className="absolute inset-0 flex items-center justify-center gap-4 bg-black/20 backdrop-blur-sm opacity-0 transition-all duration-300 group-hover:opacity-100 rounded-md">
+            <div className="absolute inset-0 flex items-center justify-center gap-4 rounded-md bg-black/20 opacity-0 backdrop-blur-sm transition-all duration-300 group-hover:opacity-100">
               {!hasExistingLead ? (
                 <>
                   {/* Create Lead Button */}
                   <button
-                    className="h-8 w-8 rounded-full bg-white/95 hover:bg-white border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-100 bg-white/95 shadow-lg transition-all duration-200 hover:scale-110 hover:bg-white hover:shadow-xl"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -248,7 +266,7 @@ export const MatchCard = React.memo(function MatchCard({
 
                   {/* Share Button */}
                   <button
-                    className="h-8 w-8 rounded-full bg-white/95 hover:bg-white border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-100 bg-white/95 shadow-lg transition-all duration-200 hover:scale-110 hover:bg-white hover:shadow-xl"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -263,7 +281,7 @@ export const MatchCard = React.memo(function MatchCard({
               ) : (
                 /* Dismiss/Remove Lead Button (shown when lead exists) */
                 <button
-                  className="h-8 w-8 rounded-full bg-red-100 border-red-200 hover:bg-red-200 border shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 flex items-center justify-center"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-red-200 bg-red-100 shadow-lg transition-all duration-200 hover:scale-110 hover:bg-red-200 hover:shadow-xl"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -287,12 +305,15 @@ export const MatchCard = React.memo(function MatchCard({
           {listing.ownerContact && contactId ? (
             <Link
               href={`/contactos/${contactId.toString()}`}
-              className="flex items-center gap-1 text-xs text-muted-foreground/80 hover:text-primary transition-colors hover:underline"
+              className="flex items-center gap-1 text-xs text-muted-foreground/80 transition-colors hover:text-primary hover:underline"
               onClick={(e) => e.stopPropagation()}
             >
               <User className="h-3 w-3" />
               <span>
-                {truncateName(listing.ownerContact.firstName, listing.ownerContact.lastName)}
+                {truncateName(
+                  listing.ownerContact.firstName,
+                  listing.ownerContact.lastName,
+                )}
               </span>
             </Link>
           ) : (

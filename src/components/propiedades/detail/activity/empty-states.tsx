@@ -29,11 +29,11 @@ export function EmptyState({ type }: EmptyStateProps) {
 
   return (
     <div className="py-16 text-center">
-      <div className="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-gray-100">
-        <Icon className="w-8 h-8 text-gray-300" />
+      <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+        <Icon className="h-8 w-8 text-gray-300" />
       </div>
-      <p className="text-gray-500 font-medium text-base mb-2">{state.title}</p>
-      <p className="text-gray-400 text-sm">{state.subtitle}</p>
+      <p className="mb-2 text-base font-medium text-gray-500">{state.title}</p>
+      <p className="text-sm text-gray-400">{state.subtitle}</p>
     </div>
   );
 }

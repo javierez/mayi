@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  type ReactNode,
+} from "react";
 
 // Onboarding form data interface
 export interface OnboardingFormData {
@@ -47,12 +53,16 @@ interface OnboardingContextType {
   resetForm: () => void;
 }
 
-const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
+const OnboardingContext = createContext<OnboardingContextType | undefined>(
+  undefined,
+);
 
 export function useOnboardingContext(): OnboardingContextType {
   const context = useContext(OnboardingContext);
   if (!context) {
-    throw new Error("useOnboardingContext must be used within an OnboardingProvider");
+    throw new Error(
+      "useOnboardingContext must be used within an OnboardingProvider",
+    );
   }
   return context;
 }
@@ -69,35 +79,35 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
   });
 
   const updateFormData = useCallback((updates: Partial<OnboardingFormData>) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       formData: { ...prev.formData, ...updates },
     }));
   }, []);
 
   const setCurrentStep = useCallback((step: number) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       currentStep: Math.min(Math.max(1, step), 3),
     }));
   }, []);
 
   const nextStep = useCallback(() => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       currentStep: Math.min(prev.currentStep + 1, 3),
     }));
   }, []);
 
   const previousStep = useCallback(() => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       currentStep: Math.max(prev.currentStep - 1, 1),
     }));
   }, []);
 
   const setSubmitting = useCallback((submitting: boolean) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       isSubmitting: submitting,
     }));
@@ -127,4 +137,3 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     </OnboardingContext.Provider>
   );
 }
-

@@ -57,31 +57,37 @@ export default function FinalizationPopup({
   const saveAndFinalize = async () => {
     try {
       // Brief delay to allow any background operations to complete
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Get IDs from listingDetails (legacy) or completeFormData (new architecture)
-      const propertyId = listingDetails?.propertyId ?? completeFormData.propertyId;
+      const propertyId =
+        listingDetails?.propertyId ?? completeFormData.propertyId;
       const listingId = listingDetails?.listingId ?? completeFormData.listingId;
       const agentId = listingDetails?.agentId ?? completeFormData.agentId;
-      
+
       if (!propertyId || !listingId) {
         throw new Error("Missing property or listing ID");
       }
 
-      // Save all form data and mark as completed  
+      // Save all form data and mark as completed
       const listingIdString = String(
-        typeof listingId === 'number' || typeof listingId === 'string' ? listingId : ''
+        typeof listingId === "number" || typeof listingId === "string"
+          ? listingId
+          : "",
       );
       const saveResult = await FormSaveService.saveAllFormData(
         listingIdString,
         completeFormData,
-        listingDetails ?? { 
-          propertyId: typeof propertyId === 'string' ? parseInt(propertyId, 10) : propertyId as number | undefined, 
+        listingDetails ?? {
+          propertyId:
+            typeof propertyId === "string"
+              ? parseInt(propertyId, 10)
+              : (propertyId as number | undefined),
           listingType: completeFormData.listingType,
           agentId,
-          propertyType: completeFormData.propertyType
+          propertyType: completeFormData.propertyType,
         },
-        { markAsCompleted: true }
+        { markAsCompleted: true },
       );
 
       if (!saveResult.success) {
@@ -89,12 +95,7 @@ export default function FinalizationPopup({
       }
 
       // Step 3: Create rental listing if requested (non-blocking)
-      if (
-        isSaleListing &&
-        formData.duplicateForRent &&
-        agentId &&
-        propertyId
-      ) {
+      if (isSaleListing && formData.duplicateForRent && agentId && propertyId) {
         const rentListingData = {
           propertyId: BigInt(propertyId),
           listingType: "Rent" as const,
@@ -105,7 +106,8 @@ export default function FinalizationPopup({
           appliancesIncluded: formData.appliancesIncluded,
           internet: formData.internet,
           optionalGaragePrice: formData.optionalGaragePrice.toString(),
-          optionalStorageRoomPrice: formData.optionalStorageRoomPrice.toString(),
+          optionalStorageRoomPrice:
+            formData.optionalStorageRoomPrice.toString(),
           hasKeys: false,
           optionalStorageRoom: false,
           status: "En Alquiler" as const,
@@ -133,7 +135,9 @@ export default function FinalizationPopup({
       // Auto-redirect after 2 seconds
       setTimeout(() => {
         const idString = String(
-          typeof listingId === 'number' || typeof listingId === 'string' ? listingId : ''
+          typeof listingId === "number" || typeof listingId === "string"
+            ? listingId
+            : "",
         );
         router.push(`/propiedades/${idString}`);
       }, 2000);
@@ -141,9 +145,9 @@ export default function FinalizationPopup({
       console.error("Error in saveAndFinalize:", error);
       setState("error");
       setErrorMessage(
-        error instanceof Error 
-          ? error.message 
-          : "Error al finalizar el proceso. Por favor, inténtalo de nuevo."
+        error instanceof Error
+          ? error.message
+          : "Error al finalizar el proceso. Por favor, inténtalo de nuevo.",
       );
     }
   };

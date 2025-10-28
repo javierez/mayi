@@ -9,10 +9,7 @@ import {
 } from "~/components/ui/popover";
 import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import {
-  Collapsible,
-  CollapsibleContent,
-} from "~/components/ui/collapsible";
+import { Collapsible, CollapsibleContent } from "~/components/ui/collapsible";
 import {
   Select,
   SelectContent,
@@ -81,7 +78,9 @@ export function PropertyFilter({
   const [ownerFilter, setOwnerFilter] = useState<string | null>(null);
   const [ownerSearchInput, setOwnerSearchInput] = useState(""); // Local state for typing
   const [ownerDisplayName, setOwnerDisplayName] = useState(""); // Separate state for selected owner name
-  const [ownerSearchResults, setOwnerSearchResults] = useState<Array<{ id: string; name: string }>>([]);
+  const [ownerSearchResults, setOwnerSearchResults] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
   const [isSearchingOwners, setIsSearchingOwners] = useState(false);
   const [showOwnerDropdown, setShowOwnerDropdown] = useState(false);
   const ownerInputRef = useRef<HTMLInputElement>(null);
@@ -139,8 +138,14 @@ export function PropertyFilter({
       maxPrice: maxPrice ? parseInt(maxPrice) : undefined,
       minSquareMeter: minSize ? parseInt(minSize) : undefined,
       maxSquareMeter: maxSize ? parseInt(maxSize) : undefined,
-      hasKeys: hasKeys === "true" ? true : hasKeys === "false" ? false : undefined,
-      publishToWebsite: publishToWebsite === "true" ? true : publishToWebsite === "false" ? false : undefined,
+      hasKeys:
+        hasKeys === "true" ? true : hasKeys === "false" ? false : undefined,
+      publishToWebsite:
+        publishToWebsite === "true"
+          ? true
+          : publishToWebsite === "false"
+            ? false
+            : undefined,
     });
     setAgentFilters(agent ? agent.split(",") : []);
     setOwnerFilter(ownerId ?? null);
@@ -176,10 +181,12 @@ export function PropertyFilter({
     try {
       setIsSearchingOwners(true);
       const results = await searchContactsForFormWithAuth(valueToSearch, 6);
-      setOwnerSearchResults(results.map(contact => ({
-        id: contact.id.toString(),
-        name: contact.name,
-      })));
+      setOwnerSearchResults(
+        results.map((contact) => ({
+          id: contact.id.toString(),
+          name: contact.name,
+        })),
+      );
       setShowOwnerDropdown(results.length > 0);
     } catch (error) {
       console.error("Error searching owner contacts:", error);
@@ -292,12 +299,18 @@ export function PropertyFilter({
     }
 
     // Update area range (only if slider was touched)
-    if (newPropertyFilters.minSquareMeter !== undefined && isAreaSliderTouched) {
+    if (
+      newPropertyFilters.minSquareMeter !== undefined &&
+      isAreaSliderTouched
+    ) {
       params.set("minSize", newPropertyFilters.minSquareMeter.toString());
     } else {
       params.delete("minSize");
     }
-    if (newPropertyFilters.maxSquareMeter !== undefined && isAreaSliderTouched) {
+    if (
+      newPropertyFilters.maxSquareMeter !== undefined &&
+      isAreaSliderTouched
+    ) {
       params.set("maxSize", newPropertyFilters.maxSquareMeter.toString());
     } else {
       params.delete("maxSize");
@@ -310,7 +323,10 @@ export function PropertyFilter({
       params.delete("hasKeys");
     }
     if (newPropertyFilters.publishToWebsite !== undefined) {
-      params.set("publishToWebsite", newPropertyFilters.publishToWebsite.toString());
+      params.set(
+        "publishToWebsite",
+        newPropertyFilters.publishToWebsite.toString(),
+      );
     } else {
       params.delete("publishToWebsite");
     }
@@ -321,10 +337,7 @@ export function PropertyFilter({
     router.push(`/propiedades?${params.toString()}`);
   };
 
-  const togglePropertyFilter = (
-    category: "status" | "type",
-    value: string,
-  ) => {
+  const togglePropertyFilter = (category: "status" | "type", value: string) => {
     const currentValues = propertyFilters[category];
     const newFilters = {
       ...propertyFilters,
@@ -370,7 +383,12 @@ export function PropertyFilter({
     const currentValue = propertyFilters[key];
     const newFilters = {
       ...propertyFilters,
-      [key]: currentValue === undefined ? true : currentValue === true ? false : undefined,
+      [key]:
+        currentValue === undefined
+          ? true
+          : currentValue === true
+            ? false
+            : undefined,
     };
     setPropertyFilters(newFilters);
     updateUrlParams(newFilters, agentFilters, ownerFilter, searchQuery);
@@ -467,7 +485,6 @@ export function PropertyFilter({
     updateUrlParams(propertyFilters, agentFilters, ownerFilter, value);
   };
 
-
   // Check if current filters are the default ones
   const isDefaultStatusFilter =
     propertyFilters.status.length === 2 &&
@@ -477,7 +494,9 @@ export function PropertyFilter({
 
   // Only count as active filters if they differ from defaults
   const activePropertyFiltersCount =
-    (isDefaultStatusFilter ? 0 : propertyFilters.status.length + propertyFilters.type.length) +
+    (isDefaultStatusFilter
+      ? 0
+      : propertyFilters.status.length + propertyFilters.type.length) +
     (propertyFilters.city ? 1 : 0) +
     (propertyFilters.neighborhood ? 1 : 0) +
     (propertyFilters.minBedrooms !== undefined ? 1 : 0) +
@@ -500,15 +519,19 @@ export function PropertyFilter({
   }) => {
     const isSelected = isAgent
       ? agentFilters.includes(value)
-      : category ? propertyFilters[category].includes(value) : false;
+      : category
+        ? propertyFilters[category].includes(value)
+        : false;
 
     return (
       <div
-        className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 hover:bg-accent transition-colors"
+        className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 transition-colors hover:bg-accent"
         onClick={() =>
           isAgent
             ? toggleAgentFilter(value)
-            : category ? togglePropertyFilter(category, value) : undefined
+            : category
+              ? togglePropertyFilter(category, value)
+              : undefined
         }
       >
         <div
@@ -538,11 +561,11 @@ export function PropertyFilter({
   }) => (
     <div className="space-y-1">
       <div
-        className="flex cursor-pointer items-center gap-1 group"
+        className="group flex cursor-pointer items-center gap-1"
         onClick={() => toggleCategory(category)}
       >
-        <Icon className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
-        <h5 className="text-[12px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+        <Icon className="h-3 w-3 text-muted-foreground transition-colors group-hover:text-foreground" />
+        <h5 className="text-[12px] font-medium text-muted-foreground transition-colors group-hover:text-foreground">
           {title}
         </h5>
         <ChevronDown
@@ -570,14 +593,23 @@ export function PropertyFilter({
           <PropertySearch
             onSearchChange={handleSearchChange}
             onSearch={() =>
-              updateUrlParams(propertyFilters, agentFilters, ownerFilter, searchQuery)
+              updateUrlParams(
+                propertyFilters,
+                agentFilters,
+                ownerFilter,
+                searchQuery,
+              )
             }
           />
         </div>
         <div className="flex items-center gap-1.5">
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="relative h-8 w-8 p-0">
+              <Button
+                variant="outline"
+                size="sm"
+                className="relative h-8 w-8 p-0"
+              >
                 <User className="h-3.5 w-3.5" />
                 {agentFilters.length > 0 && (
                   <Badge
@@ -677,11 +709,15 @@ export function PropertyFilter({
 
       <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
         <CollapsibleContent className="space-y-2">
-          <div className="rounded-lg shadow-md bg-card p-2">
+          <div className="rounded-lg bg-card p-2 shadow-md">
             <div className="space-y-2">
               {/* Row 1: Location, Rooms, Price, Area */}
-              <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                <FilterCategory title="Ubicación" category="location" icon={MapPin}>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                <FilterCategory
+                  title="Ubicación"
+                  category="location"
+                  icon={MapPin}
+                >
                   <div className="pt-1">
                     <TwoLevelLocationSelect
                       cities={cities}
@@ -697,15 +733,28 @@ export function PropertyFilter({
                   </div>
                 </FilterCategory>
 
-                <FilterCategory title="Habitaciones y Baños" category="rooms" icon={Bed}>
-                  <div className="grid gap-2 grid-cols-2 pt-1">
+                <FilterCategory
+                  title="Habitaciones y Baños"
+                  category="rooms"
+                  icon={Bed}
+                >
+                  <div className="grid grid-cols-2 gap-2 pt-1">
                     <Select
                       value={propertyFilters.minBedrooms?.toString() ?? "any"}
                       onValueChange={(value) =>
-                        updateSelectFilter("minBedrooms", value === "any" ? "" : value)
+                        updateSelectFilter(
+                          "minBedrooms",
+                          value === "any" ? "" : value,
+                        )
                       }
                     >
-                      <SelectTrigger id="bedrooms" className="h-8 text-xs" isPlaceholder={propertyFilters.minBedrooms === undefined}>
+                      <SelectTrigger
+                        id="bedrooms"
+                        className="h-8 text-xs"
+                        isPlaceholder={
+                          propertyFilters.minBedrooms === undefined
+                        }
+                      >
                         <SelectValue placeholder="Hab." />
                       </SelectTrigger>
                       <SelectContent>
@@ -746,10 +795,19 @@ export function PropertyFilter({
                     <Select
                       value={propertyFilters.minBathrooms?.toString() ?? "any"}
                       onValueChange={(value) =>
-                        updateSelectFilter("minBathrooms", value === "any" ? "" : value)
+                        updateSelectFilter(
+                          "minBathrooms",
+                          value === "any" ? "" : value,
+                        )
                       }
                     >
-                      <SelectTrigger id="bathrooms" className="h-8 text-xs" isPlaceholder={propertyFilters.minBathrooms === undefined}>
+                      <SelectTrigger
+                        id="bathrooms"
+                        className="h-8 text-xs"
+                        isPlaceholder={
+                          propertyFilters.minBathrooms === undefined
+                        }
+                      >
                         <SelectValue placeholder="Baños" />
                       </SelectTrigger>
                       <SelectContent>
@@ -783,15 +841,27 @@ export function PropertyFilter({
                   </div>
                 </FilterCategory>
 
-                <FilterCategory title="Precio" category="price" icon={DollarSign}>
+                <FilterCategory
+                  title="Precio"
+                  category="price"
+                  icon={DollarSign}
+                >
                   <div className="flex items-center gap-1.5 pt-1">
                     <input
                       type="number"
                       placeholder="Min"
-                      defaultValue={isPriceSliderTouched ? priceSliderValues[0] : undefined}
+                      defaultValue={
+                        isPriceSliderTouched ? priceSliderValues[0] : undefined
+                      }
                       onBlur={(e) => {
-                        const val = e.target.value === "" ? priceRange.minPrice : parseInt(e.target.value);
-                        handlePriceSliderChange([val, priceSliderValues[1] ?? priceRange.maxPrice]);
+                        const val =
+                          e.target.value === ""
+                            ? priceRange.minPrice
+                            : parseInt(e.target.value);
+                        handlePriceSliderChange([
+                          val,
+                          priceSliderValues[1] ?? priceRange.maxPrice,
+                        ]);
                         applySliderFilters();
                       }}
                       className="h-8 w-full rounded-md border border-input bg-background px-2 text-[12px] placeholder:text-[12px] focus:outline-none focus:ring-1 focus:ring-ring"
@@ -800,10 +870,18 @@ export function PropertyFilter({
                     <input
                       type="number"
                       placeholder="Max"
-                      defaultValue={isPriceSliderTouched ? priceSliderValues[1] : undefined}
+                      defaultValue={
+                        isPriceSliderTouched ? priceSliderValues[1] : undefined
+                      }
                       onBlur={(e) => {
-                        const val = e.target.value === "" ? priceRange.maxPrice : parseInt(e.target.value);
-                        handlePriceSliderChange([priceSliderValues[0] ?? priceRange.minPrice, val]);
+                        const val =
+                          e.target.value === ""
+                            ? priceRange.maxPrice
+                            : parseInt(e.target.value);
+                        handlePriceSliderChange([
+                          priceSliderValues[0] ?? priceRange.minPrice,
+                          val,
+                        ]);
                         applySliderFilters();
                       }}
                       className="h-8 w-full rounded-md border border-input bg-background px-2 text-[12px] placeholder:text-[12px] focus:outline-none focus:ring-1 focus:ring-ring"
@@ -811,15 +889,27 @@ export function PropertyFilter({
                   </div>
                 </FilterCategory>
 
-                <FilterCategory title="Superficie (m²)" category="area" icon={Ruler}>
+                <FilterCategory
+                  title="Superficie (m²)"
+                  category="area"
+                  icon={Ruler}
+                >
                   <div className="flex items-center gap-1.5 pt-1">
                     <input
                       type="number"
                       placeholder="Min"
-                      defaultValue={isAreaSliderTouched ? areaSliderValues[0] : undefined}
+                      defaultValue={
+                        isAreaSliderTouched ? areaSliderValues[0] : undefined
+                      }
                       onBlur={(e) => {
-                        const val = e.target.value === "" ? areaRange.minArea : parseInt(e.target.value);
-                        handleAreaSliderChange([val, areaSliderValues[1] ?? areaRange.maxArea]);
+                        const val =
+                          e.target.value === ""
+                            ? areaRange.minArea
+                            : parseInt(e.target.value);
+                        handleAreaSliderChange([
+                          val,
+                          areaSliderValues[1] ?? areaRange.maxArea,
+                        ]);
                         applySliderFilters();
                       }}
                       className="h-8 w-full rounded-md border border-input bg-background px-2 text-[12px] placeholder:text-[12px] focus:outline-none focus:ring-1 focus:ring-ring"
@@ -828,10 +918,18 @@ export function PropertyFilter({
                     <input
                       type="number"
                       placeholder="Max"
-                      defaultValue={isAreaSliderTouched ? areaSliderValues[1] : undefined}
+                      defaultValue={
+                        isAreaSliderTouched ? areaSliderValues[1] : undefined
+                      }
                       onBlur={(e) => {
-                        const val = e.target.value === "" ? areaRange.maxArea : parseInt(e.target.value);
-                        handleAreaSliderChange([areaSliderValues[0] ?? areaRange.minArea, val]);
+                        const val =
+                          e.target.value === ""
+                            ? areaRange.maxArea
+                            : parseInt(e.target.value);
+                        handleAreaSliderChange([
+                          areaSliderValues[0] ?? areaRange.minArea,
+                          val,
+                        ]);
                         applySliderFilters();
                       }}
                       className="h-8 w-full rounded-md border border-input bg-background px-2 text-[12px] placeholder:text-[12px] focus:outline-none focus:ring-1 focus:ring-ring"
@@ -844,14 +942,34 @@ export function PropertyFilter({
               <div className="border-t" />
 
               {/* Row 2: Status, Type, Other & Clear Button */}
-              <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 <FilterCategory title="Estado" category="status" icon={Tag}>
                   <div className="grid grid-cols-2 gap-x-2">
-                    <FilterOption value="for-sale" label="En Venta" category="status" />
-                    <FilterOption value="for-rent" label="En Alquiler" category="status" />
-                    <FilterOption value="sold" label="Vendido" category="status" />
-                    <FilterOption value="rented" label="Alquilado" category="status" />
-                    <FilterOption value="discarded" label="Descartado" category="status" />
+                    <FilterOption
+                      value="for-sale"
+                      label="En Venta"
+                      category="status"
+                    />
+                    <FilterOption
+                      value="for-rent"
+                      label="En Alquiler"
+                      category="status"
+                    />
+                    <FilterOption
+                      value="sold"
+                      label="Vendido"
+                      category="status"
+                    />
+                    <FilterOption
+                      value="rented"
+                      label="Alquilado"
+                      category="status"
+                    />
+                    <FilterOption
+                      value="discarded"
+                      label="Descartado"
+                      category="status"
+                    />
                   </div>
                 </FilterCategory>
 
@@ -861,47 +979,67 @@ export function PropertyFilter({
                     <FilterOption value="casa" label="Casa" category="type" />
                     <FilterOption value="local" label="Local" category="type" />
                     <FilterOption value="solar" label="Solar" category="type" />
-                    <FilterOption value="garaje" label="Garaje" category="type" />
+                    <FilterOption
+                      value="garaje"
+                      label="Garaje"
+                      category="type"
+                    />
                   </div>
                 </FilterCategory>
 
                 <FilterCategory title="Otros" category="other" icon={Key}>
                   <div className="grid grid-cols-1 gap-y-0.5">
                     <div
-                      className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 hover:bg-accent transition-colors"
+                      className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 transition-colors hover:bg-accent"
                       onClick={() => toggleBooleanFilter("hasKeys")}
                     >
                       <div
                         className={`flex h-3 w-3 items-center justify-center rounded border ${
-                          propertyFilters.hasKeys === true ? "border-primary bg-primary" : "border-input"
+                          propertyFilters.hasKeys === true
+                            ? "border-primary bg-primary"
+                            : "border-input"
                         }`}
                       >
-                        {propertyFilters.hasKeys === true && <Check className="h-2 w-2 text-primary-foreground" />}
+                        {propertyFilters.hasKeys === true && (
+                          <Check className="h-2 w-2 text-primary-foreground" />
+                        )}
                       </div>
-                      <span className={`text-[12px] ${propertyFilters.hasKeys === true ? "font-medium" : ""}`}>
+                      <span
+                        className={`text-[12px] ${propertyFilters.hasKeys === true ? "font-medium" : ""}`}
+                      >
                         Con llaves
                       </span>
                     </div>
                     <div
-                      className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 hover:bg-accent transition-colors"
+                      className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 transition-colors hover:bg-accent"
                       onClick={() => toggleBooleanFilter("publishToWebsite")}
                     >
                       <div
                         className={`flex h-3 w-3 items-center justify-center rounded border ${
-                          propertyFilters.publishToWebsite === true ? "border-primary bg-primary" : "border-input"
+                          propertyFilters.publishToWebsite === true
+                            ? "border-primary bg-primary"
+                            : "border-input"
                         }`}
                       >
-                        {propertyFilters.publishToWebsite === true && <Check className="h-2 w-2 text-primary-foreground" />}
+                        {propertyFilters.publishToWebsite === true && (
+                          <Check className="h-2 w-2 text-primary-foreground" />
+                        )}
                       </div>
-                      <span className={`text-[12px] ${propertyFilters.publishToWebsite === true ? "font-medium" : ""}`}>
+                      <span
+                        className={`text-[12px] ${propertyFilters.publishToWebsite === true ? "font-medium" : ""}`}
+                      >
                         Visible en web
                       </span>
                     </div>
                   </div>
                 </FilterCategory>
 
-                <FilterCategory title="Propietario" category="owner" icon={User}>
-                  <div className="pt-1 owner-search-container relative">
+                <FilterCategory
+                  title="Propietario"
+                  category="owner"
+                  icon={User}
+                >
+                  <div className="owner-search-container relative pt-1">
                     <div className="flex items-center gap-1">
                       <input
                         ref={ownerInputRef}
@@ -928,7 +1066,7 @@ export function PropertyFilter({
                           }
                         }}
                         disabled={isSearchingOwners}
-                        className="h-8 px-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center justify-center disabled:opacity-50"
+                        className="flex h-8 items-center justify-center rounded-md bg-primary px-2 text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
                         title="Buscar"
                       >
                         <Search className="h-3 w-3" />
@@ -937,7 +1075,7 @@ export function PropertyFilter({
 
                     {/* Dropdown with search results */}
                     {showOwnerDropdown && (
-                      <div className="absolute z-50 mt-1 left-0 right-0 rounded-md border border-input bg-background shadow-lg">
+                      <div className="absolute left-0 right-0 z-50 mt-1 rounded-md border border-input bg-background shadow-lg">
                         <ScrollArea className="max-h-[200px]">
                           {isSearchingOwners ? (
                             <div className="py-3 text-center text-[12px] text-muted-foreground">
@@ -952,8 +1090,10 @@ export function PropertyFilter({
                               {ownerSearchResults.map((owner) => (
                                 <button
                                   key={owner.id}
-                                  onClick={() => handleSelectOwner(owner.id, owner.name)}
-                                  className="w-full text-left px-2 py-1.5 text-[12px] rounded hover:bg-accent transition-colors"
+                                  onClick={() =>
+                                    handleSelectOwner(owner.id, owner.name)
+                                  }
+                                  className="w-full rounded px-2 py-1.5 text-left text-[12px] transition-colors hover:bg-accent"
                                 >
                                   {owner.name}
                                 </button>
@@ -966,12 +1106,14 @@ export function PropertyFilter({
 
                     {ownerFilter && (
                       <div className="mt-1 flex items-center gap-1">
-                        <span className="text-[10px] text-muted-foreground">Filtrado por:</span>
-                        <Badge variant="secondary" className="text-[10px] h-5">
+                        <span className="text-[10px] text-muted-foreground">
+                          Filtrado por:
+                        </span>
+                        <Badge variant="secondary" className="h-5 text-[10px]">
                           {ownerDisplayName}
                           <button
                             onClick={clearOwnerFilter}
-                            className="ml-1 hover:bg-accent rounded-full"
+                            className="ml-1 rounded-full hover:bg-accent"
                           >
                             <X className="h-2.5 w-2.5" />
                           </button>
@@ -991,7 +1133,7 @@ export function PropertyFilter({
                 variant="ghost"
                 size="sm"
                 onClick={clearPropertyFilters}
-                className="h-auto py-1 px-2 text-[12px]"
+                className="h-auto px-2 py-1 text-[12px]"
               >
                 <FilterX className="mr-1 h-3 w-3" />
                 Borrar filtros

@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,7 +24,10 @@ import { Input } from "~/components/ui/input";
 import { Switch } from "~/components/ui/switch";
 import { Button } from "~/components/ui/button";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { getAccountDetailsAction, getCurrentUserAccountId } from "~/app/actions/account-settings";
+import {
+  getAccountDetailsAction,
+  getCurrentUserAccountId,
+} from "~/app/actions/account-settings";
 import { useSession } from "~/lib/auth-client";
 
 const termsSchema = z.object({
@@ -82,7 +83,7 @@ export function TermsModal({ isOpen, onClose, onContinue }: TermsModalProps) {
       }
 
       const accountResult = await getAccountDetailsAction(userAccountId);
-      
+
       if (accountResult.success && accountResult.data?.terms) {
         const terms = accountResult.data.terms;
         form.reset({
@@ -115,7 +116,7 @@ export function TermsModal({ isOpen, onClose, onContinue }: TermsModalProps) {
     console.log("Modal onSubmit called with data:", data);
     setIsGenerating(true);
     setError(null);
-    
+
     try {
       // Generate contract with the selected terms (keep modal open with animation)
       onContinue(data);
@@ -130,7 +131,7 @@ export function TermsModal({ isOpen, onClose, onContinue }: TermsModalProps) {
   };
 
   console.log("TermsModal render - isOpen:", isOpen);
-  
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
@@ -147,17 +148,19 @@ export function TermsModal({ isOpen, onClose, onContinue }: TermsModalProps) {
         {isLoadingTerms ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin" />
-            <span className="ml-2 text-sm text-gray-600">Cargando términos...</span>
+            <span className="ml-2 text-sm text-gray-600">
+              Cargando términos...
+            </span>
           </div>
         ) : isGenerating ? (
           <div className="flex flex-col items-center justify-center py-16">
             {/* Icon container with animation like the old button */}
-            <div className="mb-4 mx-auto rounded-full flex items-center justify-center w-16 h-16 bg-gradient-to-r from-amber-400 to-rose-400 transition-all duration-700 ease-in-out">
-              <FileText className="h-8 w-8 text-white scale-110 transition-all duration-700 ease-in-out" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-amber-400 to-rose-400 transition-all duration-700 ease-in-out">
+              <FileText className="h-8 w-8 scale-110 text-white transition-all duration-700 ease-in-out" />
             </div>
-            
+
             {/* Loading state with spinner */}
-            <div className="flex items-center justify-center gap-2 text-gray-600 transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-bottom-2">
+            <div className="animate-in fade-in slide-in-from-bottom-2 flex items-center justify-center gap-2 text-gray-600 transition-all duration-300 ease-in-out">
               <Loader2 className="h-4 w-4 animate-spin" />
               <span className="text-sm">Generando documento...</span>
             </div>
@@ -167,178 +170,180 @@ export function TermsModal({ isOpen, onClose, onContinue }: TermsModalProps) {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <ScrollArea className="h-[400px]">
                 <div className="space-y-4 pr-4">
-              <FormField
-                control={form.control}
-                name="commission"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Comisión (%)</FormLabel>
-                    <FormDescription>
-                      Porcentaje de comisión sobre el precio de venta
-                    </FormDescription>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        value={field.value || 0}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={form.control}
+                    name="commission"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Comisión (%)</FormLabel>
+                        <FormDescription>
+                          Porcentaje de comisión sobre el precio de venta
+                        </FormDescription>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.1"
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(parseFloat(e.target.value) || 0)
+                            }
+                            value={field.value || 0}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="min_commission"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Comisión mínima (€)</FormLabel>
-                    <FormDescription>
-                      Comisión mínima garantizada
-                    </FormDescription>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="100"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                        value={field.value || 0}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={form.control}
+                    name="min_commission"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Comisión mínima (€)</FormLabel>
+                        <FormDescription>
+                          Comisión mínima garantizada
+                        </FormDescription>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="100"
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(parseInt(e.target.value) || 0)
+                            }
+                            value={field.value || 0}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="duration"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Duración (meses)</FormLabel>
-                    <FormDescription>
-                      Duración del contrato en meses
-                    </FormDescription>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="1"
-                        step="1"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 12)}
-                        value={field.value || 12}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={form.control}
+                    name="duration"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Duración (meses)</FormLabel>
+                        <FormDescription>
+                          Duración del contrato en meses
+                        </FormDescription>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="1"
+                            step="1"
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(parseInt(e.target.value) || 12)
+                            }
+                            value={field.value || 12}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="exclusivity"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel>Exclusividad</FormLabel>
-                      <FormDescription>
-                        Contrato de exclusividad
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={form.control}
+                    name="exclusivity"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                        <div className="space-y-0.5">
+                          <FormLabel>Exclusividad</FormLabel>
+                          <FormDescription>
+                            Contrato de exclusividad
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="communications"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel>Comunicaciones</FormLabel>
-                      <FormDescription>
-                        Autorizar comunicaciones comerciales
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={form.control}
+                    name="communications"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                        <div className="space-y-0.5">
+                          <FormLabel>Comunicaciones</FormLabel>
+                          <FormDescription>
+                            Autorizar comunicaciones comerciales
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="allowSignage"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel>Colocación de cartel</FormLabel>
-                      <FormDescription>
-                        Autorizar la colocación de cartel publicitario
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={form.control}
+                    name="allowSignage"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                        <div className="space-y-0.5">
+                          <FormLabel>Colocación de cartel</FormLabel>
+                          <FormDescription>
+                            Autorizar la colocación de cartel publicitario
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="allowVisits"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel>Autorización para visitas</FormLabel>
-                      <FormDescription>
-                        Autorizar visitas de posibles compradores
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={form.control}
+                    name="allowVisits"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                        <div className="space-y-0.5">
+                          <FormLabel>Autorización para visitas</FormLabel>
+                          <FormDescription>
+                            Autorizar visitas de posibles compradores
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </ScrollArea>
 
               {error && (
-                <div className="text-red-600 text-sm p-3 bg-red-50 rounded-lg">
+                <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
                   {error}
                 </div>
               )}
 
               {!isGenerating && (
                 <DialogFooter>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onClose}
-                  >
+                  <Button type="button" variant="outline" onClick={onClose}>
                     Cancelar
                   </Button>
                   <Button

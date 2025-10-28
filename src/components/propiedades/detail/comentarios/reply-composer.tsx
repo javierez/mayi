@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
@@ -24,7 +23,7 @@ export function ReplyComposer({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!content.trim()) {
       return;
     }
@@ -44,7 +43,7 @@ export function ReplyComposer({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <div className="border rounded-lg p-3 bg-background">
+      <div className="rounded-lg border bg-background p-3">
         <Textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -54,14 +53,16 @@ export function ReplyComposer({
           disabled={isSubmitting}
           autoFocus
         />
-        
-        <div className="flex items-center justify-between mt-3 pt-3 border-t">
-          <span className={`text-xs ${
-            remainingChars < 20 ? "text-destructive" : "text-muted-foreground"
-          }`}>
+
+        <div className="mt-3 flex items-center justify-between border-t pt-3">
+          <span
+            className={`text-xs ${
+              remainingChars < 20 ? "text-destructive" : "text-muted-foreground"
+            }`}
+          >
             {remainingChars}
           </span>
-          
+
           <div className="flex items-center space-x-2">
             <Button
               type="button"
@@ -70,16 +71,16 @@ export function ReplyComposer({
               onClick={onCancel}
               disabled={isSubmitting}
             >
-              <X className="h-4 w-4 mr-1" />
+              <X className="mr-1 h-4 w-4" />
               Cancelar
             </Button>
-            
-            <Button 
+
+            <Button
               type="submit"
               size="sm"
               disabled={!content.trim() || isSubmitting || remainingChars < 0}
             >
-              <Send className="h-4 w-4 mr-1" />
+              <Send className="mr-1 h-4 w-4" />
               {isSubmitting ? "Enviando..." : "Responder"}
             </Button>
           </div>

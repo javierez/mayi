@@ -32,13 +32,13 @@ export interface AddressAutoCompleteResult {
 export async function autoCompleteAddress(
   street: string,
   city?: string,
-  country = "España"
+  country = "España",
 ): Promise<AddressAutoCompleteResult> {
   try {
     if (!street || street.trim() === "") {
-      return { 
-        success: false, 
-        error: "Street address is required" 
+      return {
+        success: false,
+        error: "Street address is required",
       };
     }
 
@@ -54,7 +54,7 @@ export async function autoCompleteAddress(
 
     // Query Nominatim for address details
     const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-      fullAddress
+      fullAddress,
     )}&limit=1&countrycodes=es&addressdetails=1`;
 
     const response = await fetch(nominatimUrl);
@@ -62,17 +62,17 @@ export async function autoCompleteAddress(
 
     if (!nominatimResults || nominatimResults.length === 0) {
       console.warn(`⚠️ [ADDRESS] No results found for: ${fullAddress}`);
-      return { 
-        success: false, 
-        error: "Address not found" 
+      return {
+        success: false,
+        error: "Address not found",
       };
     }
 
     const result = nominatimResults[0];
     if (!result?.address) {
-      return { 
-        success: false, 
-        error: "Invalid address data" 
+      return {
+        success: false,
+        error: "Invalid address data",
       };
     }
 
@@ -81,7 +81,9 @@ export async function autoCompleteAddress(
     console.log(`   └─ City: ${result.address.city ?? result.address.town}`);
     console.log(`   └─ State: ${result.address.state}`);
     console.log(`   └─ Postcode: ${result.address.postcode}`);
-    console.log(`   └─ Suburb: ${result.address.suburb ?? result.address.quarter}`);
+    console.log(
+      `   └─ Suburb: ${result.address.suburb ?? result.address.quarter}`,
+    );
 
     // Build enriched address data
     const enrichedData: AddressAutoCompleteResult = {
@@ -91,8 +93,9 @@ export async function autoCompleteAddress(
       city: result.address.city ?? result.address.town ?? city,
       province: result.address.state ?? undefined,
       municipality: result.address.city ?? result.address.town ?? city,
-      neighborhood: result.address.suburb ?? result.address.quarter ?? undefined,
-      success: true
+      neighborhood:
+        result.address.suburb ?? result.address.quarter ?? undefined,
+      success: true,
     };
 
     // Add coordinates if available
@@ -103,12 +106,11 @@ export async function autoCompleteAddress(
     }
 
     return enrichedData;
-
   } catch (error) {
     console.error(`❌ [ADDRESS] Error auto-completing address:`, error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }

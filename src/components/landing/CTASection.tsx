@@ -71,7 +71,11 @@ export function CTASection() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Button type="submit" variant="secondary" className="flex-none w-full sm:w-auto">
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    className="w-full flex-none sm:w-auto"
+                  >
                     Comenzar
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -148,15 +152,15 @@ export function CTASection() {
               hidden: { opacity: 0 },
               visible: {
                 opacity: 1,
-                transition: { staggerChildren: 0.2, delayChildren: 0.8 }
-              }
+                transition: { staggerChildren: 0.2, delayChildren: 0.8 },
+              },
             }}
           >
             <motion.div
               className="text-center"
               variants={{
                 hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
               }}
             >
               <AnimatedCounter
@@ -172,7 +176,7 @@ export function CTASection() {
               className="text-center"
               variants={{
                 hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
               }}
             >
               <AnimatedCounter
@@ -188,7 +192,7 @@ export function CTASection() {
               className="text-center"
               variants={{
                 hidden: { opacity: 0, y: 20 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+                visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
               }}
             >
               <div className="text-2xl font-bold text-white">24/7</div>
@@ -209,29 +213,33 @@ export function CTASection() {
             hidden: { opacity: 0 },
             visible: {
               opacity: 1,
-              transition: { staggerChildren: 0.1, delayChildren: 1.2 }
-            }
+              transition: { staggerChildren: 0.1, delayChildren: 1.2 },
+            },
           }}
         >
           {[
             "Publica en todos los portales con un solo clic",
             "Convierte más leads con seguimiento inteligente",
             "Ahorra tiempo con descripciones generadas por IA",
-            "Mantén toda tu información en un solo lugar"
+            "Mantén toda tu información en un solo lugar",
           ].map((text, index) => (
             <motion.div
               key={index}
               className="flex items-start gap-3 text-sm text-primary-foreground/90"
               variants={{
                 hidden: { opacity: 0, x: -20 },
-                visible: { opacity: 1, x: 0, transition: { duration: 0.5 } }
+                visible: { opacity: 1, x: 0, transition: { duration: 0.5 } },
               }}
             >
               <motion.div
                 initial={{ scale: 0 }}
                 whileInView={{ scale: 1 }}
                 viewport={{ once: true }}
-                transition={{ delay: 1.2 + index * 0.1 + 0.2, type: "spring", stiffness: 200 }}
+                transition={{
+                  delay: 1.2 + index * 0.1 + 0.2,
+                  type: "spring",
+                  stiffness: 200,
+                }}
               >
                 <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-300" />
               </motion.div>

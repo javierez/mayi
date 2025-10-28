@@ -14,13 +14,13 @@ import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.
  */
 export function navigateToPage(url: string, router: AppRouterInstance): void {
   // Check if running as PWA (standalone mode)
-  const isPWA = window.matchMedia('(display-mode: standalone)').matches;
+  const isPWA = window.matchMedia("(display-mode: standalone)").matches;
 
   if (isPWA) {
     // In PWA mode, navigate in same window
     router.push(url);
   } else {
     // In browser mode, open new tab
-    window.open(url, '_blank');
+    window.open(url, "_blank");
   }
 }

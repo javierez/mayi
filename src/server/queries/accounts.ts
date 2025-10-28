@@ -32,33 +32,36 @@ export async function createAccount(data: {
   isActive?: boolean | null;
 }) {
   try {
-    const [result] = await db.insert(accounts).values({
-      name: data.name,
-      shortName: data.shortName ?? null,
-      legalName: data.legalName ?? null,
-      logo: data.logo ?? null,
-      email: data.email ?? null,
-      phone: data.phone ?? null,
-      website: data.website ?? null,
-      address: data.address ?? null,
-      accountType: data.accountType ?? "company",
-      taxId: data.taxId ?? null,
-      registryDetails: data.registryDetails ?? null,
-      legalEmail: data.legalEmail ?? null,
-      jurisdiction: data.jurisdiction ?? null,
-      privacyEmail: data.privacyEmail ?? null,
-      dpoEmail: data.dpoEmail ?? null,
-      portalSettings: data.portalSettings ?? {},
-      paymentSettings: data.paymentSettings ?? {},
-      preferences: data.preferences ?? {},
-      plan: data.plan ?? "basic",
-      subscriptionType: data.subscriptionType ?? null,
-      subscriptionStatus: data.subscriptionStatus ?? "active",
-      subscriptionStartDate: data.subscriptionStartDate ?? null,
-      subscriptionEndDate: data.subscriptionEndDate ?? null,
-      status: data.status ?? "active",
-      isActive: data.isActive ?? true,
-    }).$returningId();
+    const [result] = await db
+      .insert(accounts)
+      .values({
+        name: data.name,
+        shortName: data.shortName ?? null,
+        legalName: data.legalName ?? null,
+        logo: data.logo ?? null,
+        email: data.email ?? null,
+        phone: data.phone ?? null,
+        website: data.website ?? null,
+        address: data.address ?? null,
+        accountType: data.accountType ?? "company",
+        taxId: data.taxId ?? null,
+        registryDetails: data.registryDetails ?? null,
+        legalEmail: data.legalEmail ?? null,
+        jurisdiction: data.jurisdiction ?? null,
+        privacyEmail: data.privacyEmail ?? null,
+        dpoEmail: data.dpoEmail ?? null,
+        portalSettings: data.portalSettings ?? {},
+        paymentSettings: data.paymentSettings ?? {},
+        preferences: data.preferences ?? {},
+        plan: data.plan ?? "basic",
+        subscriptionType: data.subscriptionType ?? null,
+        subscriptionStatus: data.subscriptionStatus ?? "active",
+        subscriptionStartDate: data.subscriptionStartDate ?? null,
+        subscriptionEndDate: data.subscriptionEndDate ?? null,
+        status: data.status ?? "active",
+        isActive: data.isActive ?? true,
+      })
+      .$returningId();
 
     if (!result) {
       throw new Error("Failed to create account");
@@ -68,7 +71,11 @@ export async function createAccount(data: {
     await initializeAccountRoles(BigInt(result.accountId));
 
     console.log(`✅ Created account ${result.accountId} with default roles`);
-    return { success: true, message: "Account created successfully", accountId: result.accountId };
+    return {
+      success: true,
+      message: "Account created successfully",
+      accountId: result.accountId,
+    };
   } catch (error) {
     console.error("Error creating account:", error);
     throw error;
@@ -435,10 +442,12 @@ export async function updateAccountPreferences(
 }
 
 // Get account transparent logo URL
-export async function getAccountTransparentLogo(accountId: number | bigint): Promise<string | null> {
+export async function getAccountTransparentLogo(
+  accountId: number | bigint,
+): Promise<string | null> {
   try {
     const account = await getAccountById(accountId);
-    
+
     if (!account) {
       console.warn(`Account not found for ID: ${accountId}`);
       return null;
@@ -447,7 +456,7 @@ export async function getAccountTransparentLogo(accountId: number | bigint): Pro
     // Extract transparent logo URL from preferences
     const preferences = (account.preferences as Record<string, unknown>) ?? {};
     const logoTransparent = preferences.logoTransparent as string | null;
-    
+
     console.log("Retrieved transparent logo for account:", {
       accountId: accountId.toString(),
       hasLogo: !!logoTransparent,
@@ -488,25 +497,28 @@ export async function getAccountColorPalette(accountId: number | bigint) {
 }
 
 // Get Fotocasa API key from account portal settings
-export async function getAccountFotocasaApiKey(accountId: number | bigint): Promise<string | null> {
+export async function getAccountFotocasaApiKey(
+  accountId: number | bigint,
+): Promise<string | null> {
   try {
     const account = await getAccountById(accountId);
-    
+
     if (!account) {
       console.warn(`Account not found for ID: ${accountId}`);
       return null;
     }
 
     // Extract API key from portal settings
-    const portalSettings = (account.portalSettings as Record<string, unknown>) ?? {};
+    const portalSettings =
+      (account.portalSettings as Record<string, unknown>) ?? {};
     const fotocasa = (portalSettings.fotocasa as Record<string, unknown>) ?? {};
     const apiKey = fotocasa.api_key as string | undefined;
-    
+
     if (!apiKey) {
       console.warn(`No Fotocasa API key found for account: ${accountId}`);
       return null;
     }
-    
+
     console.log("Retrieved Fotocasa API key for account:", {
       accountId: accountId.toString(),
       hasApiKey: true,
@@ -520,25 +532,29 @@ export async function getAccountFotocasaApiKey(accountId: number | bigint): Prom
 }
 
 // Get Idealista API key from account portal settings
-export async function getAccountIdealistaApiKey(accountId: number | bigint): Promise<string | null> {
+export async function getAccountIdealistaApiKey(
+  accountId: number | bigint,
+): Promise<string | null> {
   try {
     const account = await getAccountById(accountId);
-    
+
     if (!account) {
       console.warn(`Account not found for ID: ${accountId}`);
       return null;
     }
 
     // Extract API key from portal settings
-    const portalSettings = (account.portalSettings as Record<string, unknown>) ?? {};
-    const idealista = (portalSettings.idealista as Record<string, unknown>) ?? {};
+    const portalSettings =
+      (account.portalSettings as Record<string, unknown>) ?? {};
+    const idealista =
+      (portalSettings.idealista as Record<string, unknown>) ?? {};
     const apiKey = idealista.api_key as string | undefined;
-    
+
     if (!apiKey) {
       console.warn(`No Idealista API key found for account: ${accountId}`);
       return null;
     }
-    
+
     console.log("Retrieved Idealista API key for account:", {
       accountId: accountId.toString(),
       hasApiKey: true,
@@ -552,19 +568,22 @@ export async function getAccountIdealistaApiKey(accountId: number | bigint): Pro
 }
 
 // Get account onboarding status
-export async function getAccountOnboardingStatus(accountId: number | bigint): Promise<boolean> {
+export async function getAccountOnboardingStatus(
+  accountId: number | bigint,
+): Promise<boolean> {
   try {
     const account = await getAccountById(accountId);
-    
+
     if (!account) {
       console.warn(`Account not found for ID: ${accountId}`);
       return false;
     }
 
     // Extract onboarding data from account
-    const onboardingData = (account.onboardingData as Record<string, unknown>) ?? {};
+    const onboardingData =
+      (account.onboardingData as Record<string, unknown>) ?? {};
     const completed = Boolean(onboardingData.completed);
-    
+
     console.log("Retrieved onboarding status for account:", {
       accountId: accountId.toString(),
       completed,

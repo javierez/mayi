@@ -30,7 +30,7 @@ export async function transcribeAudio(
     language?: string;
     prompt?: string;
     temperature?: number;
-  } = {}
+  } = {},
 ): Promise<TranscriptionResult> {
   try {
     console.log(`🎤 [TRANSCRIPTION] Starting transcription for: ${audioUrl}`);
@@ -38,30 +38,37 @@ export async function transcribeAudio(
     // Fetch the audio file from S3
     const audioResponse = await fetch(audioUrl);
     if (!audioResponse.ok) {
-      throw new Error(`Failed to fetch audio from S3: ${audioResponse.statusText}`);
+      throw new Error(
+        `Failed to fetch audio from S3: ${audioResponse.statusText}`,
+      );
     }
 
     const audioBuffer = await audioResponse.arrayBuffer();
-    const audioFile = new File([audioBuffer], "recording.webm", { type: "audio/webm" });
+    const audioFile = new File([audioBuffer], "recording.webm", {
+      type: "audio/webm",
+    });
 
     // Configure transcription with Spanish real estate context
-    const transcriptionOptions: OpenAI.Audio.Transcriptions.TranscriptionCreateParams = {
-      file: audioFile,
-      model: "whisper-1",
-      language: options.language ?? "es", // Spanish by default
-      response_format: "verbose_json", // Get detailed response with timestamps
-      temperature: options.temperature ?? 0.1, // Low temperature for accuracy
-      // Provide context prompt for better Spanish real estate terminology recognition
-      prompt: options.prompt ?? 
-        "Esta es una descripción de una propiedad inmobiliaria en español. " +
-        "Incluye información sobre: precio, ubicación, metros cuadrados, habitaciones, baños, " +
-        "características como ascensor, garaje, trastero, orientación, estado de conservación, " +
-        "calefacción, aire acondicionado, terraza, jardín, piscina, y otros detalles de la vivienda."
-    };
+    const transcriptionOptions: OpenAI.Audio.Transcriptions.TranscriptionCreateParams =
+      {
+        file: audioFile,
+        model: "whisper-1",
+        language: options.language ?? "es", // Spanish by default
+        response_format: "verbose_json", // Get detailed response with timestamps
+        temperature: options.temperature ?? 0.1, // Low temperature for accuracy
+        // Provide context prompt for better Spanish real estate terminology recognition
+        prompt:
+          options.prompt ??
+          "Esta es una descripción de una propiedad inmobiliaria en español. " +
+            "Incluye información sobre: precio, ubicación, metros cuadrados, habitaciones, baños, " +
+            "características como ascensor, garaje, trastero, orientación, estado de conservación, " +
+            "calefacción, aire acondicionado, terraza, jardín, piscina, y otros detalles de la vivienda.",
+      };
 
     console.log(`🎤 [TRANSCRIPTION] Calling OpenAI Whisper API...`);
 
-    const transcription = await openai.audio.transcriptions.create(transcriptionOptions);
+    const transcription =
+      await openai.audio.transcriptions.create(transcriptionOptions);
 
     // Extract the main transcript text
     const transcript = transcription.text ?? "";
@@ -80,23 +87,30 @@ export async function transcribeAudio(
     };
     if (transcriptionAny.segments && Array.isArray(transcriptionAny.segments)) {
       const segmentConfidences = transcriptionAny.segments
-        .map((seg) => seg.avg_logprob ? Math.exp(seg.avg_logprob) * 100 : 85)
+        .map((seg) => (seg.avg_logprob ? Math.exp(seg.avg_logprob) * 100 : 85))
         .filter((conf: number) => conf > 0);
-      
+
       if (segmentConfidences.length > 0) {
-        confidence = segmentConfidences.reduce((sum: number, conf: number) => sum + conf, 0) / segmentConfidences.length;
+        confidence =
+          segmentConfidences.reduce(
+            (sum: number, conf: number) => sum + conf,
+            0,
+          ) / segmentConfidences.length;
       }
     }
 
     // Extract segments for detailed analysis if available
-    const segments = transcriptionAny.segments && Array.isArray(transcriptionAny.segments)
-      ? transcriptionAny.segments.map((seg) => ({
-          text: seg.text ?? "",
-          start: seg.start ?? 0,
-          end: seg.end ?? 0,
-          confidence: seg.avg_logprob ? Math.exp(seg.avg_logprob) * 100 : undefined,
-        }))
-      : undefined;
+    const segments =
+      transcriptionAny.segments && Array.isArray(transcriptionAny.segments)
+        ? transcriptionAny.segments.map((seg) => ({
+            text: seg.text ?? "",
+            start: seg.start ?? 0,
+            end: seg.end ?? 0,
+            confidence: seg.avg_logprob
+              ? Math.exp(seg.avg_logprob) * 100
+              : undefined,
+          }))
+        : undefined;
 
     const result: TranscriptionResult = {
       transcript: transcript.trim(),
@@ -110,9 +124,9 @@ export async function transcribeAudio(
     console.log(`   - Text length: ${result.transcript.length} characters`);
     console.log(`   - Confidence: ${result.confidence}%`);
     console.log(`   - Language: ${result.language}`);
-    console.log(`   - Duration: ${result.duration ?? 'unknown'}s`);
+    console.log(`   - Duration: ${result.duration ?? "unknown"}s`);
     console.log(`   - Segments: ${result.segments?.length ?? 0}`);
-    
+
     // Log the full transcript
     console.log(`\n📝 [TRANSCRIPTION] Full transcript:`);
     console.log(`=====================================`);
@@ -121,13 +135,16 @@ export async function transcribeAudio(
 
     // Validate transcript quality
     if (!result.transcript || result.transcript.length < 10) {
-      console.warn(`⚠️ [TRANSCRIPTION] Transcripción muy corta: ${result.transcript.length} caracteres`);
+      console.warn(
+        `⚠️ [TRANSCRIPTION] Transcripción muy corta: ${result.transcript.length} caracteres`,
+      );
       // Devolver resultado con transcripción vacía pero con indicador de error
       return {
         ...result,
         transcript: "", // Transcripción vacía para indicar que no hay contenido válido
         confidence: 0,
-        error: "Transcripción muy corta o vacía. Por favor, graba de nuevo con más claridad."
+        error:
+          "Transcripción muy corta o vacía. Por favor, graba de nuevo con más claridad.",
       } as TranscriptionResult & { error?: string };
     }
 
@@ -136,29 +153,31 @@ export async function transcribeAudio(
     }
 
     return result;
-
   } catch (error) {
     console.error("❌ [TRANSCRIPTION] Error al transcribir audio:", error);
-    
-    let errorMessage = "Error al transcribir el audio. Por favor, intenta de nuevo.";
-    
+
+    let errorMessage =
+      "Error al transcribir el audio. Por favor, intenta de nuevo.";
+
     if (error instanceof Error) {
       // Mensajes de error amigables en español
       if (error.message.includes("fetch")) {
-        errorMessage = "Error al descargar el audio. Por favor, intenta de nuevo.";
+        errorMessage =
+          "Error al descargar el audio. Por favor, intenta de nuevo.";
       } else if (error.message.includes("audio")) {
         errorMessage = "Formato de audio no válido. Por favor, graba de nuevo.";
       } else if (error.message.includes("API")) {
-        errorMessage = "Error del servicio de transcripción. Por favor, intenta más tarde.";
+        errorMessage =
+          "Error del servicio de transcripción. Por favor, intenta más tarde.";
       }
     }
-    
+
     // Devolver resultado con error en lugar de lanzar excepción
     return {
       transcript: "",
       confidence: 0,
       language: "es",
-      error: errorMessage
+      error: errorMessage,
     } as TranscriptionResult & { error?: string };
   }
 }
@@ -168,12 +187,14 @@ export async function transcribeAudio(
  */
 export async function transcribeRealEstateAudio(
   audioUrl: string,
-  referenceNumber?: string
+  referenceNumber?: string,
 ): Promise<TranscriptionResult> {
-  console.log(`🏠 [REAL-ESTATE-TRANSCRIPTION] Starting real estate transcription for ref: ${referenceNumber}`);
+  console.log(
+    `🏠 [REAL-ESTATE-TRANSCRIPTION] Starting real estate transcription for ref: ${referenceNumber}`,
+  );
 
   // Use specialized prompt for real estate
-  const realEstatePrompt = 
+  const realEstatePrompt =
     "Transcripción de una descripción detallada de una propiedad inmobiliaria en España. " +
     "La descripción puede incluir: precio en euros, dirección completa, metros cuadrados (m² o m2), " +
     "número de dormitorios y baños, plantas del edificio, características como ascensor, " +
@@ -189,7 +210,7 @@ export async function transcribeRealEstateAudio(
 
   // Post-process the transcript for real estate specifics
   const enhancedTranscript = postProcessRealEstateTranscript(result.transcript);
-  
+
   // Log the enhanced transcript if it's different
   if (enhancedTranscript !== result.transcript) {
     console.log(`\n🏠 [REAL-ESTATE-TRANSCRIPTION] Post-processed transcript:`);
@@ -197,7 +218,7 @@ export async function transcribeRealEstateAudio(
     console.log(enhancedTranscript);
     console.log(`=====================================\n`);
   }
-  
+
   return {
     ...result,
     transcript: enhancedTranscript,
@@ -215,42 +236,42 @@ function postProcessRealEstateTranscript(transcript: string): string {
     // Numbers and measurements
     "metros cuadrados": "m²",
     "metro cuadrado": "m²",
-    "metros": "m²",
-    "m2": "m²",
+    metros: "m²",
+    m2: "m²",
     "m 2": "m²",
-    
+
     // Property types
-    "apartamento": "piso",
-    "flat": "piso",
-    "department": "piso",
-    
+    apartamento: "piso",
+    flat: "piso",
+    department: "piso",
+
     // Features
-    "parking": "garaje",
-    "aparcamiento": "garaje",
-    "cochera": "garaje",
+    parking: "garaje",
+    aparcamiento: "garaje",
+    cochera: "garaje",
     "plaza de garaje": "garaje",
-    
+
     // Rooms
-    "cuartos": "habitaciones",
-    "dormitorios": "habitaciones",
-    "dorm": "habitaciones",
-    "hab": "habitaciones",
-    
-    "aseos": "baños",
-    "servicios": "baños",
-    "wc": "baños",
-    
+    cuartos: "habitaciones",
+    dormitorios: "habitaciones",
+    dorm: "habitaciones",
+    hab: "habitaciones",
+
+    aseos: "baños",
+    servicios: "baños",
+    wc: "baños",
+
     // Features
     "aire acondicionado": "aire acondicionado",
     "a/c": "aire acondicionado",
-    "aa": "aire acondicionado",
-    
+    aa: "aire acondicionado",
+
     // Conditions
     "buen estado": "buen estado",
     "buena conservación": "buen estado",
     "para reformar": "a reformar",
     "necesita reforma": "a reformar",
-    
+
     // Orientations
     "hacia el norte": "orientación norte",
     "hacia el sur": "orientación sur",
@@ -265,11 +286,20 @@ function postProcessRealEstateTranscript(transcript: string): string {
   }
 
   // Standardize euro amounts
-  processed = processed.replace(/(\d+(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*euros?/gi, "$1€");
-  processed = processed.replace(/(\d+(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*eur/gi, "$1€");
+  processed = processed.replace(
+    /(\d+(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*euros?/gi,
+    "$1€",
+  );
+  processed = processed.replace(
+    /(\d+(?:[.,]\d{3})*(?:[.,]\d{2})?)\s*eur/gi,
+    "$1€",
+  );
 
   // Standardize square meters
-  processed = processed.replace(/(\d+(?:[.,]\d+)?)\s*metros?\s*cuadrados?/gi, "$1 m²");
+  processed = processed.replace(
+    /(\d+(?:[.,]\d+)?)\s*metros?\s*cuadrados?/gi,
+    "$1 m²",
+  );
   processed = processed.replace(/(\d+(?:[.,]\d+)?)\s*m2/gi, "$1 m²");
 
   // Clean up extra spaces

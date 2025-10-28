@@ -94,7 +94,9 @@ export function PortalConfiguration() {
         }
 
         setAccountId(BigInt(userAccountId));
-        const result = await getPortalConfigurationAction(BigInt(userAccountId));
+        const result = await getPortalConfigurationAction(
+          BigInt(userAccountId),
+        );
 
         if (result.success && result.data) {
           form.reset(result.data);

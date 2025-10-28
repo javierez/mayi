@@ -63,7 +63,12 @@ export default function ProspectsPage() {
   const [currentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState<string | null>(null);
-  const prefetchCacheRef = useRef<Map<number, { prospects: ProspectWithContact[], listings: ListingWithDetails[] }>>(new Map());
+  const prefetchCacheRef = useRef<
+    Map<
+      number,
+      { prospects: ProspectWithContact[]; listings: ListingWithDetails[] }
+    >
+  >(new Map());
 
   const view = (searchParams.get("view") ?? "list") as "kanban" | "list";
 
@@ -149,7 +154,7 @@ export default function ProspectsPage() {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", newPage.toString());
     router.push(`/operaciones/prospects?${params.toString()}`);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleViewChange = () => {

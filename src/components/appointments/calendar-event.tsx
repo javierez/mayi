@@ -94,11 +94,11 @@ export default function CalendarEvent({
   };
 
   const statusConfig = statusColors[event.status] || statusColors.Scheduled;
-  
+
   // Apply visual indicators for optimistic events
   const isOptimisticEvent = event.isOptimistic ?? false;
-  const optimisticStyles = isOptimisticEvent 
-    ? "opacity-75 ring-1 ring-blue-400 ring-opacity-50 animate-pulse" 
+  const optimisticStyles = isOptimisticEvent
+    ? "opacity-75 ring-1 ring-blue-400 ring-opacity-50 animate-pulse"
     : "";
 
   const formatTime = (date: Date) => {
@@ -135,12 +135,18 @@ export default function CalendarEvent({
   // Get the base color for fading travel blocks
   const getBaseColor = () => {
     switch (event.type) {
-      case 'Visita': return '59, 130, 246'; // blue-500 RGB
-      case 'Reunión': return '147, 51, 234'; // purple-500 RGB
-      case 'Firma': return '34, 197, 94'; // green-500 RGB
-      case 'Cierre': return '234, 179, 8'; // yellow-500 RGB
-      case 'Viaje': return '16, 185, 129'; // emerald-500 RGB
-      default: return '107, 114, 128'; // gray-500 RGB
+      case "Visita":
+        return "59, 130, 246"; // blue-500 RGB
+      case "Reunión":
+        return "147, 51, 234"; // purple-500 RGB
+      case "Firma":
+        return "34, 197, 94"; // green-500 RGB
+      case "Cierre":
+        return "234, 179, 8"; // yellow-500 RGB
+      case "Viaje":
+        return "16, 185, 129"; // emerald-500 RGB
+      default:
+        return "107, 114, 128"; // gray-500 RGB
     }
   };
   const baseColorRGB = getBaseColor();
@@ -150,7 +156,7 @@ export default function CalendarEvent({
       {/* Travel Time Block - positioned above appointment */}
       {travelTimeHeight > 0 && event.status !== "Cancelled" && (
         <div
-          className="absolute left-0.5 right-0.5 pointer-events-none rounded-t-lg backdrop-blur-sm"
+          className="pointer-events-none absolute left-0.5 right-0.5 rounded-t-lg backdrop-blur-sm"
           style={{
             top: `${parseInt(style.top) - travelTimeHeight}px`,
             height: `${travelTimeHeight}px`,
@@ -162,17 +168,20 @@ export default function CalendarEvent({
         >
           {/* Subtle travel indicator */}
           {travelTimeHeight >= 12 && (
-            <div className="absolute top-1 right-2">
-              <Car className="h-2.5 w-2.5" style={{ color: `rgba(${baseColorRGB}, 0.5)` }} />
+            <div className="absolute right-2 top-1">
+              <Car
+                className="h-2.5 w-2.5"
+                style={{ color: `rgba(${baseColorRGB}, 0.5)` }}
+              />
             </div>
           )}
         </div>
       )}
-      
+
       {/* Main Appointment Block */}
       <div
         className={cn(
-          "calendar-event absolute left-0.5 right-0.5 cursor-pointer overflow-hidden px-2 py-1 transition-all duration-200 hover:ring-2 hover:ring-black hover:ring-offset-1 shadow-sm",
+          "calendar-event absolute left-0.5 right-0.5 cursor-pointer overflow-hidden px-2 py-1 shadow-sm transition-all duration-200 hover:ring-2 hover:ring-black hover:ring-offset-1",
           travelTimeHeight > 0 ? "" : "rounded-lg", // No rounding if travel blocks exist (they handle the rounding)
           typeConfig.color,
           typeConfig.textColor,
@@ -239,11 +248,11 @@ export default function CalendarEvent({
           </div>
         )}
       </div>
-      
+
       {/* Return Travel Time Block - positioned below appointment */}
       {travelTimeHeight > 0 && event.status !== "Cancelled" && (
         <div
-          className="absolute left-0.5 right-0.5 pointer-events-none rounded-b-lg backdrop-blur-sm"
+          className="pointer-events-none absolute left-0.5 right-0.5 rounded-b-lg backdrop-blur-sm"
           style={{
             top: `${parseInt(style.top) + parseInt(style.height)}px`,
             height: `${travelTimeHeight}px`,
@@ -256,7 +265,10 @@ export default function CalendarEvent({
           {/* Subtle travel indicator */}
           {travelTimeHeight >= 12 && (
             <div className="absolute bottom-1 right-2">
-              <Car className="h-2.5 w-2.5" style={{ color: `rgba(${baseColorRGB}, 0.5)` }} />
+              <Car
+                className="h-2.5 w-2.5"
+                style={{ color: `rgba(${baseColorRGB}, 0.5)` }}
+              />
             </div>
           )}
         </div>

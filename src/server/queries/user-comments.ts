@@ -440,10 +440,15 @@ export async function getContactListingsForTasksWithAuth(contactId: bigint) {
   return getContactListingsForTasks(contactId, accountId);
 }
 
-export async function getContactListingsForTasks(contactId: bigint, accountId: number) {
+export async function getContactListingsForTasks(
+  contactId: bigint,
+  accountId: number,
+) {
   try {
-    const { listings, listingContacts, properties, locations } = await import("../db/schema");
-    
+    const { listings, listingContacts, properties, locations } = await import(
+      "../db/schema"
+    );
+
     const contactListings = await db
       .select({
         listingContactId: sql<number>`CAST(${listingContacts.listingContactId} AS UNSIGNED)`,
@@ -463,17 +468,20 @@ export async function getContactListingsForTasks(contactId: bigint, accountId: n
       .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
       .innerJoin(listings, eq(listingContacts.listingId, listings.listingId))
       .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
       .where(
         and(
           eq(listingContacts.contactId, contactId),
           eq(contacts.accountId, BigInt(accountId)),
           eq(listings.isActive, true),
-          eq(listingContacts.isActive, true)
-        )
+          eq(listingContacts.isActive, true),
+        ),
       )
       .orderBy(desc(listingContacts.createdAt));
-    
+
     return contactListings;
   } catch (error) {
     console.error("Error fetching contact listings for tasks:", error);
@@ -490,7 +498,7 @@ export async function getContactDealsWithAuth(contactId: bigint) {
 export async function getContactDeals(contactId: bigint, accountId: number) {
   try {
     const { deals, dealParticipants } = await import("../db/schema");
-    
+
     const contactDeals = await db
       .select({
         dealId: sql<number>`CAST(${deals.dealId} AS UNSIGNED)`,
@@ -505,11 +513,11 @@ export async function getContactDeals(contactId: bigint, accountId: number) {
       .where(
         and(
           eq(dealParticipants.contactId, contactId),
-          eq(contacts.accountId, BigInt(accountId))
-        )
+          eq(contacts.accountId, BigInt(accountId)),
+        ),
       )
       .orderBy(desc(deals.createdAt));
-    
+
     return contactDeals;
   } catch (error) {
     console.error("Error fetching contact deals:", error);

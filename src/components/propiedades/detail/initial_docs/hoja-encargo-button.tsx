@@ -5,7 +5,10 @@ import { cn } from "~/lib/utils";
 import { FileText } from "lucide-react";
 import { TermsModal } from "./terms-modal";
 import { getNotaEncargoData } from "~/server/queries/nota-encargo";
-import { transformToNotaEncargoPDF, extractListingIdFromPathname } from "~/lib/nota-encargo-helpers";
+import {
+  transformToNotaEncargoPDF,
+  extractListingIdFromPathname,
+} from "~/lib/nota-encargo-helpers";
 
 interface DocumentRecord {
   docId: bigint;
@@ -22,9 +25,13 @@ interface HojaEncargoButtonProps {
   className?: string;
 }
 
-export function HojaEncargoButton({ propertyId, onDocumentGenerated, className }: HojaEncargoButtonProps) {
+export function HojaEncargoButton({
+  propertyId,
+  onDocumentGenerated,
+  className,
+}: HojaEncargoButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   console.log("🚀 HojaEncargoButton render - isModalOpen:", isModalOpen);
   console.log("🚀 propertyId:", propertyId);
 
@@ -45,16 +52,18 @@ export function HojaEncargoButton({ propertyId, onDocumentGenerated, className }
       // Extract listing ID from the current URL
       const pathname = window.location.pathname;
       const listingId = extractListingIdFromPathname(pathname);
-      
+
       if (!listingId) {
-        throw new Error("No se pudo obtener el ID de la propiedad desde la URL");
+        throw new Error(
+          "No se pudo obtener el ID de la propiedad desde la URL",
+        );
       }
 
       console.log("📋 Extracted listing ID:", listingId);
 
       // Fetch nota encargo data
       const rawData = await getNotaEncargoData(listingId);
-      
+
       if (!rawData) {
         throw new Error("No se pudieron obtener los datos de la propiedad");
       }
@@ -63,7 +72,7 @@ export function HojaEncargoButton({ propertyId, onDocumentGenerated, className }
 
       // Transform data for PDF generation
       const pdfData = transformToNotaEncargoPDF(rawData, terms);
-      
+
       console.log("📄 PDF data prepared:", pdfData);
 
       // Generate PDF using existing API
@@ -84,29 +93,34 @@ export function HojaEncargoButton({ propertyId, onDocumentGenerated, className }
 
       // Get the PDF blob
       const pdfBlob = await response.blob();
-      
+
       // Create a File object from the blob for upload
       const filename = `${pdfData.documentNumber}.pdf`;
-      const pdfFile = new File([pdfBlob], filename, { type: "application/pdf" });
+      const pdfFile = new File([pdfBlob], filename, {
+        type: "application/pdf",
+      });
 
       console.log("📤 Uploading PDF to document management system...");
 
       // Upload to document management system (S3 + Database)
-      const uploadResponse = await fetch(`/api/properties/${listingId}/documents`, {
-        method: "POST",
-        body: (() => {
-          const formData = new FormData();
-          formData.append("file", pdfFile);
-          formData.append("folderType", "initial-docs");
-          return formData;
-        })(),
-      });
+      const uploadResponse = await fetch(
+        `/api/properties/${listingId}/documents`,
+        {
+          method: "POST",
+          body: (() => {
+            const formData = new FormData();
+            formData.append("file", pdfFile);
+            formData.append("folderType", "initial-docs");
+            return formData;
+          })(),
+        },
+      );
 
       if (!uploadResponse.ok) {
         throw new Error("Error al guardar el documento en el sistema");
       }
 
-      const uploadedDocument = await uploadResponse.json() as {
+      const uploadedDocument = (await uploadResponse.json()) as {
         docId: string | number;
         filename: string;
         fileType: string;
@@ -137,35 +151,43 @@ export function HojaEncargoButton({ propertyId, onDocumentGenerated, className }
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
-      console.log("✅ Nota de Encargo PDF generated, uploaded, and downloaded successfully");
-      
+
+      console.log(
+        "✅ Nota de Encargo PDF generated, uploaded, and downloaded successfully",
+      );
+
       // Show success message
-      alert(`Hoja de encargo generada y guardada exitosamente para ${pdfData.client.fullName}`);
-      
+      alert(
+        `Hoja de encargo generada y guardada exitosamente para ${pdfData.client.fullName}`,
+      );
     } catch (error) {
       console.error("❌ Error generating Nota de Encargo:", error);
-      
+
       // Show user-friendly error message
-      const errorMessage = error instanceof Error ? error.message : "Error desconocido";
+      const errorMessage =
+        error instanceof Error ? error.message : "Error desconocido";
       alert(`Error al generar la hoja de encargo: ${errorMessage}`);
-      
+
       throw error; // Re-throw to trigger modal error handling
     }
   };
 
   return (
     <div className={cn("w-full", className)}>
-      <div className="bg-gray-50/50 rounded-lg border border-gray-200 p-4 text-center hover:bg-gray-100/50 transition-colors h-[200px] flex flex-col justify-center">
+      <div className="flex h-[200px] flex-col justify-center rounded-lg border border-gray-200 bg-gray-50/50 p-4 text-center transition-colors hover:bg-gray-100/50">
         {/* Icon container */}
-        <div className="mb-4 mx-auto rounded-full flex items-center justify-center w-12 h-12 bg-gradient-to-br from-amber-100 to-rose-100">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-amber-100 to-rose-100">
           <FileText className="h-6 w-6 text-amber-600" />
         </div>
-        
+
         {/* Text content */}
         <div className="mb-4">
-          <p className="text-gray-600 text-sm mb-4">
-            Crea la <span className="font-semibold text-amber-600 bg-amber-50 px-1 py-0.5 rounded text-sm">hoja de encargo</span> con toda la información aportada.
+          <p className="mb-4 text-sm text-gray-600">
+            Crea la{" "}
+            <span className="rounded bg-amber-50 px-1 py-0.5 text-sm font-semibold text-amber-600">
+              hoja de encargo
+            </span>{" "}
+            con toda la información aportada.
           </p>
         </div>
 
@@ -179,8 +201,8 @@ export function HojaEncargoButton({ propertyId, onDocumentGenerated, className }
             console.log("Modal state set to true");
           }}
           className={cn(
-            "w-full px-4 py-2 bg-gradient-to-r from-amber-400 to-rose-400 text-white font-medium rounded-md text-sm",
-            "hover:from-amber-500 hover:to-rose-500 transition-all duration-200 hover:scale-105 shadow-sm"
+            "w-full rounded-md bg-gradient-to-r from-amber-400 to-rose-400 px-4 py-2 text-sm font-medium text-white",
+            "shadow-sm transition-all duration-200 hover:scale-105 hover:from-amber-500 hover:to-rose-500",
           )}
         >
           Generar ahora

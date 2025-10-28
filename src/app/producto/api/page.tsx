@@ -1,24 +1,31 @@
 import { type Metadata } from "next";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import Link from "next/link";
-import { 
-  Code, 
-  Terminal, 
-  FileJson, 
+import {
+  Code,
+  Terminal,
+  FileJson,
   Webhook,
   Zap,
   Book,
   GitBranch,
   Package,
   ArrowRight,
-  Check
+  Check,
 } from "lucide-react";
 import Navbar from "~/components/navbar";
 
 export const metadata: Metadata = {
   title: "API y Desarrolladores - Vesta Real Estate Platform",
-  description: "API REST completa para integrar Vesta con tus sistemas. Documentación, SDKs, y herramientas para desarrolladores.",
+  description:
+    "API REST completa para integrar Vesta con tus sistemas. Documentación, SDKs, y herramientas para desarrolladores.",
 };
 
 export default function ApiPage() {
@@ -26,60 +33,78 @@ export default function ApiPage() {
     {
       icon: Terminal,
       title: "API REST Completa",
-      description: "Accede a todas las funcionalidades de Vesta mediante nuestra API REST",
-      highlights: ["Autenticación OAuth 2.0", "Rate limiting inteligente", "Versionado de API", "Respuestas en JSON"]
+      description:
+        "Accede a todas las funcionalidades de Vesta mediante nuestra API REST",
+      highlights: [
+        "Autenticación OAuth 2.0",
+        "Rate limiting inteligente",
+        "Versionado de API",
+        "Respuestas en JSON",
+      ],
     },
     {
       icon: Webhook,
       title: "Webhooks en Tiempo Real",
-      description: "Recibe notificaciones instantáneas cuando ocurren eventos importantes",
-      highlights: ["Eventos configurables", "Reintentos automáticos", "Firma de seguridad", "Logs detallados"]
+      description:
+        "Recibe notificaciones instantáneas cuando ocurren eventos importantes",
+      highlights: [
+        "Eventos configurables",
+        "Reintentos automáticos",
+        "Firma de seguridad",
+        "Logs detallados",
+      ],
     },
     {
       icon: Package,
       title: "SDKs Oficiales",
       description: "Librerías oficiales para los lenguajes más populares",
-      highlights: ["JavaScript/TypeScript", "Python", "PHP", "Java"]
+      highlights: ["JavaScript/TypeScript", "Python", "PHP", "Java"],
     },
     {
       icon: GitBranch,
       title: "Entorno de Pruebas",
-      description: "Sandbox completo para desarrollar y probar sin afectar datos reales",
-      highlights: ["Datos de prueba", "Sin límites de uso", "Reset bajo demanda", "Mismo comportamiento que producción"]
-    }
+      description:
+        "Sandbox completo para desarrollar y probar sin afectar datos reales",
+      highlights: [
+        "Datos de prueba",
+        "Sin límites de uso",
+        "Reset bajo demanda",
+        "Mismo comportamiento que producción",
+      ],
+    },
   ];
 
   const endpoints = [
     {
       method: "GET",
       path: "/api/v1/properties",
-      description: "Listar todas las propiedades"
+      description: "Listar todas las propiedades",
     },
     {
       method: "POST",
       path: "/api/v1/properties",
-      description: "Crear nueva propiedad"
+      description: "Crear nueva propiedad",
     },
     {
       method: "GET",
       path: "/api/v1/contacts",
-      description: "Obtener lista de contactos"
+      description: "Obtener lista de contactos",
     },
     {
       method: "POST",
       path: "/api/v1/contacts",
-      description: "Crear nuevo contacto"
+      description: "Crear nuevo contacto",
     },
     {
       method: "GET",
       path: "/api/v1/appointments",
-      description: "Listar citas programadas"
+      description: "Listar citas programadas",
     },
     {
       method: "POST",
       path: "/api/v1/webhooks",
-      description: "Configurar webhook"
-    }
+      description: "Configurar webhook",
+    },
   ];
 
   const codeExample = `// Ejemplo: Crear una nueva propiedad
@@ -118,12 +143,13 @@ console.log('Propiedad creada:', property.id);`;
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-xl text-gray-600">
-              Integra Vesta con tus sistemas usando nuestra API REST completa. 
-              Documentación detallada, SDKs oficiales y soporte técnico dedicado.
+              Integra Vesta con tus sistemas usando nuestra API REST completa.
+              Documentación detallada, SDKs oficiales y soporte técnico
+              dedicado.
             </p>
             <div className="mt-10 flex items-center justify-center gap-4">
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 className="bg-gradient-to-r from-amber-400 to-rose-400 text-white hover:from-amber-500 hover:to-rose-500"
                 asChild
               >
@@ -133,9 +159,7 @@ console.log('Propiedad creada:', property.id);`;
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/dashboard">
-                  Obtener API Key
-                </Link>
+                <Link href="/dashboard">Obtener API Key</Link>
               </Button>
             </div>
           </div>
@@ -149,14 +173,19 @@ console.log('Propiedad creada:', property.id);`;
             {apiFeatures.map((feature) => {
               const Icon = feature.icon;
               return (
-                <Card key={feature.title} className="overflow-hidden hover:shadow-lg transition-all">
+                <Card
+                  key={feature.title}
+                  className="overflow-hidden transition-all hover:shadow-lg"
+                >
                   <CardHeader>
                     <div className="flex items-start gap-4">
                       <div className="rounded-lg bg-amber-100 p-2">
                         <Icon className="h-6 w-6 text-amber-600" />
                       </div>
                       <div className="flex-1">
-                        <CardTitle className="text-xl">{feature.title}</CardTitle>
+                        <CardTitle className="text-xl">
+                          {feature.title}
+                        </CardTitle>
                         <CardDescription className="mt-2">
                           {feature.description}
                         </CardDescription>
@@ -168,7 +197,9 @@ console.log('Propiedad creada:', property.id);`;
                       {feature.highlights.map((highlight) => (
                         <li key={highlight} className="flex items-center gap-2">
                           <Check className="h-4 w-4 text-green-600" />
-                          <span className="text-sm text-gray-600">{highlight}</span>
+                          <span className="text-sm text-gray-600">
+                            {highlight}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -183,24 +214,31 @@ console.log('Propiedad creada:', property.id);`;
       {/* Code Example */}
       <section className="border-t border-gray-200 px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900">Empieza en Minutos</h2>
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-bold text-gray-900">
+              Empieza en Minutos
+            </h2>
             <p className="mt-4 text-lg text-gray-600">
-              Integración simple y directa con cualquier lenguaje de programación
+              Integración simple y directa con cualquier lenguaje de
+              programación
             </p>
           </div>
-          
+
           <div className="mx-auto max-w-4xl">
             <Card className="overflow-hidden bg-gray-900">
               <CardHeader className="border-b border-gray-800">
                 <div className="flex items-center gap-2">
                   <FileJson className="h-5 w-5 text-green-400" />
-                  <span className="text-sm font-mono text-gray-400">example.js</span>
+                  <span className="font-mono text-sm text-gray-400">
+                    example.js
+                  </span>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
                 <pre className="overflow-x-auto p-6">
-                  <code className="text-sm text-gray-300 whitespace-pre">{codeExample}</code>
+                  <code className="whitespace-pre text-sm text-gray-300">
+                    {codeExample}
+                  </code>
                 </pre>
               </CardContent>
             </Card>
@@ -211,13 +249,15 @@ console.log('Propiedad creada:', property.id);`;
       {/* Endpoints */}
       <section className="px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900">Endpoints Principales</h2>
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-bold text-gray-900">
+              Endpoints Principales
+            </h2>
             <p className="mt-4 text-lg text-gray-600">
               Accede a todas las funcionalidades de Vesta mediante nuestra API
             </p>
           </div>
-          
+
           <div className="mx-auto max-w-4xl">
             <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
               <table className="min-w-full divide-y divide-gray-200">
@@ -238,11 +278,13 @@ console.log('Propiedad creada:', property.id);`;
                   {endpoints.map((endpoint, index) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="whitespace-nowrap px-6 py-4">
-                        <span className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${
-                          endpoint.method === 'GET' 
-                            ? 'bg-blue-100 text-blue-700' 
-                            : 'bg-green-100 text-green-700'
-                        }`}>
+                        <span
+                          className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ${
+                            endpoint.method === "GET"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-green-100 text-green-700"
+                          }`}
+                        >
                           {endpoint.method}
                         </span>
                       </td>
@@ -264,46 +306,51 @@ console.log('Propiedad creada:', property.id);`;
       {/* Developer Resources */}
       <section className="border-t border-gray-200 bg-gray-50 px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900">Recursos para Desarrolladores</h2>
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-bold text-gray-900">
+              Recursos para Desarrolladores
+            </h2>
             <p className="mt-4 text-lg text-gray-600">
               Todo lo que necesitas para integrar Vesta con éxito
             </p>
           </div>
-          
+
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <Card className="hover:shadow-lg transition-all">
+            <Card className="transition-all hover:shadow-lg">
               <CardHeader>
                 <Book className="h-8 w-8 text-amber-600" />
                 <CardTitle className="mt-4">Guía de Inicio</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
-                  Tutorial paso a paso para tu primera integración con la API de Vesta.
+                  Tutorial paso a paso para tu primera integración con la API de
+                  Vesta.
                 </p>
               </CardContent>
             </Card>
-            
-            <Card className="hover:shadow-lg transition-all">
+
+            <Card className="transition-all hover:shadow-lg">
               <CardHeader>
                 <FileJson className="h-8 w-8 text-amber-600" />
                 <CardTitle className="mt-4">Referencia API</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
-                  Documentación completa de todos los endpoints, parámetros y respuestas.
+                  Documentación completa de todos los endpoints, parámetros y
+                  respuestas.
                 </p>
               </CardContent>
             </Card>
-            
-            <Card className="hover:shadow-lg transition-all">
+
+            <Card className="transition-all hover:shadow-lg">
               <CardHeader>
                 <Zap className="h-8 w-8 text-amber-600" />
                 <CardTitle className="mt-4">Postman Collection</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
-                  Colección lista para importar en Postman con todos los endpoints.
+                  Colección lista para importar en Postman con todos los
+                  endpoints.
                 </p>
               </CardContent>
             </Card>
@@ -318,11 +365,12 @@ console.log('Propiedad creada:', property.id);`;
             ¿Listo para empezar a construir?
           </h2>
           <p className="mt-4 text-lg text-gray-600">
-            Obtén tu API key gratuita y empieza a integrar Vesta en tus aplicaciones hoy mismo.
+            Obtén tu API key gratuita y empieza a integrar Vesta en tus
+            aplicaciones hoy mismo.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="bg-gradient-to-r from-amber-400 to-rose-400 text-white hover:from-amber-500 hover:to-rose-500"
               asChild
             >
@@ -332,9 +380,7 @@ console.log('Propiedad creada:', property.id);`;
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <Link href="/recursos/soporte">
-                Contactar Soporte Técnico
-              </Link>
+              <Link href="/recursos/soporte">Contactar Soporte Técnico</Link>
             </Button>
           </div>
         </div>

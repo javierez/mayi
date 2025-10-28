@@ -17,7 +17,7 @@ export async function fetchPropertyExamplesFromS3(): Promise<string> {
   const now = Date.now();
 
   // Return cached version if it's still fresh
-  if (cachedExamples && (now - lastFetchTime) < CACHE_DURATION) {
+  if (cachedExamples && now - lastFetchTime < CACHE_DURATION) {
     return cachedExamples;
   }
 
@@ -40,7 +40,9 @@ export async function fetchPropertyExamplesFromS3(): Promise<string> {
     cachedExamples = examplesText;
     lastFetchTime = now;
 
-    console.log(`Fetched ${examplesText.length} characters of examples from S3`);
+    console.log(
+      `Fetched ${examplesText.length} characters of examples from S3`,
+    );
 
     return examplesText;
   } catch (error) {

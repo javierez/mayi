@@ -53,7 +53,9 @@ export default function DashboardPage() {
             {/* Performance Metrics */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Resumen de Rendimiento</CardTitle>
+                <CardTitle className="text-lg">
+                  Resumen de Rendimiento
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">

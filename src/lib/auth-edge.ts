@@ -1,6 +1,6 @@
 /**
  * Edge Runtime compatible auth functions for middleware
- * 
+ *
  * This module provides authentication helpers that work in the Edge Runtime
  * without importing Node.js modules like database connections.
  */

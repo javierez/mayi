@@ -61,25 +61,25 @@ export async function updateListingWithAuth(
 
 export async function toggleListingKeysWithAuth(listingId: number) {
   const accountId = await getCurrentUserAccountId();
-  
+
   try {
     // First get the current hasKeys value
     const currentListing = await getListingById(listingId, accountId);
     if (!currentListing) {
       throw new Error("Listing not found");
     }
-    
+
     // Toggle the hasKeys value
     const newHasKeysValue = !currentListing.hasKeys;
-    
+
     // Update the listing
     const updatedListing = await updateListing(listingId, accountId, {
-      hasKeys: newHasKeysValue
+      hasKeys: newHasKeysValue,
     });
-    
+
     return {
       hasKeys: newHasKeysValue,
-      listing: updatedListing
+      listing: updatedListing,
     };
   } catch (error) {
     console.error("Error toggling listing keys:", error);
@@ -89,25 +89,25 @@ export async function toggleListingKeysWithAuth(listingId: number) {
 
 export async function toggleListingPublishToWebsiteWithAuth(listingId: number) {
   const accountId = await getCurrentUserAccountId();
-  
+
   try {
     // First get the current publishToWebsite value
     const currentListing = await getListingById(listingId, accountId);
     if (!currentListing) {
       throw new Error("Listing not found");
     }
-    
+
     // Toggle the publishToWebsite value
     const newPublishToWebsiteValue = !currentListing.publishToWebsite;
-    
+
     // Update the listing
     const updatedListing = await updateListing(listingId, accountId, {
-      publishToWebsite: newPublishToWebsiteValue
+      publishToWebsite: newPublishToWebsiteValue,
     });
-    
+
     return {
       publishToWebsite: newPublishToWebsiteValue,
-      listing: updatedListing
+      listing: updatedListing,
     };
   } catch (error) {
     console.error("Error toggling listing publishToWebsite:", error);
@@ -140,9 +140,11 @@ export async function deleteDraftListingWithAuth(listingId: number) {
 }
 
 // Duplicate listing_contacts from source listing to target listing
-export async function duplicateListingContacts(sourceListingId: number, targetListingId: number) {
+export async function duplicateListingContacts(
+  sourceListingId: number,
+  targetListingId: number,
+) {
   try {
-    
     // Get all listing_contacts from the source listing
     const sourceContacts = await db
       .select()
@@ -150,17 +152,17 @@ export async function duplicateListingContacts(sourceListingId: number, targetLi
       .where(
         and(
           eq(listingContacts.listingId, BigInt(sourceListingId)),
-          eq(listingContacts.isActive, true)
-        )
+          eq(listingContacts.isActive, true),
+        ),
       );
-    
+
     if (sourceContacts.length === 0) {
       console.log("No listing contacts found to duplicate");
       return [];
     }
-    
+
     // Create new listing_contacts for the target listing
-    const newContactsData = sourceContacts.map(contact => ({
+    const newContactsData = sourceContacts.map((contact) => ({
       listingId: BigInt(targetListingId),
       contactId: contact.contactId,
       contactType: contact.contactType,
@@ -169,14 +171,16 @@ export async function duplicateListingContacts(sourceListingId: number, targetLi
       status: contact.status,
       isActive: true,
     }));
-    
+
     // Insert the new listing_contacts
     const results = await db
       .insert(listingContacts)
       .values(newContactsData)
       .$returningId();
-    
-    console.log(`Duplicated ${results.length} listing contacts from listing ${sourceListingId} to ${targetListingId}`);
+
+    console.log(
+      `Duplicated ${results.length} listing contacts from listing ${sourceListingId} to ${targetListingId}`,
+    );
     return results;
   } catch (error) {
     console.error("Error duplicating listing contacts:", error);
@@ -387,7 +391,13 @@ export async function listListings(
   page = 1,
   limit = 10,
   filters?: {
-    status?: "En Venta" | "En Alquiler" | "Vendido" | "Alquilado" | "Descartado" | "Draft";
+    status?:
+      | "En Venta"
+      | "En Alquiler"
+      | "Vendido"
+      | "Alquilado"
+      | "Descartado"
+      | "Draft";
     listingType?: "Sale" | "Rent";
     agentId?: string[];
     ownerId?: string;
@@ -423,27 +433,39 @@ export async function listListings(
     // Build the where conditions array
     const whereConditions = [];
     if (filters) {
-      if (filters.status && Array.isArray(filters.status) && filters.status.length > 0) {
+      if (
+        filters.status &&
+        Array.isArray(filters.status) &&
+        filters.status.length > 0
+      ) {
         // Properly format the status values for SQL IN clause
-        const statusList = filters.status.map(s => `'${s}'`).join(',');
-        whereConditions.push(sql`${listings.status} IN (${sql.raw(statusList)})`);
+        const statusList = filters.status.map((s) => `'${s}'`).join(",");
+        whereConditions.push(
+          sql`${listings.status} IN (${sql.raw(statusList)})`,
+        );
       }
-      if (filters.listingType && Array.isArray(filters.listingType) && filters.listingType.length > 0) {
+      if (
+        filters.listingType &&
+        Array.isArray(filters.listingType) &&
+        filters.listingType.length > 0
+      ) {
         // Properly format the listing types for SQL IN clause
-        const typeList = filters.listingType.map(t => `'${t}'`).join(',');
+        const typeList = filters.listingType.map((t) => `'${t}'`).join(",");
         whereConditions.push(
           sql`${listings.listingType} IN (${sql.raw(typeList)})`,
         );
       }
       if (filters.agentId && filters.agentId.length > 0) {
         // Properly format the agent IDs for SQL IN clause
-        const agentList = filters.agentId.map(id => `'${id}'`).join(',');
-        whereConditions.push(sql`${listings.agentId} IN (${sql.raw(agentList)})`);
+        const agentList = filters.agentId.map((id) => `'${id}'`).join(",");
+        whereConditions.push(
+          sql`${listings.agentId} IN (${sql.raw(agentList)})`,
+        );
       }
       if (filters.ownerId) {
         // Filter by owner contact ID using exact match
         whereConditions.push(
-          sql`owner_contact.contact_id = ${BigInt(filters.ownerId)}`
+          sql`owner_contact.contact_id = ${BigInt(filters.ownerId)}`,
         );
       }
       if (filters.propertyId) {
@@ -472,14 +494,18 @@ export async function listListings(
       }
       if (filters.propertyType && filters.propertyType.length > 0) {
         // Properly format the property types for SQL IN clause
-        const propTypeList = filters.propertyType.map(t => `'${t}'`).join(',');
+        const propTypeList = filters.propertyType
+          .map((t) => `'${t}'`)
+          .join(",");
         whereConditions.push(
           sql`${properties.propertyType} IN (${sql.raw(propTypeList)})`,
         );
       }
       if (filters.propertySubtype && filters.propertySubtype.length > 0) {
         // Properly format the property subtypes for SQL IN clause
-        const subTypeList = filters.propertySubtype.map(t => `'${t}'`).join(',');
+        const subTypeList = filters.propertySubtype
+          .map((t) => `'${t}'`)
+          .join(",");
         whereConditions.push(
           sql`${properties.propertySubtype} IN (${sql.raw(subTypeList)})`,
         );
@@ -558,7 +584,9 @@ export async function listListings(
 
     // Default status filter: if no status filter is explicitly provided, show only En Venta and En Alquiler
     if (!filters?.status) {
-      whereConditions.push(sql`${listings.status} IN ('En Venta', 'En Alquiler')`);
+      whereConditions.push(
+        sql`${listings.status} IN ('En Venta', 'En Alquiler')`,
+      );
     }
 
     // Always filter for non-Draft status listings and account
@@ -589,45 +617,45 @@ export async function listListings(
             ownerEmail: sql<string | null>`owner_contact.email`,
           })
         : view === "map"
-        ? db.select({
-            // Map view: optimized fields with coordinates
-            listingId: listings.listingId,
-            propertyId: listings.propertyId,
-            agentName: users.name,
-            price: listings.price,
-            listingType: listings.listingType,
-            status: listings.status,
-            referenceNumber: properties.referenceNumber,
-            title: properties.title,
-            propertyType: properties.propertyType,
-            bedrooms: properties.bedrooms,
-            bathrooms: properties.bathrooms,
-            squareMeter: properties.squareMeter,
-            city: locations.city,
-            latitude: properties.latitude,
-            longitude: properties.longitude,
-            imageUrl: sql<string>`img1.image_url`,
-          })
-        : db.select({
-            // Grid view: optimized fields
-            listingId: listings.listingId,
-            propertyId: listings.propertyId,
-            agentName: users.name,
-            price: listings.price,
-            listingType: listings.listingType,
-            status: listings.status,
-            isBankOwned: listings.isBankOwned,
-            referenceNumber: properties.referenceNumber,
-            propertyType: properties.propertyType,
-            bedrooms: properties.bedrooms,
-            bathrooms: properties.bathrooms,
-            squareMeter: properties.squareMeter,
-            street: properties.street,
-            city: locations.city,
-            province: locations.province,
-            imageUrl: sql<string>`img1.image_url`,
-            imageUrl2: sql<string>`img2.image_url`,
-          });
+          ? db.select({
+              // Map view: optimized fields with coordinates
+              listingId: listings.listingId,
+              propertyId: listings.propertyId,
+              agentName: users.name,
+              price: listings.price,
+              listingType: listings.listingType,
+              status: listings.status,
+              referenceNumber: properties.referenceNumber,
+              title: properties.title,
+              propertyType: properties.propertyType,
+              bedrooms: properties.bedrooms,
+              bathrooms: properties.bathrooms,
+              squareMeter: properties.squareMeter,
+              city: locations.city,
+              latitude: properties.latitude,
+              longitude: properties.longitude,
+              imageUrl: sql<string>`img1.image_url`,
+            })
+          : db.select({
+              // Grid view: optimized fields
+              listingId: listings.listingId,
+              propertyId: listings.propertyId,
+              agentName: users.name,
+              price: listings.price,
+              listingType: listings.listingType,
+              status: listings.status,
+              isBankOwned: listings.isBankOwned,
+              referenceNumber: properties.referenceNumber,
+              propertyType: properties.propertyType,
+              bedrooms: properties.bedrooms,
+              bathrooms: properties.bathrooms,
+              squareMeter: properties.squareMeter,
+              street: properties.street,
+              city: locations.city,
+              province: locations.province,
+              imageUrl: sql<string>`img1.image_url`,
+              imageUrl2: sql<string>`img2.image_url`,
+            });
 
     const baseQuery = query
       .from(listings)
@@ -647,7 +675,7 @@ export async function listListings(
           WHERE is_active = true
             AND (image_tag IS NULL OR image_tag NOT IN ('video', 'youtube', 'tour'))
         ) img1`,
-        sql`img1.property_id = ${properties.propertyId} AND img1.rn = 1`
+        sql`img1.property_id = ${properties.propertyId} AND img1.rn = 1`,
       )
       .leftJoin(
         sql`(
@@ -659,7 +687,7 @@ export async function listListings(
           WHERE is_active = true
             AND (image_tag IS NULL OR image_tag NOT IN ('video', 'youtube', 'tour'))
         ) img2`,
-        sql`img2.property_id = ${properties.propertyId} AND img2.rn = 2`
+        sql`img2.property_id = ${properties.propertyId} AND img2.rn = 2`,
       )
       .leftJoin(
         sql`(
@@ -675,7 +703,7 @@ export async function listListings(
           JOIN contacts c ON lc.contact_id = c.contact_id
           WHERE lc.contact_type = 'owner' AND lc.is_active = true AND c.is_active = true
         ) owner_contact`,
-        sql`owner_contact.listing_id = ${listings.listingId} AND owner_contact.rn = 1`
+        sql`owner_contact.listing_id = ${listings.listingId} AND owner_contact.rn = 1`,
       );
 
     // Get total count for pagination (include owner JOIN if owner filter is active)
@@ -701,12 +729,13 @@ export async function listListings(
             JOIN contacts c ON lc.contact_id = c.contact_id
             WHERE lc.contact_type = 'owner' AND lc.is_active = true AND c.is_active = true
           ) owner_contact`,
-          sql`owner_contact.listing_id = ${listings.listingId} AND owner_contact.rn = 1`
+          sql`owner_contact.listing_id = ${listings.listingId} AND owner_contact.rn = 1`,
         )
       : countQuery;
 
-    const countResult = await countQueryWithOwner
-      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
+    const countResult = await countQueryWithOwner.where(
+      whereConditions.length > 0 ? and(...whereConditions) : undefined,
+    );
 
     const count = countResult[0]?.count ?? 0;
 
@@ -755,7 +784,13 @@ export async function listListings(
 export async function listListingsCompact(
   accountId: number,
   filters?: {
-    status?: "En Venta" | "En Alquiler" | "Vendido" | "Alquilado" | "Descartado" | "Draft";
+    status?:
+      | "En Venta"
+      | "En Alquiler"
+      | "Vendido"
+      | "Alquilado"
+      | "Descartado"
+      | "Draft";
     listingType?: "Sale" | "Rent";
     propertyType?: string[];
     searchQuery?: string;
@@ -768,21 +803,33 @@ export async function listListingsCompact(
     const whereConditions = [];
 
     if (filters) {
-      if (filters.status && Array.isArray(filters.status) && filters.status.length > 0) {
+      if (
+        filters.status &&
+        Array.isArray(filters.status) &&
+        filters.status.length > 0
+      ) {
         // Properly format the status values for SQL IN clause
-        const statusList = filters.status.map(s => `'${s}'`).join(',');
-        whereConditions.push(sql`${listings.status} IN (${sql.raw(statusList)})`);
+        const statusList = filters.status.map((s) => `'${s}'`).join(",");
+        whereConditions.push(
+          sql`${listings.status} IN (${sql.raw(statusList)})`,
+        );
       }
-      if (filters.listingType && Array.isArray(filters.listingType) && filters.listingType.length > 0) {
+      if (
+        filters.listingType &&
+        Array.isArray(filters.listingType) &&
+        filters.listingType.length > 0
+      ) {
         // Properly format the listing types for SQL IN clause
-        const typeList = filters.listingType.map(t => `'${t}'`).join(',');
+        const typeList = filters.listingType.map((t) => `'${t}'`).join(",");
         whereConditions.push(
           sql`${listings.listingType} IN (${sql.raw(typeList)})`,
         );
       }
       if (filters.propertyType && filters.propertyType.length > 0) {
         // Properly format the property types for SQL IN clause
-        const propTypeList = filters.propertyType.map(t => `'${t}'`).join(',');
+        const propTypeList = filters.propertyType
+          .map((t) => `'${t}'`)
+          .join(",");
         whereConditions.push(
           sql`${properties.propertyType} IN (${sql.raw(propTypeList)})`,
         );
@@ -846,7 +893,7 @@ export async function listListingsCompact(
           eq(propertyImages.isActive, true),
           eq(propertyImages.imageOrder, 1),
           // Only get actual images, not videos, YouTube links, or virtual tours
-          sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`
+          sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`,
         ),
       );
 
@@ -914,7 +961,6 @@ export async function getAccountWebsite(accountId: number) {
 // This query is optimized for the property characteristics form
 export async function getListingDetails(listingId: number, accountId: number) {
   try {
-
     const [listingDetails] = await db
       .select({
         // Listing fields - All needed for form
@@ -957,7 +1003,7 @@ export async function getListingDetails(listingId: number, accountId: number) {
         inquiryCount: listings.inquiryCount,
         createdAt: listings.createdAt,
         updatedAt: listings.updatedAt,
-        
+
         // Listing descriptions - From listings table
         description: listings.description,
         shortDescription: listings.shortDescription,
@@ -968,21 +1014,21 @@ export async function getListingDetails(listingId: number, accountId: number) {
         propertyType: properties.propertyType,
         propertySubtype: properties.propertySubtype,
         formPosition: properties.formPosition,
-        
+
         // Details from second page - Map form fields to database fields
         bedrooms: properties.bedrooms,
         bathrooms: properties.bathrooms,
         totalSurface: properties.squareMeter, // Form uses totalSurface, DB has squareMeter
-        usefulSurface: properties.builtSurfaceArea, // Form uses usefulSurface, DB has builtSurfaceArea  
+        usefulSurface: properties.builtSurfaceArea, // Form uses usefulSurface, DB has builtSurfaceArea
         plotSurface: sql<number>`NULL`, // Not in properties table yet
-        floor: sql<string>`NULL`, // Not in properties table yet  
+        floor: sql<string>`NULL`, // Not in properties table yet
         totalFloors: properties.buildingFloors, // Form uses totalFloors, DB has buildingFloors
         buildYear: properties.yearBuilt, // Form uses buildYear, DB has yearBuilt
         condition: properties.conservationStatus, // Form uses condition, DB has conservationStatus
         energyCertificate: properties.energyConsumptionScale, // Form uses energyCertificate, DB has energyConsumptionScale
         emissions: properties.emissionsScale, // Form uses emissions, DB has emissionsScale
         cadastralReference: properties.cadastralReference,
-        
+
         // Address from third page - Map form fields to database fields
         address: properties.street, // Form uses address, DB has street
         city: locations.city,
@@ -992,7 +1038,7 @@ export async function getListingDetails(listingId: number, accountId: number) {
         neighborhood: locations.neighborhood,
         latitude: properties.latitude,
         longitude: properties.longitude,
-        
+
         // Equipment from fourth page - Map form fields to database fields
         heating: properties.heatingType, // Form uses heating, DB has heatingType
         airConditioning: properties.airConditioningType, // Form uses airConditioning, DB has airConditioningType
@@ -1003,38 +1049,38 @@ export async function getListingDetails(listingId: number, accountId: number) {
         hasSwimmingPool: sql<boolean>`(${properties.pool} OR ${properties.communityPool} OR ${properties.privatePool})`, // Form uses hasSwimmingPool, DB has multiple pool fields
         hasTerrace: properties.terrace, // Form uses hasTerrace, DB has terrace
         hasBalcony: sql<boolean>`(${properties.balconyCount} > 0)`, // Form uses hasBalcony, DB has balconyCount
-        
-        // Orientation from fifth page  
+
+        // Orientation from fifth page
         orientation: properties.orientation,
         views: properties.views,
         luminosity: properties.bright, // Form uses luminosity, DB has bright
-        
+
         // Additional from sixth page - Map form fields to database fields
         accessibility: properties.disabledAccessible, // Form uses accessibility, DB has disabledAccessible
         securitySystem: sql<boolean>`(${properties.alarm} OR ${properties.securityDoor})`, // Form uses securitySystem, DB has multiple security fields
         doorman: properties.conciergeService, // Form uses doorman, DB has conciergeService
         builtInWardrobes: properties.builtInWardrobes,
-        
+
         // Luxury from seventh page - Map form fields to database fields
         designerKitchen: properties.furnishedKitchen, // Form uses designerKitchen, DB has furnishedKitchen
         smartHome: properties.homeAutomation, // Form uses smartHome, DB has homeAutomation
-        
+
         // Spaces from eighth page - Map form fields to database fields
         hasAttic: sql<boolean>`NULL`, // Not in properties table
         hasBasement: sql<boolean>`NULL`, // Not in properties table
         hasLaundryRoom: properties.laundryRoom, // Form uses hasLaundryRoom, DB has laundryRoom
         hasOffice: sql<boolean>`NULL`, // Not in properties table
         hasDressingRoom: sql<boolean>`NULL`, // Not in properties table
-        
+
         // Materials from ninth page - Map form fields to database fields
         mainFloorType: properties.mainFloorType, // Database has mainFloorType column
         wallMaterial: sql<string>`NULL`, // Not in properties table
         kitchenMaterial: properties.kitchenType, // Form uses kitchenMaterial, DB has kitchenType
         bathroomMaterial: sql<string>`NULL`, // Not in properties table
-        
+
         // Description from description page
         highlights: sql<string>`NULL`, // Not in properties table
-        
+
         // Legacy fields for backward compatibility
         yearBuilt: properties.yearBuilt,
         squareMeter: properties.squareMeter,
@@ -1151,7 +1197,7 @@ export async function getListingDetails(listingId: number, accountId: number) {
           JOIN contacts c ON lc.contact_id = c.contact_id
           WHERE lc.contact_type = 'owner' AND lc.is_active = true AND c.is_active = true
         ) owner_contact`,
-        sql`owner_contact.listing_id = ${listings.listingId} AND owner_contact.rn = 1`
+        sql`owner_contact.listing_id = ${listings.listingId} AND owner_contact.rn = 1`,
       )
       .where(
         and(
@@ -1307,9 +1353,10 @@ export async function discardListing(listingId: number, accountId: number) {
         ),
       );
 
-    return { 
-      success: true, 
-      message: "Anuncio descartado correctamente. Puedes reactivarlo más tarde si es necesario."
+    return {
+      success: true,
+      message:
+        "Anuncio descartado correctamente. Puedes reactivarlo más tarde si es necesario.",
     };
   } catch (error) {
     console.error("Error discarding listing:", error);
@@ -1343,8 +1390,12 @@ export async function recoverListing(listingId: number, accountId: number) {
     // Determine the appropriate active status based on listing type
     let newStatus: string;
     const listingType = listing.listingType;
-    
-    if (listingType === "Rent" || listingType === "RentWithOption" || listingType === "RoomSharing") {
+
+    if (
+      listingType === "Rent" ||
+      listingType === "RentWithOption" ||
+      listingType === "RoomSharing"
+    ) {
       newStatus = "En Alquiler";
     } else if (listingType === "Sale" || listingType === "Transfer") {
       newStatus = "En Venta";
@@ -1364,9 +1415,9 @@ export async function recoverListing(listingId: number, accountId: number) {
         ),
       );
 
-    return { 
-      success: true, 
-      message: `Anuncio recuperado correctamente. Estado cambiado a "${newStatus}".`
+    return {
+      success: true,
+      message: `Anuncio recuperado correctamente. Estado cambiado a "${newStatus}".`,
     };
   } catch (error) {
     console.error("Error recovering listing:", error);
@@ -1412,9 +1463,10 @@ export async function deleteListingOnly(listingId: number, accountId: number) {
         ),
       );
 
-    return { 
-      success: true, 
-      message: "Anuncio eliminado correctamente. La propiedad se mantiene intacta."
+    return {
+      success: true,
+      message:
+        "Anuncio eliminado correctamente. La propiedad se mantiene intacta.",
     };
   } catch (error) {
     console.error("Error deleting listing:", error);
@@ -1457,11 +1509,11 @@ export async function deleteProperty(propertyId: number, accountId: number) {
       );
 
     // Start transaction-like cleanup (SingleStore doesn't support full transactions)
-    
+
     // 1. Delete listing_contacts for all listings of this property
     if (propertyListings.length > 0) {
-      const listingIds = propertyListings.map(l => l.listingId);
-      
+      const listingIds = propertyListings.map((l) => l.listingId);
+
       for (const listingId of listingIds) {
         await db
           .delete(listingContacts)
@@ -1494,10 +1546,11 @@ export async function deleteProperty(propertyId: number, accountId: number) {
         ),
       );
 
-    return { 
-      success: true, 
-      message: "Propiedad y todos sus datos relacionados eliminados correctamente",
-      deletedListings: propertyListings.length
+    return {
+      success: true,
+      message:
+        "Propiedad y todos sus datos relacionados eliminados correctamente",
+      deletedListings: propertyListings.length,
     };
   } catch (error) {
     console.error("Error deleting property:", error);
@@ -1703,9 +1756,15 @@ export async function getListingCartelData(listingId: number) {
       })
       .from(listings)
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
       .leftJoin(accounts, eq(listings.accountId, accounts.accountId))
-      .leftJoin(websiteProperties, eq(accounts.accountId, websiteProperties.accountId))
+      .leftJoin(
+        websiteProperties,
+        eq(accounts.accountId, websiteProperties.accountId),
+      )
       .where(
         and(
           eq(listings.listingId, BigInt(listingId)),
@@ -1713,7 +1772,7 @@ export async function getListingCartelData(listingId: number) {
           eq(listings.isActive, true),
         ),
       );
-      
+
     console.log("📊 [getListingCartelData] Raw query result:", {
       hasCartelData: !!cartelData,
       contactPropsRaw: cartelData?.contactProps,
@@ -1769,14 +1828,14 @@ export async function getListingCartelSaveData(listingId: number) {
 // Get listing contacts by listingId - returns contactId and name for pre-populating forms
 export async function getListingContactsByIdWithAuth(listingId: number) {
   const accountId = await getCurrentUserAccountId();
-  
+
   console.log("🔍 [getListingContactsByIdWithAuth] Starting query with:", {
     listingId,
     accountId,
     bigIntListingId: BigInt(listingId),
-    bigIntAccountId: BigInt(accountId)
+    bigIntAccountId: BigInt(accountId),
   });
-  
+
   try {
     const contactsData = await db
       .select({
@@ -1791,18 +1850,21 @@ export async function getListingContactsByIdWithAuth(listingId: number) {
           eq(listingContacts.listingId, BigInt(listingId)),
           eq(listingContacts.isActive, true),
           eq(contacts.isActive, true),
-          eq(contacts.accountId, BigInt(accountId))
+          eq(contacts.accountId, BigInt(accountId)),
         ),
       );
 
     console.log("📋 [getListingContactsByIdWithAuth] Query result:", {
       count: contactsData.length,
-      contacts: contactsData
+      contacts: contactsData,
     });
 
     return contactsData;
   } catch (error) {
-    console.error("❌ [getListingContactsByIdWithAuth] Error fetching listing contacts:", error);
+    console.error(
+      "❌ [getListingContactsByIdWithAuth] Error fetching listing contacts:",
+      error,
+    );
     throw error;
   }
 }

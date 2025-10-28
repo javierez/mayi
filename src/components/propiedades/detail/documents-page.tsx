@@ -46,7 +46,9 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
+  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(
+    null,
+  );
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Map folder types for API calls
@@ -99,13 +101,13 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
       const result = await deleteDocumentAction(
         documentToDelete.docId,
         documentToDelete.documentKey,
-        listing.propertyId
+        listing.propertyId,
       );
 
       if (result.success) {
         // Remove document from local state
-        setDocuments((prev) => 
-          prev.filter((doc) => doc.docId !== documentToDelete.docId)
+        setDocuments((prev) =>
+          prev.filter((doc) => doc.docId !== documentToDelete.docId),
         );
         toast.success("Documento eliminado correctamente");
       } else {
@@ -171,7 +173,6 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
 
   return (
     <div className="relative">
-
       {/* Documents list - clean, no titles */}
       <div className="space-y-3">
         {isLoading ? (
@@ -219,7 +220,7 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
                             <Download className="mr-2 h-4 w-4" />
                             Descargar
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             className="text-red-600"
                             onClick={() => handleDeleteClick(document)}
                           >
@@ -241,7 +242,8 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
                   No hay documentos en esta carpeta
                 </p>
                 <p className="mt-1 text-sm text-gray-400">
-                  Usa el botón de &quot;Subir Documentos&quot; para agregar archivos
+                  Usa el botón de &quot;Subir Documentos&quot; para agregar
+                  archivos
                 </p>
               </div>
             )}

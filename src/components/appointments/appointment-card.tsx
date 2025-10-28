@@ -1,6 +1,18 @@
 "use client";
 
-import { Clock, MapPin, Car, Users, PenTool, Handshake, Train, CalendarIcon, ChevronDown, ChevronUp, Check } from "lucide-react";
+import {
+  Clock,
+  MapPin,
+  Car,
+  Users,
+  PenTool,
+  Handshake,
+  Train,
+  CalendarIcon,
+  ChevronDown,
+  ChevronUp,
+  Check,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "~/lib/utils";
@@ -139,9 +151,14 @@ export function AppointmentCard({
     // Otherwise, fetch tasks from server
     const fetchTasks = async () => {
       try {
-        console.log('🔍 Fetching tasks for appointment:', appointment.appointmentId.toString());
-        const result = await getAppointmentTasksAction(Number(appointment.appointmentId));
-        console.log('📋 Appointment tasks result:', {
+        console.log(
+          "🔍 Fetching tasks for appointment:",
+          appointment.appointmentId.toString(),
+        );
+        const result = await getAppointmentTasksAction(
+          Number(appointment.appointmentId),
+        );
+        console.log("📋 Appointment tasks result:", {
           appointmentId: appointment.appointmentId.toString(),
           success: result.success,
           taskCount: result.tasks?.length ?? 0,
@@ -177,122 +194,124 @@ export function AppointmentCard({
         )}
         onClick={handleClick}
       >
-      {/* Main content */}
-      <div className="pr-28"> {/* Add right padding to avoid overlap with badges */}
-        {/* Contact name */}
-        <div className="font-medium text-sm mb-1">
-          {appointment.contactId ? (
-            <Link
-              href={`/contactos/${appointment.contactId}`}
-              onClick={(e) => e.stopPropagation()}
-              className="text-gray-900 hover:text-blue-600 hover:underline transition-colors"
-            >
-              {appointment.contactName}
-            </Link>
-          ) : (
-            <span className="text-gray-900">{appointment.contactName}</span>
-          )}
-        </div>
-
-        {/* Details */}
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap">
-          <span className="flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            {formatDate(appointment.datetimeStart)} • {formatTime(appointment.datetimeStart)} - {formatTime(appointment.datetimeEnd)}
-          </span>
-          {appointment.propertyAddress && (
-            <>
-              <span>•</span>
-              <span className="flex items-center gap-1 truncate">
-                <MapPin className="h-3 w-3" />
-                {appointment.propertyAddress}
-              </span>
-            </>
-          )}
-          {appointment.agentName && (
-            <>
-              <span>•</span>
-              <span className="flex items-center gap-1">
-                <span>Agente: {appointment.agentName}</span>
-              </span>
-            </>
-          )}
-          {appointment.tripTimeMinutes && (
-            <>
-              <span>•</span>
-              <span className="flex items-center gap-1">
-                <Car className="h-3 w-3" />
-                {formatTripTime(appointment.tripTimeMinutes)}
-              </span>
-            </>
-          )}
-          {/* Tasks Toggle - Only show if tasks exist, right after trip time */}
-          {(tasksLoaded && tasks.length > 0) && (
-            <>
-              <span>•</span>
-              <button
-                onClick={handleToggleTasks}
-                className="flex items-center gap-0.5 text-gray-400 hover:text-gray-600 transition-colors"
+        {/* Main content */}
+        <div className="pr-28">
+          {" "}
+          {/* Add right padding to avoid overlap with badges */}
+          {/* Contact name */}
+          <div className="mb-1 text-sm font-medium">
+            {appointment.contactId ? (
+              <Link
+                href={`/contactos/${appointment.contactId}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-gray-900 transition-colors hover:text-blue-600 hover:underline"
               >
-                <span>Tareas</span>
-                {showTasks ? (
-                  <ChevronUp className="h-2.5 w-2.5" />
-                ) : (
-                  <ChevronDown className="h-2.5 w-2.5" />
-                )}
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* Tasks Display - Inside card, super subtle */}
-        {showTasks && tasks.length > 0 && (
-          <div className="mt-2 pt-2 border-t border-gray-100 space-y-1">
-            {tasks.map((task) => (
-              <div
-                key={task.taskId.toString()}
-                className="flex items-center gap-1.5 text-xs"
-              >
-                {/* Checkbox */}
-                <div
-                  className={cn(
-                    "flex-shrink-0 w-3 h-3 rounded border flex items-center justify-center",
-                    task.completed
-                      ? "bg-emerald-500 border-emerald-500 text-white"
-                      : "border-gray-300"
-                  )}
-                >
-                  {task.completed && <Check className="w-2 h-2" />}
-                </div>
-
-                {/* Task title only */}
-                <span
-                  className={cn(
-                    "text-xs text-gray-500",
-                    task.completed && "line-through"
-                  )}
-                >
-                  {task.title}
-                </span>
-              </div>
-            ))}
+                {appointment.contactName}
+              </Link>
+            ) : (
+              <span className="text-gray-900">{appointment.contactName}</span>
+            )}
           </div>
-        )}
-      </div>
+          {/* Details */}
+          <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {formatDate(appointment.datetimeStart)} •{" "}
+              {formatTime(appointment.datetimeStart)} -{" "}
+              {formatTime(appointment.datetimeEnd)}
+            </span>
+            {appointment.propertyAddress && (
+              <>
+                <span>•</span>
+                <span className="flex items-center gap-1 truncate">
+                  <MapPin className="h-3 w-3" />
+                  {appointment.propertyAddress}
+                </span>
+              </>
+            )}
+            {appointment.agentName && (
+              <>
+                <span>•</span>
+                <span className="flex items-center gap-1">
+                  <span>Agente: {appointment.agentName}</span>
+                </span>
+              </>
+            )}
+            {appointment.tripTimeMinutes && (
+              <>
+                <span>•</span>
+                <span className="flex items-center gap-1">
+                  <Car className="h-3 w-3" />
+                  {formatTripTime(appointment.tripTimeMinutes)}
+                </span>
+              </>
+            )}
+            {/* Tasks Toggle - Only show if tasks exist, right after trip time */}
+            {tasksLoaded && tasks.length > 0 && (
+              <>
+                <span>•</span>
+                <button
+                  onClick={handleToggleTasks}
+                  className="flex items-center gap-0.5 text-gray-400 transition-colors hover:text-gray-600"
+                >
+                  <span>Tareas</span>
+                  {showTasks ? (
+                    <ChevronUp className="h-2.5 w-2.5" />
+                  ) : (
+                    <ChevronDown className="h-2.5 w-2.5" />
+                  )}
+                </button>
+              </>
+            )}
+          </div>
+          {/* Tasks Display - Inside card, super subtle */}
+          {showTasks && tasks.length > 0 && (
+            <div className="mt-2 space-y-1 border-t border-gray-100 pt-2">
+              {tasks.map((task) => (
+                <div
+                  key={task.taskId.toString()}
+                  className="flex items-center gap-1.5 text-xs"
+                >
+                  {/* Checkbox */}
+                  <div
+                    className={cn(
+                      "flex h-3 w-3 flex-shrink-0 items-center justify-center rounded border",
+                      task.completed
+                        ? "border-emerald-500 bg-emerald-500 text-white"
+                        : "border-gray-300",
+                    )}
+                  >
+                    {task.completed && <Check className="h-2 w-2" />}
+                  </div>
 
-      {/* Badges - Top right */}
-      <div className="absolute top-3 right-2 flex flex-col gap-1.5">
-        {/* Type badge */}
-        <div
-          className={cn(
-            "flex items-center justify-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-            typeConfig.color,
+                  {/* Task title only */}
+                  <span
+                    className={cn(
+                      "text-xs text-gray-500",
+                      task.completed && "line-through",
+                    )}
+                  >
+                    {task.title}
+                  </span>
+                </div>
+              ))}
+            </div>
           )}
-        >
-          {typeConfig.icon && typeConfig.icon}
-          <span>{appointment.type}</span>
         </div>
-      </div>
+
+        {/* Badges - Top right */}
+        <div className="absolute right-2 top-3 flex flex-col gap-1.5">
+          {/* Type badge */}
+          <div
+            className={cn(
+              "flex items-center justify-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+              typeConfig.color,
+            )}
+          >
+            {typeConfig.icon && typeConfig.icon}
+            <span>{appointment.type}</span>
+          </div>
+        </div>
       </div>
     </>
   );

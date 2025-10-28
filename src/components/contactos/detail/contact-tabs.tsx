@@ -89,9 +89,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
     ...(showSolicitudes
       ? [{ value: "solicitudes", label: "Solicitudes" }]
       : []),
-    ...(showActividad
-      ? [{ value: "actividad", label: "Actividad" }]
-      : []),
+    ...(showActividad ? [{ value: "actividad", label: "Actividad" }] : []),
   ];
 
   // Function to handle tab changes with URL persistence
@@ -126,12 +124,12 @@ export function ContactTabs({ contact }: ContactTabsProps) {
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-      <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-2 md:gap-0 p-1 h-auto md:h-10 bg-gray-100 rounded-lg">
+      <TabsList className="grid h-auto w-full grid-cols-2 gap-2 rounded-lg bg-gray-100 p-1 md:h-10 md:grid-cols-4 md:gap-0">
         {tabs.map((tab) => (
           <TabsTrigger
             key={tab.value}
             value={tab.value}
-            className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm"
+            className="h-8 rounded-md text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm"
           >
             {tab.label}
           </TabsTrigger>

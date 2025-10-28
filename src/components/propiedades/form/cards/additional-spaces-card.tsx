@@ -1,5 +1,3 @@
-
-
 import React from "react";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
@@ -70,10 +68,7 @@ export function AdditionalSpacesCard({
         getCardStyles("additionalSpaces"),
       )}
     >
-      <ModernSaveIndicator
-        state={saveState}
-        onSave={onSave}
-      />
+      <ModernSaveIndicator state={saveState} onSave={onSave} />
       <div className="mb-3 flex items-center justify-between">
         <button
           type="button"
@@ -104,54 +99,94 @@ export function AdditionalSpacesCard({
         <div className="overflow-hidden">
           {(propertyType === "garaje" || propertyType === "solar") && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="rounded-full bg-muted p-3 mb-3">
-                <svg className="h-6 w-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              <div className="mb-3 rounded-full bg-muted p-3">
+                <svg
+                  className="h-6 w-6 text-muted-foreground"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                  />
                 </svg>
               </div>
-              <p className="text-sm text-muted-foreground font-medium">
-                {propertyType === "garaje" ? "No aplicable para garajes" : "No aplicable para solares"}
+              <p className="text-sm font-medium text-muted-foreground">
+                {propertyType === "garaje"
+                  ? "No aplicable para garajes"
+                  : "No aplicable para solares"}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Las zonas y espacios complementarios no se aplican a este tipo de propiedad
+              <p className="mt-1 text-xs text-muted-foreground">
+                Las zonas y espacios complementarios no se aplican a este tipo
+                de propiedad
               </p>
             </div>
           )}
           {propertyType !== "garaje" && propertyType !== "solar" && (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="space-y-3">
-              {/* Outdoor Spaces */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-medium text-muted-foreground">
-                  Espacios exteriores
-                </h4>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="terrace"
-                    checked={terrace}
-                    onCheckedChange={(checked) => {
-                      setTerrace(checked as boolean);
-                      onUpdateModule(true);
-                    }}
-                    disabled={!canEdit}
-                  />
-                  <Label htmlFor="terrace" className="text-sm">
-                    Terraza
-                  </Label>
-                </div>
-                {terrace && (
-                  <div className="ml-6 space-y-1.5">
-                    <Label htmlFor="terraceSize" className="text-sm">
-                      Tamaño (m²)
+              <div className="space-y-3">
+                {/* Outdoor Spaces */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-muted-foreground">
+                    Espacios exteriores
+                  </h4>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="terrace"
+                      checked={terrace}
+                      onCheckedChange={(checked) => {
+                        setTerrace(checked as boolean);
+                        onUpdateModule(true);
+                      }}
+                      disabled={!canEdit}
+                    />
+                    <Label htmlFor="terrace" className="text-sm">
+                      Terraza
+                    </Label>
+                  </div>
+                  {terrace && (
+                    <div className="ml-6 space-y-1.5">
+                      <Label htmlFor="terraceSize" className="text-sm">
+                        Tamaño (m²)
+                      </Label>
+                      <Input
+                        id="terraceSize"
+                        type="number"
+                        value={terraceSize ?? ""}
+                        placeholder="-"
+                        onChange={(e) => {
+                          const value =
+                            e.target.value === ""
+                              ? null
+                              : parseInt(e.target.value);
+                          setTerraceSize(isNaN(value!) ? null : value);
+                          onUpdateModule(true);
+                        }}
+                        className="h-8 text-gray-500"
+                        min="0"
+                        step="1"
+                        disabled={!canEdit}
+                      />
+                    </div>
+                  )}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="balconyCount" className="text-sm">
+                      Nº balcones
                     </Label>
                     <Input
-                      id="terraceSize"
+                      id="balconyCount"
                       type="number"
-                      value={terraceSize ?? ''}
+                      value={balconyCount ?? ""}
                       placeholder="-"
                       onChange={(e) => {
-                        const value = e.target.value === '' ? null : parseInt(e.target.value);
-                        setTerraceSize(isNaN(value!) ? null : value);
+                        const value =
+                          e.target.value === ""
+                            ? null
+                            : parseInt(e.target.value);
+                        setBalconyCount(isNaN(value!) ? null : value);
                         onUpdateModule(true);
                       }}
                       className="h-8 text-gray-500"
@@ -160,81 +195,21 @@ export function AdditionalSpacesCard({
                       disabled={!canEdit}
                     />
                   </div>
-                )}
-                <div className="space-y-1.5">
-                  <Label htmlFor="balconyCount" className="text-sm">
-                    Nº balcones
-                  </Label>
-                  <Input
-                    id="balconyCount"
-                    type="number"
-                    value={balconyCount ?? ''}
-                    placeholder="-"
-                    onChange={(e) => {
-                      const value = e.target.value === '' ? null : parseInt(e.target.value);
-                      setBalconyCount(isNaN(value!) ? null : value);
-                      onUpdateModule(true);
-                    }}
-                    className="h-8 text-gray-500"
-                    min="0"
-                    step="1"
-                    disabled={!canEdit}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="galleryCount" className="text-sm">
-                    Nº galerías
-                  </Label>
-                  <Input
-                    id="galleryCount"
-                    type="number"
-                    value={galleryCount ?? ''}
-                    placeholder="-"
-                    onChange={(e) => {
-                      const value = e.target.value === '' ? null : parseInt(e.target.value);
-                      setGalleryCount(isNaN(value!) ? null : value);
-                      onUpdateModule(true);
-                    }}
-                    className="h-8 text-gray-500"
-                    min="0"
-                    step="1"
-                    disabled={!canEdit}
-                  />
-                </div>
-              </div>
-
-              {/* Storage Spaces */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-medium text-muted-foreground">
-                  Almacenamiento
-                </h4>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="wineCellar"
-                    checked={wineCellar}
-                    onCheckedChange={(checked) => {
-                      setWineCellar(checked as boolean);
-                      onUpdateModule(true);
-                    }}
-                    disabled={!canEdit}
-                  />
-                  <Label htmlFor="wineCellar" className="text-sm">
-                    Bodega
-                  </Label>
-                </div>
-                {wineCellar && (
-                  <div className="ml-6 space-y-1.5">
-                    <Label htmlFor="wineCellarSize" className="text-sm">
-                      Tamaño (m²)
+                  <div className="space-y-1.5">
+                    <Label htmlFor="galleryCount" className="text-sm">
+                      Nº galerías
                     </Label>
                     <Input
-                      id="wineCellarSize"
+                      id="galleryCount"
                       type="number"
-                      value={wineCellarSize ?? ''}
+                      value={galleryCount ?? ""}
                       placeholder="-"
                       onChange={(e) => {
-                        const value = e.target.value === '' ? null : parseInt(e.target.value);
-                        setWineCellarSize(isNaN(value!) ? null : value);
+                        const value =
+                          e.target.value === ""
+                            ? null
+                            : parseInt(e.target.value);
+                        setGalleryCount(isNaN(value!) ? null : value);
                         onUpdateModule(true);
                       }}
                       className="h-8 text-gray-500"
@@ -243,59 +218,107 @@ export function AdditionalSpacesCard({
                       disabled={!canEdit}
                     />
                   </div>
-                )}
-              </div>
-            </div>
+                </div>
 
-            <div className="space-y-3">
-              {/* Room Sizes */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-medium text-muted-foreground">
-                  Dimensiones
-                </h4>
-                <div className="space-y-1.5">
-                  <Label htmlFor="livingRoomSize" className="text-sm">
-                    Tamaño salón (m²)
-                  </Label>
-                  <Input
-                    id="livingRoomSize"
-                    type="number"
-                    value={livingRoomSize ?? ''}
-                    placeholder="-"
-                    onChange={(e) => {
-                      const value = e.target.value === '' ? null : parseInt(e.target.value);
-                      setLivingRoomSize(isNaN(value!) ? null : value);
-                      onUpdateModule(true);
-                    }}
-                    className="h-8 text-gray-500"
-                    min="0"
-                    step="1"
-                    disabled={!canEdit}
-                  />
+                {/* Storage Spaces */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-muted-foreground">
+                    Almacenamiento
+                  </h4>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="wineCellar"
+                      checked={wineCellar}
+                      onCheckedChange={(checked) => {
+                        setWineCellar(checked as boolean);
+                        onUpdateModule(true);
+                      }}
+                      disabled={!canEdit}
+                    />
+                    <Label htmlFor="wineCellar" className="text-sm">
+                      Bodega
+                    </Label>
+                  </div>
+                  {wineCellar && (
+                    <div className="ml-6 space-y-1.5">
+                      <Label htmlFor="wineCellarSize" className="text-sm">
+                        Tamaño (m²)
+                      </Label>
+                      <Input
+                        id="wineCellarSize"
+                        type="number"
+                        value={wineCellarSize ?? ""}
+                        placeholder="-"
+                        onChange={(e) => {
+                          const value =
+                            e.target.value === ""
+                              ? null
+                              : parseInt(e.target.value);
+                          setWineCellarSize(isNaN(value!) ? null : value);
+                          onUpdateModule(true);
+                        }}
+                        className="h-8 text-gray-500"
+                        min="0"
+                        step="1"
+                        disabled={!canEdit}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Built-in Features */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-medium text-muted-foreground">
-                  Empotrados
-                </h4>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="builtInWardrobes"
-                    checked={builtInWardrobes}
-                    onCheckedChange={(checked) => {
-                      setBuiltInWardrobes(!!checked);
-                      onUpdateModule(true);
-                    }}
-                    disabled={!canEdit}
-                  />
-                  <Label htmlFor="builtInWardrobes" className="text-sm">
-                    Armarios empotrados
-                  </Label>
+              <div className="space-y-3">
+                {/* Room Sizes */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-muted-foreground">
+                    Dimensiones
+                  </h4>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="livingRoomSize" className="text-sm">
+                      Tamaño salón (m²)
+                    </Label>
+                    <Input
+                      id="livingRoomSize"
+                      type="number"
+                      value={livingRoomSize ?? ""}
+                      placeholder="-"
+                      onChange={(e) => {
+                        const value =
+                          e.target.value === ""
+                            ? null
+                            : parseInt(e.target.value);
+                        setLivingRoomSize(isNaN(value!) ? null : value);
+                        onUpdateModule(true);
+                      }}
+                      className="h-8 text-gray-500"
+                      min="0"
+                      step="1"
+                      disabled={!canEdit}
+                    />
+                  </div>
+                </div>
+
+                {/* Built-in Features */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-muted-foreground">
+                    Empotrados
+                  </h4>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="builtInWardrobes"
+                      checked={builtInWardrobes}
+                      onCheckedChange={(checked) => {
+                        setBuiltInWardrobes(!!checked);
+                        onUpdateModule(true);
+                      }}
+                      disabled={!canEdit}
+                    />
+                    <Label htmlFor="builtInWardrobes" className="text-sm">
+                      Armarios empotrados
+                    </Label>
+                  </div>
                 </div>
               </div>
-            </div>
             </div>
           )}
         </div>

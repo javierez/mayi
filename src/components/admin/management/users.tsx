@@ -25,18 +25,18 @@ import {
 import { Switch } from "~/components/ui/switch";
 import { Badge } from "~/components/ui/badge";
 import { Checkbox } from "~/components/ui/checkbox";
-import { 
-  Search, 
-  Plus, 
-  Edit, 
-  Trash2, 
+import {
+  Search,
+  Plus,
+  Edit,
+  Trash2,
   Users as UsersIcon,
   UserCheck,
   UserX,
   MoreHorizontal,
   Filter,
   RefreshCw,
-  Settings
+  Settings,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -71,7 +71,11 @@ import type {
 const AVAILABLE_ROLES: RoleOption[] = [
   { roleId: 1, name: "agent", description: "Agente con permisos básicos" },
   { roleId: 2, name: "superadmin", description: "Acceso completo al sistema" },
-  { roleId: 3, name: "admin de cuenta", description: "Administrador de cuenta" },
+  {
+    roleId: 3,
+    name: "admin de cuenta",
+    description: "Administrador de cuenta",
+  },
 ];
 
 interface UserFormData {
@@ -94,10 +98,10 @@ export const UsersManagement: FC = () => {
   const [filters, setFilters] = useState<UserFilters>({
     page: 1,
     limit: 10,
-    search: '',
-    statusFilter: 'active',
-    sortBy: 'createdAt',
-    sortOrder: 'desc',
+    search: "",
+    statusFilter: "active",
+    sortBy: "createdAt",
+    sortOrder: "desc",
   });
   const [pagination, setPagination] = useState({
     totalCount: 0,
@@ -117,27 +121,32 @@ export const UsersManagement: FC = () => {
   // Helper function to get Spanish role names
   const getRoleDisplayName = (roleName: string): string => {
     const roleMap: Record<string, string> = {
-      'superadmin': 'Superadmin',
-      'admin': 'Administrador', 
-      'account-admin': 'Admin de Cuenta',
-      'account_admin': 'Admin de Cuenta',
-      'admin de cuenta': 'Admin de Cuenta',
-      'agent': 'Agente'
+      superadmin: "Superadmin",
+      admin: "Administrador",
+      "account-admin": "Admin de Cuenta",
+      account_admin: "Admin de Cuenta",
+      "admin de cuenta": "Admin de Cuenta",
+      agent: "Agente",
     };
-    return roleMap[roleName?.toLowerCase()] ?? roleName ?? 'Sin rol';
+    return roleMap[roleName?.toLowerCase()] ?? roleName ?? "Sin rol";
   };
 
   // Helper function to get role badge variant
-  const getRoleBadgeVariant = (roleName: string): "default" | "secondary" | "destructive" | "outline" => {
-    const roleMap: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      'superadmin': 'destructive',
-      'admin': 'default',
-      'account-admin': 'default',
-      'account_admin': 'default',
-      'admin de cuenta': 'default',
-      'agent': 'secondary'
+  const getRoleBadgeVariant = (
+    roleName: string,
+  ): "default" | "secondary" | "destructive" | "outline" => {
+    const roleMap: Record<
+      string,
+      "default" | "secondary" | "destructive" | "outline"
+    > = {
+      superadmin: "destructive",
+      admin: "default",
+      "account-admin": "default",
+      account_admin: "default",
+      "admin de cuenta": "default",
+      agent: "secondary",
     };
-    return roleMap[roleName?.toLowerCase()] ?? 'outline';
+    return roleMap[roleName?.toLowerCase()] ?? "outline";
   };
 
   // Form state
@@ -192,13 +201,15 @@ export const UsersManagement: FC = () => {
   const loadAccounts = useCallback(async () => {
     try {
       const result = await searchAccounts();
-      setAccounts(result.map(account => ({
-        accountId: Number(account.accountId),
-        name: account.name,
-        plan: account.plan ?? undefined,
-      })));
+      setAccounts(
+        result.map((account) => ({
+          accountId: Number(account.accountId),
+          name: account.name,
+          plan: account.plan ?? undefined,
+        })),
+      );
     } catch (error) {
-      console.error('Error loading accounts:', error);
+      console.error("Error loading accounts:", error);
     }
   }, []);
 
@@ -227,7 +238,9 @@ export const UsersManagement: FC = () => {
       resetForm();
       void loadUsers();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al crear usuario");
+      toast.error(
+        error instanceof Error ? error.message : "Error al crear usuario",
+      );
       console.error(error);
     } finally {
       setIsCreating(false);
@@ -252,9 +265,12 @@ export const UsersManagement: FC = () => {
       };
 
       await updateUser(selectedUser.id, updateData);
-      
+
       // Update role if changed
-      if (formData.roleId && selectedUser.roles[0]?.roleId !== parseInt(formData.roleId)) {
+      if (
+        formData.roleId &&
+        selectedUser.roles[0]?.roleId !== parseInt(formData.roleId)
+      ) {
         await assignRoleToUser(selectedUser.id, parseInt(formData.roleId));
       }
 
@@ -264,7 +280,9 @@ export const UsersManagement: FC = () => {
       resetForm();
       void loadUsers();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al actualizar usuario");
+      toast.error(
+        error instanceof Error ? error.message : "Error al actualizar usuario",
+      );
       console.error(error);
     } finally {
       setIsUpdating(false);
@@ -279,7 +297,9 @@ export const UsersManagement: FC = () => {
       toast.success("Usuario eliminado exitosamente");
       void loadUsers();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al eliminar usuario");
+      toast.error(
+        error instanceof Error ? error.message : "Error al eliminar usuario",
+      );
       console.error(error);
     }
   };
@@ -287,27 +307,39 @@ export const UsersManagement: FC = () => {
   const handleToggleUserStatus = async (userId: string) => {
     try {
       const result = await toggleUserStatus(userId);
-      toast.success(`Usuario ${result.isActive ? 'activado' : 'desactivado'} exitosamente`);
+      toast.success(
+        `Usuario ${result.isActive ? "activado" : "desactivado"} exitosamente`,
+      );
       void loadUsers();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al cambiar estado del usuario");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Error al cambiar estado del usuario",
+      );
       console.error(error);
     }
   };
 
-  const handleBulkAction = async (action: 'activate' | 'deactivate' | 'delete') => {
+  const handleBulkAction = async (
+    action: "activate" | "deactivate" | "delete",
+  ) => {
     if (selectedUsers.length === 0) {
       toast.error("Selecciona al menos un usuario");
       return;
     }
 
     const actionText = {
-      activate: 'activar',
-      deactivate: 'desactivar',
-      delete: 'eliminar'
+      activate: "activar",
+      deactivate: "desactivar",
+      delete: "eliminar",
     }[action];
 
-    if (!confirm(`¿Estás seguro de que quieres ${actionText} ${selectedUsers.length} usuario(s)?`)) {
+    if (
+      !confirm(
+        `¿Estás seguro de que quieres ${actionText} ${selectedUsers.length} usuario(s)?`,
+      )
+    ) {
       return;
     }
 
@@ -318,11 +350,17 @@ export const UsersManagement: FC = () => {
       };
 
       await bulkUserActions(bulkOperation);
-      toast.success(`${selectedUsers.length} usuario(s) ${actionText}(s) exitosamente`);
+      toast.success(
+        `${selectedUsers.length} usuario(s) ${actionText}(s) exitosamente`,
+      );
       setSelectedUsers([]);
       void loadUsers();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : `Error al ${actionText} usuarios`);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : `Error al ${actionText} usuarios`,
+      );
       console.error(error);
     }
   };
@@ -347,7 +385,7 @@ export const UsersManagement: FC = () => {
 
   const openRoleEditDialog = (user: UserWithRoles) => {
     setSelectedUser(user);
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       roleId: user.roles[0]?.roleId.toString() ?? "",
     }));
@@ -365,7 +403,9 @@ export const UsersManagement: FC = () => {
       setSelectedUser(null);
       void loadUsers();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al actualizar rol");
+      toast.error(
+        error instanceof Error ? error.message : "Error al actualizar rol",
+      );
     } finally {
       setIsUpdating(false);
     }
@@ -373,7 +413,7 @@ export const UsersManagement: FC = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedUsers(users.map(user => user.id));
+      setSelectedUsers(users.map((user) => user.id));
     } else {
       setSelectedUsers([]);
     }
@@ -383,7 +423,7 @@ export const UsersManagement: FC = () => {
     if (checked) {
       setSelectedUsers([...selectedUsers, userId]);
     } else {
-      setSelectedUsers(selectedUsers.filter(id => id !== userId));
+      setSelectedUsers(selectedUsers.filter((id) => id !== userId));
     }
   };
 
@@ -398,7 +438,10 @@ export const UsersManagement: FC = () => {
       {/* Header with actions */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <Dialog
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+          >
             <DialogTrigger asChild>
               <Button onClick={resetForm}>
                 <Plus className="mr-2 h-4 w-4" />
@@ -420,7 +463,9 @@ export const UsersManagement: FC = () => {
                   <Input
                     id="create-name"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     className="col-span-3"
                     required
                   />
@@ -433,7 +478,9 @@ export const UsersManagement: FC = () => {
                     id="create-email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     className="col-span-3"
                     required
                   />
@@ -445,7 +492,9 @@ export const UsersManagement: FC = () => {
                   <Input
                     id="create-firstName"
                     value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, firstName: e.target.value })
+                    }
                     className="col-span-3"
                     required
                   />
@@ -457,7 +506,9 @@ export const UsersManagement: FC = () => {
                   <Input
                     id="create-lastName"
                     value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, lastName: e.target.value })
+                    }
                     className="col-span-3"
                   />
                 </div>
@@ -468,7 +519,9 @@ export const UsersManagement: FC = () => {
                   <Input
                     id="create-phone"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
                     className="col-span-3"
                   />
                 </div>
@@ -478,14 +531,19 @@ export const UsersManagement: FC = () => {
                   </Label>
                   <Select
                     value={formData.accountId}
-                    onValueChange={(value) => setFormData({ ...formData, accountId: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, accountId: value })
+                    }
                   >
                     <SelectTrigger className="col-span-3">
                       <SelectValue placeholder="Selecciona una cuenta" />
                     </SelectTrigger>
                     <SelectContent>
                       {accounts.map((account) => (
-                        <SelectItem key={account.accountId} value={account.accountId.toString()}>
+                        <SelectItem
+                          key={account.accountId}
+                          value={account.accountId.toString()}
+                        >
                           {account.name}
                         </SelectItem>
                       ))}
@@ -498,14 +556,19 @@ export const UsersManagement: FC = () => {
                   </Label>
                   <Select
                     value={formData.roleId}
-                    onValueChange={(value) => setFormData({ ...formData, roleId: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, roleId: value })
+                    }
                   >
                     <SelectTrigger className="col-span-3">
                       <SelectValue placeholder="Selecciona un rol" />
                     </SelectTrigger>
                     <SelectContent>
                       {AVAILABLE_ROLES.map((role) => (
-                        <SelectItem key={role.roleId} value={role.roleId.toString()}>
+                        <SelectItem
+                          key={role.roleId}
+                          value={role.roleId.toString()}
+                        >
                           {getRoleDisplayName(role.name)}
                         </SelectItem>
                       ))}
@@ -518,7 +581,9 @@ export const UsersManagement: FC = () => {
                   </Label>
                   <Select
                     value={formData.language}
-                    onValueChange={(value) => setFormData({ ...formData, language: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, language: value })
+                    }
                   >
                     <SelectTrigger className="col-span-3">
                       <SelectValue />
@@ -537,7 +602,9 @@ export const UsersManagement: FC = () => {
                   <Switch
                     id="create-isVerified"
                     checked={formData.isVerified}
-                    onCheckedChange={(checked) => setFormData({ ...formData, isVerified: checked })}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, isVerified: checked })
+                    }
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -547,7 +614,9 @@ export const UsersManagement: FC = () => {
                   <Switch
                     id="create-isActive"
                     checked={formData.isActive}
-                    onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, isActive: checked })
+                    }
                   />
                 </div>
               </div>
@@ -568,7 +637,9 @@ export const UsersManagement: FC = () => {
           </Button>
 
           <Button variant="outline" onClick={loadUsers} disabled={loading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
+            />
             Actualizar
           </Button>
         </div>
@@ -579,26 +650,26 @@ export const UsersManagement: FC = () => {
             <span className="text-sm text-gray-600">
               {selectedUsers.length} seleccionado(s)
             </span>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
-              onClick={() => handleBulkAction('activate')}
+              onClick={() => handleBulkAction("activate")}
             >
               <UserCheck className="mr-1 h-3 w-3" />
               Activar
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
-              onClick={() => handleBulkAction('deactivate')}
+              onClick={() => handleBulkAction("deactivate")}
             >
               <UserX className="mr-1 h-3 w-3" />
               Desactivar
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               size="sm"
-              onClick={() => handleBulkAction('delete')}
+              onClick={() => handleBulkAction("delete")}
             >
               <Trash2 className="mr-1 h-3 w-3" />
               Eliminar
@@ -622,7 +693,13 @@ export const UsersManagement: FC = () => {
                   <Input
                     placeholder="Nombre, email..."
                     value={filters.search}
-                    onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })}
+                    onChange={(e) =>
+                      setFilters({
+                        ...filters,
+                        search: e.target.value,
+                        page: 1,
+                      })
+                    }
                     className="pl-10"
                   />
                 </div>
@@ -630,12 +707,13 @@ export const UsersManagement: FC = () => {
               <div>
                 <Label className="text-xs">Cuenta</Label>
                 <Select
-                  value={filters.accountId?.toString() ?? 'all'}
-                  onValueChange={(value) => 
-                    setFilters({ 
-                      ...filters, 
-                      accountId: (value && value !== "all") ? parseInt(value) : undefined, 
-                      page: 1 
+                  value={filters.accountId?.toString() ?? "all"}
+                  onValueChange={(value) =>
+                    setFilters({
+                      ...filters,
+                      accountId:
+                        value && value !== "all" ? parseInt(value) : undefined,
+                      page: 1,
                     })
                   }
                 >
@@ -645,7 +723,10 @@ export const UsersManagement: FC = () => {
                   <SelectContent>
                     <SelectItem value="all">Todas las cuentas</SelectItem>
                     {accounts.map((account) => (
-                      <SelectItem key={account.accountId} value={account.accountId.toString()}>
+                      <SelectItem
+                        key={account.accountId}
+                        value={account.accountId.toString()}
+                      >
                         {account.name}
                       </SelectItem>
                     ))}
@@ -656,7 +737,7 @@ export const UsersManagement: FC = () => {
                 <Label className="text-xs">Estado</Label>
                 <Select
                   value={filters.statusFilter}
-                  onValueChange={(value: 'active' | 'inactive' | 'all') => 
+                  onValueChange={(value: "active" | "inactive" | "all") =>
                     setFilters({ ...filters, statusFilter: value, page: 1 })
                   }
                 >
@@ -673,12 +754,13 @@ export const UsersManagement: FC = () => {
               <div>
                 <Label className="text-xs">Rol</Label>
                 <Select
-                  value={filters.roleFilter?.toString() ?? 'all'}
-                  onValueChange={(value) => 
-                    setFilters({ 
-                      ...filters, 
-                      roleFilter: (value && value !== "all") ? parseInt(value) : undefined, 
-                      page: 1 
+                  value={filters.roleFilter?.toString() ?? "all"}
+                  onValueChange={(value) =>
+                    setFilters({
+                      ...filters,
+                      roleFilter:
+                        value && value !== "all" ? parseInt(value) : undefined,
+                      page: 1,
                     })
                   }
                 >
@@ -688,7 +770,10 @@ export const UsersManagement: FC = () => {
                   <SelectContent>
                     <SelectItem value="all">Todos los roles</SelectItem>
                     {AVAILABLE_ROLES.map((role) => (
-                      <SelectItem key={role.roleId} value={role.roleId.toString()}>
+                      <SelectItem
+                        key={role.roleId}
+                        value={role.roleId.toString()}
+                      >
                         {getRoleDisplayName(role.name)}
                       </SelectItem>
                     ))}
@@ -699,9 +784,9 @@ export const UsersManagement: FC = () => {
                 <Label className="text-xs">Ordenar por</Label>
                 <Select
                   value={filters.sortBy}
-                  onValueChange={(value: 'name' | 'email' | 'createdAt' | 'lastLogin') => 
-                    setFilters({ ...filters, sortBy: value })
-                  }
+                  onValueChange={(
+                    value: "name" | "email" | "createdAt" | "lastLogin",
+                  ) => setFilters({ ...filters, sortBy: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -732,7 +817,10 @@ export const UsersManagement: FC = () => {
             <CardContent className="flex flex-col items-center justify-center py-12">
               <UsersIcon className="mb-4 h-12 w-12 text-gray-400" />
               <p className="text-center text-gray-500">
-                {filters.search || filters.roleFilter || filters.accountId || filters.statusFilter !== 'active'
+                {filters.search ||
+                filters.roleFilter ||
+                filters.accountId ||
+                filters.statusFilter !== "active"
                   ? "No se encontraron usuarios con los filtros actuales"
                   : "No hay usuarios registrados"}
               </p>
@@ -763,27 +851,29 @@ export const UsersManagement: FC = () => {
                     <div className="flex items-start gap-3">
                       <Checkbox
                         checked={selectedUsers.includes(user.id)}
-                        onCheckedChange={(checked) => 
+                        onCheckedChange={(checked) =>
                           handleSelectUser(user.id, checked as boolean)
                         }
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <h3 className="font-medium">{user.name}</h3>
-                          {user.roles.length > 0 ? user.roles.map((role) => (
-                            <Badge 
-                              key={role.roleId} 
-                              variant={getRoleBadgeVariant(role.name)}
-                              className="text-xs font-medium"
-                            >
-                              {getRoleDisplayName(role.name)}
-                            </Badge>
-                          )) : (
+                          {user.roles.length > 0 ? (
+                            user.roles.map((role) => (
+                              <Badge
+                                key={role.roleId}
+                                variant={getRoleBadgeVariant(role.name)}
+                                className="text-xs font-medium"
+                              >
+                                {getRoleDisplayName(role.name)}
+                              </Badge>
+                            ))
+                          ) : (
                             <Badge variant="outline" className="text-xs">
                               Sin rol
                             </Badge>
                           )}
-                          <Badge 
+                          <Badge
                             variant={user.isActive ? "default" : "secondary"}
                             className="text-xs"
                           >
@@ -802,15 +892,24 @@ export const UsersManagement: FC = () => {
                             </p>
                           )}
                           <p className="text-gray-600">{user.email}</p>
-                          {user.phone && <p className="text-gray-600">Teléfono: {user.phone}</p>}
-                          <p className="text-gray-600">Creado: {user.createdAt.toLocaleDateString()}</p>
+                          {user.phone && (
+                            <p className="text-gray-600">
+                              Teléfono: {user.phone}
+                            </p>
+                          )}
+                          <p className="text-gray-600">
+                            Creado: {user.createdAt.toLocaleDateString()}
+                          </p>
                           {user.lastLogin && (
-                            <p className="text-gray-600">Último acceso: {user.lastLogin.toLocaleDateString()}</p>
+                            <p className="text-gray-600">
+                              Último acceso:{" "}
+                              {user.lastLogin.toLocaleDateString()}
+                            </p>
                           )}
                         </div>
                       </div>
                     </div>
-                    
+
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
@@ -824,21 +923,29 @@ export const UsersManagement: FC = () => {
                           <Edit className="mr-2 h-4 w-4" />
                           Editar
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openRoleEditDialog(user)}>
+                        <DropdownMenuItem
+                          onClick={() => openRoleEditDialog(user)}
+                        >
                           <Settings className="mr-2 h-4 w-4" />
                           Cambiar Rol
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={() => handleToggleUserStatus(user.id)}
                         >
                           {user.isActive ? (
-                            <><UserX className="mr-2 h-4 w-4" />Desactivar</>
+                            <>
+                              <UserX className="mr-2 h-4 w-4" />
+                              Desactivar
+                            </>
                           ) : (
-                            <><UserCheck className="mr-2 h-4 w-4" />Activar</>
+                            <>
+                              <UserCheck className="mr-2 h-4 w-4" />
+                              Activar
+                            </>
                           )}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={() => handleDeleteUser(user.id)}
                           className="text-red-600"
                         >
@@ -859,16 +966,21 @@ export const UsersManagement: FC = () => {
       {pagination.totalPages > 1 && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-gray-600">
-            Mostrando {((pagination.page - 1) * (filters.limit ?? 10)) + 1} a{' '}
-            {Math.min(pagination.page * (filters.limit ?? 10), pagination.totalCount)} de{' '}
-            {pagination.totalCount} usuarios
+            Mostrando {(pagination.page - 1) * (filters.limit ?? 10) + 1} a{" "}
+            {Math.min(
+              pagination.page * (filters.limit ?? 10),
+              pagination.totalCount,
+            )}{" "}
+            de {pagination.totalCount} usuarios
           </p>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
               disabled={pagination.page <= 1}
-              onClick={() => setFilters({ ...filters, page: pagination.page - 1 })}
+              onClick={() =>
+                setFilters({ ...filters, page: pagination.page - 1 })
+              }
             >
               Anterior
             </Button>
@@ -876,7 +988,9 @@ export const UsersManagement: FC = () => {
               variant="outline"
               size="sm"
               disabled={pagination.page >= pagination.totalPages}
-              onClick={() => setFilters({ ...filters, page: pagination.page + 1 })}
+              onClick={() =>
+                setFilters({ ...filters, page: pagination.page + 1 })
+              }
             >
               Siguiente
             </Button>
@@ -902,7 +1016,9 @@ export const UsersManagement: FC = () => {
               <Input
                 id="edit-name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
                 className="col-span-3"
                 required
               />
@@ -915,7 +1031,9 @@ export const UsersManagement: FC = () => {
                 id="edit-email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
                 className="col-span-3"
                 required
               />
@@ -927,7 +1045,9 @@ export const UsersManagement: FC = () => {
               <Input
                 id="edit-firstName"
                 value={formData.firstName}
-                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, firstName: e.target.value })
+                }
                 className="col-span-3"
                 required
               />
@@ -939,7 +1059,9 @@ export const UsersManagement: FC = () => {
               <Input
                 id="edit-lastName"
                 value={formData.lastName}
-                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, lastName: e.target.value })
+                }
                 className="col-span-3"
               />
             </div>
@@ -950,7 +1072,9 @@ export const UsersManagement: FC = () => {
               <Input
                 id="edit-phone"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
                 className="col-span-3"
               />
             </div>
@@ -960,14 +1084,19 @@ export const UsersManagement: FC = () => {
               </Label>
               <Select
                 value={formData.roleId}
-                onValueChange={(value) => setFormData({ ...formData, roleId: value })}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, roleId: value })
+                }
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Selecciona un rol" />
                 </SelectTrigger>
                 <SelectContent>
                   {AVAILABLE_ROLES.map((role) => (
-                    <SelectItem key={role.roleId} value={role.roleId.toString()}>
+                    <SelectItem
+                      key={role.roleId}
+                      value={role.roleId.toString()}
+                    >
                       {getRoleDisplayName(role.name)}
                     </SelectItem>
                   ))}
@@ -981,7 +1110,9 @@ export const UsersManagement: FC = () => {
               <Switch
                 id="edit-isVerified"
                 checked={formData.isVerified}
-                onCheckedChange={(checked) => setFormData({ ...formData, isVerified: checked })}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, isVerified: checked })
+                }
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -991,7 +1122,9 @@ export const UsersManagement: FC = () => {
               <Switch
                 id="edit-isActive"
                 checked={formData.isActive}
-                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, isActive: checked })
+                }
               />
             </div>
           </div>
@@ -1004,7 +1137,10 @@ export const UsersManagement: FC = () => {
       </Dialog>
 
       {/* Role Edit Dialog */}
-      <Dialog open={isRoleEditDialogOpen} onOpenChange={setIsRoleEditDialogOpen}>
+      <Dialog
+        open={isRoleEditDialogOpen}
+        onOpenChange={setIsRoleEditDialogOpen}
+      >
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>Cambiar Rol de Usuario</DialogTitle>
@@ -1019,16 +1155,24 @@ export const UsersManagement: FC = () => {
               </Label>
               <Select
                 value={formData.roleId}
-                onValueChange={(value) => setFormData({ ...formData, roleId: value })}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, roleId: value })
+                }
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Selecciona un rol" />
                 </SelectTrigger>
                 <SelectContent>
                   {AVAILABLE_ROLES.map((role) => (
-                    <SelectItem key={role.roleId} value={role.roleId.toString()}>
+                    <SelectItem
+                      key={role.roleId}
+                      value={role.roleId.toString()}
+                    >
                       <div className="flex items-center gap-2">
-                        <Badge variant={getRoleBadgeVariant(role.name)} className="text-xs">
+                        <Badge
+                          variant={getRoleBadgeVariant(role.name)}
+                          className="text-xs"
+                        >
                           {getRoleDisplayName(role.name)}
                         </Badge>
                         <span className="text-sm text-muted-foreground">
@@ -1042,14 +1186,14 @@ export const UsersManagement: FC = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setIsRoleEditDialogOpen(false)}
               disabled={isUpdating}
             >
               Cancelar
             </Button>
-            <Button 
+            <Button
               onClick={handleRoleEdit}
               disabled={isUpdating || !formData.roleId}
             >

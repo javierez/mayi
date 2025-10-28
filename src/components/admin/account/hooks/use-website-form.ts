@@ -186,7 +186,7 @@ export function useWebsiteForm(userId?: string): UseWebsiteFormReturn {
             "📋 FORM: metadata.mainpage:",
             result.data.metadata?.mainpage,
           );
-          
+
           // Ensure all fields have defined values (not undefined)
           const formData = {
             ...result.data,
@@ -210,8 +210,11 @@ export function useWebsiteForm(userId?: string): UseWebsiteFormReturn {
               title: result.data.heroProps?.title ?? "",
               subtitle: result.data.heroProps?.subtitle ?? "",
               backgroundImage: result.data.heroProps?.backgroundImage ?? "",
-              findPropertyButton: result.data.heroProps?.findPropertyButton ?? "Explorar Propiedades",
-              contactButton: result.data.heroProps?.contactButton ?? "Contáctanos",
+              findPropertyButton:
+                result.data.heroProps?.findPropertyButton ??
+                "Explorar Propiedades",
+              contactButton:
+                result.data.heroProps?.contactButton ?? "Contáctanos",
             },
             aboutProps: {
               ...result.data.aboutProps,
@@ -221,10 +224,16 @@ export function useWebsiteForm(userId?: string): UseWebsiteFormReturn {
               content: result.data.aboutProps?.content ?? "",
               content2: result.data.aboutProps?.content2 ?? "",
               image: result.data.aboutProps?.image ?? "",
-              maxServicesDisplayed: result.data.aboutProps?.maxServicesDisplayed ?? 6,
-              servicesSectionTitle: result.data.aboutProps?.servicesSectionTitle ?? "Nuestros Servicios",
-              aboutSectionTitle: result.data.aboutProps?.aboutSectionTitle ?? "Nuestra Misión",
-              buttonName: result.data.aboutProps?.buttonName ?? "Contacta a Nuestro Equipo",
+              maxServicesDisplayed:
+                result.data.aboutProps?.maxServicesDisplayed ?? 6,
+              servicesSectionTitle:
+                result.data.aboutProps?.servicesSectionTitle ??
+                "Nuestros Servicios",
+              aboutSectionTitle:
+                result.data.aboutProps?.aboutSectionTitle ?? "Nuestra Misión",
+              buttonName:
+                result.data.aboutProps?.buttonName ??
+                "Contacta a Nuestro Equipo",
               showKPI: result.data.aboutProps?.showKPI ?? true,
               kpi1Name: result.data.aboutProps?.kpi1Name ?? "",
               kpi1Data: result.data.aboutProps?.kpi1Data ?? "",
@@ -236,7 +245,7 @@ export function useWebsiteForm(userId?: string): UseWebsiteFormReturn {
               kpi4Data: result.data.aboutProps?.kpi4Data ?? "",
             },
           };
-          
+
           form.reset(formData);
           console.log("📋 FORM: Form reset completed with data");
         } else {

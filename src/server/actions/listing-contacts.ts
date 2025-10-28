@@ -28,8 +28,8 @@ export async function deactivateListingContactAction(
       .where(
         and(
           eq(listingContacts.listingContactId, listingContactId),
-          eq(contacts.accountId, BigInt(accountId))
-        )
+          eq(contacts.accountId, BigInt(accountId)),
+        ),
       )
       .limit(1);
 
@@ -65,6 +65,64 @@ export async function deactivateListingContactAction(
 }
 
 /**
+ * Reactivate a listing contact (set isActive = true)
+ * This adds the contact back to the active contacts list for a property
+ */
+export async function reactivateListingContactAction(
+  listingContactId: bigint,
+  listingId?: bigint,
+) {
+  try {
+    const accountId = await getCurrentUserAccountId();
+
+    // Verify the listing contact belongs to the current account
+    const [listingContact] = await db
+      .select({
+        listingContactId: listingContacts.listingContactId,
+        listingId: listingContacts.listingId,
+      })
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .where(
+        and(
+          eq(listingContacts.listingContactId, listingContactId),
+          eq(contacts.accountId, BigInt(accountId)),
+        ),
+      )
+      .limit(1);
+
+    if (!listingContact) {
+      return {
+        success: false,
+        error: "Contacto no encontrado o acceso denegado",
+      };
+    }
+
+    // Update the listing contact to set isActive = true
+    await db
+      .update(listingContacts)
+      .set({
+        isActive: true,
+        updatedAt: new Date(),
+      })
+      .where(eq(listingContacts.listingContactId, listingContactId));
+
+    // Revalidate the property detail page if listingId is provided
+    if (listingId ?? listingContact.listingId) {
+      revalidatePath(`/propiedades/${listingId ?? listingContact.listingId}`);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error reactivating listing contact:", error);
+    return {
+      success: false,
+      error: "Error al reactivar el contacto",
+    };
+  }
+}
+
+/**
  * Add or update offer amount for a listing contact
  */
 export async function addOfferToListingContactAction(
@@ -88,8 +146,8 @@ export async function addOfferToListingContactAction(
       .where(
         and(
           eq(listingContacts.listingContactId, listingContactId),
-          eq(contacts.accountId, BigInt(accountId))
-        )
+          eq(contacts.accountId, BigInt(accountId)),
+        ),
       )
       .limit(1);
 
@@ -160,8 +218,8 @@ export async function updateOfferStatusAction(
         .where(
           and(
             eq(listingContacts.listingContactId, listingContactId),
-            eq(contacts.accountId, BigInt(accountId))
-          )
+            eq(contacts.accountId, BigInt(accountId)),
+          ),
         )
         .limit(1);
 
@@ -182,7 +240,9 @@ export async function updateOfferStatusAction(
       if (offerAccepted === true) {
         // Verify listingId exists before creating deal
         if (!listingContact.listingId) {
-          throw new Error("No se puede crear un trato sin un listingId asociado");
+          throw new Error(
+            "No se puede crear un trato sin un listingId asociado",
+          );
         }
 
         // Accepting an offer: create or update deal

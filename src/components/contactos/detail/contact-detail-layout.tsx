@@ -35,7 +35,10 @@ export function ContactDetailLayout({ contact }: ContactDetailLayoutProps) {
 
   const handleRatingChange = (rating: number | null) => {
     startTransition(async () => {
-      const result = await updateContactRating(Number(contact.contactId), rating);
+      const result = await updateContactRating(
+        Number(contact.contactId),
+        rating,
+      );
       if (result.success) {
         toast.success(
           rating

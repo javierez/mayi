@@ -1,7 +1,13 @@
 "use server";
 
 import { db } from "~/server/db";
-import { listings, properties, contacts, locations, accounts } from "~/server/db/schema";
+import {
+  listings,
+  properties,
+  contacts,
+  locations,
+  accounts,
+} from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getCurrentUserAccountId } from "~/lib/dal";
 import { sendEmail } from "~/lib/email";
@@ -11,7 +17,11 @@ export async function shareListingViaEmailWithAuth(
   contactId: bigint,
   prospectId: bigint,
 ) {
-  console.log("📧 Sharing listing via email:", { listingId, contactId, prospectId });
+  console.log("📧 Sharing listing via email:", {
+    listingId,
+    contactId,
+    prospectId,
+  });
   const accountId = await getCurrentUserAccountId();
 
   try {
@@ -76,7 +86,10 @@ export async function shareListingViaEmailWithAuth(
       })
       .from(listings)
       .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
       .where(eq(listings.listingId, listingId));
 
     if (!listingData) {
@@ -87,7 +100,11 @@ export async function shareListingViaEmailWithAuth(
     }
 
     // Generate email content
-    const { html, text } = generatePropertyShareEmail(listingData, contact, accountWebsite);
+    const { html, text } = generatePropertyShareEmail(
+      listingData,
+      contact,
+      accountWebsite,
+    );
 
     // Send email
     await sendEmail({
@@ -106,7 +123,8 @@ export async function shareListingViaEmailWithAuth(
     console.error("❌ Error sharing listing:", error);
     return {
       success: false,
-      message: error instanceof Error ? error.message : "Error al compartir propiedad",
+      message:
+        error instanceof Error ? error.message : "Error al compartir propiedad",
     };
   }
 }
@@ -136,7 +154,8 @@ function generatePropertyShareEmail(
 ): { html: string; text: string } {
   const listingTypeText = listing.listingType === "Sale" ? "Venta" : "Alquiler";
   const propertyTypeText = listing.propertyType
-    ? listing.propertyType.charAt(0).toUpperCase() + listing.propertyType.slice(1)
+    ? listing.propertyType.charAt(0).toUpperCase() +
+      listing.propertyType.slice(1)
     : "Propiedad";
   const price = parseFloat(listing.price);
   const priceText =
@@ -144,13 +163,18 @@ function generatePropertyShareEmail(
       ? `€${Math.round(price / 1000)}k`
       : `€${price.toLocaleString()}/mes`;
 
-  const propertyTitle = listing.title ?? `${propertyTypeText} en ${listing.neighborhood ?? listing.city ?? ""}`;
+  const propertyTitle =
+    listing.title ??
+    `${propertyTypeText} en ${listing.neighborhood ?? listing.city ?? ""}`;
   const location = [listing.neighborhood, listing.city, listing.province]
     .filter(Boolean)
     .join(", ");
 
   // Use account website or fallback to current origin
-  const baseUrl = accountWebsite ?? (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000");
+  const baseUrl =
+    accountWebsite ??
+    process.env.NEXT_PUBLIC_APP_URL ??
+    "http://localhost:3000";
   const cleanBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
   const propertyUrl = `${cleanBaseUrl}/propiedades/${listing.listingId.toString()}`;
 

@@ -1,6 +1,6 @@
 /**
  * Property Types Configuration
- * 
+ *
  * Defines which fields are applicable for each property type based on the form cards analysis.
  * This helps generate accurate property descriptions by only including relevant fields.
  */
@@ -12,8 +12,22 @@ export type PropertyType = "piso" | "casa" | "local" | "solar" | "garaje";
 
 // Property subtypes for each main type
 export interface PropertySubtypes {
-  piso: "Tríplex" | "Dúplex" | "Ático" | "Estudio" | "Loft" | "Piso" | "Apartamento" | "Bajo";
-  casa: "Casa" | "Casa adosada" | "Casa pareada" | "Chalet" | "Casa rústica" | "Bungalow";
+  piso:
+    | "Tríplex"
+    | "Dúplex"
+    | "Ático"
+    | "Estudio"
+    | "Loft"
+    | "Piso"
+    | "Apartamento"
+    | "Bajo";
+  casa:
+    | "Casa"
+    | "Casa adosada"
+    | "Casa pareada"
+    | "Chalet"
+    | "Casa rústica"
+    | "Bungalow";
   local: "Residencial" | "Otros" | "Mixto residencial" | "Oficinas" | "Hotel";
   solar: "Suelo residencial" | "Suelo industrial" | "Suelo rústico";
   garaje: "Moto" | "Doble" | "Individual";
@@ -25,20 +39,20 @@ export interface CorePropertyFields {
   propertyId?: number | string;
   listingId?: number | string;
   agentId?: string;
-  
+
   // Basic property info
   propertyType: PropertyType;
   propertySubtype?: string;
   listingType?: string;
   price?: number | string;
   cadastralReference?: string;
-  
+
   // Status flags
   isBankOwned?: boolean;
   isFeatured?: boolean;
   newConstruction?: boolean;
   publishToWebsite?: boolean;
-  
+
   // Location (all properties have location)
   street?: string;
   addressDetails?: string;
@@ -49,11 +63,11 @@ export interface CorePropertyFields {
   municipality?: string;
   latitude?: number;
   longitude?: number;
-  
+
   // Content
   description?: string;
   shortDescription?: string;
-  
+
   // Agent information
   agent?: {
     id: string;
@@ -64,14 +78,14 @@ export interface CorePropertyFields {
 // Fields specific to garage properties
 export interface GaragePropertyFields extends CorePropertyFields {
   propertyType: "garaje";
-  
+
   // Garage-specific measurements (uses builtSurfaceArea instead of squareMeter)
   builtSurfaceArea?: number;
-  
+
   // Construction details (limited for garages)
   yearBuilt?: number;
   conservationStatus?: number;
-  
+
   // Garage-specific features
   hasGarage?: boolean; // Can still have additional garage spaces
   garageType?: string;
@@ -79,25 +93,25 @@ export interface GaragePropertyFields extends CorePropertyFields {
   garageInBuilding?: boolean;
   garageNumber?: string;
   optionalGaragePrice?: number;
-  
+
   // Basic building features that apply to garages
   hasElevator?: boolean;
-  
+
   // Security features (applicable to garages)
   videoIntercom?: boolean;
   conciergeService?: boolean;
   securityGuard?: boolean;
   alarm?: boolean;
   securityDoor?: boolean;
-  
+
   // Building characteristics
   disabledAccessible?: boolean;
   vpo?: boolean;
   satelliteDish?: boolean;
-  
+
   // Orientation (only exterior applies)
   exterior?: boolean;
-  
+
   // Rental-specific (if applicable)
   internet?: boolean;
   studentFriendly?: boolean;
@@ -108,28 +122,28 @@ export interface GaragePropertyFields extends CorePropertyFields {
 // Fields specific to solar (land) properties
 export interface SolarPropertyFields extends CorePropertyFields {
   propertyType: "solar";
-  
+
   // Solar-specific measurements
   squareMeter?: number; // Total land area
   builtSurfaceArea?: number; // Buildable area
-  
+
   // No construction year for undeveloped land
   // No conservation status for land
   // No building floors for land
-  
+
   // Orientation and characteristics
   orientation?: string;
   bright?: boolean;
-  
+
   // Views (land can have views)
   views?: boolean;
   mountainViews?: boolean;
   seaViews?: boolean;
   beachfront?: boolean;
-  
+
   // Location benefits
   nearbyPublicTransport?: boolean;
-  
+
   // Note: Most other features don't apply to undeveloped solar properties
   // as indicated by the conditional rendering in the card components
 }
@@ -137,22 +151,22 @@ export interface SolarPropertyFields extends CorePropertyFields {
 // Fields for residential properties (piso, casa)
 export interface ResidentialPropertyFields extends CorePropertyFields {
   propertyType: "piso" | "casa";
-  
+
   // Dimensions and layout
   bedrooms?: number;
   bathrooms?: number;
   squareMeter?: number;
   builtSurfaceArea?: number;
-  
+
   // Construction details
   yearBuilt?: number;
   lastRenovationYear?: string;
   buildingFloors?: number;
   conservationStatus?: number;
-  
+
   // Basic features
   hasElevator?: boolean;
-  
+
   // Garage and storage
   hasGarage?: boolean;
   garageType?: string;
@@ -164,26 +178,26 @@ export interface ResidentialPropertyFields extends CorePropertyFields {
   storageRoomSize?: number;
   storageRoomNumber?: string;
   optionalStorageRoomPrice?: number;
-  
+
   // Utilities
   hasHeating?: boolean;
   heatingType?: string;
   hotWaterType?: string;
   airConditioningType?: string;
-  
+
   // Furnishing
   isFurnished?: boolean;
   furnitureQuality?: string;
-  
+
   // Orientation and characteristics
   exterior?: boolean;
   orientation?: string;
   bright?: boolean;
-  
+
   // Building characteristics
   disabledAccessible?: boolean;
   vpo?: boolean;
-  
+
   // Security features
   videoIntercom?: boolean;
   conciergeService?: boolean;
@@ -192,14 +206,14 @@ export interface ResidentialPropertyFields extends CorePropertyFields {
   doubleGlazing?: boolean;
   alarm?: boolean;
   securityDoor?: boolean;
-  
+
   // Kitchen features
   kitchenType?: string;
   openKitchen?: boolean;
   frenchKitchen?: boolean;
   furnishedKitchen?: boolean;
   pantry?: boolean;
-  
+
   // Outdoor spaces
   terrace?: boolean;
   terraceSize?: number;
@@ -209,19 +223,19 @@ export interface ResidentialPropertyFields extends CorePropertyFields {
   balconyCount?: number;
   galleryCount?: number;
   builtInWardrobes?: boolean | string;
-  
+
   // Materials and finishes
   mainFloorType?: string;
   shutterType?: string;
   carpentryType?: string;
   windowType?: string;
-  
+
   // Views
   views?: boolean;
   mountainViews?: boolean;
   seaViews?: boolean;
   beachfront?: boolean;
-  
+
   // Premium features
   jacuzzi?: boolean;
   hydromassage?: boolean;
@@ -239,16 +253,16 @@ export interface ResidentialPropertyFields extends CorePropertyFields {
   childrenArea?: boolean;
   suiteBathroom?: boolean;
   tennisCourt?: boolean;
-  
+
   // Location features
   nearbyPublicTransport?: boolean;
-  
+
   // Rental-specific features
   studentFriendly?: boolean;
   petsAllowed?: boolean;
   appliancesIncluded?: boolean;
   internet?: boolean;
-  
+
   // Appliances (when furnished)
   oven?: boolean;
   microwave?: boolean;
@@ -261,22 +275,22 @@ export interface ResidentialPropertyFields extends CorePropertyFields {
 // Fields for commercial properties (local)
 export interface CommercialPropertyFields extends CorePropertyFields {
   propertyType: "local";
-  
+
   // Dimensions (uses bedrooms as "estancias" - rooms)
   bedrooms?: number; // Shown as "Estancias" for locals
   bathrooms?: number;
   squareMeter?: number;
   builtSurfaceArea?: number;
-  
+
   // Construction details
   yearBuilt?: number;
   lastRenovationYear?: string;
   buildingFloors?: number;
   conservationStatus?: number;
-  
+
   // Basic features
   hasElevator?: boolean;
-  
+
   // Garage and storage
   hasGarage?: boolean;
   garageType?: string;
@@ -288,22 +302,22 @@ export interface CommercialPropertyFields extends CorePropertyFields {
   storageRoomSize?: number;
   storageRoomNumber?: string;
   optionalStorageRoomPrice?: number;
-  
+
   // Utilities
   hasHeating?: boolean;
   heatingType?: string;
   hotWaterType?: string;
   airConditioningType?: string;
-  
+
   // Orientation and characteristics
   exterior?: boolean;
   orientation?: string;
   bright?: boolean;
-  
+
   // Building characteristics
   disabledAccessible?: boolean;
   vpo?: boolean;
-  
+
   // Security features
   videoIntercom?: boolean;
   conciergeService?: boolean;
@@ -312,14 +326,14 @@ export interface CommercialPropertyFields extends CorePropertyFields {
   doubleGlazing?: boolean;
   alarm?: boolean;
   securityDoor?: boolean;
-  
+
   // Kitchen features (for some commercial spaces)
   kitchenType?: string;
   openKitchen?: boolean;
   frenchKitchen?: boolean;
   furnishedKitchen?: boolean;
   pantry?: boolean;
-  
+
   // Outdoor spaces
   terrace?: boolean;
   terraceSize?: number;
@@ -329,19 +343,19 @@ export interface CommercialPropertyFields extends CorePropertyFields {
   balconyCount?: number;
   galleryCount?: number;
   builtInWardrobes?: boolean | string;
-  
+
   // Materials and finishes
   mainFloorType?: string;
   shutterType?: string;
   carpentryType?: string;
   windowType?: string;
-  
+
   // Views
   views?: boolean;
   mountainViews?: boolean;
   seaViews?: boolean;
   beachfront?: boolean;
-  
+
   // Premium features
   jacuzzi?: boolean;
   hydromassage?: boolean;
@@ -359,22 +373,22 @@ export interface CommercialPropertyFields extends CorePropertyFields {
   childrenArea?: boolean;
   suiteBathroom?: boolean;
   tennisCourt?: boolean;
-  
+
   // Location features
   nearbyPublicTransport?: boolean;
-  
+
   // Rental-specific features (limited for commercial)
   internet?: boolean;
   appliancesIncluded?: boolean;
-  
+
   // Note: studentFriendly and petsAllowed are not applicable for commercial properties
 }
 
 // Union type for all property types
-export type TypedPropertyListing = 
-  | GaragePropertyFields 
-  | SolarPropertyFields 
-  | ResidentialPropertyFields 
+export type TypedPropertyListing =
+  | GaragePropertyFields
+  | SolarPropertyFields
+  | ResidentialPropertyFields
   | CommercialPropertyFields;
 
 // Utility functions to help with property type checking and field filtering
@@ -382,21 +396,27 @@ export type TypedPropertyListing =
 /**
  * Checks if a property type is residential (piso or casa)
  */
-export function isResidentialProperty(propertyType: string): propertyType is "piso" | "casa" {
+export function isResidentialProperty(
+  propertyType: string,
+): propertyType is "piso" | "casa" {
   return propertyType === "piso" || propertyType === "casa";
 }
 
 /**
  * Checks if a property type is commercial (local)
  */
-export function isCommercialProperty(propertyType: string): propertyType is "local" {
+export function isCommercialProperty(
+  propertyType: string,
+): propertyType is "local" {
   return propertyType === "local";
 }
 
 /**
  * Checks if a property type is a garage
  */
-export function isGarageProperty(propertyType: string): propertyType is "garaje" {
+export function isGarageProperty(
+  propertyType: string,
+): propertyType is "garaje" {
   return propertyType === "garaje";
 }
 
@@ -411,11 +431,13 @@ export function isSolarProperty(propertyType: string): propertyType is "solar" {
  * Gets the relevant fields for a specific property type
  * This function helps filter out irrelevant fields when generating descriptions
  */
-export function getRelevantFields(listing: PropertyListing): Partial<PropertyListing> {
+export function getRelevantFields(
+  listing: PropertyListing,
+): Partial<PropertyListing> {
   if (!listing.propertyType) return listing;
 
   const propertyType = listing.propertyType;
-  
+
   // Start with core fields that apply to all properties
   const relevantFields: Partial<PropertyListing> = {
     propertyId: listing.propertyId,
@@ -491,7 +513,10 @@ export function getRelevantFields(listing: PropertyListing): Partial<PropertyLis
       // Location
       nearbyPublicTransport: listing.nearbyPublicTransport,
     });
-  } else if (isResidentialProperty(propertyType) || isCommercialProperty(propertyType)) {
+  } else if (
+    isResidentialProperty(propertyType) ||
+    isCommercialProperty(propertyType)
+  ) {
     // Residential and Commercial properties - most comprehensive
     Object.assign(relevantFields, {
       // Dimensions
@@ -619,7 +644,7 @@ export function getPropertyTypeDisplayName(propertyType: PropertyType): string {
     solar: "Solar",
     garaje: "Garaje",
   };
-  
+
   return displayNames[propertyType] || propertyType;
 }
 
@@ -628,12 +653,28 @@ export function getPropertyTypeDisplayName(propertyType: PropertyType): string {
  */
 export function getPropertySubtypes(propertyType: PropertyType): string[] {
   const subtypes: Record<PropertyType, string[]> = {
-    piso: ["Tríplex", "Dúplex", "Ático", "Estudio", "Loft", "Piso", "Apartamento", "Bajo"],
-    casa: ["Casa", "Casa adosada", "Casa pareada", "Chalet", "Casa rústica", "Bungalow"],
+    piso: [
+      "Tríplex",
+      "Dúplex",
+      "Ático",
+      "Estudio",
+      "Loft",
+      "Piso",
+      "Apartamento",
+      "Bajo",
+    ],
+    casa: [
+      "Casa",
+      "Casa adosada",
+      "Casa pareada",
+      "Chalet",
+      "Casa rústica",
+      "Bungalow",
+    ],
     local: ["Residencial", "Otros", "Mixto residencial", "Oficinas", "Hotel"],
     solar: ["Suelo residencial", "Suelo industrial", "Suelo rústico"],
     garaje: ["Moto", "Doble", "Individual"],
   };
-  
+
   return subtypes[propertyType] || [];
 }

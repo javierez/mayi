@@ -125,34 +125,34 @@ export async function createAppointmentTaskWithAuth(
   contactId: bigint,
   contactName: string,
   notes?: string,
-  selectedListingsCount = 0
+  selectedListingsCount = 0,
 ) {
   try {
     // Get current user for task assignment
     const accountId = await getCurrentUserAccountId();
-    
+
     // We need to get the current user's ID, but we need to fetch it from the database
     // Let's use the session to get the user ID directly
     const session = await getSecureSession();
     if (!session?.user?.id) {
       throw new Error("No authenticated user found");
     }
-    
+
     // Calculate due date (3 days from now)
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 3);
-    
+
     // Prepare task description
     let description = `Configurar cita para mostrar propiedades a ${contactName}`;
-    
+
     if (selectedListingsCount > 0) {
       description += `\n\nPropiedades de interés: ${selectedListingsCount} propiedades seleccionadas`;
     }
-    
+
     if (notes?.trim()) {
       description += `\n\nNotas del contacto: ${notes.trim()}`;
     }
-    
+
     // Create the task using the existing createTask function
     const taskData = {
       userId: session.user.id,
@@ -163,7 +163,7 @@ export async function createAppointmentTaskWithAuth(
       contactId,
       isActive: true,
     };
-    
+
     const newTask = await createTask(taskData, accountId);
     return newTask;
   } catch (error) {
@@ -280,11 +280,17 @@ export async function getTaskById(taskId: number, accountId: number) {
       .select()
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
-      .leftJoin(contacts, or(
-        eq(prospects.contactId, contacts.contactId),
-        eq(tasks.contactId, contacts.contactId)
-      ))
-      .leftJoin(listingContacts, eq(tasks.listingContactId, listingContacts.listingContactId))
+      .leftJoin(
+        contacts,
+        or(
+          eq(prospects.contactId, contacts.contactId),
+          eq(tasks.contactId, contacts.contactId),
+        ),
+      )
+      .leftJoin(
+        listingContacts,
+        eq(tasks.listingContactId, listingContacts.listingContactId),
+      )
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -313,11 +319,17 @@ export async function getUserTasks(userId: string, accountId: number) {
       .select()
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
-      .leftJoin(contacts, or(
-        eq(prospects.contactId, contacts.contactId),
-        eq(tasks.contactId, contacts.contactId)
-      ))
-      .leftJoin(listingContacts, eq(tasks.listingContactId, listingContacts.listingContactId))
+      .leftJoin(
+        contacts,
+        or(
+          eq(prospects.contactId, contacts.contactId),
+          eq(tasks.contactId, contacts.contactId),
+        ),
+      )
+      .leftJoin(
+        listingContacts,
+        eq(tasks.listingContactId, listingContacts.listingContactId),
+      )
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -395,15 +407,21 @@ export async function getListingTasks(listingId: number, accountId: number) {
 }
 
 // Get tasks by lead ID
-export async function getLeadTasks(listingContactId: number, accountId: number) {
+export async function getLeadTasks(
+  listingContactId: number,
+  accountId: number,
+) {
   try {
     const leadTasks = await db
       .select()
       .from(tasks)
-      .innerJoin(listingContacts, and(
-        eq(tasks.listingContactId, listingContacts.listingContactId),
-        eq(listingContacts.contactType, "buyer")
-      ))
+      .innerJoin(
+        listingContacts,
+        and(
+          eq(tasks.listingContactId, listingContacts.listingContactId),
+          eq(listingContacts.contactType, "buyer"),
+        ),
+      )
       .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
       .where(
         and(
@@ -461,7 +479,7 @@ export async function getAppointmentTasks(
       );
 
     // Transform to match expected Task interface
-    return appointmentTasks.map(row => ({
+    return appointmentTasks.map((row) => ({
       ...row.tasks,
       userName: row.users?.name,
       userFirstName: row.users?.firstName,
@@ -486,15 +504,21 @@ export async function updateTask(
       .select({
         taskId: tasks.taskId,
         title: tasks.title,
-        completed: tasks.completed
+        completed: tasks.completed,
       })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
-      .leftJoin(contacts, or(
-        eq(prospects.contactId, contacts.contactId),
-        eq(tasks.contactId, contacts.contactId)
-      ))
-      .leftJoin(listingContacts, eq(tasks.listingContactId, listingContacts.listingContactId))
+      .leftJoin(
+        contacts,
+        or(
+          eq(prospects.contactId, contacts.contactId),
+          eq(tasks.contactId, contacts.contactId),
+        ),
+      )
+      .leftJoin(
+        listingContacts,
+        eq(tasks.listingContactId, listingContacts.listingContactId),
+      )
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -515,7 +539,7 @@ export async function updateTask(
     // Prepare update data with editedBy
     const updateData = {
       ...data,
-      editedBy: editedBy ?? null
+      editedBy: editedBy ?? null,
     };
 
     await db
@@ -524,8 +548,10 @@ export async function updateTask(
       .where(and(eq(tasks.taskId, BigInt(taskId)), eq(tasks.isActive, true)));
 
     // Log the edit action
-    const updatedFields = Object.keys(data).join(', ');
-    console.log(`[TASK EDITED] Task ID: ${taskId}, Title: "${existingTask.title}", Edited by: ${editedBy ?? 'unknown'}, Account ID: ${accountId}, Updated fields: [${updatedFields}], Timestamp: ${new Date().toISOString()}`);
+    const updatedFields = Object.keys(data).join(", ");
+    console.log(
+      `[TASK EDITED] Task ID: ${taskId}, Title: "${existingTask.title}", Edited by: ${editedBy ?? "unknown"}, Account ID: ${accountId}, Updated fields: [${updatedFields}], Timestamp: ${new Date().toISOString()}`,
+    );
 
     const [updatedTask] = await db
       .select({
@@ -585,7 +611,7 @@ export async function updateContactTask(
       .update(tasks)
       .set(data)
       .where(and(eq(tasks.taskId, BigInt(taskId)), eq(tasks.isActive, true)));
-      
+
     const [updatedTask] = await db
       .select({
         taskId: sql<number>`CAST(${tasks.taskId} AS UNSIGNED)`,
@@ -627,7 +653,7 @@ export async function updateListingTask(
       .select({
         taskId: tasks.taskId,
         title: tasks.title,
-        listingId: tasks.listingId
+        listingId: tasks.listingId,
       })
       .from(tasks)
       .innerJoin(listings, eq(tasks.listingId, listings.listingId))
@@ -647,7 +673,7 @@ export async function updateListingTask(
     // Prepare update data with editedBy
     const updateData = {
       ...data,
-      editedBy: editedBy ?? null
+      editedBy: editedBy ?? null,
     };
 
     await db
@@ -656,8 +682,10 @@ export async function updateListingTask(
       .where(and(eq(tasks.taskId, BigInt(taskId)), eq(tasks.isActive, true)));
 
     // Log the edit action
-    const updatedFields = Object.keys(data).join(', ');
-    console.log(`[LISTING TASK EDITED] Task ID: ${taskId}, Title: "${existingTask.title}", Listing ID: ${existingTask.listingId}, Edited by: ${editedBy ?? 'unknown'}, Account ID: ${accountId}, Updated fields: [${updatedFields}], Timestamp: ${new Date().toISOString()}`);
+    const updatedFields = Object.keys(data).join(", ");
+    console.log(
+      `[LISTING TASK EDITED] Task ID: ${taskId}, Title: "${existingTask.title}", Listing ID: ${existingTask.listingId}, Edited by: ${editedBy ?? "unknown"}, Account ID: ${accountId}, Updated fields: [${updatedFields}], Timestamp: ${new Date().toISOString()}`,
+    );
 
     const [updatedTask] = await db
       .select({
@@ -691,22 +719,32 @@ export async function updateListingTask(
 }
 
 // Mark task as completed
-export async function completeTask(taskId: number, accountId: number, completedBy?: string) {
+export async function completeTask(
+  taskId: number,
+  accountId: number,
+  completedBy?: string,
+) {
   try {
     // First verify the task belongs to this account
     const [existingTask] = await db
       .select({
         taskId: tasks.taskId,
         title: tasks.title,
-        completed: tasks.completed
+        completed: tasks.completed,
       })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
-      .leftJoin(contacts, or(
-        eq(prospects.contactId, contacts.contactId),
-        eq(tasks.contactId, contacts.contactId)
-      ))
-      .leftJoin(listingContacts, eq(tasks.listingContactId, listingContacts.listingContactId))
+      .leftJoin(
+        contacts,
+        or(
+          eq(prospects.contactId, contacts.contactId),
+          eq(tasks.contactId, contacts.contactId),
+        ),
+      )
+      .leftJoin(
+        listingContacts,
+        eq(tasks.listingContactId, listingContacts.listingContactId),
+      )
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -730,12 +768,14 @@ export async function completeTask(taskId: number, accountId: number, completedB
       .update(tasks)
       .set({
         completed: true,
-        completedBy: completedBy ?? null
+        completedBy: completedBy ?? null,
       })
       .where(and(eq(tasks.taskId, BigInt(taskId)), eq(tasks.isActive, true)));
 
     // Log the completion action
-    console.log(`[TASK COMPLETED] Task ID: ${taskId}, Title: "${existingTask.title}", Completed by: ${completedBy ?? 'unknown'}, Account ID: ${accountId}, Previous status: ${wasCompleted ? 'completed' : 'incomplete'}, Timestamp: ${new Date().toISOString()}`);
+    console.log(
+      `[TASK COMPLETED] Task ID: ${taskId}, Title: "${existingTask.title}", Completed by: ${completedBy ?? "unknown"}, Account ID: ${accountId}, Previous status: ${wasCompleted ? "completed" : "incomplete"}, Timestamp: ${new Date().toISOString()}`,
+    );
 
     const [updatedTask] = await db
       .select({
@@ -775,11 +815,17 @@ export async function softDeleteTask(taskId: number, accountId: number) {
       .select({ taskId: tasks.taskId })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
-      .leftJoin(contacts, or(
-        eq(prospects.contactId, contacts.contactId),
-        eq(tasks.contactId, contacts.contactId)
-      ))
-      .leftJoin(listingContacts, eq(tasks.listingContactId, listingContacts.listingContactId))
+      .leftJoin(
+        contacts,
+        or(
+          eq(prospects.contactId, contacts.contactId),
+          eq(tasks.contactId, contacts.contactId),
+        ),
+      )
+      .leftJoin(
+        listingContacts,
+        eq(tasks.listingContactId, listingContacts.listingContactId),
+      )
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -815,11 +861,17 @@ export async function deleteTask(taskId: number, accountId: number) {
       .select({ taskId: tasks.taskId })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
-      .leftJoin(contacts, or(
-        eq(prospects.contactId, contacts.contactId),
-        eq(tasks.contactId, contacts.contactId)
-      ))
-      .leftJoin(listingContacts, eq(tasks.listingContactId, listingContacts.listingContactId))
+      .leftJoin(
+        contacts,
+        or(
+          eq(prospects.contactId, contacts.contactId),
+          eq(tasks.contactId, contacts.contactId),
+        ),
+      )
+      .leftJoin(
+        listingContacts,
+        eq(tasks.listingContactId, listingContacts.listingContactId),
+      )
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -943,11 +995,17 @@ export async function listTasks(
       .select()
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
-      .leftJoin(contacts, or(
-        eq(prospects.contactId, contacts.contactId),
-        eq(tasks.contactId, contacts.contactId)
-      ))
-      .leftJoin(listingContacts, eq(tasks.listingContactId, listingContacts.listingContactId))
+      .leftJoin(
+        contacts,
+        or(
+          eq(prospects.contactId, contacts.contactId),
+          eq(tasks.contactId, contacts.contactId),
+        ),
+      )
+      .leftJoin(
+        listingContacts,
+        eq(tasks.listingContactId, listingContacts.listingContactId),
+      )
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
@@ -962,13 +1020,17 @@ export async function listTasks(
 }
 
 // Get most urgent tasks sorted by due date
-export async function getMostUrgentTasks(accountId: number, limit = 10, daysAhead = 30) {
+export async function getMostUrgentTasks(
+  accountId: number,
+  limit = 10,
+  daysAhead = 30,
+) {
   try {
     // Calculate the end date based on daysAhead parameter
     const today = new Date();
     const endDate = new Date(today);
     endDate.setDate(today.getDate() + daysAhead);
-    
+
     const urgentTasks = await db
       .select({
         taskId: sql<number>`CAST(${tasks.taskId} AS UNSIGNED)`,
@@ -999,11 +1061,17 @@ export async function getMostUrgentTasks(accountId: number, limit = 10, daysAhea
       .from(tasks)
       .innerJoin(users, eq(tasks.userId, users.id))
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
-      .leftJoin(contacts, or(
-        eq(prospects.contactId, contacts.contactId),
-        eq(tasks.contactId, contacts.contactId)
-      ))
-      .leftJoin(listingContacts, eq(tasks.listingContactId, listingContacts.listingContactId))
+      .leftJoin(
+        contacts,
+        or(
+          eq(prospects.contactId, contacts.contactId),
+          eq(tasks.contactId, contacts.contactId),
+        ),
+      )
+      .leftJoin(
+        listingContacts,
+        eq(tasks.listingContactId, listingContacts.listingContactId),
+      )
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
@@ -1020,7 +1088,7 @@ export async function getMostUrgentTasks(accountId: number, limit = 10, daysAhea
       )
       .orderBy(asc(tasks.dueDate))
       .limit(limit);
-    
+
     return urgentTasks;
   } catch (error) {
     console.error("Error fetching most urgent tasks:", error);

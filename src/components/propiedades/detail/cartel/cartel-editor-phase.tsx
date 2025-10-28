@@ -13,9 +13,9 @@ interface CartelEditorPhase1Props {
  * Server component that fetches listingType and propertyType from database and passes to client editor
  * Phase 1: Single field integration with graceful fallback
  */
-export async function CartelEditorPhase1({ 
-  listingId, 
-  images 
+export async function CartelEditorPhase1({
+  listingId,
+  images,
 }: CartelEditorPhase1Props) {
   let databaseListingType: "Sale" | "Rent" | undefined;
   let databasePropertyType: string | undefined;
@@ -30,19 +30,22 @@ export async function CartelEditorPhase1({
   let databaseWatermarkProps: string | undefined;
   let databaseLogoUrl: string | undefined;
   let accountPreferences: string | undefined;
-  
+
   try {
     console.log("🔄 CartelEditorPhase1: Fetching data for:", listingId);
-    
+
     // Get account ID and fetch data in parallel
     const accountId = await getCurrentUserAccountId();
     const [cartelData, colorPalette] = await Promise.all([
       getListingCartelData(parseInt(listingId)),
-      getAccountColorPalette(accountId)
+      getAccountColorPalette(accountId),
     ]);
-    
+
     // Type-safe assignment with validation
-    if (cartelData.listingType === "Sale" || cartelData.listingType === "Rent") {
+    if (
+      cartelData.listingType === "Sale" ||
+      cartelData.listingType === "Rent"
+    ) {
       databaseListingType = cartelData.listingType;
     }
     if (cartelData.propertyType) {
@@ -78,22 +81,29 @@ export async function CartelEditorPhase1({
       databaseWebsite = cartelData.website;
     }
     if (cartelData.watermarkProps) {
-      console.log("🖼️ [CartelEditorPhase1] Watermark props from DB:", cartelData.watermarkProps);
+      console.log(
+        "🖼️ [CartelEditorPhase1] Watermark props from DB:",
+        cartelData.watermarkProps,
+      );
       databaseWatermarkProps = cartelData.watermarkProps;
     }
     if (cartelData.logoUrl) {
-      console.log("🎨 [CartelEditorPhase1] Logo URL from DB:", cartelData.logoUrl);
+      console.log(
+        "🎨 [CartelEditorPhase1] Logo URL from DB:",
+        cartelData.logoUrl,
+      );
       databaseLogoUrl = cartelData.logoUrl;
     }
     if (cartelData.preferences) {
-      accountPreferences = typeof cartelData.preferences === 'string' 
-        ? cartelData.preferences 
-        : JSON.stringify(cartelData.preferences);
+      accountPreferences =
+        typeof cartelData.preferences === "string"
+          ? cartelData.preferences
+          : JSON.stringify(cartelData.preferences);
     }
-    
+
     accountColorPalette = colorPalette;
-    
-    console.log("✅ CartelEditorPhase1: Loaded from database:", { 
+
+    console.log("✅ CartelEditorPhase1: Loaded from database:", {
       listingType: databaseListingType,
       propertyType: databasePropertyType,
       imagesCount: images?.length ?? 0,
@@ -105,13 +115,16 @@ export async function CartelEditorPhase1({
       squareMeter: databaseSquareMeter,
       website: databaseWebsite,
       hasContactProps: !!databaseContactProps,
-      imagesSample: images?.slice(0, 2).map(img => ({
+      imagesSample: images?.slice(0, 2).map((img) => ({
         id: img.propertyImageId,
-        url: img.imageUrl
-      }))
+        url: img.imageUrl,
+      })),
     });
   } catch (error) {
-    console.error("❌ CartelEditorPhase1: Failed to load from database, using fallback:", error);
+    console.error(
+      "❌ CartelEditorPhase1: Failed to load from database, using fallback:",
+      error,
+    );
     // Graceful fallback: no database data passed = editable mode
   }
 

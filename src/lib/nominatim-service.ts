@@ -31,7 +31,7 @@ const COUNTRY_CODE_MAP: Record<string, string> = {
  */
 export async function fetchNeighborhoodsByCity(
   cityName: string,
-  country = "es"
+  country = "es",
 ): Promise<FormattedNeighborhood[]> {
   if (!cityName || cityName.trim().length === 0) {
     return [];
@@ -54,7 +54,9 @@ export async function fetchNeighborhoodsByCity(
       throw new Error(`API error: ${response.statusText}`);
     }
 
-    const data = (await response.json()) as { neighborhoods: FormattedNeighborhood[] };
+    const data = (await response.json()) as {
+      neighborhoods: FormattedNeighborhood[];
+    };
 
     return data.neighborhoods;
   } catch (error) {
@@ -62,4 +64,3 @@ export async function fetchNeighborhoodsByCity(
     return [];
   }
 }
-

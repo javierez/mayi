@@ -22,9 +22,7 @@ import {
   ArrowUp,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import {
-  getDimensionsForOrientation,
-} from "~/lib/carteleria/classic-vertical-constants";
+import { getDimensionsForOrientation } from "~/lib/carteleria/classic-vertical-constants";
 import { injectPrintStyles } from "~/lib/carteleria/print-utils";
 import { MiniEnergyCertificate } from "../mini-energy-certificate";
 import { getConservationStatusLabel } from "~/lib/constants/conservation-status";
@@ -50,13 +48,13 @@ const isHexColor = (color: string): boolean => {
 // Helper function to calculate luminance of a hex color
 const getColorLuminance = (hex: string): number => {
   // Remove # if present
-  const color = hex.replace('#', '');
-  
+  const color = hex.replace("#", "");
+
   // Convert to RGB
   const r = parseInt(color.substring(0, 2), 16) / 255;
   const g = parseInt(color.substring(2, 4), 16) / 255;
   const b = parseInt(color.substring(4, 6), 16) / 255;
-  
+
   // Calculate relative luminance
   const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
   return luminance;
@@ -67,7 +65,7 @@ const getOverlayClass = (overlayType: string) => {
   if (isHexColor(overlayType)) {
     return "";
   }
-  
+
   const overlayMap: Record<string, string> = {
     default: "bg-gray-400",
     dark: "bg-gray-800",
@@ -90,9 +88,11 @@ const getTextColorForOverlay = (overlayType: string) => {
     // Use white text for dark backgrounds, dark text for light backgrounds
     return luminance > 0.5 ? "#1e293b" : "white";
   }
-  
+
   // Light overlay needs dark text, others need white text
-  return overlayType === "light" || overlayType === "white" ? "#1e293b" : "white";
+  return overlayType === "light" || overlayType === "white"
+    ? "#1e293b"
+    : "white";
 };
 
 // Helper functions for additional fields
@@ -124,8 +124,16 @@ const getFieldLabel = (fieldValue: string) => {
   return labelMap[fieldValue] ?? fieldValue;
 };
 
-const getFieldValue = (fieldValue: string, data: ConfigurableTemplateProps["data"]): string => {
-  const value = (data as unknown as Record<string, unknown>)[fieldValue] as string | number | boolean | undefined | null;
+const getFieldValue = (
+  fieldValue: string,
+  data: ConfigurableTemplateProps["data"],
+): string => {
+  const value = (data as unknown as Record<string, unknown>)[fieldValue] as
+    | string
+    | number
+    | boolean
+    | undefined
+    | null;
 
   if (value === undefined || value === null) return "N/A";
   if (typeof value === "boolean") return value ? "Sí" : "No";
@@ -226,16 +234,17 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
   );
 
   // Get images from data prop (passed by the editor) or fallback to default S3 images
-  const templateImages = data.images && data.images.length > 0 
-    ? data.images 
-    : getTemplateImages(config.imageCount);
+  const templateImages =
+    data.images && data.images.length > 0
+      ? data.images
+      : getTemplateImages(config.imageCount);
 
   // Asymmetric image gallery for horizontal layout
   const renderImageGallery = () => {
     if (templateImages.length === 0) return null;
 
     const imageCount = Math.min(templateImages.length, config.imageCount);
-    
+
     // Base styles for all image containers
     const imageContainerStyle: React.CSSProperties = {
       overflow: "hidden",
@@ -256,7 +265,7 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
               onError={handleImageError}
               style={{
                 objectPosition: data.imagePositions?.[templateImages[0]]
-                  ? `${Math.max(0, Math.min(100, (data.imagePositions[templateImages[0]]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[templateImages[0]]?.y ?? 50)))}%`
+                  ? `${Math.max(0, Math.min(100, data.imagePositions[templateImages[0]]?.x ?? 50))}% ${Math.max(0, Math.min(100, data.imagePositions[templateImages[0]]?.y ?? 50))}%`
                   : "50% 50%",
               }}
               priority
@@ -291,10 +300,10 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
                   onError={handleImageError}
                   style={{
                     objectPosition: data.imagePositions?.[image]
-                      ? `${Math.max(0, Math.min(100, (data.imagePositions[image]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[image]?.y ?? 50)))}%`
+                      ? `${Math.max(0, Math.min(100, data.imagePositions[image]?.x ?? 50))}% ${Math.max(0, Math.min(100, data.imagePositions[image]?.y ?? 50))}%`
                       : "50% 50%",
                     transform: `scale(${data.imagePositions?.[image]?.zoom ?? 1.0})`,
-                    transformOrigin: 'center',
+                    transformOrigin: "center",
                   }}
                 />
               )}
@@ -330,17 +339,17 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
                 onError={handleImageError}
                 style={{
                   objectPosition: data.imagePositions?.[templateImages[0]]
-                    ? `${Math.max(0, Math.min(100, (data.imagePositions[templateImages[0]]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[templateImages[0]]?.y ?? 50)))}%`
+                    ? `${Math.max(0, Math.min(100, data.imagePositions[templateImages[0]]?.x ?? 50))}% ${Math.max(0, Math.min(100, data.imagePositions[templateImages[0]]?.y ?? 50))}%`
                     : "50% 50%",
                   transform: `scale(${data.imagePositions?.[templateImages[0]]?.zoom ?? 1.0})`,
-                  transformOrigin: 'center',
+                  transformOrigin: "center",
                 }}
                 priority
               />
             )}
             {renderWatermark("large")}
           </div>
-          
+
           {/* Two stacked images on the right */}
           {templateImages.slice(1, 3).map((image, index) => (
             <div key={index + 1} style={imageContainerStyle}>
@@ -353,10 +362,10 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
                   onError={handleImageError}
                   style={{
                     objectPosition: data.imagePositions?.[image]
-                      ? `${Math.max(0, Math.min(100, (data.imagePositions[image]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[image]?.y ?? 50)))}%`
+                      ? `${Math.max(0, Math.min(100, data.imagePositions[image]?.x ?? 50))}% ${Math.max(0, Math.min(100, data.imagePositions[image]?.y ?? 50))}%`
                       : "50% 50%",
                     transform: `scale(${data.imagePositions?.[image]?.zoom ?? 1.0})`,
-                    transformOrigin: 'center',
+                    transformOrigin: "center",
                   }}
                 />
               )}
@@ -391,17 +400,17 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
               onError={handleImageError}
               style={{
                 objectPosition: data.imagePositions?.[templateImages[0]]
-                  ? `${Math.max(0, Math.min(100, (data.imagePositions[templateImages[0]]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[templateImages[0]]?.y ?? 50)))}%`
+                  ? `${Math.max(0, Math.min(100, data.imagePositions[templateImages[0]]?.x ?? 50))}% ${Math.max(0, Math.min(100, data.imagePositions[templateImages[0]]?.y ?? 50))}%`
                   : "50% 50%",
                 transform: `scale(${data.imagePositions?.[templateImages[0]]?.zoom ?? 1.0})`,
-                transformOrigin: 'center',
+                transformOrigin: "center",
               }}
               priority
             />
           )}
           {renderWatermark("large")}
         </div>
-        
+
         {/* Medium image spans 2 columns on top */}
         <div style={{ ...imageContainerStyle, gridColumn: "2 / -1" }}>
           {templateImages[1] && (
@@ -413,16 +422,16 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
               onError={handleImageError}
               style={{
                 objectPosition: data.imagePositions?.[templateImages[1]]
-                  ? `${Math.max(0, Math.min(100, (data.imagePositions[templateImages[1]]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[templateImages[1]]?.y ?? 50)))}%`
+                  ? `${Math.max(0, Math.min(100, data.imagePositions[templateImages[1]]?.x ?? 50))}% ${Math.max(0, Math.min(100, data.imagePositions[templateImages[1]]?.y ?? 50))}%`
                   : "50% 50%",
                 transform: `scale(${data.imagePositions?.[templateImages[1]]?.zoom ?? 1.0})`,
-                transformOrigin: 'center',
+                transformOrigin: "center",
               }}
             />
           )}
           {renderWatermark("medium")}
         </div>
-        
+
         {/* Two small images on bottom right */}
         {templateImages.slice(2, 4).map((image, index) => (
           <div key={index + 2} style={imageContainerStyle}>
@@ -435,10 +444,10 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
                 onError={handleImageError}
                 style={{
                   objectPosition: data.imagePositions?.[image]
-                    ? `${Math.max(0, Math.min(100, (data.imagePositions[image]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[image]?.y ?? 50)))}%`
+                    ? `${Math.max(0, Math.min(100, data.imagePositions[image]?.x ?? 50))}% ${Math.max(0, Math.min(100, data.imagePositions[image]?.y ?? 50))}%`
                     : "50% 50%",
                   transform: `scale(${data.imagePositions?.[image]?.zoom ?? 1.0})`,
-                  transformOrigin: 'center',
+                  transformOrigin: "center",
                 }}
               />
             )}
@@ -463,11 +472,11 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
     const { width, height } = sizeMap[size];
 
     return (
-      <div 
+      <div
         className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
         style={{
           zIndex: 10,
-          pointerEvents: 'none'
+          pointerEvents: "none",
         }}
       >
         {data.logoUrl && (
@@ -478,9 +487,9 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
             height={height}
             className="object-contain opacity-25"
             style={{
-              maxWidth: '100%',
-              maxHeight: '100%',
-              objectFit: 'contain'
+              maxWidth: "100%",
+              maxHeight: "100%",
+              objectFit: "contain",
             }}
           />
         )}
@@ -493,22 +502,22 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
     if (!isBottomRight || !data.reference) return null;
 
     return (
-      <div 
+      <div
         className="pointer-events-none absolute bottom-2 right-2 z-20"
         style={{
           zIndex: 20,
-          pointerEvents: 'none'
+          pointerEvents: "none",
         }}
       >
         <span
           className="font-mono font-medium"
           style={{
-            fontSize: '12px',
-            color: config.referenceTextColor || '#000000',
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            padding: '2px 6px',
-            borderRadius: '2px',
-            letterSpacing: '0.5px',
+            fontSize: "12px",
+            color: config.referenceTextColor || "#000000",
+            backgroundColor: "rgba(255, 255, 255, 0.9)",
+            padding: "2px 6px",
+            borderRadius: "2px",
+            letterSpacing: "0.5px",
           }}
         >
           {data.reference}
@@ -537,7 +546,8 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
   const headerHeight = 120; // Increased from 80 to 120
   const footerHeight = 45;
   const statsRowHeight = 120;
-  const galleryHeight = containerDimensions.height - headerHeight - statsRowHeight - footerHeight;
+  const galleryHeight =
+    containerDimensions.height - headerHeight - statsRowHeight - footerHeight;
 
   // Horizontal layout structure
   return (
@@ -570,7 +580,11 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
           borderBottom: overlayClass ? "none" : "2px solid #e2e8f0",
           flexShrink: 0,
           boxSizing: "border-box",
-          backgroundColor: isHexColor(config.overlayColor) ? config.overlayColor : (overlayClass ? undefined : "#f8fafc"),
+          backgroundColor: isHexColor(config.overlayColor)
+            ? config.overlayColor
+            : overlayClass
+              ? undefined
+              : "#f8fafc",
         }}
       >
         {/* Left side - Title and Location */}
@@ -587,18 +601,16 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
               marginBottom: "8px", // Increased from 4px to 8px
               color: config.titleColor || textColor,
               textAlign: config.titleAlignment || "left",
-              transform: config.titlePositionX || config.titlePositionY 
-                ? `translate(${config.titlePositionX || 0}px, ${config.titlePositionY || 0}px)` 
-                : undefined,
+              transform:
+                config.titlePositionX || config.titlePositionY
+                  ? `translate(${config.titlePositionX || 0}px, ${config.titlePositionY || 0}px)`
+                  : undefined,
             }}
           >
             {safeData.title}
           </h2>
           <div
-            className={cn(
-              "font-medium",
-              getFontClass(config.locationFont),
-            )}
+            className={cn("font-medium", getFontClass(config.locationFont))}
             style={{
               fontSize: `${config.locationSize || 20}px`, // Increased from 18 to 20
               lineHeight: "1.3", // Slightly increased for better spacing
@@ -606,15 +618,16 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
               color: config.locationColor || "#64748b",
               opacity: 0.9,
               textAlign: config.locationAlignment || "left",
-              transform: config.locationPositionX || config.locationPositionY 
-                ? `translate(${config.locationPositionX || 0}px, ${config.locationPositionY || 0}px)` 
-                : undefined,
+              transform:
+                config.locationPositionX || config.locationPositionY
+                  ? `translate(${config.locationPositionX || 0}px, ${config.locationPositionY || 0}px)`
+                  : undefined,
             }}
           >
             {formatLocation(safeData.location)}
           </div>
         </div>
-        
+
         {/* Right side - Reference, Energy Certificate and QR */}
         <div style={{ display: "flex", alignItems: "center", gap: "40px" }}>
           {/* Reference */}
@@ -631,14 +644,14 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
               REF: {data.reference}
             </span>
           )}
-          
+
           {/* Energy Certificate - positioned to the left of QR or in QR's place */}
           {config.showEnergyRating && config.energyConsumptionScale && (
             <MiniEnergyCertificate
               energyRating={config.energyConsumptionScale}
             />
           )}
-          
+
           {/* QR Code */}
           {config.showQR && (
             <PropertyQRCode
@@ -680,7 +693,7 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
           boxSizing: "border-box",
         }}
       >
-{config.showIcons ? (
+        {config.showIcons ? (
           /* Icons Layout - Only icons, no description */
           <div
             style={{
@@ -702,7 +715,10 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
                 gap: `${config.iconTextGap || 4}px`,
               }}
             >
-              <Bed size={Math.round(28 * (config.iconSize || 1))} color="#64748b" />
+              <Bed
+                size={Math.round(28 * (config.iconSize || 1))}
+                color="#64748b"
+              />
               <span
                 style={{
                   fontSize: `${Math.round(20 * (config.iconSize || 1))}px`,
@@ -724,7 +740,10 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
                 gap: `${config.iconTextGap || 4}px`,
               }}
             >
-              <Bath size={Math.round(28 * (config.iconSize || 1))} color="#64748b" />
+              <Bath
+                size={Math.round(28 * (config.iconSize || 1))}
+                color="#64748b"
+              />
               <span
                 style={{
                   fontSize: `${Math.round(20 * (config.iconSize || 1))}px`,
@@ -746,7 +765,10 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
                 gap: `${config.iconTextGap || 4}px`,
               }}
             >
-              <Maximize size={Math.round(28 * (config.iconSize || 1))} color="#64748b" />
+              <Maximize
+                size={Math.round(28 * (config.iconSize || 1))}
+                color="#64748b"
+              />
               <span
                 style={{
                   fontSize: `${Math.round(20 * (config.iconSize || 1))}px`,
@@ -762,9 +784,9 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
             {config.additionalFields?.slice(0, 3).map((fieldValue, _index) => {
               const value = getFieldValue(fieldValue, data);
               if (value === "N/A") return null;
-              
+
               const IconComponent = getFieldIcon(fieldValue);
-              
+
               return (
                 <div
                   key={fieldValue}
@@ -776,7 +798,10 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
                     gap: `${config.iconTextGap || 4}px`,
                   }}
                 >
-                  <IconComponent size={Math.round(28 * (config.iconSize || 1))} color="#64748b" />
+                  <IconComponent
+                    size={Math.round(28 * (config.iconSize || 1))}
+                    color="#64748b"
+                  />
                   <span
                     style={{
                       fontSize: `${Math.round(20 * (config.iconSize || 1))}px`,
@@ -804,7 +829,10 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
             {/* Bullet List - Always shown when icons are not clicked */}
             <div
               style={{
-                flex: config.showShortDescription && data.shortDescription ? "0 0 auto" : "1",
+                flex:
+                  config.showShortDescription && data.shortDescription
+                    ? "0 0 auto"
+                    : "1",
               }}
             >
               {data.iconListText ? (
@@ -817,9 +845,10 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
                     whiteSpace: "pre-wrap",
                     textAlign: config.bulletAlignment || "left",
                     color: config.bulletColor || "#000000",
-                    transform: config.bulletPositionX || config.bulletPositionY 
-                      ? `translate(${config.bulletPositionX || 0}px, ${config.bulletPositionY || 0}px)` 
-                      : undefined,
+                    transform:
+                      config.bulletPositionX || config.bulletPositionY
+                        ? `translate(${config.bulletPositionX || 0}px, ${config.bulletPositionY || 0}px)`
+                        : undefined,
                   }}
                 >
                   {data.iconListText}
@@ -837,9 +866,10 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
                     fontSize: `${config.bulletSize || 16}px`,
                     lineHeight: "1.3",
                     color: config.bulletColor || "#000000",
-                    transform: config.bulletPositionX || config.bulletPositionY 
-                      ? `translate(${config.bulletPositionX || 0}px, ${config.bulletPositionY || 0}px)` 
-                      : undefined,
+                    transform:
+                      config.bulletPositionX || config.bulletPositionY
+                        ? `translate(${config.bulletPositionX || 0}px, ${config.bulletPositionY || 0}px)`
+                        : undefined,
                   }}
                 >
                   {safeData.specs.bathrooms && (
@@ -862,11 +892,16 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
                   {config.additionalFields?.slice(0, 2).map((fieldValue) => {
                     const value = getFieldValue(fieldValue, data);
                     if (value === "N/A") return null;
-                    
+
                     return (
-                      <li key={fieldValue} style={{ display: "flex", alignItems: "center" }}>
+                      <li
+                        key={fieldValue}
+                        style={{ display: "flex", alignItems: "center" }}
+                      >
                         <span style={{ marginRight: "8px" }}>•</span>
-                        <span>{getFieldLabel(fieldValue)}: {value}</span>
+                        <span>
+                          {getFieldLabel(fieldValue)}: {value}
+                        </span>
                       </li>
                     );
                   })}
@@ -885,15 +920,18 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
                 }}
               >
                 <div
-                  className={cn(getFontClass(config.descriptionFont || "default"))}
+                  className={cn(
+                    getFontClass(config.descriptionFont || "default"),
+                  )}
                   style={{
                     fontSize: `${config.descriptionSize || 16}px`,
                     lineHeight: "1.4",
                     color: config.descriptionColor || "#000000",
                     textAlign: config.descriptionAlignment || "left",
-                    transform: config.descriptionPositionX || config.descriptionPositionY 
-                      ? `translate(${config.descriptionPositionX || 0}px, ${config.descriptionPositionY || 0}px)` 
-                      : undefined,
+                    transform:
+                      config.descriptionPositionX || config.descriptionPositionY
+                        ? `translate(${config.descriptionPositionX || 0}px, ${config.descriptionPositionY || 0}px)`
+                        : undefined,
                     whiteSpace: "pre-wrap",
                   }}
                 >
@@ -920,28 +958,28 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
           }}
         >
           <div
-            className={cn(
-              "font-bold",
-              getFontClass(config.priceFont),
-            )}
+            className={cn("font-bold", getFontClass(config.priceFont))}
             style={{
               fontSize: `${config.priceSize || 36}px`,
               lineHeight: "1.1",
               color: config.priceColor || "#1e293b",
               textAlign: "center",
-              transform: config.pricePositionX || config.pricePositionY 
-                ? `translate(${config.pricePositionX || 0}px, ${config.pricePositionY || 0}px)` 
-                : undefined,
+              transform:
+                config.pricePositionX || config.pricePositionY
+                  ? `translate(${config.pricePositionX || 0}px, ${config.pricePositionY || 0}px)`
+                  : undefined,
             }}
           >
-{config.listingType === "alquiler" ? (
+            {config.listingType === "alquiler" ? (
               <>
                 {priceText.replace(" €/mes", "")}
                 <span
                   className="font-normal"
                   style={{
                     fontSize: `${Math.round((config.priceSize || 36) * 0.7)}px`,
-                    color: config.priceColor ? `${config.priceColor}CC` : "#64748b",
+                    color: config.priceColor
+                      ? `${config.priceColor}CC`
+                      : "#64748b",
                     marginLeft: "8px",
                   }}
                 >
@@ -953,7 +991,6 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
             )}
           </div>
         </div>
-
       </div>
 
       {/* 6. FOOTER BAR - Contact elements */}
@@ -966,7 +1003,11 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
           alignItems: "center",
           paddingLeft: "30px",
           paddingRight: "30px",
-          backgroundColor: isHexColor(config.overlayColor) ? config.overlayColor : (overlayClass ? undefined : "#1e293b"),
+          backgroundColor: isHexColor(config.overlayColor)
+            ? config.overlayColor
+            : overlayClass
+              ? undefined
+              : "#1e293b",
           color: textColor,
           flexShrink: 0,
           boxSizing: "border-box",
@@ -982,7 +1023,9 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
                 fontWeight: "500",
               }}
             >
-              {data.contact.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
+              {data.contact.website
+                .replace(/^https?:\/\/(www\.)?/, "")
+                .replace(/\/$/, "")}
             </span>
           )}
           {!config.showWebsite && config.showEmail && data.contact.email && (
@@ -1011,17 +1054,20 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
               {data.contact.phone}
             </span>
           )}
-          {!config.showPhone && config.showEmail && data.contact.email && config.showWebsite && (
-            <span
-              style={{
-                fontSize: "16px",
-                color: textColor,
-                fontWeight: "500",
-              }}
-            >
-              {data.contact.email}
-            </span>
-          )}
+          {!config.showPhone &&
+            config.showEmail &&
+            data.contact.email &&
+            config.showWebsite && (
+              <span
+                style={{
+                  fontSize: "16px",
+                  color: textColor,
+                  fontWeight: "500",
+                }}
+              >
+                {data.contact.email}
+              </span>
+            )}
         </div>
       </div>
     </div>

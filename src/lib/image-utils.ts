@@ -7,7 +7,9 @@ export async function imageUrlToBase64(imageUrl: string): Promise<string> {
     // Download the image
     const response = await fetch(imageUrl);
     if (!response.ok) {
-      throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch image: ${response.status} ${response.statusText}`,
+      );
     }
 
     // Convert to buffer
@@ -15,16 +17,18 @@ export async function imageUrlToBase64(imageUrl: string): Promise<string> {
     const buffer = Buffer.from(arrayBuffer);
 
     // Convert to base64
-    const base64 = buffer.toString('base64');
-    
+    const base64 = buffer.toString("base64");
+
     // Get content type from response headers
-    const contentType = response.headers.get('content-type') ?? 'image/jpeg';
-    
+    const contentType = response.headers.get("content-type") ?? "image/jpeg";
+
     // Return data URL format that Freepik expects
     return `data:${contentType};base64,${base64}`;
   } catch (error) {
-    console.error('Error converting image URL to base64:', error);
-    throw new Error(`Failed to process image from URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error("Error converting image URL to base64:", error);
+    throw new Error(
+      `Failed to process image from URL: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
 
@@ -34,16 +38,19 @@ export async function imageUrlToBase64(imageUrl: string): Promise<string> {
  * @param maxSizeInMB - Maximum allowed size in MB (default: 10MB)
  * @returns true if valid, false if too large
  */
-export function validateImageSize(base64Image: string, maxSizeInMB = 10): boolean {
+export function validateImageSize(
+  base64Image: string,
+  maxSizeInMB = 10,
+): boolean {
   try {
     // Calculate the size of the base64 string
     // Base64 encoding increases size by ~33%, so we need to account for that
     const base64SizeInBytes = (base64Image.length * 3) / 4;
     const sizeInMB = base64SizeInBytes / (1024 * 1024);
-    
+
     return sizeInMB <= maxSizeInMB;
   } catch (error) {
-    console.error('Error validating image size:', error);
+    console.error("Error validating image size:", error);
     return false;
   }
 }
@@ -64,14 +71,18 @@ export async function downloadImageAsBuffer(imageUrl: string): Promise<Buffer> {
   try {
     const response = await fetch(imageUrl);
     if (!response.ok) {
-      throw new Error(`Failed to download image: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Failed to download image: ${response.status} ${response.statusText}`,
+      );
     }
 
     const arrayBuffer = await response.arrayBuffer();
     return Buffer.from(arrayBuffer);
   } catch (error) {
-    console.error('Error downloading image as buffer:', error);
-    throw new Error(`Failed to download image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error("Error downloading image as buffer:", error);
+    throw new Error(
+      `Failed to download image: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
 
@@ -83,7 +94,7 @@ export function generateEnhancedImageFilename(
   referenceNumber: string,
   originalImageOrder: number,
   nanoid: string,
-  fileExtension = 'jpg'
+  fileExtension = "jpg",
 ): string {
   return `${referenceNumber}/images/enhanced_${originalImageOrder}_${nanoid}.${fileExtension}`;
 }
@@ -94,12 +105,12 @@ export function generateEnhancedImageFilename(
 export function getFileExtensionFromUrl(url: string): string {
   try {
     const urlPath = new URL(url).pathname;
-    const extension = urlPath.split('.').pop()?.toLowerCase();
-    return extension ?? 'jpg'; // Default to jpg if no extension found
+    const extension = urlPath.split(".").pop()?.toLowerCase();
+    return extension ?? "jpg"; // Default to jpg if no extension found
   } catch {
     // If URL parsing fails, try to extract from string directly
-    const parts = url.split('.');
-    return parts.length > 1 ? parts[parts.length - 1]!.toLowerCase() : 'jpg';
+    const parts = url.split(".");
+    return parts.length > 1 ? parts[parts.length - 1]!.toLowerCase() : "jpg";
   }
 }
 
@@ -107,7 +118,7 @@ export function getFileExtensionFromUrl(url: string): string {
  * Check if a URL points to a valid image based on extension
  */
 export function isValidImageUrl(url: string): boolean {
-  const validExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+  const validExtensions = ["jpg", "jpeg", "png", "webp", "gif"];
   const extension = getFileExtensionFromUrl(url);
   return validExtensions.includes(extension);
 }
@@ -131,11 +142,16 @@ export function estimateProcessingTime(imageSizeInMB: number): number {
 export function base64ToBuffer(base64String: string): Buffer {
   try {
     // Remove data URL prefix if present
-    const cleanBase64 = base64String.replace(/^data:image\/[a-zA-Z]+;base64,/, '');
-    return Buffer.from(cleanBase64, 'base64');
+    const cleanBase64 = base64String.replace(
+      /^data:image\/[a-zA-Z]+;base64,/,
+      "",
+    );
+    return Buffer.from(cleanBase64, "base64");
   } catch (error) {
-    console.error('Error converting base64 to buffer:', error);
-    throw new Error(`Failed to process base64 image data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error("Error converting base64 to buffer:", error);
+    throw new Error(
+      `Failed to process base64 image data: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
 
@@ -147,7 +163,7 @@ export function generateRenovatedImageFilename(
   referenceNumber: string,
   originalImageOrder: number,
   nanoid: string,
-  fileExtension = 'jpg'
+  fileExtension = "jpg",
 ): string {
   return `${referenceNumber}/images/renovated_${originalImageOrder}_${nanoid}.${fileExtension}`;
 }
@@ -156,30 +172,38 @@ export function generateRenovatedImageFilename(
  * Validate base64 image format for Gemini API
  * Gemini accepts various formats but has specific requirements
  */
-export function validateGeminiImageFormat(base64Image: string): { valid: boolean; error?: string } {
+export function validateGeminiImageFormat(base64Image: string): {
+  valid: boolean;
+  error?: string;
+} {
   try {
-    if (!base64Image || typeof base64Image !== 'string') {
-      return { valid: false, error: 'Invalid image data format' };
+    if (!base64Image || typeof base64Image !== "string") {
+      return { valid: false, error: "Invalid image data format" };
     }
 
     // Remove data URL prefix if present for validation
-    const cleanBase64 = base64Image.replace(/^data:image\/[a-zA-Z]+;base64,/, '');
-    
+    const cleanBase64 = base64Image.replace(
+      /^data:image\/[a-zA-Z]+;base64,/,
+      "",
+    );
+
     // Check base64 format
     if (!/^[A-Za-z0-9+/]*={0,2}$/.test(cleanBase64)) {
-      return { valid: false, error: 'Invalid base64 format' };
+      return { valid: false, error: "Invalid base64 format" };
     }
 
     // Check size limits (Gemini supports up to 20MB)
     if (!validateImageSize(base64Image, 20)) {
       const sizeMB = getImageSizeInMB(base64Image);
-      return { valid: false, error: `Image too large (${sizeMB.toFixed(2)}MB). Maximum size is 20MB` };
+      return {
+        valid: false,
+        error: `Image too large (${sizeMB.toFixed(2)}MB). Maximum size is 20MB`,
+      };
     }
 
     return { valid: true };
-    
   } catch {
-    return { valid: false, error: 'Failed to validate image format' };
+    return { valid: false, error: "Failed to validate image format" };
   }
 }
 
@@ -199,14 +223,14 @@ export function estimateGeminiProcessingTime(imageSizeInMB: number): number {
  * Gemini expects clean base64 without the data URL prefix
  */
 export function extractBase64FromDataUrl(dataUrl: string): string {
-  return dataUrl.replace(/^data:image\/[a-zA-Z]+;base64,/, '');
+  return dataUrl.replace(/^data:image\/[a-zA-Z]+;base64,/, "");
 }
 
 /**
  * Create a data URL from base64 and mime type
  * Useful for displaying Gemini-generated images
  */
-export function createDataUrl(base64: string, mimeType = 'image/jpeg'): string {
+export function createDataUrl(base64: string, mimeType = "image/jpeg"): string {
   const cleanBase64 = extractBase64FromDataUrl(base64); // In case it's already a data URL
   return `data:${mimeType};base64,${cleanBase64}`;
 }
@@ -216,29 +240,32 @@ export function createDataUrl(base64: string, mimeType = 'image/jpeg'): string {
  * Uses Next.js built-in image optimization when possible
  */
 export function getThumbnailUrl(
-  originalUrl: string, 
+  originalUrl: string,
   options: {
     width?: number;
     height?: number;
     quality?: number;
-  } = {}
+  } = {},
 ): string {
   const { width = 150, height = 100, quality = 75 } = options;
 
   // For S3 URLs, we'll rely on Next.js Image component optimization
   // The actual optimization happens when the image is requested with specific dimensions
-  if (originalUrl.includes('amazonaws.com') || originalUrl.includes('s3.')) {
+  if (originalUrl.includes("amazonaws.com") || originalUrl.includes("s3.")) {
     // Return original URL - Next.js Image component will handle the optimization
     return originalUrl;
   }
 
   // For external URLs that support query parameter resizing
-  if (originalUrl.includes('cloudinary.com')) {
-    return originalUrl.replace('/upload/', `/upload/w_${width},h_${height},c_fill,q_${quality}/`);
+  if (originalUrl.includes("cloudinary.com")) {
+    return originalUrl.replace(
+      "/upload/",
+      `/upload/w_${width},h_${height},c_fill,q_${quality}/`,
+    );
   }
 
-  if (originalUrl.includes('imagekit.io')) {
-    const separator = originalUrl.includes('?') ? '&' : '?';
+  if (originalUrl.includes("imagekit.io")) {
+    const separator = originalUrl.includes("?") ? "&" : "?";
     return `${originalUrl}${separator}tr=w-${width},h-${height},c-at_max,q-${quality}`;
   }
 
@@ -259,17 +286,19 @@ export const ImageSizes = {
 /**
  * Generate sizes attribute for responsive images
  */
-export function getImageSizes(usage: 'thumbnail' | 'card' | 'gallery' | 'fullscreen'): string {
+export function getImageSizes(
+  usage: "thumbnail" | "card" | "gallery" | "fullscreen",
+): string {
   switch (usage) {
-    case 'thumbnail':
-      return '128px';
-    case 'card':
-      return '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw';
-    case 'gallery':
-      return '(max-width: 768px) 100vw, 800px';
-    case 'fullscreen':
-      return '100vw';
+    case "thumbnail":
+      return "128px";
+    case "card":
+      return "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw";
+    case "gallery":
+      return "(max-width: 768px) 100vw, 800px";
+    case "fullscreen":
+      return "100vw";
     default:
-      return '100vw';
+      return "100vw";
   }
 }

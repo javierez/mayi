@@ -63,9 +63,9 @@ export interface UserFilters {
   search?: string;
   accountId?: number;
   roleFilter?: number;
-  statusFilter?: 'active' | 'inactive' | 'all';
-  sortBy?: 'name' | 'email' | 'createdAt' | 'lastLogin';
-  sortOrder?: 'asc' | 'desc';
+  statusFilter?: "active" | "inactive" | "all";
+  sortBy?: "name" | "email" | "createdAt" | "lastLogin";
+  sortOrder?: "asc" | "desc";
   page?: number;
   limit?: number;
 }
@@ -83,7 +83,7 @@ export interface UsersResponse {
 }
 
 export interface BulkUserOperation {
-  operation: 'activate' | 'deactivate' | 'delete';
+  operation: "activate" | "deactivate" | "delete";
   userIds: string[];
 }
 
@@ -228,7 +228,7 @@ export interface PermissionCategory {
   };
 }
 
-export interface RoleWithPermissions extends Omit<RoleOption, 'permissions'> {
+export interface RoleWithPermissions extends Omit<RoleOption, "permissions"> {
   permissions: PermissionCategory;
   isSystem: boolean;
   isActive: boolean;
@@ -236,7 +236,7 @@ export interface RoleWithPermissions extends Omit<RoleOption, 'permissions'> {
 
 // Table/List view types
 export interface UserTableColumn {
-  key: keyof UserWithRoles | 'roles' | 'actions';
+  key: keyof UserWithRoles | "roles" | "actions";
   label: string;
   sortable?: boolean;
   width?: string;
@@ -244,7 +244,7 @@ export interface UserTableColumn {
 
 export interface SortConfig {
   field: string;
-  direction: 'asc' | 'desc';
+  direction: "asc" | "desc";
 }
 
 // Search and filter types
@@ -259,13 +259,13 @@ export interface AdvancedSearchFilters {
 }
 
 // Status types
-export type UserStatus = 'active' | 'inactive' | 'pending' | 'suspended';
-export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
+export type UserStatus = "active" | "inactive" | "pending" | "suspended";
+export type LoadingState = "idle" | "loading" | "success" | "error";
 
 // Modal/Dialog types
 export interface UserModalState {
   isOpen: boolean;
-  mode: 'create' | 'edit' | 'view' | 'delete';
+  mode: "create" | "edit" | "view" | "delete";
   user?: UserDetails;
 }
 
@@ -278,5 +278,5 @@ export interface ConfirmationModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   loading?: boolean;
-  variant?: 'danger' | 'warning' | 'info';
+  variant?: "danger" | "warning" | "info";
 }

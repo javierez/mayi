@@ -47,7 +47,7 @@ export default function StepOne({ onNext }: StepOneProps) {
   const handleBusinessFocusToggle = (focusId: string) => {
     const currentFocus = formData.businessFocus ?? [];
     const newFocus = currentFocus.includes(focusId)
-      ? currentFocus.filter(id => id !== focusId)
+      ? currentFocus.filter((id) => id !== focusId)
       : [...currentFocus, focusId];
     updateFormData({ businessFocus: newFocus });
   };
@@ -55,7 +55,7 @@ export default function StepOne({ onNext }: StepOneProps) {
   const handleChallengeToggle = (challengeId: string) => {
     const currentChallenges = formData.biggestChallenge ?? [];
     const newChallenges = currentChallenges.includes(challengeId)
-      ? currentChallenges.filter(id => id !== challengeId)
+      ? currentChallenges.filter((id) => id !== challengeId)
       : [...currentChallenges, challengeId];
     updateFormData({ biggestChallenge: newChallenges });
   };
@@ -67,7 +67,10 @@ export default function StepOne({ onNext }: StepOneProps) {
       return;
     }
     // If "Otro" is selected, check for custom CRM name
-    if (formData.previousCrm === "other" && !formData.previousCrmOther?.trim()) {
+    if (
+      formData.previousCrm === "other" &&
+      !formData.previousCrmOther?.trim()
+    ) {
       alert("Por favor, escribe el nombre de tu CRM anterior.");
       return;
     }
@@ -98,10 +101,10 @@ export default function StepOne({ onNext }: StepOneProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <h3 className="mb-4 text-lg font-semibold text-gray-900">
           Antecedentes y Situación Actual
         </h3>
-        <p className="text-sm text-gray-600 mb-6">
+        <p className="mb-6 text-sm text-gray-600">
           Ayúdanos a conocer mejor tu negocio para personalizar tu experiencia.
         </p>
       </div>
@@ -147,7 +150,9 @@ export default function StepOne({ onNext }: StepOneProps) {
           <FloatingLabelInput
             id="previousCrmOther"
             value={formData.previousCrmOther ?? ""}
-            onChange={(value: string) => updateFormData({ previousCrmOther: value })}
+            onChange={(value: string) =>
+              updateFormData({ previousCrmOther: value })
+            }
             placeholder="Nombre del CRM"
             type="text"
           />
@@ -180,7 +185,8 @@ export default function StepOne({ onNext }: StepOneProps) {
       {/* Team Size */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-900">
-          Número de agentes/miembros del equipo <span className="text-red-500">*</span>
+          Número de agentes/miembros del equipo{" "}
+          <span className="text-red-500">*</span>
         </label>
         <Select
           value={formData.teamSize}
@@ -205,7 +211,9 @@ export default function StepOne({ onNext }: StepOneProps) {
         <label className="text-sm font-medium text-gray-900">
           Enfoque principal del negocio <span className="text-red-500">*</span>
         </label>
-        <p className="text-xs text-gray-500">Selecciona todas las que apliquen</p>
+        <p className="text-xs text-gray-500">
+          Selecciona todas las que apliquen
+        </p>
         <div className="space-y-2 rounded-lg bg-gray-50 p-4">
           {businessFocusOptions.map((option) => (
             <div key={option.id} className="flex items-center space-x-2">
@@ -252,13 +260,17 @@ export default function StepOne({ onNext }: StepOneProps) {
         <label className="text-sm font-medium text-gray-900">
           Mayores desafíos actuales <span className="text-red-500">*</span>
         </label>
-        <p className="text-xs text-gray-500">Selecciona todos los que apliquen</p>
+        <p className="text-xs text-gray-500">
+          Selecciona todos los que apliquen
+        </p>
         <div className="space-y-2 rounded-lg bg-gray-50 p-4">
           {challengeOptions.map((option) => (
             <div key={option.id} className="flex items-center space-x-2">
               <Checkbox
                 id={option.id}
-                checked={formData.biggestChallenge?.includes(option.id) ?? false}
+                checked={
+                  formData.biggestChallenge?.includes(option.id) ?? false
+                }
                 onCheckedChange={() => handleChallengeToggle(option.id)}
               />
               <label
@@ -292,4 +304,3 @@ export default function StepOne({ onNext }: StepOneProps) {
     </div>
   );
 }
-

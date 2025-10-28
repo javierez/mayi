@@ -46,10 +46,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
-import {
-  Collapsible,
-  CollapsibleContent,
-} from "~/components/ui/collapsible";
+import { Collapsible, CollapsibleContent } from "~/components/ui/collapsible";
 import Image from "next/image"; // Add Image import for optimized images
 import { useWeeklyAppointments } from "~/hooks/use-cached-calendar";
 import CalendarEvent, {
@@ -61,10 +58,16 @@ import AppointmentModal, {
 } from "~/components/appointments/appointment-modal";
 import { AppointmentDetailSheet } from "~/components/appointments/appointment-detail-sheet";
 import type { AppointmentData } from "~/components/appointments/appointment-card";
-import { getAgentsForFilterAction, getBatchAppointmentTasksAction } from "~/server/actions/appointments";
+import {
+  getAgentsForFilterAction,
+  getBatchAppointmentTasksAction,
+} from "~/server/actions/appointments";
 import { useGoogleCalendarIntegration } from "~/hooks/use-google-calendar-integration";
 import { GoogleCalendarSyncSettings } from "~/components/calendar/google-calendar-sync-settings";
-import { canEditCalendar, canDeleteCalendar } from "~/app/actions/permissions/check-permissions";
+import {
+  canEditCalendar,
+  canDeleteCalendar,
+} from "~/app/actions/permissions/check-permissions";
 import { useSession } from "~/lib/auth-client";
 import { ExpandableSection } from "~/components/propiedades/detail/activity/expandable-section";
 
@@ -186,7 +189,12 @@ export default function AppointmentsPage() {
     status: boolean;
   }>({ type: true, status: true });
   const [agents, setAgents] = useState<
-    Array<{ id: string; name: string; firstName: string; lastName: string | null }>
+    Array<{
+      id: string;
+      name: string;
+      firstName: string;
+      lastName: string | null;
+    }>
   >([]);
   const [view, setView] = useState<"list" | "calendar" | "weekly">("weekly");
   const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()));
@@ -228,11 +236,15 @@ export default function AppointmentsPage() {
   const [syncSettingsOpen, setSyncSettingsOpen] = useState(false);
 
   // Permission states
-  const [hasEditCalendarPermission, setHasEditCalendarPermission] = useState<boolean>(false);
-  const [hasDeleteCalendarPermission, setHasDeleteCalendarPermission] = useState<boolean>(false);
+  const [hasEditCalendarPermission, setHasEditCalendarPermission] =
+    useState<boolean>(false);
+  const [hasDeleteCalendarPermission, setHasDeleteCalendarPermission] =
+    useState<boolean>(false);
 
   // Tasks state - batch loaded for all appointments
-  const [appointmentTasksMap, setAppointmentTasksMap] = useState<Record<number, unknown[]>>({});
+  const [appointmentTasksMap, setAppointmentTasksMap] = useState<
+    Record<number, unknown[]>
+  >({});
 
   // Fetch user permissions on component mount
   useEffect(() => {
@@ -250,7 +262,10 @@ export default function AppointmentsPage() {
         setHasEditCalendarPermission(editCalendarPerm);
         setHasDeleteCalendarPermission(deleteCalendarPerm);
       } catch (error) {
-        console.error("❌ [Calendar] Error fetching calendar permissions:", error);
+        console.error(
+          "❌ [Calendar] Error fetching calendar permissions:",
+          error,
+        );
         setHasEditCalendarPermission(false);
         setHasDeleteCalendarPermission(false);
       }
@@ -286,14 +301,15 @@ export default function AppointmentsPage() {
           ?.toLowerCase()
           .includes(searchQuery.toLowerCase()) ??
           false);
-      const matchesType = typeFilter === "all" || appointment.type === typeFilter;
+      const matchesType =
+        typeFilter === "all" || appointment.type === typeFilter;
 
       // Map Spanish status filter to English DB status
       const statusMap: Record<string, string> = {
-        "Programado": "Scheduled",
-        "Completado": "Completed",
-        "Cancelado": "Cancelled",
-        "Reprogramado": "Rescheduled",
+        Programado: "Scheduled",
+        Completado: "Completed",
+        Cancelado: "Cancelled",
+        Reprogramado: "Rescheduled",
         "No asistió": "NoShow",
       };
       const matchesStatus =
@@ -310,7 +326,14 @@ export default function AppointmentsPage() {
           ));
       return matchesSearch && matchesType && matchesStatus && matchesAgent;
     });
-  }, [realAppointments, searchQuery, typeFilter, statusFilter, selectedAgents, agents]);
+  }, [
+    realAppointments,
+    searchQuery,
+    typeFilter,
+    statusFilter,
+    selectedAgents,
+    agents,
+  ]);
 
   // Batch fetch tasks for filtered appointments (only in list view)
   useEffect(() => {
@@ -318,7 +341,9 @@ export default function AppointmentsPage() {
 
     const fetchTasksForAppointments = async () => {
       try {
-        const appointmentIds = filteredAppointments.map(app => Number(app.appointmentId));
+        const appointmentIds = filteredAppointments.map((app) =>
+          Number(app.appointmentId),
+        );
         const result = await getBatchAppointmentTasksAction(appointmentIds);
 
         if (result.success) {
@@ -368,7 +393,9 @@ export default function AppointmentsPage() {
         nextWeekStart.setDate(nextWeekStart.getDate() + 7);
 
         // Trigger refetch for extended range
-        console.log(`Prefetching appointments for next week starting ${nextWeekStart.toDateString()}`);
+        console.log(
+          `Prefetching appointments for next week starting ${nextWeekStart.toDateString()}`,
+        );
         refetch().catch(console.error);
       }
     };
@@ -377,8 +404,8 @@ export default function AppointmentsPage() {
       requestAnimationFrame(prefetchNextWeek);
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [view, weekStart, loading, refetch]);
 
   // Scroll to 10:00 AM on mount for weekly view
@@ -471,8 +498,11 @@ export default function AppointmentsPage() {
   };
 
   // Permission helper function for ownership check
-  const checkAppointmentOwnership = (appointment: AppointmentData & { userId?: string | null }): boolean => {
-    const userId = (appointment as AppointmentData & { userId?: string | null }).userId;
+  const checkAppointmentOwnership = (
+    appointment: AppointmentData & { userId?: string | null },
+  ): boolean => {
+    const userId = (appointment as AppointmentData & { userId?: string | null })
+      .userId;
     if (!userId) return hasEditCalendarPermission;
     const isOwner = userId === session?.user?.id;
     return isOwner || hasEditCalendarPermission;
@@ -521,7 +551,11 @@ export default function AppointmentsPage() {
           {/* Agent Filter - Multi-select */}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="relative h-8 w-8 p-0">
+              <Button
+                variant="outline"
+                size="sm"
+                className="relative h-8 w-8 p-0"
+              >
                 <Users className="h-3.5 w-3.5" />
                 {selectedAgents.length > 0 && (
                   <Badge
@@ -543,14 +577,17 @@ export default function AppointmentsPage() {
                         return (
                           <div
                             key={agent.id}
-                            className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 hover:bg-accent transition-colors"
+                            className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 transition-colors hover:bg-accent"
                             onClick={() => {
                               if (isSelected) {
                                 setSelectedAgents((prev) =>
                                   prev.filter((id) => id !== agent.id),
                                 );
                               } else {
-                                setSelectedAgents((prev) => [...prev, agent.id]);
+                                setSelectedAgents((prev) => [
+                                  ...prev,
+                                  agent.id,
+                                ]);
                               }
                             }}
                           >
@@ -565,7 +602,9 @@ export default function AppointmentsPage() {
                                 <Check className="h-2 w-2 text-primary-foreground" />
                               )}
                             </div>
-                            <span className={`text-[12px] ${isSelected ? "font-medium" : ""}`}>
+                            <span
+                              className={`text-[12px] ${isSelected ? "font-medium" : ""}`}
+                            >
                               {agent.name ??
                                 `${agent.firstName} ${agent.lastName ?? ""}`}
                             </span>
@@ -623,7 +662,12 @@ export default function AppointmentsPage() {
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 w-8 p-0" title="Integraciones">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0"
+                title="Integraciones"
+              >
                 <LinkIcon className="h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
@@ -754,8 +798,7 @@ export default function AppointmentsPage() {
           >
             <Filter className="mr-1.5 h-3.5 w-3.5" />
             <span className="hidden sm:inline">Filtros</span>
-            {(typeFilter !== "all" ||
-              statusFilter !== "all") && (
+            {(typeFilter !== "all" || statusFilter !== "all") && (
               <Badge
                 variant="secondary"
                 className="ml-1.5 h-4 min-w-4 rounded-full px-1 text-[12px] font-normal"
@@ -774,12 +817,12 @@ export default function AppointmentsPage() {
 
       <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
         <CollapsibleContent className="space-y-2">
-          <div className="rounded-lg shadow-md bg-card p-2">
+          <div className="rounded-lg bg-card p-2 shadow-md">
             <div className="space-y-2">
-              <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <div className="space-y-1">
                   <div
-                    className="flex cursor-pointer items-center gap-1 group"
+                    className="group flex cursor-pointer items-center gap-1"
                     onClick={() =>
                       setExpandedFilterSections((prev) => ({
                         ...prev,
@@ -787,7 +830,7 @@ export default function AppointmentsPage() {
                       }))
                     }
                   >
-                    <h5 className="text-[12px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                    <h5 className="text-[12px] font-medium text-muted-foreground transition-colors group-hover:text-foreground">
                       Tipo
                     </h5>
                     <ChevronDown
@@ -801,7 +844,7 @@ export default function AppointmentsPage() {
                       {Object.keys(appointmentTypes).map((type) => (
                         <div
                           key={type}
-                          className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 hover:bg-accent transition-colors"
+                          className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 transition-colors hover:bg-accent"
                           onClick={() => {
                             setTypeFilter(typeFilter === type ? "all" : type);
                           }}
@@ -813,7 +856,11 @@ export default function AppointmentsPage() {
                               <Check className="h-2 w-2 text-primary-foreground" />
                             )}
                           </div>
-                          <span className={`text-[12px] ${typeFilter === type ? "font-medium" : ""}`}>{type}</span>
+                          <span
+                            className={`text-[12px] ${typeFilter === type ? "font-medium" : ""}`}
+                          >
+                            {type}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -822,7 +869,7 @@ export default function AppointmentsPage() {
 
                 <div className="space-y-1">
                   <div
-                    className="flex cursor-pointer items-center gap-1 group"
+                    className="group flex cursor-pointer items-center gap-1"
                     onClick={() =>
                       setExpandedFilterSections((prev) => ({
                         ...prev,
@@ -830,7 +877,7 @@ export default function AppointmentsPage() {
                       }))
                     }
                   >
-                    <h5 className="text-[12px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                    <h5 className="text-[12px] font-medium text-muted-foreground transition-colors group-hover:text-foreground">
                       Estado
                     </h5>
                     <ChevronDown
@@ -841,28 +888,36 @@ export default function AppointmentsPage() {
                   </div>
                   {expandedFilterSections.status && (
                     <div className="space-y-0.5">
-                      {["Programado", "Completado", "Cancelado", "Reprogramado", "No asistió"].map(
-                        (status) => (
+                      {[
+                        "Programado",
+                        "Completado",
+                        "Cancelado",
+                        "Reprogramado",
+                        "No asistió",
+                      ].map((status) => (
+                        <div
+                          key={status}
+                          className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 transition-colors hover:bg-accent"
+                          onClick={() => {
+                            setStatusFilter(
+                              statusFilter === status ? "all" : status,
+                            );
+                          }}
+                        >
                           <div
-                            key={status}
-                            className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 hover:bg-accent transition-colors"
-                            onClick={() => {
-                              setStatusFilter(
-                                statusFilter === status ? "all" : status,
-                              );
-                            }}
+                            className={`flex h-3 w-3 items-center justify-center rounded border ${statusFilter === status ? "border-primary bg-primary" : "border-input"}`}
                           >
-                            <div
-                              className={`flex h-3 w-3 items-center justify-center rounded border ${statusFilter === status ? "border-primary bg-primary" : "border-input"}`}
-                            >
-                              {statusFilter === status && (
-                                <Check className="h-2 w-2 text-primary-foreground" />
-                              )}
-                            </div>
-                            <span className={`text-[12px] ${statusFilter === status ? "font-medium" : ""}`}>{status}</span>
+                            {statusFilter === status && (
+                              <Check className="h-2 w-2 text-primary-foreground" />
+                            )}
                           </div>
-                        ),
-                      )}
+                          <span
+                            className={`text-[12px] ${statusFilter === status ? "font-medium" : ""}`}
+                          >
+                            {status}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -880,7 +935,7 @@ export default function AppointmentsPage() {
                   setTypeFilter("all");
                   setStatusFilter("all");
                 }}
-                className="h-auto py-1 px-2 text-[12px]"
+                className="h-auto px-2 py-1 text-[12px]"
               >
                 <FilterX className="mr-1 h-3 w-3" />
                 Borrar filtros
@@ -911,44 +966,65 @@ export default function AppointmentsPage() {
                 const urgentAppointments = filteredAppointments
                   .filter((a) => {
                     // Include NoShow and Rescheduled
-                    if (a.status === "NoShow" || a.status === "Rescheduled") return true;
+                    if (a.status === "NoShow" || a.status === "Rescheduled")
+                      return true;
                     // Include Scheduled appointments that are in the past
-                    if (a.status === "Scheduled" && a.endTime < now) return true;
+                    if (a.status === "Scheduled" && a.endTime < now)
+                      return true;
                     return false;
                   })
-                  .sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
+                  .sort(
+                    (a, b) => b.startTime.getTime() - a.startTime.getTime(),
+                  );
 
                 return urgentAppointments.length > 0 ? (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 px-1">
                       <div className="h-2 w-2 rounded-full bg-rose-500" />
-                      <h3 className="text-sm font-semibold text-rose-700 uppercase tracking-wide">
+                      <h3 className="text-sm font-semibold uppercase tracking-wide text-rose-700">
                         Requieren Atención ({urgentAppointments.length})
                       </h3>
                     </div>
                     <div className="space-y-0">
                       {urgentAppointments.map((appointment, index) => {
-                        const currentDate = getDateString(appointment.startTime);
-                        const previousDate = index > 0 ? getDateString(urgentAppointments[index - 1]!.startTime) : null;
-                        const showDateLabel = index === 0 || (previousDate && currentDate !== previousDate);
-                        const isToday = currentDate === getDateString(new Date());
+                        const currentDate = getDateString(
+                          appointment.startTime,
+                        );
+                        const previousDate =
+                          index > 0
+                            ? getDateString(
+                                urgentAppointments[index - 1]!.startTime,
+                              )
+                            : null;
+                        const showDateLabel =
+                          index === 0 ||
+                          (previousDate && currentDate !== previousDate);
+                        const isToday =
+                          currentDate === getDateString(new Date());
 
                         return (
-                          <div key={`urgent-${appointment.appointmentId.toString()}`}>
+                          <div
+                            key={`urgent-${appointment.appointmentId.toString()}`}
+                          >
                             {showDateLabel && (
                               <div className={isToday ? "my-4" : "my-3"}>
                                 {isToday ? (
-                                  <div className="flex items-center gap-2 mb-2">
+                                  <div className="mb-2 flex items-center gap-2">
                                     <div className="h-px flex-1 bg-blue-200" />
-                                    <span className="text-sm font-semibold text-blue-600 uppercase tracking-wide">
-                                      Hoy - {formatDateSeparator(appointment.startTime)}
+                                    <span className="text-sm font-semibold uppercase tracking-wide text-blue-600">
+                                      Hoy -{" "}
+                                      {formatDateSeparator(
+                                        appointment.startTime,
+                                      )}
                                     </span>
                                     <div className="h-px flex-1 bg-blue-200" />
                                   </div>
                                 ) : (
-                                  <div className="flex items-center gap-2 mb-2">
+                                  <div className="mb-2 flex items-center gap-2">
                                     <span className="text-xs text-muted-foreground">
-                                      {formatDateSeparator(appointment.startTime)}
+                                      {formatDateSeparator(
+                                        appointment.startTime,
+                                      )}
                                     </span>
                                     <div className="h-px flex-1 bg-gray-100" />
                                   </div>
@@ -958,9 +1034,17 @@ export default function AppointmentsPage() {
                             <div className="mb-3">
                               <ListCalendarEvent
                                 event={appointment}
-                                isSelected={selectedEvent === appointment.appointmentId}
-                                onClick={() => setSelectedEvent(appointment.appointmentId)}
-                                tasks={appointmentTasksMap[Number(appointment.appointmentId)] ?? []}
+                                isSelected={
+                                  selectedEvent === appointment.appointmentId
+                                }
+                                onClick={() =>
+                                  setSelectedEvent(appointment.appointmentId)
+                                }
+                                tasks={
+                                  appointmentTasksMap[
+                                    Number(appointment.appointmentId)
+                                  ] ?? []
+                                }
                               />
                             </div>
                           </div>
@@ -976,38 +1060,57 @@ export default function AppointmentsPage() {
                 const now = new Date();
                 const activeAppointments = filteredAppointments
                   .filter((a) => a.status === "Scheduled" && a.endTime >= now)
-                  .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+                  .sort(
+                    (a, b) => a.startTime.getTime() - b.startTime.getTime(),
+                  );
 
                 return activeAppointments.length > 0 ? (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 px-1">
-                      <h3 className="text-sm font-semibold text-emerald-700 uppercase tracking-wide">
+                      <h3 className="text-sm font-semibold uppercase tracking-wide text-emerald-700">
                         Próximas Citas ({activeAppointments.length})
                       </h3>
                     </div>
                     <div className="space-y-0">
                       {activeAppointments.map((appointment, index) => {
-                        const currentDate = getDateString(appointment.startTime);
-                        const previousDate = index > 0 ? getDateString(activeAppointments[index - 1]!.startTime) : null;
-                        const showDateLabel = index === 0 || (previousDate && currentDate !== previousDate);
-                        const isToday = currentDate === getDateString(new Date());
+                        const currentDate = getDateString(
+                          appointment.startTime,
+                        );
+                        const previousDate =
+                          index > 0
+                            ? getDateString(
+                                activeAppointments[index - 1]!.startTime,
+                              )
+                            : null;
+                        const showDateLabel =
+                          index === 0 ||
+                          (previousDate && currentDate !== previousDate);
+                        const isToday =
+                          currentDate === getDateString(new Date());
 
                         return (
-                          <div key={`active-${appointment.appointmentId.toString()}`}>
+                          <div
+                            key={`active-${appointment.appointmentId.toString()}`}
+                          >
                             {showDateLabel && (
                               <div className={isToday ? "my-4" : "my-3"}>
                                 {isToday ? (
-                                  <div className="flex items-center gap-2 mb-2">
+                                  <div className="mb-2 flex items-center gap-2">
                                     <div className="h-px flex-1 bg-blue-200" />
-                                    <span className="text-sm font-semibold text-blue-600 uppercase tracking-wide">
-                                      Hoy - {formatDateSeparator(appointment.startTime)}
+                                    <span className="text-sm font-semibold uppercase tracking-wide text-blue-600">
+                                      Hoy -{" "}
+                                      {formatDateSeparator(
+                                        appointment.startTime,
+                                      )}
                                     </span>
                                     <div className="h-px flex-1 bg-blue-200" />
                                   </div>
                                 ) : (
-                                  <div className="flex items-center gap-2 mb-2">
+                                  <div className="mb-2 flex items-center gap-2">
                                     <span className="text-xs text-muted-foreground">
-                                      {formatDateSeparator(appointment.startTime)}
+                                      {formatDateSeparator(
+                                        appointment.startTime,
+                                      )}
                                     </span>
                                     <div className="h-px flex-1 bg-gray-100" />
                                   </div>
@@ -1017,9 +1120,17 @@ export default function AppointmentsPage() {
                             <div className="mb-3">
                               <ListCalendarEvent
                                 event={appointment}
-                                isSelected={selectedEvent === appointment.appointmentId}
-                                onClick={() => setSelectedEvent(appointment.appointmentId)}
-                                tasks={appointmentTasksMap[Number(appointment.appointmentId)] ?? []}
+                                isSelected={
+                                  selectedEvent === appointment.appointmentId
+                                }
+                                onClick={() =>
+                                  setSelectedEvent(appointment.appointmentId)
+                                }
+                                tasks={
+                                  appointmentTasksMap[
+                                    Number(appointment.appointmentId)
+                                  ] ?? []
+                                }
                               />
                             </div>
                           </div>
@@ -1034,7 +1145,9 @@ export default function AppointmentsPage() {
               {(() => {
                 const completedAppointments = filteredAppointments
                   .filter((a) => a.status === "Completed")
-                  .sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
+                  .sort(
+                    (a, b) => b.startTime.getTime() - a.startTime.getTime(),
+                  );
 
                 return completedAppointments.length > 0 ? (
                   <ExpandableSection
@@ -1045,27 +1158,44 @@ export default function AppointmentsPage() {
                   >
                     <div className="space-y-0">
                       {completedAppointments.map((appointment, index) => {
-                        const currentDate = getDateString(appointment.startTime);
-                        const previousDate = index > 0 ? getDateString(completedAppointments[index - 1]!.startTime) : null;
-                        const showDateLabel = index === 0 || (previousDate && currentDate !== previousDate);
-                        const isToday = currentDate === getDateString(new Date());
+                        const currentDate = getDateString(
+                          appointment.startTime,
+                        );
+                        const previousDate =
+                          index > 0
+                            ? getDateString(
+                                completedAppointments[index - 1]!.startTime,
+                              )
+                            : null;
+                        const showDateLabel =
+                          index === 0 ||
+                          (previousDate && currentDate !== previousDate);
+                        const isToday =
+                          currentDate === getDateString(new Date());
 
                         return (
-                          <div key={`completed-${appointment.appointmentId.toString()}`}>
+                          <div
+                            key={`completed-${appointment.appointmentId.toString()}`}
+                          >
                             {showDateLabel && (
                               <div className={isToday ? "my-4" : "my-3"}>
                                 {isToday ? (
-                                  <div className="flex items-center gap-2 mb-2">
+                                  <div className="mb-2 flex items-center gap-2">
                                     <div className="h-px flex-1 bg-blue-200" />
-                                    <span className="text-sm font-semibold text-blue-600 uppercase tracking-wide">
-                                      Hoy - {formatDateSeparator(appointment.startTime)}
+                                    <span className="text-sm font-semibold uppercase tracking-wide text-blue-600">
+                                      Hoy -{" "}
+                                      {formatDateSeparator(
+                                        appointment.startTime,
+                                      )}
                                     </span>
                                     <div className="h-px flex-1 bg-blue-200" />
                                   </div>
                                 ) : (
-                                  <div className="flex items-center gap-2 mb-2">
+                                  <div className="mb-2 flex items-center gap-2">
                                     <span className="text-xs text-muted-foreground">
-                                      {formatDateSeparator(appointment.startTime)}
+                                      {formatDateSeparator(
+                                        appointment.startTime,
+                                      )}
                                     </span>
                                     <div className="h-px flex-1 bg-gray-100" />
                                   </div>
@@ -1075,9 +1205,17 @@ export default function AppointmentsPage() {
                             <div className="mb-3">
                               <ListCalendarEvent
                                 event={appointment}
-                                isSelected={selectedEvent === appointment.appointmentId}
-                                onClick={() => setSelectedEvent(appointment.appointmentId)}
-                                tasks={appointmentTasksMap[Number(appointment.appointmentId)] ?? []}
+                                isSelected={
+                                  selectedEvent === appointment.appointmentId
+                                }
+                                onClick={() =>
+                                  setSelectedEvent(appointment.appointmentId)
+                                }
+                                tasks={
+                                  appointmentTasksMap[
+                                    Number(appointment.appointmentId)
+                                  ] ?? []
+                                }
                               />
                             </div>
                           </div>
@@ -1095,8 +1233,14 @@ export default function AppointmentsPage() {
                 fourteenDaysAgo.setDate(now.getDate() - 14);
 
                 const cancelledAppointments = filteredAppointments
-                  .filter((a) => a.status === "Cancelled" && a.startTime >= fourteenDaysAgo)
-                  .sort((a, b) => b.startTime.getTime() - a.startTime.getTime());
+                  .filter(
+                    (a) =>
+                      a.status === "Cancelled" &&
+                      a.startTime >= fourteenDaysAgo,
+                  )
+                  .sort(
+                    (a, b) => b.startTime.getTime() - a.startTime.getTime(),
+                  );
 
                 return cancelledAppointments.length > 0 ? (
                   <ExpandableSection
@@ -1107,27 +1251,44 @@ export default function AppointmentsPage() {
                   >
                     <div className="space-y-0">
                       {cancelledAppointments.map((appointment, index) => {
-                        const currentDate = getDateString(appointment.startTime);
-                        const previousDate = index > 0 ? getDateString(cancelledAppointments[index - 1]!.startTime) : null;
-                        const showDateLabel = index === 0 || (previousDate && currentDate !== previousDate);
-                        const isToday = currentDate === getDateString(new Date());
+                        const currentDate = getDateString(
+                          appointment.startTime,
+                        );
+                        const previousDate =
+                          index > 0
+                            ? getDateString(
+                                cancelledAppointments[index - 1]!.startTime,
+                              )
+                            : null;
+                        const showDateLabel =
+                          index === 0 ||
+                          (previousDate && currentDate !== previousDate);
+                        const isToday =
+                          currentDate === getDateString(new Date());
 
                         return (
-                          <div key={`cancelled-${appointment.appointmentId.toString()}`}>
+                          <div
+                            key={`cancelled-${appointment.appointmentId.toString()}`}
+                          >
                             {showDateLabel && (
                               <div className={isToday ? "my-4" : "my-3"}>
                                 {isToday ? (
-                                  <div className="flex items-center gap-2 mb-2">
+                                  <div className="mb-2 flex items-center gap-2">
                                     <div className="h-px flex-1 bg-blue-200" />
-                                    <span className="text-sm font-semibold text-blue-600 uppercase tracking-wide">
-                                      Hoy - {formatDateSeparator(appointment.startTime)}
+                                    <span className="text-sm font-semibold uppercase tracking-wide text-blue-600">
+                                      Hoy -{" "}
+                                      {formatDateSeparator(
+                                        appointment.startTime,
+                                      )}
                                     </span>
                                     <div className="h-px flex-1 bg-blue-200" />
                                   </div>
                                 ) : (
-                                  <div className="flex items-center gap-2 mb-2">
+                                  <div className="mb-2 flex items-center gap-2">
                                     <span className="text-xs text-muted-foreground">
-                                      {formatDateSeparator(appointment.startTime)}
+                                      {formatDateSeparator(
+                                        appointment.startTime,
+                                      )}
                                     </span>
                                     <div className="h-px flex-1 bg-gray-100" />
                                   </div>
@@ -1137,9 +1298,17 @@ export default function AppointmentsPage() {
                             <div className="mb-3">
                               <ListCalendarEvent
                                 event={appointment}
-                                isSelected={selectedEvent === appointment.appointmentId}
-                                onClick={() => setSelectedEvent(appointment.appointmentId)}
-                                tasks={appointmentTasksMap[Number(appointment.appointmentId)] ?? []}
+                                isSelected={
+                                  selectedEvent === appointment.appointmentId
+                                }
+                                onClick={() =>
+                                  setSelectedEvent(appointment.appointmentId)
+                                }
+                                tasks={
+                                  appointmentTasksMap[
+                                    Number(appointment.appointmentId)
+                                  ] ?? []
+                                }
                               />
                             </div>
                           </div>

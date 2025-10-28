@@ -2,7 +2,18 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Shield, Mail, Building2, ChevronRight, Lock, Eye, FileText, Users, Clock, Database } from "lucide-react";
+import {
+  Shield,
+  Mail,
+  Building2,
+  ChevronRight,
+  Lock,
+  Eye,
+  FileText,
+  Users,
+  Clock,
+  Database,
+} from "lucide-react";
 import Navbar from "~/components/navbar";
 import { Footer } from "~/components/landing/Footer";
 
@@ -18,7 +29,7 @@ const sections = [
       <p><strong>Correo electrónico:</strong> javier@vesta-crm.com</p>
       <p><strong>Teléfono:</strong> +34 636 036 116</p>
       <p class="mt-4">Vesta CRM es el responsable del tratamiento de los datos personales que nos proporcione. Nos comprometemos a proteger su privacidad y a cumplir con la normativa vigente en materia de protección de datos.</p>
-    `
+    `,
   },
   {
     id: "finalidad",
@@ -33,7 +44,7 @@ const sections = [
         <li><strong>Cumplimiento legal:</strong> Para cumplir con las obligaciones legales aplicables al sector inmobiliario (base legal: obligación legal).</li>
         <li><strong>Mejora de servicios:</strong> Para analizar el uso de nuestra plataforma y mejorar nuestros servicios (base legal: interés legítimo).</li>
       </ul>
-    `
+    `,
   },
   {
     id: "datos",
@@ -51,7 +62,7 @@ const sections = [
       <p class="mt-4 text-sm bg-amber-50 p-3 rounded-lg border border-amber-200">
         <strong>Importante:</strong> No solicitamos ni tratamos categorías especiales de datos (datos sensibles como origen racial, religión, salud, etc.) salvo que sea estrictamente necesario y con su consentimiento explícito.
       </p>
-    `
+    `,
   },
   {
     id: "destinatarios",
@@ -67,7 +78,7 @@ const sections = [
         <li><strong>Asesores profesionales:</strong> Abogados, auditores y consultores que nos presten servicios profesionales sujetos a confidencialidad.</li>
       </ul>
       <p class="mt-4"><strong>Transferencias internacionales:</strong> Algunos de nuestros proveedores de servicios pueden estar ubicados fuera del Espacio Económico Europeo. En estos casos, garantizamos que existen garantías adecuadas para la protección de sus datos mediante cláusulas contractuales tipo aprobadas por la Comisión Europea u otros mecanismos legalmente reconocidos.</p>
-    `
+    `,
   },
   {
     id: "conservacion",
@@ -82,7 +93,7 @@ const sections = [
         <li><strong>Consentimiento para comunicaciones comerciales:</strong> Hasta que retire su consentimiento.</li>
       </ul>
       <p class="mt-4">Transcurridos estos plazos, procederemos a la supresión segura de sus datos personales, salvo que exista una obligación legal de conservación.</p>
-    `
+    `,
   },
   {
     id: "derechos",
@@ -122,7 +133,7 @@ const sections = [
       <p class="mt-3 text-sm bg-blue-50 p-3 rounded-lg border border-blue-200">
         <strong>Derecho a reclamar:</strong> Si considera que no hemos atendido correctamente sus derechos, puede presentar una reclamación ante la Agencia Española de Protección de Datos (AEPD) - www.aepd.es
       </p>
-    `
+    `,
   },
   {
     id: "seguridad",
@@ -139,7 +150,7 @@ const sections = [
         <li><strong>Auditorías:</strong> Realizamos auditorías periódicas de seguridad y protección de datos.</li>
       </ul>
       <p class="mt-4">A pesar de estas medidas, ningún sistema es completamente seguro. Le recomendamos que mantenga la confidencialidad de sus credenciales de acceso.</p>
-    `
+    `,
   },
   {
     id: "cookies",
@@ -156,7 +167,7 @@ const sections = [
       </ul>
       <p class="mt-4">Puede configurar su navegador para rechazar las cookies o ser informado cuando se envíe una. Sin embargo, esto puede afectar al funcionamiento de la plataforma.</p>
       <p class="mt-3">Para más información, consulte nuestra <Link href="#cookies" class="text-amber-600 hover:text-amber-700 underline">Política de Cookies completa</Link>.</p>
-    `
+    `,
   },
   {
     id: "actualizaciones",
@@ -166,7 +177,7 @@ const sections = [
       <p>Nos reservamos el derecho a modificar esta Política de Privacidad para adaptarla a cambios legislativos, jurisprudenciales o en nuestras prácticas empresariales.</p>
       <p class="mt-3">Cualquier modificación será publicada en esta página con antelación suficiente a su aplicación. Le recomendamos revisar periódicamente esta política.</p>
       <p class="mt-3"><strong>Fecha de última actualización:</strong> Enero 2025</p>
-    `
+    `,
   },
   {
     id: "contacto",
@@ -199,8 +210,8 @@ const sections = [
           </div>
         </div>
       </div>
-    `
-  }
+    `,
+  },
 ];
 
 export default function PrivacidadPage() {
@@ -226,8 +237,9 @@ export default function PrivacidadPage() {
               Política de Privacidad
             </h1>
             <p className="text-xl text-gray-600">
-              En Vesta CRM, la protección de sus datos personales es nuestra prioridad.
-              Le informamos de manera transparente sobre cómo tratamos su información.
+              En Vesta CRM, la protección de sus datos personales es nuestra
+              prioridad. Le informamos de manera transparente sobre cómo
+              tratamos su información.
             </p>
             <div className="mt-6 flex items-center justify-center gap-2 text-sm text-gray-500">
               <Clock className="h-4 w-4" />
@@ -240,7 +252,9 @@ export default function PrivacidadPage() {
       {/* Table of Contents */}
       <section className="border-b border-gray-200 bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
-          <h2 className="mb-6 text-lg font-semibold text-gray-900">Índice de Contenidos</h2>
+          <h2 className="mb-6 text-lg font-semibold text-gray-900">
+            Índice de Contenidos
+          </h2>
           <nav className="grid gap-2 sm:grid-cols-2">
             {sections.map((section, index) => (
               <motion.a
@@ -297,7 +311,8 @@ export default function PrivacidadPage() {
             ¿Tiene alguna pregunta sobre privacidad?
           </h2>
           <p className="mb-8 text-xl text-white/90">
-            Nuestro equipo está aquí para ayudarle con cualquier duda sobre el tratamiento de sus datos
+            Nuestro equipo está aquí para ayudarle con cualquier duda sobre el
+            tratamiento de sus datos
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <a

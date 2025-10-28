@@ -16,23 +16,23 @@ export async function createAppointmentTaskAction(
   contactId: bigint,
   contactName: string,
   notes?: string,
-  selectedListings: bigint[] = []
+  selectedListings: bigint[] = [],
 ): Promise<CreateAppointmentTaskResult> {
   try {
     // Get current user for task assignment
     const currentUser = await getCurrentUser();
-    
+
     // Calculate due date (3 days from now)
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 3);
-    
+
     // Prepare task description
     const description = `Configurar cita con ${contactName}`;
-    
+
     // Get listing contact relationship for task association (use first listing if multiple)
     let listingId: bigint | undefined;
     let listingContactId: bigint | undefined;
-    
+
     if (selectedListings.length > 0) {
       try {
         const [listingContact] = await db
@@ -45,11 +45,11 @@ export async function createAppointmentTaskAction(
             and(
               eq(listingContacts.contactId, contactId),
               eq(listingContacts.listingId, selectedListings[0]!), // Use first listing
-              eq(listingContacts.isActive, true)
-            )
+              eq(listingContacts.isActive, true),
+            ),
           )
           .limit(1);
-          
+
         if (listingContact) {
           listingId = listingContact.listingId ?? undefined;
           listingContactId = listingContact.listingContactId ?? undefined;
@@ -59,7 +59,7 @@ export async function createAppointmentTaskAction(
         // Continue without listing association if query fails
       }
     }
-    
+
     // Create the task
     const taskData = {
       userId: currentUser.id,
@@ -72,9 +72,9 @@ export async function createAppointmentTaskAction(
       listingContactId,
       isActive: true,
     };
-    
+
     const newTask = await createTaskWithAuth(taskData);
-    
+
     return {
       success: true,
       task: newTask,

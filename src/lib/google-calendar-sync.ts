@@ -41,8 +41,13 @@ export async function syncFromGoogle(userId: string): Promise<SyncResult> {
     }
 
     // Check sync direction preference
-    if (integration.syncDirection === "vesta_to_google" || integration.syncDirection === "none") {
-      console.log(`Skipping sync from Google - sync direction is ${integration.syncDirection}`);
+    if (
+      integration.syncDirection === "vesta_to_google" ||
+      integration.syncDirection === "none"
+    ) {
+      console.log(
+        `Skipping sync from Google - sync direction is ${integration.syncDirection}`,
+      );
       return { success: true, syncedEvents: 0 };
     }
 
@@ -312,8 +317,13 @@ export async function syncToGoogle(
     }
 
     // Check sync direction preference
-    if (integration.syncDirection === "google_to_vesta" || integration.syncDirection === "none") {
-      console.log(`Skipping sync to Google - sync direction is ${integration.syncDirection}`);
+    if (
+      integration.syncDirection === "google_to_vesta" ||
+      integration.syncDirection === "none"
+    ) {
+      console.log(
+        `Skipping sync to Google - sync direction is ${integration.syncDirection}`,
+      );
       return false;
     }
 

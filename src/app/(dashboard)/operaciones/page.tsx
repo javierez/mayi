@@ -15,7 +15,11 @@ import {
   getUrgentTasksWithAuth,
   getTodayAppointmentsWithAuth,
 } from "~/server/queries/operaciones-dashboard";
-import type { OperacionesSummary, UrgentTask, TodayAppointment } from "~/server/queries/operaciones-dashboard";
+import type {
+  OperacionesSummary,
+  UrgentTask,
+  TodayAppointment,
+} from "~/server/queries/operaciones-dashboard";
 import { getMostUrgentTasksWithAuth } from "~/server/queries/task";
 
 export default function OperacionesPage() {
@@ -24,7 +28,9 @@ export default function OperacionesPage() {
   const [summary, setSummary] = useState<OperacionesSummary | null>(null);
   const [urgentTasks, setUrgentTasks] = useState<UrgentTask[]>([]);
   const [appointments, setAppointments] = useState<TodayAppointment[]>([]);
-  const [mostUrgentTasks, setMostUrgentTasks] = useState<Awaited<ReturnType<typeof getMostUrgentTasksWithAuth>>>([]);
+  const [mostUrgentTasks, setMostUrgentTasks] = useState<
+    Awaited<ReturnType<typeof getMostUrgentTasksWithAuth>>
+  >([]);
   const [tasksDaysFilter, setTasksDaysFilter] = useState(7);
   const [tasksLoading, setTasksLoading] = useState(false);
 
@@ -35,12 +41,13 @@ export default function OperacionesPage() {
       setError(null);
       try {
         // Obtención de datos iniciales en paralelo para mejor rendimiento
-        const [summaryData, tasksData, appointmentsData, mostUrgentTasksData] = await Promise.all([
-          getOperacionesSummaryWithAuth(),
-          getUrgentTasksWithAuth(5), // 5 días laborables
-          getTodayAppointmentsWithAuth(),
-          getMostUrgentTasksWithAuth(10, tasksDaysFilter), // Initial detailed tasks
-        ]);
+        const [summaryData, tasksData, appointmentsData, mostUrgentTasksData] =
+          await Promise.all([
+            getOperacionesSummaryWithAuth(),
+            getUrgentTasksWithAuth(5), // 5 días laborables
+            getTodayAppointmentsWithAuth(),
+            getMostUrgentTasksWithAuth(10, tasksDaysFilter), // Initial detailed tasks
+          ]);
 
         setSummary(summaryData);
         setUrgentTasks(tasksData);
@@ -48,7 +55,9 @@ export default function OperacionesPage() {
         setMostUrgentTasks(mostUrgentTasksData);
       } catch (error) {
         console.error("Error al cargar datos de operaciones:", error);
-        setError("No se pudieron cargar los datos de operaciones. Por favor, intenta actualizar la página.");
+        setError(
+          "No se pudieron cargar los datos de operaciones. Por favor, intenta actualizar la página.",
+        );
       } finally {
         setIsLoading(false);
       }
@@ -63,7 +72,10 @@ export default function OperacionesPage() {
     const fetchDetailedTasks = async () => {
       setTasksLoading(true);
       try {
-        const mostUrgentTasksData = await getMostUrgentTasksWithAuth(10, tasksDaysFilter);
+        const mostUrgentTasksData = await getMostUrgentTasksWithAuth(
+          10,
+          tasksDaysFilter,
+        );
         setMostUrgentTasks(mostUrgentTasksData);
       } catch (error) {
         console.error("Error al cargar tareas detalladas:", error);

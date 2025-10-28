@@ -23,7 +23,9 @@ export async function loadGoogleMapsApi(): Promise<google.maps.PlacesLibrary> {
 
   // If currently loading, return the existing promise
   if (loadPromise) {
-    console.log("⏳ [GoogleMapsLoader] Already loading, returning existing promise");
+    console.log(
+      "⏳ [GoogleMapsLoader] Already loading, returning existing promise",
+    );
     return loadPromise;
   }
 
@@ -39,7 +41,9 @@ export async function loadGoogleMapsApi(): Promise<google.maps.PlacesLibrary> {
         libraries: ["places"],
       });
 
-      console.log("📦 [GoogleMapsLoader] Options set, importing places library...");
+      console.log(
+        "📦 [GoogleMapsLoader] Options set, importing places library...",
+      );
 
       // Import the places library
       const placesLibrary = await importLibrary("places");

@@ -39,7 +39,10 @@ interface AppointmentModalProps {
   // Optimistic update functions
   addOptimisticEvent?: (event: Partial<Record<string, unknown>>) => bigint;
   removeOptimisticEvent?: (tempId: bigint) => void;
-  updateOptimisticEvent?: (tempId: bigint, updates: Partial<Record<string, unknown>>) => void;
+  updateOptimisticEvent?: (
+    tempId: bigint,
+    updates: Partial<Record<string, unknown>>,
+  ) => void;
 }
 
 export default function AppointmentModal({

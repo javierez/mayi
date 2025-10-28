@@ -97,10 +97,11 @@ export const FeaturesGrid: FC<FeaturesGridProps> = ({
           // Determine icon size based on feature count and apply custom multiplier
           const getIconSize = () => {
             let baseSize;
-            if (totalFeatures === 1) baseSize = PRINT_DIMENSIONS.ICONS.extraLarge;
+            if (totalFeatures === 1)
+              baseSize = PRINT_DIMENSIONS.ICONS.extraLarge;
             else if (shouldCompact) baseSize = PRINT_DIMENSIONS.ICONS.small;
             else baseSize = PRINT_DIMENSIONS.ICONS.large;
-            
+
             // Apply custom size multiplier
             return {
               width: Math.round(baseSize.width * iconSize),

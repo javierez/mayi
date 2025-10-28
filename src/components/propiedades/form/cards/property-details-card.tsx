@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
@@ -66,15 +65,23 @@ export function PropertyDetailsCard({
   };
 
   // Local state for formatted surface values
-  const [squareMeterDisplay, setSquareMeterDisplay] = useState(formatArea(listing.squareMeter));
+  const [squareMeterDisplay, setSquareMeterDisplay] = useState(
+    formatArea(listing.squareMeter),
+  );
   const [builtSurfaceDisplay, setBuiltSurfaceDisplay] = useState(
-    formatArea(listing.builtSurfaceArea ? Math.round(listing.builtSurfaceArea) : null)
+    formatArea(
+      listing.builtSurfaceArea ? Math.round(listing.builtSurfaceArea) : null,
+    ),
   );
 
   // Update display values when listing changes
   useEffect(() => {
     setSquareMeterDisplay(formatArea(listing.squareMeter));
-    setBuiltSurfaceDisplay(formatArea(listing.builtSurfaceArea ? Math.round(listing.builtSurfaceArea) : null));
+    setBuiltSurfaceDisplay(
+      formatArea(
+        listing.builtSurfaceArea ? Math.round(listing.builtSurfaceArea) : null,
+      ),
+    );
   }, [listing.squareMeter, listing.builtSurfaceArea]);
 
   const handleSquareMeterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,7 +107,11 @@ export function PropertyDetailsCard({
 
   const handleBuiltSurfaceBlur = () => {
     // Reformat on blur to ensure consistent formatting
-    setBuiltSurfaceDisplay(formatArea(listing.builtSurfaceArea ? Math.round(listing.builtSurfaceArea) : null));
+    setBuiltSurfaceDisplay(
+      formatArea(
+        listing.builtSurfaceArea ? Math.round(listing.builtSurfaceArea) : null,
+      ),
+    );
   };
 
   return (
@@ -110,10 +121,7 @@ export function PropertyDetailsCard({
         getCardStyles("propertyDetails"),
       )}
     >
-      <ModernSaveIndicator
-        state={saveState}
-        onSave={onSave}
-      />
+      <ModernSaveIndicator state={saveState} onSave={onSave} />
       <div className="mb-3 flex items-center justify-between">
         <button
           type="button"
@@ -192,7 +200,9 @@ export function PropertyDetailsCard({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="builtSurfaceArea" className="text-sm">
-                {propertyType === "solar" ? "Edificable (m²)" : "Construida (m²)"}
+                {propertyType === "solar"
+                  ? "Edificable (m²)"
+                  : "Construida (m²)"}
               </Label>
               <Input
                 id="builtSurfaceArea"
@@ -279,11 +289,21 @@ export function PropertyDetailsCard({
                 <SelectValue placeholder="Seleccionar estado" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">{CONSERVATION_STATUS_LABELS[1]}</SelectItem>
-                <SelectItem value="2">{CONSERVATION_STATUS_LABELS[2]}</SelectItem>
-                <SelectItem value="3">{CONSERVATION_STATUS_LABELS[3]}</SelectItem>
-                <SelectItem value="4">{CONSERVATION_STATUS_LABELS[4]}</SelectItem>
-                <SelectItem value="6">{CONSERVATION_STATUS_LABELS[6]}</SelectItem>
+                <SelectItem value="1">
+                  {CONSERVATION_STATUS_LABELS[1]}
+                </SelectItem>
+                <SelectItem value="2">
+                  {CONSERVATION_STATUS_LABELS[2]}
+                </SelectItem>
+                <SelectItem value="3">
+                  {CONSERVATION_STATUS_LABELS[3]}
+                </SelectItem>
+                <SelectItem value="4">
+                  {CONSERVATION_STATUS_LABELS[4]}
+                </SelectItem>
+                <SelectItem value="6">
+                  {CONSERVATION_STATUS_LABELS[6]}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

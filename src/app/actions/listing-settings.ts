@@ -21,7 +21,13 @@ export async function updateListingStatus(
       throw new Error("Status cannot be empty");
     }
 
-    const validStatuses = ['En Venta', 'En Alquiler', 'Vendido', 'Alquilado', 'Draft'];
+    const validStatuses = [
+      "En Venta",
+      "En Alquiler",
+      "Vendido",
+      "Alquilado",
+      "Draft",
+    ];
 
     if (!validStatuses.includes(newStatus)) {
       throw new Error("Invalid status");
@@ -29,11 +35,11 @@ export async function updateListingStatus(
 
     // Verify the listing belongs to the user's account
     const [listing] = await db
-      .select({ 
+      .select({
         accountId: listings.accountId,
         propertyId: listings.propertyId,
         currentListingType: listings.listingType,
-        currentStatus: listings.status
+        currentStatus: listings.status,
       })
       .from(listings)
       .where(eq(listings.listingId, listingId))
@@ -50,33 +56,36 @@ export async function updateListingStatus(
     // Update only the listing status (listingType remains unchanged)
     await db
       .update(listings)
-      .set({ 
+      .set({
         status: newStatus,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(
         and(
           eq(listings.listingId, listingId),
-          eq(listings.accountId, BigInt(session.user.accountId))
-        )
+          eq(listings.accountId, BigInt(session.user.accountId)),
+        ),
       );
 
     // Revalidate the property page to show the updated status
     revalidatePath(`/propiedades/${listing.propertyId}`);
-    
-    // Also revalidate the main properties list
-    revalidatePath('/propiedades');
 
-    return { 
-      success: true, 
+    // Also revalidate the main properties list
+    revalidatePath("/propiedades");
+
+    return {
+      success: true,
       listingType: listing.currentListingType, // Return unchanged listingType
-      status: newStatus
+      status: newStatus,
     };
   } catch (error) {
     console.error("Error updating listing status:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to update listing status",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to update listing status",
     };
   }
 }

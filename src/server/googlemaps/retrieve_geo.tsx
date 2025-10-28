@@ -22,7 +22,10 @@ export async function getNeighborhoodFromCoordinates(
 ): Promise<string | null> {
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&accept-language=es`;
-    console.log("🌍 [NOMINATIM] Fetching neighborhood from coordinates:", { lat, lng });
+    console.log("🌍 [NOMINATIM] Fetching neighborhood from coordinates:", {
+      lat,
+      lng,
+    });
 
     const response = await fetch(url, {
       method: "GET",

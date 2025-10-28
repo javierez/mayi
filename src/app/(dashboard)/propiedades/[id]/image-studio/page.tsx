@@ -16,7 +16,9 @@ interface ImageStudioPageProps {
   }>;
 }
 
-export default async function ImageStudioPage({ params }: ImageStudioPageProps) {
+export default async function ImageStudioPage({
+  params,
+}: ImageStudioPageProps) {
   const unwrappedParams = await params;
   const listingId = parseInt(unwrappedParams.id);
   await getSecureSession();
@@ -60,11 +62,10 @@ export default async function ImageStudioPage({ params }: ImageStudioPageProps) 
         isBankOwned={headerData.isBankOwned ?? false}
       />
 
-
       {/* Main Content */}
-      <ImageStudioClientWrapper 
-        images={images as PropertyImage[]} 
-        title={headerData.title ?? ""} 
+      <ImageStudioClientWrapper
+        images={images as PropertyImage[]}
+        title={headerData.title ?? ""}
       />
     </div>
   );

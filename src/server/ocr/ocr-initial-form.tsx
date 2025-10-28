@@ -75,7 +75,7 @@ export async function extractTextFromDocument(
   );
 
   try {
-    const bucket = bucketName ?? await getDynamicBucketName();
+    const bucket = bucketName ?? (await getDynamicBucketName());
     console.log(`📦 [OCR] Using bucket: ${bucket}`);
 
     const command = new DetectDocumentTextCommand({
@@ -175,7 +175,7 @@ export async function analyzeDocumentStructure(
   );
 
   try {
-    const bucket = bucketName ?? await getDynamicBucketName();
+    const bucket = bucketName ?? (await getDynamicBucketName());
 
     const featureTypes = [];
     if (enableForms) featureTypes.push("FORMS");
@@ -698,7 +698,9 @@ export async function processDocumentInBackgroundEnhanced(
     // Step 2: Enhanced Field Extraction with GPT-4
     console.log(`🔬 [OCR-ENHANCED] Step 2: Enhanced GPT-4 field extraction...`);
 
-    const { extractEnhancedPropertyDataWithGPT4 } = await import("./gpt4-field-extractor");
+    const { extractEnhancedPropertyDataWithGPT4 } = await import(
+      "./gpt4-field-extractor"
+    );
     const extractionResult = await extractEnhancedPropertyDataWithGPT4({
       extractedText: ocrResult.extractedText,
       detectedFields: ocrResult.detectedFields,

@@ -11,7 +11,16 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
-import { Mail, MessageSquare, Phone, Copy, MapPin, Euro, Home, Check } from "lucide-react";
+import {
+  Mail,
+  MessageSquare,
+  Phone,
+  Copy,
+  MapPin,
+  Euro,
+  Home,
+  Check,
+} from "lucide-react";
 import { toast } from "~/components/hooks/use-toast";
 import { sendSMS, openWhatsApp, copyToClipboard } from "~/lib/share-utils";
 import type { ProspectMatch } from "~/types/connection-matches";
@@ -34,12 +43,14 @@ export function ShareListingModal({
   const { listing, prospect } = match;
   const contact = prospect.contacts;
   const property = listing.properties;
-  const listingType = listing.listings.listingType === "Sale" ? "Venta" : "Alquiler";
+  const listingType =
+    listing.listings.listingType === "Sale" ? "Venta" : "Alquiler";
   const price = parseFloat(listing.listings.price);
 
   // Property summary for share message
   const propertyTitle = property.title ?? "Propiedad sin título";
-  const propertyLocation = listing.locations.neighborhood ?? "Ubicación no especificada";
+  const propertyLocation =
+    listing.locations.neighborhood ?? "Ubicación no especificada";
   const propertyPrice =
     listingType === "Venta"
       ? `${Math.round(price / 1000)}k €`
@@ -160,9 +171,11 @@ Saludos`;
         </DialogHeader>
 
         {/* Property Summary */}
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-2">
-          <h4 className="font-semibold text-sm text-gray-900">{propertyDetails}</h4>
-          <div className="text-xs text-gray-600 space-y-2">
+        <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <h4 className="text-sm font-semibold text-gray-900">
+            {propertyDetails}
+          </h4>
+          <div className="space-y-2 text-xs text-gray-600">
             <div className="flex items-center gap-2">
               <MapPin className="h-3.5 w-3.5 text-gray-500" />
               <span>{propertyLocation}</span>
@@ -179,7 +192,7 @@ Saludos`;
         </div>
 
         {/* Contact Info */}
-        <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-2">
+        <div className="space-y-2 rounded-lg border border-gray-200 bg-white p-4">
           <p className="text-sm font-medium text-gray-900">
             {contact.firstName} {contact.lastName}
           </p>
@@ -202,7 +215,7 @@ Saludos`;
           {/* Email */}
           <Button
             variant="outline"
-            className="flex flex-col items-center justify-center h-20 gap-2"
+            className="flex h-20 flex-col items-center justify-center gap-2"
             onClick={handleEmailShare}
             disabled={!contact.email}
           >
@@ -213,7 +226,7 @@ Saludos`;
           {/* SMS */}
           <Button
             variant="outline"
-            className="flex flex-col items-center justify-center h-20 gap-2"
+            className="flex h-20 flex-col items-center justify-center gap-2"
             onClick={handleSMSShare}
             disabled={!contact.phone}
           >
@@ -224,7 +237,7 @@ Saludos`;
           {/* WhatsApp */}
           <Button
             variant="outline"
-            className="flex flex-col items-center justify-center h-20 gap-2"
+            className="flex h-20 flex-col items-center justify-center gap-2"
             onClick={handleWhatsAppShare}
             disabled={!contact.phone}
           >
@@ -235,10 +248,8 @@ Saludos`;
           {/* Copy Info */}
           <Button
             variant="outline"
-            className={`flex flex-col items-center justify-center h-20 gap-2 transition-all ${
-              isCopied
-                ? "bg-green-50 border-green-500 text-green-700"
-                : ""
+            className={`flex h-20 flex-col items-center justify-center gap-2 transition-all ${
+              isCopied ? "border-green-500 bg-green-50 text-green-700" : ""
             }`}
             onClick={handleCopyInfo}
           >
@@ -247,7 +258,9 @@ Saludos`;
             ) : (
               <Copy className="h-5 w-5" />
             )}
-            <span className="text-xs">{isCopied ? "Copiado!" : "Copiar Info"}</span>
+            <span className="text-xs">
+              {isCopied ? "Copiado!" : "Copiar Info"}
+            </span>
           </Button>
         </div>
 

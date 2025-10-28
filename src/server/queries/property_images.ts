@@ -8,37 +8,37 @@ export async function createPropertyImage(
   data: Omit<PropertyImage, "propertyImageId" | "createdAt" | "updatedAt">,
 ) {
   try {
-    console.log('🔍 createPropertyImage called with:', {
-      propertyId: data.propertyId?.toString() ?? 'undefined',
+    console.log("🔍 createPropertyImage called with:", {
+      propertyId: data.propertyId?.toString() ?? "undefined",
       referenceNumber: data.referenceNumber,
       imageOrder: data.imageOrder,
       imageTag: data.imageTag,
-      originImageId: data.originImageId?.toString() ?? 'undefined',
-      hasOriginImageId: 'originImageId' in data,
-      dataKeys: Object.keys(data)
+      originImageId: data.originImageId?.toString() ?? "undefined",
+      hasOriginImageId: "originImageId" in data,
+      dataKeys: Object.keys(data),
     });
 
     const [propertyImage] = await db
       .insert(propertyImages)
       .values(data)
       .$returningId();
-    
-    console.log('✅ createPropertyImage success:', {
-      propertyImageId: propertyImage?.propertyImageId?.toString() ?? 'null',
-      success: !!propertyImage
+
+    console.log("✅ createPropertyImage success:", {
+      propertyImageId: propertyImage?.propertyImageId?.toString() ?? "null",
+      success: !!propertyImage,
     });
-    
+
     return propertyImage;
   } catch (error) {
     console.error("❌ Error creating property image:", {
       error,
-      message: error instanceof Error ? error.message : 'Unknown error',
+      message: error instanceof Error ? error.message : "Unknown error",
       data: {
-        propertyId: data.propertyId?.toString() ?? 'undefined',
+        propertyId: data.propertyId?.toString() ?? "undefined",
         referenceNumber: data.referenceNumber,
         imageOrder: data.imageOrder,
-        originImageId: data.originImageId?.toString() ?? 'undefined'
-      }
+        originImageId: data.originImageId?.toString() ?? "undefined",
+      },
     });
     throw error;
   }
@@ -68,8 +68,8 @@ export async function getPropertyImagesByReference(
       eq(propertyImages.referenceNumber, referenceNumber),
       // Only get actual images, not videos, YouTube links, or virtual tours
       and(
-        sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`
-      )
+        sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`,
+      ),
     ];
     if (isActive !== undefined) {
       conditions.push(eq(propertyImages.isActive, isActive));
@@ -93,8 +93,8 @@ export async function getPropertyImages(propertyId: bigint, isActive = true) {
       eq(propertyImages.propertyId, propertyId),
       // Only get actual images, not videos, YouTube links, or virtual tours
       and(
-        sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`
-      )
+        sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`,
+      ),
     ];
     if (isActive !== undefined) {
       conditions.push(eq(propertyImages.isActive, isActive));
@@ -112,14 +112,17 @@ export async function getPropertyImages(propertyId: bigint, isActive = true) {
 }
 
 // Get count of images for a property (optimized query, excludes videos, YouTube links, and virtual tours)
-export async function getPropertyImagesCount(propertyId: bigint, isActive = true) {
+export async function getPropertyImagesCount(
+  propertyId: bigint,
+  isActive = true,
+) {
   try {
     const conditions = [
       eq(propertyImages.propertyId, propertyId),
       // Only count actual images, not videos, YouTube links, or virtual tours
       and(
-        sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`
-      )
+        sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`,
+      ),
     ];
     if (isActive !== undefined) {
       conditions.push(eq(propertyImages.isActive, isActive));
@@ -194,7 +197,7 @@ export async function getPropertyVideos(propertyId: bigint, isActive = true) {
   try {
     const conditions = [
       eq(propertyImages.propertyId, propertyId),
-      eq(propertyImages.imageTag, 'video')
+      eq(propertyImages.imageTag, "video"),
     ];
     if (isActive !== undefined) {
       conditions.push(eq(propertyImages.isActive, isActive));
@@ -219,7 +222,7 @@ export async function getPropertyVideosByReference(
   try {
     const conditions = [
       eq(propertyImages.referenceNumber, referenceNumber),
-      eq(propertyImages.imageTag, 'video')
+      eq(propertyImages.imageTag, "video"),
     ];
     if (isActive !== undefined) {
       conditions.push(eq(propertyImages.isActive, isActive));
@@ -237,11 +240,14 @@ export async function getPropertyVideosByReference(
 }
 
 // Get count of videos for a property (optimized query)
-export async function getPropertyVideosCount(propertyId: bigint, isActive = true) {
+export async function getPropertyVideosCount(
+  propertyId: bigint,
+  isActive = true,
+) {
   try {
     const conditions = [
       eq(propertyImages.propertyId, propertyId),
-      eq(propertyImages.imageTag, 'video')
+      eq(propertyImages.imageTag, "video"),
     ];
     if (isActive !== undefined) {
       conditions.push(eq(propertyImages.isActive, isActive));
@@ -260,11 +266,14 @@ export async function getPropertyVideosCount(propertyId: bigint, isActive = true
 }
 
 // Get all YouTube links for a property (filtered by imageTag = 'youtube')
-export async function getPropertyYouTubeLinks(propertyId: bigint, isActive = true) {
+export async function getPropertyYouTubeLinks(
+  propertyId: bigint,
+  isActive = true,
+) {
   try {
     const conditions = [
       eq(propertyImages.propertyId, propertyId),
-      eq(propertyImages.imageTag, 'youtube')
+      eq(propertyImages.imageTag, "youtube"),
     ];
     if (isActive !== undefined) {
       conditions.push(eq(propertyImages.isActive, isActive));
@@ -289,7 +298,7 @@ export async function getPropertyYouTubeLinksByReference(
   try {
     const conditions = [
       eq(propertyImages.referenceNumber, referenceNumber),
-      eq(propertyImages.imageTag, 'youtube')
+      eq(propertyImages.imageTag, "youtube"),
     ];
     if (isActive !== undefined) {
       conditions.push(eq(propertyImages.isActive, isActive));
@@ -307,11 +316,14 @@ export async function getPropertyYouTubeLinksByReference(
 }
 
 // Get count of YouTube links for a property (optimized query)
-export async function getPropertyYouTubeLinksCount(propertyId: bigint, isActive = true) {
+export async function getPropertyYouTubeLinksCount(
+  propertyId: bigint,
+  isActive = true,
+) {
   try {
     const conditions = [
       eq(propertyImages.propertyId, propertyId),
-      eq(propertyImages.imageTag, 'youtube')
+      eq(propertyImages.imageTag, "youtube"),
     ];
     if (isActive !== undefined) {
       conditions.push(eq(propertyImages.isActive, isActive));
@@ -330,11 +342,14 @@ export async function getPropertyYouTubeLinksCount(propertyId: bigint, isActive 
 }
 
 // Get all virtual tours for a property (filtered by imageTag = 'tour')
-export async function getPropertyVirtualTours(propertyId: bigint, isActive = true) {
+export async function getPropertyVirtualTours(
+  propertyId: bigint,
+  isActive = true,
+) {
   try {
     const conditions = [
       eq(propertyImages.propertyId, propertyId),
-      eq(propertyImages.imageTag, 'tour')
+      eq(propertyImages.imageTag, "tour"),
     ];
     if (isActive !== undefined) {
       conditions.push(eq(propertyImages.isActive, isActive));
@@ -359,7 +374,7 @@ export async function getPropertyVirtualToursByReference(
   try {
     const conditions = [
       eq(propertyImages.referenceNumber, referenceNumber),
-      eq(propertyImages.imageTag, 'tour')
+      eq(propertyImages.imageTag, "tour"),
     ];
     if (isActive !== undefined) {
       conditions.push(eq(propertyImages.isActive, isActive));
@@ -377,11 +392,14 @@ export async function getPropertyVirtualToursByReference(
 }
 
 // Get count of virtual tours for a property (optimized query)
-export async function getPropertyVirtualToursCount(propertyId: bigint, isActive = true) {
+export async function getPropertyVirtualToursCount(
+  propertyId: bigint,
+  isActive = true,
+) {
   try {
     const conditions = [
       eq(propertyImages.propertyId, propertyId),
-      eq(propertyImages.imageTag, 'tour')
+      eq(propertyImages.imageTag, "tour"),
     ];
     if (isActive !== undefined) {
       conditions.push(eq(propertyImages.isActive, isActive));
@@ -406,15 +424,17 @@ export async function getMaxImageOrder(propertyId: bigint, isActive = true) {
       eq(propertyImages.propertyId, propertyId),
       // Only consider actual images, not videos, YouTube links, or virtual tours
       and(
-        sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`
-      )
+        sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`,
+      ),
     ];
     if (isActive !== undefined) {
       conditions.push(eq(propertyImages.isActive, isActive));
     }
 
     const result = await db
-      .select({ maxOrder: sql<number>`COALESCE(MAX(${propertyImages.imageOrder}), 0)` })
+      .select({
+        maxOrder: sql<number>`COALESCE(MAX(${propertyImages.imageOrder}), 0)`,
+      })
       .from(propertyImages)
       .where(and(...conditions));
 
@@ -426,15 +446,18 @@ export async function getMaxImageOrder(propertyId: bigint, isActive = true) {
 }
 
 // Get the first property image (image_order = 1, excludes videos, YouTube links, and virtual tours)
-export async function getFirstPropertyImage(propertyId: bigint, isActive = true) {
+export async function getFirstPropertyImage(
+  propertyId: bigint,
+  isActive = true,
+) {
   try {
     const conditions = [
       eq(propertyImages.propertyId, propertyId),
       eq(propertyImages.imageOrder, 1),
       // Only get actual images, not videos, YouTube links, or virtual tours
       and(
-        sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`
-      )
+        sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`,
+      ),
     ];
     if (isActive !== undefined) {
       conditions.push(eq(propertyImages.isActive, isActive));

@@ -92,7 +92,7 @@ export const AdditionalFieldsSelector: FC<AdditionalFieldsSelectorProps> = ({
     } else {
       // Add field - different limits based on whether icons are shown
       const maxFields = config.showIcons ? 6 : 3; // 6 total when icons (3 default + 3 additional), 3 when no icons
-      
+
       if (currentFields.length >= maxFields) {
         // Replace the first field with the new one
         newFields = [...currentFields.slice(1), fieldValue];
@@ -112,13 +112,12 @@ export const AdditionalFieldsSelector: FC<AdditionalFieldsSelectorProps> = ({
       <div className="mb-2">
         <h3 className="text-lg font-medium">Información Adicional</h3>
         <p className="text-sm text-gray-600">
-          {config.showIcons 
+          {config.showIcons
             ? `Selecciona hasta 6 campos (3 por defecto + 3 adicionales).`
-            : `Selecciona hasta 3 campos.`
-          }
+            : `Selecciona hasta 3 campos.`}
         </p>
         {config.showIcons && (
-          <p className="text-xs text-blue-600 mt-1">
+          <p className="mt-1 text-xs text-blue-600">
             Con iconos habilitados, puedes mostrar más información adicional.
           </p>
         )}
@@ -141,12 +140,14 @@ export const AdditionalFieldsSelector: FC<AdditionalFieldsSelectorProps> = ({
                 isSelected && "bg-gray-200 text-gray-800 shadow-md",
                 !isSelected &&
                   !isDisabled &&
-                  "bg-white text-gray-700 shadow-sm hover:shadow-md hover:bg-gray-50",
+                  "bg-white text-gray-700 shadow-sm hover:bg-gray-50 hover:shadow-md",
                 isDisabled &&
                   "cursor-not-allowed bg-gray-100 text-gray-400 opacity-60 shadow-none",
               )}
               title={
-                isDisabled ? `Máximo ${maxFields} campos seleccionados` : field.description
+                isDisabled
+                  ? `Máximo ${maxFields} campos seleccionados`
+                  : field.description
               }
             >
               <IconComponent className="mb-1 h-4 w-4" />
@@ -155,9 +156,9 @@ export const AdditionalFieldsSelector: FC<AdditionalFieldsSelectorProps> = ({
           );
         })}
       </div>
-      
+
       {/* Selection counter */}
-      <div className="text-xs text-gray-500 text-center">
+      <div className="text-center text-xs text-gray-500">
         {selectedCount} de {maxFields} campos seleccionados
       </div>
     </div>

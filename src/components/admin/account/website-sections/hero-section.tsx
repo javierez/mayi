@@ -12,7 +12,12 @@ import {
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { HeroImageUpload } from "~/components/ui/hero-image-upload";
-import { uploadHeroImage, deleteHeroImage, uploadHeroVideo, deleteHeroVideo } from "~/app/actions/hero-upload";
+import {
+  uploadHeroImage,
+  deleteHeroImage,
+  uploadHeroVideo,
+  deleteHeroVideo,
+} from "~/app/actions/hero-upload";
 import { useToast } from "~/components/hooks/use-toast";
 import { getCurrentUserAccountIdAction } from "~/app/actions/settings";
 import {
@@ -196,11 +201,13 @@ export function HeroSection({
         {/* Background Media Field - Updated to support both image and video */}
         <div>
           <FormLabel>Imagen o Video de Fondo</FormLabel>
-          {(form.watch("heroProps.backgroundImage") || form.watch("heroProps.backgroundVideo")) ? (
+          {form.watch("heroProps.backgroundImage") ||
+          form.watch("heroProps.backgroundVideo") ? (
             <div className="mt-3 flex justify-center">
               <div className="group relative">
                 <div className="relative h-48 w-96 overflow-hidden rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
-                  {form.watch("heroProps.backgroundType") === "video" && form.watch("heroProps.backgroundVideo") ? (
+                  {form.watch("heroProps.backgroundType") === "video" &&
+                  form.watch("heroProps.backgroundVideo") ? (
                     <video
                       src={form.watch("heroProps.backgroundVideo") ?? ""}
                       className="h-full w-full object-cover"
@@ -223,9 +230,10 @@ export function HeroSection({
                     type="button"
                     className="absolute left-2 top-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
                     onClick={() => {
-                      const url = form.watch("heroProps.backgroundType") === "video"
-                        ? form.watch("heroProps.backgroundVideo")
-                        : form.watch("heroProps.backgroundImage");
+                      const url =
+                        form.watch("heroProps.backgroundType") === "video"
+                          ? form.watch("heroProps.backgroundVideo")
+                          : form.watch("heroProps.backgroundImage");
                       window.open(url, "_blank");
                     }}
                     aria-label="Ver archivo"
@@ -247,12 +255,15 @@ export function HeroSection({
                     type="button"
                     className="absolute bottom-2 left-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
                     onClick={() => {
-                      const isVideo = form.watch("heroProps.backgroundType") === "video";
+                      const isVideo =
+                        form.watch("heroProps.backgroundType") === "video";
                       const a = document.createElement("a");
                       a.href = isVideo
-                        ? form.watch("heroProps.backgroundVideo") ?? ""
-                        : form.watch("heroProps.backgroundImage") ?? "";
-                      a.download = isVideo ? "hero-background.mp4" : "hero-background.jpg";
+                        ? (form.watch("heroProps.backgroundVideo") ?? "")
+                        : (form.watch("heroProps.backgroundImage") ?? "");
+                      a.download = isVideo
+                        ? "hero-background.mp4"
+                        : "hero-background.jpg";
                       document.body.appendChild(a);
                       a.click();
                       document.body.removeChild(a);
@@ -321,7 +332,8 @@ export function HeroSection({
           <DialogHeader>
             <DialogTitle>Subir Imagen o Video de Fondo</DialogTitle>
             <DialogDescription>
-              Selecciona una imagen o video para usar como fondo de la sección principal
+              Selecciona una imagen o video para usar como fondo de la sección
+              principal
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -346,7 +358,11 @@ export function HeroSection({
               Confirmar Eliminación
             </DialogTitle>
             <DialogDescription>
-              ¿Estás seguro de que deseas eliminar {form.watch("heroProps.backgroundType") === "video" ? "el video" : "la imagen"} de fondo?
+              ¿Estás seguro de que deseas eliminar{" "}
+              {form.watch("heroProps.backgroundType") === "video"
+                ? "el video"
+                : "la imagen"}{" "}
+              de fondo?
             </DialogDescription>
           </DialogHeader>
 
@@ -355,7 +371,10 @@ export function HeroSection({
               ⚠️ Esta acción no se puede deshacer
             </p>
             <p className="mt-2 text-sm text-red-700 dark:text-red-300">
-              {form.watch("heroProps.backgroundType") === "video" ? "El video" : "La imagen"} será eliminado permanentemente del servidor.
+              {form.watch("heroProps.backgroundType") === "video"
+                ? "El video"
+                : "La imagen"}{" "}
+              será eliminado permanentemente del servidor.
             </p>
           </div>
           <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">

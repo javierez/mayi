@@ -19,75 +19,82 @@ interface ToolConfirmationModalProps {
   onCancel: () => void;
 }
 
-export function ToolConfirmationModal({ isOpen, tool, onConfirm, onCancel }: ToolConfirmationModalProps) {
-  console.log('🪟 [ToolConfirmationModal] Rendered', {
+export function ToolConfirmationModal({
+  isOpen,
+  tool,
+  onConfirm,
+  onCancel,
+}: ToolConfirmationModalProps) {
+  console.log("🪟 [ToolConfirmationModal] Rendered", {
     isOpen,
     toolId: tool?.id,
-    toolTitle: tool?.title
+    toolTitle: tool?.title,
   });
-  
+
   if (!isOpen || !tool) return null;
-  
+
   const handleConfirm = () => {
-    console.log('✅ [ToolConfirmationModal] Confirm button clicked', {
+    console.log("✅ [ToolConfirmationModal] Confirm button clicked", {
       toolId: tool.id,
-      toolTitle: tool.title
+      toolTitle: tool.title,
     });
     onConfirm();
   };
-  
+
   const handleCancel = () => {
-    console.log('❌ [ToolConfirmationModal] Cancel button clicked');
+    console.log("❌ [ToolConfirmationModal] Cancel button clicked");
     onCancel();
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={handleCancel}
       />
-      
+
       {/* Modal */}
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-100 animate-in zoom-in-95 duration-300">
+      <div className="animate-in zoom-in-95 relative w-full max-w-md rounded-2xl border border-gray-100 bg-white shadow-2xl duration-300">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="flex items-center justify-between border-b border-gray-100 p-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 flex items-center justify-center flex-shrink-0">
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-r from-amber-400 to-rose-400">
               {tool.icon}
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">{tool.title}</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {tool.title}
+              </h3>
               <p className="text-sm text-gray-500">Confirmar operación</p>
             </div>
           </div>
           <button
             onClick={handleCancel}
-            className="w-8 h-8 rounded-full p-0 transition-all duration-200 bg-transparent hover:bg-gray-50 text-gray-400 hover:text-gray-600"
+            className="h-8 w-8 rounded-full bg-transparent p-0 text-gray-400 transition-all duration-200 hover:bg-gray-50 hover:text-gray-600"
           >
-            <X className="h-4 w-4 mx-auto" />
+            <X className="mx-auto h-4 w-4" />
           </button>
         </div>
 
         {/* Content */}
         <div className="p-6">
-          <div className="flex items-start gap-3 mb-4">
-            <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
+          <div className="mb-4 flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" />
             <div>
-              <p className="text-sm text-gray-700 mb-2">
+              <p className="mb-2 text-sm text-gray-700">
                 ¿Estás seguro que deseas proceder con esta operación?
               </p>
             </div>
           </div>
 
           {/* Pricing */}
-          <div className="bg-gradient-to-br from-amber-50 to-rose-50 rounded-xl p-4 mb-4">
+          <div className="mb-4 rounded-xl bg-gradient-to-br from-amber-50 to-rose-50 p-4">
             <div className="text-center">
-              <div className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-rose-600 bg-clip-text text-transparent mb-1">
+              <div className="mb-1 bg-gradient-to-r from-amber-600 to-rose-600 bg-clip-text text-2xl font-bold text-transparent">
                 {tool.price}
               </div>
-              <p className="text-xs text-gray-700 font-medium">
+              <p className="text-xs font-medium text-gray-700">
                 {tool.priceDescription}
               </p>
             </div>
@@ -95,16 +102,12 @@ export function ToolConfirmationModal({ isOpen, tool, onConfirm, onCancel }: Too
 
           {/* Actions */}
           <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={handleCancel}
-              className="flex-1"
-            >
+            <Button variant="outline" onClick={handleCancel} className="flex-1">
               Cancelar
             </Button>
             <Button
               onClick={handleConfirm}
-              className="flex-1 bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500 text-white border-0"
+              className="flex-1 border-0 bg-gradient-to-r from-amber-400 to-rose-400 text-white hover:from-amber-500 hover:to-rose-500"
             >
               Proceder
             </Button>

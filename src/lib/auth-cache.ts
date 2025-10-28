@@ -9,12 +9,12 @@ import type { ReadonlyHeaders } from "next/dist/server/web/spec-extension/adapte
 
 /**
  * Enhanced Session Caching Strategy
- * 
+ *
  * This module implements multi-layer caching to optimize authentication performance:
- * - Session Cache: 4-hour TTL for full session data 
+ * - Session Cache: 4-hour TTL for full session data
  * - User Roles Cache: 15-minute TTL for role data
  * - Performance monitoring and metrics
- * 
+ *
  * Expected performance improvements:
  * - 90% reduction in auth database queries
  * - 80% reduction in auth latency (100-300ms → 5-20ms)
@@ -26,7 +26,7 @@ const SESSION_CACHE_TTL = 4 * 60 * 60; // 4 hours in seconds
 const ROLES_CACHE_TTL = 4 * 60 * 60; // 15 minutes in seconds
 
 // Cache Instances
-const sessionCache = new NodeCache({ 
+const sessionCache = new NodeCache({
   stdTTL: SESSION_CACHE_TTL,
   checkperiod: 60, // Check for expired keys every minute
   useClones: false, // Performance optimization - don't clone objects
@@ -34,7 +34,7 @@ const sessionCache = new NodeCache({
   maxKeys: 10000, // Reasonable limit for production
 });
 
-const rolesCache = new NodeCache({ 
+const rolesCache = new NodeCache({
   stdTTL: ROLES_CACHE_TTL,
   checkperiod: 60,
   useClones: false,
@@ -98,18 +98,25 @@ export class AuthMetrics {
   }
 
   static getStats() {
-    const totalSessionRequests = this.sessionCacheHits + this.sessionCacheMisses;
+    const totalSessionRequests =
+      this.sessionCacheHits + this.sessionCacheMisses;
     const totalRolesRequests = this.rolesCacheHits + this.rolesCacheMisses;
-    
+
     return {
       session: {
-        cacheHitRate: totalSessionRequests > 0 ? (this.sessionCacheHits / totalSessionRequests) * 100 : 0,
+        cacheHitRate:
+          totalSessionRequests > 0
+            ? (this.sessionCacheHits / totalSessionRequests) * 100
+            : 0,
         totalRequests: totalSessionRequests,
         hits: this.sessionCacheHits,
         misses: this.sessionCacheMisses,
       },
       roles: {
-        cacheHitRate: totalRolesRequests > 0 ? (this.rolesCacheHits / totalRolesRequests) * 100 : 0,
+        cacheHitRate:
+          totalRolesRequests > 0
+            ? (this.rolesCacheHits / totalRolesRequests) * 100
+            : 0,
         totalRequests: totalRolesRequests,
         hits: this.rolesCacheHits,
         misses: this.rolesCacheMisses,
@@ -120,7 +127,7 @@ export class AuthMetrics {
         rolesCacheSize: rolesCache.getStats().keys,
         sessionCacheMemory: sessionCache.getStats().vsize,
         rolesCacheMemory: rolesCache.getStats().vsize,
-      }
+      },
     };
   }
 
@@ -171,7 +178,9 @@ export async function getCachedUserRoles(
     // Cache for 4 hours
     rolesCache.set(cacheKey, rolesAndPermissions, ROLES_CACHE_TTL);
 
-    console.log(`✅ Cached - Roles: [${rolesAndPermissions.roles.join(", ")}] (TTL: 4h)`);
+    console.log(
+      `✅ Cached - Roles: [${rolesAndPermissions.roles.join(", ")}] (TTL: 4h)`,
+    );
     return rolesAndPermissions;
   } catch (error) {
     console.error(
@@ -194,7 +203,7 @@ export async function getCachedUserRoles(
  */
 export async function getCachedSession(
   sessionId: string,
-  requestHeaders: ReadonlyHeaders
+  requestHeaders: ReadonlyHeaders,
 ): Promise<CachedSessionData | null> {
   const cacheKey = `session:${sessionId}`;
 
@@ -210,7 +219,9 @@ export async function getCachedSession(
     // Cache miss - fetch from auth provider
     AuthMetrics.recordSessionCacheMiss();
     AuthMetrics.recordDbQuery();
-    console.log(`💾 Cache MISS for session: ${sessionId} - fetching from auth provider`);
+    console.log(
+      `💾 Cache MISS for session: ${sessionId} - fetching from auth provider`,
+    );
 
     // Get fresh session from auth provider
     const session = await auth.api.getSession({
@@ -244,14 +255,15 @@ export async function getCachedSession(
     // Cache for 4 hours
     sessionCache.set(cacheKey, enrichedSessionData, SESSION_CACHE_TTL);
 
-    console.log(`✅ Cached session for ${sessionId} (user: ${session.user.id})`);
+    console.log(
+      `✅ Cached session for ${sessionId} (user: ${session.user.id})`,
+    );
     return enrichedSessionData;
   } catch (error) {
     console.error(`❌ Error fetching session ${sessionId}:`, error);
     return null;
   }
 }
-
 
 /**
  * Get cached user permissions from roles+permissions cache
@@ -273,13 +285,13 @@ export async function getCachedUserPermissions(
  * Call this when user roles or permissions change
  */
 export function invalidateUserCache(userId: string, accountId: number) {
-  const sessionKeys = sessionCache.keys().filter(key => {
+  const sessionKeys = sessionCache.keys().filter((key) => {
     const cached = sessionCache.get<CachedSessionData>(key);
     return cached?.user.id === userId;
   });
 
   // Invalidate session cache entries for this user
-  sessionKeys.forEach(key => {
+  sessionKeys.forEach((key) => {
     sessionCache.del(key);
     console.log(`🗑️  Invalidated session cache: ${key}`);
   });
@@ -295,7 +307,9 @@ export function invalidateUserCache(userId: string, accountId: number) {
   // const permissionsCacheKey = `user_permissions:${userId}:${accountId}`;
   // permissionsCache.del(permissionsCacheKey);
 
-  console.log(`✅ Cache invalidated for user ${userId} (account: ${accountId})`);
+  console.log(
+    `✅ Cache invalidated for user ${userId} (account: ${accountId})`,
+  );
 }
 
 /**
@@ -321,7 +335,9 @@ export function clearAllAuthCache() {
   rolesCache.flushAll();
   // permissionsCache.flushAll(); // Future implementation
 
-  console.log(`🧹 Cleared all auth caches: ${sessionStats.keys} sessions, ${rolesStats.keys} roles`);
+  console.log(
+    `🧹 Cleared all auth caches: ${sessionStats.keys} sessions, ${rolesStats.keys} roles`,
+  );
 }
 
 /**
@@ -338,29 +354,32 @@ export function getCacheStats() {
 /**
  * Health check for cache system
  */
-export function healthCheck(): { status: "healthy" | "degraded", details: unknown } {
+export function healthCheck(): {
+  status: "healthy" | "degraded";
+  details: unknown;
+} {
   try {
     const stats = getCacheStats();
     const testKey = "health_check_test";
-    
+
     // Test session cache
     sessionCache.set(testKey, { test: true }, 1);
     const sessionTest = sessionCache.get(testKey);
     sessionCache.del(testKey);
-    
+
     // Test roles cache
     rolesCache.set(testKey, ["test"], 1);
     const rolesTest = rolesCache.get(testKey);
     rolesCache.del(testKey);
-    
+
     if (sessionTest && rolesTest) {
       return {
         status: "healthy",
         details: {
           sessionCache: "operational",
           rolesCache: "operational",
-          stats
-        }
+          stats,
+        },
       };
     } else {
       return {
@@ -368,8 +387,8 @@ export function healthCheck(): { status: "healthy" | "degraded", details: unknow
         details: {
           sessionCache: sessionTest ? "operational" : "failed",
           rolesCache: rolesTest ? "operational" : "failed",
-          stats
-        }
+          stats,
+        },
       };
     }
   } catch (error) {
@@ -377,8 +396,8 @@ export function healthCheck(): { status: "healthy" | "degraded", details: unknow
       status: "degraded",
       details: {
         error: error instanceof Error ? error.message : "Unknown error",
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     };
   }
 }
@@ -387,11 +406,16 @@ export function healthCheck(): { status: "healthy" | "degraded", details: unknow
  * Periodic stats logging (call this from a cron job or similar)
  */
 export function startPeriodicLogging(intervalMinutes = 30) {
-  setInterval(() => {
-    AuthMetrics.logStats();
-  }, intervalMinutes * 60 * 1000);
-  
-  console.log(`📊 Started auth cache monitoring - logging every ${intervalMinutes} minutes`);
+  setInterval(
+    () => {
+      AuthMetrics.logStats();
+    },
+    intervalMinutes * 60 * 1000,
+  );
+
+  console.log(
+    `📊 Started auth cache monitoring - logging every ${intervalMinutes} minutes`,
+  );
 }
 
 // Export cache instances for advanced usage if needed

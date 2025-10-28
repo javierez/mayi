@@ -28,7 +28,9 @@ export const AccountConfiguration = () => {
         const userAccountId = await getCurrentUserAccountIdAction();
         if (userAccountId) {
           setAccountId(BigInt(userAccountId));
-          const settings = await getAccountSettingsAction(BigInt(userAccountId));
+          const settings = await getAccountSettingsAction(
+            BigInt(userAccountId),
+          );
           if (settings.success && settings.data?.logo) {
             setLogoUrl(settings.data.logo);
           }

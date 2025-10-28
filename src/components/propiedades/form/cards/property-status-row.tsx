@@ -5,10 +5,18 @@ import Image from "next/image";
 import { Card } from "~/components/ui/card";
 import { PropertyImagePlaceholder } from "~/components/propiedades/PropertyImagePlaceholder";
 import { ImageViewer } from "~/components/ui/image-viewer";
-import { getAllPropertyImages, getPropertyImageCount } from "~/app/actions/property-images";
+import {
+  getAllPropertyImages,
+  getPropertyImageCount,
+} from "~/app/actions/property-images";
 import { getProcessStages } from "~/lib/constants/process-stages";
 import { cn } from "~/lib/utils";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 import { Info } from "lucide-react";
 
 const scrollbarStyles = `
@@ -94,9 +102,10 @@ export function PropertyStatusRow({
   // Fetch image count on mount
   useEffect(() => {
     if (propertyId) {
-      const id = typeof propertyId === 'bigint'
-        ? propertyId
-        : BigInt(String(propertyId));
+      const id =
+        typeof propertyId === "bigint"
+          ? propertyId
+          : BigInt(String(propertyId));
 
       getPropertyImageCount(id)
         .then((count) => {
@@ -114,7 +123,8 @@ export function PropertyStatusRow({
 
     setIsLoadingImages(true);
     try {
-      const id = typeof propertyId === 'string' ? Number(propertyId) : propertyId;
+      const id =
+        typeof propertyId === "string" ? Number(propertyId) : propertyId;
       const images = await getAllPropertyImages(id);
       setPropertyImages(images);
       setIsViewerOpen(true);
@@ -142,10 +152,10 @@ export function PropertyStatusRow({
       }, 1000);
     };
 
-    container.addEventListener('scroll', handleScroll);
+    container.addEventListener("scroll", handleScroll);
 
     return () => {
-      container.removeEventListener('scroll', handleScroll);
+      container.removeEventListener("scroll", handleScroll);
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
@@ -159,23 +169,32 @@ export function PropertyStatusRow({
   const processStages = getProcessStages(listingWithImages);
 
   // Calculate total substages for proportional width (excluding the last one)
-  const totalSubstages = processStages.reduce((acc, stage) => acc + stage.subStages.length, 0);
+  const totalSubstages = processStages.reduce(
+    (acc, stage) => acc + stage.subStages.length,
+    0,
+  );
   const totalSubstagesForBar = totalSubstages - 1; // Exclude last cell from bar rendering
 
   const completedSubstages = processStages.reduce((acc, stage) => {
-    return acc + stage.subStages.filter((sub) => sub.status === "accomplished").length;
+    return (
+      acc +
+      stage.subStages.filter((sub) => sub.status === "accomplished").length
+    );
   }, 0);
 
   const ongoingSubstages = processStages.reduce((acc, stage) => {
-    return acc + stage.subStages.filter((sub) => sub.status === "ongoing").length;
+    return (
+      acc + stage.subStages.filter((sub) => sub.status === "ongoing").length
+    );
   }, 0);
 
   // Progress fills to the middle of the previous cell to current process
   // If there's an ongoing process, fill to the middle of the last completed cell
   // If all are completed or none are completed, fill to the end of completed cells
-  const progressPercent = ongoingSubstages > 0 && completedSubstages > 0
-    ? ((completedSubstages - 0.5) / totalSubstagesForBar) * 100
-    : ((completedSubstages) / totalSubstagesForBar) * 100;
+  const progressPercent =
+    ongoingSubstages > 0 && completedSubstages > 0
+      ? ((completedSubstages - 0.5) / totalSubstagesForBar) * 100
+      : (completedSubstages / totalSubstagesForBar) * 100;
 
   console.log("📊 Progress Bar Debug:", {
     totalSubstages,
@@ -183,7 +202,10 @@ export function PropertyStatusRow({
     completedSubstages,
     ongoingSubstages,
     progressPercent,
-    formula: ongoingSubstages > 0 && completedSubstages > 0 ? "completedSubstages - 0.5" : "completedSubstages",
+    formula:
+      ongoingSubstages > 0 && completedSubstages > 0
+        ? "completedSubstages - 0.5"
+        : "completedSubstages",
   });
 
   // Format created date for tooltip
@@ -198,23 +220,23 @@ export function PropertyStatusRow({
   return (
     <TooltipProvider>
       <style dangerouslySetInnerHTML={{ __html: scrollbarStyles }} />
-      <div className="col-span-full grid grid-cols-1 lg:grid-cols-4 gap-3 sm:gap-4 -mt-2 md:-mt-3">
+      <div className="col-span-full -mt-2 grid grid-cols-1 gap-3 sm:gap-4 md:-mt-3 lg:grid-cols-4">
         {/* Process Timeline - 75% (3 columns) */}
-        <div className="lg:col-span-3 overflow-hidden">
+        <div className="overflow-hidden lg:col-span-3">
           <div
             ref={scrollContainerRef}
             className={cn(
-              "px-4 pt-8 pb-6 sm:px-6 sm:pt-10 sm:pb-8 md:px-8 md:pt-12 md:pb-10 overflow-x-auto property-status-scrollbar",
-              isScrolling && "scrolling"
+              "property-status-scrollbar overflow-x-auto px-4 pb-6 pt-8 sm:px-6 sm:pb-8 sm:pt-10 md:px-8 md:pb-10 md:pt-12",
+              isScrolling && "scrolling",
             )}
           >
             {/* Progress bar with milestone labels */}
             <div className="relative">
               {/* Progress bar */}
-              <div className="relative h-14 bg-gradient-to-br from-gray-100 to-gray-50 rounded-full overflow-hidden shadow-inner border border-gray-200/50">
+              <div className="relative h-14 overflow-hidden rounded-full border border-gray-200/50 bg-gradient-to-br from-gray-100 to-gray-50 shadow-inner">
                 {/* Completed section */}
                 <div
-                  className="absolute left-0 top-0 h-full bg-gradient-to-r from-amber-400 via-amber-500 to-rose-400 transition-all duration-700 ease-out progress-pulse"
+                  className="progress-pulse absolute left-0 top-0 h-full bg-gradient-to-r from-amber-400 via-amber-500 to-rose-400 transition-all duration-700 ease-out"
                   style={{
                     width: `${progressPercent}%`,
                   }}
@@ -222,7 +244,7 @@ export function PropertyStatusRow({
                   {/* Shimmer overlay */}
                   {progressPercent > 0 && (
                     <div className="absolute inset-0 overflow-hidden">
-                      <div className="progress-shimmer absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                      <div className="progress-shimmer absolute inset-0 h-full w-full bg-gradient-to-r from-transparent via-white/30 to-transparent" />
                     </div>
                   )}
                 </div>
@@ -232,7 +254,10 @@ export function PropertyStatusRow({
                   {processStages.map((stage, stageIndex) => {
                     return stage.subStages.map((substage, subIndex) => {
                       const globalIndex =
-                        processStages.slice(0, stageIndex).reduce((acc, s) => acc + s.subStages.length, 0) + subIndex;
+                        processStages
+                          .slice(0, stageIndex)
+                          .reduce((acc, s) => acc + s.subStages.length, 0) +
+                        subIndex;
                       const isLastCell = globalIndex === totalSubstages - 1;
                       const isSecondToLast = globalIndex === totalSubstages - 2;
 
@@ -250,7 +275,7 @@ export function PropertyStatusRow({
                         >
                           {/* Don't render divider for the last rendered cell */}
                           {!isSecondToLast && (
-                            <div className="absolute right-0 top-1/2 -translate-y-1/2 h-[60%] w-[2px] bg-white" />
+                            <div className="absolute right-0 top-1/2 h-[60%] w-[2px] -translate-y-1/2 bg-white" />
                           )}
                         </div>
                       );
@@ -260,24 +285,31 @@ export function PropertyStatusRow({
               </div>
 
               {/* Milestone labels at dividers */}
-              <div className="absolute inset-0 pointer-events-none">
+              <div className="pointer-events-none absolute inset-0">
                 {/* Labels for all substages except the last */}
                 <div className="absolute inset-0 flex">
                   {processStages.map((stage, stageIndex) => {
                     return stage.subStages.map((substage, subIndex) => {
                       const globalIndex =
-                        processStages.slice(0, stageIndex).reduce((acc, s) => acc + s.subStages.length, 0) + subIndex;
+                        processStages
+                          .slice(0, stageIndex)
+                          .reduce((acc, s) => acc + s.subStages.length, 0) +
+                        subIndex;
                       const isFirst = globalIndex === 0;
                       const isLast = globalIndex === totalSubstages - 1;
-                      const labelPosition = globalIndex % 2 === 0 ? "above" : "below";
+                      const labelPosition =
+                        globalIndex % 2 === 0 ? "above" : "below";
 
-                      const showInfoButton = substage.id === "alta" && !!createdAtText;
-                      const infoContent = substage.id === "alta" && createdAtText
-                        ? `Creado: ${createdAtText}`
-                        : undefined;
+                      const showInfoButton =
+                        substage.id === "alta" && !!createdAtText;
+                      const infoContent =
+                        substage.id === "alta" && createdAtText
+                          ? `Creado: ${createdAtText}`
+                          : undefined;
 
                       // Check if this milestone is reached (accounting for partial progress)
-                      const isReached = globalIndex < completedSubstages + ongoingSubstages;
+                      const isReached =
+                        globalIndex < completedSubstages + ongoingSubstages;
 
                       // Don't render the last label here (will be rendered at the right edge)
                       if (isLast) return null;
@@ -295,27 +327,30 @@ export function PropertyStatusRow({
                           {isFirst && (
                             <div
                               className={cn(
-                                "absolute left-0 whitespace-nowrap text-[9px] sm:text-[11px] font-semibold flex items-center gap-1.5 pointer-events-auto tracking-wider uppercase",
+                                "pointer-events-auto absolute left-0 flex items-center gap-1.5 whitespace-nowrap text-[9px] font-semibold uppercase tracking-wider sm:text-[11px]",
                                 labelPosition === "above"
                                   ? "bottom-[calc(100%+0.5rem)] sm:bottom-[calc(100%+0.625rem)]"
                                   : "top-[calc(100%+0.5rem)] sm:top-[calc(100%+0.625rem)]",
-                                isReached
-                                  ? "text-gray-800"
-                                  : "text-gray-400"
+                                isReached ? "text-gray-800" : "text-gray-400",
                               )}
                             >
                               {substage.label}
                               {showInfoButton && infoContent && (
-                                <Tooltip open={isInfoTooltipOpen} onOpenChange={setIsInfoTooltipOpen}>
+                                <Tooltip
+                                  open={isInfoTooltipOpen}
+                                  onOpenChange={setIsInfoTooltipOpen}
+                                >
                                   <TooltipTrigger asChild>
                                     <button
                                       type="button"
-                                      onClick={() => setIsInfoTooltipOpen(!isInfoTooltipOpen)}
+                                      onClick={() =>
+                                        setIsInfoTooltipOpen(!isInfoTooltipOpen)
+                                      }
                                       className={cn(
-                                        "inline-flex items-center justify-center rounded-full p-1 hover:bg-gray-200 transition-all duration-200 hover:scale-110",
+                                        "inline-flex items-center justify-center rounded-full p-1 transition-all duration-200 hover:scale-110 hover:bg-gray-200",
                                         isReached
                                           ? "text-gray-600 hover:text-gray-900"
-                                          : "text-gray-300"
+                                          : "text-gray-300",
                                       )}
                                       aria-label="Información"
                                     >
@@ -334,13 +369,11 @@ export function PropertyStatusRow({
                           {!isFirst && (
                             <div
                               className={cn(
-                                "absolute left-0 whitespace-nowrap text-[9px] sm:text-[11px] font-semibold flex items-center gap-1.5 pointer-events-auto tracking-wider uppercase",
+                                "pointer-events-auto absolute left-0 flex items-center gap-1.5 whitespace-nowrap text-[9px] font-semibold uppercase tracking-wider sm:text-[11px]",
                                 labelPosition === "above"
                                   ? "bottom-[calc(100%+0.5rem)] sm:bottom-[calc(100%+0.625rem)]"
                                   : "top-[calc(100%+0.5rem)] sm:top-[calc(100%+0.625rem)]",
-                                isReached
-                                  ? "text-gray-800"
-                                  : "text-gray-400"
+                                isReached ? "text-gray-800" : "text-gray-400",
                               )}
                               style={{
                                 transform: "translateX(-50%)",
@@ -358,23 +391,24 @@ export function PropertyStatusRow({
                 {/* Last label (Cierre) at the right edge */}
                 {(() => {
                   const lastStage = processStages[processStages.length - 1];
-                  const lastSubstage = lastStage?.subStages[lastStage.subStages.length - 1];
+                  const lastSubstage =
+                    lastStage?.subStages[lastStage.subStages.length - 1];
                   if (!lastSubstage) return null;
 
                   const lastGlobalIndex = totalSubstages - 1;
-                  const labelPosition = lastGlobalIndex % 2 === 0 ? "above" : "below";
-                  const isReached = lastGlobalIndex < completedSubstages + ongoingSubstages;
+                  const labelPosition =
+                    lastGlobalIndex % 2 === 0 ? "above" : "below";
+                  const isReached =
+                    lastGlobalIndex < completedSubstages + ongoingSubstages;
 
                   return (
                     <div
                       className={cn(
-                        "absolute right-0 whitespace-nowrap text-[9px] sm:text-[11px] font-semibold pointer-events-auto tracking-wider uppercase",
+                        "pointer-events-auto absolute right-0 whitespace-nowrap text-[9px] font-semibold uppercase tracking-wider sm:text-[11px]",
                         labelPosition === "above"
                           ? "bottom-[calc(100%+0.75rem)] sm:bottom-[calc(100%+1rem)]"
                           : "top-[calc(100%+0.75rem)] sm:top-[calc(100%+1rem)]",
-                        isReached
-                          ? "text-gray-800"
-                          : "text-gray-400"
+                        isReached ? "text-gray-800" : "text-gray-400",
                       )}
                     >
                       {lastSubstage.label}
@@ -387,11 +421,11 @@ export function PropertyStatusRow({
         </div>
 
         {/* Image Preview - 25% (1 column) */}
-        <Card className="lg:col-span-1 border-gray-200/50 overflow-hidden">
+        <Card className="overflow-hidden border-gray-200/50 lg:col-span-1">
           <div className="relative h-full min-h-[120px] sm:min-h-[140px] md:min-h-[160px]">
             {firstImageUrl ? (
               <div
-                className="relative w-full h-full group cursor-pointer"
+                className="group relative h-full w-full cursor-pointer"
                 onClick={handleImageClick}
                 role="button"
                 tabIndex={0}

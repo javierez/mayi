@@ -9,7 +9,11 @@ import {
   getListingDetailsWithAuth,
   getAllAgentsWithAuth,
 } from "~/server/queries/listing";
-import { FormProvider, useFormContext, type CompleteFormData } from "~/components/crear/form-context";
+import {
+  FormProvider,
+  useFormContext,
+  type CompleteFormData,
+} from "~/components/crear/form-context";
 import CloseConfirmationDialog from "~/components/crear/close-confirmation-dialog";
 import FirstPage from "~/components/crear/pages/first";
 import SecondPage from "~/components/crear/pages/second";
@@ -41,7 +45,7 @@ interface ListingDetailsData {
   petsAllowed?: boolean | null;
   appliancesIncluded?: boolean | null;
   internet?: boolean | null;
-  
+
   // Property fields
   referenceNumber?: string | null;
   title?: string | null;
@@ -56,7 +60,7 @@ interface ListingDetailsData {
   renovationYear?: number;
   isRenovated?: boolean;
   conservationStatus?: number;
-  
+
   // Location fields
   address?: string | null;
   addressDetails?: string | null;
@@ -65,15 +69,15 @@ interface ListingDetailsData {
   municipality?: string | null;
   postalCode?: string | null;
   neighborhood?: string | null;
-  
+
   // Cadastral and geographic data
   latitude?: string | null;
   longitude?: string | null;
   cadastralReference?: string | null;
-  
+
   // Form meta
   formPosition?: number;
-  
+
   // Allow for additional properties from database
   [key: string]: unknown;
 }
@@ -91,32 +95,42 @@ const registrationSteps: Step[] = [
 ];
 
 // Convert fetched database data to CompleteFormData format
-function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null): CompleteFormData {
+function convertFetchedDataToFormData(
+  listingDetails: ListingDetailsData | null,
+): CompleteFormData {
   if (!listingDetails) return {};
-  
+
   return {
     // Meta data
     formPosition: Math.min(listingDetails.formPosition ?? 1, 3), // Max 3 for registration
-    
+
     // Page 1 - Basic Info & IDs
-    propertyId: listingDetails.propertyId ? Number(listingDetails.propertyId) : undefined,
-    listingId: listingDetails.listingId ? Number(listingDetails.listingId) : undefined,
+    propertyId: listingDetails.propertyId
+      ? Number(listingDetails.propertyId)
+      : undefined,
+    listingId: listingDetails.listingId
+      ? Number(listingDetails.listingId)
+      : undefined,
     price: listingDetails.price?.toString() ?? "",
-    listingType: listingDetails.listingType ?? "Sale", 
+    listingType: listingDetails.listingType ?? "Sale",
     propertyType: listingDetails.propertyType ?? "piso",
     propertySubtype: listingDetails.propertySubtype ?? "",
     agentId: listingDetails.agentId?.toString() ?? "",
-    
-    // Page 2 - Details  
+
+    // Page 2 - Details
     bedrooms: listingDetails.bedrooms ?? undefined,
-    bathrooms: listingDetails.bathrooms ? Number(listingDetails.bathrooms) : undefined,
+    bathrooms: listingDetails.bathrooms
+      ? Number(listingDetails.bathrooms)
+      : undefined,
     totalSurface: listingDetails.totalSurface ?? undefined,
-    usefulSurface: listingDetails.usefulSurface ? Number(listingDetails.usefulSurface) : undefined,
+    usefulSurface: listingDetails.usefulSurface
+      ? Number(listingDetails.usefulSurface)
+      : undefined,
     buildYear: listingDetails.buildYear ?? undefined,
     renovationYear: listingDetails.renovationYear ?? undefined,
     isRenovated: listingDetails.isRenovated ?? false,
     conservationStatus: listingDetails.conservationStatus ?? 3,
-    
+
     // Page 3 - Address
     address: listingDetails.address ?? "",
     addressDetails: listingDetails.addressDetails ?? "",
@@ -125,14 +139,17 @@ function convertFetchedDataToFormData(listingDetails: ListingDetailsData | null)
     municipality: listingDetails.municipality ?? "",
     postalCode: listingDetails.postalCode ?? "",
     neighborhood: listingDetails.neighborhood ?? "",
-    
+
     // Cadastral and geographic data
-    latitude: listingDetails.latitude ? Number(listingDetails.latitude) : undefined,
-    longitude: listingDetails.longitude ? Number(listingDetails.longitude) : undefined,
+    latitude: listingDetails.latitude
+      ? Number(listingDetails.latitude)
+      : undefined,
+    longitude: listingDetails.longitude
+      ? Number(listingDetails.longitude)
+      : undefined,
     cadastralReference: listingDetails.cadastralReference ?? "",
   };
 }
-
 
 // Inner component that uses the form context
 function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
@@ -173,15 +190,16 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
       if (shouldBlockNavigation && state.hasUnsavedChanges) {
         event.preventDefault();
         // Most modern browsers ignore custom messages and show their own
-        event.returnValue = '¿Estás seguro de que quieres salir? Tienes cambios sin guardar que se perderán.';
+        event.returnValue =
+          "¿Estás seguro de que quieres salir? Tienes cambios sin guardar que se perderán.";
       }
     };
 
     // Add event listener for browser navigation (back button, tab close, etc.)
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener("beforeunload", handleBeforeUnload);
 
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [shouldBlockNavigation, state.hasUnsavedChanges]);
 
@@ -190,19 +208,19 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
     // Push a new state to history to intercept back button
     if (shouldBlockNavigation && state.hasUnsavedChanges) {
       // Add a hash to the current URL to create a history entry
-      window.history.pushState(null, '', window.location.href);
+      window.history.pushState(null, "", window.location.href);
 
       const handlePopState = (_event: PopStateEvent) => {
         // Show our custom confirmation dialog
         setShowCloseConfirmation(true);
         // Push the state back so we stay on the page
-        window.history.pushState(null, '', window.location.href);
+        window.history.pushState(null, "", window.location.href);
       };
 
-      window.addEventListener('popstate', handlePopState);
+      window.addEventListener("popstate", handlePopState);
 
       return () => {
-        window.removeEventListener('popstate', handlePopState);
+        window.removeEventListener("popstate", handlePopState);
       };
     }
   }, [shouldBlockNavigation, state.hasUnsavedChanges]);
@@ -218,7 +236,7 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
 
       // Traverse up the DOM tree to find an anchor tag
       while (target && target !== document.body) {
-        if (target.tagName === 'A') {
+        if (target.tagName === "A") {
           linkElement = target as HTMLAnchorElement;
           break;
         }
@@ -227,20 +245,21 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
 
       // If we found a link
       if (linkElement) {
-        const href = linkElement.getAttribute('href');
-        
+        const href = linkElement.getAttribute("href");
+
         // Check if it's an internal navigation link (not external, not same page)
-        if (href && 
-            !href.startsWith('http') && 
-            !href.startsWith('mailto:') && 
-            !href.startsWith('tel:') &&
-            !href.startsWith('#') &&
-            href !== window.location.pathname) {
-          
+        if (
+          href &&
+          !href.startsWith("http") &&
+          !href.startsWith("mailto:") &&
+          !href.startsWith("tel:") &&
+          !href.startsWith("#") &&
+          href !== window.location.pathname
+        ) {
           // Prevent the navigation
           event.preventDefault();
           event.stopPropagation();
-          
+
           // Show our custom confirmation dialog
           setShowCloseConfirmation(true);
         }
@@ -248,10 +267,10 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
     };
 
     // Add click listener with capture phase to catch it before React Router
-    document.addEventListener('click', handleClick, true);
+    document.addEventListener("click", handleClick, true);
 
     return () => {
-      document.removeEventListener('click', handleClick, true);
+      document.removeEventListener("click", handleClick, true);
     };
   }, [shouldBlockNavigation, state.hasUnsavedChanges]);
 
@@ -262,39 +281,51 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
         setLoading(true);
 
         // Fetch all data in parallel (no currentContacts since this is a new property)
-        const [listingDetails, agents] =
-          await Promise.all([
-            getListingDetailsWithAuth(Number(listingId)),
-            getAllAgentsWithAuth(),
-          ]);
+        const [listingDetails, agents] = await Promise.all([
+          getListingDetailsWithAuth(Number(listingId)),
+          getAllAgentsWithAuth(),
+        ]);
 
         // Set current step based on form position (max 3 for registration)
         const typedListingDetails = listingDetails;
-        
+
         console.log("=== FETCHED LISTING DETAILS ===");
         console.log("Raw listingDetails from DB:", listingDetails);
         console.log("typedListingDetails:", typedListingDetails);
         console.log("propertyId from DB:", typedListingDetails?.propertyId);
-        console.log("typeof propertyId from DB:", typeof typedListingDetails?.propertyId);
+        console.log(
+          "typeof propertyId from DB:",
+          typeof typedListingDetails?.propertyId,
+        );
         console.log("listingId from DB:", typedListingDetails?.listingId);
-        console.log("typeof listingId from DB:", typeof typedListingDetails?.listingId);
+        console.log(
+          "typeof listingId from DB:",
+          typeof typedListingDetails?.listingId,
+        );
         console.log("URL listingId parameter:", listingId);
         console.log("typeof URL listingId parameter:", typeof listingId);
-        
+
         if (typedListingDetails?.formPosition) {
           const stepIndex = Math.max(
             0,
-            Math.min(typedListingDetails.formPosition - 1, registrationSteps.length - 1),
+            Math.min(
+              typedListingDetails.formPosition - 1,
+              registrationSteps.length - 1,
+            ),
           );
           setCurrentStep(stepIndex);
         }
 
         // Convert fetched data and set as local working copy
-        const convertedFormData = convertFetchedDataToFormData(typedListingDetails);
+        const convertedFormData =
+          convertFetchedDataToFormData(typedListingDetails);
         console.log("=== CONVERTED FORM DATA ===");
         console.log("convertedFormData:", convertedFormData);
-        console.log("convertedFormData.propertyId:", convertedFormData.propertyId);
-        
+        console.log(
+          "convertedFormData.propertyId:",
+          convertedFormData.propertyId,
+        );
+
         setInitialData({
           fetchedFormData: convertedFormData,
           agents: agents.map((agent) => ({
@@ -315,10 +346,10 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
   // Save all data when registration is complete
   const saveRegistrationData = useCallback(async () => {
     if (isSaving) return;
-    
+
     try {
       setIsSaving(true);
-      
+
       console.log("=== STARTING SAVE REGISTRATION DATA ===");
       console.log("Listing ID:", listingId);
       console.log("Current Form State:", state.formData);
@@ -350,44 +381,50 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
         postalCode: state.formData.postalCode,
         title: state.formData.title,
       });
-      
+
       // Extract basic listing details from form data for save service
       console.log("=== DEBUGGING PROPERTY ID RESOLUTION ===");
       console.log("state.formData.propertyId:", state.formData.propertyId);
-      console.log("typeof state.formData.propertyId:", typeof state.formData.propertyId);
+      console.log(
+        "typeof state.formData.propertyId:",
+        typeof state.formData.propertyId,
+      );
       console.log("listingId:", listingId);
       console.log("parseInt(listingId):", parseInt(listingId));
-      
+
       const listingDetails = {
-        propertyId: state.formData.propertyId 
-          ? (typeof state.formData.propertyId === 'number' 
-            ? state.formData.propertyId 
-            : parseInt(state.formData.propertyId.toString()))
+        propertyId: state.formData.propertyId
+          ? typeof state.formData.propertyId === "number"
+            ? state.formData.propertyId
+            : parseInt(state.formData.propertyId.toString())
           : undefined, // Don't use listingId as fallback - it's incorrect
         listingType: state.formData.listingType,
         propertyType: state.formData.propertyType,
         agentId: state.formData.agentId,
         price: state.formData.price,
       };
-      
+
       console.log("Final Listing Details being passed:", listingDetails);
-      console.log("Will attempt to update propertyId:", listingDetails.propertyId);
+      console.log(
+        "Will attempt to update propertyId:",
+        listingDetails.propertyId,
+      );
       console.log("=== CALLING saveQuickFormData ===");
-      
+
       // Save all form data using the quick form save function
       const result = await saveQuickFormData(
         listingId,
         state.formData,
         listingDetails,
-        { markAsCompleted: true }
+        { markAsCompleted: true },
       );
-      
+
       console.log("Save Result:", result);
-      
+
       if (!result.success) {
         throw new Error(result.error ?? "Failed to save registration data");
       }
-      
+
       return true;
     } catch (error) {
       console.error("Save registration error:", error);
@@ -404,21 +441,24 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
     }
   }, [currentStep]);
 
-  const goToStep = useCallback((stepIndex: number) => {
-    const formPosition = state.formData?.formPosition ?? 1;
-    const currentFormStep = formPosition - 1;
+  const goToStep = useCallback(
+    (stepIndex: number) => {
+      const formPosition = state.formData?.formPosition ?? 1;
+      const currentFormStep = formPosition - 1;
 
-    // Allow navigation to the immediate next step
-    if (stepIndex === currentFormStep + 1) {
-      setDirection("forward");
-      setCurrentStep(stepIndex);
-    }
-    // Allow backward navigation to any previous step
-    else if (stepIndex < currentFormStep) {
-      setDirection(stepIndex < currentStep ? "backward" : "forward");
-      setCurrentStep(stepIndex);
-    }
-  }, [currentStep, state.formData.formPosition]);
+      // Allow navigation to the immediate next step
+      if (stepIndex === currentFormStep + 1) {
+        setDirection("forward");
+        setCurrentStep(stepIndex);
+      }
+      // Allow backward navigation to any previous step
+      else if (stepIndex < currentFormStep) {
+        setDirection(stepIndex < currentStep ? "backward" : "forward");
+        setCurrentStep(stepIndex);
+      }
+    },
+    [currentStep, state.formData.formPosition],
+  );
 
   // Navigation without auto-save - just move between steps
   const navigateToNextStep = useCallback(async () => {
@@ -498,7 +538,6 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
 
             <div className="mx-auto mb-4 h-1 w-24 rounded-full bg-gradient-to-r from-gray-700 to-yellow-800"></div>
 
-
             {/* Registration Progress Bar */}
             <RegistrationProgressBar
               currentStep={currentStep}
@@ -547,13 +586,15 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
                 >
                   <div className="text-center">
                     {/* Animated bolt icon */}
-                    <div className="mb-6 mx-auto w-24 h-24 bg-gradient-to-r from-amber-400 to-rose-400 rounded-full flex items-center justify-center transition-all duration-700 ease-in-out">
-                      <Zap className="h-14 w-14 text-white scale-110 transition-all duration-700 ease-in-out" />
+                    <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-r from-amber-400 to-rose-400 transition-all duration-700 ease-in-out">
+                      <Zap className="h-14 w-14 scale-110 text-white transition-all duration-700 ease-in-out" />
                     </div>
-                    
+
                     {/* Loading text */}
                     <div className="flex items-center justify-center gap-2 text-gray-600">
-                      <span className="text-sm font-medium">Completando registro...</span>
+                      <span className="text-sm font-medium">
+                        Completando registro...
+                      </span>
                     </div>
                   </div>
                 </motion.div>
@@ -576,7 +617,9 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
 }
 
 // Main component that provides the form context
-export default function QuickRegistrationForm({ listingId }: QuickRegistrationFormProps) {
+export default function QuickRegistrationForm({
+  listingId,
+}: QuickRegistrationFormProps) {
   return (
     <FormProvider>
       <QuickRegistrationFormInner listingId={listingId} />

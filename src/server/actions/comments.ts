@@ -5,10 +5,10 @@ import { getCurrentUserAccountId, getCurrentUser } from "~/lib/dal";
 import { db } from "~/server/db";
 import { comments } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
-import type { 
-  CreateCommentFormData, 
-  UpdateCommentFormData, 
-  CommentActionResult 
+import type {
+  CreateCommentFormData,
+  UpdateCommentFormData,
+  CommentActionResult,
 } from "~/types/comments";
 import { canUserModifyComment } from "~/server/queries/comments";
 
@@ -145,7 +145,12 @@ export async function updateCommentAction(
       };
     }
 
-    console.log("Updating comment:", commentId, "with content:", formData.content);
+    console.log(
+      "Updating comment:",
+      commentId,
+      "with content:",
+      formData.content,
+    );
 
     // PATTERN: Use database update with proper conditions
     await db
@@ -158,8 +163,8 @@ export async function updateCommentAction(
         and(
           eq(comments.commentId, commentId),
           eq(comments.userId, currentUser.id),
-          eq(comments.isDeleted, false)
-        )
+          eq(comments.isDeleted, false),
+        ),
       );
 
     console.log("Comment updated successfully");
@@ -187,7 +192,9 @@ export async function updateCommentAction(
 }
 
 // Server action for soft deleting a comment
-export async function deleteCommentAction(commentId: bigint): Promise<CommentActionResult> {
+export async function deleteCommentAction(
+  commentId: bigint,
+): Promise<CommentActionResult> {
   try {
     // PATTERN: Always get account ID and current user for security
     const accountId = await getCurrentUserAccountId();
@@ -230,17 +237,22 @@ export async function deleteCommentAction(commentId: bigint): Promise<CommentAct
       .where(eq(comments.commentId, commentId));
 
     // Check if this comment has replies (only for parent comments)
-    const replies = comment?.parentId === null ? await db
-      .select({ commentId: comments.commentId })
-      .from(comments)
-      .where(
-        and(
-          eq(comments.parentId, commentId),
-          eq(comments.isDeleted, false)
-        )
-      ) : [];
+    const replies =
+      comment?.parentId === null
+        ? await db
+            .select({ commentId: comments.commentId })
+            .from(comments)
+            .where(
+              and(
+                eq(comments.parentId, commentId),
+                eq(comments.isDeleted, false),
+              ),
+            )
+        : [];
 
-    console.log(`Comment has ${replies.length} replies that will also be deleted`);
+    console.log(
+      `Comment has ${replies.length} replies that will also be deleted`,
+    );
 
     // PATTERN: Cascade soft delete - delete parent and all replies
     if (comment?.parentId === null && replies.length > 0) {
@@ -252,10 +264,7 @@ export async function deleteCommentAction(commentId: bigint): Promise<CommentAct
           updatedAt: new Date(),
         })
         .where(
-          and(
-            eq(comments.parentId, commentId),
-            eq(comments.isDeleted, false)
-          )
+          and(eq(comments.parentId, commentId), eq(comments.isDeleted, false)),
         );
       console.log(`Cascade deleted ${replies.length} replies`);
     }
@@ -270,12 +279,12 @@ export async function deleteCommentAction(commentId: bigint): Promise<CommentAct
       .where(
         and(
           eq(comments.commentId, commentId),
-          eq(comments.userId, currentUser.id)
-        )
+          eq(comments.userId, currentUser.id),
+        ),
       );
 
     console.log("Comment soft deleted successfully.");
-    
+
     // Double check if the comment was actually deleted
     const [checkComment] = await db
       .select({ isDeleted: comments.isDeleted })

@@ -122,12 +122,17 @@ export function ContactInterestForm({
       const timeoutId = setTimeout(() => {
         const loadNeighborhoods = async () => {
           try {
-            const neighborhoodsList = await fetchNeighborhoodsByCity(selectedCity, "es");
+            const neighborhoodsList = await fetchNeighborhoodsByCity(
+              selectedCity,
+              "es",
+            );
             setNeighborhoods(neighborhoodsList);
           } catch (error) {
             console.error("Error loading neighborhoods:", error);
             setNeighborhoods([]);
-            toast.error("Error al cargar los barrios. Por favor, espera unos segundos e intenta de nuevo.");
+            toast.error(
+              "Error al cargar los barrios. Por favor, espera unos segundos e intenta de nuevo.",
+            );
           } finally {
             setLoadingNeighborhoods(false);
           }
@@ -274,7 +279,7 @@ export function ContactInterestForm({
                       // Always set default sale price when switching to Compra
                       updateLocalData({
                         demandType: "Sale",
-                        maxPrice: 200000
+                        maxPrice: 200000,
                       });
                     }}
                     className={cn(
@@ -291,7 +296,7 @@ export function ContactInterestForm({
                       // Always set default rent price when switching to Alquiler
                       updateLocalData({
                         demandType: "Rent",
-                        maxPrice: 500
+                        maxPrice: 500,
                       });
                     }}
                     className={cn(
@@ -465,8 +470,7 @@ export function ContactInterestForm({
             {(() => {
               const propertyType = localData.propertyTypes[0] ?? "";
               const shouldShowRooms =
-                propertyType !== "garaje" &&
-                propertyType !== "solar";
+                propertyType !== "garaje" && propertyType !== "solar";
 
               if (shouldShowRooms) {
                 return (
@@ -553,12 +557,15 @@ export function ContactInterestForm({
                     if (city?.trim()) {
                       const formattedCity = formatCityName(city);
                       const alreadyAdded = localData.selectedCities?.some(
-                        (c) => c.toLowerCase() === formattedCity.toLowerCase()
+                        (c) => c.toLowerCase() === formattedCity.toLowerCase(),
                       );
 
                       if (!alreadyAdded) {
                         updateLocalData({
-                          selectedCities: [...(localData.selectedCities ?? []), formattedCity],
+                          selectedCities: [
+                            ...(localData.selectedCities ?? []),
+                            formattedCity,
+                          ],
                         });
                       }
 
@@ -571,36 +578,38 @@ export function ContactInterestForm({
                 />
 
                 {/* Display selected cities */}
-                {localData.selectedCities && localData.selectedCities.length > 0 && (
-                  <div className="space-y-1">
-                    {localData.selectedCities.map((city) => (
-                      <div
-                        key={city}
-                        className="flex items-center justify-between rounded-md bg-blue-50 px-2 py-1"
-                      >
-                        <span className="text-sm font-medium text-blue-900">
-                          {city} (toda la ciudad)
-                        </span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
-                          onClick={() => {
-                            const updatedCities = localData.selectedCities?.filter(
-                              (c) => c !== city,
-                            ) ?? [];
-                            updateLocalData({
-                              selectedCities: updatedCities,
-                            });
-                          }}
+                {localData.selectedCities &&
+                  localData.selectedCities.length > 0 && (
+                    <div className="space-y-1">
+                      {localData.selectedCities.map((city) => (
+                        <div
+                          key={city}
+                          className="flex items-center justify-between rounded-md bg-blue-50 px-2 py-1"
                         >
-                          ×
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                          <span className="text-sm font-medium text-blue-900">
+                            {city} (toda la ciudad)
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => {
+                              const updatedCities =
+                                localData.selectedCities?.filter(
+                                  (c) => c !== city,
+                                ) ?? [];
+                              updateLocalData({
+                                selectedCities: updatedCities,
+                              });
+                            }}
+                          >
+                            ×
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                 {/* Neighborhood Selection */}
                 {selectedCity && (
@@ -632,14 +641,25 @@ export function ContactInterestForm({
                         }
                       }}
                     >
-                      <SelectTrigger className="h-9 text-gray-500" disabled={loadingNeighborhoods}>
-                        <SelectValue placeholder={loadingNeighborhoods ? "Cargando barrios..." : "Añadir barrio"} />
+                      <SelectTrigger
+                        className="h-9 text-gray-500"
+                        disabled={loadingNeighborhoods}
+                      >
+                        <SelectValue
+                          placeholder={
+                            loadingNeighborhoods
+                              ? "Cargando barrios..."
+                              : "Añadir barrio"
+                          }
+                        />
                       </SelectTrigger>
                       <SelectContent>
                         {loadingNeighborhoods ? (
                           <div className="flex items-center justify-center py-4">
                             <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-                            <span className="ml-2 text-sm text-gray-500">Cargando barrios...</span>
+                            <span className="ml-2 text-sm text-gray-500">
+                              Cargando barrios...
+                            </span>
                           </div>
                         ) : (
                           <>
@@ -660,18 +680,19 @@ export function ContactInterestForm({
                               </div>
                             ) : (
                               filteredNeighborhoods.map((neighborhood) => (
-                          <SelectItem
-                            key={neighborhood.neighborhood}
-                            value={neighborhood.neighborhood}
-                            disabled={localData.selectedNeighborhoods?.some(
-                              (n) =>
-                                n.neighborhood === neighborhood.neighborhood &&
-                                n.city === selectedCity,
-                            )}
-                          >
-                            {neighborhood.neighborhood} (
-                            {neighborhood.municipality})
-                          </SelectItem>
+                                <SelectItem
+                                  key={neighborhood.neighborhood}
+                                  value={neighborhood.neighborhood}
+                                  disabled={localData.selectedNeighborhoods?.some(
+                                    (n) =>
+                                      n.neighborhood ===
+                                        neighborhood.neighborhood &&
+                                      n.city === selectedCity,
+                                  )}
+                                >
+                                  {neighborhood.neighborhood} (
+                                  {neighborhood.municipality})
+                                </SelectItem>
                               ))
                             )}
                           </>
@@ -702,7 +723,8 @@ export function ContactInterestForm({
                               const updatedNeighborhoods =
                                 localData.selectedNeighborhoods?.filter(
                                   (n) =>
-                                    n.neighborhood !== neighborhood.neighborhood ||
+                                    n.neighborhood !==
+                                      neighborhood.neighborhood ||
                                     n.city !== neighborhood.city,
                                 ) || [];
                               updateLocalData({

@@ -13,7 +13,7 @@ import {
   Copyright,
   Info,
   Gavel,
-  Lock
+  Lock,
 } from "lucide-react";
 import Navbar from "~/components/navbar";
 import { Footer } from "~/components/landing/Footer";
@@ -97,7 +97,7 @@ const sections = [
       <p class="text-sm text-gray-600 mt-4">
         Vesta CRM es un servicio prestado por un profesional autónomo establecido en España, dedicado al desarrollo y comercialización de software de gestión para el sector inmobiliario.
       </p>
-    `
+    `,
   },
   {
     id: "objeto",
@@ -121,7 +121,7 @@ const sections = [
       <p class="mt-4 text-sm bg-blue-50 p-3 rounded-lg border border-blue-200">
         <strong>Nota importante:</strong> El titular se reserva el derecho a modificar, en cualquier momento y sin previo aviso, la presentación, configuración y contenidos del Sitio Web, así como las condiciones requeridas para su acceso y/o uso.
       </p>
-    `
+    `,
   },
   {
     id: "normativa",
@@ -156,7 +156,7 @@ const sections = [
           <p class="text-sm text-gray-700">Texto Refundido de la Ley de Propiedad Intelectual</p>
         </div>
       </div>
-    `
+    `,
   },
   {
     id: "propiedad-intelectual",
@@ -177,7 +177,7 @@ const sections = [
       <p class="mt-4 text-sm bg-red-50 p-3 rounded-lg border border-red-200">
         <strong>Advertencia:</strong> El Usuario se compromete a respetar los derechos de Propiedad Intelectual e Industrial del titular. El incumplimiento de estas prohibiciones podrá dar lugar a las acciones legales correspondientes.
       </p>
-    `
+    `,
   },
   {
     id: "uso-contenidos",
@@ -209,7 +209,7 @@ const sections = [
           </ul>
         </div>
       </div>
-    `
+    `,
   },
   {
     id: "responsabilidad",
@@ -237,7 +237,7 @@ const sections = [
       <p class="mt-4 text-sm bg-amber-50 p-3 rounded-lg border border-amber-200">
         <strong>Importante:</strong> El titular se reserva el derecho a efectuar, sin previo aviso, las modificaciones que considere oportunas en el Sitio Web, pudiendo cambiar, suprimir o añadir tanto los contenidos y servicios que se presten a través de la misma como la forma en la que éstos aparezcan presentados o localizados.
       </p>
-    `
+    `,
   },
   {
     id: "proteccion-datos",
@@ -271,7 +271,7 @@ const sections = [
       <p class="mb-3">Para más información sobre cómo tratamos sus datos personales, consulte nuestra <a href="/privacidad" class="text-amber-600 hover:text-amber-700 underline font-semibold">Política de Privacidad</a>.</p>
 
       <p class="mb-3">Para más información sobre el uso de cookies, consulte nuestra <a href="/cookies" class="text-amber-600 hover:text-amber-700 underline font-semibold">Política de Cookies</a>.</p>
-    `
+    `,
   },
   {
     id: "legislacion",
@@ -306,7 +306,7 @@ const sections = [
           <ExternalLink className="h-3 w-3" />
         </a>
       </p>
-    `
+    `,
   },
   {
     id: "comunicaciones",
@@ -337,7 +337,7 @@ const sections = [
       </div>
 
       <p class="mt-4">El titular se compromete a contestar las comunicaciones recibidas a través de estos medios en el menor plazo posible, y en todo caso dentro de los plazos legalmente establecidos según la naturaleza de la consulta.</p>
-    `
+    `,
   },
   {
     id: "modificaciones",
@@ -353,7 +353,7 @@ const sections = [
       <p class="mt-4"><strong>Fecha de última actualización:</strong> Enero 2025</p>
 
       <p class="mt-4"><strong>Versión:</strong> 1.0</p>
-    `
+    `,
   },
   {
     id: "contacto",
@@ -403,8 +403,8 @@ const sections = [
           <span class="font-medium text-gray-900">Condiciones de Servicio</span>
         </a>
       </div>
-    `
-  }
+    `,
+  },
 ];
 
 export default function AvisoLegalPage() {
@@ -430,8 +430,8 @@ export default function AvisoLegalPage() {
               Aviso Legal
             </h1>
             <p className="text-xl text-gray-600">
-              Información legal sobre el titular del sitio web, condiciones de uso
-              y normativa aplicable en cumplimiento de la LSSI-CE.
+              Información legal sobre el titular del sitio web, condiciones de
+              uso y normativa aplicable en cumplimiento de la LSSI-CE.
             </p>
             <div className="mt-6 flex items-center justify-center gap-2 text-sm text-gray-500">
               <Info className="h-4 w-4" />
@@ -444,7 +444,9 @@ export default function AvisoLegalPage() {
       {/* Table of Contents */}
       <section className="border-b border-gray-200 bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
-          <h2 className="mb-6 text-lg font-semibold text-gray-900">Índice de Contenidos</h2>
+          <h2 className="mb-6 text-lg font-semibold text-gray-900">
+            Índice de Contenidos
+          </h2>
           <nav className="grid gap-2 sm:grid-cols-2">
             {sections.map((section, index) => (
               <motion.a
@@ -501,7 +503,8 @@ export default function AvisoLegalPage() {
             ¿Necesita más información?
           </h2>
           <p className="mb-8 text-xl text-white/90">
-            Estamos a su disposición para resolver cualquier duda sobre este Aviso Legal
+            Estamos a su disposición para resolver cualquier duda sobre este
+            Aviso Legal
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <a

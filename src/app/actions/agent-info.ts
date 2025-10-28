@@ -1,7 +1,12 @@
 "use server";
 
 import { db } from "~/server/db";
-import { accounts, users, userRoles, websiteProperties } from "~/server/db/schema";
+import {
+  accounts,
+  users,
+  userRoles,
+  websiteProperties,
+} from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
 
 /**
@@ -35,13 +40,13 @@ export async function getAgentNameAction(accountId: bigint): Promise<{
 
     // If account type is company, use account.name
     if (account.accountType === "company") {
-      return { 
-        success: true, 
+      return {
+        success: true,
         agentName: account.name,
         collegiateNumber: account.collegiateNumber ?? undefined,
         accountType: account.accountType,
         taxId: account.taxId ?? undefined,
-        website: account.website ?? undefined
+        website: account.website ?? undefined,
       };
     }
 
@@ -54,20 +59,17 @@ export async function getAgentNameAction(accountId: bigint): Promise<{
         .from(users)
         .innerJoin(userRoles, eq(users.id, userRoles.userId))
         .where(
-          and(
-            eq(users.accountId, accountId),
-            eq(userRoles.roleId, BigInt(3))
-          )
+          and(eq(users.accountId, accountId), eq(userRoles.roleId, BigInt(3))),
         );
 
       if (userWithRole) {
-        return { 
-          success: true, 
+        return {
+          success: true,
           agentName: userWithRole.userName,
           collegiateNumber: account.collegiateNumber ?? undefined,
           accountType: account.accountType,
           taxId: account.taxId ?? undefined,
-          website: account.website ?? undefined
+          website: account.website ?? undefined,
         };
       } else {
         // Fallback to any user in the account if no role 3 found
@@ -79,33 +81,32 @@ export async function getAgentNameAction(accountId: bigint): Promise<{
           .where(eq(users.accountId, accountId));
 
         if (anyUser) {
-          return { 
-            success: true, 
+          return {
+            success: true,
             agentName: anyUser.userName,
             collegiateNumber: account.collegiateNumber ?? undefined,
             accountType: account.accountType,
             taxId: account.taxId ?? undefined,
-            website: account.website ?? undefined
+            website: account.website ?? undefined,
           };
         }
       }
     }
 
     // Fallback to account name if nothing else works
-    return { 
-      success: true, 
+    return {
+      success: true,
       agentName: account.name,
       collegiateNumber: account.collegiateNumber ?? undefined,
       accountType: account.accountType ?? undefined,
       taxId: account.taxId ?? undefined,
-      website: account.website ?? undefined
+      website: account.website ?? undefined,
     };
-
   } catch (error) {
     console.error("Error getting agent name:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Unknown error" 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
@@ -138,9 +139,10 @@ export async function getOfficeInfoAction(accountId: bigint): Promise<{
     // Parse contactProps JSON
     let contactProps: unknown;
     try {
-      contactProps = typeof websiteConfig.contactProps === "string" 
-        ? JSON.parse(websiteConfig.contactProps) 
-        : websiteConfig.contactProps;
+      contactProps =
+        typeof websiteConfig.contactProps === "string"
+          ? JSON.parse(websiteConfig.contactProps)
+          : websiteConfig.contactProps;
     } catch (parseError) {
       console.error("Error parsing contactProps:", parseError);
       return { success: false, error: "Invalid website configuration data" };
@@ -148,29 +150,31 @@ export async function getOfficeInfoAction(accountId: bigint): Promise<{
 
     // Extract and format offices
     const parsedContactProps = contactProps as { offices?: unknown[] };
-    const offices = parsedContactProps?.offices?.map((office: unknown) => {
-      const officeData = office as {
-        address?: { street?: string; city?: string; state?: string };
-        phoneNumbers?: { main?: string };
-      };
-      return {
-        address: officeData.address?.street ?? "",
-        city: officeData.address?.city ?? "",
-        postalCode: officeData.address?.state ?? "",
-        phone: officeData.phoneNumbers?.main ?? "",
-      };
-    }) ?? [];
+    const offices =
+      parsedContactProps?.offices?.map((office: unknown) => {
+        const officeData = office as {
+          address?: { street?: string; city?: string; state?: string };
+          phoneNumbers?: { main?: string };
+        };
+        return {
+          address: officeData.address?.street ?? "",
+          city: officeData.address?.city ?? "",
+          postalCode: officeData.address?.state ?? "",
+          phone: officeData.phoneNumbers?.main ?? "",
+        };
+      }) ?? [];
 
-    return { 
-      success: true, 
-      offices: offices.filter((office) => office.address ?? office.city ?? office.phone)
+    return {
+      success: true,
+      offices: offices.filter(
+        (office) => office.address ?? office.city ?? office.phone,
+      ),
     };
-
   } catch (error) {
     console.error("Error getting office info:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Unknown error" 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }

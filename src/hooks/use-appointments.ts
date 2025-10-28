@@ -67,7 +67,10 @@ interface UseAppointmentsReturn {
   fetchByDateRange: (startDate: Date, endDate: Date) => Promise<void>;
   addOptimisticEvent: (event: Partial<CalendarEvent>) => bigint;
   removeOptimisticEvent: (tempId: bigint) => void;
-  updateOptimisticEvent: (tempId: bigint, updates: Partial<CalendarEvent>) => void;
+  updateOptimisticEvent: (
+    tempId: bigint,
+    updates: Partial<CalendarEvent>,
+  ) => void;
 }
 
 // Generate temporary ID for optimistic events
@@ -82,7 +85,7 @@ function transformToOptimisticEvent(
   tempId: bigint,
 ): CalendarEvent {
   const now = new Date();
-  
+
   return {
     appointmentId: tempId,
     contactName: eventData.contactName ?? "New Contact",
@@ -109,7 +112,7 @@ function mergeAndSortEvents(
   optimisticEvents: CalendarEvent[],
 ): CalendarEvent[] {
   const allEvents = [...serverEvents, ...optimisticEvents];
-  
+
   // Sort by start time
   return allEvents.sort((a, b) => {
     return a.startTime.getTime() - b.startTime.getTime();
@@ -230,8 +233,12 @@ export function useAppointments(): UseAppointmentsReturn {
     refetch: fetchAppointments,
     fetchByDateRange,
     addOptimisticEvent: () => BigInt(0), // Placeholder implementation
-    removeOptimisticEvent: () => { /* placeholder */ }, // Placeholder implementation  
-    updateOptimisticEvent: () => { /* placeholder */ }, // Placeholder implementation
+    removeOptimisticEvent: () => {
+      /* placeholder */
+    }, // Placeholder implementation
+    updateOptimisticEvent: () => {
+      /* placeholder */
+    }, // Placeholder implementation
   };
 }
 
@@ -273,36 +280,48 @@ export function useWeeklyAppointments(weekStart: Date): UseAppointmentsReturn {
   }, [weekStart]);
 
   // Add optimistic event
-  const addOptimisticEvent = useCallback((eventData: Partial<CalendarEvent>): bigint => {
-    const tempId = generateTempId();
-    const optimisticEvent = transformToOptimisticEvent(eventData, tempId);
-    
-    setOptimisticEvents(prev => [...prev, optimisticEvent]);
-    
-    // Auto-cleanup optimistic events after 30 seconds if still optimistic (not converted to real)
-    setTimeout(() => {
-      setOptimisticEvents(prev => prev.filter(event => 
-        event.appointmentId !== tempId || !event.isOptimistic
-      ));
-    }, 30000);
-    
-    return tempId;
-  }, []);
+  const addOptimisticEvent = useCallback(
+    (eventData: Partial<CalendarEvent>): bigint => {
+      const tempId = generateTempId();
+      const optimisticEvent = transformToOptimisticEvent(eventData, tempId);
+
+      setOptimisticEvents((prev) => [...prev, optimisticEvent]);
+
+      // Auto-cleanup optimistic events after 30 seconds if still optimistic (not converted to real)
+      setTimeout(() => {
+        setOptimisticEvents((prev) =>
+          prev.filter(
+            (event) => event.appointmentId !== tempId || !event.isOptimistic,
+          ),
+        );
+      }, 30000);
+
+      return tempId;
+    },
+    [],
+  );
 
   // Remove optimistic event
   const removeOptimisticEvent = useCallback((tempId: bigint) => {
-    setOptimisticEvents(prev => prev.filter(event => event.appointmentId !== tempId));
+    setOptimisticEvents((prev) =>
+      prev.filter((event) => event.appointmentId !== tempId),
+    );
   }, []);
 
   // Update optimistic event
-  const updateOptimisticEvent = useCallback((tempId: bigint, updates: Partial<CalendarEvent>) => {
-    setOptimisticEvents(prev => prev.map(event => {
-      if (event.appointmentId === tempId) {
-        return { ...event, ...updates };
-      }
-      return event;
-    }));
-  }, []);
+  const updateOptimisticEvent = useCallback(
+    (tempId: bigint, updates: Partial<CalendarEvent>) => {
+      setOptimisticEvents((prev) =>
+        prev.map((event) => {
+          if (event.appointmentId === tempId) {
+            return { ...event, ...updates };
+          }
+          return event;
+        }),
+      );
+    },
+    [],
+  );
 
   // Merge server events with optimistic events for display
   const mergedAppointments = mergeAndSortEvents(appointments, optimisticEvents);
@@ -429,8 +448,12 @@ export function useTodayAppointments(): UseAppointmentsReturn {
       }
     },
     addOptimisticEvent: () => BigInt(0), // Placeholder implementation
-    removeOptimisticEvent: () => { /* placeholder */ }, // Placeholder implementation  
-    updateOptimisticEvent: () => { /* placeholder */ }, // Placeholder implementation
+    removeOptimisticEvent: () => {
+      /* placeholder */
+    }, // Placeholder implementation
+    updateOptimisticEvent: () => {
+      /* placeholder */
+    }, // Placeholder implementation
   };
 }
 

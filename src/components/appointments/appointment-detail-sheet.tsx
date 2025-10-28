@@ -35,7 +35,10 @@ import {
   Loader,
   Pencil,
 } from "lucide-react";
-import { updateAppointmentStatusAction, deleteAppointmentAction } from "~/server/actions/appointments";
+import {
+  updateAppointmentStatusAction,
+  deleteAppointmentAction,
+} from "~/server/actions/appointments";
 import type { AppointmentData } from "./appointment-card";
 
 // Appointment types configuration
@@ -63,7 +66,12 @@ const appointmentTypes = {
 };
 
 // Status labels mapping
-type VisitStatus = "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow";
+type VisitStatus =
+  | "Completed"
+  | "Scheduled"
+  | "Cancelled"
+  | "Rescheduled"
+  | "NoShow";
 const STATUS_LABELS: Record<VisitStatus, string> = {
   Completed: "Completado",
   Scheduled: "Programado",
@@ -93,7 +101,10 @@ export interface AppointmentDetailSheetProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdate?: () => void | Promise<void>;
-  onEdit?: (appointmentId: bigint, initialData: Partial<AppointmentFormData>) => void;
+  onEdit?: (
+    appointmentId: bigint,
+    initialData: Partial<AppointmentFormData>,
+  ) => void;
   permissions: {
     canEdit: boolean;
     canDelete: boolean;
@@ -134,7 +145,8 @@ export function AppointmentDetailSheet({
 
   // Check if "Visita" button should be shown
   // Hide "Visita" button for final/non-actionable states
-  const showVisitaButton = canEditAppointment &&
+  const showVisitaButton =
+    canEditAppointment &&
     appointment.type === "Visita" &&
     currentStatus === "Scheduled";
 
@@ -164,7 +176,12 @@ export function AppointmentDetailSheet({
 
   // Handle status update
   const handleStatusUpdate = async (
-    newStatus: "Scheduled" | "Completed" | "Cancelled" | "Rescheduled" | "NoShow",
+    newStatus:
+      | "Scheduled"
+      | "Completed"
+      | "Cancelled"
+      | "Rescheduled"
+      | "NoShow",
   ) => {
     // Optimistically update the status
     setOptimisticStatus(newStatus);
@@ -175,7 +192,7 @@ export function AppointmentDetailSheet({
         appointment.appointmentId,
         newStatus,
         context?.listingId,
-        context?.contactId ?? appointment.contactId
+        context?.contactId ?? appointment.contactId,
       );
 
       if (result.success) {
@@ -210,7 +227,7 @@ export function AppointmentDetailSheet({
       const result = await deleteAppointmentAction(
         appointment.appointmentId,
         context?.listingId,
-        context?.contactId ?? appointment.contactId
+        context?.contactId ?? appointment.contactId,
       );
 
       if (result.success) {
@@ -242,7 +259,12 @@ export function AppointmentDetailSheet({
       endTime: appointment.datetimeEnd.toTimeString().slice(0, 5),
       tripTimeMinutes: appointment.tripTimeMinutes,
       notes: appointment.notes,
-      appointmentType: appointment.type as "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje",
+      appointmentType: appointment.type as
+        | "Visita"
+        | "Reunión"
+        | "Firma"
+        | "Cierre"
+        | "Viaje",
     };
 
     // Add context-specific fields
@@ -287,11 +309,13 @@ export function AppointmentDetailSheet({
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             {typeConfig.icon}
-            <span>{appointment.type} - {appointment.contactName}</span>
+            <span>
+              {appointment.type} - {appointment.contactName}
+            </span>
           </SheetTitle>
         </SheetHeader>
 
-        <div className="space-y-4 mt-4">
+        <div className="mt-4 space-y-4">
           {/* Type and Status */}
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">{appointment.type}</p>
@@ -305,14 +329,20 @@ export function AppointmentDetailSheet({
                   className="h-7 px-2 text-xs"
                   disabled={!canEditAppointment}
                 >
-                  <span className={cn(
-                    "rounded-full px-2 py-0.5",
-                    currentStatus === "Scheduled" && "bg-gray-100 text-gray-700",
-                    currentStatus === "Completed" && "bg-gray-200 text-gray-800",
-                    currentStatus === "Cancelled" && "bg-gray-50 text-gray-400 line-through",
-                    currentStatus === "Rescheduled" && "bg-gray-150 text-gray-700",
-                    currentStatus === "NoShow" && "bg-gray-100 text-gray-500",
-                  )}>
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5",
+                      currentStatus === "Scheduled" &&
+                        "bg-gray-100 text-gray-700",
+                      currentStatus === "Completed" &&
+                        "bg-gray-200 text-gray-800",
+                      currentStatus === "Cancelled" &&
+                        "bg-gray-50 text-gray-400 line-through",
+                      currentStatus === "Rescheduled" &&
+                        "bg-gray-150 text-gray-700",
+                      currentStatus === "NoShow" && "bg-gray-100 text-gray-500",
+                    )}
+                  >
                     {STATUS_LABELS[currentStatus as VisitStatus]}
                   </span>
                 </Button>
@@ -387,7 +417,7 @@ export function AppointmentDetailSheet({
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(appointment.propertyAddress)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline decoration-dotted underline-offset-2 hover:decoration-solid transition-all"
+                  className="underline decoration-dotted underline-offset-2 transition-all hover:decoration-solid"
                 >
                   {appointment.propertyAddress}
                 </a>
@@ -403,8 +433,8 @@ export function AppointmentDetailSheet({
 
           {/* Notes */}
           {appointment.notes && (
-            <div className="mt-6 border-l-2 border-gray-300 pl-4 py-1">
-              <p className="text-sm text-gray-600 leading-relaxed italic">
+            <div className="mt-6 border-l-2 border-gray-300 py-1 pl-4">
+              <p className="text-sm italic leading-relaxed text-gray-600">
                 &ldquo;{appointment.notes}&rdquo;
               </p>
             </div>
@@ -422,8 +452,9 @@ export function AppointmentDetailSheet({
                 Visita
               </Button>
             )}
-            {!showVisitaButton && (canEditAppointment || canDeleteAppointment) ? (
-              <div className="flex items-center justify-center gap-3 w-full">
+            {!showVisitaButton &&
+            (canEditAppointment || canDeleteAppointment) ? (
+              <div className="flex w-full items-center justify-center gap-3">
                 {canEditAppointment && onEdit && (
                   <Button
                     size="default"
@@ -443,7 +474,7 @@ export function AppointmentDetailSheet({
                       void handleDeleteAppointment();
                     }}
                     disabled={isDeletingAppointment}
-                    className="flex-1 gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300"
+                    className="flex-1 gap-2 border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700"
                   >
                     {isDeletingAppointment ? (
                       <Loader className="h-4 w-4 animate-spin" />
@@ -461,7 +492,7 @@ export function AppointmentDetailSheet({
                     size="sm"
                     variant="ghost"
                     onClick={handleEditClick}
-                    className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                    className="h-8 w-8 p-0 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                     title="Editar"
                   >
                     <Pencil className="h-4 w-4" />
@@ -475,7 +506,7 @@ export function AppointmentDetailSheet({
                       void handleDeleteAppointment();
                     }}
                     disabled={isDeletingAppointment}
-                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 hover:text-red-700"
                     title="Eliminar"
                   >
                     {isDeletingAppointment ? (

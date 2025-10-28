@@ -43,18 +43,18 @@ export function DeleteConfirmationModal({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button 
-            variant="outline" 
-            onClick={onClose}
-            disabled={isDeleting}
-          >
+          <Button variant="outline" onClick={onClose} disabled={isDeleting}>
             Cancelar
           </Button>
           <Button
             variant={variant}
             onClick={onConfirm}
             disabled={isDeleting}
-            className={variant === "default" ? "bg-green-600 hover:bg-green-700 text-white" : ""}
+            className={
+              variant === "default"
+                ? "bg-green-600 text-white hover:bg-green-700"
+                : ""
+            }
           >
             {isDeleting ? (
               <>

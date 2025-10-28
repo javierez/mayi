@@ -55,13 +55,13 @@ export async function middleware(request: NextRequest) {
     request.cookies.get("better-auth.session_token");
 
   if (!sessionToken?.value) {
-    console.log(`🔄 Redirecting to homepage from: ${pathname} - No session token found`);
+    console.log(
+      `🔄 Redirecting to homepage from: ${pathname} - No session token found`,
+    );
     // No session token, redirect to homepage
     const homeUrl = new URL("/", request.url);
     return NextResponse.redirect(homeUrl);
   }
-
-
 
   // For authenticated users, let the DAL handle full session validation
   // We just pass through with basic session indication

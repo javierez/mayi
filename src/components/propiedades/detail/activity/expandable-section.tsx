@@ -37,13 +37,13 @@ export function ExpandableSection({
       {/* Header */}
       <button
         onClick={handleToggle}
-        className="w-full flex items-center justify-between group px-1"
+        className="group flex w-full items-center justify-between px-1"
       >
-        <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wide">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-600">
           {title} ({count})
         </h3>
         <ChevronDown
-          className={`w-4 h-4 text-gray-400 transition-transform duration-200 group-hover:text-gray-600 ${
+          className={`h-4 w-4 text-gray-400 transition-transform duration-200 group-hover:text-gray-600 ${
             isExpanded ? "rotate-180" : ""
           }`}
         />

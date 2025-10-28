@@ -91,14 +91,17 @@ interface AppointmentFormProps {
   // Optimistic update functions
   addOptimisticEvent?: (event: Partial<Record<string, unknown>>) => bigint;
   removeOptimisticEvent?: (tempId: bigint) => void;
-  updateOptimisticEvent?: (tempId: bigint, updates: Partial<Record<string, unknown>>) => void;
+  updateOptimisticEvent?: (
+    tempId: bigint,
+    updates: Partial<Record<string, unknown>>,
+  ) => void;
 }
 
 // Helper function to get tomorrow's date in YYYY-MM-DD format
 const getTomorrowDate = () => {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  return tomorrow.toISOString().split('T')[0] ?? "";
+  return tomorrow.toISOString().split("T")[0] ?? "";
 };
 
 // Helper function to get current time in HH:mm format, rounded to nearest 15 minutes
@@ -123,7 +126,7 @@ const getCurrentTime = () => {
 const addMinutesToTime = (timeStr: string, minutesToAdd: number): string => {
   if (!timeStr) return "";
 
-  const [hours, minutes] = timeStr.split(':').map(Number);
+  const [hours, minutes] = timeStr.split(":").map(Number);
   const date = new Date();
   date.setHours(hours ?? 0);
   date.setMinutes((minutes ?? 0) + minutesToAdd);
@@ -222,7 +225,9 @@ export default function AppointmentForm({
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoadingContacts, setIsLoadingContacts] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [optimisticEventId, setOptimisticEventId] = useState<bigint | null>(null);
+  const [optimisticEventId, setOptimisticEventId] = useState<bigint | null>(
+    null,
+  );
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const isMountedRef = useRef(true);
   const [listings, setListings] = useState<Listing[]>([]);
@@ -232,7 +237,9 @@ export default function AppointmentForm({
   const [showEndDate, setShowEndDate] = useState(false);
   const [durationHours, setDurationHours] = useState(0);
   const [durationMinutes, setDurationMinutes] = useState(30);
-  const [agents, setAgents] = useState<{ id: string; name: string; firstName?: string; lastName?: string; }[]>([]);
+  const [agents, setAgents] = useState<
+    { id: string; name: string; firstName?: string; lastName?: string }[]
+  >([]);
   const [isLoadingAgents, setIsLoadingAgents] = useState(false);
   const { data: session } = useSession();
 
@@ -291,14 +298,16 @@ export default function AppointmentForm({
           contactsData = await listContactsWithAuth(1, 10); // page 1, limit 10
         } else {
           // For search, use the optimized search function
-          const searchResults = await searchContactsWithAuth(searchQuery.trim());
+          const searchResults = await searchContactsWithAuth(
+            searchQuery.trim(),
+          );
           // Transform search results to match Contact interface
           contactsData = searchResults.map((result) => {
-            const [firstName, ...lastNameParts] = result.name.split(' ');
+            const [firstName, ...lastNameParts] = result.name.split(" ");
             return {
               contactId: result.id,
-              firstName: firstName ?? '',
-              lastName: lastNameParts.join(' ') || '',
+              firstName: firstName ?? "",
+              lastName: lastNameParts.join(" ") || "",
               email: null,
               phone: null,
             };
@@ -353,7 +362,7 @@ export default function AppointmentForm({
         }));
         setAgents(formattedAgents);
       } catch (error) {
-        console.error('Error fetching agents:', error);
+        console.error("Error fetching agents:", error);
       } finally {
         setIsLoadingAgents(false);
       }
@@ -365,7 +374,7 @@ export default function AppointmentForm({
   // Initialize agent selection with current user when on step 0
   useEffect(() => {
     if (currentStep === 0 && !formData.assignedTo && session?.user?.id) {
-      setFormData(prev => ({ ...prev, assignedTo: session.user.id }));
+      setFormData((prev) => ({ ...prev, assignedTo: session.user.id }));
     }
   }, [currentStep, session?.user?.id, formData.assignedTo]);
 
@@ -617,18 +626,24 @@ export default function AppointmentForm({
   };
 
   // Transform form data to CalendarEvent format for optimistic updates
-  const transformFormDataToCalendarEvent = (data: Partial<AppointmentFormData>) => {
+  const transformFormDataToCalendarEvent = (
+    data: Partial<AppointmentFormData>,
+  ) => {
     if (!data.contactId || !data.startDate || !data.startTime) {
       return null;
     }
 
     // Create start and end Date objects
     const startDateTime = new Date(`${data.startDate}T${data.startTime}`);
-    const endDateTime = new Date(`${data.endDate ?? data.startDate}T${data.endTime ?? data.startTime}`);
+    const endDateTime = new Date(
+      `${data.endDate ?? data.startDate}T${data.endTime ?? data.startTime}`,
+    );
 
     return {
       contactId: data.contactId,
-      contactName: selectedContact ? `${selectedContact.firstName} ${selectedContact.lastName}` : "New Contact",
+      contactName: selectedContact
+        ? `${selectedContact.firstName} ${selectedContact.lastName}`
+        : "New Contact",
       propertyAddress: selectedListing?.title ?? undefined,
       startTime: startDateTime,
       endTime: endDateTime,
@@ -648,10 +663,14 @@ export default function AppointmentForm({
     return {
       appointmentId,
       contactId: formData.contactId!,
-      contactName: selectedContact ? `${selectedContact.firstName} ${selectedContact.lastName}` : "New Contact",
+      contactName: selectedContact
+        ? `${selectedContact.firstName} ${selectedContact.lastName}`
+        : "New Contact",
       propertyAddress: selectedListing?.title ?? undefined,
       startTime: new Date(`${formData.startDate}T${formData.startTime}`),
-      endTime: new Date(`${formData.endDate ?? formData.startDate}T${formData.endTime ?? formData.startTime}`),
+      endTime: new Date(
+        `${formData.endDate ?? formData.startDate}T${formData.endTime ?? formData.startTime}`,
+      ),
       status: "Scheduled" as const,
       type: formData.appointmentType ?? "Visita",
       tripTimeMinutes: formData.tripTimeMinutes,
@@ -671,7 +690,7 @@ export default function AppointmentForm({
     if (!isValid) return;
 
     setIsCreating(true);
-    
+
     // Add optimistic update for create mode
     let tempEventId: bigint | null = null;
     if (mode === "create" && addOptimisticEvent) {
@@ -712,7 +731,9 @@ export default function AppointmentForm({
       if (result.success) {
         // Convert optimistic event to real event instead of removing
         if (tempEventId && updateOptimisticEvent && result.appointmentId) {
-          const realEventData = transformServerResponseToCalendarEvent(result.appointmentId);
+          const realEventData = transformServerResponseToCalendarEvent(
+            result.appointmentId,
+          );
           updateOptimisticEvent(tempEventId, realEventData);
         }
         if (isMountedRef.current) {
@@ -759,7 +780,10 @@ export default function AppointmentForm({
           <div className="space-y-3">
             {/* Agent Selection */}
             <div className="space-y-2">
-              <label htmlFor="agent-select" className="text-sm font-medium text-gray-700">
+              <label
+                htmlFor="agent-select"
+                className="text-sm font-medium text-gray-700"
+              >
                 Asignar a
               </label>
               <Select
@@ -771,15 +795,22 @@ export default function AppointmentForm({
                 disabled={isLoadingAgents}
               >
                 <SelectTrigger className="h-9 text-gray-500">
-                  <SelectValue placeholder={
-                    isLoadingAgents ? "Cargando agentes..." :
-                    agents.length === 0 ? "No hay agentes" : "Seleccionar agente"
-                  } />
+                  <SelectValue
+                    placeholder={
+                      isLoadingAgents
+                        ? "Cargando agentes..."
+                        : agents.length === 0
+                          ? "No hay agentes"
+                          : "Seleccionar agente"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {agents.map((agent) => (
                     <SelectItem key={agent.id} value={agent.id}>
-                      {agent.name ?? (`${agent.firstName ?? ''} ${agent.lastName ?? ''}`.trim() || agent.id)}
+                      {agent.name ??
+                        (`${agent.firstName ?? ""} ${agent.lastName ?? ""}`.trim() ||
+                          agent.id)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -787,7 +818,10 @@ export default function AppointmentForm({
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="contact-search" className="text-sm font-medium text-gray-700">
+              <label
+                htmlFor="contact-search"
+                className="text-sm font-medium text-gray-700"
+              >
                 Buscar contacto
               </label>
               <div className="relative">
@@ -825,7 +859,7 @@ export default function AppointmentForm({
                     variant="ghost"
                     size="sm"
                     onClick={handleClearContact}
-                    className="h-6 w-6 p-0 shrink-0"
+                    className="h-6 w-6 shrink-0 p-0"
                     title="Cambiar contacto"
                   >
                     <X className="h-3 w-3" />
@@ -875,7 +909,7 @@ export default function AppointmentForm({
       case 1: // Details
         return (
           <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <FloatingLabelInput
                   id="startDate"
@@ -909,7 +943,7 @@ export default function AppointmentForm({
               </div>
 
               <div className="relative mt-8">
-                <label className="absolute left-0 -top-5 z-10 px-2 text-xs font-medium text-gray-600">
+                <label className="absolute -top-5 left-0 z-10 px-2 text-xs font-medium text-gray-600">
                   Hora de inicio
                 </label>
                 <Select
@@ -944,17 +978,19 @@ export default function AppointmentForm({
             )}
 
             <div className="relative">
-              <label className="absolute left-0 -top-5 z-10 px-2 text-xs font-medium text-gray-600">
+              <label className="absolute -top-5 left-0 z-10 px-2 text-xs font-medium text-gray-600">
                 Duración
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <div className="space-y-1">
                   <input
                     type="number"
                     min="0"
                     max="23"
                     value={durationHours}
-                    onChange={(e) => setDurationHours(parseInt(e.target.value) || 0)}
+                    onChange={(e) =>
+                      setDurationHours(parseInt(e.target.value) || 0)
+                    }
                     placeholder="0"
                     className="h-9 w-full rounded-md border border-gray-200 bg-background px-3 py-2 text-sm shadow-md ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
@@ -967,7 +1003,9 @@ export default function AppointmentForm({
                     max="59"
                     step="15"
                     value={durationMinutes}
-                    onChange={(e) => setDurationMinutes(parseInt(e.target.value) || 0)}
+                    onChange={(e) =>
+                      setDurationMinutes(parseInt(e.target.value) || 0)
+                    }
                     placeholder="30"
                     className="h-9 w-full rounded-md border border-gray-200 bg-background px-3 py-2 text-sm shadow-md ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   />
@@ -977,7 +1015,7 @@ export default function AppointmentForm({
             </div>
 
             <div className="relative">
-              <label className="absolute left-0 -top-5 z-10 px-2 text-xs font-medium text-gray-600">
+              <label className="absolute -top-5 left-0 z-10 px-2 text-xs font-medium text-gray-600">
                 Tipo de cita
               </label>
               <Select
@@ -1006,11 +1044,11 @@ export default function AppointmentForm({
                 {/* Only show label and search if listing wasn't pre-selected via URL */}
                 {!initialData.listingId && !selectedListing && (
                   <div className="relative">
-                    <label className="absolute left-0 -top-5 z-10 px-2 text-xs font-medium text-gray-600">
+                    <label className="absolute -top-5 left-0 z-10 px-2 text-xs font-medium text-gray-600">
                       Seleccionar Propiedad
                     </label>
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground z-10" />
+                      <Search className="absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <input
                         value={listingSearchQuery}
                         onChange={(e) => setListingSearchQuery(e.target.value)}
@@ -1032,7 +1070,11 @@ export default function AppointmentForm({
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Ref: {selectedListing.referenceNumber} •{" "}
-                          {selectedListing.city} • {Math.floor(parseFloat(selectedListing.price)).toLocaleString('es-ES')}€
+                          {selectedListing.city} •{" "}
+                          {Math.floor(
+                            parseFloat(selectedListing.price),
+                          ).toLocaleString("es-ES")}
+                          €
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {selectedListing.bedrooms &&
@@ -1049,7 +1091,7 @@ export default function AppointmentForm({
                           variant="ghost"
                           size="sm"
                           onClick={handleClearListing}
-                          className="h-6 w-6 p-0 shrink-0"
+                          className="h-6 w-6 shrink-0 p-0"
                           title="Cambiar propiedad"
                         >
                           <X className="h-3 w-3" />
@@ -1087,7 +1129,11 @@ export default function AppointmentForm({
                                 </div>
                                 <div className="text-xs text-gray-400">
                                   Ref: {listing.referenceNumber} •{" "}
-                                  {listing.city} • {Math.floor(parseFloat(listing.price)).toLocaleString('es-ES')}€
+                                  {listing.city} •{" "}
+                                  {Math.floor(
+                                    parseFloat(listing.price),
+                                  ).toLocaleString("es-ES")}
+                                  €
                                 </div>
                                 <div className="text-xs text-gray-400">
                                   {listing.bedrooms &&
@@ -1109,7 +1155,7 @@ export default function AppointmentForm({
             )}
 
             <div className="relative">
-              <label className="absolute left-0 -top-5 z-10 px-2 text-xs font-medium text-gray-600">
+              <label className="absolute -top-5 left-0 z-10 px-2 text-xs font-medium text-gray-600">
                 Tiempo de viaje (minutos)
               </label>
               <input
@@ -1126,7 +1172,7 @@ export default function AppointmentForm({
             </div>
 
             <div className="relative">
-              <label className="absolute left-0 -top-5 z-10 px-2 text-xs font-medium text-gray-600">
+              <label className="absolute -top-5 left-0 z-10 px-2 text-xs font-medium text-gray-600">
                 Notas
               </label>
               <Textarea
@@ -1166,11 +1212,10 @@ export default function AppointmentForm({
                 <Calendar className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <div className="font-medium">
-                    {formData.startDate} • {formData.startTime} - {formData.endTime}
+                    {formData.startDate} • {formData.startTime} -{" "}
+                    {formData.endTime}
                     {showEndDate && formData.endDate !== formData.startDate && (
-                      <>
-                        {" "}(hasta {formData.endDate})
-                      </>
+                      <> (hasta {formData.endDate})</>
                     )}
                   </div>
                   <div className="text-sm text-muted-foreground">
@@ -1180,7 +1225,8 @@ export default function AppointmentForm({
                       )?.label
                     }
                     {" • "}
-                    Duración: {durationHours > 0 && `${durationHours}h `}{durationMinutes}min
+                    Duración: {durationHours > 0 && `${durationHours}h `}
+                    {durationMinutes}min
                   </div>
                 </div>
               </div>
@@ -1194,7 +1240,11 @@ export default function AppointmentForm({
                         `${selectedListing.propertyType} en ${selectedListing.city}`}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Ref: {selectedListing.referenceNumber} • {Math.floor(parseFloat(selectedListing.price)).toLocaleString('es-ES')}€
+                      Ref: {selectedListing.referenceNumber} •{" "}
+                      {Math.floor(
+                        parseFloat(selectedListing.price),
+                      ).toLocaleString("es-ES")}
+                      €
                     </div>
                   </div>
                 </div>

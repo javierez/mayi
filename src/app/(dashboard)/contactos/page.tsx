@@ -106,7 +106,7 @@ export default function ContactsPage() {
       lastContactFilter: lastContact ?? "all",
       sources: sources ? sources.split(",") : [],
       ratings: ratings ? ratings.split(",").map(Number) : [],
-      statuses: statuses ? statuses.split(",").map(s => s === "true") : [],
+      statuses: statuses ? statuses.split(",").map((s) => s === "true") : [],
     };
   }, [searchParams]);
 
@@ -114,27 +114,29 @@ export default function ContactsPage() {
   const processContactsData = useCallback(
     (rawContacts: DbContact[]): ExtendedContact[] => {
       // Transform to ExtendedContact format - NO SORTING (done in database)
-      const extendedContacts: ExtendedContact[] = rawContacts.map((contact) => ({
-        contactId: contact.contactId,
-        firstName: contact.firstName,
-        lastName: contact.lastName,
-        email: contact.email ?? undefined,
-        phone: contact.phone ?? undefined,
-        source: contact.source ?? undefined,
-        additionalInfo: contact.additionalInfo ?? undefined,
-        isActive: contact.isActive,
-        createdAt: new Date(), // Default value since not fetched
-        updatedAt: contact.updatedAt,
-        ownerCount: contact.ownerCount,
-        buyerCount: contact.buyerCount,
-        prospectCount: contact.prospectCount,
-        isOwner: contact.isOwner,
-        isBuyer: contact.isBuyer,
-        isInteresado: contact.isInteresado,
-        prospectTitles: contact.prospectTitles ?? [],
-        allListings: contact.allListings ?? [],
-        tasks: contact.tasks ?? [],
-      }));
+      const extendedContacts: ExtendedContact[] = rawContacts.map(
+        (contact) => ({
+          contactId: contact.contactId,
+          firstName: contact.firstName,
+          lastName: contact.lastName,
+          email: contact.email ?? undefined,
+          phone: contact.phone ?? undefined,
+          source: contact.source ?? undefined,
+          additionalInfo: contact.additionalInfo ?? undefined,
+          isActive: contact.isActive,
+          createdAt: new Date(), // Default value since not fetched
+          updatedAt: contact.updatedAt,
+          ownerCount: contact.ownerCount,
+          buyerCount: contact.buyerCount,
+          prospectCount: contact.prospectCount,
+          isOwner: contact.isOwner,
+          isBuyer: contact.isBuyer,
+          isInteresado: contact.isInteresado,
+          prospectTitles: contact.prospectTitles ?? [],
+          allListings: contact.allListings ?? [],
+          tasks: contact.tasks ?? [],
+        }),
+      );
 
       return extendedContacts;
     },
@@ -142,44 +144,48 @@ export default function ContactsPage() {
   );
 
   // Fetch contacts for a specific page
-  const fetchContactsForPage = useCallback(async (page: number, filters: ReturnType<typeof getFiltersFromUrl>) => {
-    const isOwnerView = filters.roles.includes("owner");
-    const pageSize = 50; // Items per page
+  const fetchContactsForPage = useCallback(
+    async (page: number, filters: ReturnType<typeof getFiltersFromUrl>) => {
+      const isOwnerView = filters.roles.includes("owner");
+      const pageSize = 50; // Items per page
 
-    // Use the appropriate optimized query based on view
-    const result = isOwnerView
-      ? await listContactsOwnerDataWithAuth(page, pageSize, {
-          searchQuery: filters.searchQuery,
-          roles: ["owner"],
-          lastContactFilter: filters.lastContactFilter,
-          sources: filters.sources,
-          ratings: filters.ratings,
-          statuses: filters.statuses,
-        })
-      : await listContactsBuyerDataWithAuth(page, pageSize, {
-          searchQuery: filters.searchQuery,
-          roles: ["buyer"],
-          lastContactFilter: filters.lastContactFilter,
-          sources: filters.sources,
-          ratings: filters.ratings,
-          statuses: filters.statuses,
-        });
+      // Use the appropriate optimized query based on view
+      const result = isOwnerView
+        ? await listContactsOwnerDataWithAuth(page, pageSize, {
+            searchQuery: filters.searchQuery,
+            roles: ["owner"],
+            lastContactFilter: filters.lastContactFilter,
+            sources: filters.sources,
+            ratings: filters.ratings,
+            statuses: filters.statuses,
+          })
+        : await listContactsBuyerDataWithAuth(page, pageSize, {
+            searchQuery: filters.searchQuery,
+            roles: ["buyer"],
+            lastContactFilter: filters.lastContactFilter,
+            sources: filters.sources,
+            ratings: filters.ratings,
+            statuses: filters.statuses,
+          });
 
-    // Process contacts from the result (already sorted by database)
-    const processedContacts = processContactsData(result.contacts as DbContact[]);
+      // Process contacts from the result (already sorted by database)
+      const processedContacts = processContactsData(
+        result.contacts as DbContact[],
+      );
 
-    return {
-      contacts: processedContacts,
-      totalPages: result.totalPages,
-      totalCount: result.totalCount,
-    };
-  }, [processContactsData]);
-
+      return {
+        contacts: processedContacts,
+        totalPages: result.totalPages,
+        totalCount: result.totalCount,
+      };
+    },
+    [processContactsData],
+  );
 
   // Page change handler
   const handlePageChange = useCallback((newPage: number) => {
     setCurrentPage(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   // Reset to page 1 when filters change
@@ -236,7 +242,8 @@ export default function ContactsPage() {
       // Fetch ALL contacts with current filters (no pagination)
       const isOwnerView = filters.roles.includes("owner");
       const result = isOwnerView
-        ? await listContactsOwnerDataWithAuth(1, 100000, { // Large limit to get all
+        ? await listContactsOwnerDataWithAuth(1, 100000, {
+            // Large limit to get all
             searchQuery: filters.searchQuery,
             roles: ["owner"],
             lastContactFilter: filters.lastContactFilter,
@@ -244,7 +251,8 @@ export default function ContactsPage() {
             ratings: filters.ratings,
             statuses: filters.statuses,
           })
-        : await listContactsBuyerDataWithAuth(1, 100000, { // Large limit to get all
+        : await listContactsBuyerDataWithAuth(1, 100000, {
+            // Large limit to get all
             searchQuery: filters.searchQuery,
             roles: ["buyer"],
             lastContactFilter: filters.lastContactFilter,
@@ -256,16 +264,26 @@ export default function ContactsPage() {
       const allContacts = processContactsData(result.contacts as DbContact[]);
 
       // Create CSV headers
-      const headers = ["Nombre", "Email", "Teléfono", "Tipo", "Propiedades", "Última Actualización"];
+      const headers = [
+        "Nombre",
+        "Email",
+        "Teléfono",
+        "Tipo",
+        "Propiedades",
+        "Última Actualización",
+      ];
 
       // Create CSV rows
-      const rows = allContacts.map(contact => {
+      const rows = allContacts.map((contact) => {
         const types = [];
         if (contact.isOwner) types.push("Propietario");
         if (contact.isBuyer) types.push("Comprador");
         if (contact.isInteresado) types.push("Interesado");
 
-        const propertiesCount = (contact.ownerCount ?? 0) + (contact.buyerCount ?? 0) + (contact.prospectCount ?? 0);
+        const propertiesCount =
+          (contact.ownerCount ?? 0) +
+          (contact.buyerCount ?? 0) +
+          (contact.prospectCount ?? 0);
 
         return [
           `"${contact.firstName} ${contact.lastName}"`,
@@ -285,7 +303,10 @@ export default function ContactsPage() {
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
       link.setAttribute("href", url);
-      link.setAttribute("download", `contactos-${new Date().toISOString().split("T")[0]}.csv`);
+      link.setAttribute(
+        "download",
+        `contactos-${new Date().toISOString().split("T")[0]}.csv`,
+      );
       link.style.visibility = "hidden";
       document.body.appendChild(link);
       link.click();

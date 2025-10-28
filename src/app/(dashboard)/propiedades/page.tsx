@@ -34,12 +34,17 @@ export default function PropertiesPage() {
   const [agents, setAgents] = useState<Array<{ id: string; name: string }>>([]);
   const [accountWebsite, setAccountWebsite] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [prefetchedPages, setPrefetchedPages] = useState<Set<number>>(new Set());
+  const [prefetchedPages, setPrefetchedPages] = useState<Set<number>>(
+    new Set(),
+  );
   const [cities, setCities] = useState<string[]>([]);
   const [priceRange] = useState({ minPrice: 50000, maxPrice: 1000000 });
   const [areaRange] = useState({ minArea: 20, maxArea: 500 });
 
-  const view = (searchParams.get("view") ?? "table") as "grid" | "table" | "map";
+  const view = (searchParams.get("view") ?? "table") as
+    | "grid"
+    | "table"
+    | "map";
 
   // Fetch agents, cities, and account website independently
   useEffect(() => {
@@ -71,7 +76,7 @@ export default function PropertiesPage() {
         const filters: Record<string, unknown> = {};
         // Check if status is explicitly in the URL
         let hasStatusParam = false;
-        
+
         for (const [key, value] of searchParams.entries()) {
           if (key === "page") continue;
           if (key === "q") {
@@ -86,9 +91,7 @@ export default function PropertiesPage() {
               rented: "Alquilado",
               discarded: "Descartado",
             };
-            filters.status = value
-              .split(",")
-              .map((v) => statusMap[v] ?? v);
+            filters.status = value.split(",").map((v) => statusMap[v] ?? v);
           } else if (key === "type") {
             filters.propertyType = value.split(",");
           } else if (key === "agent") {
@@ -137,13 +140,8 @@ export default function PropertiesPage() {
 
         // For map view, fetch all listings; for table/grid, use pagination
         const limit = view === "map" ? 10000 : ITEMS_PER_PAGE;
-        const result = await listListingsWithAuth(
-          page,
-          limit,
-          filters,
-          view,
-        );
-        
+        const result = await listListingsWithAuth(page, limit, filters, view);
+
         setCurrentPage(page);
 
         console.log("Raw result from listListingsWithAuth:", result);
@@ -204,9 +202,7 @@ export default function PropertiesPage() {
             rented: "Alquilado",
             discarded: "Descartado",
           };
-          filters.status = value
-            .split(",")
-            .map((v) => statusMap[v] ?? v);
+          filters.status = value.split(",").map((v) => statusMap[v] ?? v);
         } else if (key === "type") {
           filters.propertyType = value.split(",");
         } else if (key === "agent") {
@@ -276,7 +272,7 @@ export default function PropertiesPage() {
       ];
 
       // Create CSV rows
-      const rows = allListings.map(listing => {
+      const rows = allListings.map((listing) => {
         return [
           listing.referenceNumber ?? "",
           `"${listing.title ?? ""}"`,
@@ -285,7 +281,9 @@ export default function PropertiesPage() {
           listing.price?.toString() ?? "",
           listing.city ?? "",
           listing.bedrooms?.toString() ?? "",
-          listing.bathrooms ? Math.floor(Number(listing.bathrooms)).toString() : "",
+          listing.bathrooms
+            ? Math.floor(Number(listing.bathrooms)).toString()
+            : "",
           listing.squareMeter?.toString() ?? "",
           listing.ownerName ?? "",
           listing.agentName ?? "",
@@ -300,7 +298,10 @@ export default function PropertiesPage() {
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
       link.setAttribute("href", url);
-      link.setAttribute("download", `propiedades-${new Date().toISOString().split("T")[0]}.csv`);
+      link.setAttribute(
+        "download",
+        `propiedades-${new Date().toISOString().split("T")[0]}.csv`,
+      );
       link.style.visibility = "hidden";
       document.body.appendChild(link);
       link.click();
@@ -317,12 +318,12 @@ export default function PropertiesPage() {
     }
 
     try {
-      setPrefetchedPages(prev => new Set(prev).add(pageNum));
-      
+      setPrefetchedPages((prev) => new Set(prev).add(pageNum));
+
       // Get current filters
       const filters: Record<string, unknown> = {};
       let hasStatusParam = false;
-      
+
       for (const [key, value] of searchParams.entries()) {
         if (key === "page") continue;
         if (key === "q") {
@@ -336,9 +337,7 @@ export default function PropertiesPage() {
             rented: "Alquilado",
             discarded: "Descartado",
           };
-          filters.status = value
-            .split(",")
-            .map((v) => statusMap[v] ?? v);
+          filters.status = value.split(",").map((v) => statusMap[v] ?? v);
         } else if (key === "type") {
           filters.propertyType = value.split(",");
         } else if (key === "agent") {
@@ -384,18 +383,13 @@ export default function PropertiesPage() {
       }
 
       // Prefetch in background
-      await listListingsWithAuth(
-        pageNum,
-        ITEMS_PER_PAGE,
-        filters,
-        view,
-      );
-      
+      await listListingsWithAuth(pageNum, ITEMS_PER_PAGE, filters, view);
+
       console.log(`Prefetched page ${pageNum}`);
     } catch (error) {
       console.error(`Error prefetching page ${pageNum}:`, error);
       // Remove from prefetched set if failed
-      setPrefetchedPages(prev => {
+      setPrefetchedPages((prev) => {
         const newSet = new Set(prev);
         newSet.delete(pageNum);
         return newSet;
@@ -453,10 +447,7 @@ export default function PropertiesPage() {
           accountWebsite={accountWebsite}
         />
       ) : view === "map" ? (
-        <PropertyMap
-          listings={listings}
-          accountWebsite={accountWebsite}
-        />
+        <PropertyMap listings={listings} accountWebsite={accountWebsite} />
       ) : (
         <PropertyTable
           listings={listings}

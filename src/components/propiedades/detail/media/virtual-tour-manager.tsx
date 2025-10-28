@@ -48,7 +48,8 @@ export function VirtualTourManager({
   onVirtualTourAdded,
   canEdit = true,
 }: VirtualTourManagerProps) {
-  const [virtualTours, setVirtualTours] = useState<PropertyImage[]>(initialVirtualTours);
+  const [virtualTours, setVirtualTours] =
+    useState<PropertyImage[]>(initialVirtualTours);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingTour, setEditingTour] = useState<PropertyImage | null>(null);
   const [tourUrl, setTourUrl] = useState("");
@@ -57,7 +58,9 @@ export function VirtualTourManager({
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedTours, setSelectedTours] = useState<Set<number>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState(false);
-  const [isTogglingVisibility, setIsTogglingVisibility] = useState<Set<number>>(new Set());
+  const [isTogglingVisibility, setIsTogglingVisibility] = useState<Set<number>>(
+    new Set(),
+  );
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [isUpdatingOrder, setIsUpdatingOrder] = useState(false);
@@ -69,14 +72,20 @@ export function VirtualTourManager({
 
     setIsSubmitting(true);
     try {
-      const newTour = await addVirtualTourLink(tourUrl, propertyId, referenceNumber);
+      const newTour = await addVirtualTourLink(
+        tourUrl,
+        propertyId,
+        referenceNumber,
+      );
       setVirtualTours((prev) => [...prev, newTour]);
       onVirtualTourAdded?.(newTour);
       setTourUrl("");
       setIsAddDialogOpen(false);
     } catch (error) {
       console.error("Error adding virtual tour:", error);
-      alert(error instanceof Error ? error.message : "Error adding virtual tour");
+      alert(
+        error instanceof Error ? error.message : "Error adding virtual tour",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -92,20 +101,26 @@ export function VirtualTourManager({
 
     setIsSubmitting(true);
     try {
-      const newTour = await addVirtualTourLink(tourUrl, propertyId, referenceNumber);
+      const newTour = await addVirtualTourLink(
+        tourUrl,
+        propertyId,
+        referenceNumber,
+      );
       // Delete the old tour
       await deletePropertyImage(editingTour.imageKey, propertyId);
       // Update the list
       setVirtualTours((prev) =>
         prev.map((tour) =>
-          tour.propertyImageId === editingTour.propertyImageId ? newTour : tour
-        )
+          tour.propertyImageId === editingTour.propertyImageId ? newTour : tour,
+        ),
       );
       setEditingTour(null);
       setTourUrl("");
     } catch (error) {
       console.error("Error updating virtual tour:", error);
-      alert(error instanceof Error ? error.message : "Error updating virtual tour");
+      alert(
+        error instanceof Error ? error.message : "Error updating virtual tour",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -169,18 +184,21 @@ export function VirtualTourManager({
 
     setVirtualTours((prev) =>
       prev.map((tr, i) =>
-        i === index ? { ...tr, isActive: newActiveStatus } : tr
-      )
+        i === index ? { ...tr, isActive: newActiveStatus } : tr,
+      ),
     );
 
     try {
-      await togglePropertyImageVisibility(tour.propertyImageId, newActiveStatus);
+      await togglePropertyImageVisibility(
+        tour.propertyImageId,
+        newActiveStatus,
+      );
     } catch (error) {
       console.error("Error toggling virtual tour visibility:", error);
       setVirtualTours((prev) =>
         prev.map((tr, i) =>
-          i === index ? { ...tr, isActive: !newActiveStatus } : tr
-        )
+          i === index ? { ...tr, isActive: !newActiveStatus } : tr,
+        ),
       );
     } finally {
       setIsTogglingVisibility((prev) => {
@@ -278,10 +296,12 @@ export function VirtualTourManager({
   if (virtualTours.length === 0 && !isAddDialogOpen) {
     return (
       <div className="border-t pt-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Glasses className="h-8 w-8 text-blue-600" />
-            <h3 className="text-lg font-medium text-gray-900">Tours Virtuales</h3>
+            <h3 className="text-lg font-medium text-gray-900">
+              Tours Virtuales
+            </h3>
           </div>
         </div>
 
@@ -295,9 +315,7 @@ export function VirtualTourManager({
               <span className="text-sm font-medium text-gray-400 transition-colors duration-200 group-hover:text-gray-500">
                 Añadir URL
               </span>
-              <span className="text-xs text-gray-400">
-                de tour virtual
-              </span>
+              <span className="text-xs text-gray-400">de tour virtual</span>
             </div>
           )}
         </div>
@@ -346,14 +364,14 @@ export function VirtualTourManager({
 
   return (
     <div className="border-t pt-6">
-      <div className="flex items-center gap-3 mb-4">
+      <div className="mb-4 flex items-center gap-3">
         <Glasses className="h-8 w-8 text-blue-600" />
         <h3 className="text-lg font-medium text-gray-900">Tours Virtuales</h3>
       </div>
 
       {/* Help text for drag and drop */}
       {virtualTours.length > 1 && (
-        <p className="text-center text-sm text-gray-500 mb-4">
+        <p className="mb-4 text-center text-sm text-gray-500">
           Arrastra y suelta los tours para reordenarlos
         </p>
       )}
@@ -370,7 +388,7 @@ export function VirtualTourManager({
                 dragOverIndex === idx && "scale-105 ring-2 ring-blue-400",
                 draggedIndex === idx && "scale-95 opacity-50",
                 !isSelectMode && "cursor-move",
-                !tour.isActive && "opacity-50"
+                !tour.isActive && "opacity-50",
               )}
               draggable={!isSelectMode && !isUpdatingOrder}
               onDragStart={(e) => handleDragStart(e, idx)}
@@ -383,35 +401,37 @@ export function VirtualTourManager({
               {/* Mock Preview Content */}
               <div className="relative h-40 w-full">
                 {/* 360° Circle Pattern - positioned higher */}
-                <div className="absolute inset-0 flex items-center justify-center -mt-4">
+                <div className="absolute inset-0 -mt-4 flex items-center justify-center">
                   <div className="relative">
                     {/* Outer circle representing 360° view */}
-                    <div className="w-20 h-20 border-2 border-dashed border-blue-300 rounded-full flex items-center justify-center">
+                    <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-dashed border-blue-300">
                       {/* Inner content */}
-                      <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-600">
                         <Glasses className="h-6 w-6 text-white" />
                       </div>
                     </div>
-                    
+
                     {/* Four directional indicators around the circle */}
-                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-blue-400 rounded-full" />
-                    <div className="absolute top-1/2 -right-1 transform -translate-y-1/2 w-2 h-2 bg-blue-400 rounded-full" />
-                    <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-blue-400 rounded-full" />
-                    <div className="absolute top-1/2 -left-1 transform -translate-y-1/2 w-2 h-2 bg-blue-400 rounded-full" />
+                    <div className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 transform rounded-full bg-blue-400" />
+                    <div className="absolute -right-1 top-1/2 h-2 w-2 -translate-y-1/2 transform rounded-full bg-blue-400" />
+                    <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 transform rounded-full bg-blue-400" />
+                    <div className="absolute -left-1 top-1/2 h-2 w-2 -translate-y-1/2 transform rounded-full bg-blue-400" />
                   </div>
                 </div>
-                
+
                 {/* Label - positioned at bottom with more space */}
-                <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2">
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 transform">
                   <div className="text-center">
-                    <div className="text-xs font-medium text-blue-700">Tour Virtual</div>
+                    <div className="text-xs font-medium text-blue-700">
+                      Tour Virtual
+                    </div>
                     <div className="text-xs text-blue-500">360°</div>
                   </div>
                 </div>
-                
+
                 {/* Simple hover overlay */}
-                <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-200 flex items-center justify-center opacity-0 hover:opacity-100">
-                  <span className="text-white text-sm font-medium bg-black/60 px-2 py-1 rounded">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-colors duration-200 hover:bg-black/10 hover:opacity-100">
+                  <span className="rounded bg-black/60 px-2 py-1 text-sm font-medium text-white">
                     Ver tour
                   </span>
                 </div>
@@ -432,7 +452,7 @@ export function VirtualTourManager({
                     className="absolute left-2 top-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
                     onClick={(e) => {
                       e.stopPropagation();
-                      window.open(tour.imageUrl, '_blank');
+                      window.open(tour.imageUrl, "_blank");
                     }}
                     aria-label="Abrir tour virtual"
                   >
@@ -474,7 +494,9 @@ export function VirtualTourManager({
                         void handleToggleVisibility(idx);
                       }}
                       disabled={isTogglingVisibility.has(idx)}
-                      aria-label={tour.isActive ? "Ocultar tour" : "Mostrar tour"}
+                      aria-label={
+                        tour.isActive ? "Ocultar tour" : "Mostrar tour"
+                      }
                     >
                       {isTogglingVisibility.has(idx) ? (
                         <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -508,9 +530,7 @@ export function VirtualTourManager({
             <span className="text-sm font-medium text-gray-400 transition-colors duration-200 group-hover:text-gray-500">
               Añadir URL
             </span>
-            <span className="text-xs text-gray-400">
-              de tour virtual
-            </span>
+            <span className="text-xs text-gray-400">de tour virtual</span>
           </div>
         )}
       </div>

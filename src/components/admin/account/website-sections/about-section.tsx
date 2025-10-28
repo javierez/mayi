@@ -2,10 +2,25 @@
 
 import { useEffect } from "react";
 import { useFieldArray } from "react-hook-form";
-import { 
-  Users, Plus, Trash2, User, Calculator, Megaphone, 
-  Briefcase, Map, Clock, MessageSquare, Handshake, HelpCircle, 
-  Home, Key, Shield, Star, Phone, Mail 
+import {
+  Users,
+  Plus,
+  Trash2,
+  User,
+  Calculator,
+  Megaphone,
+  Briefcase,
+  Map,
+  Clock,
+  MessageSquare,
+  Handshake,
+  HelpCircle,
+  Home,
+  Key,
+  Shield,
+  Star,
+  Phone,
+  Mail,
 } from "lucide-react";
 import {
   FormControl,
@@ -16,7 +31,13 @@ import {
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Button } from "~/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { KPIConfiguration } from "./components/kpi-configuration";
 import type { AboutSectionProps } from "../types/website-sections";
 
@@ -39,7 +60,8 @@ const AVAILABLE_ICONS = [
   { value: "mail", label: "Correo", icon: Mail },
 ];
 
-function ServicesConfiguration({ form }: { form: any }) { // eslint-disable-line @typescript-eslint/no-explicit-any
+function ServicesConfiguration({ form }: { form: any }) {
+  // eslint-disable-line @typescript-eslint/no-explicit-any
   const { fields, append, remove } = useFieldArray({
     control: form.control, // eslint-disable-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     name: "aboutProps.services",
@@ -83,7 +105,8 @@ function ServicesConfiguration({ form }: { form: any }) { // eslint-disable-line
             No hay servicios configurados
           </h4>
           <p className="mt-2 text-sm text-gray-500">
-            Agrega servicios para mostrar en la sección &quot;Sobre Nosotros&quot;
+            Agrega servicios para mostrar en la sección &quot;Sobre
+            Nosotros&quot;
           </p>
           <Button
             type="button"
@@ -92,7 +115,7 @@ function ServicesConfiguration({ form }: { form: any }) { // eslint-disable-line
             onClick={addService}
             className="mt-4"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             Agregar Primer Servicio
           </Button>
         </div>
@@ -145,7 +168,9 @@ function ServicesConfiguration({ form }: { form: any }) { // eslint-disable-line
                                 {field.value && (
                                   <div className="flex items-center gap-2">
                                     {(() => {
-                                      const selectedIcon = AVAILABLE_ICONS.find(icon => icon.value === field.value);
+                                      const selectedIcon = AVAILABLE_ICONS.find(
+                                        (icon) => icon.value === field.value,
+                                      );
                                       if (selectedIcon) {
                                         const IconComponent = selectedIcon.icon;
                                         return (
@@ -166,7 +191,10 @@ function ServicesConfiguration({ form }: { form: any }) { // eslint-disable-line
                             {AVAILABLE_ICONS.map((iconOption) => {
                               const IconComponent = iconOption.icon;
                               return (
-                                <SelectItem key={iconOption.value} value={iconOption.value}>
+                                <SelectItem
+                                  key={iconOption.value}
+                                  value={iconOption.value}
+                                >
                                   <div className="flex items-center gap-2">
                                     <IconComponent className="h-4 w-4" />
                                     <span>{iconOption.label}</span>
@@ -182,13 +210,13 @@ function ServicesConfiguration({ form }: { form: any }) { // eslint-disable-line
                 </div>
 
                 {/* Remove Button */}
-                <div className="md:col-span-1 flex items-end">
+                <div className="flex items-end md:col-span-1">
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => removeService(index)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -196,7 +224,7 @@ function ServicesConfiguration({ form }: { form: any }) { // eslint-disable-line
               </div>
 
               {/* Service Number Badge */}
-              <div className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-700">
+              <div className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-700">
                 {index + 1}
               </div>
             </div>
@@ -217,9 +245,7 @@ function ServicesConfiguration({ form }: { form: any }) { // eslint-disable-line
                 placeholder="6"
                 min="1"
                 max="20"
-                onChange={(e) =>
-                  field.onChange(parseInt(e.target.value) || 6)
-                }
+                onChange={(e) => field.onChange(parseInt(e.target.value) || 6)}
               />
             </FormControl>
           </FormItem>
@@ -228,7 +254,8 @@ function ServicesConfiguration({ form }: { form: any }) { // eslint-disable-line
 
       {fields.length > 0 && (
         <div className="text-xs text-gray-500">
-          💡 Tip: Los servicios aparecerán en la página web en el orden que los hayas configurado aquí
+          💡 Tip: Los servicios aparecerán en la página web en el orden que los
+          hayas configurado aquí
         </div>
       )}
     </div>

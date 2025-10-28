@@ -9,14 +9,14 @@ export interface FreepikEnhanceRequest {
 
 export interface FreepikEnhanceResponse {
   taskId: string;
-  status: 'CREATED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
-  generated?: string[];  // Enhanced image URLs
+  status: "CREATED" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
+  generated?: string[]; // Enhanced image URLs
   error?: string;
 }
 
 export interface FreepikTaskStatus {
   id: string;
-  status: 'CREATED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+  status: "CREATED" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
   progress?: number;
   result?: {
     generated: string[];
@@ -26,9 +26,9 @@ export interface FreepikTaskStatus {
 
 // Light preset optimized for cost
 export const LIGHT_ENHANCEMENT_SETTINGS = {
-  sharpen: 30,      // Lower value for cost optimization
-  smartGrain: 5,    // Lower value for cost optimization
-  ultraDetail: 20,  // Lower value for cost optimization
+  sharpen: 30, // Lower value for cost optimization
+  smartGrain: 5, // Lower value for cost optimization
+  ultraDetail: 20, // Lower value for cost optimization
 } as const;
 
 // Comparison slider state
@@ -40,7 +40,7 @@ export interface ComparisonSliderState {
 }
 
 // Enhancement status type for UI components
-export type EnhancementStatus = 'idle' | 'processing' | 'success' | 'error';
+export type EnhancementStatus = "idle" | "processing" | "success" | "error";
 
 // Enhanced image data structure
 export interface EnhancedImageData {

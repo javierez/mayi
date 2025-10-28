@@ -25,7 +25,7 @@ interface NominatimResponse {
 const DELAY_MS = 1100; // Slightly over 1 second to be safe
 
 async function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function fetchCoordinatesFromNominatim(
@@ -44,7 +44,8 @@ async function fetchCoordinatesFromNominatim(
       method: "GET",
       headers: {
         Accept: "application/json",
-        "User-Agent": "Mozilla/5.0 (compatible; RealEstateApp/1.0; +backfill-script)",
+        "User-Agent":
+          "Mozilla/5.0 (compatible; RealEstateApp/1.0; +backfill-script)",
       },
     });
 
@@ -88,14 +89,11 @@ async function backfillLocationCoordinates() {
         municipality: locations.municipality,
       })
       .from(locations)
-      .where(
-        or(
-          isNull(locations.latitude),
-          isNull(locations.longitude),
-        ),
-      );
+      .where(or(isNull(locations.latitude), isNull(locations.longitude)));
 
-    console.log(`📊 Found ${locationsWithoutCoords.length} locations without coordinates\n`);
+    console.log(
+      `📊 Found ${locationsWithoutCoords.length} locations without coordinates\n`,
+    );
 
     if (locationsWithoutCoords.length === 0) {
       console.log("✅ All locations already have coordinates!");
@@ -138,7 +136,8 @@ async function backfillLocationCoordinates() {
           failures.push({
             id: location.neighborhoodId,
             name: `${location.neighborhood}, ${location.city}`,
-            reason: error instanceof Error ? error.message : "Database update failed",
+            reason:
+              error instanceof Error ? error.message : "Database update failed",
           });
           console.error(`  ❌ Database update failed:`, error);
         }
@@ -172,7 +171,9 @@ async function backfillLocationCoordinates() {
         console.log(`  ${idx + 1}. [ID: ${failure.id}] ${failure.name}`);
         console.log(`     Reason: ${failure.reason}`);
       });
-      console.log("\n💡 You may need to manually add coordinates for these locations.");
+      console.log(
+        "\n💡 You may need to manually add coordinates for these locations.",
+      );
     }
 
     console.log("\n✅ Backfill complete!");

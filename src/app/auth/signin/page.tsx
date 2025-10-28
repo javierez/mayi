@@ -73,7 +73,12 @@ const SignInPage: FC = () => {
     <div className="flex min-h-screen flex-col justify-center bg-white py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Vesta <span className="bg-gradient-to-r from-amber-400 to-rose-400 bg-clip-text text-transparent">CRM</span></h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Vesta{" "}
+            <span className="bg-gradient-to-r from-amber-400 to-rose-400 bg-clip-text text-transparent">
+              CRM
+            </span>
+          </h1>
           <h2 className="mt-6 text-2xl font-bold text-gray-900">
             Inicia sesión en tu cuenta
           </h2>
@@ -152,7 +157,11 @@ const SignInPage: FC = () => {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500 border-0" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="w-full border-0 bg-gradient-to-r from-amber-400 to-rose-400 hover:from-amber-500 hover:to-rose-500"
+                disabled={isLoading}
+              >
                 {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
               </Button>
             </form>
@@ -199,7 +208,7 @@ const SignInPage: FC = () => {
             <div className="text-center">
               <Link
                 href="/auth/forgot-password"
-                className="text-sm font-medium text-gray-600 hover:bg-gradient-to-r hover:from-amber-400 hover:to-rose-400 hover:bg-clip-text hover:text-transparent transition-all"
+                className="text-sm font-medium text-gray-600 transition-all hover:bg-gradient-to-r hover:from-amber-400 hover:to-rose-400 hover:bg-clip-text hover:text-transparent"
               >
                 ¿Olvidaste tu contraseña?
               </Link>

@@ -14,9 +14,7 @@ import {
   softDeleteAppointment,
   getAppointmentByIdWithAuth,
 } from "~/server/queries/appointment";
-import {
-  findOrCreateLeadForAppointment,
-} from "~/server/queries/lead-status-sync";
+import { findOrCreateLeadForAppointment } from "~/server/queries/lead-status-sync";
 import { syncToGoogle } from "~/lib/google-calendar-sync";
 import { getAppointmentTasksWithAuth } from "~/server/queries/task";
 
@@ -52,7 +50,9 @@ export async function updateAppointmentAction(
       userId: currentUser.id, // String for BetterAuth
       contactId: BigInt(formData.contactId),
       listingId: formData.listingId ? BigInt(formData.listingId) : undefined,
-      listingContactId: formData.listingContactId ? BigInt(formData.listingContactId) : undefined,
+      listingContactId: formData.listingContactId
+        ? BigInt(formData.listingContactId)
+        : undefined,
       dealId: formData.dealId ? BigInt(formData.dealId) : undefined,
       prospectId: formData.prospectId ? BigInt(formData.prospectId) : undefined,
       datetimeStart: new Date(`${formData.startDate}T${formData.startTime}`),
@@ -136,7 +136,9 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
       userId: currentUser.id, // String for BetterAuth
       contactId: BigInt(formData.contactId),
       listingId: formData.listingId ? BigInt(formData.listingId) : undefined,
-      listingContactId: formData.listingContactId ? BigInt(formData.listingContactId) : undefined,
+      listingContactId: formData.listingContactId
+        ? BigInt(formData.listingContactId)
+        : undefined,
       dealId: formData.dealId ? BigInt(formData.dealId) : undefined,
       prospectId: formData.prospectId ? BigInt(formData.prospectId) : undefined,
       datetimeStart: new Date(`${formData.startDate}T${formData.startTime}`),
@@ -483,7 +485,10 @@ export async function getBatchAppointmentTasksAction(appointmentIds: number[]) {
           tasks,
         };
       } catch (error) {
-        console.error(`Failed to fetch tasks for appointment ${appointmentId}:`, error);
+        console.error(
+          `Failed to fetch tasks for appointment ${appointmentId}:`,
+          error,
+        );
         return {
           appointmentId,
           tasks: [],
@@ -494,7 +499,7 @@ export async function getBatchAppointmentTasksAction(appointmentIds: number[]) {
     const results = await Promise.all(tasksPromises);
 
     // Convert to a map for easy lookup
-    const tasksMap = new Map<number, typeof results[0]['tasks']>();
+    const tasksMap = new Map<number, (typeof results)[0]["tasks"]>();
     results.forEach(({ appointmentId, tasks }) => {
       tasksMap.set(appointmentId, tasks);
     });
@@ -534,7 +539,10 @@ export async function deleteAppointmentAction(
     try {
       await syncToGoogle(currentUser.id, appointmentId, "delete");
     } catch (error) {
-      console.error("Failed to sync appointment deletion to Google Calendar:", error);
+      console.error(
+        "Failed to sync appointment deletion to Google Calendar:",
+        error,
+      );
       // Don't fail the delete operation if Google Calendar sync fails
     }
 

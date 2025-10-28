@@ -499,9 +499,7 @@ export interface InterestFormData {
  */
 export async function convertProspectToFormData(
   prospect: ProspectData,
-  getLocationByNeighborhoodId: (
-    id: number | bigint,
-  ) => Promise<
+  getLocationByNeighborhoodId: (id: number | bigint) => Promise<
     | {
         neighborhoodId: bigint;
         neighborhood: string;
@@ -531,7 +529,9 @@ export async function convertProspectToFormData(
       async (area: { neighborhoodId?: number; name?: string }) => {
         try {
           if (typeof area.neighborhoodId !== "number") return null;
-          const location = await getLocationByNeighborhoodId(area.neighborhoodId);
+          const location = await getLocationByNeighborhoodId(
+            area.neighborhoodId,
+          );
           return location
             ? {
                 neighborhoodId: location.neighborhoodId,

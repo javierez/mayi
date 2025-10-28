@@ -81,7 +81,12 @@ export function TwoLevelLocationSelect({
   return (
     <div className="grid grid-cols-2 gap-2">
       {/* City Select */}
-      <Select value={selectedCity || "all"} onValueChange={(value) => handleCityChange(value === "all" ? "" : value)}>
+      <Select
+        value={selectedCity || "all"}
+        onValueChange={(value) =>
+          handleCityChange(value === "all" ? "" : value)
+        }
+      >
         <SelectTrigger className="h-8 text-xs" isPlaceholder={!selectedCity}>
           <SelectValue placeholder={cityPlaceholder} />
         </SelectTrigger>
@@ -98,10 +103,15 @@ export function TwoLevelLocationSelect({
       {/* Neighborhood Select */}
       <Select
         value={selectedNeighborhood || "all"}
-        onValueChange={(value) => onNeighborhoodChange(value === "all" ? "" : value)}
+        onValueChange={(value) =>
+          onNeighborhoodChange(value === "all" ? "" : value)
+        }
         disabled={!selectedCity || isLoadingNeighborhoods}
       >
-        <SelectTrigger className="h-8 text-xs" isPlaceholder={!selectedNeighborhood}>
+        <SelectTrigger
+          className="h-8 text-xs"
+          isPlaceholder={!selectedNeighborhood}
+        >
           <SelectValue
             placeholder={
               isLoadingNeighborhoods
@@ -115,7 +125,10 @@ export function TwoLevelLocationSelect({
         <SelectContent>
           <SelectItem value="all">Todos</SelectItem>
           {neighborhoods.map((n) => (
-            <SelectItem key={n.neighborhoodId.toString()} value={n.neighborhood}>
+            <SelectItem
+              key={n.neighborhoodId.toString()}
+              value={n.neighborhood}
+            >
               {n.neighborhood}
             </SelectItem>
           ))}

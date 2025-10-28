@@ -55,7 +55,8 @@ export function YouTubeLinkManager({
   onYouTubeLinkAdded,
   canEdit = true,
 }: YouTubeLinkManagerProps) {
-  const [youtubeLinks, setYoutubeLinks] = useState<PropertyImage[]>(initialYouTubeLinks);
+  const [youtubeLinks, setYoutubeLinks] =
+    useState<PropertyImage[]>(initialYouTubeLinks);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<PropertyImage | null>(null);
   const [youtubeUrl, setYoutubeUrl] = useState("");
@@ -64,7 +65,9 @@ export function YouTubeLinkManager({
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedLinks, setSelectedLinks] = useState<Set<number>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState(false);
-  const [isTogglingVisibility, setIsTogglingVisibility] = useState<Set<number>>(new Set());
+  const [isTogglingVisibility, setIsTogglingVisibility] = useState<Set<number>>(
+    new Set(),
+  );
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [isUpdatingOrder, setIsUpdatingOrder] = useState(false);
@@ -76,14 +79,20 @@ export function YouTubeLinkManager({
 
     setIsSubmitting(true);
     try {
-      const newLink = await addYouTubeLink(youtubeUrl, propertyId, referenceNumber);
+      const newLink = await addYouTubeLink(
+        youtubeUrl,
+        propertyId,
+        referenceNumber,
+      );
       setYoutubeLinks((prev) => [...prev, newLink]);
       onYouTubeLinkAdded?.(newLink);
       setYoutubeUrl("");
       setIsAddDialogOpen(false);
     } catch (error) {
       console.error("Error adding YouTube link:", error);
-      alert(error instanceof Error ? error.message : "Error adding YouTube link");
+      alert(
+        error instanceof Error ? error.message : "Error adding YouTube link",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -99,20 +108,26 @@ export function YouTubeLinkManager({
 
     setIsSubmitting(true);
     try {
-      const newLink = await addYouTubeLink(youtubeUrl, propertyId, referenceNumber);
+      const newLink = await addYouTubeLink(
+        youtubeUrl,
+        propertyId,
+        referenceNumber,
+      );
       // Delete the old link
       await deletePropertyImage(editingLink.imageKey, propertyId);
       // Update the list
       setYoutubeLinks((prev) =>
         prev.map((link) =>
-          link.propertyImageId === editingLink.propertyImageId ? newLink : link
-        )
+          link.propertyImageId === editingLink.propertyImageId ? newLink : link,
+        ),
       );
       setEditingLink(null);
       setYoutubeUrl("");
     } catch (error) {
       console.error("Error updating YouTube link:", error);
-      alert(error instanceof Error ? error.message : "Error updating YouTube link");
+      alert(
+        error instanceof Error ? error.message : "Error updating YouTube link",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -176,18 +191,21 @@ export function YouTubeLinkManager({
 
     setYoutubeLinks((prev) =>
       prev.map((lnk, i) =>
-        i === index ? { ...lnk, isActive: newActiveStatus } : lnk
-      )
+        i === index ? { ...lnk, isActive: newActiveStatus } : lnk,
+      ),
     );
 
     try {
-      await togglePropertyImageVisibility(link.propertyImageId, newActiveStatus);
+      await togglePropertyImageVisibility(
+        link.propertyImageId,
+        newActiveStatus,
+      );
     } catch (error) {
       console.error("Error toggling YouTube link visibility:", error);
       setYoutubeLinks((prev) =>
         prev.map((lnk, i) =>
-          i === index ? { ...lnk, isActive: !newActiveStatus } : lnk
-        )
+          i === index ? { ...lnk, isActive: !newActiveStatus } : lnk,
+        ),
       );
     } finally {
       setIsTogglingVisibility((prev) => {
@@ -285,7 +303,7 @@ export function YouTubeLinkManager({
   if (youtubeLinks.length === 0 && !isAddDialogOpen) {
     return (
       <div className="border-t pt-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Image
               src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/Youtube_logo.png"
@@ -294,7 +312,9 @@ export function YouTubeLinkManager({
               height={23}
               className="object-contain"
             />
-            <h3 className="text-lg font-medium text-gray-900">Vídeos de YouTube</h3>
+            <h3 className="text-lg font-medium text-gray-900">
+              Vídeos de YouTube
+            </h3>
           </div>
         </div>
 
@@ -303,15 +323,13 @@ export function YouTubeLinkManager({
             <div
               onClick={() => setIsAddDialogOpen(true)}
               className="group relative flex w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-200 bg-white transition-all duration-200 hover:bg-gray-50"
-              style={{ aspectRatio: '16 / 9' }}
+              style={{ aspectRatio: "16 / 9" }}
             >
               <Plus className="mb-1 h-5 w-5 text-gray-400 transition-colors duration-200 group-hover:text-gray-500" />
               <span className="text-sm font-medium text-gray-400 transition-colors duration-200 group-hover:text-gray-500">
                 Añadir URL
               </span>
-              <span className="text-xs text-gray-400">
-                de YouTube
-              </span>
+              <span className="text-xs text-gray-400">de YouTube</span>
             </div>
           )}
         </div>
@@ -360,7 +378,7 @@ export function YouTubeLinkManager({
 
   return (
     <div className="border-t pt-6">
-      <div className="flex items-center gap-3 mb-4">
+      <div className="mb-4 flex items-center gap-3">
         <Image
           src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/Youtube_logo.png"
           alt="YouTube"
@@ -373,7 +391,7 @@ export function YouTubeLinkManager({
 
       {/* Help text for drag and drop */}
       {youtubeLinks.length > 1 && (
-        <p className="text-center text-sm text-gray-500 mb-4">
+        <p className="mb-4 text-center text-sm text-gray-500">
           Arrastra y suelta los vídeos para reordenarlos
         </p>
       )}
@@ -392,9 +410,9 @@ export function YouTubeLinkManager({
                 dragOverIndex === idx && "scale-105 ring-2 ring-blue-400",
                 draggedIndex === idx && "scale-95 opacity-50",
                 !isSelectMode && "cursor-move",
-                !link.isActive && "opacity-50"
+                !link.isActive && "opacity-50",
               )}
-              style={{ aspectRatio: '16 / 9' }}
+              style={{ aspectRatio: "16 / 9" }}
               draggable={!isSelectMode && !isUpdatingOrder}
               onDragStart={(e) => handleDragStart(e, idx)}
               onDragEnd={handleDragEnd}
@@ -409,7 +427,7 @@ export function YouTubeLinkManager({
                   title="YouTube video player"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
-                  className="w-full h-full rounded-t-lg"
+                  className="h-full w-full rounded-t-lg"
                 />
               )}
 
@@ -428,7 +446,7 @@ export function YouTubeLinkManager({
                     className="absolute left-2 top-2 rounded-full bg-black/40 p-1.5 text-white opacity-0 transition-all duration-200 hover:bg-black/60 group-hover:opacity-100"
                     onClick={(e) => {
                       e.stopPropagation();
-                      window.open(link.imageUrl, '_blank');
+                      window.open(link.imageUrl, "_blank");
                     }}
                     aria-label="Abrir en YouTube"
                   >
@@ -470,7 +488,9 @@ export function YouTubeLinkManager({
                         void handleToggleVisibility(idx);
                       }}
                       disabled={isTogglingVisibility.has(idx)}
-                      aria-label={link.isActive ? "Ocultar vídeo" : "Mostrar vídeo"}
+                      aria-label={
+                        link.isActive ? "Ocultar vídeo" : "Mostrar vídeo"
+                      }
                     >
                       {isTogglingVisibility.has(idx) ? (
                         <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -499,15 +519,13 @@ export function YouTubeLinkManager({
           <div
             onClick={() => setIsAddDialogOpen(true)}
             className="group relative flex w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-200 bg-white transition-all duration-200 hover:bg-gray-50"
-            style={{ aspectRatio: '16 / 9' }}
+            style={{ aspectRatio: "16 / 9" }}
           >
             <Plus className="mb-1 h-5 w-5 text-gray-400 transition-colors duration-200 group-hover:text-gray-500" />
             <span className="text-sm font-medium text-gray-400 transition-colors duration-200 group-hover:text-gray-500">
               Añadir URL
             </span>
-            <span className="text-xs text-gray-400">
-              de YouTube
-            </span>
+            <span className="text-xs text-gray-400">de YouTube</span>
           </div>
         )}
       </div>

@@ -6,7 +6,11 @@ import { BasicHorizontalTemplate } from "~/components/propiedades/detail/cartel/
 
 export type TemplateStyle = "classic" | "basic";
 export type TemplateOrientation = "vertical" | "horizontal";
-export type FullTemplateStyle = "classic-vertical" | "classic-horizontal" | "basic-vertical" | "basic-horizontal";
+export type FullTemplateStyle =
+  | "classic-vertical"
+  | "classic-horizontal"
+  | "basic-vertical"
+  | "basic-horizontal";
 
 export interface AccountPreferences {
   poster_preferences?: {
@@ -40,8 +44,9 @@ export function getTemplateComponent(
     }
 
     // Extract template style from poster_preferences
-    const templateStyle = parsedPreferences.poster_preferences?.template_style ?? "classic";
-    
+    const templateStyle =
+      parsedPreferences.poster_preferences?.template_style ?? "classic";
+
     // Create full template identifier
     const fullTemplateStyle: FullTemplateStyle = `${templateStyle}-${orientation}`;
 
@@ -59,7 +64,10 @@ export function getTemplateComponent(
         return ClassicTemplate; // Safe fallback
     }
   } catch (error) {
-    console.error("Error parsing account preferences for template selection:", error);
+    console.error(
+      "Error parsing account preferences for template selection:",
+      error,
+    );
     // Fallback to classic template on error
     return ClassicTemplate;
   }
@@ -86,10 +94,14 @@ export function getTemplateStyleName(
       return `classic-${orientation}`;
     }
 
-    const templateStyle = parsedPreferences.poster_preferences?.template_style ?? "classic";
+    const templateStyle =
+      parsedPreferences.poster_preferences?.template_style ?? "classic";
     return `${templateStyle}-${orientation}` as FullTemplateStyle;
   } catch (error) {
-    console.error("Error parsing account preferences for template style:", error);
+    console.error(
+      "Error parsing account preferences for template style:",
+      error,
+    );
     return `classic-${orientation}` as FullTemplateStyle;
   }
 }

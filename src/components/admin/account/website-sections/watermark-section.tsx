@@ -12,7 +12,13 @@ import {
 } from "~/components/ui/form";
 import { Switch } from "~/components/ui/switch";
 import { Slider } from "~/components/ui/slider";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import type { WatermarkSectionProps } from "../types/website-sections";
 
@@ -24,9 +30,7 @@ export function WatermarkSection({
   // Watch for form changes to detect unsaved changes
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
-      if (
-        name?.startsWith("watermarkProps.")
-      ) {
+      if (name?.startsWith("watermarkProps.")) {
         onUnsavedChanges(true);
       }
     });
@@ -63,9 +67,12 @@ export function WatermarkSection({
         {/* Enable/Disable Watermark */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Estado de la Marca de Agua</CardTitle>
+            <CardTitle className="text-lg">
+              Estado de la Marca de Agua
+            </CardTitle>
             <CardDescription>
-              Activa o desactiva la aplicación automática de marca de agua a las imágenes
+              Activa o desactiva la aplicación automática de marca de agua a las
+              imágenes
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -101,14 +108,18 @@ export function WatermarkSection({
               <div className="rounded-lg border-2 border-dashed border-yellow-300 bg-yellow-50 p-4">
                 <div className="flex">
                   <div className="flex-shrink-0">
-                    <ImageIcon className="h-5 w-5 text-yellow-400" aria-hidden="true" />
+                    <ImageIcon
+                      className="h-5 w-5 text-yellow-400"
+                      aria-hidden="true"
+                    />
                   </div>
                   <div className="ml-3">
                     <h3 className="text-sm font-medium text-yellow-800">
                       Logo no configurado
                     </h3>
                     <p className="mt-1 text-sm text-yellow-700">
-                      Configura tu logo en la sección &quot;Marca&quot; para usarlo como marca de agua.
+                      Configura tu logo en la sección &quot;Marca&quot; para
+                      usarlo como marca de agua.
                     </p>
                   </div>
                 </div>
@@ -121,7 +132,9 @@ export function WatermarkSection({
         {watermarkEnabled && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Posición de la Marca de Agua</CardTitle>
+              <CardTitle className="text-lg">
+                Posición de la Marca de Agua
+              </CardTitle>
               <CardDescription>
                 Selecciona dónde aparecerá la marca de agua en las imágenes
               </CardDescription>
@@ -133,7 +146,7 @@ export function WatermarkSection({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Posición</FormLabel>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-2">
+                    <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       {positionOptions.map((option) => (
                         <label
                           key={option.value}
@@ -175,9 +188,12 @@ export function WatermarkSection({
         {watermarkEnabled && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Tamaño de la Marca de Agua</CardTitle>
+              <CardTitle className="text-lg">
+                Tamaño de la Marca de Agua
+              </CardTitle>
               <CardDescription>
-                Ajusta el tamaño de la marca de agua como porcentaje del ancho de la imagen
+                Ajusta el tamaño de la marca de agua como porcentaje del ancho
+                de la imagen
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -187,7 +203,9 @@ export function WatermarkSection({
                 render={({ field }) => (
                   <FormItem>
                     <div className="flex items-center justify-between">
-                      <FormLabel>Tamaño ({field.value || 30}% del ancho de la imagen)</FormLabel>
+                      <FormLabel>
+                        Tamaño ({field.value || 30}% del ancho de la imagen)
+                      </FormLabel>
                       <Badge variant="outline" className="text-xs">
                         {field.value || 30}%
                       </Badge>
@@ -208,7 +226,8 @@ export function WatermarkSection({
                       <span>50% (Grande)</span>
                     </div>
                     <FormDescription>
-                      Un tamaño entre 20-40% es recomendado para la mayoría de imágenes
+                      Un tamaño entre 20-40% es recomendado para la mayoría de
+                      imágenes
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -223,7 +242,10 @@ export function WatermarkSection({
           <CardContent className="pt-6">
             <div className="flex">
               <div className="flex-shrink-0">
-                <ImageIcon className="h-5 w-5 text-blue-400" aria-hidden="true" />
+                <ImageIcon
+                  className="h-5 w-5 text-blue-400"
+                  aria-hidden="true"
+                />
               </div>
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-blue-800">
@@ -232,16 +254,20 @@ export function WatermarkSection({
                 <div className="mt-2 text-sm text-blue-700">
                   <ul className="list-disc space-y-1 pl-5">
                     <li>
-                      Las marcas de agua se aplican automáticamente a las imágenes cuando se publican en portales
+                      Las marcas de agua se aplican automáticamente a las
+                      imágenes cuando se publican en portales
                     </li>
                     <li>
-                      Se recomienda usar un logo en formato PNG con fondo transparente
+                      Se recomienda usar un logo en formato PNG con fondo
+                      transparente
                     </li>
                     <li>
-                      La marca de agua se aplicará con 60% de transparencia para mantener la calidad de la imagen
+                      La marca de agua se aplicará con 60% de transparencia para
+                      mantener la calidad de la imagen
                     </li>
                     <li>
-                      El tamaño se ajusta automáticamente según las dimensiones de cada imagen
+                      El tamaño se ajusta automáticamente según las dimensiones
+                      de cada imagen
                     </li>
                   </ul>
                 </div>

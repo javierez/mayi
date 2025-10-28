@@ -67,8 +67,8 @@ export async function getCommentsByPropertyId(
           eq(comments.propertyId, propertyId),
           eq(comments.isDeleted, false),
           isNull(comments.parentId),
-          eq(properties.accountId, BigInt(accountId))
-        )
+          eq(properties.accountId, BigInt(accountId)),
+        ),
       )
       .orderBy(desc(comments.createdAt));
 
@@ -125,8 +125,8 @@ export async function getCommentsByListingId(
           eq(comments.listingId, listingId),
           eq(comments.isDeleted, false),
           isNull(comments.parentId),
-          eq(properties.accountId, BigInt(accountId))
-        )
+          eq(properties.accountId, BigInt(accountId)),
+        ),
       )
       .orderBy(desc(comments.createdAt));
 
@@ -181,8 +181,8 @@ export async function getCommentById(
         and(
           eq(comments.commentId, commentId),
           eq(comments.isDeleted, false),
-          eq(properties.accountId, BigInt(accountId))
-        )
+          eq(properties.accountId, BigInt(accountId)),
+        ),
       );
 
     if (!comment) {
@@ -238,8 +238,8 @@ export async function getCommentReplies(
         and(
           eq(comments.parentId, parentCommentId),
           eq(comments.isDeleted, false),
-          eq(properties.accountId, BigInt(accountId))
-        )
+          eq(properties.accountId, BigInt(accountId)),
+        ),
       )
       .orderBy(comments.createdAt); // Replies in chronological order
 
@@ -269,8 +269,8 @@ export async function canUserModifyComment(
         and(
           eq(comments.commentId, commentId),
           eq(comments.isDeleted, false),
-          eq(properties.accountId, BigInt(accountId))
-        )
+          eq(properties.accountId, BigInt(accountId)),
+        ),
       );
 
     return comment?.userId === userId;

@@ -346,7 +346,6 @@ export function EnergyCertificatePage({
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-
       <Card
         className={cn(
           "relative border-0 bg-transparent p-6 shadow-none transition-all duration-500 ease-out",
@@ -398,7 +397,9 @@ export function EnergyCertificatePage({
                   <div className="pointer-events-none absolute inset-0 bg-black/5 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                     <div className="pointer-events-auto absolute bottom-3 right-3 flex gap-2">
                       <button
-                        onClick={() => window.open(uploadedDocumentUrl, "_blank")}
+                        onClick={() =>
+                          window.open(uploadedDocumentUrl, "_blank")
+                        }
                         className="rounded-full bg-white/80 p-2.5 text-gray-700 shadow-lg backdrop-blur-sm transition-all hover:scale-110 hover:bg-white"
                         title="Abrir en nueva pestaña"
                       >
@@ -446,7 +447,9 @@ export function EnergyCertificatePage({
         {!hasUploadedCertificate && (
           <div className="mb-8 flex justify-center gap-4">
             <Button
-              variant={certificateStatus === "en_tramite" ? "default" : "outline"}
+              variant={
+                certificateStatus === "en_tramite" ? "default" : "outline"
+              }
               onClick={() => handleStatusChange("en_tramite")}
             >
               En trámite

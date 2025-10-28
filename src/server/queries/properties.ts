@@ -348,7 +348,7 @@ export async function getPropertyImages(propertyId: number) {
           eq(propertyImages.propertyId, BigInt(propertyId)),
           eq(propertyImages.isActive, true),
           // Only get actual images, not videos, YouTube links, or virtual tours
-          sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`
+          sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`,
         ),
       );
     return images;

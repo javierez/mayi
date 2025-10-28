@@ -1,10 +1,10 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getSecureSession } from "~/lib/dal";
-import { 
-  saveCartelConfigurationWithAuth, 
+import {
+  saveCartelConfigurationWithAuth,
   getCartelConfigurationsWithAuth,
-  getDefaultCartelConfigurationWithAuth 
+  getDefaultCartelConfigurationWithAuth,
 } from "~/server/queries/cartel-configurations";
 import type { SaveConfigurationRequest } from "~/types/template-data";
 
@@ -13,31 +13,25 @@ export async function POST(request: NextRequest) {
   try {
     // Use optimized DAL function for session retrieval
     const session = await getSecureSession();
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const body = (await request.json()) as SaveConfigurationRequest;
 
-    const body = await request.json() as SaveConfigurationRequest;
-    
     // Validate required fields
     if (!body.name || !body.templateConfig) {
       return NextResponse.json(
         { error: "Name and template configuration are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const result = await saveCartelConfigurationWithAuth(
-      body
-    );
+    const result = await saveCartelConfigurationWithAuth(body);
 
     if (!result.success) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
     // Convert BigInt values to strings for JSON serialization
@@ -56,7 +50,7 @@ export async function POST(request: NextRequest) {
     console.error("Error saving cartel configuration:", error);
     return NextResponse.json(
       { error: "Failed to save configuration" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -66,11 +60,10 @@ export async function GET(request: NextRequest) {
   try {
     // Use optimized DAL function for session retrieval
     const session = await getSecureSession();
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
 
     const { searchParams } = new URL(request.url);
     const propertyId = searchParams.get("propertyId") ?? undefined;
@@ -81,10 +74,7 @@ export async function GET(request: NextRequest) {
       const result = await getDefaultCartelConfigurationWithAuth();
 
       if (!result.success) {
-        return NextResponse.json(
-          { error: result.error },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: result.error }, { status: 404 });
       }
 
       // Convert BigInt values to strings for JSON serialization
@@ -101,19 +91,14 @@ export async function GET(request: NextRequest) {
       });
     } else {
       // Get all configurations
-      const result = await getCartelConfigurationsWithAuth(
-        propertyId
-      );
+      const result = await getCartelConfigurationsWithAuth(propertyId);
 
       if (!result.success) {
-        return NextResponse.json(
-          { error: result.error },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: result.error }, { status: 400 });
       }
 
       // Convert BigInt values to strings for JSON serialization
-      const serializedData = result.data!.map(config => ({
+      const serializedData = result.data!.map((config) => ({
         ...config,
         id: config.id.toString(),
         accountId: config.accountId.toString(),
@@ -129,7 +114,7 @@ export async function GET(request: NextRequest) {
     console.error("Error fetching cartel configurations:", error);
     return NextResponse.json(
       { error: "Failed to fetch configurations" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -62,7 +62,7 @@ export default function FourthPage({
   const { state, updateFormData } = useFormContext();
   const searchParams = useSearchParams();
   const method = searchParams?.get("method");
-  
+
   const propertyType = state.formData.propertyType ?? "";
 
   // Get current form data from context - matches CompleteFormData interface
@@ -71,7 +71,9 @@ export default function FourthPage({
     hasGarage: state.formData.hasGarage ?? false,
     hasStorageRoom: state.formData.hasStorageRoom ?? false,
     heating: state.formData.heating ?? "",
-    airConditioning: Array.isArray(state.formData.airConditioning) ? state.formData.airConditioning : [],
+    airConditioning: Array.isArray(state.formData.airConditioning)
+      ? state.formData.airConditioning
+      : [],
     isFurnished: state.formData.isFurnished ?? false,
     furnitureQuality: state.formData.furnitureQuality ?? "",
   };
@@ -235,7 +237,9 @@ export default function FourthPage({
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => updateField("hasStorageRoom", !formData.hasStorageRoom)}
+            onClick={() =>
+              updateField("hasStorageRoom", !formData.hasStorageRoom)
+            }
             className={`relative w-full overflow-hidden rounded-lg p-3 transition-all duration-200 ${
               formData.hasStorageRoom
                 ? "border border-gray-900 bg-gray-900 text-white shadow-sm"
@@ -343,10 +347,7 @@ export default function FourthPage({
                     </SelectTrigger>
                     <SelectContent>
                       {heatingOptions.map((option) => (
-                        <SelectItem
-                          key={option.id}
-                          value={option.label}
-                        >
+                        <SelectItem key={option.id} value={option.label}>
                           {option.label}
                         </SelectItem>
                       ))}
@@ -421,7 +422,9 @@ export default function FourthPage({
                   </Label>
                   <Select
                     value={formData.airConditioning[0] ?? ""}
-                    onValueChange={(value) => updateField("airConditioning", [value])}
+                    onValueChange={(value) =>
+                      updateField("airConditioning", [value])
+                    }
                   >
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="Seleccionar tipo" />
@@ -510,7 +513,9 @@ export default function FourthPage({
                         key={option.value}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => updateField("furnitureQuality", option.value)}
+                        onClick={() =>
+                          updateField("furnitureQuality", option.value)
+                        }
                         className={`relative w-full overflow-hidden rounded-md p-2 text-xs transition-all duration-200 ${
                           formData.furnitureQuality === option.value
                             ? "border border-gray-900 bg-gray-900 text-white shadow-sm"

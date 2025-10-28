@@ -40,10 +40,7 @@ export default function DescriptionPage({
   };
 
   // Update form data helper
-  const updateField = (
-    field: keyof DescriptionPageFormData,
-    value: string,
-  ) => {
+  const updateField = (field: keyof DescriptionPageFormData, value: string) => {
     updateFormData({ [field]: value });
   };
 
@@ -77,7 +74,6 @@ export default function DescriptionPage({
     // Navigate IMMEDIATELY - no saves, completely instant!
     onNext();
   };
-
 
   return (
     <motion.div

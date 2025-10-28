@@ -218,9 +218,7 @@ export async function buildFotocasaPayload(
 ): Promise<{ payload: FotocasaProperty; watermarkedKeys: string[] }> {
   try {
     // Get listing details and property images
-    const listing = await getListingDetailsWithAuth(
-      listingId,
-    );
+    const listing = await getListingDetailsWithAuth(listingId);
     const images = await getPropertyImages(BigInt(listing.propertyId));
 
     // NEW: Get account watermark configuration and process images if needed
@@ -335,9 +333,19 @@ export async function buildFotocasaPayload(
 
     // Fetch additional media types for Fotocasa
     const videos = await getPropertyVideos(BigInt(listing.propertyId), true);
-    const youtubeLinks = await getPropertyYouTubeLinks(BigInt(listing.propertyId), true);
-    const virtualTours = await getPropertyVirtualTours(BigInt(listing.propertyId), true);
-    const blueprints = await getPropertyDocuments(BigInt(listing.propertyId), 'blueprint', true);
+    const youtubeLinks = await getPropertyYouTubeLinks(
+      BigInt(listing.propertyId),
+      true,
+    );
+    const virtualTours = await getPropertyVirtualTours(
+      BigInt(listing.propertyId),
+      true,
+    );
+    const blueprints = await getPropertyDocuments(
+      BigInt(listing.propertyId),
+      "blueprint",
+      true,
+    );
 
     console.log("Fetched additional media for Fotocasa:", {
       videosCount: videos.length,
@@ -519,10 +527,14 @@ export async function buildFotocasaPayload(
     }
 
     // Home Automation (FeatureId: 142)
-    if ('homeAutomation' in listing && typeof (listing as Record<string, unknown>).homeAutomation === 'boolean') {
+    if (
+      "homeAutomation" in listing &&
+      typeof (listing as Record<string, unknown>).homeAutomation === "boolean"
+    ) {
       propertyFeatures.push({
         FeatureId: 142,
-        BoolValue: (listing as Record<string, unknown>).homeAutomation as boolean,
+        BoolValue: (listing as Record<string, unknown>)
+          .homeAutomation as boolean,
       });
     }
 
@@ -634,7 +646,10 @@ export async function buildFotocasaPayload(
     }
 
     // Security Door (FeatureId: 294)
-    if ('securityDoor' in listing && typeof (listing as Record<string, unknown>).securityDoor === 'boolean') {
+    if (
+      "securityDoor" in listing &&
+      typeof (listing as Record<string, unknown>).securityDoor === "boolean"
+    ) {
       propertyFeatures.push({
         FeatureId: 294,
         BoolValue: (listing as Record<string, unknown>).securityDoor as boolean,
@@ -642,7 +657,10 @@ export async function buildFotocasaPayload(
     }
 
     // Alarm (FeatureId: 235)
-    if ('alarm' in listing && typeof (listing as Record<string, unknown>).alarm === 'boolean') {
+    if (
+      "alarm" in listing &&
+      typeof (listing as Record<string, unknown>).alarm === "boolean"
+    ) {
       propertyFeatures.push({
         FeatureId: 235,
         BoolValue: (listing as Record<string, unknown>).alarm as boolean,
@@ -650,7 +668,10 @@ export async function buildFotocasaPayload(
     }
 
     // Private Pool (FeatureId: 25)
-    if ('privatePool' in listing && typeof (listing as Record<string, unknown>).privatePool === 'boolean') {
+    if (
+      "privatePool" in listing &&
+      typeof (listing as Record<string, unknown>).privatePool === "boolean"
+    ) {
       propertyFeatures.push({
         FeatureId: 25,
         BoolValue: (listing as Record<string, unknown>).privatePool as boolean,
@@ -658,10 +679,14 @@ export async function buildFotocasaPayload(
     }
 
     // Community Pool (FeatureId: 300)
-    if ('communityPool' in listing && typeof (listing as Record<string, unknown>).communityPool === 'boolean') {
+    if (
+      "communityPool" in listing &&
+      typeof (listing as Record<string, unknown>).communityPool === "boolean"
+    ) {
       propertyFeatures.push({
         FeatureId: 300,
-        BoolValue: (listing as Record<string, unknown>).communityPool as boolean,
+        BoolValue: (listing as Record<string, unknown>)
+          .communityPool as boolean,
       });
     }
 
@@ -690,7 +715,7 @@ export async function buildFotocasaPayload(
     }
 
     // Laundry Room (FeatureId: 257)
-    if ('hasLaundryRoom' in listing && listing.hasLaundryRoom !== null) {
+    if ("hasLaundryRoom" in listing && listing.hasLaundryRoom !== null) {
       propertyFeatures.push({
         FeatureId: 257,
         BoolValue: listing.hasLaundryRoom ?? false,
@@ -744,7 +769,10 @@ export async function buildFotocasaPayload(
     // --- QUICK WIN ADDITIONS ---
 
     // Terrace (FeatureId: 27)
-    if ('terrace' in listing && typeof (listing as Record<string, unknown>).terrace === 'boolean') {
+    if (
+      "terrace" in listing &&
+      typeof (listing as Record<string, unknown>).terrace === "boolean"
+    ) {
       propertyFeatures.push({
         FeatureId: 27,
         BoolValue: (listing as Record<string, unknown>).terrace as boolean,
@@ -752,7 +780,10 @@ export async function buildFotocasaPayload(
     }
 
     // Terrace surface (FeatureId: 62)
-    if ('terraceSize' in listing && (listing as Record<string, unknown>).terraceSize) {
+    if (
+      "terraceSize" in listing &&
+      (listing as Record<string, unknown>).terraceSize
+    ) {
       propertyFeatures.push({
         FeatureId: 62,
         DecimalValue: Number((listing as Record<string, unknown>).terraceSize),
@@ -760,7 +791,10 @@ export async function buildFotocasaPayload(
     }
 
     // Has heating (FeatureId: 29)
-    if ('hasHeating' in listing && typeof (listing as Record<string, unknown>).hasHeating === 'boolean') {
+    if (
+      "hasHeating" in listing &&
+      typeof (listing as Record<string, unknown>).hasHeating === "boolean"
+    ) {
       propertyFeatures.push({
         FeatureId: 29,
         BoolValue: (listing as Record<string, unknown>).hasHeating as boolean,
@@ -768,7 +802,10 @@ export async function buildFotocasaPayload(
     }
 
     // Sauna (FeatureId: 277)
-    if ('sauna' in listing && typeof (listing as Record<string, unknown>).sauna === 'boolean') {
+    if (
+      "sauna" in listing &&
+      typeof (listing as Record<string, unknown>).sauna === "boolean"
+    ) {
       propertyFeatures.push({
         FeatureId: 277,
         BoolValue: (listing as Record<string, unknown>).sauna as boolean,
@@ -776,8 +813,13 @@ export async function buildFotocasaPayload(
     }
 
     // Balcony (FeatureId: 297) - convert balconyCount to boolean
-    if ('balconyCount' in listing && (listing as Record<string, unknown>).balconyCount !== null) {
-      const balconyCount = Number((listing as Record<string, unknown>).balconyCount);
+    if (
+      "balconyCount" in listing &&
+      (listing as Record<string, unknown>).balconyCount !== null
+    ) {
+      const balconyCount = Number(
+        (listing as Record<string, unknown>).balconyCount,
+      );
       propertyFeatures.push({
         FeatureId: 297,
         BoolValue: balconyCount > 0,
@@ -785,18 +827,29 @@ export async function buildFotocasaPayload(
     }
 
     // Land area (FeatureId: 69) - using builtSurfaceArea
-    if ('builtSurfaceArea' in listing && (listing as Record<string, unknown>).builtSurfaceArea) {
+    if (
+      "builtSurfaceArea" in listing &&
+      (listing as Record<string, unknown>).builtSurfaceArea
+    ) {
       propertyFeatures.push({
         FeatureId: 69,
-        DecimalValue: Number((listing as Record<string, unknown>).builtSurfaceArea),
+        DecimalValue: Number(
+          (listing as Record<string, unknown>).builtSurfaceArea,
+        ),
       });
     }
 
     // Air conditioner (FeatureId: 254) - convert airConditioningType to boolean
-    if ('airConditioningType' in listing) {
-      const airCondType = (listing as Record<string, unknown>).airConditioningType;
+    if ("airConditioningType" in listing) {
+      const airCondType = (listing as Record<string, unknown>)
+        .airConditioningType;
       // Convert airCondType to boolean - it's considered true if it's not null/undefined and has a non-empty string value
-      const hasAirConditioning = airCondType !== null && airCondType !== undefined && (typeof airCondType === 'string' ? airCondType.trim() !== '' : Boolean(airCondType));
+      const hasAirConditioning =
+        airCondType !== null &&
+        airCondType !== undefined &&
+        (typeof airCondType === "string"
+          ? airCondType.trim() !== ""
+          : Boolean(airCondType));
       propertyFeatures.push({
         FeatureId: 254,
         BoolValue: hasAirConditioning,
@@ -804,7 +857,10 @@ export async function buildFotocasaPayload(
     }
 
     // Surveillance system/Alarm (FeatureId: 272) - using alarm field
-    if ('alarm' in listing && typeof (listing as Record<string, unknown>).alarm === 'boolean') {
+    if (
+      "alarm" in listing &&
+      typeof (listing as Record<string, unknown>).alarm === "boolean"
+    ) {
       propertyFeatures.push({
         FeatureId: 272,
         BoolValue: (listing as Record<string, unknown>).alarm as boolean,
@@ -820,11 +876,16 @@ export async function buildFotocasaPayload(
     }
 
     // Parquet (FeatureId: 290) - check if mainFloorType is parquet
-    if ('mainFloorType' in listing && (listing as Record<string, unknown>).mainFloorType) {
-      const floorType = String((listing as Record<string, unknown>).mainFloorType).toLowerCase();
+    if (
+      "mainFloorType" in listing &&
+      (listing as Record<string, unknown>).mainFloorType
+    ) {
+      const floorType = String(
+        (listing as Record<string, unknown>).mainFloorType,
+      ).toLowerCase();
       propertyFeatures.push({
         FeatureId: 290,
-        BoolValue: floorType === 'parquet',
+        BoolValue: floorType === "parquet",
       });
     }
 
@@ -905,13 +966,13 @@ export async function buildFotocasaPayload(
     // Map Spanish heating types to Fotocasa IDs
     const heatingTypeMapping: Record<string, number> = {
       "gas natural": 1,
-      "eléctrico": 2,
-      "electrico": 2, // Handle both with and without accent
-      "gasóleo": 3,
-      "gasoleo": 3,
-      "butano": 4,
-      "propano": 5,
-      "solar": 6,
+      eléctrico: 2,
+      electrico: 2, // Handle both with and without accent
+      gasóleo: 3,
+      gasoleo: 3,
+      butano: 4,
+      propano: 5,
+      solar: 6,
     };
 
     if (listingWithEnergy.heatingType) {
@@ -941,7 +1002,9 @@ export async function buildFotocasaPayload(
         hotWaterId = Number(listingWithEnergy.hotWaterType);
       } else {
         // Map Spanish string to ID using same mapping as heating
-        const hotWaterKey = String(listingWithEnergy.hotWaterType).toLowerCase();
+        const hotWaterKey = String(
+          listingWithEnergy.hotWaterType,
+        ).toLowerCase();
         hotWaterId = heatingTypeMapping[hotWaterKey];
       }
 
@@ -988,7 +1051,12 @@ export async function buildFotocasaPayload(
       .map((tour, index) => ({
         TypeId: 7, // Virtual tour
         Url: tour.imageUrl, // Matterport/Kuula/etc URL
-        SortingId: imageDocuments.length + videoDocuments.length + youtubeDocuments.length + index + 1,
+        SortingId:
+          imageDocuments.length +
+          videoDocuments.length +
+          youtubeDocuments.length +
+          index +
+          1,
       }));
 
     // Build blueprint documents (TypeId: 23)
@@ -998,7 +1066,13 @@ export async function buildFotocasaPayload(
       .map((blueprint, index) => ({
         TypeId: 23, // Blueprint
         Url: blueprint.fileUrl, // S3 PDF/image URL
-        SortingId: imageDocuments.length + videoDocuments.length + youtubeDocuments.length + virtualTourDocuments.length + index + 1,
+        SortingId:
+          imageDocuments.length +
+          videoDocuments.length +
+          youtubeDocuments.length +
+          virtualTourDocuments.length +
+          index +
+          1,
       }));
 
     // Combine all media types into single PropertyDocument array
@@ -1103,7 +1177,9 @@ export async function publishToFotocasa(
     // Get account-specific API key
     const apiKey = await getAccountFotocasaApiKey(accountId);
     if (!apiKey) {
-      throw new Error(`No Fotocasa API key configured for account ${accountId}. Please configure the API key in portal settings.`);
+      throw new Error(
+        `No Fotocasa API key configured for account ${accountId}. Please configure the API key in portal settings.`,
+      );
     }
     const FOTOCASA_API_KEY = apiKey;
 
@@ -1147,9 +1223,14 @@ export async function publishToFotocasa(
       // Update database to set fotocasa = true ONLY on successful API response
       try {
         await updateListing(listingId, Number(accountId), { fotocasa: true });
-        console.log(`Successfully updated database: listings.fotocasa = true for listing ${listingId}`);
+        console.log(
+          `Successfully updated database: listings.fotocasa = true for listing ${listingId}`,
+        );
       } catch (dbError) {
-        console.error("Error updating database after successful Fotocasa publish:", dbError);
+        console.error(
+          "Error updating database after successful Fotocasa publish:",
+          dbError,
+        );
         // Log but don't fail the operation - the ad is already published on Fotocasa
       }
 
@@ -1206,7 +1287,13 @@ export async function publishToFotocasa(
       error instanceof Error ? error.message : "Unknown error";
 
     // Log the exception
-    await logPublishRequest(listingId, undefined, undefined, false, errorMessage);
+    await logPublishRequest(
+      listingId,
+      undefined,
+      undefined,
+      false,
+      errorMessage,
+    );
 
     return {
       success: false,
@@ -1236,7 +1323,9 @@ export async function updateFotocasa(
     // Get account-specific API key
     const apiKey = await getAccountFotocasaApiKey(accountId);
     if (!apiKey) {
-      throw new Error(`No Fotocasa API key configured for account ${accountId}. Please configure the API key in portal settings.`);
+      throw new Error(
+        `No Fotocasa API key configured for account ${accountId}. Please configure the API key in portal settings.`,
+      );
     }
     const FOTOCASA_API_KEY = apiKey;
 
@@ -1248,7 +1337,10 @@ export async function updateFotocasa(
     );
 
     // Log the payload for debugging
-    console.log("Fotocasa PUT Update Payload:", JSON.stringify(payload, null, 2));
+    console.log(
+      "Fotocasa PUT Update Payload:",
+      JSON.stringify(payload, null, 2),
+    );
     console.log(`Updating listing ${listingId} on Fotocasa`);
 
     // Make the PUT API call to Fotocasa
@@ -1283,9 +1375,14 @@ export async function updateFotocasa(
       // (It should already be true, but this ensures consistency)
       try {
         await updateListing(listingId, Number(accountId), { fotocasa: true });
-        console.log(`Successfully confirmed database: listings.fotocasa = true for listing ${listingId}`);
+        console.log(
+          `Successfully confirmed database: listings.fotocasa = true for listing ${listingId}`,
+        );
       } catch (dbError) {
-        console.error("Error confirming database after successful Fotocasa update:", dbError);
+        console.error(
+          "Error confirming database after successful Fotocasa update:",
+          dbError,
+        );
         // Log but don't fail the operation - the ad is already updated on Fotocasa
       }
 
@@ -1342,7 +1439,13 @@ export async function updateFotocasa(
       error instanceof Error ? error.message : "Unknown error";
 
     // Log the exception
-    await logUpdateRequest(listingId, undefined, undefined, false, errorMessage);
+    await logUpdateRequest(
+      listingId,
+      undefined,
+      undefined,
+      false,
+      errorMessage,
+    );
 
     return {
       success: false,
@@ -1365,7 +1468,9 @@ export async function deleteFromFotocasa(
     // Get account-specific API key
     const apiKey = await getAccountFotocasaApiKey(accountId);
     if (!apiKey) {
-      throw new Error(`No Fotocasa API key configured for account ${accountId}. Please configure the API key in portal settings.`);
+      throw new Error(
+        `No Fotocasa API key configured for account ${accountId}. Please configure the API key in portal settings.`,
+      );
     }
     const FOTOCASA_API_KEY = apiKey;
 
@@ -1406,9 +1511,14 @@ export async function deleteFromFotocasa(
       // Update database to set fotocasa = false ONLY on successful API response
       try {
         await updateListing(listingId, Number(accountId), { fotocasa: false });
-        console.log(`Successfully updated database: listings.fotocasa = false for listing ${listingId}`);
+        console.log(
+          `Successfully updated database: listings.fotocasa = false for listing ${listingId}`,
+        );
       } catch (dbError) {
-        console.error("Error updating database after successful Fotocasa delete:", dbError);
+        console.error(
+          "Error updating database after successful Fotocasa delete:",
+          dbError,
+        );
         // Log but don't fail the operation - the ad is already deleted from Fotocasa
       }
 

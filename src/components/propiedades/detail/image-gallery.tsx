@@ -58,7 +58,9 @@ export function ImageGallery({
   const [selectedImages, setSelectedImages] = useState<Set<number>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isTogglingVisibility, setIsTogglingVisibility] = useState<Set<number>>(new Set());
+  const [isTogglingVisibility, setIsTogglingVisibility] = useState<Set<number>>(
+    new Set(),
+  );
 
   // Drag and drop state
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -66,7 +68,6 @@ export function ImageGallery({
   const [isUpdatingOrder, setIsUpdatingOrder] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [pendingImages, setPendingImages] = useState<PropertyImage[]>([]);
-
 
   // State for managing image sources with fallbacks
   const [imageSources, setImageSources] = useState<Record<number, string>>({});
@@ -87,7 +88,6 @@ export function ImageGallery({
     });
     setImageSources(sources);
   }, [initialImages]);
-
 
   const handleImageError = (index: number) => {
     console.log("Image failed to load:", imageSources[index]);
@@ -154,12 +154,14 @@ export function ImageGallery({
 
   const handleBulkDelete = async () => {
     const selectedImagesList = Array.from(selectedImages);
-    const imagesToDelete = selectedImagesList.map(index => images[index]).filter((img): img is PropertyImage => img !== undefined);
-    
+    const imagesToDelete = selectedImagesList
+      .map((index) => images[index])
+      .filter((img): img is PropertyImage => img !== undefined);
+
     // Optimistic update: immediately remove from UI
     const newImages = images.filter((_, i) => !selectedImages.has(i));
     setImages(newImages);
-    
+
     // Update imageSources to match new indices
     const newImageSources: Record<number, string> = {};
     newImages.forEach((image, idx) => {
@@ -168,7 +170,7 @@ export function ImageGallery({
       }
     });
     setImageSources(newImageSources);
-    
+
     // Clear selection and exit select mode immediately
     setSelectedImages(new Set());
     setIsSelectMode(false);
@@ -339,19 +341,22 @@ export function ImageGallery({
     // Optimistic update
     setImages((prev) =>
       prev.map((img, i) =>
-        i === index ? { ...img, isActive: newActiveStatus } : img
-      )
+        i === index ? { ...img, isActive: newActiveStatus } : img,
+      ),
     );
 
     try {
-      await togglePropertyImageVisibility(image.propertyImageId, newActiveStatus);
+      await togglePropertyImageVisibility(
+        image.propertyImageId,
+        newActiveStatus,
+      );
     } catch (error) {
       console.error("Error toggling image visibility:", error);
       // Revert optimistic update
       setImages((prev) =>
         prev.map((img, i) =>
-          i === index ? { ...img, isActive: !newActiveStatus } : img
-        )
+          i === index ? { ...img, isActive: !newActiveStatus } : img,
+        ),
       );
       // TODO: Show error toast
     } finally {
@@ -475,7 +480,6 @@ export function ImageGallery({
     setImageSources(originalImageSources);
   };
 
-
   return (
     <div className="space-y-4">
       {/* Help text for drag and drop */}
@@ -519,7 +523,7 @@ export function ImageGallery({
                 height={200}
                 className={cn(
                   "h-40 w-full object-cover transition-opacity duration-200",
-                  !image.isActive && "opacity-50"
+                  !image.isActive && "opacity-50",
                 )}
                 onError={() => handleImageError(idx)}
                 onLoad={() => handleImageLoad(idx)}
@@ -583,7 +587,9 @@ export function ImageGallery({
                       void handleToggleVisibility(idx);
                     }}
                     disabled={isTogglingVisibility.has(idx)}
-                    aria-label={image.isActive ? "Ocultar imagen" : "Mostrar imagen"}
+                    aria-label={
+                      image.isActive ? "Ocultar imagen" : "Mostrar imagen"
+                    }
                   >
                     {isTogglingVisibility.has(idx) ? (
                       <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />

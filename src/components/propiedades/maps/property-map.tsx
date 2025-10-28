@@ -69,7 +69,7 @@ export const PropertyMap = React.memo(function PropertyMap({
         listing.latitude &&
         listing.longitude &&
         !isNaN(parseFloat(listing.latitude)) &&
-        !isNaN(parseFloat(listing.longitude))
+        !isNaN(parseFloat(listing.longitude)),
     );
 
     if (validListings.length === 0) {
@@ -125,7 +125,7 @@ export const PropertyMap = React.memo(function PropertyMap({
           }
         }
         google.maps.event.removeListener(listener);
-      }
+      },
     );
   }, [isLoaded, listings]);
 
@@ -142,7 +142,7 @@ export const PropertyMap = React.memo(function PropertyMap({
       listing.latitude &&
       listing.longitude &&
       !isNaN(parseFloat(listing.latitude)) &&
-      !isNaN(parseFloat(listing.longitude))
+      !isNaN(parseFloat(listing.longitude)),
   ).length;
 
   return (
@@ -155,8 +155,7 @@ export const PropertyMap = React.memo(function PropertyMap({
       <p className="text-sm text-muted-foreground">
         Mostrando {validListingsCount} propiedades en el mapa
         {validListingsCount < listings.length &&
-          ` (${listings.length - validListingsCount} sin coordenadas)`
-        }
+          ` (${listings.length - validListingsCount} sin coordenadas)`}
       </p>
     </div>
   );

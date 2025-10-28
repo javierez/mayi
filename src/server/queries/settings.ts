@@ -221,7 +221,9 @@ export async function getAccountIdForUser(
 // Google Calendar Integration Settings
 export async function getGoogleCalendarSyncDirection(
   userId: string,
-): Promise<"bidirectional" | "vesta_to_google" | "google_to_vesta" | "none" | null> {
+): Promise<
+  "bidirectional" | "vesta_to_google" | "google_to_vesta" | "none" | null
+> {
   try {
     const [integration] = await db
       .select({
@@ -237,7 +239,13 @@ export async function getGoogleCalendarSyncDirection(
       )
       .limit(1);
 
-    return (integration?.syncDirection as "bidirectional" | "vesta_to_google" | "google_to_vesta" | "none") ?? null;
+    return (
+      (integration?.syncDirection as
+        | "bidirectional"
+        | "vesta_to_google"
+        | "google_to_vesta"
+        | "none") ?? null
+    );
   } catch (error) {
     console.error("Error getting Google Calendar sync direction:", error);
     throw new Error("Failed to get sync direction");
@@ -246,7 +254,11 @@ export async function getGoogleCalendarSyncDirection(
 
 export async function updateGoogleCalendarSyncDirection(
   userId: string,
-  syncDirection: "bidirectional" | "vesta_to_google" | "google_to_vesta" | "none",
+  syncDirection:
+    | "bidirectional"
+    | "vesta_to_google"
+    | "google_to_vesta"
+    | "none",
 ): Promise<boolean> {
   try {
     await db

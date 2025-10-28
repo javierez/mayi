@@ -35,7 +35,9 @@ export type ConservationStatusId = (typeof CONSERVATION_STATUS_IDS)[number];
 /**
  * Get display label for a conservation status ID
  */
-export function getConservationStatusLabel(id: number | null | undefined): string {
+export function getConservationStatusLabel(
+  id: number | null | undefined,
+): string {
   if (id == null) return "N/A";
   return CONSERVATION_STATUS_LABELS[id] ?? "N/A";
 }
@@ -43,6 +45,11 @@ export function getConservationStatusLabel(id: number | null | undefined): strin
 /**
  * Check if a value is a valid conservation status ID
  */
-export function isValidConservationStatus(value: unknown): value is ConservationStatusId {
-  return typeof value === "number" && CONSERVATION_STATUS_IDS.includes(value as ConservationStatusId);
+export function isValidConservationStatus(
+  value: unknown,
+): value is ConservationStatusId {
+  return (
+    typeof value === "number" &&
+    CONSERVATION_STATUS_IDS.includes(value as ConservationStatusId)
+  );
 }

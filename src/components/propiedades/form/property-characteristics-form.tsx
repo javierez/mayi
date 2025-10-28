@@ -11,7 +11,12 @@ import {
 import { findOrCreateLocation } from "~/server/queries/locations";
 import { useRouter, useSearchParams } from "next/navigation";
 import { updateProperty } from "~/server/queries/properties";
-import { updateListingWithAuth, toggleListingKeysWithAuth, toggleListingPublishToWebsiteWithAuth, getListingDetailsWithAuth } from "~/server/queries/listing";
+import {
+  updateListingWithAuth,
+  toggleListingKeysWithAuth,
+  toggleListingPublishToWebsiteWithAuth,
+  getListingDetailsWithAuth,
+} from "~/server/queries/listing";
 import { toast } from "sonner";
 import { PropertySummaryCard } from "./cards/property-summary-card";
 import { PropertyStatusRow } from "./cards/property-status-row";
@@ -28,14 +33,25 @@ import { RentalPropertiesCard } from "./cards/rental-properties-card";
 import { DescriptionCard } from "./cards/description-card";
 import { ContactInfoCard } from "./cards/contact-info-card";
 import { Separator } from "~/components/ui/separator";
-import { generatePropertyDescription, generateShortPropertyDescription } from "~/server/openai/property_descriptions";
+import {
+  generatePropertyDescription,
+  generateShortPropertyDescription,
+} from "~/server/openai/property_descriptions";
 import { ExternalLinkPopup } from "~/components/ui/external-link-popup";
 import { generatePropertyTitle } from "~/lib/property-title";
 import { DeleteConfirmationModal } from "~/components/ui/delete-confirmation-modal";
-import { deletePropertyWithAuth, deleteListingWithAuth, discardListingWithAuth, recoverListingWithAuth } from "~/server/queries/listing";
+import {
+  deletePropertyWithAuth,
+  deleteListingWithAuth,
+  discardListingWithAuth,
+  recoverListingWithAuth,
+} from "~/server/queries/listing";
 import { getFirstImage } from "~/app/actions/property-images";
 import { formFormatters } from "~/lib/utils";
-import { canDeleteProperties, canEditProperties } from "~/app/actions/permissions/check-permissions";
+import {
+  canDeleteProperties,
+  canEditProperties,
+} from "~/app/actions/permissions/check-permissions";
 
 import type { PropertyListing } from "~/types/property-listing";
 
@@ -83,7 +99,7 @@ export function PropertyCharacteristicsForm({
   const searchParams = useSearchParams();
   const initialPropertyType =
     searchParams.get("type") ?? listing.propertyType ?? "piso";
-  
+
   // Local state to track current property type
   const [propertyType, setPropertyType] = useState(initialPropertyType);
 
@@ -198,7 +214,8 @@ export function PropertyCharacteristicsForm({
       switch (moduleName) {
         case "basicInfo":
           // Use the current title from local state
-          const priceInputValue = (document.getElementById("price") as HTMLInputElement)?.value ?? "";
+          const priceInputValue =
+            (document.getElementById("price") as HTMLInputElement)?.value ?? "";
           // Remove thousand separators and convert to numeric value
           const numericPrice = formFormatters.getNumericPrice(priceInputValue);
 
@@ -247,15 +264,30 @@ export function PropertyCharacteristicsForm({
 
         case "location":
           // Handle location data with proper locations table integration
-          const streetValue = (document.getElementById("street") as HTMLInputElement)?.value;
-          const addressDetailsValue = (document.getElementById("addressDetails") as HTMLInputElement)?.value;
-          const postalCodeValue = (document.getElementById("postalCode") as HTMLInputElement)?.value;
-          const neighborhoodValue = (document.getElementById("neighborhood") as HTMLInputElement)?.value;
+          const streetValue = (
+            document.getElementById("street") as HTMLInputElement
+          )?.value;
+          const addressDetailsValue = (
+            document.getElementById("addressDetails") as HTMLInputElement
+          )?.value;
+          const postalCodeValue = (
+            document.getElementById("postalCode") as HTMLInputElement
+          )?.value;
+          const neighborhoodValue = (
+            document.getElementById("neighborhood") as HTMLInputElement
+          )?.value;
 
           // Get city, province, municipality from either state or inputs (for immediate save after auto-complete)
-          const cityValue = city || (document.getElementById("city") as HTMLInputElement)?.value;
-          const provinceValue = province || (document.getElementById("province") as HTMLInputElement)?.value;
-          const municipalityValue = municipality || (document.getElementById("municipality") as HTMLInputElement)?.value;
+          const cityValue =
+            city ||
+            (document.getElementById("city") as HTMLInputElement)?.value;
+          const provinceValue =
+            province ||
+            (document.getElementById("province") as HTMLInputElement)?.value;
+          const municipalityValue =
+            municipality ||
+            (document.getElementById("municipality") as HTMLInputElement)
+              ?.value;
 
           console.log("💾 [SAVE] Starting location save with values:", {
             street: streetValue,
@@ -271,47 +303,74 @@ export function PropertyCharacteristicsForm({
           // Find or create location in locations table and get neighborhoodId
           let neighborhoodId: bigint | null = null;
 
-          if (cityValue && provinceValue && municipalityValue && neighborhoodValue) {
-            console.log("✅ [SAVE] All 4 location fields present, calling findOrCreateLocation...");
+          if (
+            cityValue &&
+            provinceValue &&
+            municipalityValue &&
+            neighborhoodValue
+          ) {
+            console.log(
+              "✅ [SAVE] All 4 location fields present, calling findOrCreateLocation...",
+            );
             try {
-              neighborhoodId = BigInt(await findOrCreateLocation({
-                city: cityValue,
-                province: provinceValue,
-                municipality: municipalityValue,
-                neighborhood: neighborhoodValue,
-              }));
-              console.log("🏘️ [SAVE] Created/found location with neighborhoodId:", neighborhoodId);
+              neighborhoodId = BigInt(
+                await findOrCreateLocation({
+                  city: cityValue,
+                  province: provinceValue,
+                  municipality: municipalityValue,
+                  neighborhood: neighborhoodValue,
+                }),
+              );
+              console.log(
+                "🏘️ [SAVE] Created/found location with neighborhoodId:",
+                neighborhoodId,
+              );
             } catch (error) {
               console.error("❌ [SAVE] Error handling location:", error);
               // neighborhoodId will remain null if location update fails
             }
           } else {
-            console.warn("⚠️ [SAVE] Missing location fields, neighborhoodId will NOT be updated:", {
-              hasCity: !!cityValue,
-              hasProvince: !!provinceValue,
-              hasMunicipality: !!municipalityValue,
-              hasNeighborhood: !!neighborhoodValue,
-            });
+            console.warn(
+              "⚠️ [SAVE] Missing location fields, neighborhoodId will NOT be updated:",
+              {
+                hasCity: !!cityValue,
+                hasProvince: !!provinceValue,
+                hasMunicipality: !!municipalityValue,
+                hasNeighborhood: !!neighborhoodValue,
+              },
+            );
           }
 
           // Get coordinates from hidden inputs
-          const latitudeValue = (document.getElementById("latitude") as HTMLInputElement)?.value;
-          const longitudeValue = (document.getElementById("longitude") as HTMLInputElement)?.value;
+          const latitudeValue = (
+            document.getElementById("latitude") as HTMLInputElement
+          )?.value;
+          const longitudeValue = (
+            document.getElementById("longitude") as HTMLInputElement
+          )?.value;
 
           // Generate new title based on updated location
           const newTitle = generatePropertyTitle(
             propertyType,
             streetValue ?? listing.street ?? "",
-            neighborhoodValue ?? listing.neighborhood ?? ""
+            neighborhoodValue ?? listing.neighborhood ?? "",
           );
 
-          console.log("🏷️ [SAVE] Generated new title based on location:", newTitle);
+          console.log(
+            "🏷️ [SAVE] Generated new title based on location:",
+            newTitle,
+          );
 
           propertyData = {
             street: streetValue,
             addressDetails: addressDetailsValue,
             postalCode: postalCodeValue,
-            cadastralReference: (document.getElementById("cadastralReference") as HTMLInputElement)?.value || null,
+            cadastralReference:
+              (
+                document.getElementById(
+                  "cadastralReference",
+                ) as HTMLInputElement
+              )?.value || null,
             ...(neighborhoodId && { neighborhoodId }),
             nearbyPublicTransport,
             latitude: latitudeValue || null,
@@ -321,7 +380,9 @@ export function PropertyCharacteristicsForm({
 
           console.log("📝 [SAVE] Property data prepared for update:", {
             ...propertyData,
-            neighborhoodId: neighborhoodId ? neighborhoodId.toString() : 'NOT SET',
+            neighborhoodId: neighborhoodId
+              ? neighborhoodId.toString()
+              : "NOT SET",
           });
 
           // Note: city, province, municipality, neighborhood are NOT in listings table
@@ -338,7 +399,10 @@ export function PropertyCharacteristicsForm({
             garageInBuilding,
             garageNumber,
             hasStorageRoom,
-            storageRoomSize: storageRoomSize && !isNaN(storageRoomSize) ? storageRoomSize : null,
+            storageRoomSize:
+              storageRoomSize && !isNaN(storageRoomSize)
+                ? storageRoomSize
+                : null,
             storageRoomNumber,
             hasHeating: isHeating,
             heatingType,
@@ -350,14 +414,18 @@ export function PropertyCharacteristicsForm({
             furnitureQuality: isFurnished ? furnitureQuality : null,
             optionalGaragePrice: (() => {
               const value = (
-                document.getElementById("optionalGaragePrice") as HTMLInputElement
+                document.getElementById(
+                  "optionalGaragePrice",
+                ) as HTMLInputElement
               )?.value;
               const num = Number(value);
               return value && !isNaN(num) ? Math.round(num) : null;
             })(),
             optionalStorageRoomPrice: (() => {
               const value = (
-                document.getElementById("optionalStorageRoomPrice") as HTMLInputElement
+                document.getElementById(
+                  "optionalStorageRoomPrice",
+                ) as HTMLInputElement
               )?.value;
               const num = Number(value);
               return value && !isNaN(num) ? Math.round(num) : null;
@@ -474,9 +542,9 @@ export function PropertyCharacteristicsForm({
             description: (
               document.getElementById("description") as HTMLTextAreaElement
             )?.value,
-            shortDescription: (  // Use camelCase for TypeScript/Drizzle field name
-              document.getElementById("shortDescription") as HTMLTextAreaElement
-            )?.value,
+            shortDescription: // Use camelCase for TypeScript/Drizzle field name
+            (document.getElementById("shortDescription") as HTMLTextAreaElement)
+              ?.value,
           };
           // No propertyData for descriptions - they belong in listings only
           break;
@@ -523,7 +591,10 @@ export function PropertyCharacteristicsForm({
       // Update current title state if location was saved with a new title
       if (moduleName === "location" && propertyData.title) {
         setCurrentTitle(propertyData.title as string);
-        console.log("✅ [SAVE] Updated local title state to:", propertyData.title);
+        console.log(
+          "✅ [SAVE] Updated local title state to:",
+          propertyData.title,
+        );
         // Refresh server components to update PropertyHeader with new title
         router.refresh();
       }
@@ -670,7 +741,9 @@ export function PropertyCharacteristicsForm({
   );
   const [pantry, setPantry] = useState(listing.pantry ?? false);
   const [terrace, setTerrace] = useState(listing.terrace ?? false);
-  const [terraceSize, setTerraceSize] = useState<number | null>(listing.terraceSize ?? null);
+  const [terraceSize, setTerraceSize] = useState<number | null>(
+    listing.terraceSize ?? null,
+  );
   const [wineCellar, setWineCellar] = useState(listing.wineCellar ?? false);
   const [wineCellarSize, setWineCellarSize] = useState<number | null>(
     listing.wineCellarSize ?? null,
@@ -678,8 +751,12 @@ export function PropertyCharacteristicsForm({
   const [livingRoomSize, setLivingRoomSize] = useState<number | null>(
     listing.livingRoomSize ?? null,
   );
-  const [balconyCount, setBalconyCount] = useState<number | null>(listing.balconyCount ?? null);
-  const [galleryCount, setGalleryCount] = useState<number | null>(listing.galleryCount ?? null);
+  const [balconyCount, setBalconyCount] = useState<number | null>(
+    listing.balconyCount ?? null,
+  );
+  const [galleryCount, setGalleryCount] = useState<number | null>(
+    listing.galleryCount ?? null,
+  );
   const [buildingFloors, setBuildingFloors] = useState(
     listing.buildingFloors ?? 0,
   );
@@ -743,14 +820,17 @@ export function PropertyCharacteristicsForm({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingShort, setIsGeneratingShort] = useState(false);
   const [description, setDescription] = useState(listing.description ?? "");
-  const [shortDescription, setShortDescription] = useState(listing.shortDescription ?? "");
+  const [shortDescription, setShortDescription] = useState(
+    listing.shortDescription ?? "",
+  );
   const [isCatastroPopupOpen, setIsCatastroPopupOpen] = useState(false);
   const [isMapsPopupOpen, setIsMapsPopupOpen] = useState(false);
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
   const [signature, setSignature] = useState("");
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isDeleteListingModalOpen, setIsDeleteListingModalOpen] = useState(false);
+  const [isDeleteListingModalOpen, setIsDeleteListingModalOpen] =
+    useState(false);
   const [isDeletingListing, setIsDeletingListing] = useState(false);
   const [isDiscardModalOpen, setIsDiscardModalOpen] = useState(false);
   const [isDiscarding, setIsDiscarding] = useState(false);
@@ -759,7 +839,9 @@ export function PropertyCharacteristicsForm({
   const contactInfoRef = useRef<HTMLDivElement>(null);
 
   // State for collapsible sections (all closed by default)
-  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
+  const [collapsedSections, setCollapsedSections] = useState<
+    Record<string, boolean>
+  >({
     basicInfo: true,
     propertyDetails: true,
     location: true,
@@ -775,25 +857,25 @@ export function PropertyCharacteristicsForm({
   });
 
   const toggleSection = (section: string) => {
-    setCollapsedSections(prev => ({
+    setCollapsedSections((prev) => ({
       ...prev,
-      [section]: !prev[section]
+      [section]: !prev[section],
     }));
   };
 
   // Handler to expand and scroll to contact info section
   const handleEditOwner = () => {
     // Expand the contact info section
-    setCollapsedSections(prev => ({
+    setCollapsedSections((prev) => ({
       ...prev,
-      contactInfo: false
+      contactInfo: false,
     }));
-    
+
     // Scroll to the contact info card after a short delay to allow the section to expand
     setTimeout(() => {
       contactInfoRef.current?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'
+        behavior: "smooth",
+        block: "center",
       });
     }, 100);
   };
@@ -828,12 +910,14 @@ export function PropertyCharacteristicsForm({
   const [stoneware, setStoneware] = useState(listing.stoneware ?? false);
 
   // Furniture quality state
-  const [furnitureQuality, setFurnitureQuality] = useState(listing.furnitureQuality ?? "");
+  const [furnitureQuality, setFurnitureQuality] = useState(
+    listing.furnitureQuality ?? "",
+  );
 
   // Rental duplicate state
   const [duplicateForRent, setDuplicateForRent] = useState(false);
   const [rentalPrice, setRentalPrice] = useState(0);
-  
+
   // Toggle button states
   const [hasKeys, setHasKeys] = useState<boolean>(false);
   const [keysLoading, setKeysLoading] = useState(false);
@@ -863,15 +947,29 @@ export function PropertyCharacteristicsForm({
   useEffect(() => {
     const fetchAllFormData = async () => {
       try {
-        console.log('Fetching all form data in single batch...');
+        console.log("Fetching all form data in single batch...");
 
         // Batch all API calls in parallel for maximum performance
-        const [agentsData, potentialOwnersData, currentOwnersData, listingDetailsData, firstImage, hasDeletePermission, hasEditPermission] = await Promise.all([
+        const [
+          agentsData,
+          potentialOwnersData,
+          currentOwnersData,
+          listingDetailsData,
+          firstImage,
+          hasDeletePermission,
+          hasEditPermission,
+        ] = await Promise.all([
           getAllAgentsWithAuth(),
           getAllPotentialOwnersWithAuth(),
-          listing.listingId ? getCurrentListingOwnersWithAuth(Number(listing.listingId)) : Promise.resolve([]),
-          listing.listingId ? getListingDetailsWithAuth(Number(listing.listingId)) : Promise.resolve(null),
-          listing.propertyId ? getFirstImage(Number(listing.propertyId)) : Promise.resolve(null),
+          listing.listingId
+            ? getCurrentListingOwnersWithAuth(Number(listing.listingId))
+            : Promise.resolve([]),
+          listing.listingId
+            ? getListingDetailsWithAuth(Number(listing.listingId))
+            : Promise.resolve(null),
+          listing.propertyId
+            ? getFirstImage(Number(listing.propertyId))
+            : Promise.resolve(null),
           canDeleteProperties(),
           canEditProperties(),
         ]);
@@ -901,7 +999,10 @@ export function PropertyCharacteristicsForm({
 
         // Process listing details for toggle states
         if (listingDetailsData) {
-          const details = listingDetailsData as { hasKeys?: boolean; publishToWebsite?: boolean };
+          const details = listingDetailsData as {
+            hasKeys?: boolean;
+            publishToWebsite?: boolean;
+          };
           setHasKeys(details.hasKeys ?? false);
           setPublishToWebsite(details.publishToWebsite ?? false);
         }
@@ -912,16 +1013,18 @@ export function PropertyCharacteristicsForm({
         // Set permissions
         setCanDelete(hasDeletePermission);
         setCanEdit(hasEditPermission);
-        console.log('🔐 Permission Checks:', {
+        console.log("🔐 Permission Checks:", {
           hasDeletePermission,
           hasEditPermission,
-          willShowDeleteButtons: hasDeletePermission ? 'YES' : 'NO',
-          formMode: hasEditPermission ? 'EDIT MODE' : 'READ-ONLY MODE'
+          willShowDeleteButtons: hasDeletePermission ? "YES" : "NO",
+          formMode: hasEditPermission ? "EDIT MODE" : "READ-ONLY MODE",
         });
 
-        console.log('✅ All form data fetched successfully - Performance optimized!');
+        console.log(
+          "✅ All form data fetched successfully - Performance optimized!",
+        );
       } catch (error) {
-        console.error('❌ Error fetching form data:', error);
+        console.error("❌ Error fetching form data:", error);
         // Set fallback values on error
         setAgents([]);
         setOwners([]);
@@ -940,18 +1043,18 @@ export function PropertyCharacteristicsForm({
   // Toggle handlers
   const handleToggleKeys = async () => {
     if (keysLoading) return;
-    
+
     setKeysLoading(true);
     const previousValue = hasKeys;
-    
+
     // Optimistic update
     setHasKeys(!hasKeys);
-    
+
     try {
       const result = await toggleListingKeysWithAuth(Number(listing.listingId));
       setHasKeys(result.hasKeys);
     } catch (error) {
-      console.error('Error toggling keys:', error);
+      console.error("Error toggling keys:", error);
       // Revert optimistic update on error
       setHasKeys(previousValue);
     } finally {
@@ -961,18 +1064,20 @@ export function PropertyCharacteristicsForm({
 
   const handleToggleWebsite = async () => {
     if (websiteLoading) return;
-    
+
     setWebsiteLoading(true);
     const previousValue = publishToWebsite;
-    
+
     // Optimistic update
     setPublishToWebsite(!publishToWebsite);
-    
+
     try {
-      const result = await toggleListingPublishToWebsiteWithAuth(Number(listing.listingId));
+      const result = await toggleListingPublishToWebsiteWithAuth(
+        Number(listing.listingId),
+      );
       setPublishToWebsite(result.publishToWebsite);
     } catch (error) {
-      console.error('Error toggling publishToWebsite:', error);
+      console.error("Error toggling publishToWebsite:", error);
       // Revert optimistic update on error
       setPublishToWebsite(previousValue);
     } finally {
@@ -1039,7 +1144,9 @@ export function PropertyCharacteristicsForm({
       setIsGenerating(true);
       const listingWithNumberTypes = {
         ...listing,
-        lastRenovationYear: lastRenovationYear ? String(lastRenovationYear) : undefined,
+        lastRenovationYear: lastRenovationYear
+          ? String(lastRenovationYear)
+          : undefined,
       };
       const generatedDescription = await generatePropertyDescription(
         listingWithNumberTypes,
@@ -1065,34 +1172,41 @@ export function PropertyCharacteristicsForm({
   const handleGenerateShortDescription = async () => {
     try {
       setIsGeneratingShort(true);
-      
+
       let fullDescription = description;
-      
+
       // Check if we have a full description to summarize
       if (!fullDescription || fullDescription.trim() === "") {
         // If no full description exists, generate it first without setting isGenerating state
         const listingWithNumberTypes = {
           ...listing,
-          lastRenovationYear: lastRenovationYear ? String(lastRenovationYear) : undefined,
+          lastRenovationYear: lastRenovationYear
+            ? String(lastRenovationYear)
+            : undefined,
         };
-        fullDescription = await generatePropertyDescription(listingWithNumberTypes);
+        fullDescription = await generatePropertyDescription(
+          listingWithNumberTypes,
+        );
         setDescription(fullDescription);
       }
-      
+
       // Now generate short description based on the full description
       if (fullDescription && fullDescription.trim() !== "") {
         const listingWithStringTypes = {
           ...listing,
-          lastRenovationYear: lastRenovationYear ? String(lastRenovationYear) : undefined,
+          lastRenovationYear: lastRenovationYear
+            ? String(lastRenovationYear)
+            : undefined,
         };
-        
-        const generatedShortDescription = await generateShortPropertyDescription(
-          fullDescription,
-          listingWithStringTypes
-        );
-        
+
+        const generatedShortDescription =
+          await generateShortPropertyDescription(
+            fullDescription,
+            listingWithStringTypes,
+          );
+
         setShortDescription(generatedShortDescription);
-        
+
         // Update the textarea value
         const shortDescTextarea = document.getElementById(
           "shortDescription",
@@ -1119,10 +1233,10 @@ export function PropertyCharacteristicsForm({
     }
 
     setIsDeleting(true);
-    
+
     try {
       const result = await deletePropertyWithAuth(Number(listing.propertyId));
-      
+
       if (result.success) {
         toast.success(result.message);
         // Redirect to properties list after successful deletion
@@ -1146,10 +1260,10 @@ export function PropertyCharacteristicsForm({
     }
 
     setIsDeletingListing(true);
-    
+
     try {
       const result = await deleteListingWithAuth(Number(listing.listingId));
-      
+
       if (result.success) {
         toast.success(result.message);
         // Redirect to properties list after successful deletion
@@ -1173,10 +1287,10 @@ export function PropertyCharacteristicsForm({
     }
 
     setIsDiscarding(true);
-    
+
     try {
       const result = await discardListingWithAuth(Number(listing.listingId));
-      
+
       if (result.success) {
         toast.success(result.message);
         // Reload the page to reflect the updated status
@@ -1200,10 +1314,10 @@ export function PropertyCharacteristicsForm({
     }
 
     setIsDiscarding(true);
-    
+
     try {
       const result = await recoverListingWithAuth(Number(listing.listingId));
-      
+
       if (result.success) {
         toast.success(result.message);
         // Reload the page to reflect the updated status
@@ -1241,9 +1355,11 @@ export function PropertyCharacteristicsForm({
   const currentListingType = listingTypes[0] ?? "";
 
   // Debug logging for delete permission
-  console.log('🔍 Render - Delete Permission State:', {
+  console.log("🔍 Render - Delete Permission State:", {
     canDelete,
-    willRenderButtons: canDelete ? 'YES - Buttons will be visible' : 'NO - Buttons will be hidden'
+    willRenderButtons: canDelete
+      ? "YES - Buttons will be visible"
+      : "NO - Buttons will be hidden",
   });
 
   return (
@@ -1281,9 +1397,9 @@ export function PropertyCharacteristicsForm({
       </div>
 
       {/* Two independent columns */}
-      <div className="flex flex-col lg:flex-row gap-4 items-start">
+      <div className="flex flex-col items-start gap-4 lg:flex-row">
         {/* Left Column */}
-        <div className="flex-1 space-y-4 w-full">
+        <div className="w-full flex-1 space-y-4">
           {/* Basic Information */}
           <BasicInfoCard
             listing={listing}
@@ -1298,7 +1414,9 @@ export function PropertyCharacteristicsForm({
             canEdit={canEdit}
             onToggleSection={toggleSection}
             onSave={() => saveModule("basicInfo")}
-            onUpdateModule={(hasChanges) => updateModuleState("basicInfo", hasChanges)}
+            onUpdateModule={(hasChanges) =>
+              updateModuleState("basicInfo", hasChanges)
+            }
             onToggleListingType={toggleListingType}
             onHandleSecondaryListingType={handleSecondaryListingType}
             onPropertyTypeChange={handlePropertyTypeChange}
@@ -1319,7 +1437,9 @@ export function PropertyCharacteristicsForm({
             canEdit={canEdit}
             onToggleSection={toggleSection}
             onSave={() => saveModule("propertyDetails")}
-            onUpdateModule={(hasChanges) => updateModuleState("propertyDetails", hasChanges)}
+            onUpdateModule={(hasChanges) =>
+              updateModuleState("propertyDetails", hasChanges)
+            }
             setLastRenovationYear={setLastRenovationYear}
             setBuildingFloors={setBuildingFloors}
             getCardStyles={getCardStyles}
@@ -1359,7 +1479,9 @@ export function PropertyCharacteristicsForm({
             canEdit={canEdit}
             onToggleSection={toggleSection}
             onSave={() => saveModule("features")}
-            onUpdateModule={(hasChanges) => updateModuleState("features", hasChanges)}
+            onUpdateModule={(hasChanges) =>
+              updateModuleState("features", hasChanges)
+            }
             setHasElevator={setHasElevator}
             setIsFurnished={setIsFurnished}
             setFurnitureQuality={setFurnitureQuality}
@@ -1406,10 +1528,14 @@ export function PropertyCharacteristicsForm({
             pantry={pantry}
             propertyType={propertyType}
             showAdditionalCharacteristics={showAdditionalCharacteristics}
-            saveState={moduleStates.additionalCharacteristics?.saveState ?? "idle"}
+            saveState={
+              moduleStates.additionalCharacteristics?.saveState ?? "idle"
+            }
             canEdit={canEdit}
             onSave={() => saveModule("additionalCharacteristics")}
-            onUpdateModule={(hasChanges) => updateModuleState("additionalCharacteristics", hasChanges)}
+            onUpdateModule={(hasChanges) =>
+              updateModuleState("additionalCharacteristics", hasChanges)
+            }
             setDisabledAccessible={setDisabledAccessible}
             setVpo={setVpo}
             setVideoIntercom={setVideoIntercom}
@@ -1444,7 +1570,9 @@ export function PropertyCharacteristicsForm({
             canEdit={canEdit}
             onToggleSection={toggleSection}
             onSave={() => saveModule("additionalSpaces")}
-            onUpdateModule={(hasChanges) => updateModuleState("additionalSpaces", hasChanges)}
+            onUpdateModule={(hasChanges) =>
+              updateModuleState("additionalSpaces", hasChanges)
+            }
             setTerrace={setTerrace}
             setTerraceSize={setTerraceSize}
             setWineCellar={setWineCellar}
@@ -1458,7 +1586,7 @@ export function PropertyCharacteristicsForm({
         </div>
 
         {/* Right Column */}
-        <div className="flex-1 space-y-4 w-full">
+        <div className="w-full flex-1 space-y-4">
           {/* Contact Information */}
           <ContactInfoCard
             ref={contactInfoRef}
@@ -1473,7 +1601,9 @@ export function PropertyCharacteristicsForm({
             canEdit={canEdit}
             onToggleSection={toggleSection}
             onSave={() => saveModule("contactInfo")}
-            onUpdateModule={(hasChanges) => updateModuleState("contactInfo", hasChanges)}
+            onUpdateModule={(hasChanges) =>
+              updateModuleState("contactInfo", hasChanges)
+            }
             setSelectedOwnerIds={setSelectedOwnerIds}
             setOwnerSearch={setOwnerSearch}
             setSelectedAgentId={setSelectedAgentId}
@@ -1491,7 +1621,9 @@ export function PropertyCharacteristicsForm({
             canEdit={canEdit}
             onToggleSection={toggleSection}
             onSave={() => saveModule("location")}
-            onUpdateModule={(hasChanges) => updateModuleState("location", hasChanges)}
+            onUpdateModule={(hasChanges) =>
+              updateModuleState("location", hasChanges)
+            }
             setCity={setCity}
             setProvince={setProvince}
             setMunicipality={setMunicipality}
@@ -1511,7 +1643,9 @@ export function PropertyCharacteristicsForm({
             canEdit={canEdit}
             onToggleSection={toggleSection}
             onSave={() => saveModule("orientation")}
-            onUpdateModule={(hasChanges) => updateModuleState("orientation", hasChanges)}
+            onUpdateModule={(hasChanges) =>
+              updateModuleState("orientation", hasChanges)
+            }
             setIsExterior={setIsExterior}
             setIsBright={setIsBright}
             setOrientation={setOrientation}
@@ -1547,7 +1681,9 @@ export function PropertyCharacteristicsForm({
             canEdit={canEdit}
             onToggleSection={toggleSection}
             onSave={() => saveModule("premiumFeatures")}
-            onUpdateModule={(hasChanges) => updateModuleState("premiumFeatures", hasChanges)}
+            onUpdateModule={(hasChanges) =>
+              updateModuleState("premiumFeatures", hasChanges)
+            }
             setViews={setViews}
             setMountainViews={setMountainViews}
             setSeaViews={setSeaViews}
@@ -1583,7 +1719,9 @@ export function PropertyCharacteristicsForm({
             saveState={moduleStates.materials?.saveState ?? "idle"}
             canEdit={canEdit}
             onSave={() => saveModule("materials")}
-            onUpdateModule={(hasChanges) => updateModuleState("materials", hasChanges)}
+            onUpdateModule={(hasChanges) =>
+              updateModuleState("materials", hasChanges)
+            }
             setMainFloorType={setMainFloorType}
             setShutterType={setShutterType}
             setCarpentryType={setCarpentryType}
@@ -1608,7 +1746,9 @@ export function PropertyCharacteristicsForm({
         saveState={moduleStates.description?.saveState ?? "idle"}
         canEdit={canEdit}
         onSave={() => saveModule("description")}
-        onUpdateModule={(hasChanges) => updateModuleState("description", hasChanges)}
+        onUpdateModule={(hasChanges) =>
+          updateModuleState("description", hasChanges)
+        }
         onGenerateDescription={handleGenerateDescription}
         onGenerateShortDescription={handleGenerateShortDescription}
         setSignature={setSignature}
@@ -1620,54 +1760,58 @@ export function PropertyCharacteristicsForm({
 
       {/* Rental Properties Module */}
       <RentalPropertiesCard
-          listingType={currentListingType}
-          propertyType={propertyType}
-          internet={internet}
-          studentFriendly={studentFriendly}
-          petsAllowed={petsAllowed}
-          appliancesIncluded={appliancesIncluded}
-          duplicateForRent={duplicateForRent}
-          rentalPrice={rentalPrice}
-          collapsedSections={collapsedSections}
-          saveState={moduleStates.rentalProperties?.saveState ?? "idle"}
-          canEdit={canEdit}
-          // Listing data for duplication
-          propertyId={listing.propertyId}
-          listingId={listing.listingId}
-          agentId={listing.agent?.id}
-          isFurnished={isFurnished}
-          furnitureQuality={listing.furnitureQuality ?? ""}
-          optionalGaragePrice={optionalGaragePrice}
-          optionalStorageRoomPrice={optionalStorageRoomPrice}
-          onToggleSection={toggleSection}
-          onSave={() => saveModule("rentalProperties")}
-          onUpdateModule={(hasChanges) => updateModuleState("rentalProperties", hasChanges)}
-          setInternet={setInternet}
-          setStudentFriendly={setStudentFriendly}
-          setPetsAllowed={setPetsAllowed}
-          setAppliancesIncluded={setAppliancesIncluded}
-          setDuplicateForRent={setDuplicateForRent}
-          setRentalPrice={setRentalPrice}
-          getCardStyles={getCardStyles}
-        />
+        listingType={currentListingType}
+        propertyType={propertyType}
+        internet={internet}
+        studentFriendly={studentFriendly}
+        petsAllowed={petsAllowed}
+        appliancesIncluded={appliancesIncluded}
+        duplicateForRent={duplicateForRent}
+        rentalPrice={rentalPrice}
+        collapsedSections={collapsedSections}
+        saveState={moduleStates.rentalProperties?.saveState ?? "idle"}
+        canEdit={canEdit}
+        // Listing data for duplication
+        propertyId={listing.propertyId}
+        listingId={listing.listingId}
+        agentId={listing.agent?.id}
+        isFurnished={isFurnished}
+        furnitureQuality={listing.furnitureQuality ?? ""}
+        optionalGaragePrice={optionalGaragePrice}
+        optionalStorageRoomPrice={optionalStorageRoomPrice}
+        onToggleSection={toggleSection}
+        onSave={() => saveModule("rentalProperties")}
+        onUpdateModule={(hasChanges) =>
+          updateModuleState("rentalProperties", hasChanges)
+        }
+        setInternet={setInternet}
+        setStudentFriendly={setStudentFriendly}
+        setPetsAllowed={setPetsAllowed}
+        setAppliancesIncluded={setAppliancesIncluded}
+        setDuplicateForRent={setDuplicateForRent}
+        setRentalPrice={setRentalPrice}
+        getCardStyles={getCardStyles}
+      />
 
       {/* Action Buttons - Discard, Delete Listing, and Delete Property */}
       {canDelete && (
         <div className="mt-6">
-          <div className="flex justify-center gap-4 flex-wrap">
+          <div className="flex flex-wrap justify-center gap-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsDiscardModalOpen(true)}
               className="text-gray-600 hover:text-gray-800"
             >
-              {listing.status === "Descartado" ? "Recuperar anuncio" : "Descartar anuncio"}
+              {listing.status === "Descartado"
+                ? "Recuperar anuncio"
+                : "Descartar anuncio"}
             </Button>
             <Button
               type="button"
               variant="destructive"
               onClick={() => setIsDeleteListingModalOpen(true)}
-              className="bg-white hover:bg-red-50 border-2 border-red-500 border-dashed text-red-600 hover:text-red-700"
+              className="border-2 border-dashed border-red-500 bg-white text-red-600 hover:bg-red-50 hover:text-red-700"
             >
               Borrar anuncio
             </Button>
@@ -1712,15 +1856,27 @@ export function PropertyCharacteristicsForm({
       <DeleteConfirmationModal
         isOpen={isDiscardModalOpen}
         onClose={() => setIsDiscardModalOpen(false)}
-        onConfirm={listing.status === "Descartado" ? handleRecoverListing : handleDiscardListing}
-        title={listing.status === "Descartado" ? "¿Recuperar anuncio?" : "¿Descartar anuncio?"}
+        onConfirm={
+          listing.status === "Descartado"
+            ? handleRecoverListing
+            : handleDiscardListing
+        }
+        title={
+          listing.status === "Descartado"
+            ? "¿Recuperar anuncio?"
+            : "¿Descartar anuncio?"
+        }
         description={
-          listing.status === "Descartado" 
+          listing.status === "Descartado"
             ? "Esta acción reactivará el anuncio y lo volverá a hacer disponible."
             : "Esta acción marcará el anuncio como descartado. Podrás reactivarlo más tarde si es necesario. No se eliminarán datos."
         }
-        confirmText={listing.status === "Descartado" ? "Recuperar" : "Descartar"}
-        loadingText={listing.status === "Descartado" ? "Recuperando..." : "Descartando..."}
+        confirmText={
+          listing.status === "Descartado" ? "Recuperar" : "Descartar"
+        }
+        loadingText={
+          listing.status === "Descartado" ? "Recuperando..." : "Descartando..."
+        }
         variant={listing.status === "Descartado" ? "default" : "destructive"}
         isDeleting={isDiscarding}
       />

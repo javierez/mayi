@@ -4,7 +4,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { VisitsKPICard } from "~/components/propiedades/detail/activity/visits-kpi-card";
 import { ContactsKPICard } from "~/components/propiedades/detail/activity/contacts-kpi-card";
-import { AppointmentCard, type AppointmentData } from "~/components/appointments/appointment-card";
+import {
+  AppointmentCard,
+  type AppointmentData,
+} from "~/components/appointments/appointment-card";
 import { CompactContactCard } from "~/components/propiedades/detail/activity/compact-contact-card";
 import { CompactPropertyCard } from "~/components/propiedades/compact-property-card";
 import { EmptyState } from "~/components/propiedades/detail/activity/empty-states";
@@ -17,7 +20,11 @@ import {
   getContactRelatedContactsForBuyerListings,
   getContactRelatedContactsAsOwner,
 } from "~/server/queries/activity";
-import { canEditCalendar, canDeleteCalendar, canEditContacts } from "~/app/actions/permissions/check-permissions";
+import {
+  canEditCalendar,
+  canDeleteCalendar,
+  canEditContacts,
+} from "~/app/actions/permissions/check-permissions";
 import {
   getBuyerListingsWithAuth,
   removeListingContactRelationshipWithAuth,
@@ -25,12 +32,18 @@ import {
 } from "~/server/queries/contact";
 import { toast } from "sonner";
 import type { PropertyListing } from "~/types/property-listing";
-import AppointmentModal, { useAppointmentModal } from "~/components/appointments/appointment-modal";
+import AppointmentModal, {
+  useAppointmentModal,
+} from "~/components/appointments/appointment-modal";
 import { AppointmentDetailSheet } from "~/components/appointments/appointment-detail-sheet";
 import { ContactDetailSheet } from "~/components/contactos/contact-detail-sheet";
 import { Card } from "~/components/ui/card";
 import { Building, Home } from "lucide-react";
-import type { ContactVisitWithDetails, ContactRelatedContact, ContactSheetData } from "~/types/activity";
+import type {
+  ContactVisitWithDetails,
+  ContactRelatedContact,
+  ContactSheetData,
+} from "~/types/activity";
 import { cn } from "~/lib/utils";
 
 interface ContactActividadTabProps {
@@ -87,24 +100,39 @@ interface ListingActivityGroup {
 export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
   const router = useRouter();
 
-  const [selectedRole, setSelectedRole] = useState<"propiedades" | "intereses">("propiedades");
+  const [selectedRole, setSelectedRole] = useState<"propiedades" | "intereses">(
+    "propiedades",
+  );
   const [listings, setListings] = useState<ListingInfo[]>([]);
   const [visits, setVisits] = useState<ContactVisitWithDetails[]>([]);
-  const [relatedContacts, setRelatedContacts] = useState<ContactRelatedContact[]>([]);
+  const [relatedContacts, setRelatedContacts] = useState<
+    ContactRelatedContact[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedAppointment, setSelectedAppointment] = useState<AppointmentData | null>(null);
-  const [selectedContact, setSelectedContact] = useState<ContactSheetData | null>(null);
-  const [activeViews, setActiveViews] = useState<Record<string, "visits" | "contacts" | null>>({});
-  const [expandedListings, setExpandedListings] = useState<Record<string, boolean>>({});
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<AppointmentData | null>(null);
+  const [selectedContact, setSelectedContact] =
+    useState<ContactSheetData | null>(null);
+  const [activeViews, setActiveViews] = useState<
+    Record<string, "visits" | "contacts" | null>
+  >({});
+  const [expandedListings, setExpandedListings] = useState<
+    Record<string, boolean>
+  >({});
 
   // Intereses (buyer listings) state
-  const [interesesListings, setInteresesListings] = useState<PropertyListing[]>([]);
+  const [interesesListings, setInteresesListings] = useState<PropertyListing[]>(
+    [],
+  );
   const [isLoadingIntereses, setIsLoadingIntereses] = useState(false);
 
   // Permission states
-  const [hasEditCalendarPermission, setHasEditCalendarPermission] = useState<boolean>(false);
-  const [hasDeleteCalendarPermission, setHasDeleteCalendarPermission] = useState<boolean>(false);
-  const [hasEditContactsPermission, setHasEditContactsPermission] = useState<boolean>(false);
+  const [hasEditCalendarPermission, setHasEditCalendarPermission] =
+    useState<boolean>(false);
+  const [hasDeleteCalendarPermission, setHasDeleteCalendarPermission] =
+    useState<boolean>(false);
+  const [hasEditContactsPermission, setHasEditContactsPermission] =
+    useState<boolean>(false);
 
   // Appointment modal state
   const {
@@ -114,22 +142,28 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
     initialData: modalInitialData,
   } = useAppointmentModal();
   const [editMode, setEditMode] = useState<"create" | "edit">("create");
-  const [editingAppointmentId, setEditingAppointmentId] = useState<bigint | null>(null);
+  const [editingAppointmentId, setEditingAppointmentId] = useState<
+    bigint | null
+  >(null);
 
   // Fetch permissions
   useEffect(() => {
     const fetchPermissions = async () => {
       try {
-        const [editCalendarPerm, deleteCalendarPerm, editContactsPerm] = await Promise.all([
-          canEditCalendar(),
-          canDeleteCalendar(),
-          canEditContacts(),
-        ]);
+        const [editCalendarPerm, deleteCalendarPerm, editContactsPerm] =
+          await Promise.all([
+            canEditCalendar(),
+            canDeleteCalendar(),
+            canEditContacts(),
+          ]);
         setHasEditCalendarPermission(editCalendarPerm);
         setHasDeleteCalendarPermission(deleteCalendarPerm);
         setHasEditContactsPermission(editContactsPerm);
       } catch (error) {
-        console.error("❌ [Contact Activity] Error fetching permissions:", error);
+        console.error(
+          "❌ [Contact Activity] Error fetching permissions:",
+          error,
+        );
       }
     };
 
@@ -180,7 +214,9 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
       const fetchBuyerListings = async () => {
         setIsLoadingIntereses(true);
         try {
-          const buyerListings = await getBuyerListingsWithAuth(Number(contactId));
+          const buyerListings = await getBuyerListingsWithAuth(
+            Number(contactId),
+          );
           setInteresesListings(buyerListings as unknown as PropertyListing[]);
         } catch (error) {
           console.error("Error fetching buyer listings:", error);
@@ -196,8 +232,12 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
 
   // Group visits and contacts by listing
   const listingGroups: ListingActivityGroup[] = listings.map((listing) => {
-    const listingVisits = visits.filter((v) => v.listingId?.toString() === listing.listingId.toString());
-    const listingContacts = relatedContacts.filter((c) => c.listingId?.toString() === listing.listingId.toString());
+    const listingVisits = visits.filter(
+      (v) => v.listingId?.toString() === listing.listingId.toString(),
+    );
+    const listingContacts = relatedContacts.filter(
+      (c) => c.listingId?.toString() === listing.listingId.toString(),
+    );
 
     return {
       listing,
@@ -241,12 +281,14 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
       await removeListingContactRelationshipWithAuth(
         Number(contactId),
         Number(listingId),
-        "buyer"
+        "buyer",
       );
 
       // Optimistically update the UI by removing the listing from the array
       setInteresesListings((prev) =>
-        prev.filter((listing) => listing.listingId?.toString() !== listingId.toString())
+        prev.filter(
+          (listing) => listing.listingId?.toString() !== listingId.toString(),
+        ),
       );
 
       toast.success("Interés eliminado correctamente");
@@ -262,16 +304,17 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
       await deactivateListingContactWithAuth(
         Number(contactId),
         Number(listingId),
-        "buyer"
+        "buyer",
       );
 
       // Optimistically update the UI by updating the listing's isActive status
-      setInteresesListings((prev) =>
-        prev.map((listing) =>
-          listing.listingId?.toString() === listingId.toString()
-            ? { ...listing, listingContactIsActive: false }
-            : listing
-        ) as unknown as PropertyListing[]
+      setInteresesListings(
+        (prev) =>
+          prev.map((listing) =>
+            listing.listingId?.toString() === listingId.toString()
+              ? { ...listing, listingContactIsActive: false }
+              : listing,
+          ) as unknown as PropertyListing[],
       );
 
       toast.success("Interés desactivado correctamente");
@@ -290,25 +333,25 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
             <button
               onClick={() => setSelectedRole("propiedades")}
               className={cn(
-                "px-4 py-2 text-sm font-medium rounded-md transition-all duration-200",
+                "rounded-md px-4 py-2 text-sm font-medium transition-all duration-200",
                 selectedRole === "propiedades"
-                  ? "bg-white shadow-md text-gray-900"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "bg-white text-gray-900 shadow-md"
+                  : "text-gray-600 hover:text-gray-900",
               )}
             >
-              <Building className="inline-block h-4 w-4 mr-2" />
+              <Building className="mr-2 inline-block h-4 w-4" />
               Propiedades
             </button>
             <button
               onClick={() => setSelectedRole("intereses")}
               className={cn(
-                "px-4 py-2 text-sm font-medium rounded-md transition-all duration-200",
+                "rounded-md px-4 py-2 text-sm font-medium transition-all duration-200",
                 selectedRole === "intereses"
-                  ? "bg-white shadow-md text-gray-900"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "bg-white text-gray-900 shadow-md"
+                  : "text-gray-600 hover:text-gray-900",
               )}
             >
-              <Home className="inline-block h-4 w-4 mr-2" />
+              <Home className="mr-2 inline-block h-4 w-4" />
               Intereses
             </button>
           </div>
@@ -316,7 +359,7 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
 
         {/* Loading skeleton cards */}
         {[1, 2, 3].map((i) => (
-          <Card key={i} className="p-6 animate-pulse">
+          <Card key={i} className="animate-pulse p-6">
             <div className="h-20 rounded-lg bg-gray-200"></div>
           </Card>
         ))}
@@ -332,25 +375,25 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
           <button
             onClick={() => setSelectedRole("propiedades")}
             className={cn(
-              "px-4 py-2 text-sm font-medium rounded-md transition-all duration-200",
+              "rounded-md px-4 py-2 text-sm font-medium transition-all duration-200",
               selectedRole === "propiedades"
-                ? "bg-white shadow-md text-gray-900"
-                : "text-gray-600 hover:text-gray-900"
+                ? "bg-white text-gray-900 shadow-md"
+                : "text-gray-600 hover:text-gray-900",
             )}
           >
-            <Building className="inline-block h-4 w-4 mr-2" />
+            <Building className="mr-2 inline-block h-4 w-4" />
             Propiedades
           </button>
           <button
             onClick={() => setSelectedRole("intereses")}
             className={cn(
-              "px-4 py-2 text-sm font-medium rounded-md transition-all duration-200",
+              "rounded-md px-4 py-2 text-sm font-medium transition-all duration-200",
               selectedRole === "intereses"
-                ? "bg-white shadow-md text-gray-900"
-                : "text-gray-600 hover:text-gray-900"
+                ? "bg-white text-gray-900 shadow-md"
+                : "text-gray-600 hover:text-gray-900",
             )}
           >
-            <Home className="inline-block h-4 w-4 mr-2" />
+            <Home className="mr-2 inline-block h-4 w-4" />
             Intereses
           </button>
         </div>
@@ -361,333 +404,461 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
         listings.length === 0 ? (
           <Card className="p-12">
             <div className="text-center">
-              <Building className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Sin propiedades</h3>
+              <Building className="mx-auto mb-4 h-12 w-12 text-gray-300" />
+              <h3 className="mb-2 text-lg font-semibold">Sin propiedades</h3>
               <p className="text-muted-foreground">
                 Este contacto no tiene propiedades registradas.
               </p>
             </div>
           </Card>
         ) : (
-        <>
-          {listingGroups.map((group) => {
-        const { listing, visits: listingVisits, contacts: listingContacts, activeView } = group;
+          <>
+            {listingGroups.map((group) => {
+              const {
+                listing,
+                visits: listingVisits,
+                contacts: listingContacts,
+                activeView,
+              } = group;
 
-        // Calculate KPI counts for this listing
-        const completedVisits = listingVisits.filter((v) => v.status === "Completed");
-        const scheduledVisits = listingVisits.filter((v) => v.status === "Scheduled");
-        const cancelledVisits = listingVisits.filter((v) => v.status === "Cancelled");
+              // Calculate KPI counts for this listing
+              const completedVisits = listingVisits.filter(
+                (v) => v.status === "Completed",
+              );
+              const scheduledVisits = listingVisits.filter(
+                (v) => v.status === "Scheduled",
+              );
+              const cancelledVisits = listingVisits.filter(
+                (v) => v.status === "Cancelled",
+              );
 
-        // Calculate KPI metrics based on badge states
-        // Contacts with visits (En visita): hasUpcomingVisit
-        const contactsWithVisits = listingContacts.filter((c) => c.hasUpcomingVisit);
+              // Calculate KPI metrics based on badge states
+              // Contacts with visits (En visita): hasUpcomingVisit
+              const contactsWithVisits = listingContacts.filter(
+                (c) => c.hasUpcomingVisit,
+              );
 
-        // Contacts in offer stage (Negociación): hasCompletedVisit OR hasOffer OR offerAccepted OR offerRejected
-        const contactsInOfferStage = listingContacts.filter(
-          (c) => c.hasCompletedVisit || c.hasOffer || c.offerAccepted === true || c.offerAccepted === false
-        );
+              // Contacts in offer stage (Negociación): hasCompletedVisit OR hasOffer OR offerAccepted OR offerRejected
+              const contactsInOfferStage = listingContacts.filter(
+                (c) =>
+                  c.hasCompletedVisit ||
+                  c.hasOffer ||
+                  c.offerAccepted === true ||
+                  c.offerAccepted === false,
+              );
 
-        // Contacts without visits (Visita pendiente): no upcoming visit, no completed visit, no offer
-        const contactsWithoutVisits = listingContacts.filter(
-          (c) => !c.hasUpcomingVisit && !c.hasCompletedVisit && !c.hasOffer && c.offerAccepted === null
-        );
+              // Contacts without visits (Visita pendiente): no upcoming visit, no completed visit, no offer
+              const contactsWithoutVisits = listingContacts.filter(
+                (c) =>
+                  !c.hasUpcomingVisit &&
+                  !c.hasCompletedVisit &&
+                  !c.hasOffer &&
+                  c.offerAccepted === null,
+              );
 
-        // Check if any offer is accepted in this listing (for ghosted effect)
-        const hasAcceptedOffer = listingContacts.some((c) => c.offerAccepted === true);
+              // Check if any offer is accepted in this listing (for ghosted effect)
+              const hasAcceptedOffer = listingContacts.some(
+                (c) => c.offerAccepted === true,
+              );
 
-        const listingIdStr = listing.listingId.toString();
-        const isExpanded = expandedListings[listingIdStr] ?? false;
+              const listingIdStr = listing.listingId.toString();
+              const isExpanded = expandedListings[listingIdStr] ?? false;
 
-        return (
-          <Card key={listingIdStr} className={cn("overflow-hidden", isExpanded && "shadow-none")}>
-            <CompactPropertyCard
-              listing={{
-                listingId: listing.listingId,
-                propertyId: listing.propertyId,
-                price: listing.price,
-                listingType: listing.listingType,
-                propertyType: listing.propertyType,
-                bedrooms: listing.bedrooms,
-                bathrooms: listing.bathrooms,
-                squareMeter: listing.squareMeter,
-                street: listing.street,
-                city: listing.city,
-                referenceNumber: listing.referenceNumber,
-                title: listing.title,
-                imageUrl: listing.imageUrl,
-              }}
-              isExpanded={isExpanded}
-              onToggle={() => toggleListing(listing.listingId)}
-            />
+              return (
+                <Card
+                  key={listingIdStr}
+                  className={cn("overflow-hidden", isExpanded && "shadow-none")}
+                >
+                  <CompactPropertyCard
+                    listing={{
+                      listingId: listing.listingId,
+                      propertyId: listing.propertyId,
+                      price: listing.price,
+                      listingType: listing.listingType,
+                      propertyType: listing.propertyType,
+                      bedrooms: listing.bedrooms,
+                      bathrooms: listing.bathrooms,
+                      squareMeter: listing.squareMeter,
+                      street: listing.street,
+                      city: listing.city,
+                      referenceNumber: listing.referenceNumber,
+                      title: listing.title,
+                      imageUrl: listing.imageUrl,
+                    }}
+                    isExpanded={isExpanded}
+                    onToggle={() => toggleListing(listing.listingId)}
+                  />
 
-            {/* Expanded Content */}
-            {isExpanded && (
-              <div className="border-t border-gray-200 p-4 space-y-6 bg-gray-50">
-                {/* KPI Navigation Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <VisitsKPICard
-                  completedCount={completedVisits.length}
-                  scheduledCount={scheduledVisits.length}
-                  cancelledCount={cancelledVisits.length}
-                  totalCount={listingVisits.length}
-                  isActive={activeView === "visits"}
-                  onClick={() => handleViewToggle(listing.listingId, "visits")}
-                  listingId={listing.listingId}
-                />
-                <ContactsKPICard
-                  contactsWithVisitsCount={contactsWithVisits.length}
-                  contactsWithoutVisitsCount={contactsWithoutVisits.length}
-                  contactsInOfferStageCount={contactsInOfferStage.length}
-                  totalContactsCount={listingContacts.length}
-                  isActive={activeView === "contacts"}
-                  onClick={() => handleViewToggle(listing.listingId, "contacts")}
-                  listingId={listing.listingId}
-                />
-                </div>
+                  {/* Expanded Content */}
+                  {isExpanded && (
+                    <div className="space-y-6 border-t border-gray-200 bg-gray-50 p-4">
+                      {/* KPI Navigation Cards */}
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <VisitsKPICard
+                          completedCount={completedVisits.length}
+                          scheduledCount={scheduledVisits.length}
+                          cancelledCount={cancelledVisits.length}
+                          totalCount={listingVisits.length}
+                          isActive={activeView === "visits"}
+                          onClick={() =>
+                            handleViewToggle(listing.listingId, "visits")
+                          }
+                          listingId={listing.listingId}
+                        />
+                        <ContactsKPICard
+                          contactsWithVisitsCount={contactsWithVisits.length}
+                          contactsWithoutVisitsCount={
+                            contactsWithoutVisits.length
+                          }
+                          contactsInOfferStageCount={
+                            contactsInOfferStage.length
+                          }
+                          totalContactsCount={listingContacts.length}
+                          isActive={activeView === "contacts"}
+                          onClick={() =>
+                            handleViewToggle(listing.listingId, "contacts")
+                          }
+                          listingId={listing.listingId}
+                        />
+                      </div>
 
-                {/* Visits Content - Grouped by Status */}
-                {activeView === "visits" && (() => {
-                  // Group visits by status
-                  const urgentVisits = listingVisits.filter(
-                    (v) => v.status === "NoShow" || v.status === "Rescheduled"
-                  ).sort((a, b) => {
-                    // Most recent first for urgent items
-                    return new Date(b.datetimeStart).getTime() - new Date(a.datetimeStart).getTime();
-                  });
+                      {/* Visits Content - Grouped by Status */}
+                      {activeView === "visits" &&
+                        (() => {
+                          // Group visits by status
+                          const urgentVisits = listingVisits
+                            .filter(
+                              (v) =>
+                                v.status === "NoShow" ||
+                                v.status === "Rescheduled",
+                            )
+                            .sort((a, b) => {
+                              // Most recent first for urgent items
+                              return (
+                                new Date(b.datetimeStart).getTime() -
+                                new Date(a.datetimeStart).getTime()
+                              );
+                            });
 
-                  const activeVisits = listingVisits.filter(
-                    (v) => v.status === "Scheduled"
-                  ).sort((a, b) => {
-                    // Soonest first for upcoming visits
-                    return new Date(a.datetimeStart).getTime() - new Date(b.datetimeStart).getTime();
-                  });
+                          const activeVisits = listingVisits
+                            .filter((v) => v.status === "Scheduled")
+                            .sort((a, b) => {
+                              // Soonest first for upcoming visits
+                              return (
+                                new Date(a.datetimeStart).getTime() -
+                                new Date(b.datetimeStart).getTime()
+                              );
+                            });
 
-                  const completedVisits = listingVisits.filter(
-                    (v) => v.status === "Completed"
-                  ).sort((a, b) => {
-                    // Most recent first for completed
-                    return new Date(b.datetimeStart).getTime() - new Date(a.datetimeStart).getTime();
-                  });
+                          const completedVisits = listingVisits
+                            .filter((v) => v.status === "Completed")
+                            .sort((a, b) => {
+                              // Most recent first for completed
+                              return (
+                                new Date(b.datetimeStart).getTime() -
+                                new Date(a.datetimeStart).getTime()
+                              );
+                            });
 
-                  const cancelledVisits = listingVisits.filter(
-                    (v) => v.status === "Cancelled"
-                  ).sort((a, b) => {
-                    // Most recent first for cancelled
-                    return new Date(b.datetimeStart).getTime() - new Date(a.datetimeStart).getTime();
-                  });
+                          const cancelledVisits = listingVisits
+                            .filter((v) => v.status === "Cancelled")
+                            .sort((a, b) => {
+                              // Most recent first for cancelled
+                              return (
+                                new Date(b.datetimeStart).getTime() -
+                                new Date(a.datetimeStart).getTime()
+                              );
+                            });
 
-                  return (
-                    <div className="space-y-4 animate-in fade-in duration-300">
-                      {listingVisits.length === 0 ? (
-                        <EmptyState type="completed-visits" />
-                      ) : (
-                        <div className="space-y-6">
-                          {/* 🔴 Urgent/Action Required Section */}
-                          {urgentVisits.length > 0 && (
-                            <div className="space-y-3">
-                              <div className="flex items-center gap-2 px-1">
-                                <div className="h-2 w-2 rounded-full bg-rose-500" />
-                                <h3 className="text-sm font-semibold text-rose-700 uppercase tracking-wide">
-                                  Requieren Atención ({urgentVisits.length})
-                                </h3>
-                              </div>
-                              <div className="space-y-3 pl-4">
-                                {urgentVisits.map((visit) => {
-                                  const appointmentData: AppointmentData = {
-                                    appointmentId: visit.appointmentId,
-                                    type: visit.type ?? "",
-                                    status: (visit.status ?? "Completed") as "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow",
-                                    datetimeStart: visit.datetimeStart,
-                                    datetimeEnd: visit.datetimeEnd,
-                                    tripTimeMinutes: visit.tripTimeMinutes ?? undefined,
-                                    notes: visit.notes ?? undefined,
-                                    contactId: visit.contactId ?? undefined,
-                                    contactName: `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
-                                    propertyAddress: undefined,
-                                    agentName: visit.agentName ?? undefined,
-                                    isOptimistic: false,
-                                  };
+                          return (
+                            <div className="animate-in fade-in space-y-4 duration-300">
+                              {listingVisits.length === 0 ? (
+                                <EmptyState type="completed-visits" />
+                              ) : (
+                                <div className="space-y-6">
+                                  {/* 🔴 Urgent/Action Required Section */}
+                                  {urgentVisits.length > 0 && (
+                                    <div className="space-y-3">
+                                      <div className="flex items-center gap-2 px-1">
+                                        <div className="h-2 w-2 rounded-full bg-rose-500" />
+                                        <h3 className="text-sm font-semibold uppercase tracking-wide text-rose-700">
+                                          Requieren Atención (
+                                          {urgentVisits.length})
+                                        </h3>
+                                      </div>
+                                      <div className="space-y-3 pl-4">
+                                        {urgentVisits.map((visit) => {
+                                          const appointmentData: AppointmentData =
+                                            {
+                                              appointmentId:
+                                                visit.appointmentId,
+                                              type: visit.type ?? "",
+                                              status: (visit.status ??
+                                                "Completed") as
+                                                | "Completed"
+                                                | "Scheduled"
+                                                | "Cancelled"
+                                                | "Rescheduled"
+                                                | "NoShow",
+                                              datetimeStart:
+                                                visit.datetimeStart,
+                                              datetimeEnd: visit.datetimeEnd,
+                                              tripTimeMinutes:
+                                                visit.tripTimeMinutes ??
+                                                undefined,
+                                              notes: visit.notes ?? undefined,
+                                              contactId:
+                                                visit.contactId ?? undefined,
+                                              contactName:
+                                                `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
+                                              propertyAddress: undefined,
+                                              agentName:
+                                                visit.agentName ?? undefined,
+                                              isOptimistic: false,
+                                            };
 
-                                  return (
-                                    <AppointmentCard
-                                      key={visit.appointmentId.toString()}
-                                      appointment={appointmentData}
-                                      onClick={(appointment) => setSelectedAppointment(appointment)}
-                                      navigateToVisit={false}
-                                    />
-                                  );
-                                })}
-                              </div>
+                                          return (
+                                            <AppointmentCard
+                                              key={visit.appointmentId.toString()}
+                                              appointment={appointmentData}
+                                              onClick={(appointment) =>
+                                                setSelectedAppointment(
+                                                  appointment,
+                                                )
+                                              }
+                                              navigateToVisit={false}
+                                            />
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* 🟢 Active/Upcoming Visits Section */}
+                                  {activeVisits.length > 0 && (
+                                    <div className="space-y-3">
+                                      <div className="flex items-center gap-2 px-1">
+                                        <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                                        <h3 className="text-sm font-semibold uppercase tracking-wide text-emerald-700">
+                                          Próximas Visitas (
+                                          {activeVisits.length})
+                                        </h3>
+                                      </div>
+                                      <div className="space-y-3 pl-4">
+                                        {activeVisits.map((visit) => {
+                                          const appointmentData: AppointmentData =
+                                            {
+                                              appointmentId:
+                                                visit.appointmentId,
+                                              type: visit.type ?? "",
+                                              status: (visit.status ??
+                                                "Completed") as
+                                                | "Completed"
+                                                | "Scheduled"
+                                                | "Cancelled"
+                                                | "Rescheduled"
+                                                | "NoShow",
+                                              datetimeStart:
+                                                visit.datetimeStart,
+                                              datetimeEnd: visit.datetimeEnd,
+                                              tripTimeMinutes:
+                                                visit.tripTimeMinutes ??
+                                                undefined,
+                                              notes: visit.notes ?? undefined,
+                                              contactId:
+                                                visit.contactId ?? undefined,
+                                              contactName:
+                                                `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
+                                              propertyAddress: undefined,
+                                              agentName:
+                                                visit.agentName ?? undefined,
+                                              isOptimistic: false,
+                                            };
+
+                                          return (
+                                            <AppointmentCard
+                                              key={visit.appointmentId.toString()}
+                                              appointment={appointmentData}
+                                              onClick={(appointment) =>
+                                                setSelectedAppointment(
+                                                  appointment,
+                                                )
+                                              }
+                                              navigateToVisit={false}
+                                            />
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* ✓ Completed Visits Section - Collapsible */}
+                                  {completedVisits.length > 0 && (
+                                    <ExpandableSection
+                                      title="Completadas"
+                                      count={completedVisits.length}
+                                      defaultExpanded={false}
+                                      storageKey={`contact-activity-propiedades-completed-${listing.listingId}`}
+                                    >
+                                      <div className="space-y-3">
+                                        {completedVisits.map((visit) => {
+                                          const appointmentData: AppointmentData =
+                                            {
+                                              appointmentId:
+                                                visit.appointmentId,
+                                              type: visit.type ?? "",
+                                              status: (visit.status ??
+                                                "Completed") as
+                                                | "Completed"
+                                                | "Scheduled"
+                                                | "Cancelled"
+                                                | "Rescheduled"
+                                                | "NoShow",
+                                              datetimeStart:
+                                                visit.datetimeStart,
+                                              datetimeEnd: visit.datetimeEnd,
+                                              tripTimeMinutes:
+                                                visit.tripTimeMinutes ??
+                                                undefined,
+                                              notes: visit.notes ?? undefined,
+                                              contactId:
+                                                visit.contactId ?? undefined,
+                                              contactName:
+                                                `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
+                                              propertyAddress: undefined,
+                                              agentName:
+                                                visit.agentName ?? undefined,
+                                              isOptimistic: false,
+                                            };
+
+                                          return (
+                                            <AppointmentCard
+                                              key={visit.appointmentId.toString()}
+                                              appointment={appointmentData}
+                                              onClick={(appointment) =>
+                                                setSelectedAppointment(
+                                                  appointment,
+                                                )
+                                              }
+                                              navigateToVisit={false}
+                                            />
+                                          );
+                                        })}
+                                      </div>
+                                    </ExpandableSection>
+                                  )}
+
+                                  {/* ✕ Cancelled Visits Section - Collapsible */}
+                                  {cancelledVisits.length > 0 && (
+                                    <ExpandableSection
+                                      title="Canceladas"
+                                      count={cancelledVisits.length}
+                                      defaultExpanded={false}
+                                      storageKey={`contact-activity-propiedades-cancelled-${listing.listingId}`}
+                                    >
+                                      <div className="space-y-3">
+                                        {cancelledVisits.map((visit) => {
+                                          const appointmentData: AppointmentData =
+                                            {
+                                              appointmentId:
+                                                visit.appointmentId,
+                                              type: visit.type ?? "",
+                                              status: (visit.status ??
+                                                "Completed") as
+                                                | "Completed"
+                                                | "Scheduled"
+                                                | "Cancelled"
+                                                | "Rescheduled"
+                                                | "NoShow",
+                                              datetimeStart:
+                                                visit.datetimeStart,
+                                              datetimeEnd: visit.datetimeEnd,
+                                              tripTimeMinutes:
+                                                visit.tripTimeMinutes ??
+                                                undefined,
+                                              notes: visit.notes ?? undefined,
+                                              contactId:
+                                                visit.contactId ?? undefined,
+                                              contactName:
+                                                `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
+                                              propertyAddress: undefined,
+                                              agentName:
+                                                visit.agentName ?? undefined,
+                                              isOptimistic: false,
+                                            };
+
+                                          return (
+                                            <AppointmentCard
+                                              key={visit.appointmentId.toString()}
+                                              appointment={appointmentData}
+                                              onClick={(appointment) =>
+                                                setSelectedAppointment(
+                                                  appointment,
+                                                )
+                                              }
+                                              navigateToVisit={false}
+                                            />
+                                          );
+                                        })}
+                                      </div>
+                                    </ExpandableSection>
+                                  )}
+                                </div>
+                              )}
                             </div>
-                          )}
+                          );
+                        })()}
 
-                          {/* 🟢 Active/Upcoming Visits Section */}
-                          {activeVisits.length > 0 && (
+                      {/* Contacts Content */}
+                      {activeView === "contacts" && (
+                        <div className="animate-in fade-in space-y-4 duration-300">
+                          {listingContacts.length === 0 ? (
+                            <EmptyState type="new-contacts" />
+                          ) : (
                             <div className="space-y-3">
-                              <div className="flex items-center gap-2 px-1">
-                                <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                                <h3 className="text-sm font-semibold text-emerald-700 uppercase tracking-wide">
-                                  Próximas Visitas ({activeVisits.length})
-                                </h3>
-                              </div>
-                              <div className="space-y-3 pl-4">
-                                {activeVisits.map((visit) => {
-                                  const appointmentData: AppointmentData = {
-                                    appointmentId: visit.appointmentId,
-                                    type: visit.type ?? "",
-                                    status: (visit.status ?? "Completed") as "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow",
-                                    datetimeStart: visit.datetimeStart,
-                                    datetimeEnd: visit.datetimeEnd,
-                                    tripTimeMinutes: visit.tripTimeMinutes ?? undefined,
-                                    notes: visit.notes ?? undefined,
-                                    contactId: visit.contactId ?? undefined,
-                                    contactName: `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
-                                    propertyAddress: undefined,
-                                    agentName: visit.agentName ?? undefined,
-                                    isOptimistic: false,
-                                  };
-
-                                  return (
-                                    <AppointmentCard
-                                      key={visit.appointmentId.toString()}
-                                      appointment={appointmentData}
-                                      onClick={(appointment) => setSelectedAppointment(appointment)}
-                                      navigateToVisit={false}
-                                    />
-                                  );
-                                })}
-                              </div>
+                              {listingContacts.map((contact) => (
+                                <CompactContactCard
+                                  key={contact.listingContactId.toString()}
+                                  listingContactId={contact.listingContactId}
+                                  contact={{
+                                    contactId: contact.contactId,
+                                    firstName: contact.firstName,
+                                    lastName: contact.lastName,
+                                    email: contact.email,
+                                    phone: contact.phone,
+                                    createdAt: contact.createdAt,
+                                  }}
+                                  listingContact={{
+                                    source: contact.source,
+                                    status: contact.status,
+                                    contactType: contact.contactType as
+                                      | "buyer"
+                                      | "owner"
+                                      | "viewer",
+                                  }}
+                                  hasUpcomingVisit={contact.hasUpcomingVisit}
+                                  hasMissedVisit={contact.hasMissedVisit}
+                                  hasCompletedVisit={contact.hasCompletedVisit}
+                                  hasCancelledVisit={contact.hasCancelledVisit}
+                                  hasOffer={contact.hasOffer}
+                                  offer={contact.offer}
+                                  offerAccepted={contact.offerAccepted}
+                                  visitCount={contact.visitCount}
+                                  listingId={listing.listingId}
+                                  onContactClick={setSelectedContact}
+                                  hasAcceptedOfferInList={hasAcceptedOffer}
+                                />
+                              ))}
                             </div>
-                          )}
-
-                          {/* ✓ Completed Visits Section - Collapsible */}
-                          {completedVisits.length > 0 && (
-                            <ExpandableSection
-                              title="Completadas"
-                              count={completedVisits.length}
-                              defaultExpanded={false}
-                              storageKey={`contact-activity-propiedades-completed-${listing.listingId}`}
-                            >
-                              <div className="space-y-3">
-                                {completedVisits.map((visit) => {
-                                  const appointmentData: AppointmentData = {
-                                    appointmentId: visit.appointmentId,
-                                    type: visit.type ?? "",
-                                    status: (visit.status ?? "Completed") as "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow",
-                                    datetimeStart: visit.datetimeStart,
-                                    datetimeEnd: visit.datetimeEnd,
-                                    tripTimeMinutes: visit.tripTimeMinutes ?? undefined,
-                                    notes: visit.notes ?? undefined,
-                                    contactId: visit.contactId ?? undefined,
-                                    contactName: `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
-                                    propertyAddress: undefined,
-                                    agentName: visit.agentName ?? undefined,
-                                    isOptimistic: false,
-                                  };
-
-                                  return (
-                                    <AppointmentCard
-                                      key={visit.appointmentId.toString()}
-                                      appointment={appointmentData}
-                                      onClick={(appointment) => setSelectedAppointment(appointment)}
-                                      navigateToVisit={false}
-                                    />
-                                  );
-                                })}
-                              </div>
-                            </ExpandableSection>
-                          )}
-
-                          {/* ✕ Cancelled Visits Section - Collapsible */}
-                          {cancelledVisits.length > 0 && (
-                            <ExpandableSection
-                              title="Canceladas"
-                              count={cancelledVisits.length}
-                              defaultExpanded={false}
-                              storageKey={`contact-activity-propiedades-cancelled-${listing.listingId}`}
-                            >
-                              <div className="space-y-3">
-                                {cancelledVisits.map((visit) => {
-                                  const appointmentData: AppointmentData = {
-                                    appointmentId: visit.appointmentId,
-                                    type: visit.type ?? "",
-                                    status: (visit.status ?? "Completed") as "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow",
-                                    datetimeStart: visit.datetimeStart,
-                                    datetimeEnd: visit.datetimeEnd,
-                                    tripTimeMinutes: visit.tripTimeMinutes ?? undefined,
-                                    notes: visit.notes ?? undefined,
-                                    contactId: visit.contactId ?? undefined,
-                                    contactName: `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
-                                    propertyAddress: undefined,
-                                    agentName: visit.agentName ?? undefined,
-                                    isOptimistic: false,
-                                  };
-
-                                  return (
-                                    <AppointmentCard
-                                      key={visit.appointmentId.toString()}
-                                      appointment={appointmentData}
-                                      onClick={(appointment) => setSelectedAppointment(appointment)}
-                                      navigateToVisit={false}
-                                    />
-                                  );
-                                })}
-                              </div>
-                            </ExpandableSection>
                           )}
                         </div>
                       )}
                     </div>
-                  );
-                })()}
-
-                {/* Contacts Content */}
-                {activeView === "contacts" && (
-                  <div className="space-y-4 animate-in fade-in duration-300">
-                    {listingContacts.length === 0 ? (
-                      <EmptyState type="new-contacts" />
-                    ) : (
-                      <div className="space-y-3">
-                        {listingContacts.map((contact) => (
-                          <CompactContactCard
-                            key={contact.listingContactId.toString()}
-                            listingContactId={contact.listingContactId}
-                            contact={{
-                              contactId: contact.contactId,
-                              firstName: contact.firstName,
-                              lastName: contact.lastName,
-                              email: contact.email,
-                              phone: contact.phone,
-                              createdAt: contact.createdAt,
-                            }}
-                            listingContact={{
-                              source: contact.source,
-                              status: contact.status,
-                              contactType: contact.contactType as "buyer" | "owner" | "viewer",
-                            }}
-                            hasUpcomingVisit={contact.hasUpcomingVisit}
-                            hasMissedVisit={contact.hasMissedVisit}
-                            hasCompletedVisit={contact.hasCompletedVisit}
-                            hasCancelledVisit={contact.hasCancelledVisit}
-                            hasOffer={contact.hasOffer}
-                            offer={contact.offer}
-                            offerAccepted={contact.offerAccepted}
-                            visitCount={contact.visitCount}
-                            listingId={listing.listingId}
-                            onContactClick={setSelectedContact}
-                            hasAcceptedOfferInList={hasAcceptedOffer}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </Card>
-        );
-      })}
-        </>
+                  )}
+                </Card>
+              );
+            })}
+          </>
         )
       ) : (
         // Intereses section with compact property cards
@@ -698,7 +869,7 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
               {[1, 2, 3].map((i) => (
                 <Card key={i} className="animate-pulse p-3">
                   <div className="flex gap-3">
-                    <div className="w-20 h-16 rounded-md bg-gray-200"></div>
+                    <div className="h-16 w-20 rounded-md bg-gray-200"></div>
                     <div className="flex-1 space-y-2">
                       <div className="h-4 w-3/4 rounded bg-gray-200"></div>
                       <div className="h-3 w-1/2 rounded bg-gray-200"></div>
@@ -713,44 +884,75 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
             <div className="space-y-3">
               {interesesListings
                 .sort((a, b) => {
-                  const aActive = (a as Record<string, unknown>).listingContactIsActive ?? true;
-                  const bActive = (b as Record<string, unknown>).listingContactIsActive ?? true;
+                  const aActive =
+                    (a as Record<string, unknown>).listingContactIsActive ??
+                    true;
+                  const bActive =
+                    (b as Record<string, unknown>).listingContactIsActive ??
+                    true;
                   // Sort active (true) before inactive (false)
                   if (aActive === bActive) return 0;
                   return aActive ? -1 : 1;
                 })
                 .map((listing) => {
-                  const listingContactId = (listing as Record<string, unknown>).listingContactId as bigint | undefined;
-                  const listingContactIdStr = listingContactId?.toString() ?? "unknown";
-                  const listingIdStr = listing.listingId?.toString() ?? "unknown";
+                  const listingContactId = (listing as Record<string, unknown>)
+                    .listingContactId as bigint | undefined;
+                  const listingContactIdStr =
+                    listingContactId?.toString() ?? "unknown";
+                  const listingIdStr =
+                    listing.listingId?.toString() ?? "unknown";
                   const isExpanded = expandedListings[listingIdStr] ?? false;
-                  const isActive = (listing as Record<string, unknown>).listingContactIsActive ?? true;
+                  const isActive =
+                    (listing as Record<string, unknown>)
+                      .listingContactIsActive ?? true;
 
                   // Convert PropertyListing (from getBuyerListingsWithAuth) to CompactPropertyCard props
                   const listingForCard = {
-                    listingId: typeof listing.listingId === 'bigint' ? listing.listingId : BigInt(listing.listingId ?? 0),
-                    propertyId: typeof listing.propertyId === 'bigint' ? listing.propertyId : BigInt(listing.propertyId ?? 0),
+                    listingId:
+                      typeof listing.listingId === "bigint"
+                        ? listing.listingId
+                        : BigInt(listing.listingId ?? 0),
+                    propertyId:
+                      typeof listing.propertyId === "bigint"
+                        ? listing.propertyId
+                        : BigInt(listing.propertyId ?? 0),
                     price: listing.price?.toString() ?? "0",
                     listingType: listing.listingType ?? "",
                     propertyType: listing.propertyType ?? null,
                     bedrooms: listing.bedrooms ?? null,
-                    bathrooms: listing.bathrooms ? String(listing.bathrooms) : null,
+                    bathrooms: listing.bathrooms
+                      ? String(listing.bathrooms)
+                      : null,
                     squareMeter: listing.squareMeter ?? null,
                     street: listing.street ?? null,
                     city: listing.city ?? null,
-                    referenceNumber: (listing as Record<string, unknown>).referenceNumber as string | null ?? null,
+                    referenceNumber:
+                      ((listing as Record<string, unknown>).referenceNumber as
+                        | string
+                        | null) ?? null,
                     title: listing.title ?? listing.street ?? null,
-                    imageUrl: (listing as Record<string, unknown>).imageUrl as string | null ?? null,
+                    imageUrl:
+                      ((listing as Record<string, unknown>).imageUrl as
+                        | string
+                        | null) ?? null,
                     isActive: isActive as boolean,
                   };
 
                   // Filter visits for this specific listing and current contact
                   const listingVisits = visits.filter(
-                    (v) => v.listingId?.toString() === listingForCard.listingId.toString()
+                    (v) =>
+                      v.listingId?.toString() ===
+                      listingForCard.listingId.toString(),
                   );
 
                   return (
-                    <Card key={listingContactIdStr} className={cn("overflow-hidden", isExpanded && "shadow-none")}>
+                    <Card
+                      key={listingContactIdStr}
+                      className={cn(
+                        "overflow-hidden",
+                        isExpanded && "shadow-none",
+                      )}
+                    >
                       <CompactPropertyCard
                         listing={listingForCard}
                         isExpanded={isExpanded}
@@ -764,200 +966,291 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
                       />
 
                       {/* Expanded Content - Grouped Visit Cards */}
-                      {isExpanded && (() => {
-                        // Group visits by status
-                        const urgentVisits = listingVisits.filter(
-                          (v) => v.status === "NoShow" || v.status === "Rescheduled"
-                        ).sort((a, b) => {
-                          // Most recent first for urgent items
-                          return new Date(b.datetimeStart).getTime() - new Date(a.datetimeStart).getTime();
-                        });
+                      {isExpanded &&
+                        (() => {
+                          // Group visits by status
+                          const urgentVisits = listingVisits
+                            .filter(
+                              (v) =>
+                                v.status === "NoShow" ||
+                                v.status === "Rescheduled",
+                            )
+                            .sort((a, b) => {
+                              // Most recent first for urgent items
+                              return (
+                                new Date(b.datetimeStart).getTime() -
+                                new Date(a.datetimeStart).getTime()
+                              );
+                            });
 
-                        const activeVisits = listingVisits.filter(
-                          (v) => v.status === "Scheduled"
-                        ).sort((a, b) => {
-                          // Soonest first for upcoming visits
-                          return new Date(a.datetimeStart).getTime() - new Date(b.datetimeStart).getTime();
-                        });
+                          const activeVisits = listingVisits
+                            .filter((v) => v.status === "Scheduled")
+                            .sort((a, b) => {
+                              // Soonest first for upcoming visits
+                              return (
+                                new Date(a.datetimeStart).getTime() -
+                                new Date(b.datetimeStart).getTime()
+                              );
+                            });
 
-                        const completedVisits = listingVisits.filter(
-                          (v) => v.status === "Completed"
-                        ).sort((a, b) => {
-                          // Most recent first for completed
-                          return new Date(b.datetimeStart).getTime() - new Date(a.datetimeStart).getTime();
-                        });
+                          const completedVisits = listingVisits
+                            .filter((v) => v.status === "Completed")
+                            .sort((a, b) => {
+                              // Most recent first for completed
+                              return (
+                                new Date(b.datetimeStart).getTime() -
+                                new Date(a.datetimeStart).getTime()
+                              );
+                            });
 
-                        const cancelledVisits = listingVisits.filter(
-                          (v) => v.status === "Cancelled"
-                        ).sort((a, b) => {
-                          // Most recent first for cancelled
-                          return new Date(b.datetimeStart).getTime() - new Date(a.datetimeStart).getTime();
-                        });
+                          const cancelledVisits = listingVisits
+                            .filter((v) => v.status === "Cancelled")
+                            .sort((a, b) => {
+                              // Most recent first for cancelled
+                              return (
+                                new Date(b.datetimeStart).getTime() -
+                                new Date(a.datetimeStart).getTime()
+                              );
+                            });
 
-                        return (
-                          <div className="border-t border-gray-200 p-4 space-y-4 bg-gray-50">
-                            {listingVisits.length === 0 ? (
-                              <EmptyState type="completed-visits" />
-                            ) : (
-                              <div className="space-y-6">
-                                {/* 🔴 Urgent/Action Required Section */}
-                                {urgentVisits.length > 0 && (
-                                  <div className="space-y-3">
-                                    <div className="flex items-center gap-2 px-1">
-                                      <div className="h-2 w-2 rounded-full bg-rose-500" />
-                                      <h3 className="text-sm font-semibold text-rose-700 uppercase tracking-wide">
-                                        Requieren Atención ({urgentVisits.length})
-                                      </h3>
-                                    </div>
-                                    <div className="space-y-3 pl-4">
-                                      {urgentVisits.map((visit) => {
-                                        const appointmentData: AppointmentData = {
-                                          appointmentId: visit.appointmentId,
-                                          type: visit.type ?? "",
-                                          status: (visit.status ?? "Completed") as "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow",
-                                          datetimeStart: visit.datetimeStart,
-                                          datetimeEnd: visit.datetimeEnd,
-                                          tripTimeMinutes: visit.tripTimeMinutes ?? undefined,
-                                          notes: visit.notes ?? undefined,
-                                          contactId: visit.contactId ?? undefined,
-                                          contactName: `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
-                                          propertyAddress: undefined,
-                                          agentName: visit.agentName ?? undefined,
-                                          isOptimistic: false,
-                                        };
-
-                                        return (
-                                          <AppointmentCard
-                                            key={visit.appointmentId.toString()}
-                                            appointment={appointmentData}
-                                            onClick={(appointment) => setSelectedAppointment(appointment)}
-                                            navigateToVisit={false}
-                                          />
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* 🟢 Active/Upcoming Visits Section */}
-                                {activeVisits.length > 0 && (
-                                  <div className="space-y-3">
-                                    <div className="flex items-center gap-2 px-1">
-                                      <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                                      <h3 className="text-sm font-semibold text-emerald-700 uppercase tracking-wide">
-                                        Próximas Visitas ({activeVisits.length})
-                                      </h3>
-                                    </div>
-                                    <div className="space-y-3 pl-4">
-                                      {activeVisits.map((visit) => {
-                                        const appointmentData: AppointmentData = {
-                                          appointmentId: visit.appointmentId,
-                                          type: visit.type ?? "",
-                                          status: (visit.status ?? "Completed") as "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow",
-                                          datetimeStart: visit.datetimeStart,
-                                          datetimeEnd: visit.datetimeEnd,
-                                          tripTimeMinutes: visit.tripTimeMinutes ?? undefined,
-                                          notes: visit.notes ?? undefined,
-                                          contactId: visit.contactId ?? undefined,
-                                          contactName: `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
-                                          propertyAddress: undefined,
-                                          agentName: visit.agentName ?? undefined,
-                                          isOptimistic: false,
-                                        };
-
-                                        return (
-                                          <AppointmentCard
-                                            key={visit.appointmentId.toString()}
-                                            appointment={appointmentData}
-                                            onClick={(appointment) => setSelectedAppointment(appointment)}
-                                            navigateToVisit={false}
-                                          />
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* ✓ Completed Visits Section - Collapsible */}
-                                {completedVisits.length > 0 && (
-                                  <ExpandableSection
-                                    title="Completadas"
-                                    count={completedVisits.length}
-                                    defaultExpanded={false}
-                                    storageKey={`contact-activity-completed-${listingForCard.listingId}`}
-                                  >
+                          return (
+                            <div className="space-y-4 border-t border-gray-200 bg-gray-50 p-4">
+                              {listingVisits.length === 0 ? (
+                                <EmptyState type="completed-visits" />
+                              ) : (
+                                <div className="space-y-6">
+                                  {/* 🔴 Urgent/Action Required Section */}
+                                  {urgentVisits.length > 0 && (
                                     <div className="space-y-3">
-                                      {completedVisits.map((visit) => {
-                                        const appointmentData: AppointmentData = {
-                                          appointmentId: visit.appointmentId,
-                                          type: visit.type ?? "",
-                                          status: (visit.status ?? "Completed") as "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow",
-                                          datetimeStart: visit.datetimeStart,
-                                          datetimeEnd: visit.datetimeEnd,
-                                          tripTimeMinutes: visit.tripTimeMinutes ?? undefined,
-                                          notes: visit.notes ?? undefined,
-                                          contactId: visit.contactId ?? undefined,
-                                          contactName: `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
-                                          propertyAddress: undefined,
-                                          agentName: visit.agentName ?? undefined,
-                                          isOptimistic: false,
-                                        };
+                                      <div className="flex items-center gap-2 px-1">
+                                        <div className="h-2 w-2 rounded-full bg-rose-500" />
+                                        <h3 className="text-sm font-semibold uppercase tracking-wide text-rose-700">
+                                          Requieren Atención (
+                                          {urgentVisits.length})
+                                        </h3>
+                                      </div>
+                                      <div className="space-y-3 pl-4">
+                                        {urgentVisits.map((visit) => {
+                                          const appointmentData: AppointmentData =
+                                            {
+                                              appointmentId:
+                                                visit.appointmentId,
+                                              type: visit.type ?? "",
+                                              status: (visit.status ??
+                                                "Completed") as
+                                                | "Completed"
+                                                | "Scheduled"
+                                                | "Cancelled"
+                                                | "Rescheduled"
+                                                | "NoShow",
+                                              datetimeStart:
+                                                visit.datetimeStart,
+                                              datetimeEnd: visit.datetimeEnd,
+                                              tripTimeMinutes:
+                                                visit.tripTimeMinutes ??
+                                                undefined,
+                                              notes: visit.notes ?? undefined,
+                                              contactId:
+                                                visit.contactId ?? undefined,
+                                              contactName:
+                                                `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
+                                              propertyAddress: undefined,
+                                              agentName:
+                                                visit.agentName ?? undefined,
+                                              isOptimistic: false,
+                                            };
 
-                                        return (
-                                          <AppointmentCard
-                                            key={visit.appointmentId.toString()}
-                                            appointment={appointmentData}
-                                            onClick={(appointment) => setSelectedAppointment(appointment)}
-                                            navigateToVisit={false}
-                                          />
-                                        );
-                                      })}
+                                          return (
+                                            <AppointmentCard
+                                              key={visit.appointmentId.toString()}
+                                              appointment={appointmentData}
+                                              onClick={(appointment) =>
+                                                setSelectedAppointment(
+                                                  appointment,
+                                                )
+                                              }
+                                              navigateToVisit={false}
+                                            />
+                                          );
+                                        })}
+                                      </div>
                                     </div>
-                                  </ExpandableSection>
-                                )}
+                                  )}
 
-                                {/* ✕ Cancelled Visits Section - Collapsible */}
-                                {cancelledVisits.length > 0 && (
-                                  <ExpandableSection
-                                    title="Canceladas"
-                                    count={cancelledVisits.length}
-                                    defaultExpanded={false}
-                                    storageKey={`contact-activity-cancelled-${listingForCard.listingId}`}
-                                  >
+                                  {/* 🟢 Active/Upcoming Visits Section */}
+                                  {activeVisits.length > 0 && (
                                     <div className="space-y-3">
-                                      {cancelledVisits.map((visit) => {
-                                        const appointmentData: AppointmentData = {
-                                          appointmentId: visit.appointmentId,
-                                          type: visit.type ?? "",
-                                          status: (visit.status ?? "Completed") as "Completed" | "Scheduled" | "Cancelled" | "Rescheduled" | "NoShow",
-                                          datetimeStart: visit.datetimeStart,
-                                          datetimeEnd: visit.datetimeEnd,
-                                          tripTimeMinutes: visit.tripTimeMinutes ?? undefined,
-                                          notes: visit.notes ?? undefined,
-                                          contactId: visit.contactId ?? undefined,
-                                          contactName: `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
-                                          propertyAddress: undefined,
-                                          agentName: visit.agentName ?? undefined,
-                                          isOptimistic: false,
-                                        };
+                                      <div className="flex items-center gap-2 px-1">
+                                        <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                                        <h3 className="text-sm font-semibold uppercase tracking-wide text-emerald-700">
+                                          Próximas Visitas (
+                                          {activeVisits.length})
+                                        </h3>
+                                      </div>
+                                      <div className="space-y-3 pl-4">
+                                        {activeVisits.map((visit) => {
+                                          const appointmentData: AppointmentData =
+                                            {
+                                              appointmentId:
+                                                visit.appointmentId,
+                                              type: visit.type ?? "",
+                                              status: (visit.status ??
+                                                "Completed") as
+                                                | "Completed"
+                                                | "Scheduled"
+                                                | "Cancelled"
+                                                | "Rescheduled"
+                                                | "NoShow",
+                                              datetimeStart:
+                                                visit.datetimeStart,
+                                              datetimeEnd: visit.datetimeEnd,
+                                              tripTimeMinutes:
+                                                visit.tripTimeMinutes ??
+                                                undefined,
+                                              notes: visit.notes ?? undefined,
+                                              contactId:
+                                                visit.contactId ?? undefined,
+                                              contactName:
+                                                `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
+                                              propertyAddress: undefined,
+                                              agentName:
+                                                visit.agentName ?? undefined,
+                                              isOptimistic: false,
+                                            };
 
-                                        return (
-                                          <AppointmentCard
-                                            key={visit.appointmentId.toString()}
-                                            appointment={appointmentData}
-                                            onClick={(appointment) => setSelectedAppointment(appointment)}
-                                            navigateToVisit={false}
-                                          />
-                                        );
-                                      })}
+                                          return (
+                                            <AppointmentCard
+                                              key={visit.appointmentId.toString()}
+                                              appointment={appointmentData}
+                                              onClick={(appointment) =>
+                                                setSelectedAppointment(
+                                                  appointment,
+                                                )
+                                              }
+                                              navigateToVisit={false}
+                                            />
+                                          );
+                                        })}
+                                      </div>
                                     </div>
-                                  </ExpandableSection>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })()}
+                                  )}
+
+                                  {/* ✓ Completed Visits Section - Collapsible */}
+                                  {completedVisits.length > 0 && (
+                                    <ExpandableSection
+                                      title="Completadas"
+                                      count={completedVisits.length}
+                                      defaultExpanded={false}
+                                      storageKey={`contact-activity-completed-${listingForCard.listingId}`}
+                                    >
+                                      <div className="space-y-3">
+                                        {completedVisits.map((visit) => {
+                                          const appointmentData: AppointmentData =
+                                            {
+                                              appointmentId:
+                                                visit.appointmentId,
+                                              type: visit.type ?? "",
+                                              status: (visit.status ??
+                                                "Completed") as
+                                                | "Completed"
+                                                | "Scheduled"
+                                                | "Cancelled"
+                                                | "Rescheduled"
+                                                | "NoShow",
+                                              datetimeStart:
+                                                visit.datetimeStart,
+                                              datetimeEnd: visit.datetimeEnd,
+                                              tripTimeMinutes:
+                                                visit.tripTimeMinutes ??
+                                                undefined,
+                                              notes: visit.notes ?? undefined,
+                                              contactId:
+                                                visit.contactId ?? undefined,
+                                              contactName:
+                                                `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
+                                              propertyAddress: undefined,
+                                              agentName:
+                                                visit.agentName ?? undefined,
+                                              isOptimistic: false,
+                                            };
+
+                                          return (
+                                            <AppointmentCard
+                                              key={visit.appointmentId.toString()}
+                                              appointment={appointmentData}
+                                              onClick={(appointment) =>
+                                                setSelectedAppointment(
+                                                  appointment,
+                                                )
+                                              }
+                                              navigateToVisit={false}
+                                            />
+                                          );
+                                        })}
+                                      </div>
+                                    </ExpandableSection>
+                                  )}
+
+                                  {/* ✕ Cancelled Visits Section - Collapsible */}
+                                  {cancelledVisits.length > 0 && (
+                                    <ExpandableSection
+                                      title="Canceladas"
+                                      count={cancelledVisits.length}
+                                      defaultExpanded={false}
+                                      storageKey={`contact-activity-cancelled-${listingForCard.listingId}`}
+                                    >
+                                      <div className="space-y-3">
+                                        {cancelledVisits.map((visit) => {
+                                          const appointmentData: AppointmentData =
+                                            {
+                                              appointmentId:
+                                                visit.appointmentId,
+                                              type: visit.type ?? "",
+                                              status: (visit.status ??
+                                                "Completed") as
+                                                | "Completed"
+                                                | "Scheduled"
+                                                | "Cancelled"
+                                                | "Rescheduled"
+                                                | "NoShow",
+                                              datetimeStart:
+                                                visit.datetimeStart,
+                                              datetimeEnd: visit.datetimeEnd,
+                                              tripTimeMinutes:
+                                                visit.tripTimeMinutes ??
+                                                undefined,
+                                              notes: visit.notes ?? undefined,
+                                              contactId:
+                                                visit.contactId ?? undefined,
+                                              contactName:
+                                                `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
+                                              propertyAddress: undefined,
+                                              agentName:
+                                                visit.agentName ?? undefined,
+                                              isOptimistic: false,
+                                            };
+
+                                          return (
+                                            <AppointmentCard
+                                              key={visit.appointmentId.toString()}
+                                              appointment={appointmentData}
+                                              onClick={(appointment) =>
+                                                setSelectedAppointment(
+                                                  appointment,
+                                                )
+                                              }
+                                              navigateToVisit={false}
+                                            />
+                                          );
+                                        })}
+                                      </div>
+                                    </ExpandableSection>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                     </Card>
                   );
                 })}
@@ -966,8 +1259,10 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
             // Empty state for "Intereses"
             <Card className="p-12">
               <div className="text-center">
-                <Home className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Sin intereses registrados</h3>
+                <Home className="mx-auto mb-4 h-12 w-12 text-gray-300" />
+                <h3 className="mb-2 text-lg font-semibold">
+                  Sin intereses registrados
+                </h3>
                 <p className="text-muted-foreground">
                   Este contacto no tiene intereses de búsqueda registrados.
                 </p>

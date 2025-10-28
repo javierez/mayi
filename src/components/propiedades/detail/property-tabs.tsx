@@ -19,12 +19,19 @@ import type { PropertyListing } from "~/types/property-listing";
 import {
   getListingTasksWithAuth,
   updateListingTaskWithAuth,
-  deleteListingTaskWithAuth
+  deleteListingTaskWithAuth,
 } from "~/server/queries/task";
 import { getCommentsByListingIdWithAuth } from "~/server/queries/comments";
-import { createCommentAction, updateCommentAction, deleteCommentAction } from "~/server/actions/comments";
+import {
+  createCommentAction,
+  updateCommentAction,
+  deleteCommentAction,
+} from "~/server/actions/comments";
 import type { CommentWithUser } from "~/types/comments";
-import { getListingVisitsSummary, getListingContactsSummary } from "~/server/queries/activity";
+import {
+  getListingVisitsSummary,
+  getListingContactsSummary,
+} from "~/server/queries/activity";
 import type { VisitWithDetails, ContactWithDetails } from "~/types/activity";
 import { toast } from "sonner";
 
@@ -119,7 +126,8 @@ export function PropertyTabs({
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState(tabParam ?? "general");
-  const [selectedMediaType, setSelectedMediaType] = useState<MediaType>("images");
+  const [selectedMediaType, setSelectedMediaType] =
+    useState<MediaType>("images");
   const [tabData, setTabData] = useState<{
     images: PropertyImage[] | null;
     videos: PropertyImage[] | null;
@@ -132,7 +140,9 @@ export function PropertyTabs({
       fileUrl: string;
     } | null;
     tasks: TaskWithId[] | null;
-    agents: { id: string; name: string; firstName?: string; lastName?: string; }[] | null;
+    agents:
+      | { id: string; name: string; firstName?: string; lastName?: string }[]
+      | null;
     comments: CommentWithUser[] | null;
     carteles: Cartel[] | null;
     portals: {
@@ -179,23 +189,32 @@ export function PropertyTabs({
   const fetchTasksData = useCallback(async () => {
     setLoading((prev) => ({ ...prev, tasks: true }));
     try {
-      const tasksData = await getListingTasksWithAuth(Number(listing.listingId));
-      const tasksWithId = tasksData.map(task => {
+      const tasksData = await getListingTasksWithAuth(
+        Number(listing.listingId),
+      );
+      const tasksWithId = tasksData.map((task) => {
         // Create relatedContact object if contact data exists
-        const relatedContact = task.contactId && (task.contactFirstName ?? task.contactLastName) ? {
-          contactId: BigInt(task.contactId),
-          name: `${task.contactFirstName ?? ''} ${task.contactLastName ?? ''}`.trim(),
-          email: task.contactEmail ?? undefined,
-        } : undefined;
+        const relatedContact =
+          task.contactId && (task.contactFirstName ?? task.contactLastName)
+            ? {
+                contactId: BigInt(task.contactId),
+                name: `${task.contactFirstName ?? ""} ${task.contactLastName ?? ""}`.trim(),
+                email: task.contactEmail ?? undefined,
+              }
+            : undefined;
 
         const mappedTask = {
           ...task,
           id: task.taskId.toString(),
           taskId: BigInt(task.taskId),
-          leadId: task.listingContactId ? BigInt(task.listingContactId) : undefined,
+          leadId: task.listingContactId
+            ? BigInt(task.listingContactId)
+            : undefined,
           listingId: task.listingId ? BigInt(task.listingId) : undefined,
           dealId: task.dealId ? BigInt(task.dealId) : undefined,
-          appointmentId: task.appointmentId ? BigInt(task.appointmentId) : undefined,
+          appointmentId: task.appointmentId
+            ? BigInt(task.appointmentId)
+            : undefined,
           prospectId: task.prospectId ? BigInt(task.prospectId) : undefined,
           dueDate: task.dueDate ?? undefined,
           completed: task.completed ?? false,
@@ -205,13 +224,18 @@ export function PropertyTabs({
           relatedContact,
         };
 
-        console.log('Task mapping - createdBy:', task.createdBy, 'taskId:', task.taskId);
+        console.log(
+          "Task mapping - createdBy:",
+          task.createdBy,
+          "taskId:",
+          task.taskId,
+        );
 
         return mappedTask;
       });
       setTabData((prev) => ({ ...prev, tasks: tasksWithId }));
     } catch (error) {
-      console.error('Error fetching tasks:', error);
+      console.error("Error fetching tasks:", error);
       setTabData((prev) => ({ ...prev, tasks: [] }));
     } finally {
       setLoading((prev) => ({ ...prev, tasks: false }));
@@ -229,9 +253,10 @@ export function PropertyTabs({
     // Optimistic update
     setTabData((prev) => ({
       ...prev,
-      tasks: prev.tasks?.map((t) =>
-        t.id === taskId ? { ...t, completed: newCompleted } : t
-      ) ?? null
+      tasks:
+        prev.tasks?.map((t) =>
+          t.id === taskId ? { ...t, completed: newCompleted } : t,
+        ) ?? null,
     }));
 
     try {
@@ -244,9 +269,10 @@ export function PropertyTabs({
       // Revert optimistic update on error
       setTabData((prev) => ({
         ...prev,
-        tasks: prev.tasks?.map((t) =>
-          t.id === taskId ? { ...t, completed: !newCompleted } : t
-        ) ?? null
+        tasks:
+          prev.tasks?.map((t) =>
+            t.id === taskId ? { ...t, completed: !newCompleted } : t,
+          ) ?? null,
       }));
       toast.error("Error al actualizar la tarea");
     }
@@ -261,7 +287,7 @@ export function PropertyTabs({
     const previousTasks = tabData.tasks;
     setTabData((prev) => ({
       ...prev,
-      tasks: prev.tasks?.filter((t) => t.id !== taskId) ?? null
+      tasks: prev.tasks?.filter((t) => t.id !== taskId) ?? null,
     }));
 
     try {
@@ -271,7 +297,7 @@ export function PropertyTabs({
       // Revert optimistic update on error
       setTabData((prev) => ({
         ...prev,
-        tasks: previousTasks
+        tasks: previousTasks,
       }));
       toast.error("Error al eliminar la tarea");
     }
@@ -281,18 +307,22 @@ export function PropertyTabs({
     // Add task optimistically
     setTabData((prev) => ({
       ...prev,
-      tasks: prev.tasks ? [newTask, ...prev.tasks] : [newTask]
+      tasks: prev.tasks ? [newTask, ...prev.tasks] : [newTask],
     }));
     return newTask;
   };
 
-  const handleUpdateTaskAfterSave = (optimisticId: string, savedTask: TaskWithId) => {
+  const handleUpdateTaskAfterSave = (
+    optimisticId: string,
+    savedTask: TaskWithId,
+  ) => {
     // Update with server response
     setTabData((prev) => ({
       ...prev,
-      tasks: prev.tasks?.map((task) =>
-        task.id === optimisticId ? savedTask : task
-      ) ?? null
+      tasks:
+        prev.tasks?.map((task) =>
+          task.id === optimisticId ? savedTask : task,
+        ) ?? null,
     }));
   };
 
@@ -300,12 +330,14 @@ export function PropertyTabs({
     // Remove optimistic task on error
     setTabData((prev) => ({
       ...prev,
-      tasks: prev.tasks?.filter((task) => task.id !== optimisticId) ?? null
+      tasks: prev.tasks?.filter((task) => task.id !== optimisticId) ?? null,
     }));
   };
 
   // Comment update functions
-  const handleAddComment = async (tempComment: CommentWithUser): Promise<{ success: boolean; error?: string }> => {
+  const handleAddComment = async (
+    tempComment: CommentWithUser,
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
       const result = await createCommentAction({
         listingId: tempComment.listingId,
@@ -328,7 +360,10 @@ export function PropertyTabs({
     }
   };
 
-  const handleEditComment = async (commentId: bigint, content: string): Promise<{ success: boolean; error?: string }> => {
+  const handleEditComment = async (
+    commentId: bigint,
+    content: string,
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
       const result = await updateCommentAction({
         commentId,
@@ -348,7 +383,9 @@ export function PropertyTabs({
     }
   };
 
-  const handleDeleteComment = async (commentId: bigint): Promise<{ success: boolean; error?: string }> => {
+  const handleDeleteComment = async (
+    commentId: bigint,
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
       const result = await deleteCommentAction(commentId);
 
@@ -369,15 +406,19 @@ export function PropertyTabs({
     setLoading((prev) => ({ ...prev, agents: true }));
     try {
       // For now, just provide the current user until we implement proper API endpoint
-      const agentsData = session?.user ? [{
-        id: session.user.id,
-        name: session.user.name || '',
-        firstName: session.user.name?.split(' ')[0] ?? undefined,
-        lastName: session.user.name?.split(' ')[1] ?? undefined,
-      }] : [];
+      const agentsData = session?.user
+        ? [
+            {
+              id: session.user.id,
+              name: session.user.name || "",
+              firstName: session.user.name?.split(" ")[0] ?? undefined,
+              lastName: session.user.name?.split(" ")[1] ?? undefined,
+            },
+          ]
+        : [];
       setTabData((prev) => ({ ...prev, agents: agentsData }));
     } catch (error) {
-      console.error('Error fetching agents:', error);
+      console.error("Error fetching agents:", error);
       setTabData((prev) => ({ ...prev, agents: [] }));
     } finally {
       setLoading((prev) => ({ ...prev, agents: false }));
@@ -387,10 +428,12 @@ export function PropertyTabs({
   const fetchCommentsData = useCallback(async () => {
     setLoading((prev) => ({ ...prev, comments: true }));
     try {
-      const commentsData = await getCommentsByListingIdWithAuth(listing.listingId);
+      const commentsData = await getCommentsByListingIdWithAuth(
+        listing.listingId,
+      );
       setTabData((prev) => ({ ...prev, comments: commentsData }));
     } catch (error) {
-      console.error('Error fetching comments:', error);
+      console.error("Error fetching comments:", error);
       setTabData((prev) => ({ ...prev, comments: [] }));
     } finally {
       setLoading((prev) => ({ ...prev, comments: false }));
@@ -400,14 +443,16 @@ export function PropertyTabs({
   const fetchCartelesData = useCallback(async () => {
     setLoading((prev) => ({ ...prev, carteles: true }));
     try {
-      const response = await fetch(`/api/properties/${listing.listingId}/carteles`);
+      const response = await fetch(
+        `/api/properties/${listing.listingId}/carteles`,
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch carteles");
       }
-      const data = await response.json() as { documents?: Cartel[] };
+      const data = (await response.json()) as { documents?: Cartel[] };
       setTabData((prev) => ({ ...prev, carteles: data.documents ?? [] }));
     } catch (error) {
-      console.error('Error fetching carteles:', error);
+      console.error("Error fetching carteles:", error);
       setTabData((prev) => ({ ...prev, carteles: [] }));
     } finally {
       setLoading((prev) => ({ ...prev, carteles: false }));
@@ -427,7 +472,7 @@ export function PropertyTabs({
         contacts: contactsData,
       }));
     } catch (error) {
-      console.error('Error fetching activity data:', error);
+      console.error("Error fetching activity data:", error);
       setTabData((prev) => ({ ...prev, visits: [], contacts: [] }));
     } finally {
       setLoading((prev) => ({ ...prev, activity: false }));
@@ -437,7 +482,7 @@ export function PropertyTabs({
   const handlePortalStateChange = (
     platformStates: Record<string, boolean>,
     visibilityModes: Record<string, number>,
-    hidePriceModes: Record<string, boolean>
+    hidePriceModes: Record<string, boolean>,
   ) => {
     setTabData((prev) => ({
       ...prev,
@@ -448,7 +493,6 @@ export function PropertyTabs({
       },
     }));
   };
-
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -486,14 +530,48 @@ export function PropertyTabs({
   }, [tabParam]);
 
   return (
-    <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mt-8 md:mt-0">
-      <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 gap-2 md:gap-0 p-1 h-auto md:h-10 bg-gray-100 rounded-lg">
-        <TabsTrigger value="general" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">General</TabsTrigger>
-        <TabsTrigger value="tareas" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Tareas y notas</TabsTrigger>
-        <TabsTrigger value="imagenes" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Imágenes</TabsTrigger>
-        <TabsTrigger value="actividad" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Actividad</TabsTrigger>
-        <TabsTrigger value="portales" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Portales</TabsTrigger>
-        <TabsTrigger value="documentos" className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md h-8 text-sm">Archivos</TabsTrigger>
+    <Tabs
+      value={activeTab}
+      onValueChange={handleTabChange}
+      className="mt-8 w-full md:mt-0"
+    >
+      <TabsList className="grid h-auto w-full grid-cols-2 gap-2 rounded-lg bg-gray-100 p-1 md:h-10 md:grid-cols-6 md:gap-0">
+        <TabsTrigger
+          value="general"
+          className="h-8 rounded-md text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm"
+        >
+          General
+        </TabsTrigger>
+        <TabsTrigger
+          value="tareas"
+          className="h-8 rounded-md text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm"
+        >
+          Tareas y notas
+        </TabsTrigger>
+        <TabsTrigger
+          value="imagenes"
+          className="h-8 rounded-md text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm"
+        >
+          Imágenes
+        </TabsTrigger>
+        <TabsTrigger
+          value="actividad"
+          className="h-8 rounded-md text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm"
+        >
+          Actividad
+        </TabsTrigger>
+        <TabsTrigger
+          value="portales"
+          className="h-8 rounded-md text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm"
+        >
+          Portales
+        </TabsTrigger>
+        <TabsTrigger
+          value="documentos"
+          className="h-8 rounded-md text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm"
+        >
+          Archivos
+        </TabsTrigger>
       </TabsList>
 
       <TabsContent value="general" className="mt-8 sm:mt-6">
@@ -514,7 +592,7 @@ export function PropertyTabs({
 
       <TabsContent value="tareas" className="mt-8 sm:mt-6">
         <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex flex-col gap-6 lg:flex-row">
             {/* Left side - Tasks */}
             <div className="flex-1 lg:w-1/2">
               <Tareas
@@ -530,22 +608,26 @@ export function PropertyTabs({
                 onRemoveOptimisticTask={handleRemoveOptimisticTask}
               />
             </div>
-            
+
             {/* Right side - Comments */}
             <div className="flex-1 lg:w-1/2">
-              <h3 className="text-lg sm:text-xl font-semibold mb-2">Notas</h3>
-              <Comments 
+              <h3 className="mb-2 text-lg font-semibold sm:text-xl">Notas</h3>
+              <Comments
                 propertyId={listing.propertyId}
                 listingId={listing.listingId}
                 referenceNumber={listing.referenceNumber ?? ""}
                 initialComments={tabData.comments ?? []}
                 loading={loading.comments}
                 currentUserId={session?.user?.id}
-                currentUser={session?.user ? {
-                  id: session.user.id,
-                  name: session.user.name ?? undefined,
-                  image: session.user.image ?? undefined
-                } : undefined}
+                currentUser={
+                  session?.user
+                    ? {
+                        id: session.user.id,
+                        name: session.user.name ?? undefined,
+                        image: session.user.image ?? undefined,
+                      }
+                    : undefined
+                }
                 onAddComment={handleAddComment}
                 onEditComment={handleEditComment}
                 onDeleteComment={handleDeleteComment}
@@ -568,25 +650,29 @@ export function PropertyTabs({
             onImageUploaded={(image) => {
               setTabData((prev) => ({
                 ...prev,
-                images: prev.images ? [...prev.images, image] : [image]
+                images: prev.images ? [...prev.images, image] : [image],
               }));
             }}
             onVideoUploaded={(video) => {
               setTabData((prev) => ({
                 ...prev,
-                videos: prev.videos ? [...prev.videos, video] : [video]
+                videos: prev.videos ? [...prev.videos, video] : [video],
               }));
             }}
             onYouTubeLinkAdded={(link) => {
               setTabData((prev) => ({
                 ...prev,
-                youtubeLinks: prev.youtubeLinks ? [...prev.youtubeLinks, link] : [link]
+                youtubeLinks: prev.youtubeLinks
+                  ? [...prev.youtubeLinks, link]
+                  : [link],
               }));
             }}
             onVirtualTourAdded={(tour) => {
               setTabData((prev) => ({
                 ...prev,
-                virtualTours: prev.virtualTours ? [...prev.virtualTours, tour] : [tour]
+                virtualTours: prev.virtualTours
+                  ? [...prev.virtualTours, tour]
+                  : [tour],
               }));
             }}
             onMediaTypeChange={setSelectedMediaType}
@@ -596,7 +682,9 @@ export function PropertyTabs({
             <div className="flex justify-center pt-6">
               <button
                 type="button"
-                onClick={() => router.push(`/propiedades/${listing.listingId}/image-studio`)}
+                onClick={() =>
+                  router.push(`/propiedades/${listing.listingId}/image-studio`)
+                }
                 className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-2.5 font-medium text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-amber-500 hover:to-rose-500 hover:shadow-xl active:scale-95"
               >
                 Vesta Image Studio
@@ -621,7 +709,9 @@ export function PropertyTabs({
             />
           ) : (
             <div className="py-16 text-center">
-              <p className="text-gray-500">No se pudo cargar la información de actividad</p>
+              <p className="text-gray-500">
+                No se pudo cargar la información de actividad
+              </p>
             </div>
           )}
         </div>
@@ -647,10 +737,9 @@ export function PropertyTabs({
         </div>
       </TabsContent>
 
-
       <TabsContent value="documentos" className="mt-8 sm:mt-6">
         <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex flex-col gap-6 lg:flex-row">
             {/* Left side - Documents */}
             <div className="flex-1 lg:w-1/2">
               <DocumentsManager
@@ -674,7 +763,6 @@ export function PropertyTabs({
           </div>
         </div>
       </TabsContent>
-
     </Tabs>
   );
 }

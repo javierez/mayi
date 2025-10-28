@@ -2,8 +2,23 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Building, ChevronDown, ChevronUp, MapPin, Home, FileText, Bed, Bath, Maximize, Trash2, EyeOff } from "lucide-react";
-import { formatListingType, getPropertyTypeLabel } from "~/components/contactos/contact-config";
+import {
+  Building,
+  ChevronDown,
+  ChevronUp,
+  MapPin,
+  Home,
+  FileText,
+  Bed,
+  Bath,
+  Maximize,
+  Trash2,
+  EyeOff,
+} from "lucide-react";
+import {
+  formatListingType,
+  getPropertyTypeLabel,
+} from "~/components/contactos/contact-config";
 import { PropertyImagePlaceholder } from "./PropertyImagePlaceholder";
 import { Button } from "~/components/ui/button";
 
@@ -46,12 +61,14 @@ export function CompactPropertyCard({
   onDeactivate,
 }: CompactPropertyCardProps) {
   // Format location
-  const location = [listing.street, listing.city].filter(Boolean).join(", ") || "Sin dirección";
+  const location =
+    [listing.street, listing.city].filter(Boolean).join(", ") ||
+    "Sin dirección";
 
   // Format price without decimals
-  const formattedPrice = new Intl.NumberFormat('es-ES', {
+  const formattedPrice = new Intl.NumberFormat("es-ES", {
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0
+    maximumFractionDigits: 0,
   }).format(parseFloat(listing.price));
 
   const isActive = listing.isActive ?? true;
@@ -77,18 +94,18 @@ export function CompactPropertyCard({
 
   return (
     <div
-      className="relative group cursor-pointer hover:bg-muted/30 transition-colors"
+      className="group relative cursor-pointer transition-colors hover:bg-muted/30"
       onClick={onToggle}
     >
       <div className="flex gap-3 p-3">
         {/* Property Image - Reduced size */}
-        <div className="relative w-20 h-16 flex-shrink-0 rounded-md overflow-hidden bg-muted">
+        <div className="relative h-16 w-20 flex-shrink-0 overflow-hidden rounded-md bg-muted">
           {listing.imageUrl ? (
             <Image
               src={listing.imageUrl}
               alt={listing.title ?? location}
               fill
-              className={`object-cover ${!isActive ? 'grayscale' : ''}`}
+              className={`object-cover ${!isActive ? "grayscale" : ""}`}
               sizes="80px"
             />
           ) : (
@@ -100,13 +117,13 @@ export function CompactPropertyCard({
         </div>
 
         {/* Property Details */}
-        <div className="flex-1 min-w-0 text-left">
+        <div className="min-w-0 flex-1 text-left">
           {/* Title/Location */}
-          <div className="flex items-start gap-1.5 mb-1">
-            <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+          <div className="mb-1 flex items-start gap-1.5">
+            <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
             <Link
               href={`/propiedades/${listing.listingId.toString()}`}
-              className="font-medium text-sm leading-tight truncate uppercase tracking-wide hover:underline"
+              className="truncate text-sm font-medium uppercase leading-tight tracking-wide hover:underline"
               onClick={(e) => e.stopPropagation()}
             >
               {location}
@@ -114,7 +131,7 @@ export function CompactPropertyCard({
           </div>
 
           {/* Property Info */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground mb-1">
+          <div className="mb-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
               <Home className="h-3 w-3" />
               <span>{getPropertyTypeLabel(listing.propertyType)}</span>
@@ -153,12 +170,12 @@ export function CompactPropertyCard({
         </div>
 
         {/* Price and Action Buttons */}
-        <div className="flex flex-col items-end justify-between flex-shrink-0">
+        <div className="flex flex-shrink-0 flex-col items-end justify-between">
           <p className="text-base font-semibold">{formattedPrice}€</p>
 
           {/* Action Buttons - Bottom right corner, shown on hover */}
           {showActionButtons && (
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
               {canDeactivate && isActive && (
                 <Button
                   variant="ghost"

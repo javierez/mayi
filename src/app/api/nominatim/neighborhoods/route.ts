@@ -78,14 +78,15 @@ export async function GET(request: NextRequest) {
     if (!city) {
       return NextResponse.json(
         { error: "City parameter is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Step 1: Get city's OSM relation ID from Nominatim
     console.log(`[Neighborhoods API] Geocoding ${city}, ${country}...`);
 
-    const nominatimUrl = `${NOMINATIM_API_URL}/search?` +
+    const nominatimUrl =
+      `${NOMINATIM_API_URL}/search?` +
       `q=${encodeURIComponent(city)},${encodeURIComponent(country)}` +
       `&format=json&limit=1&featuretype=settlement&addressdetails=0`;
 
@@ -99,7 +100,8 @@ export async function GET(request: NextRequest) {
       throw new Error(`Nominatim API error: ${nominatimResponse.statusText}`);
     }
 
-    const nominatimData = (await nominatimResponse.json()) as NominatimGeocodeResult[];
+    const nominatimData =
+      (await nominatimResponse.json()) as NominatimGeocodeResult[];
 
     if (!nominatimData[0]?.osm_id) {
       console.log(`[Neighborhoods API] City not found: ${city}, ${country}`);
@@ -121,7 +123,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ neighborhoods: [] });
     }
 
-    console.log(`[Neighborhoods API] Found OSM ${osmType} ${osmId} -> area ${areaId}`);
+    console.log(
+      `[Neighborhoods API] Found OSM ${osmType} ${osmId} -> area ${areaId}`,
+    );
 
     // Check cache with area ID to ensure accuracy
     const cacheKey = `${city}-${country}-${areaId}`;
@@ -154,7 +158,8 @@ export async function GET(request: NextRequest) {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "Vesta Real Estate Platform (Contact: support@vesta.com)",
+          "User-Agent":
+            "Vesta Real Estate Platform (Contact: support@vesta.com)",
         },
         body: `data=${encodeURIComponent(overpassQuery)}`,
       });
@@ -164,10 +169,11 @@ export async function GET(request: NextRequest) {
         if (response.status === 429) {
           return NextResponse.json(
             {
-              error: "Demasiadas solicitudes. Por favor, espera unos segundos e intenta de nuevo.",
-              retryAfter: 5
+              error:
+                "Demasiadas solicitudes. Por favor, espera unos segundos e intenta de nuevo.",
+              retryAfter: 5,
             },
-            { status: 429 }
+            { status: 429 },
           );
         }
         throw new Error(`Overpass API error: ${response.statusText}`);
@@ -194,8 +200,7 @@ export async function GET(request: NextRequest) {
     >();
 
     data.elements.forEach((element) => {
-      const neighborhoodName =
-        element.tags?.["name:es"] ?? element.tags?.name;
+      const neighborhoodName = element.tags?.["name:es"] ?? element.tags?.name;
 
       if (neighborhoodName) {
         const key = neighborhoodName.toLowerCase();
@@ -206,7 +211,7 @@ export async function GET(request: NextRequest) {
             ? `place=${element.tags.place}`
             : element.tags?.admin_level
               ? `admin_level=${element.tags.admin_level}`
-              : 'unknown';
+              : "unknown";
 
           console.log(`  - Found: ${neighborhoodName} (${elementType})`);
 
@@ -221,19 +226,24 @@ export async function GET(request: NextRequest) {
     });
 
     const formattedNeighborhoods = Array.from(
-      uniqueNeighborhoods.values()
+      uniqueNeighborhoods.values(),
     ).sort((a, b) => a.neighborhood.localeCompare(b.neighborhood));
 
     // Log the response for debugging
-    console.log(`[Neighborhoods API] Found ${formattedNeighborhoods.length} neighborhoods for ${city}, ${country}`);
-    console.log("[Neighborhoods API] Response:", JSON.stringify(formattedNeighborhoods, null, 2));
+    console.log(
+      `[Neighborhoods API] Found ${formattedNeighborhoods.length} neighborhoods for ${city}, ${country}`,
+    );
+    console.log(
+      "[Neighborhoods API] Response:",
+      JSON.stringify(formattedNeighborhoods, null, 2),
+    );
 
     return NextResponse.json({ neighborhoods: formattedNeighborhoods });
   } catch (error) {
     console.error("Error fetching neighborhoods from Overpass API:", error);
     return NextResponse.json(
       { error: "Failed to fetch neighborhoods" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

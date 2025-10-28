@@ -26,10 +26,7 @@ export default function RegistrationProgressBar({
     const currentFormStep = (formPosition || 1) - 1;
 
     // Only allow clicking on the immediate next step or previous steps
-    if (
-      stepIndex === currentFormStep + 1 ||
-      stepIndex < currentFormStep
-    ) {
+    if (stepIndex === currentFormStep + 1 || stepIndex < currentFormStep) {
       onStepClick(stepIndex);
     }
   };
@@ -38,16 +35,16 @@ export default function RegistrationProgressBar({
     const currentFormStep = (formPosition || 1) - 1;
 
     // Only allow clicking on the immediate next step or previous steps
-    return (
-      stepIndex === currentFormStep + 1 ||
-      stepIndex < currentFormStep
-    );
+    return stepIndex === currentFormStep + 1 || stepIndex < currentFormStep;
   };
 
   return (
-    <div className="w-full mt-6">
+    <div className="mt-6 w-full">
       {/* Progress Bar Container */}
-      <div className="relative flex flex-col items-center" style={{ minHeight: 80 }}>
+      <div
+        className="relative flex flex-col items-center"
+        style={{ minHeight: 80 }}
+      >
         {/* Progress Line */}
         <div className="absolute left-0 right-0 top-4 z-0 h-0.5 bg-gray-200">
           <motion.div
@@ -59,7 +56,10 @@ export default function RegistrationProgressBar({
         </div>
 
         {/* Step Indicators */}
-        <div className="relative z-10 flex w-full justify-between" style={{ minHeight: 40 }}>
+        <div
+          className="relative z-10 flex w-full justify-between"
+          style={{ minHeight: 40 }}
+        >
           {steps.map((step, index) => {
             const isCompleted = index < currentStep;
             const isCurrent = index === currentStep;

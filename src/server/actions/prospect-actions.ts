@@ -450,12 +450,18 @@ export async function updateListingProspectValuation(
       .from(prospects)
       .where(eq(prospects.id, BigInt(prospectId)))
       .limit(1);
-    
+
     const currentNotes = prospectData[0]?.notesInternal;
-    const notes = typeof currentNotes === 'string' 
-      ? { text: currentNotes, valuationStatus } 
-      : { ...(typeof currentNotes === 'object' && currentNotes !== null ? currentNotes : {}), valuationStatus };
-    
+    const notes =
+      typeof currentNotes === "string"
+        ? { text: currentNotes, valuationStatus }
+        : {
+            ...(typeof currentNotes === "object" && currentNotes !== null
+              ? currentNotes
+              : {}),
+            valuationStatus,
+          };
+
     await db
       .update(prospects)
       .set({
@@ -522,12 +528,18 @@ export async function updateListingProspectAgreement(
       .from(prospects)
       .where(eq(prospects.id, BigInt(prospectId)))
       .limit(1);
-    
+
     const currentNotes = prospectData[0]?.notesInternal;
-    const notes = typeof currentNotes === 'string' 
-      ? { text: currentNotes, listingAgreementStatus } 
-      : { ...(typeof currentNotes === 'object' && currentNotes !== null ? currentNotes : {}), listingAgreementStatus };
-    
+    const notes =
+      typeof currentNotes === "string"
+        ? { text: currentNotes, listingAgreementStatus }
+        : {
+            ...(typeof currentNotes === "object" && currentNotes !== null
+              ? currentNotes
+              : {}),
+            listingAgreementStatus,
+          };
+
     await db
       .update(prospects)
       .set({

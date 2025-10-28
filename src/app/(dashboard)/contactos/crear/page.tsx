@@ -3,7 +3,13 @@ import ContactForm from "~/components/contactos/crear/contact-form";
 
 export default function CreateContactPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Cargando...</div>}>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          Cargando...
+        </div>
+      }
+    >
       <ContactForm />
     </Suspense>
   );

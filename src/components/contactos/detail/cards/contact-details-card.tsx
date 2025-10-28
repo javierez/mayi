@@ -1,5 +1,3 @@
-
-
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -127,7 +125,10 @@ export function ContactDetailsCard({
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="secondaryPhoneNotes" className="text-xs text-muted-foreground">
+          <Label
+            htmlFor="secondaryPhoneNotes"
+            className="text-xs text-muted-foreground"
+          >
             Notas del Teléfono Secundario
           </Label>
           <Textarea
@@ -146,4 +147,3 @@ export function ContactDetailsCard({
     </Card>
   );
 }
-

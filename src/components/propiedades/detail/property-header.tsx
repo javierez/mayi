@@ -19,9 +19,12 @@ const statusColors: Record<string, string> = {
   Sale: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-200 hover:text-amber-900 hover:border-amber-400 hover:shadow-lg hover:scale-105",
   Rent: "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-200 hover:text-rose-900 hover:border-rose-400 hover:shadow-lg hover:scale-105",
   Sold: "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-200 hover:text-gray-800 hover:border-gray-400 hover:shadow-lg hover:scale-105",
-  RoomSharing: "bg-gradient-to-r from-amber-50 to-rose-50 text-rose-600 border-rose-200 hover:from-amber-200 hover:to-rose-200 hover:text-rose-900 hover:border-rose-400 hover:shadow-lg hover:scale-105",
-  Transfer: "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-300 hover:text-amber-900 hover:border-amber-500 hover:shadow-lg hover:scale-105",
-  RentWithOption: "bg-rose-100 text-rose-800 border-rose-300 hover:bg-rose-300 hover:text-rose-900 hover:border-rose-500 hover:shadow-lg hover:scale-105",
+  RoomSharing:
+    "bg-gradient-to-r from-amber-50 to-rose-50 text-rose-600 border-rose-200 hover:from-amber-200 hover:to-rose-200 hover:text-rose-900 hover:border-rose-400 hover:shadow-lg hover:scale-105",
+  Transfer:
+    "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-300 hover:text-amber-900 hover:border-amber-500 hover:shadow-lg hover:scale-105",
+  RentWithOption:
+    "bg-rose-100 text-rose-800 border-rose-300 hover:bg-rose-300 hover:text-rose-900 hover:border-rose-500 hover:shadow-lg hover:scale-105",
 };
 
 interface PropertyHeaderProps {
@@ -66,41 +69,46 @@ export function PropertyHeader({
   listing,
 }: PropertyHeaderProps) {
   // Generate dynamic title if enabled, otherwise use provided title
-  const displayTitle = dynamicTitle && propertyType
-    ? generatePropertyTitle(propertyType, street, neighborhood ?? "")
-    : title;
-    
+  const displayTitle =
+    dynamicTitle && propertyType
+      ? generatePropertyTitle(propertyType, street, neighborhood ?? "")
+      : title;
+
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(displayTitle);
   const [currentTitle, setCurrentTitle] = useState(displayTitle);
   const [isLoading, setIsLoading] = useState(false);
   const [hasBeenUpdated, setHasBeenUpdated] = useState(false);
-  
+
   // Status toggle state
   const [currentStatus, setCurrentStatus] = useState(status);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   // Completion tracker modal state
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
-  
+
   // Check if we're on the main property page (not a sub-page)
   const pathname = usePathname();
-  const isMainPropertyPage = pathname ? /^\/propiedades\/\d+\/?$/.test(pathname) : false;
+  const isMainPropertyPage = pathname
+    ? /^\/propiedades\/\d+\/?$/.test(pathname)
+    : false;
 
   // Calculate completion percentage from listing data
   const completion = listing ? calculateCompletion(listing) : null;
   const completionPercentage = completion?.overallPercentage ?? 0;
 
   // Determine color based on mandatory fields completion (green when all mandatory are complete)
-  const completionColor =
-    completion?.canPublishToPortals ? "#10b981" : // green - all mandatory complete
-    completionPercentage >= 50 ? "#f59e0b" : // amber
-    "#ef4444"; // red
+  const completionColor = completion?.canPublishToPortals
+    ? "#10b981" // green - all mandatory complete
+    : completionPercentage >= 50
+      ? "#f59e0b" // amber
+      : "#ef4444"; // red
 
   // Calculate circle dash properties for SVG
   const radius = 8;
   const circumference = 2 * Math.PI * radius;
-  const dashOffset = circumference - (completionPercentage / 100) * circumference;
+  const dashOffset =
+    circumference - (completionPercentage / 100) * circumference;
 
   // Update titles when displayTitle changes (for dynamic mode) but only if we haven't manually updated the title
   useEffect(() => {
@@ -143,32 +151,37 @@ export function PropertyHeader({
   // Toggle logic function - only changes status, listingType stays constant
   const getToggledStatus = (type: string, currentStat: string | undefined) => {
     // Determine if we're currently in "active" or "completed" state
-    const isCompleted = currentStat === 'Vendido' || currentStat === 'Alquilado';
-    
+    const isCompleted =
+      currentStat === "Vendido" || currentStat === "Alquilado";
+
     if (isCompleted) {
       // Toggle back to active state
-      if (currentStat === 'Alquilado') {
+      if (currentStat === "Alquilado") {
         return {
-          status: 'En Alquiler',
-          displayText: 'Alquiler'
+          status: "En Alquiler",
+          displayText: "Alquiler",
         };
       } else {
         return {
-          status: 'En Venta', 
-          displayText: 'Venta'
+          status: "En Venta",
+          displayText: "Venta",
         };
       }
     } else {
       // Toggle to completed state
-      if (type === 'Rent' || type === 'RentWithOption' || type === 'RoomSharing') {
+      if (
+        type === "Rent" ||
+        type === "RentWithOption" ||
+        type === "RoomSharing"
+      ) {
         return {
-          status: 'Alquilado',
-          displayText: 'Alquilado'
+          status: "Alquilado",
+          displayText: "Alquilado",
         };
       } else {
         return {
-          status: 'Vendido',
-          displayText: 'Vendido'
+          status: "Vendido",
+          displayText: "Vendido",
         };
       }
     }
@@ -177,10 +190,10 @@ export function PropertyHeader({
   // Helper function to get display text based on listingType + status combination
   const getDisplayText = (type: string, stat: string | undefined) => {
     // For completed states, show the completion status
-    if (stat === 'Alquilado') {
-      return 'Alquilado';
-    } else if (stat === 'Vendido') {
-      return 'Vendido';
+    if (stat === "Alquilado") {
+      return "Alquilado";
+    } else if (stat === "Vendido") {
+      return "Vendido";
     } else {
       // For active states, show based on listingType
       return formatListingType(type);
@@ -191,24 +204,18 @@ export function PropertyHeader({
     if (!listingId || isUpdatingStatus) return;
 
     const toggledState = getToggledStatus(listingType, currentStatus);
-    
+
     // Optimistic update
     setCurrentStatus(toggledState.status);
     setIsUpdatingStatus(true);
 
     try {
-      const result = await updateListingStatus(
-        listingId,
-        toggledState.status
-      );
+      const result = await updateListingStatus(listingId, toggledState.status);
 
       if (result.success) {
-        toast.success(
-          `Estado actualizado a ${toggledState.displayText}`,
-          {
-            description: "El cambio se ha guardado correctamente"
-          }
-        );
+        toast.success(`Estado actualizado a ${toggledState.displayText}`, {
+          description: "El cambio se ha guardado correctamente",
+        });
       } else {
         // Rollback on error
         setCurrentStatus(status);
@@ -234,7 +241,7 @@ export function PropertyHeader({
                 <Input
                   value={editedTitle}
                   onChange={(e) => setEditedTitle(e.target.value)}
-                  className="h-auto w-full border border-input bg-background px-3 py-2 text-xl font-bold sm:text-2xl md:text-3xl focus-visible:ring-2 focus-visible:ring-ring"
+                  className="h-auto w-full border border-input bg-background px-3 py-2 text-xl font-bold focus-visible:ring-2 focus-visible:ring-ring sm:text-2xl md:text-3xl"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       void handleSave();
@@ -269,26 +276,27 @@ export function PropertyHeader({
                 </div>
               </div>
             ) : (
-              <div className="flex min-w-0 flex-1 items-start gap-2 flex-wrap">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-xl font-bold leading-tight break-words min-w-0 sm:text-2xl md:text-3xl">
-                    <span className="inline break-words">
-                      {currentTitle}
-                    </span>
+              <div className="flex min-w-0 flex-1 flex-wrap items-start gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="min-w-0 break-words text-xl font-bold leading-tight sm:text-2xl md:text-3xl">
+                    <span className="inline break-words">{currentTitle}</span>
                     {propertyId && (
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="ml-2 sm:ml-3 inline-flex p-1.5 sm:p-2 opacity-0 transition-opacity group-hover:opacity-100 align-baseline whitespace-nowrap rounded-full min-h-[44px] min-w-[44px]"
+                        className="ml-2 inline-flex min-h-[44px] min-w-[44px] whitespace-nowrap rounded-full p-1.5 align-baseline opacity-0 transition-opacity group-hover:opacity-100 sm:ml-3 sm:p-2"
                         onClick={() => setIsEditing(true)}
                         aria-label="Editar título"
                       >
-                        <Pencil className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+                        <Pencil className="h-4 w-4 text-muted-foreground sm:h-5 sm:w-5" />
                       </Button>
                     )}
                   </h1>
                   {isBankOwned && (
-                    <Badge variant="secondary" className="bg-amber-500 text-white text-xs sm:text-sm flex-shrink-0">
+                    <Badge
+                      variant="secondary"
+                      className="flex-shrink-0 bg-amber-500 text-xs text-white sm:text-sm"
+                    >
                       Piso de Banco
                     </Badge>
                   )}
@@ -303,29 +311,31 @@ export function PropertyHeader({
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center text-sm sm:text-base text-muted-foreground transition-colors hover:text-primary min-w-0 max-w-full"
+              className="group inline-flex min-w-0 max-w-full items-center text-sm text-muted-foreground transition-colors hover:text-primary sm:text-base"
             >
               <MapPin className="mr-1 h-4 w-4 flex-shrink-0 transition-transform group-hover:scale-110" />
-              <span className="group-hover:underline truncate">
+              <span className="truncate group-hover:underline">
                 {street}, {city}, {province} {postalCode}
               </span>
             </a>
           </div>
         </div>
-        <div className="flex flex-col items-start gap-1.5 mt-2 sm:items-end sm:mt-0 md:flex-shrink-0">
+        <div className="mt-2 flex flex-col items-start gap-1.5 sm:mt-0 sm:items-end md:flex-shrink-0">
           {/* Price - prominent on mobile */}
           <div
             className={cn(
-              "text-2xl font-bold sm:text-2xl md:text-3xl whitespace-nowrap transition-colors",
+              "whitespace-nowrap text-2xl font-bold transition-colors sm:text-2xl md:text-3xl",
               listingId ? "cursor-pointer hover:text-primary" : "",
               isUpdatingStatus && "opacity-50",
-              (currentStatus === 'Vendido' || currentStatus === 'Alquilado') && "line-through decoration-2"
+              (currentStatus === "Vendido" || currentStatus === "Alquilado") &&
+                "line-through decoration-2",
             )}
             onClick={listingId ? handleStatusToggle : undefined}
             title={listingId ? "Haz clic para cambiar el estado" : undefined}
           >
             {formatPrice(price)}€
-            {(["Rent", "RentWithOption", "RoomSharing"].includes(listingType) || currentStatus === 'Alquilado')
+            {["Rent", "RentWithOption", "RoomSharing"].includes(listingType) ||
+            currentStatus === "Alquilado"
               ? "/mes"
               : ""}
           </div>
@@ -335,10 +345,10 @@ export function PropertyHeader({
             <Badge
               variant="secondary"
               className={cn(
-                "font-normal transition-all duration-200 text-xs sm:text-sm flex-shrink-0",
+                "flex-shrink-0 text-xs font-normal transition-all duration-200 sm:text-sm",
                 statusColors[listingType],
                 listingId ? "cursor-pointer hover:scale-105" : "",
-                isUpdatingStatus && "opacity-50"
+                isUpdatingStatus && "opacity-50",
               )}
               onClick={listingId ? handleStatusToggle : undefined}
               title={listingId ? "Haz clic para cambiar el estado" : undefined}
@@ -352,12 +362,19 @@ export function PropertyHeader({
                 onClick={() => {
                   setIsCompletionModalOpen(!isCompletionModalOpen);
                 }}
-                className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-accent transition-colors"
+                className="flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors hover:bg-accent"
                 title="Ver estado de registro"
               >
                 {/* Circular progress ring - dynamic percentage */}
-                <svg width="20" height="20" className="transform -rotate-90">
-                  <circle cx="10" cy="10" r="8" fill="none" stroke="#e5e7eb" strokeWidth="2"/>
+                <svg width="20" height="20" className="-rotate-90 transform">
+                  <circle
+                    cx="10"
+                    cy="10"
+                    r="8"
+                    fill="none"
+                    stroke="#e5e7eb"
+                    strokeWidth="2"
+                  />
                   <circle
                     cx="10"
                     cy="10"
@@ -370,7 +387,9 @@ export function PropertyHeader({
                     strokeLinecap="round"
                   />
                 </svg>
-                <span className="text-xs font-medium text-muted-foreground">{completionPercentage}%</span>
+                <span className="text-xs font-medium text-muted-foreground">
+                  {completionPercentage}%
+                </span>
               </button>
             )}
           </div>
@@ -380,7 +399,12 @@ export function PropertyHeader({
       {/* Completion Tracker Modal - only show on main property page */}
       {listing && isMainPropertyPage && (
         <CompletionTrackerModal
-          listing={listing as { propertyId?: bigint | number | string; [key: string]: unknown }}
+          listing={
+            listing as {
+              propertyId?: bigint | number | string;
+              [key: string]: unknown;
+            }
+          }
           isOpen={isCompletionModalOpen}
           onClose={() => setIsCompletionModalOpen(false)}
         />

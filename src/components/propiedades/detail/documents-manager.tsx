@@ -83,13 +83,13 @@ export function DocumentsManager({
       </div>
 
       {/* Folders grid */}
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {folders.map((folder) => {
           const isEnergyFolder = folder.id === "certificado-energetico";
           return (
             <Card
               key={folder.id}
-              className="cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md relative"
+              className="relative cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md"
               onClick={() => handleFolderClick(folder.id)}
             >
               <CardContent className="p-4">
@@ -98,7 +98,7 @@ export function DocumentsManager({
                     <FolderIcon className="h-6 w-6 fill-current text-gray-600" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h4 className="truncate font-medium text-gray-900 text-sm">
+                    <h4 className="truncate text-sm font-medium text-gray-900">
                       {folder.name}
                     </h4>
                     <p className="mt-0.5 text-xs text-gray-500">
@@ -107,7 +107,7 @@ export function DocumentsManager({
                   </div>
                 </div>
                 {isEnergyFolder && (
-                  <ZapIcon className="absolute top-2 right-2 h-3.5 w-3.5 text-green-600 opacity-60 fill-current" />
+                  <ZapIcon className="absolute right-2 top-2 h-3.5 w-3.5 fill-current text-green-600 opacity-60" />
                 )}
               </CardContent>
             </Card>

@@ -47,21 +47,21 @@ function validateSubstageProgression(subStages: SubStage[]): SubStage[] {
 function validateGlobalProgression(stages: ProcessStage[]): ProcessStage[] {
   // Find the last stage with any completed substage
   let lastCompletedStageIndex = -1;
-  
+
   stages.forEach((stage, index) => {
     const hasCompletedSubstage = stage.subStages.some(
-      sub => sub.status === "accomplished" || sub.status === "ongoing"
+      (sub) => sub.status === "accomplished" || sub.status === "ongoing",
     );
     if (hasCompletedSubstage) {
       lastCompletedStageIndex = index;
     }
   });
-  
+
   // If no completed stages found, return as is
   if (lastCompletedStageIndex === -1) {
     return stages;
   }
-  
+
   // Apply logic: all stages before lastCompletedStageIndex should be completed
   // all stages after should be future
   return stages.map((stage, stageIndex) => {
@@ -69,13 +69,19 @@ function validateGlobalProgression(stages: ProcessStage[]): ProcessStage[] {
       // All previous stages: mark all substages as accomplished
       return {
         ...stage,
-        subStages: stage.subStages.map(sub => ({ ...sub, status: "accomplished" as StageStatus }))
+        subStages: stage.subStages.map((sub) => ({
+          ...sub,
+          status: "accomplished" as StageStatus,
+        })),
       };
     } else if (stageIndex > lastCompletedStageIndex) {
       // All future stages: mark all substages as future
       return {
         ...stage,
-        subStages: stage.subStages.map(sub => ({ ...sub, status: "future" as StageStatus }))
+        subStages: stage.subStages.map((sub) => ({
+          ...sub,
+          status: "future" as StageStatus,
+        })),
       };
     }
     // Current stage: keep as is
@@ -98,9 +104,7 @@ const rawProcessStages: ProcessStage[] = [
     id: "busqueda",
     label: "Búsqueda",
     status: "ongoing",
-    subStages: [
-      { id: "visitas", label: "Visitas", status: "accomplished" },
-    ],
+    subStages: [{ id: "visitas", label: "Visitas", status: "accomplished" }],
   },
   {
     id: "cierre",
@@ -116,10 +120,10 @@ const rawProcessStages: ProcessStage[] = [
 
 // Apply validation: first individual substage progression, then global progression
 export const PROCESS_STAGES: ProcessStage[] = validateGlobalProgression(
-  rawProcessStages.map(stage => ({
+  rawProcessStages.map((stage) => ({
     ...stage,
-    subStages: validateSubstageProgression(stage.subStages)
-  }))
+    subStages: validateSubstageProgression(stage.subStages),
+  })),
 );
 
 /**
@@ -128,7 +132,7 @@ export const PROCESS_STAGES: ProcessStage[] = validateGlobalProgression(
 function cloneProcessStage(stage: ProcessStage): ProcessStage {
   return {
     ...stage,
-    subStages: stage.subStages.map(sub => ({ ...sub }))
+    subStages: stage.subStages.map((sub) => ({ ...sub })),
   };
 }
 
@@ -137,10 +141,14 @@ function cloneProcessStage(stage: ProcessStage): ProcessStage {
  * @param listing - Property listing data for completion calculation
  * @returns Process stages with dynamic completion status
  */
-export function getProcessStages(listing?: Record<string, unknown>): ProcessStage[] {
+export function getProcessStages(
+  listing?: Record<string, unknown>,
+): ProcessStage[] {
   // If no listing data provided, return default stages
   if (!listing) {
-    console.log("🔍 getProcessStages: No listing data provided, returning default stages");
+    console.log(
+      "🔍 getProcessStages: No listing data provided, returning default stages",
+    );
     return PROCESS_STAGES;
   }
 
@@ -155,7 +163,7 @@ export function getProcessStages(listing?: Record<string, unknown>): ProcessStag
       completed: completion.mandatory.completedCount,
       total: completion.mandatory.total,
       pending: completion.mandatory.pending.length,
-      pendingFields: completion.mandatory.pending.map(f => f.label),
+      pendingFields: completion.mandatory.pending.map((f) => f.label),
     },
     optional: {
       completed: completion.nth.completedCount,
@@ -168,10 +176,16 @@ export function getProcessStages(listing?: Record<string, unknown>): ProcessStag
   const dynamicStages: ProcessStage[] = rawProcessStages.map(cloneProcessStage);
 
   // Find and update "Ficha completa" substage based on mandatory field completion
-  const oportunidadStage = dynamicStages.find(stage => stage.id === "oportunidad");
+  const oportunidadStage = dynamicStages.find(
+    (stage) => stage.id === "oportunidad",
+  );
   if (oportunidadStage) {
-    const fichaCompleta = oportunidadStage.subStages.find(sub => sub.id === "completar-info");
-    const encargoSubstage = oportunidadStage.subStages.find(sub => sub.id === "firma-encargo");
+    const fichaCompleta = oportunidadStage.subStages.find(
+      (sub) => sub.id === "completar-info",
+    );
+    const encargoSubstage = oportunidadStage.subStages.find(
+      (sub) => sub.id === "firma-encargo",
+    );
 
     if (fichaCompleta) {
       const previousFichaStatus = fichaCompleta.status;
@@ -198,25 +212,35 @@ export function getProcessStages(listing?: Record<string, unknown>): ProcessStag
 
       // Step 1: If ficha is not complete, block at "Ficha completa"
       if (!isFichaComplete) {
-        const fichaIndex = oportunidadStage.subStages.findIndex(sub => sub.id === "completar-info");
+        const fichaIndex = oportunidadStage.subStages.findIndex(
+          (sub) => sub.id === "completar-info",
+        );
         // Set all substages after "completar-info" in Oportunidad to future
-        for (let i = fichaIndex + 1; i < oportunidadStage.subStages.length; i++) {
+        for (
+          let i = fichaIndex + 1;
+          i < oportunidadStage.subStages.length;
+          i++
+        ) {
           oportunidadStage.subStages[i]!.status = "future";
         }
 
         // Set all stages after Oportunidad to future (including all their substages)
-        const oportunidadIndex = dynamicStages.findIndex(stage => stage.id === "oportunidad");
+        const oportunidadIndex = dynamicStages.findIndex(
+          (stage) => stage.id === "oportunidad",
+        );
         for (let i = oportunidadIndex + 1; i < dynamicStages.length; i++) {
           const stage = dynamicStages[i];
           if (stage) {
             stage.status = "future";
-            stage.subStages.forEach(sub => {
+            stage.subStages.forEach((sub) => {
               sub.status = "future";
             });
           }
         }
 
-        console.log("🚫 Step 1: Blocking at 'Ficha completa' - mandatory fields incomplete");
+        console.log(
+          "🚫 Step 1: Blocking at 'Ficha completa' - mandatory fields incomplete",
+        );
       }
       // Step 2: If ficha is complete but encargo is false, block at "Encargo"
       else if (!hasEncargo && encargoSubstage) {
@@ -224,12 +248,14 @@ export function getProcessStages(listing?: Record<string, unknown>): ProcessStag
         encargoSubstage.status = "ongoing";
 
         // Set all stages after Encargo to future
-        const oportunidadIndex = dynamicStages.findIndex(stage => stage.id === "oportunidad");
+        const oportunidadIndex = dynamicStages.findIndex(
+          (stage) => stage.id === "oportunidad",
+        );
         for (let i = oportunidadIndex + 1; i < dynamicStages.length; i++) {
           const stage = dynamicStages[i];
           if (stage) {
             stage.status = "future";
-            stage.subStages.forEach(sub => {
+            stage.subStages.forEach((sub) => {
               sub.status = "future";
             });
           }
@@ -252,43 +278,61 @@ export function getProcessStages(listing?: Record<string, unknown>): ProcessStag
 
         if (!hasOfferAccepted) {
           // Find the "Busqueda" stage and "visitas" substage
-          const busquedaStage = dynamicStages.find(stage => stage.id === "busqueda");
-          const visitasSubstage = busquedaStage?.subStages.find(sub => sub.id === "visitas");
+          const busquedaStage = dynamicStages.find(
+            (stage) => stage.id === "busqueda",
+          );
+          const visitasSubstage = busquedaStage?.subStages.find(
+            (sub) => sub.id === "visitas",
+          );
 
           if (visitasSubstage) {
             // Mark visitas as ongoing
             visitasSubstage.status = "ongoing";
 
             // Set all stages after Busqueda to future
-            const busquedaIndex = dynamicStages.findIndex(stage => stage.id === "busqueda");
+            const busquedaIndex = dynamicStages.findIndex(
+              (stage) => stage.id === "busqueda",
+            );
             for (let i = busquedaIndex + 1; i < dynamicStages.length; i++) {
               const stage = dynamicStages[i];
               if (stage) {
                 stage.status = "future";
-                stage.subStages.forEach(sub => {
+                stage.subStages.forEach((sub) => {
                   sub.status = "future";
                 });
               }
             }
 
-            console.log("🔍 Step 3: Blocking at 'Visitas' - no offer accepted yet");
+            console.log(
+              "🔍 Step 3: Blocking at 'Visitas' - no offer accepted yet",
+            );
           }
         } else {
           // Step 4: offerAccepted is true, mark visitas as accomplished and continue
-          const busquedaStage = dynamicStages.find(stage => stage.id === "busqueda");
-          const visitasSubstage = busquedaStage?.subStages.find(sub => sub.id === "visitas");
+          const busquedaStage = dynamicStages.find(
+            (stage) => stage.id === "busqueda",
+          );
+          const visitasSubstage = busquedaStage?.subStages.find(
+            (sub) => sub.id === "visitas",
+          );
 
           if (visitasSubstage) {
             visitasSubstage.status = "accomplished";
 
             // Mark the next stage (Arras) as ongoing
-            const cierreStage = dynamicStages.find(stage => stage.id === "cierre");
-            const arrasSubstage = cierreStage?.subStages.find(sub => sub.id === "arras");
+            const cierreStage = dynamicStages.find(
+              (stage) => stage.id === "cierre",
+            );
+            const arrasSubstage = cierreStage?.subStages.find(
+              (sub) => sub.id === "arras",
+            );
             if (arrasSubstage) {
               arrasSubstage.status = "ongoing";
             }
 
-            console.log("✅ Step 4: Offer accepted - progressing to 'Arras' (ongoing)");
+            console.log(
+              "✅ Step 4: Offer accepted - progressing to 'Arras' (ongoing)",
+            );
           }
         }
       }
@@ -297,9 +341,9 @@ export function getProcessStages(listing?: Record<string, unknown>): ProcessStag
 
   // Don't apply validation - we want to keep our dynamic status
   // Just ensure internal substage consistency within each stage
-  return dynamicStages.map(stage => ({
+  return dynamicStages.map((stage) => ({
     ...stage,
-    subStages: validateSubstageProgression(stage.subStages)
+    subStages: validateSubstageProgression(stage.subStages),
   }));
 }
 

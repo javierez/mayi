@@ -11,8 +11,7 @@ export function ProspectEmptyState() {
       <User className="mx-auto mb-3 h-12 w-12 text-gray-300" />
       <p className="text-sm">No hay solicitudes de búsqueda configuradas</p>
       <p className="mt-1 text-xs text-gray-400">
-        Haz clic en &quot;Añadir solicitud&quot; para crear la primera
-        solicitud
+        Haz clic en &quot;Añadir solicitud&quot; para crear la primera solicitud
       </p>
     </div>
   );

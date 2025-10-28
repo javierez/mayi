@@ -71,7 +71,7 @@ export async function uploadAccountLogo(
 
     // Generate dynamic bucket name based on account name
     const bucketName = await getDynamicBucketNameForAccount(accountId);
-    
+
     // Upload to S3 in account-specific folder
     const { imageUrl } = await uploadImageToS3(
       file,
@@ -428,7 +428,7 @@ export async function uploadAccountLogoForConfig(
 
     // Generate dynamic bucket name based on account name
     const bucketName = await getDynamicBucketNameForAccount(accountId);
-    
+
     // Create a custom upload function for the config folder
     const fileExtension = file.name.split(".").pop();
     const logoKey = `${bucketName}/config/logo_${accountId}_${Date.now()}.${fileExtension}`;
@@ -485,10 +485,12 @@ export async function getAccountTransparentLogoAction(): Promise<{
 }> {
   try {
     const accountId = await getCurrentUserAccountId();
-    const { getAccountTransparentLogo } = await import("~/server/queries/accounts");
-    
+    const { getAccountTransparentLogo } = await import(
+      "~/server/queries/accounts"
+    );
+
     const logoUrl = await getAccountTransparentLogo(accountId);
-    
+
     return {
       success: true,
       logoUrl,

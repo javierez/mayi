@@ -1203,7 +1203,7 @@ export const CONTACT_FIELD_MAPPINGS: FieldMapping[] = [
     category: "contact",
   },
   {
-    dbColumn: "lastName", 
+    dbColumn: "lastName",
     dbTable: "contacts",
     aliases: ["apellidos", "apellido", "surname"],
     dataType: "string",
@@ -1218,7 +1218,7 @@ export const CONTACT_FIELD_MAPPINGS: FieldMapping[] = [
   },
   {
     dbColumn: "phone",
-    dbTable: "contacts", 
+    dbTable: "contacts",
     aliases: ["teléfono", "telefono", "móvil", "movil", "celular", "tel"],
     dataType: "string",
     category: "contact",

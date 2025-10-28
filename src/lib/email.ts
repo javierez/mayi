@@ -16,8 +16,10 @@ export interface EmailOptions {
  */
 export async function sendEmail({ to, subject, text, html }: EmailOptions) {
   if (!resend || !env.RESEND_API_KEY) {
-    console.warn("⚠️ Email service not configured. Set RESEND_API_KEY to enable email functionality.");
-    
+    console.warn(
+      "⚠️ Email service not configured. Set RESEND_API_KEY to enable email functionality.",
+    );
+
     // In development, log the email instead of sending
     if (env.NODE_ENV === "development") {
       console.log("\n📧 Email (Development Mode):");
@@ -28,7 +30,7 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions) {
       console.log("──────────────────────────────\n");
       return { success: true, id: "dev-email-id" };
     }
-    
+
     throw new Error("Email service not configured");
   }
 
@@ -52,7 +54,10 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions) {
 /**
  * Generate password reset email HTML
  */
-export function generatePasswordResetEmail(resetUrl: string, userEmail: string): { html: string; text: string } {
+export function generatePasswordResetEmail(
+  resetUrl: string,
+  userEmail: string,
+): { html: string; text: string } {
   const html = `
     <!DOCTYPE html>
     <html>

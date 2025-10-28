@@ -20,7 +20,13 @@ interface ConfirmDialogProps {
   onCancel?: () => void;
   confirmText?: string;
   cancelText?: string;
-  confirmVariant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
+  confirmVariant?:
+    | "default"
+    | "destructive"
+    | "outline"
+    | "secondary"
+    | "ghost"
+    | "link";
 }
 
 export function ConfirmDialog({

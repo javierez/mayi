@@ -112,8 +112,8 @@ export async function getListingOwnerInfoWithAuth(listingId: number) {
           eq(listingContacts.contactType, "owner"),
           eq(listingContacts.isActive, true),
           eq(contacts.accountId, BigInt(accountId)),
-          eq(contacts.isActive, true)
-        )
+          eq(contacts.isActive, true),
+        ),
       )
       .limit(1);
 
@@ -349,7 +349,7 @@ async function getPreferredAreaFromProspect(
 /**
  * Check for duplicate contacts based on email, phone, and name combinations.
  * Returns an array of potential duplicate contacts.
- * 
+ *
  * Matching rules (in priority order):
  * 1. Exact email match
  * 2. Exact phone match
@@ -367,18 +367,18 @@ export async function checkForDuplicateContacts(
 ): Promise<DuplicateContact[]> {
   try {
     const duplicates: DuplicateContact[] = [];
-    
+
     // Normalize input data
     const normalizedEmail = normalizeEmail(contactData.email);
     const normalizedPhone = normalizePhone(contactData.phone);
     const normalizedFirstName = normalizeName(contactData.firstName);
     const normalizedLastName = normalizeName(contactData.lastName);
-    
+
     // Skip if no valid identifiers
     if (!normalizedEmail && !normalizedPhone) {
       return duplicates;
     }
-    
+
     // Rule 1: Exact email match
     if (normalizedEmail) {
       const emailMatches = await db
@@ -391,7 +391,7 @@ export async function checkForDuplicateContacts(
             sql`LOWER(TRIM(${contacts.email})) = ${normalizedEmail}`,
           ),
         );
-      
+
       for (const match of emailMatches) {
         duplicates.push({
           contactId: Number(match.contactId),
@@ -404,7 +404,7 @@ export async function checkForDuplicateContacts(
         });
       }
     }
-    
+
     // Rule 2: Exact phone match
     if (normalizedPhone) {
       const phoneMatches = await db
@@ -417,10 +417,10 @@ export async function checkForDuplicateContacts(
             sql`REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(${contacts.phone}, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') LIKE ${`%${normalizedPhone}%`}`,
           ),
         );
-      
+
       for (const match of phoneMatches) {
         // Avoid duplicates if already matched by email
-        if (!duplicates.some(d => d.contactId === Number(match.contactId))) {
+        if (!duplicates.some((d) => d.contactId === Number(match.contactId))) {
           duplicates.push({
             contactId: Number(match.contactId),
             firstName: match.firstName,
@@ -433,7 +433,7 @@ export async function checkForDuplicateContacts(
         }
       }
     }
-    
+
     // Rule 3: Email + name match
     if (normalizedEmail && normalizedFirstName) {
       const emailNameMatches = await db
@@ -450,9 +450,9 @@ export async function checkForDuplicateContacts(
               : sql`1=1`,
           ),
         );
-      
+
       for (const match of emailNameMatches) {
-        if (!duplicates.some(d => d.contactId === Number(match.contactId))) {
+        if (!duplicates.some((d) => d.contactId === Number(match.contactId))) {
           duplicates.push({
             contactId: Number(match.contactId),
             firstName: match.firstName,
@@ -465,7 +465,7 @@ export async function checkForDuplicateContacts(
         }
       }
     }
-    
+
     // Rule 4: Phone + name match
     if (normalizedPhone && normalizedFirstName) {
       const phoneNameMatches = await db
@@ -482,9 +482,9 @@ export async function checkForDuplicateContacts(
               : sql`1=1`,
           ),
         );
-      
+
       for (const match of phoneNameMatches) {
-        if (!duplicates.some(d => d.contactId === Number(match.contactId))) {
+        if (!duplicates.some((d) => d.contactId === Number(match.contactId))) {
           duplicates.push({
             contactId: Number(match.contactId),
             firstName: match.firstName,
@@ -497,7 +497,7 @@ export async function checkForDuplicateContacts(
         }
       }
     }
-    
+
     return duplicates;
   } catch (error) {
     console.error("Error checking for duplicate contacts:", error);
@@ -511,12 +511,11 @@ export async function createContact(
   data: Omit<Contact, "contactId" | "createdAt" | "updatedAt">,
   bypassDuplicateCheck = false,
 ): Promise<
-  | Contact
-  | { error: "DUPLICATE_FOUND"; duplicates: DuplicateContact[] }
+  Contact | { error: "DUPLICATE_FOUND"; duplicates: DuplicateContact[] }
 > {
   try {
     const accountId = await getCurrentUserAccountId();
-    
+
     // Check for duplicates unless bypassed
     if (!bypassDuplicateCheck) {
       const duplicates = await checkForDuplicateContacts(
@@ -528,12 +527,12 @@ export async function createContact(
         },
         accountId,
       );
-      
+
       if (duplicates.length > 0) {
         return { error: "DUPLICATE_FOUND", duplicates };
       }
     }
-    
+
     const [result] = await db
       .insert(contacts)
       .values({
@@ -575,12 +574,11 @@ export async function createContactWithListings(
   ownershipAction?: "change" | "add",
   bypassDuplicateCheck = false,
 ): Promise<
-  | Contact
-  | { error: "DUPLICATE_FOUND"; duplicates: DuplicateContact[] }
+  Contact | { error: "DUPLICATE_FOUND"; duplicates: DuplicateContact[] }
 > {
   try {
     const accountId = await getCurrentUserAccountId();
-    
+
     // Check for duplicates unless bypassed
     if (!bypassDuplicateCheck) {
       const duplicates = await checkForDuplicateContacts(
@@ -592,12 +590,12 @@ export async function createContactWithListings(
         },
         accountId,
       );
-      
+
       if (duplicates.length > 0) {
         return { error: "DUPLICATE_FOUND", duplicates };
       }
     }
-    
+
     // First, create the contact
     const [result] = await db
       .insert(contacts)
@@ -720,7 +718,11 @@ export async function getContactsByOrgId(orgId: number, accountId: number) {
 }
 
 // Optimized search contacts by name only
-export async function searchContacts(query: string, accountId: number, limit?: number) {
+export async function searchContacts(
+  query: string,
+  accountId: number,
+  limit?: number,
+) {
   try {
     const searchResults = await db
       .select({
@@ -732,7 +734,10 @@ export async function searchContacts(query: string, accountId: number, limit?: n
         and(
           eq(contacts.accountId, BigInt(accountId)),
           eq(contacts.isActive, true),
-          like(sql`CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})`, `%${query}%`),
+          like(
+            sql`CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})`,
+            `%${query}%`,
+          ),
         ),
       )
       .orderBy(contacts.firstName, contacts.lastName)
@@ -1827,7 +1832,7 @@ export async function listContactsOwnerDataWithAuth(
     const accountId = await getCurrentUserAccountId();
     return listContactsOwnerData(accountId, page, limit, filters);
   } catch (error) {
-    if (error instanceof Error && error.name === 'UnauthorizedError') {
+    if (error instanceof Error && error.name === "UnauthorizedError") {
       // Authentication failed - let middleware handle redirect
       throw error;
     }
@@ -1847,7 +1852,7 @@ export async function listContactsBuyerDataWithAuth(
     const accountId = await getCurrentUserAccountId();
     return listContactsBuyerData(accountId, page, limit, filters);
   } catch (error) {
-    if (error instanceof Error && error.name === 'UnauthorizedError') {
+    if (error instanceof Error && error.name === "UnauthorizedError") {
       // Authentication failed - let middleware handle redirect
       throw error;
     }
@@ -1899,7 +1904,11 @@ export async function listContactsOwnerData(
       // Apply last contact date filtering at database level
       if (filters.lastContactFilter && filters.lastContactFilter !== "all") {
         const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const today = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+        );
 
         let dateThreshold: Date;
         switch (filters.lastContactFilter) {
@@ -1910,13 +1919,19 @@ export async function listContactsOwnerData(
             dateThreshold = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
             break;
           case "month":
-            dateThreshold = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+            dateThreshold = new Date(
+              today.getTime() - 30 * 24 * 60 * 60 * 1000,
+            );
             break;
           case "quarter":
-            dateThreshold = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+            dateThreshold = new Date(
+              today.getTime() - 90 * 24 * 60 * 60 * 1000,
+            );
             break;
           case "year":
-            dateThreshold = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
+            dateThreshold = new Date(
+              today.getTime() - 365 * 24 * 60 * 60 * 1000,
+            );
             break;
           default:
             dateThreshold = new Date(0); // All time
@@ -2022,7 +2037,7 @@ export async function listContactsOwnerData(
       )
       .having(
         // Only include contacts that are actually owners
-        sql`COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END) > 0`
+        sql`COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END) > 0`,
       )
       .orderBy(desc(contacts.updatedAt))
       .limit(limit)
@@ -2065,7 +2080,10 @@ export async function listContactsOwnerData(
         }
         return acc;
       },
-      {} as Record<string, Array<{ id: string; title: string; completed: boolean; dueDate?: Date }>>,
+      {} as Record<
+        string,
+        Array<{ id: string; title: string; completed: boolean; dueDate?: Date }>
+      >,
     );
 
     // Fetch only OWNER listings for these contacts
@@ -2151,7 +2169,7 @@ export async function listContactsOwnerData(
       .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
       .groupBy(contacts.contactId)
       .having(
-        sql`COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END) > 0`
+        sql`COUNT(CASE WHEN ${listingContacts.contactType} = 'owner' AND ${listingContacts.isActive} = true THEN 1 END) > 0`,
       );
 
     const totalCount = countResult.length; // Count the number of groups (contacts)
@@ -2211,7 +2229,11 @@ export async function listContactsBuyerData(
       // Apply last contact date filtering at database level
       if (filters.lastContactFilter && filters.lastContactFilter !== "all") {
         const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const today = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+        );
 
         let dateThreshold: Date;
         switch (filters.lastContactFilter) {
@@ -2222,13 +2244,19 @@ export async function listContactsBuyerData(
             dateThreshold = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
             break;
           case "month":
-            dateThreshold = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+            dateThreshold = new Date(
+              today.getTime() - 30 * 24 * 60 * 60 * 1000,
+            );
             break;
           case "quarter":
-            dateThreshold = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+            dateThreshold = new Date(
+              today.getTime() - 90 * 24 * 60 * 60 * 1000,
+            );
             break;
           case "year":
-            dateThreshold = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
+            dateThreshold = new Date(
+              today.getTime() - 365 * 24 * 60 * 60 * 1000,
+            );
             break;
           default:
             dateThreshold = new Date(0); // All time
@@ -2336,7 +2364,7 @@ export async function listContactsBuyerData(
       .having(
         // Only include contacts that are buyers or have prospects
         sql`COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) > 0
-            OR COUNT(DISTINCT ${prospects.id}) > 0`
+            OR COUNT(DISTINCT ${prospects.id}) > 0`,
       )
       .orderBy(desc(contacts.updatedAt))
       .limit(limit)
@@ -2379,7 +2407,10 @@ export async function listContactsBuyerData(
         }
         return acc;
       },
-      {} as Record<string, Array<{ id: string; title: string; completed: boolean; dueDate?: Date }>>,
+      {} as Record<
+        string,
+        Array<{ id: string; title: string; completed: boolean; dueDate?: Date }>
+      >,
     );
 
     // Fetch prospects for buyer context
@@ -2514,7 +2545,7 @@ export async function listContactsBuyerData(
       .groupBy(contacts.contactId)
       .having(
         sql`COUNT(CASE WHEN ${listingContacts.contactType} = 'buyer' AND ${listingContacts.isActive} = true THEN 1 END) > 0
-            OR COUNT(DISTINCT ${prospects.id}) > 0`
+            OR COUNT(DISTINCT ${prospects.id}) > 0`,
       );
 
     const totalCount = countResult.length; // Count the number of groups (contacts)
@@ -2614,17 +2645,27 @@ export async function findContactBySimilarName(
       return maxLength === 0 ? 1 : 1 - matrix[b.length]![a.length]! / maxLength;
     }
 
-    let bestMatch: { contact: SimilarContactData; similarity: number } | null = null;
+    let bestMatch: { contact: SimilarContactData; similarity: number } | null =
+      null;
 
     for (const contact of allContacts) {
       // Calculate similarity for full name
       const contactFullName = `${contact.firstName} ${contact.lastName}`;
       const searchFullName = `${firstName} ${lastName}`;
-      const fullNameSimilarity = calculateSimilarity(contactFullName, searchFullName);
+      const fullNameSimilarity = calculateSimilarity(
+        contactFullName,
+        searchFullName,
+      );
 
       // Calculate similarity for individual names
-      const firstNameSimilarity = calculateSimilarity(contact.firstName, firstName);
-      const lastNameSimilarity = calculateSimilarity(contact.lastName, lastName);
+      const firstNameSimilarity = calculateSimilarity(
+        contact.firstName,
+        firstName,
+      );
+      const lastNameSimilarity = calculateSimilarity(
+        contact.lastName,
+        lastName,
+      );
 
       // Use the best similarity score
       const bestSimilarity = Math.max(

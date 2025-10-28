@@ -59,7 +59,11 @@ export default function AccionesRapidasCard() {
           {actions.map((action) => {
             const Component = action.onClick ? motion.button : motion.a;
             const props = action.onClick
-              ? { onClick: action.onClick, disabled: action.label === "Añadir Propiedad" && isCreatingProperty }
+              ? {
+                  onClick: action.onClick,
+                  disabled:
+                    action.label === "Añadir Propiedad" && isCreatingProperty,
+                }
               : { href: action.href };
 
             return (
@@ -69,12 +73,16 @@ export default function AccionesRapidasCard() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 className={`flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md ${
-                  action.label === "Añadir Propiedad" && isCreatingProperty ? "opacity-50 cursor-wait" : ""
+                  action.label === "Añadir Propiedad" && isCreatingProperty
+                    ? "cursor-wait opacity-50"
+                    : ""
                 }`}
               >
                 <action.icon className="mb-2 h-6 w-6" />
                 <span className="text-center text-[10px] font-medium uppercase tracking-wide text-gray-600">
-                  {action.label === "Añadir Propiedad" && isCreatingProperty ? "Creando..." : action.label}
+                  {action.label === "Añadir Propiedad" && isCreatingProperty
+                    ? "Creando..."
+                    : action.label}
                 </span>
               </Component>
             );

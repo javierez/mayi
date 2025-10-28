@@ -51,13 +51,13 @@ const isHexColor = (color: string): boolean => {
 // Helper function to calculate luminance of a hex color
 const getColorLuminance = (hex: string): number => {
   // Remove # if present
-  const color = hex.replace('#', '');
-  
+  const color = hex.replace("#", "");
+
   // Convert to RGB
   const r = parseInt(color.substring(0, 2), 16) / 255;
   const g = parseInt(color.substring(2, 4), 16) / 255;
   const b = parseInt(color.substring(4, 6), 16) / 255;
-  
+
   // Calculate relative luminance
   const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
   return luminance;
@@ -68,7 +68,7 @@ const getOverlayClass = (overlayType: string) => {
   if (isHexColor(overlayType)) {
     return "";
   }
-  
+
   const overlayMap: Record<string, string> = {
     default: "bg-gray-400",
     dark: "bg-gray-800",
@@ -91,9 +91,11 @@ const getTextColorForOverlay = (overlayType: string) => {
     // Use white text for dark backgrounds, dark text for light backgrounds
     return luminance > 0.5 ? "#1e293b" : "white";
   }
-  
+
   // Light overlay needs dark text, others need white text
-  return overlayType === "light" || overlayType === "white" ? "#1e293b" : "white";
+  return overlayType === "light" || overlayType === "white"
+    ? "#1e293b"
+    : "white";
 };
 
 // Helper functions for additional fields
@@ -125,8 +127,16 @@ const getFieldLabel = (fieldValue: string) => {
   return labelMap[fieldValue] ?? fieldValue;
 };
 
-const getFieldValue = (fieldValue: string, data: ConfigurableTemplateProps["data"]): string => {
-  const value = (data as unknown as Record<string, unknown>)[fieldValue] as string | number | boolean | undefined | null;
+const getFieldValue = (
+  fieldValue: string,
+  data: ConfigurableTemplateProps["data"],
+): string => {
+  const value = (data as unknown as Record<string, unknown>)[fieldValue] as
+    | string
+    | number
+    | boolean
+    | undefined
+    | null;
 
   if (value === undefined || value === null) return "N/A";
   if (typeof value === "boolean") return value ? "Sí" : "No";
@@ -228,16 +238,17 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
   );
 
   // Get images from data prop (passed by the editor) or fallback to default S3 images
-  const templateImages = data.images && data.images.length > 0 
-    ? data.images 
-    : getTemplateImages(config.imageCount);
+  const templateImages =
+    data.images && data.images.length > 0
+      ? data.images
+      : getTemplateImages(config.imageCount);
 
   // Wireframe-based responsive image gallery
   const renderImageGallery = () => {
     if (templateImages.length === 0) return null;
 
     const imageCount = Math.min(templateImages.length, config.imageCount);
-    
+
     // Base styles for all image containers
     const imageContainerStyle: React.CSSProperties = {
       overflow: "hidden",
@@ -258,14 +269,15 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
               onError={handleImageError}
               style={{
                 objectPosition: data.imagePositions?.[templateImages[0]]
-                  ? `${Math.max(0, Math.min(100, (data.imagePositions[templateImages[0]]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[templateImages[0]]?.y ?? 50)))}%`
+                  ? `${Math.max(0, Math.min(100, data.imagePositions[templateImages[0]]?.x ?? 50))}% ${Math.max(0, Math.min(100, data.imagePositions[templateImages[0]]?.y ?? 50))}%`
                   : "50% 50%",
               }}
               priority
             />
           )}
           {renderWatermark("large")}
-          {config.showReference && renderReferenceOverlay(true)} {/* Single image gets reference */}
+          {config.showReference && renderReferenceOverlay(true)}{" "}
+          {/* Single image gets reference */}
         </div>
       );
     }
@@ -295,15 +307,16 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                   onError={handleImageError}
                   style={{
                     objectPosition: data.imagePositions?.[image]
-                      ? `${Math.max(0, Math.min(100, (data.imagePositions[image]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[image]?.y ?? 50)))}%`
+                      ? `${Math.max(0, Math.min(100, data.imagePositions[image]?.x ?? 50))}% ${Math.max(0, Math.min(100, data.imagePositions[image]?.y ?? 50))}%`
                       : "50% 50%",
                     transform: `scale(${data.imagePositions?.[image]?.zoom ?? 1.0})`,
-                    transformOrigin: 'center',
+                    transformOrigin: "center",
                   }}
                 />
               )}
               {renderWatermark("medium")}
-              {config.showReference && renderReferenceOverlay(index === 1)} {/* Second image gets reference in both layouts */}
+              {config.showReference && renderReferenceOverlay(index === 1)}{" "}
+              {/* Second image gets reference in both layouts */}
             </div>
           ))}
         </div>
@@ -334,17 +347,17 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                 onError={handleImageError}
                 style={{
                   objectPosition: data.imagePositions?.[templateImages[0]]
-                    ? `${Math.max(0, Math.min(100, (data.imagePositions[templateImages[0]]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[templateImages[0]]?.y ?? 50)))}%`
+                    ? `${Math.max(0, Math.min(100, data.imagePositions[templateImages[0]]?.x ?? 50))}% ${Math.max(0, Math.min(100, data.imagePositions[templateImages[0]]?.y ?? 50))}%`
                     : "50% 50%",
                   transform: `scale(${data.imagePositions?.[templateImages[0]]?.zoom ?? 1.0})`,
-                  transformOrigin: 'center',
+                  transformOrigin: "center",
                 }}
                 priority
               />
             )}
             {renderWatermark("large")}
           </div>
-          
+
           {/* Two smaller images below */}
           {templateImages.slice(1, 3).map((image, index) => (
             <div key={index + 1} style={imageContainerStyle}>
@@ -357,15 +370,16 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                   onError={handleImageError}
                   style={{
                     objectPosition: data.imagePositions?.[image]
-                      ? `${Math.max(0, Math.min(100, (data.imagePositions[image]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[image]?.y ?? 50)))}%`
+                      ? `${Math.max(0, Math.min(100, data.imagePositions[image]?.x ?? 50))}% ${Math.max(0, Math.min(100, data.imagePositions[image]?.y ?? 50))}%`
                       : "50% 50%",
                     transform: `scale(${data.imagePositions?.[image]?.zoom ?? 1.0})`,
-                    transformOrigin: 'center',
+                    transformOrigin: "center",
                   }}
                 />
               )}
               {renderWatermark("small")}
-              {config.showReference && renderReferenceOverlay(index === 1)} {/* Bottom right image (index 1 of the two below) */}
+              {config.showReference && renderReferenceOverlay(index === 1)}{" "}
+              {/* Bottom right image (index 1 of the two below) */}
             </div>
           ))}
         </div>
@@ -395,16 +409,17 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                 onError={handleImageError}
                 style={{
                   objectPosition: data.imagePositions?.[image]
-                    ? `${Math.max(0, Math.min(100, (data.imagePositions[image]?.x ?? 50)))}% ${Math.max(0, Math.min(100, (data.imagePositions[image]?.y ?? 50)))}%`
+                    ? `${Math.max(0, Math.min(100, data.imagePositions[image]?.x ?? 50))}% ${Math.max(0, Math.min(100, data.imagePositions[image]?.y ?? 50))}%`
                     : "50% 50%",
                   transform: `scale(${data.imagePositions?.[image]?.zoom ?? 1.0})`,
-                  transformOrigin: 'center',
+                  transformOrigin: "center",
                 }}
                 priority={index === 0}
               />
             )}
             {renderWatermark("medium")}
-            {config.showReference && renderReferenceOverlay(index === 3)} {/* Bottom right image (index 3) */}
+            {config.showReference && renderReferenceOverlay(index === 3)}{" "}
+            {/* Bottom right image (index 3) */}
           </div>
         ))}
       </div>
@@ -424,11 +439,11 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
     const { width, height } = sizeMap[size];
 
     return (
-      <div 
+      <div
         className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
         style={{
           zIndex: 10,
-          pointerEvents: 'none'
+          pointerEvents: "none",
         }}
       >
         {data.logoUrl && (
@@ -439,9 +454,9 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             height={height}
             className="object-contain opacity-25"
             style={{
-              maxWidth: '100%',
-              maxHeight: '100%',
-              objectFit: 'contain'
+              maxWidth: "100%",
+              maxHeight: "100%",
+              objectFit: "contain",
             }}
           />
         )}
@@ -454,22 +469,22 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
     if (!isBottomRight || !data.reference) return null;
 
     return (
-      <div 
+      <div
         className="pointer-events-none absolute bottom-2 right-2 z-20"
         style={{
           zIndex: 20,
-          pointerEvents: 'none'
+          pointerEvents: "none",
         }}
       >
         <span
           className="font-mono font-medium"
           style={{
-            fontSize: '12px',
-            color: config.referenceTextColor || '#000000',
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            padding: '2px 6px',
-            borderRadius: '2px',
-            letterSpacing: '0.5px',
+            fontSize: "12px",
+            color: config.referenceTextColor || "#000000",
+            backgroundColor: "rgba(255, 255, 255, 0.9)",
+            padding: "2px 6px",
+            borderRadius: "2px",
+            letterSpacing: "0.5px",
           }}
         >
           {data.reference}
@@ -496,14 +511,25 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
 
   // Calculate section heights to fit within A4 bounds - flexible approach
   // Base heights that can adapt to content
-  const headerHeight = Math.max(120, config.showShortDescription && data.shortDescription ? 140 : 120);
-  const descriptionHeight = config.showShortDescription && data.shortDescription ? Math.max(30, 35) : 35; // Always reserve space for consistent image positioning
+  const headerHeight = Math.max(
+    120,
+    config.showShortDescription && data.shortDescription ? 140 : 120,
+  );
+  const descriptionHeight =
+    config.showShortDescription && data.shortDescription
+      ? Math.max(30, 35)
+      : 35; // Always reserve space for consistent image positioning
   const statsHeight = config.showIcons ? 80 : 180; // When icons disabled or description shown, stats section takes both stats + bottom strip space
   const bottomStripHeight = config.showIcons ? 100 : 0; // Only show bottom strip when icons are enabled
   const footerHeight = 45; // Contact bar - keep fixed
-  
+
   // Calculate remaining space for gallery with significantly reduced height for bigger icons/price
-  const totalFixedHeight = headerHeight + descriptionHeight + statsHeight + bottomStripHeight + footerHeight;
+  const totalFixedHeight =
+    headerHeight +
+    descriptionHeight +
+    statsHeight +
+    bottomStripHeight +
+    footerHeight;
   const calculatedGalleryHeight = containerDimensions.height - totalFixedHeight;
   const galleryHeight = Math.max(calculatedGalleryHeight - 80, 140); // Much more reduced, minimum 140px
 
@@ -538,7 +564,11 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
           borderBottom: overlayClass ? "none" : "2px solid #e2e8f0",
           flexShrink: 0,
           boxSizing: "border-box",
-          backgroundColor: isHexColor(config.overlayColor) ? config.overlayColor : (overlayClass ? undefined : "#f8fafc"),
+          backgroundColor: isHexColor(config.overlayColor)
+            ? config.overlayColor
+            : overlayClass
+              ? undefined
+              : "#f8fafc",
         }}
       >
         <div>
@@ -554,18 +584,16 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
               marginBottom: "6px",
               color: config.titleColor || textColor,
               textAlign: config.titleAlignment || "left",
-              transform: config.titlePositionX || config.titlePositionY 
-                ? `translate(${config.titlePositionX || 0}px, ${config.titlePositionY || 0}px)` 
-                : undefined,
+              transform:
+                config.titlePositionX || config.titlePositionY
+                  ? `translate(${config.titlePositionX || 0}px, ${config.titlePositionY || 0}px)`
+                  : undefined,
             }}
           >
             {safeData.title}
           </h2>
           <div
-            className={cn(
-              "font-medium",
-              getFontClass(config.locationFont),
-            )}
+            className={cn("font-medium", getFontClass(config.locationFont))}
             style={{
               fontSize: `${config.locationSize || getTypographySize("body")}px`,
               lineHeight: "1.2",
@@ -573,15 +601,16 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
               color: config.locationColor || "#64748b",
               opacity: 0.9,
               textAlign: config.locationAlignment || "left",
-              transform: config.locationPositionX || config.locationPositionY 
-                ? `translate(${config.locationPositionX || 0}px, ${config.locationPositionY || 0}px)` 
-                : undefined,
+              transform:
+                config.locationPositionX || config.locationPositionY
+                  ? `translate(${config.locationPositionX || 0}px, ${config.locationPositionY || 0}px)`
+                  : undefined,
             }}
           >
             {formatLocation(safeData.location)}
           </div>
         </div>
-        
+
         {/* QR Code - Top Right */}
         {config.showQR && (
           <div style={{ display: "flex", justifyContent: "center" }}>
@@ -596,20 +625,20 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
       </div>
 
       {/* 2. RESERVED SPACE - Always maintain space for consistent image positioning */}
-        <div
-          style={{
+      <div
+        style={{
           height: `30px`,
-            display: "flex",
-            alignItems: "center",
-            paddingLeft: "20px",
-            paddingRight: "20px",
-            backgroundColor: "#ffffff",
-            flexShrink: 0,
-            boxSizing: "border-box",
-          }}
-        >
+          display: "flex",
+          alignItems: "center",
+          paddingLeft: "20px",
+          paddingRight: "20px",
+          backgroundColor: "#ffffff",
+          flexShrink: 0,
+          boxSizing: "border-box",
+        }}
+      >
         {/* This space is reserved to maintain consistent image positioning */}
-        </div>
+      </div>
 
       {/* 3. IMAGE GALLERY - Centerpiece */}
       <div
@@ -656,15 +685,18 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
               }}
             >
               <div
-                className={cn(getFontClass(config.descriptionFont || "default"))}
+                className={cn(
+                  getFontClass(config.descriptionFont || "default"),
+                )}
                 style={{
                   fontSize: `${config.descriptionSize || 16}px`,
                   lineHeight: "1.4",
                   color: config.descriptionColor || "#000000",
                   textAlign: config.descriptionAlignment || "left",
-                  transform: config.descriptionPositionX || config.descriptionPositionY 
-                    ? `translate(${config.descriptionPositionX || 0}px, ${config.descriptionPositionY || 0}px)` 
-                    : undefined,
+                  transform:
+                    config.descriptionPositionX || config.descriptionPositionY
+                      ? `translate(${config.descriptionPositionX || 0}px, ${config.descriptionPositionY || 0}px)`
+                      : undefined,
                   whiteSpace: "pre-wrap",
                 }}
               >
@@ -683,18 +715,16 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
               }}
             >
               <div
-                className={cn(
-                  "font-bold",
-                  getFontClass(config.priceFont),
-                )}
+                className={cn("font-bold", getFontClass(config.priceFont))}
                 style={{
                   fontSize: `${config.priceSize || Math.min(getTypographySize("price"), 48)}px`,
                   lineHeight: "1.1",
                   color: config.priceColor || "#000000",
                   textAlign: "center",
-                  transform: config.pricePositionX || config.pricePositionY 
-                    ? `translate(${config.pricePositionX || 0}px, ${config.pricePositionY || 0}px)` 
-                    : undefined,
+                  transform:
+                    config.pricePositionX || config.pricePositionY
+                      ? `translate(${config.pricePositionX || 0}px, ${config.pricePositionY || 0}px)`
+                      : undefined,
                 }}
               >
                 {config.listingType === "alquiler" ? (
@@ -704,7 +734,9 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                       className="font-normal"
                       style={{
                         fontSize: `${Math.min(getTypographySize("body"), 28)}px`,
-                        color: config.priceColor ? `${config.priceColor}80` : "#00000080",
+                        color: config.priceColor
+                          ? `${config.priceColor}80`
+                          : "#00000080",
                       }}
                     >
                       {" €/mes"}
@@ -714,7 +746,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                   priceText
                 )}
               </div>
-              
+
               {/* Energy Certificate - Never show in description layout */}
             </div>
           </>
@@ -729,76 +761,85 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             }}
           >
             {/* Default Icons - Always shown */}
-        {/* Bedrooms */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            {/* Bedrooms */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 gap: `${config.iconTextGap || 8}px`,
               }}
             >
-              <Bed size={Math.round(32 * (config.iconSize || 1))} color="#64748b" />
-          <span
-            style={{
+              <Bed
+                size={Math.round(32 * (config.iconSize || 1))}
+                color="#64748b"
+              />
+              <span
+                style={{
                   fontSize: `${Math.round(24 * (config.iconSize || 1))}px`,
-              fontWeight: "600",
-              color: "#1e293b",
-            }}
-          >
-            {safeData.specs.bedrooms || 0}
-          </span>
-        </div>
+                  fontWeight: "600",
+                  color: "#1e293b",
+                }}
+              >
+                {safeData.specs.bedrooms || 0}
+              </span>
+            </div>
 
-        {/* Bathrooms */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            {/* Bathrooms */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 gap: `${config.iconTextGap || 8}px`,
               }}
             >
-              <Bath size={Math.round(32 * (config.iconSize || 1))} color="#64748b" />
-          <span
-            style={{
+              <Bath
+                size={Math.round(32 * (config.iconSize || 1))}
+                color="#64748b"
+              />
+              <span
+                style={{
                   fontSize: `${Math.round(24 * (config.iconSize || 1))}px`,
-              fontWeight: "600",
-              color: "#1e293b",
-            }}
-          >
-            {safeData.specs.bathrooms || 0}
-          </span>
-        </div>
+                  fontWeight: "600",
+                  color: "#1e293b",
+                }}
+              >
+                {safeData.specs.bathrooms || 0}
+              </span>
+            </div>
 
-        {/* Square meters */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
+            {/* Square meters */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 gap: `${config.iconTextGap || 8}px`,
               }}
             >
-              <Maximize size={Math.round(32 * (config.iconSize || 1))} color="#64748b" />
-          <span
-            style={{
+              <Maximize
+                size={Math.round(32 * (config.iconSize || 1))}
+                color="#64748b"
+              />
+              <span
+                style={{
                   fontSize: `${Math.round(24 * (config.iconSize || 1))}px`,
-              fontWeight: "600",
-              color: "#1e293b",
-            }}
-          >
-            {safeData.specs.squareMeters}m²
-          </span>
-        </div>
+                  fontWeight: "600",
+                  color: "#1e293b",
+                }}
+              >
+                {safeData.specs.squareMeters}m²
+              </span>
+            </div>
 
             {/* Additional Fields - Dynamic based on selection */}
             {config.additionalFields?.slice(0, 3).map((fieldValue) => {
               const value = getFieldValue(fieldValue, data);
               if (value === "N/A") return null;
-              
+
               const IconComponent = getFieldIcon(fieldValue);
-              
+
               return (
                 <div
                   key={fieldValue}
@@ -809,7 +850,10 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                     gap: `${config.iconTextGap || 8}px`,
                   }}
                 >
-                  <IconComponent size={Math.round(32 * (config.iconSize || 1))} color="#64748b" />
+                  <IconComponent
+                    size={Math.round(32 * (config.iconSize || 1))}
+                    color="#64748b"
+                  />
                   <span
                     style={{
                       fontSize: `${Math.round(24 * (config.iconSize || 1))}px`,
@@ -819,7 +863,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                   >
                     {value}
                   </span>
-      </div>
+                </div>
               );
             })}
           </div>
@@ -845,9 +889,10 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                     whiteSpace: "pre-wrap",
                     textAlign: config.bulletAlignment || "left",
                     color: config.bulletColor || "#000000",
-                    transform: config.bulletPositionX || config.bulletPositionY 
-                      ? `translate(${config.bulletPositionX || 0}px, ${config.bulletPositionY || 0}px)` 
-                      : undefined,
+                    transform:
+                      config.bulletPositionX || config.bulletPositionY
+                        ? `translate(${config.bulletPositionX || 0}px, ${config.bulletPositionY || 0}px)`
+                        : undefined,
                   }}
                 >
                   {data.iconListText}
@@ -867,9 +912,10 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                     lineHeight: "1.3",
                     textAlign: config.bulletAlignment || "left",
                     color: config.bulletColor || "#000000",
-                    transform: config.bulletPositionX || config.bulletPositionY 
-                      ? `translate(${config.bulletPositionX || 0}px, ${config.bulletPositionY || 0}px)` 
-                      : undefined,
+                    transform:
+                      config.bulletPositionX || config.bulletPositionY
+                        ? `translate(${config.bulletPositionX || 0}px, ${config.bulletPositionY || 0}px)`
+                        : undefined,
                   }}
                 >
                   {safeData.specs.bathrooms && (
@@ -929,7 +975,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                   {config.additionalFields?.slice(0, 6).map((fieldValue) => {
                     const value = getFieldValue(fieldValue, data);
                     if (value === "N/A") return null;
-                    
+
                     return (
                       <li
                         key={fieldValue}
@@ -967,18 +1013,16 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
               }}
             >
               <div
-                className={cn(
-                  "font-bold",
-                  getFontClass(config.priceFont),
-                )}
+                className={cn("font-bold", getFontClass(config.priceFont))}
                 style={{
                   fontSize: `${config.priceSize || Math.min(getTypographySize("price"), 48)}px`,
                   lineHeight: "1.1",
                   color: config.priceColor || "#000000",
                   textAlign: "center",
-                  transform: config.pricePositionX || config.pricePositionY 
-                    ? `translate(${config.pricePositionX || 0}px, ${config.pricePositionY || 0}px)` 
-                    : undefined,
+                  transform:
+                    config.pricePositionX || config.pricePositionY
+                      ? `translate(${config.pricePositionX || 0}px, ${config.pricePositionY || 0}px)`
+                      : undefined,
                 }}
               >
                 {config.listingType === "alquiler" ? (
@@ -988,7 +1032,9 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                       className="font-normal"
                       style={{
                         fontSize: `${Math.min(getTypographySize("body"), 28)}px`,
-                        color: config.priceColor ? `${config.priceColor}80` : "#00000080",
+                        color: config.priceColor
+                          ? `${config.priceColor}80`
+                          : "#00000080",
                       }}
                     >
                       {" €/mes"}
@@ -998,7 +1044,7 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                   priceText
                 )}
               </div>
-              
+
               {/* Energy Certificate - Never show in bullet list layout (icons are OFF) */}
             </div>
           </>
@@ -1006,83 +1052,84 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
       </div>
 
       {/* 5. BOTTOM STRIP - Only show when icons are enabled (not when description is shown) */}
-      {config.showIcons && !(config.showShortDescription && data.shortDescription) && (
-      <div
-        style={{
-          height: `${bottomStripHeight}px`,
-          display: "flex",
-            flexDirection: "row",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: "8px",
-          paddingLeft: "20px",
-          paddingRight: "20px",
-          backgroundColor: "#ffffff",
-          flexShrink: 0,
-          boxSizing: "border-box",
-        }}
-      >
-          {/* Price - Centered when icons */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-              width: "100%",
-            position: "relative",
-          }}
-        >
+      {config.showIcons &&
+        !(config.showShortDescription && data.shortDescription) && (
           <div
-            className={cn(
-              "font-bold",
-              getFontClass(config.priceFont),
-            )}
             style={{
-              fontSize: `${config.priceSize || Math.min(getTypographySize("price"), 48)}px`,
-              lineHeight: "1.1",
-              color: config.priceColor || "#000000",
-              textAlign: "center",
-              transform: config.pricePositionX || config.pricePositionY 
-                ? `translate(${config.pricePositionX || 0}px, ${config.pricePositionY || 0}px)` 
-                : undefined,
+              height: `${bottomStripHeight}px`,
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: "8px",
+              paddingLeft: "20px",
+              paddingRight: "20px",
+              backgroundColor: "#ffffff",
+              flexShrink: 0,
+              boxSizing: "border-box",
             }}
           >
-            {config.listingType === "alquiler" ? (
-              <>
-                {priceText.replace(" €/mes", "")}
-                <span
-                  className="font-normal"
-                  style={{
-                    fontSize: `${Math.min(getTypographySize("body"), 28)}px`,
-                      color: config.priceColor ? `${config.priceColor}80` : "#00000080",
-                  }}
-                >
-                  {" €/mes"}
-                </span>
-              </>
-            ) : (
-              priceText
-            )}
-        </div>
-
-          {/* Energy Certificate - Right aligned */}
-          {config.showEnergyRating && config.energyConsumptionScale && (
+            {/* Price - Centered when icons */}
             <div
               style={{
-                position: "absolute",
-                right: "0px",
-                top: "50%",
-                transform: "translateY(-50%)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                width: "100%",
+                position: "relative",
               }}
             >
-              <MiniEnergyCertificate
-                energyRating={config.energyConsumptionScale}
-              />
-      </div>
-          )}
-        </div>
-      </div>
-      )}
+              <div
+                className={cn("font-bold", getFontClass(config.priceFont))}
+                style={{
+                  fontSize: `${config.priceSize || Math.min(getTypographySize("price"), 48)}px`,
+                  lineHeight: "1.1",
+                  color: config.priceColor || "#000000",
+                  textAlign: "center",
+                  transform:
+                    config.pricePositionX || config.pricePositionY
+                      ? `translate(${config.pricePositionX || 0}px, ${config.pricePositionY || 0}px)`
+                      : undefined,
+                }}
+              >
+                {config.listingType === "alquiler" ? (
+                  <>
+                    {priceText.replace(" €/mes", "")}
+                    <span
+                      className="font-normal"
+                      style={{
+                        fontSize: `${Math.min(getTypographySize("body"), 28)}px`,
+                        color: config.priceColor
+                          ? `${config.priceColor}80`
+                          : "#00000080",
+                      }}
+                    >
+                      {" €/mes"}
+                    </span>
+                  </>
+                ) : (
+                  priceText
+                )}
+              </div>
+
+              {/* Energy Certificate - Right aligned */}
+              {config.showEnergyRating && config.energyConsumptionScale && (
+                <div
+                  style={{
+                    position: "absolute",
+                    right: "0px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                  }}
+                >
+                  <MiniEnergyCertificate
+                    energyRating={config.energyConsumptionScale}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
       {/* 6. FOOTER BAR - Contact elements (Basic template supports 2 contact elements max) */}
       <div
@@ -1094,7 +1141,11 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
           alignItems: "center",
           paddingLeft: "20px",
           paddingRight: "20px",
-          backgroundColor: isHexColor(config.overlayColor) ? config.overlayColor : (overlayClass ? undefined : "#1e293b"),
+          backgroundColor: isHexColor(config.overlayColor)
+            ? config.overlayColor
+            : overlayClass
+              ? undefined
+              : "#1e293b",
           color: textColor,
           flexShrink: 0,
           boxSizing: "border-box",
@@ -1103,14 +1154,16 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
         {/* Left contact element - Basic template enforces 2-element limit */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           {config.showWebsite && data.contact.website && (
-              <span
-                style={{
-                  fontSize: `${getTypographySize("contact")}px`,
-                  color: textColor,
-                }}
-              >
-              {data.contact.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}
-              </span>
+            <span
+              style={{
+                fontSize: `${getTypographySize("contact")}px`,
+                color: textColor,
+              }}
+            >
+              {data.contact.website
+                .replace(/^https?:\/\/(www\.)?/, "")
+                .replace(/\/$/, "")}
+            </span>
           )}
           {config.showEmail && data.contact.email && !config.showWebsite && (
             <span
@@ -1127,26 +1180,29 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
         {/* Right contact element - Only show if we don't already have 2 elements */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           {config.showPhone && data.contact.phone && (
-              <span
-                style={{
-                  fontSize: `${getTypographySize("contact")}px`,
-                  color: textColor,
-                }}
-              >
-                {data.contact.phone}
-              </span>
-          )}
-          {/* Only show email on right if we have website on left (so we have exactly 2 elements) */}
-          {config.showEmail && data.contact.email && config.showWebsite && !config.showPhone && (
             <span
               style={{
                 fontSize: `${getTypographySize("contact")}px`,
                 color: textColor,
               }}
             >
-              {data.contact.email}
+              {data.contact.phone}
             </span>
           )}
+          {/* Only show email on right if we have website on left (so we have exactly 2 elements) */}
+          {config.showEmail &&
+            data.contact.email &&
+            config.showWebsite &&
+            !config.showPhone && (
+              <span
+                style={{
+                  fontSize: `${getTypographySize("contact")}px`,
+                  color: textColor,
+                }}
+              >
+                {data.contact.email}
+              </span>
+            )}
         </div>
       </div>
     </div>

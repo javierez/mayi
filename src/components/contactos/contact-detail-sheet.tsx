@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -12,6 +12,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import {
   CalendarIcon,
   Check,
@@ -30,8 +31,22 @@ import {
 } from "lucide-react";
 import type { ContactSheetData, OwnerContact } from "~/types/activity";
 import { navigateToPage } from "~/lib/navigation";
-import { deactivateListingContactAction, updateOfferStatusAction, addOfferToListingContactAction } from "~/server/actions/listing-contacts";
+import {
+  deactivateListingContactAction,
+  reactivateListingContactAction,
+  updateOfferStatusAction,
+  addOfferToListingContactAction,
+} from "~/server/actions/listing-contacts";
 import { OfferComparisonCard } from "~/components/offer-comparison-card";
+import { ListingContactComments } from "~/components/contactos/listing-contact-comments";
+import { getListingContactCommentsByIdWithAuth } from "~/server/queries/listing-contact-comments";
+import {
+  createListingContactCommentAction,
+  updateListingContactCommentAction,
+  deleteListingContactCommentAction,
+} from "~/server/actions/listing-contact-comments";
+import type { ListingContactCommentWithUser } from "~/types/listing-contact-comments";
+import { useSession } from "~/lib/auth-client";
 
 interface ContactDetailSheetProps {
   contact: ContactSheetData | null;
@@ -53,7 +68,11 @@ interface OfferInputCardProps {
   isSubmitting: boolean;
 }
 
-function OfferInputCard({ label, onSubmit, isSubmitting }: OfferInputCardProps) {
+function OfferInputCard({
+  label,
+  onSubmit,
+  isSubmitting,
+}: OfferInputCardProps) {
   const [inputValue, setInputValue] = useState("");
   const [rawValue, setRawValue] = useState<number>(0);
 
@@ -104,7 +123,7 @@ function OfferInputCard({ label, onSubmit, isSubmitting }: OfferInputCardProps) 
           value={inputValue}
           onChange={handleInputChange}
           disabled={isSubmitting}
-          className="flex-1 h-9 bg-gray-50 border-gray-200"
+          className="h-9 flex-1 border-gray-200 bg-gray-50"
         />
         <Button
           size="sm"
@@ -134,13 +153,103 @@ export function ContactDetailSheet({
   permissions,
 }: ContactDetailSheetProps) {
   const router = useRouter();
+  const { data: session } = useSession();
   const [isDeactivating, setIsDeactivating] = useState(false);
+  const [isReactivating, setIsReactivating] = useState(false);
   const [isUpdatingOffer, setIsUpdatingOffer] = useState(false);
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
+  const [comments, setComments] = useState<ListingContactCommentWithUser[]>([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+
+  // Fetch comments when sheet opens
+  useEffect(() => {
+    if (isOpen && contact) {
+      setIsLoadingComments(true);
+      getListingContactCommentsByIdWithAuth(contact.listingContactId)
+        .then((data) => setComments(data))
+        .catch((error) => {
+          console.error("Error loading comments:", error);
+          toast.error("Error al cargar las notas");
+        })
+        .finally(() => setIsLoadingComments(false));
+    }
+  }, [isOpen, contact]);
+
+  // Comment handlers
+  const handleAddComment = async (tempComment: ListingContactCommentWithUser) => {
+    try {
+      const result = await createListingContactCommentAction({
+        listingContactId: tempComment.listingContactId,
+        content: tempComment.content,
+        category: tempComment.category ?? null,
+        parentId: tempComment.parentId,
+      });
+
+      if (result.success) {
+        // Refresh comments
+        const freshComments = await getListingContactCommentsByIdWithAuth(
+          tempComment.listingContactId,
+        );
+        setComments(freshComments);
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      return { success: false, error: "Error al crear el comentario" };
+    }
+  };
+
+  const handleEditComment = async (
+    commentId: bigint,
+    content: string,
+    category?: string | null,
+  ) => {
+    try {
+      const result = await updateListingContactCommentAction({
+        commentId,
+        content,
+        category,
+      });
+
+      if (result.success && contact) {
+        // Refresh comments
+        const freshComments = await getListingContactCommentsByIdWithAuth(
+          contact.listingContactId,
+        );
+        setComments(freshComments);
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error editing comment:", error);
+      return { success: false, error: "Error al editar el comentario" };
+    }
+  };
+
+  const handleDeleteComment = async (commentId: bigint) => {
+    try {
+      const result = await deleteListingContactCommentAction(commentId);
+
+      if (result.success && contact) {
+        // Refresh comments
+        const freshComments = await getListingContactCommentsByIdWithAuth(
+          contact.listingContactId,
+        );
+        setComments(freshComments);
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      return { success: false, error: "Error al eliminar el comentario" };
+    }
+  };
 
   if (!contact) return null;
 
-  const contactName = `${contact.contact.firstName} ${contact.contact.lastName ?? ""}`.trim();
+  const contactName =
+    `${contact.contact.firstName} ${contact.contact.lastName ?? ""}`.trim();
 
   // Handle deactivating the contact
   const handleDeactivateContact = async () => {
@@ -159,7 +268,7 @@ export function ContactDetailSheet({
     try {
       const result = await deactivateListingContactAction(
         contact.listingContactId,
-        listingId
+        listingId,
       );
 
       if (result.success) {
@@ -183,6 +292,42 @@ export function ContactDetailSheet({
     }
   };
 
+  // Handle reactivating the contact
+  const handleReactivateContact = async () => {
+    if (
+      !confirm("¿Estás seguro de que deseas reactivar este contacto?")
+    ) {
+      return;
+    }
+
+    setIsReactivating(true);
+
+    try {
+      const result = await reactivateListingContactAction(
+        contact.listingContactId,
+        listingId,
+      );
+
+      if (result.success) {
+        toast.success("Contacto reactivado correctamente");
+
+        // Refresh the contact data after successful update
+        if (onUpdate) {
+          await onUpdate();
+        }
+
+        onClose();
+      } else {
+        toast.error(result.error ?? "Error al reactivar el contacto");
+      }
+    } catch (error) {
+      console.error("Error reactivating contact:", error);
+      toast.error("Error al reactivar el contacto");
+    } finally {
+      setIsReactivating(false);
+    }
+  };
+
   // Handle accepting or rejecting an offer
   const handleUpdateOfferStatus = async (accepted: boolean | null) => {
     setIsUpdatingOffer(true);
@@ -192,15 +337,16 @@ export function ContactDetailSheet({
         contact.listingContactId,
         accepted,
         listingId,
-        contact.contact.contactId
+        contact.contact.contactId,
       );
 
       if (result.success) {
-        const message = accepted === null
-          ? "Decisión revocada correctamente"
-          : accepted
-            ? "Oferta aceptada correctamente"
-            : "Oferta rechazada";
+        const message =
+          accepted === null
+            ? "Decisión revocada correctamente"
+            : accepted
+              ? "Oferta aceptada correctamente"
+              : "Oferta rechazada";
         toast.success(message);
 
         // Refresh the contact data after successful update
@@ -210,7 +356,9 @@ export function ContactDetailSheet({
 
         onClose();
       } else {
-        toast.error(result.error ?? "Error al actualizar el estado de la oferta");
+        toast.error(
+          result.error ?? "Error al actualizar el estado de la oferta",
+        );
       }
     } catch (error) {
       console.error("Error updating offer status:", error);
@@ -229,7 +377,7 @@ export function ContactDetailSheet({
         contact.listingContactId,
         amount,
         listingId,
-        contact.contact.contactId
+        contact.contact.contactId,
       );
 
       if (result.success) {
@@ -254,7 +402,15 @@ export function ContactDetailSheet({
   let badgeType: string;
   let badgeConfig: { color: string; icon: React.ReactElement; title: string };
 
-  if (contact.hasUpcomingVisit) {
+  // Highest priority: Check if contact is inactive
+  if (contact.isActive === false) {
+    badgeType = "inactive";
+    badgeConfig = {
+      color: "bg-gray-200 text-gray-600 border border-gray-400",
+      icon: <UserX className="h-4 w-4" />,
+      title: "Inactivo",
+    };
+  } else if (contact.hasUpcomingVisit) {
     badgeType = "upcoming";
     badgeConfig = {
       color: "bg-blue-100 text-blue-800",
@@ -314,14 +470,15 @@ export function ContactDetailSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent>
+      <SheetContent className="flex flex-col">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <span>{contactName}</span>
           </SheetTitle>
         </SheetHeader>
 
-        <div className="space-y-4 mt-4">
+        <ScrollArea className="flex-1 mt-4">
+          <div className="space-y-4 pr-4">
           {/* Badge Status - Only show if not "none" */}
           {badgeType !== "none" && (
             <div className="flex items-center justify-between">
@@ -336,14 +493,46 @@ export function ContactDetailSheet({
 
           {/* Content based on badge type */}
           <div className="space-y-4">
-            {/* Offer Input for Visita Pendiente (upcoming visit) */}
-            {badgeType === "upcoming" && !contact.hasOffer && permissions.canEditContacts && (
-              <OfferInputCard
-                label="Registrar Oferta"
-                onSubmit={handleAddOffer}
-                isSubmitting={isSubmittingOffer}
-              />
+            {/* Inactive Contact - Show only reactivate option */}
+            {badgeType === "inactive" && (
+              <div className="space-y-3">
+                <div className="rounded-lg border border-gray-300 bg-gray-50 p-4">
+                  <p className="text-sm text-gray-600">
+                    Este contacto está inactivo. No se mostrará en la lista de
+                    contactos activos de la propiedad.
+                  </p>
+                </div>
+                {permissions.canEditContacts && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      void handleReactivateContact();
+                    }}
+                    disabled={isReactivating}
+                  >
+                    {isReactivating ? (
+                      <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="mr-2 h-4 w-4" />
+                    )}
+                    Reactivar Contacto
+                  </Button>
+                )}
+              </div>
             )}
+
+            {/* Offer Input for Visita Pendiente (upcoming visit) */}
+            {badgeType === "upcoming" &&
+              !contact.hasOffer &&
+              permissions.canEditContacts && (
+                <OfferInputCard
+                  label="Registrar Oferta"
+                  onSubmit={handleAddOffer}
+                  isSubmitting={isSubmittingOffer}
+                />
+              )}
 
             {badgeType === "offer" && contact.offer && (
               <OfferComparisonCard
@@ -359,11 +548,11 @@ export function ContactDetailSheet({
                   listingPrice={listingPrice}
                 />
                 {permissions.canEditContacts && (
-                  <div className="space-y-2 pt-3 border-t">
+                  <div className="space-y-2 border-t pt-3">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full justify-start text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                      className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                       onClick={() => {
                         const calendarUrl = `/calendario?new=true&listingId=${listingId}&contactId=${contact.contact.contactId}&type=Firma`;
                         navigateToPage(calendarUrl, router);
@@ -376,7 +565,7 @@ export function ContactDetailSheet({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full justify-start text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                      className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                       onClick={() => {
                         // TODO: Implement contract generation
                         toast.error("Funcionalidad en desarrollo");
@@ -388,9 +577,13 @@ export function ContactDetailSheet({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full justify-start text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                      className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                       onClick={() => {
-                        if (confirm("¿Estás seguro de que deseas revocar la aceptación de esta oferta?")) {
+                        if (
+                          confirm(
+                            "¿Estás seguro de que deseas revocar la aceptación de esta oferta?",
+                          )
+                        ) {
                           void handleUpdateOfferStatus(null);
                         }
                       }}
@@ -415,7 +608,7 @@ export function ContactDetailSheet({
                   listingPrice={listingPrice}
                 />
                 {permissions.canEditContacts && (
-                  <div className="space-y-3 pt-3 border-t">
+                  <div className="space-y-3 border-t pt-3">
                     {/* New Offer Input for Rejected Offer */}
                     <OfferInputCard
                       label="Nueva Oferta"
@@ -426,9 +619,13 @@ export function ContactDetailSheet({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="w-full justify-start text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                        className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                         onClick={() => {
-                          if (confirm("¿Estás seguro de que deseas revocar el rechazo de esta oferta?")) {
+                          if (
+                            confirm(
+                              "¿Estás seguro de que deseas revocar el rechazo de esta oferta?",
+                            )
+                          ) {
                             void handleUpdateOfferStatus(null);
                           }
                         }}
@@ -444,7 +641,7 @@ export function ContactDetailSheet({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
                         onClick={() => {
                           void handleDeactivateContact();
                         }}
@@ -468,7 +665,7 @@ export function ContactDetailSheet({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                  className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                   onClick={() => {
                     const calendarUrl = `/calendario?new=true&listingId=${listingId}&contactId=${contact.contact.contactId}`;
                     navigateToPage(calendarUrl, router);
@@ -482,7 +679,7 @@ export function ContactDetailSheet({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
                     onClick={() => {
                       void handleDeactivateContact();
                     }}
@@ -504,7 +701,7 @@ export function ContactDetailSheet({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                  className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                   onClick={() => {
                     const calendarUrl = `/calendario?new=true&listingId=${listingId}&contactId=${contact.contact.contactId}`;
                     navigateToPage(calendarUrl, router);
@@ -518,7 +715,7 @@ export function ContactDetailSheet({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
                     onClick={() => {
                       void handleDeactivateContact();
                     }}
@@ -550,7 +747,7 @@ export function ContactDetailSheet({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
                       onClick={() => {
                         void handleDeactivateContact();
                       }}
@@ -573,7 +770,7 @@ export function ContactDetailSheet({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                  className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                   onClick={() => {
                     const calendarUrl = `/calendario?new=true&listingId=${listingId}&contactId=${contact.contact.contactId}`;
                     navigateToPage(calendarUrl, router);
@@ -587,7 +784,7 @@ export function ContactDetailSheet({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
                     onClick={() => {
                       void handleDeactivateContact();
                     }}
@@ -606,7 +803,7 @@ export function ContactDetailSheet({
 
             {/* Owner Contact Section */}
             {ownerContact && (
-              <div className="space-y-2 pt-4 border-t">
+              <div className="space-y-2 border-t pt-4">
                 <p className="text-sm font-medium text-gray-900">
                   {ownerContact.firstName} {ownerContact.lastName ?? ""}
                 </p>
@@ -614,8 +811,10 @@ export function ContactDetailSheet({
                 {ownerContact.email && (
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => window.open(`mailto:${ownerContact.email}`, "_blank")}
-                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-gray-900 transition-colors"
+                      onClick={() =>
+                        window.open(`mailto:${ownerContact.email}`, "_blank")
+                      }
+                      className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gray-900"
                       title="Enviar email"
                     >
                       <Mail className="h-4 w-4" />
@@ -629,8 +828,10 @@ export function ContactDetailSheet({
                 {ownerContact.phone && (
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => window.open(`tel:${ownerContact.phone}`, "_blank")}
-                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-gray-900 transition-colors"
+                      onClick={() =>
+                        window.open(`tel:${ownerContact.phone}`, "_blank")
+                      }
+                      className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gray-900"
                       title="Llamar"
                     >
                       <Phone className="h-4 w-4" />
@@ -640,10 +841,13 @@ export function ContactDetailSheet({
                     </button>
                     <button
                       onClick={() => {
-                        const cleanPhone = (ownerContact.phone ?? "").replace(/\D/g, "");
+                        const cleanPhone = (ownerContact.phone ?? "").replace(
+                          /\D/g,
+                          "",
+                        );
                         window.open(`https://wa.me/${cleanPhone}`, "_blank");
                       }}
-                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-green-600 transition-colors"
+                      className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-green-600"
                       title="Enviar WhatsApp"
                     >
                       <MessageCircle className="h-4 w-4" />
@@ -654,11 +858,11 @@ export function ContactDetailSheet({
 
                 {/* Accept/Reject Offer Buttons - Only show when there's an offer */}
                 {badgeType === "offer" && permissions.canEditContacts && (
-                  <div className="flex items-center gap-2 pt-3 border-t">
+                  <div className="flex items-center gap-2 border-t pt-3">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="flex-1 justify-center gap-2 h-9 text-gray-700 hover:text-gray-900 hover:bg-gray-100 shadow-sm hover:shadow-md transition-all"
+                      className="h-9 flex-1 justify-center gap-2 text-gray-700 shadow-sm transition-all hover:bg-gray-100 hover:text-gray-900 hover:shadow-md"
                       onClick={() => {
                         void handleUpdateOfferStatus(true);
                       }}
@@ -674,7 +878,7 @@ export function ContactDetailSheet({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="flex-1 justify-center gap-2 h-9 text-gray-700 hover:text-gray-900 hover:bg-gray-100 shadow-sm hover:shadow-md transition-all"
+                      className="h-9 flex-1 justify-center gap-2 text-gray-700 shadow-sm transition-all hover:bg-gray-100 hover:text-gray-900 hover:shadow-md"
                       onClick={() => {
                         void handleUpdateOfferStatus(false);
                       }}
@@ -691,8 +895,32 @@ export function ContactDetailSheet({
                 )}
               </div>
             )}
+
+            {/* Listing Contact Comments Section */}
+            <div className="border-t pt-4 mt-4">
+              <h4 className="text-sm font-semibold text-gray-900 mb-3">Notas del Contacto</h4>
+              {isLoadingComments ? (
+                <div className="flex justify-center py-8">
+                  <Loader className="h-6 w-6 animate-spin text-gray-400" />
+                </div>
+              ) : (
+                <ListingContactComments
+                  listingContactId={contact.listingContactId}
+                  initialComments={comments}
+                  currentUserId={session?.user?.id}
+                  currentUser={session?.user ? {
+                    id: session.user.id,
+                    name: session.user.name ?? undefined,
+                    image: session.user.image ?? undefined,
+                  } : undefined}
+                  onAddComment={handleAddComment}
+                  onEditComment={handleEditComment}
+                  onDeleteComment={handleDeleteComment}
+                />
+              )}
+            </div>
           </div>
-        </div>
+        </ScrollArea>
       </SheetContent>
     </Sheet>
   );

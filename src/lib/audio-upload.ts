@@ -1,7 +1,4 @@
-import {
-  S3Client,
-  PutObjectCommand,
-} from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { nanoid } from "nanoid";
 import { getDynamicBucketName } from "~/lib/s3-bucket";
 
@@ -79,9 +76,9 @@ export async function uploadAudioToS3(
 
     // Return the audio URL and keys
     const audioUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${audioKey}`;
-    
+
     console.log(`✅ [AUDIO-UPLOAD] Successfully uploaded audio: ${audioKey}`);
-    
+
     return {
       audioUrl,
       s3key,
@@ -108,27 +105,27 @@ export function validateAudioBlob(audioBlob: Blob): {
   // Check file size (max 50MB for 5-minute recordings)
   const maxSize = 50 * 1024 * 1024; // 50MB
   if (audioBlob.size > maxSize) {
-    return { 
-      isValid: false, 
-      error: `Audio file too large: ${Math.round(audioBlob.size / 1024 / 1024)}MB (max 50MB)` 
+    return {
+      isValid: false,
+      error: `Audio file too large: ${Math.round(audioBlob.size / 1024 / 1024)}MB (max 50MB)`,
     };
   }
 
   // Check minimum size (should have some content)
   const minSize = 1024; // 1KB
   if (audioBlob.size < minSize) {
-    return { 
-      isValid: false, 
-      error: "Audio file too small - recording may be empty" 
+    return {
+      isValid: false,
+      error: "Audio file too small - recording may be empty",
     };
   }
 
   // Check MIME type
-  const validTypes = ['audio/webm', 'audio/wav', 'audio/mp3', 'audio/ogg'];
+  const validTypes = ["audio/webm", "audio/wav", "audio/mp3", "audio/ogg"];
   if (!validTypes.includes(audioBlob.type)) {
-    return { 
-      isValid: false, 
-      error: `Invalid audio format: ${audioBlob.type}. Supported: ${validTypes.join(', ')}` 
+    return {
+      isValid: false,
+      error: `Invalid audio format: ${audioBlob.type}. Supported: ${validTypes.join(", ")}`,
     };
   }
 
@@ -144,7 +141,7 @@ export function getAudioInfo(audioBlob: Blob): {
   duration?: string;
 } {
   const sizeMB = (audioBlob.size / 1024 / 1024).toFixed(2);
-  
+
   return {
     size: `${sizeMB}MB`,
     type: audioBlob.type,

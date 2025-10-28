@@ -224,9 +224,10 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
   );
 
   // Get images from data prop (passed by the editor) or fallback to default S3 images
-  const templateImages = data.images && data.images.length > 0 
-    ? data.images 
-    : getTemplateImages(config.imageCount);
+  const templateImages =
+    data.images && data.images.length > 0
+      ? data.images
+      : getTemplateImages(config.imageCount);
 
   // Print-optimized image gallery with fixed positioning
   const renderImages = () => {
@@ -374,8 +375,9 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
             {/* Supporting images - bottom 50%, 2 columns - full width since overlay doesn't cover this area */}
             {templateImages.slice(1, 3).map((image, index) => {
               // Make bottom images bigger by using full width with smaller gap
-              const fullWidthSubImageWidth =
-                Math.floor((containerDims.width - gap) / 2);
+              const fullWidthSubImageWidth = Math.floor(
+                (containerDims.width - gap) / 2,
+              );
               return (
                 <div
                   key={index}

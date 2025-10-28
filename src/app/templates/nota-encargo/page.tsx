@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { NotaEncargoDocument } from '~/components/documents/nota-encargo-document';
+import React, { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { NotaEncargoDocument } from "~/components/documents/nota-encargo-document";
 
 interface NotaEncargoData {
   documentNumber: string;
@@ -60,15 +60,15 @@ interface NotaEncargoData {
 
 export default function NotaEncargoTemplate() {
   const searchParams = useSearchParams();
-  
+
   // Get data from URL parameters
-  const dataParam = searchParams.get('data');
+  const dataParam = searchParams.get("data");
   let data: NotaEncargoData | null = null;
 
   try {
-    data = dataParam ? JSON.parse(dataParam) as NotaEncargoData : null;
+    data = dataParam ? (JSON.parse(dataParam) as NotaEncargoData) : null;
   } catch (error) {
-    console.error('Failed to parse nota encargo data:', error);
+    console.error("Failed to parse nota encargo data:", error);
   }
 
   // Signal to Puppeteer that the template is ready - always call hooks before early returns
@@ -76,13 +76,13 @@ export default function NotaEncargoTemplate() {
     if (data) {
       // Set a flag that Puppeteer can check
       (window as unknown as Record<string, unknown>).notaEncargoReady = true;
-      console.log('Nota encargo template ready signal set');
+      console.log("Nota encargo template ready signal set");
     }
   }, [data]);
 
   if (!data) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-gray-600">No data provided</div>
       </div>
     );
@@ -98,12 +98,12 @@ export default function NotaEncargoTemplate() {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          
+
           * {
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          
+
           .nota-encargo-document {
             width: 210mm !important;
             height: 297mm !important;
@@ -112,23 +112,23 @@ export default function NotaEncargoTemplate() {
             box-sizing: border-box !important;
             page-break-inside: avoid !important;
           }
-          
+
           .page-break {
             page-break-before: always !important;
           }
-          
+
           .no-print {
             display: none !important;
           }
         }
-        
+
         body {
           margin: 0;
           padding: 0;
           background: white;
         }
       `}</style>
-      
+
       <NotaEncargoDocument data={data} />
     </div>
   );

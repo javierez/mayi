@@ -31,7 +31,6 @@ interface Agent {
   name: string;
 }
 
-
 interface NewContact {
   contactId: number | string;
   firstName: string;
@@ -55,7 +54,6 @@ interface FirstPageFormData {
   selectedContacts: Contact[];
 }
 
-
 export default function FirstPage({
   listingId,
   onNext,
@@ -67,58 +65,63 @@ export default function FirstPage({
   const [showContactPopup, setShowContactPopup] = useState(false);
   const [searchResults, setSearchResults] = useState<Contact[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(
+    null,
+  );
   const [listingContacts, setListingContacts] = useState<Contact[]>([]);
 
   // Fallback price formatting functions in case formFormatters is undefined
   const formatPriceInput = (value: string | number): string => {
     if (!value) return "";
-    
+
     const strValue = typeof value === "string" ? value : value.toString();
-    
+
     // Split by decimal point to handle integer and decimal parts separately
-    const parts = strValue.split('.');
+    const parts = strValue.split(".");
     let integerPart = parts[0] ?? "";
     const decimalPart = parts[1];
-    
+
     // Remove any existing formatting from integer part
     integerPart = integerPart.replace(/[^\d]/g, "");
-    
+
     if (!integerPart) return "";
-    
+
     // Add thousand separators to integer part only
     const formatted = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    
+
     // Don't show decimal part if it's "00"
-    const finalResult = (decimalPart && decimalPart !== "00") ? `${formatted},${decimalPart}` : formatted;
+    const finalResult =
+      decimalPart && decimalPart !== "00"
+        ? `${formatted},${decimalPart}`
+        : formatted;
     return finalResult;
   };
 
   const getNumericPrice = (formattedValue: string): string => {
     // Handle format like "21.000.00" where last period is decimal separator
     let result = formattedValue;
-    
+
     // Find the last period - this is the decimal separator
-    const lastPeriodIndex = result.lastIndexOf('.');
-    
+    const lastPeriodIndex = result.lastIndexOf(".");
+
     if (lastPeriodIndex !== -1) {
       // Split into integer and decimal parts
       const integerPart = result.substring(0, lastPeriodIndex);
       const decimalPart = result.substring(lastPeriodIndex + 1);
-      
+
       // Remove thousand separators from integer part, keep only digits
       const cleanInteger = integerPart.replace(/[^\d]/g, "");
-      
+
       // Keep only digits in decimal part
       const cleanDecimal = decimalPart.replace(/[^\d]/g, "");
-      
+
       // Reconstruct as standard decimal format
       result = cleanDecimal ? `${cleanInteger}.${cleanDecimal}` : cleanInteger;
     } else {
       // No decimal point, just remove non-digits
       result = result.replace(/[^\d]/g, "");
     }
-    
+
     return result;
   };
 
@@ -150,10 +153,12 @@ export default function FirstPage({
     try {
       setIsSearching(true);
       const results = await searchContactsForFormWithAuth(query, 6);
-      setSearchResults(results.map(contact => ({
-        id: Number(contact.id),
-        name: contact.name,
-      })));
+      setSearchResults(
+        results.map((contact) => ({
+          id: Number(contact.id),
+          name: contact.name,
+        })),
+      );
     } catch (error) {
       console.error("Error searching contacts:", error);
       setSearchResults([]);
@@ -163,21 +168,24 @@ export default function FirstPage({
   }, []);
 
   // Handle search input with debouncing
-  const handleContactSearchChange = useCallback((value: string) => {
-    setContactSearch(value);
-    
-    // Clear existing timeout
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-    }
+  const handleContactSearchChange = useCallback(
+    (value: string) => {
+      setContactSearch(value);
 
-    // Set new timeout for debounced search
-    const timeout = setTimeout(() => {
-      void performContactSearch(value);
-    }, 300);
-    
-    setSearchTimeout(timeout);
-  }, [searchTimeout, performContactSearch]);
+      // Clear existing timeout
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+
+      // Set new timeout for debounced search
+      const timeout = setTimeout(() => {
+        void performContactSearch(value);
+      }, 300);
+
+      setSearchTimeout(timeout);
+    },
+    [searchTimeout, performContactSearch],
+  );
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -200,12 +208,12 @@ export default function FirstPage({
   };
 
   // Update form data helper
-  const updateField = useCallback((
-    field: keyof FirstPageFormData,
-    value: string | string[] | Contact[],
-  ) => {
-    updateFormData({ [field]: value });
-  }, [updateFormData]);
+  const updateField = useCallback(
+    (field: keyof FirstPageFormData, value: string | string[] | Contact[]) => {
+      updateFormData({ [field]: value });
+    },
+    [updateFormData],
+  );
 
   // Initialize form data with defaults if not already set
   useEffect(() => {
@@ -216,45 +224,72 @@ export default function FirstPage({
       updateField("propertySubtype", "Piso");
       updateField("selectedContactIds", state.currentContacts ?? []);
     }
-  }, [state.currentContacts, state.formData.price, state.formData.listingType, updateField]);
+  }, [
+    state.currentContacts,
+    state.formData.price,
+    state.formData.listingType,
+    updateField,
+  ]);
 
   // Fetch and populate listing contacts when listingId is available
   useEffect(() => {
     const fetchListingContacts = async () => {
-      console.log("🔍 [FirstPage] Checking listing contacts for listingId:", listingId);
-      
+      console.log(
+        "🔍 [FirstPage] Checking listing contacts for listingId:",
+        listingId,
+      );
+
       if (!listingId) {
-        console.log("❌ [FirstPage] No listingId provided, skipping listing contacts fetch");
+        console.log(
+          "❌ [FirstPage] No listingId provided, skipping listing contacts fetch",
+        );
         return;
       }
-      
+
       try {
-        console.log("📞 [FirstPage] Fetching listing contacts for listingId:", listingId);
-        const listingContacts = await getListingContactsByIdWithAuth(Number(listingId));
-        console.log("📋 [FirstPage] Received listing contacts:", listingContacts);
-        
+        console.log(
+          "📞 [FirstPage] Fetching listing contacts for listingId:",
+          listingId,
+        );
+        const listingContacts = await getListingContactsByIdWithAuth(
+          Number(listingId),
+        );
+        console.log(
+          "📋 [FirstPage] Received listing contacts:",
+          listingContacts,
+        );
+
         if (listingContacts && listingContacts.length > 0) {
           // Convert to Contact format for UI display
-          const contactsForUI: Contact[] = listingContacts.map(contact => ({
+          const contactsForUI: Contact[] = listingContacts.map((contact) => ({
             id: Number(contact.contactId),
-            name: `${contact.firstName} ${contact.lastName}`
+            name: `${contact.firstName} ${contact.lastName}`,
           }));
-          
+
           // Store in state for UI display
           setListingContacts(contactsForUI);
-          
+
           // Update selected contacts in formData (only if not already set)
-          if (!formData.selectedContactIds || formData.selectedContactIds.length === 0) {
-            const contactIds = listingContacts.map(contact => contact.contactId.toString());
+          if (
+            !formData.selectedContactIds ||
+            formData.selectedContactIds.length === 0
+          ) {
+            const contactIds = listingContacts.map((contact) =>
+              contact.contactId.toString(),
+            );
             console.log("✅ [FirstPage] Converting to contactIds:", contactIds);
             updateFormData({
               selectedContactIds: contactIds,
-              selectedContacts: contactsForUI
+              selectedContacts: contactsForUI,
             });
-            console.log("💾 [FirstPage] Updated selectedContactIds and selectedContacts with listing contacts");
+            console.log(
+              "💾 [FirstPage] Updated selectedContactIds and selectedContacts with listing contacts",
+            );
           }
         } else {
-          console.log("⚠️ [FirstPage] No listing contacts found or empty array");
+          console.log(
+            "⚠️ [FirstPage] No listing contacts found or empty array",
+          );
         }
       } catch (error) {
         console.error("❌ [FirstPage] Error fetching listing contacts:", error);
@@ -275,8 +310,10 @@ export default function FirstPage({
   const contactsToDisplay = useMemo(() => {
     if (contactSearch.trim()) {
       // When searching, show search results + listing contacts (avoid duplicates)
-      const searchContactIds = new Set(searchResults.map(c => c.id));
-      const uniqueListingContacts = listingContacts.filter(c => !searchContactIds.has(c.id));
+      const searchContactIds = new Set(searchResults.map((c) => c.id));
+      const uniqueListingContacts = listingContacts.filter(
+        (c) => !searchContactIds.has(c.id),
+      );
       return [...searchResults, ...uniqueListingContacts];
     } else {
       // When not searching, show only listing contacts
@@ -314,21 +351,25 @@ export default function FirstPage({
   const toggleContact = (contactId: string) => {
     const currentIds = formData.selectedContactIds;
     const currentContacts = formData.selectedContacts;
-    
+
     if (currentIds.includes(contactId)) {
       // Remove from both arrays
       updateFormData({
-        selectedContactIds: currentIds.filter(id => id !== contactId),
-        selectedContacts: currentContacts.filter(c => c.id.toString() !== contactId)
+        selectedContactIds: currentIds.filter((id) => id !== contactId),
+        selectedContacts: currentContacts.filter(
+          (c) => c.id.toString() !== contactId,
+        ),
       });
     } else {
       // Find contact in available sources
-      const contact = [...listingContacts, ...searchResults].find(c => c.id.toString() === contactId);
+      const contact = [...listingContacts, ...searchResults].find(
+        (c) => c.id.toString() === contactId,
+      );
       if (contact) {
         // Add to both arrays
         updateFormData({
           selectedContactIds: [...currentIds, contactId],
-          selectedContacts: [...currentContacts, contact]
+          selectedContacts: [...currentContacts, contact],
         });
       }
     }
@@ -361,10 +402,10 @@ export default function FirstPage({
       const currentIds = formData.selectedContactIds;
       const currentContacts = formData.selectedContacts;
       const contactIdStr = contact.contactId.toString();
-      
+
       updateFormData({
         selectedContactIds: [...currentIds, contactIdStr],
-        selectedContacts: [...currentContacts, newContactForList]
+        selectedContacts: [...currentContacts, newContactForList],
       });
     }
 
@@ -524,7 +565,7 @@ export default function FirstPage({
       <div className="space-y-2">
         <h3 className="text-md font-medium text-gray-900">Tipo de Propiedad</h3>
         {/* Desktop: Single row with animation */}
-        <div className="hidden sm:block relative h-10 rounded-lg bg-gray-100 p-1">
+        <div className="relative hidden h-10 rounded-lg bg-gray-100 p-1 sm:block">
           <motion.div
             className="absolute left-1 top-1 h-8 w-[calc(20%-2px)] rounded-md bg-white shadow-sm"
             animate={{
@@ -664,7 +705,7 @@ export default function FirstPage({
               updateField("propertySubtype", "Suelo residencial");
             }}
             className={cn(
-              "h-10 rounded-lg text-sm font-medium transition-all duration-200 col-span-1",
+              "col-span-1 h-10 rounded-lg text-sm font-medium transition-all duration-200",
               formData.propertyType === "solar"
                 ? "bg-white text-gray-900 shadow-md"
                 : "bg-gray-100 text-gray-600",
@@ -678,7 +719,7 @@ export default function FirstPage({
               updateField("propertySubtype", "Individual");
             }}
             className={cn(
-              "h-10 rounded-lg text-sm font-medium transition-all duration-200 col-span-2",
+              "col-span-2 h-10 rounded-lg text-sm font-medium transition-all duration-200",
               formData.propertyType === "garaje"
                 ? "bg-white text-gray-900 shadow-md"
                 : "bg-gray-100 text-gray-600",
@@ -811,11 +852,13 @@ export default function FirstPage({
           onValueChange={(value) => {
             if (!formData.selectedContactIds.includes(value)) {
               // Find the contact to add
-              const contact = contactsToDisplay.find(c => c.id.toString() === value);
+              const contact = contactsToDisplay.find(
+                (c) => c.id.toString() === value,
+              );
               if (contact) {
                 updateFormData({
                   selectedContactIds: [...formData.selectedContactIds, value],
-                  selectedContacts: [...formData.selectedContacts, contact]
+                  selectedContacts: [...formData.selectedContacts, contact],
                 });
               }
             }
@@ -851,7 +894,9 @@ export default function FirstPage({
                 <SelectItem
                   key={contact.id}
                   value={contact.id.toString()}
-                  disabled={formData.selectedContactIds.includes(contact.id.toString())}
+                  disabled={formData.selectedContactIds.includes(
+                    contact.id.toString(),
+                  )}
                 >
                   {contact.name}
                 </SelectItem>

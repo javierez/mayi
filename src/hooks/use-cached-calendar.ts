@@ -61,7 +61,10 @@ interface UseSimpleCalendarReturn {
   fetchByDateRange: (startDate: Date, endDate: Date) => Promise<void>;
   addOptimisticEvent: (event: Partial<CalendarEvent>) => bigint;
   removeOptimisticEvent: (tempId: bigint) => void;
-  updateOptimisticEvent: (tempId: bigint, updates: Partial<CalendarEvent>) => void;
+  updateOptimisticEvent: (
+    tempId: bigint,
+    updates: Partial<CalendarEvent>,
+  ) => void;
 }
 
 // Constants
@@ -77,17 +80,20 @@ function getMonday(date: Date): Date {
   return d;
 }
 
-function get4WeekRange(currentWeekStart: Date): { startDate: Date; endDate: Date } {
+function get4WeekRange(currentWeekStart: Date): {
+  startDate: Date;
+  endDate: Date;
+} {
   // 2 weeks before current week
   const startDate = new Date(currentWeekStart);
   startDate.setDate(startDate.getDate() - 14);
   startDate.setHours(0, 0, 0, 0);
-  
+
   // 2 weeks after current week (so 4 weeks total: 2 before + current + 2 after)
   const endDate = new Date(currentWeekStart);
   endDate.setDate(endDate.getDate() + 21);
   endDate.setHours(23, 59, 59, 999);
-  
+
   return { startDate, endDate };
 }
 
@@ -95,7 +101,10 @@ function generateTempId(): bigint {
   return BigInt(-Date.now());
 }
 
-function transformToOptimisticEvent(eventData: Partial<CalendarEvent>, tempId: bigint): CalendarEvent {
+function transformToOptimisticEvent(
+  eventData: Partial<CalendarEvent>,
+  tempId: bigint,
+): CalendarEvent {
   const now = new Date();
   return {
     appointmentId: tempId,
@@ -118,7 +127,9 @@ function transformToOptimisticEvent(eventData: Partial<CalendarEvent>, tempId: b
   };
 }
 
-function transformToCalendarEvent(rawAppointment: RawAppointment): CalendarEvent {
+function transformToCalendarEvent(
+  rawAppointment: RawAppointment,
+): CalendarEvent {
   const contactName =
     rawAppointment.contactFirstName && rawAppointment.contactLastName
       ? `${rawAppointment.contactFirstName} ${rawAppointment.contactLastName}`
@@ -137,7 +148,13 @@ function transformToCalendarEvent(rawAppointment: RawAppointment): CalendarEvent
     propertyAddress: rawAppointment.propertyStreet ?? undefined,
     startTime: rawAppointment.datetimeStart,
     endTime: rawAppointment.datetimeEnd,
-    status: (rawAppointment.status as "Scheduled" | "Completed" | "Cancelled" | "Rescheduled" | "NoShow") ?? "Scheduled",
+    status:
+      (rawAppointment.status as
+        | "Scheduled"
+        | "Completed"
+        | "Cancelled"
+        | "Rescheduled"
+        | "NoShow") ?? "Scheduled",
     type: rawAppointment.type ?? "Visita",
     tripTimeMinutes: rawAppointment.tripTimeMinutes ?? undefined,
     notes: rawAppointment.notes ?? undefined,
@@ -151,27 +168,43 @@ function transformToCalendarEvent(rawAppointment: RawAppointment): CalendarEvent
   };
 }
 
-function mergeAndSortEvents(serverEvents: CalendarEvent[], optimisticEvents: CalendarEvent[]): CalendarEvent[] {
+function mergeAndSortEvents(
+  serverEvents: CalendarEvent[],
+  optimisticEvents: CalendarEvent[],
+): CalendarEvent[] {
   const allEvents = [...serverEvents, ...optimisticEvents];
-  return allEvents.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+  return allEvents.sort(
+    (a, b) => a.startTime.getTime() - b.startTime.getTime(),
+  );
 }
 
 // Main simplified hook
-export function useSimpleCalendar(currentWeekStart: Date): UseSimpleCalendarReturn {
+export function useSimpleCalendar(
+  currentWeekStart: Date,
+): UseSimpleCalendarReturn {
   // State
   const [appointments, setAppointments] = useState<CalendarEvent[]>([]);
   const [optimisticEvents, setOptimisticEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [loadedRange, setLoadedRange] = useState<{ startDate: Date; endDate: Date } | null>(null);
+  const [loadedRange, setLoadedRange] = useState<{
+    startDate: Date;
+    endDate: Date;
+  } | null>(null);
 
   // Calculate 4-week range
-  const currentRange = useMemo(() => get4WeekRange(currentWeekStart), [currentWeekStart]);
+  const currentRange = useMemo(
+    () => get4WeekRange(currentWeekStart),
+    [currentWeekStart],
+  );
 
   // Check if current week is within loaded range
   const isWithinLoadedRange = useMemo(() => {
     if (!loadedRange) return false;
-    return currentRange.startDate >= loadedRange.startDate && currentRange.endDate <= loadedRange.endDate;
+    return (
+      currentRange.startDate >= loadedRange.startDate &&
+      currentRange.endDate <= loadedRange.endDate
+    );
   }, [currentRange, loadedRange]);
 
   // Fetch 4 weeks of data
@@ -180,10 +213,15 @@ export function useSimpleCalendar(currentWeekStart: Date): UseSimpleCalendarRetu
     setError(null);
 
     try {
-      const result = await getAppointmentsByDateRangeAction(currentRange.startDate, currentRange.endDate);
+      const result = await getAppointmentsByDateRangeAction(
+        currentRange.startDate,
+        currentRange.endDate,
+      );
 
       if (result.success) {
-        const calendarEvents = result.appointments.map(transformToCalendarEvent);
+        const calendarEvents = result.appointments.map(
+          transformToCalendarEvent,
+        );
         setAppointments(calendarEvents);
         setLoadedRange(currentRange);
       } else {
@@ -200,32 +238,44 @@ export function useSimpleCalendar(currentWeekStart: Date): UseSimpleCalendarRetu
   }, [currentRange]);
 
   // Optimistic event management
-  const addOptimisticEvent = useCallback((eventData: Partial<CalendarEvent>): bigint => {
-    const tempId = generateTempId();
-    const optimisticEvent = transformToOptimisticEvent(eventData, tempId);
-    
-    setOptimisticEvents(prev => [...prev, optimisticEvent]);
-    
-    // Auto-cleanup after timeout
-    setTimeout(() => {
-      setOptimisticEvents(prev => prev.filter(event => event.appointmentId !== tempId));
-    }, AUTO_CLEANUP_TIMEOUT);
-    
-    return tempId;
-  }, []);
+  const addOptimisticEvent = useCallback(
+    (eventData: Partial<CalendarEvent>): bigint => {
+      const tempId = generateTempId();
+      const optimisticEvent = transformToOptimisticEvent(eventData, tempId);
+
+      setOptimisticEvents((prev) => [...prev, optimisticEvent]);
+
+      // Auto-cleanup after timeout
+      setTimeout(() => {
+        setOptimisticEvents((prev) =>
+          prev.filter((event) => event.appointmentId !== tempId),
+        );
+      }, AUTO_CLEANUP_TIMEOUT);
+
+      return tempId;
+    },
+    [],
+  );
 
   const removeOptimisticEvent = useCallback((tempId: bigint) => {
-    setOptimisticEvents(prev => prev.filter(event => event.appointmentId !== tempId));
+    setOptimisticEvents((prev) =>
+      prev.filter((event) => event.appointmentId !== tempId),
+    );
   }, []);
 
-  const updateOptimisticEvent = useCallback((tempId: bigint, updates: Partial<CalendarEvent>) => {
-    setOptimisticEvents(prev => prev.map(event => {
-      if (event.appointmentId === tempId) {
-        return { ...event, ...updates };
-      }
-      return event;
-    }));
-  }, []);
+  const updateOptimisticEvent = useCallback(
+    (tempId: bigint, updates: Partial<CalendarEvent>) => {
+      setOptimisticEvents((prev) =>
+        prev.map((event) => {
+          if (event.appointmentId === tempId) {
+            return { ...event, ...updates };
+          }
+          return event;
+        }),
+      );
+    },
+    [],
+  );
 
   // Merge server events with optimistic events
   const mergedAppointments = useMemo(() => {
@@ -245,29 +295,37 @@ export function useSimpleCalendar(currentWeekStart: Date): UseSimpleCalendarRetu
   }, [fetch4Weeks]);
 
   // Custom date range fetch
-  const fetchByDateRange = useCallback(async (startDate: Date, endDate: Date) => {
-    setLoading(true);
-    setError(null);
+  const fetchByDateRange = useCallback(
+    async (startDate: Date, endDate: Date) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const result = await getAppointmentsByDateRangeAction(startDate, endDate);
+      try {
+        const result = await getAppointmentsByDateRangeAction(
+          startDate,
+          endDate,
+        );
 
-      if (result.success) {
-        const calendarEvents = result.appointments.map(transformToCalendarEvent);
-        setAppointments(calendarEvents);
-        setLoadedRange({ startDate, endDate });
-      } else {
-        setError(result.error ?? "Error desconocido");
+        if (result.success) {
+          const calendarEvents = result.appointments.map(
+            transformToCalendarEvent,
+          );
+          setAppointments(calendarEvents);
+          setLoadedRange({ startDate, endDate });
+        } else {
+          setError(result.error ?? "Error desconocido");
+          setAppointments([]);
+        }
+      } catch (err) {
+        setError("Error al cargar las citas por rango de fechas");
         setAppointments([]);
+        console.error("Error fetching appointments by date range:", err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      setError("Error al cargar las citas por rango de fechas");
-      setAppointments([]);
-      console.error("Error fetching appointments by date range:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   return {
     appointments: mergedAppointments,
@@ -282,7 +340,9 @@ export function useSimpleCalendar(currentWeekStart: Date): UseSimpleCalendarRetu
 }
 
 // Convenience hooks for backwards compatibility
-export function useWeeklyAppointments(weekStart: Date): UseSimpleCalendarReturn {
+export function useWeeklyAppointments(
+  weekStart: Date,
+): UseSimpleCalendarReturn {
   return useSimpleCalendar(weekStart);
 }
 
@@ -301,7 +361,9 @@ export function useTodayAppointments(): UseSimpleCalendarReturn {
 }
 
 // Alias for the main hook to maintain compatibility
-export function useCachedCalendar(currentWeekStart: Date): UseSimpleCalendarReturn {
+export function useCachedCalendar(
+  currentWeekStart: Date,
+): UseSimpleCalendarReturn {
   return useSimpleCalendar(currentWeekStart);
 }
 

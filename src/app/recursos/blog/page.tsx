@@ -1,11 +1,17 @@
 import { type Metadata } from "next";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import Link from "next/link";
-import { 
-  ArrowRight, 
-  BookOpen, 
+import {
+  ArrowRight,
+  BookOpen,
   Search,
   Calendar,
   User,
@@ -13,65 +19,71 @@ import {
   Tag,
   TrendingUp,
   Heart,
-  MessageCircle
+  MessageCircle,
 } from "lucide-react";
 import Navbar from "~/components/navbar";
 
 export const metadata: Metadata = {
   title: "Blog - Vesta",
-  description: "Artículos, noticias y tendencias del sector inmobiliario. Consejos prácticos para agentes y agencias.",
+  description:
+    "Artículos, noticias y tendencias del sector inmobiliario. Consejos prácticos para agentes y agencias.",
 };
 
 export default function BlogPage() {
   const featuredPost = {
     title: "El Futuro del Marketing Inmobiliario Digital en 2025",
-    excerpt: "Descubre las tendencias que están transformando cómo los agentes inmobiliarios conectan con clientes y cierran más ventas.",
+    excerpt:
+      "Descubre las tendencias que están transformando cómo los agentes inmobiliarios conectan con clientes y cierran más ventas.",
     author: "María González",
     date: "15 Enero 2025",
     readTime: "8 min",
     category: "Marketing Digital",
     image: "/api/placeholder/800/400",
     likes: 234,
-    comments: 18
+    comments: 18,
   };
 
   const recentPosts = [
     {
       title: "Cómo Optimizar tu Perfil en Portales Inmobiliarios",
-      excerpt: "5 consejos para destacar entre la competencia en Fotocasa e Idealista",
+      excerpt:
+        "5 consejos para destacar entre la competencia en Fotocasa e Idealista",
       author: "Carlos Ruiz",
       date: "12 Enero 2025",
       readTime: "5 min",
       category: "Portales",
-      likes: 156
+      likes: 156,
     },
     {
       title: "Inteligencia Artificial: Tu Nuevo Aliado en Ventas",
-      excerpt: "Cómo la IA está revolucionando la descripción de propiedades y la captación de leads",
+      excerpt:
+        "Cómo la IA está revolucionando la descripción de propiedades y la captación de leads",
       author: "Ana Martín",
       date: "10 Enero 2025",
       readTime: "12 min",
       category: "Tecnología",
-      likes: 198
+      likes: 198,
     },
     {
       title: "Gestión de Clientes: Del Primer Contacto al Cierre",
-      excerpt: "Estrategias probadas para convertir prospectos en clientes satisfechos",
+      excerpt:
+        "Estrategias probadas para convertir prospectos en clientes satisfechos",
       author: "David López",
       date: "8 Enero 2025",
       readTime: "10 min",
       category: "CRM",
-      likes: 289
+      likes: 289,
     },
     {
       title: "Tendencias del Mercado Inmobiliario en España 2025",
-      excerpt: "Análisis completo de precios, demanda y oportunidades por regiones",
+      excerpt:
+        "Análisis completo de precios, demanda y oportunidades por regiones",
       author: "Elena Torres",
       date: "5 Enero 2025",
       readTime: "15 min",
       category: "Mercado",
-      likes: 421
-    }
+      likes: 421,
+    },
   ];
 
   const categories = [
@@ -80,7 +92,7 @@ export default function BlogPage() {
     { name: "Tecnología", count: 15 },
     { name: "CRM y Ventas", count: 22 },
     { name: "Mercado Inmobiliario", count: 31 },
-    { name: "Consejos Prácticos", count: 45 }
+    { name: "Consejos Prácticos", count: 45 },
   ];
 
   return (
@@ -100,18 +112,15 @@ export default function BlogPage() {
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-xl text-gray-600">
-              Artículos, noticias y tendencias del sector inmobiliario. 
-              Consejos prácticos para hacer crecer tu negocio.
+              Artículos, noticias y tendencias del sector inmobiliario. Consejos
+              prácticos para hacer crecer tu negocio.
             </p>
-            
+
             {/* Search Bar */}
             <div className="mx-auto mt-10 max-w-md">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input 
-                  placeholder="Buscar artículos..." 
-                  className="pl-10"
-                />
+                <Input placeholder="Buscar artículos..." className="pl-10" />
               </div>
             </div>
           </div>
@@ -121,27 +130,27 @@ export default function BlogPage() {
       {/* Featured Article */}
       <section className="px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <Card className="overflow-hidden hover:shadow-xl transition-all">
+          <Card className="overflow-hidden transition-all hover:shadow-xl">
             <div className="grid gap-6 md:grid-cols-2">
-              <div className="aspect-video bg-gradient-to-br from-amber-100 to-rose-100 flex items-center justify-center">
+              <div className="flex aspect-video items-center justify-center bg-gradient-to-br from-amber-100 to-rose-100">
                 <div className="text-center">
                   <TrendingUp className="mx-auto h-12 w-12 text-amber-600" />
-                  <p className="mt-2 text-sm text-gray-600">Imagen del artículo destacado</p>
+                  <p className="mt-2 text-sm text-gray-600">
+                    Imagen del artículo destacado
+                  </p>
                 </div>
               </div>
-              <div className="p-6 flex flex-col justify-center">
+              <div className="flex flex-col justify-center p-6">
                 <div className="mb-4">
                   <span className="inline-block rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
                     {featuredPost.category}
                   </span>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                <h2 className="mb-4 text-2xl font-bold text-gray-900">
                   {featuredPost.title}
                 </h2>
-                <p className="text-gray-600 mb-6">
-                  {featuredPost.excerpt}
-                </p>
-                <div className="flex items-center justify-between mb-4">
+                <p className="mb-6 text-gray-600">{featuredPost.excerpt}</p>
+                <div className="mb-4 flex items-center justify-between">
                   <div className="flex items-center gap-4 text-sm text-gray-500">
                     <div className="flex items-center gap-1">
                       <User className="h-4 w-4" />
@@ -185,12 +194,15 @@ export default function BlogPage() {
           <div className="grid gap-8 lg:grid-cols-3">
             {/* Recent Posts */}
             <div className="lg:col-span-2">
-              <h2 className="text-2xl font-bold text-gray-900 mb-8">
+              <h2 className="mb-8 text-2xl font-bold text-gray-900">
                 Artículos Recientes
               </h2>
               <div className="space-y-6">
                 {recentPosts.map((post) => (
-                  <Card key={post.title} className="hover:shadow-lg transition-all">
+                  <Card
+                    key={post.title}
+                    className="transition-all hover:shadow-lg"
+                  >
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -199,7 +211,7 @@ export default function BlogPage() {
                               {post.category}
                             </span>
                           </div>
-                          <CardTitle className="text-xl hover:text-amber-600 transition-colors cursor-pointer">
+                          <CardTitle className="cursor-pointer text-xl transition-colors hover:text-amber-600">
                             {post.title}
                           </CardTitle>
                           <CardDescription className="mt-2">
@@ -238,7 +250,7 @@ export default function BlogPage() {
                   </Card>
                 ))}
               </div>
-              
+
               <div className="mt-12 text-center">
                 <Button variant="outline" size="lg">
                   Cargar Más Artículos
@@ -259,11 +271,14 @@ export default function BlogPage() {
                 <CardContent>
                   <div className="space-y-3">
                     {categories.map((category) => (
-                      <div key={category.name} className="flex items-center justify-between">
-                        <span className="text-sm text-gray-700 hover:text-amber-600 cursor-pointer transition-colors">
+                      <div
+                        key={category.name}
+                        className="flex items-center justify-between"
+                      >
+                        <span className="cursor-pointer text-sm text-gray-700 transition-colors hover:text-amber-600">
                           {category.name}
                         </span>
-                        <span className="text-xs text-gray-500 bg-gray-100 rounded-full px-2 py-1">
+                        <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-500">
                           {category.count}
                         </span>
                       </div>
@@ -304,12 +319,12 @@ export default function BlogPage() {
             ¿Quieres Escribir para Nuestro Blog?
           </h2>
           <p className="mt-4 text-lg text-gray-600">
-            Comparte tu experiencia con la comunidad inmobiliaria. 
-            Buscamos artículos de calidad sobre el sector.
+            Comparte tu experiencia con la comunidad inmobiliaria. Buscamos
+            artículos de calidad sobre el sector.
           </p>
           <div className="mt-10">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="bg-gradient-to-r from-amber-400 to-rose-400 text-white hover:from-amber-500 hover:to-rose-500"
               asChild
             >

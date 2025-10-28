@@ -11,14 +11,14 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { 
-  AlertCircle, 
-  CheckCircle, 
-  Building2, 
-  Users, 
+import {
+  AlertCircle,
+  CheckCircle,
+  Building2,
+  Users,
   ArrowRight,
   Sparkles,
-  KeyRound 
+  KeyRound,
 } from "lucide-react";
 import { validateInvitationCode } from "~/app/actions/accounts";
 import { updateUserAccount } from "~/app/actions/user-account";
@@ -32,7 +32,7 @@ export default function AccountSetupPage() {
   const [success, setSuccess] = useState(false);
   const [mode, setMode] = useState<"invite" | "create">("invite"); // Toggle between modes
   const [companyName, setCompanyName] = useState("");
-  
+
   const { data: session } = useSession();
 
   const handleInviteSubmit = async (e: React.FormEvent) => {
@@ -88,7 +88,7 @@ export default function AccountSetupPage() {
       // Force session refresh to get updated user data with accountId
       console.log("🔄 Refreshing session after account update...");
       await getSession();
-      
+
       setSuccess(true);
 
       // Redirect to dashboard after successful setup
@@ -152,7 +152,9 @@ export default function AccountSetupPage() {
           <div className="mb-8 inline-flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-gray-800 to-gray-900 shadow-lg">
             <Building2 className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900">Bienvenido a Vesta</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900">
+            Bienvenido a Vesta
+          </h1>
           <h2 className="mt-3 text-xl font-semibold text-gray-700">
             Un último paso
           </h2>
@@ -205,7 +207,9 @@ export default function AccountSetupPage() {
               )}
               <div>
                 <CardTitle className="text-lg">
-                  {mode === "invite" ? "Unirse a Organización" : "Solicitar Creación"}
+                  {mode === "invite"
+                    ? "Unirse a Organización"
+                    : "Solicitar Creación"}
                 </CardTitle>
                 <CardDescription className="mt-0.5">
                   {mode === "invite"
@@ -248,7 +252,10 @@ export default function AccountSetupPage() {
             {mode === "invite" ? (
               <form onSubmit={handleInviteSubmit} className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="inviteCode" className="text-sm font-medium text-gray-700">
+                  <Label
+                    htmlFor="inviteCode"
+                    className="text-sm font-medium text-gray-700"
+                  >
                     Código de Invitación
                   </Label>
                   <div className="relative">
@@ -269,9 +276,9 @@ export default function AccountSetupPage() {
                   </p>
                 </div>
 
-                <Button 
-                  type="submit" 
-                  className="h-12 w-full bg-gray-900 font-medium hover:bg-gray-800" 
+                <Button
+                  type="submit"
+                  className="h-12 w-full bg-gray-900 font-medium hover:bg-gray-800"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -290,7 +297,10 @@ export default function AccountSetupPage() {
             ) : (
               <form onSubmit={handleCreateAccount} className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="companyName" className="text-sm font-medium text-gray-700">
+                  <Label
+                    htmlFor="companyName"
+                    className="text-sm font-medium text-gray-700"
+                  >
                     Nombre de la Empresa
                   </Label>
                   <div className="relative">
@@ -311,9 +321,9 @@ export default function AccountSetupPage() {
                   </p>
                 </div>
 
-                <Button 
-                  type="submit" 
-                  className="h-12 w-full bg-gray-900 font-medium hover:bg-gray-800" 
+                <Button
+                  type="submit"
+                  className="h-12 w-full bg-gray-900 font-medium hover:bg-gray-800"
                   disabled={isLoading}
                 >
                   {isLoading ? (

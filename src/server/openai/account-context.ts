@@ -60,7 +60,9 @@ export async function fetchAccountContext(): Promise<AccountContext | null> {
     const configResult = await getWebsiteConfigurationAction(BigInt(accountId));
 
     if (!configResult.success || !configResult.data) {
-      console.log(`Website configuration not found for account ID: ${accountId}`);
+      console.log(
+        `Website configuration not found for account ID: ${accountId}`,
+      );
       return null;
     }
 
@@ -77,8 +79,8 @@ export async function fetchAccountContext(): Promise<AccountContext | null> {
         // Extract contact info from first office if available
         phone: contactProps.offices?.[0]?.phoneNumbers?.main ?? undefined,
         email: contactProps.offices?.[0]?.emailAddresses?.info ?? undefined,
-        address: contactProps.offices?.[0]?.address ?
-          `${contactProps.offices[0].address.street}, ${contactProps.offices[0].address.city}, ${contactProps.offices[0].address.state}, ${contactProps.offices[0].address.country}`
+        address: contactProps.offices?.[0]?.address
+          ? `${contactProps.offices[0].address.street}, ${contactProps.offices[0].address.city}, ${contactProps.offices[0].address.state}, ${contactProps.offices[0].address.country}`
           : undefined,
       },
       branding: {
@@ -88,11 +90,16 @@ export async function fetchAccountContext(): Promise<AccountContext | null> {
       offices: contactProps.offices ?? [],
     };
 
-    console.log(`🏢 ACCOUNT CONTEXT: Using account name: ${config.accountName}`);
-    console.log(`🏪 ACCOUNT CONTEXT: Company name fallback: ${footerProps.companyName}`);
-    console.log(`✅ ACCOUNT CONTEXT: Final agency name: ${accountContext.agencyName ?? 'Unknown Agency'}`);
+    console.log(
+      `🏢 ACCOUNT CONTEXT: Using account name: ${config.accountName}`,
+    );
+    console.log(
+      `🏪 ACCOUNT CONTEXT: Company name fallback: ${footerProps.companyName}`,
+    );
+    console.log(
+      `✅ ACCOUNT CONTEXT: Final agency name: ${accountContext.agencyName ?? "Unknown Agency"}`,
+    );
     return accountContext;
-
   } catch (error) {
     console.error("Error fetching account context:", error);
     // Return null to allow graceful fallback
@@ -103,7 +110,9 @@ export async function fetchAccountContext(): Promise<AccountContext | null> {
 /**
  * Formats account context into a readable string for GPT-4 prompts
  */
-export async function formatAccountContextForPrompt(context: AccountContext): Promise<string> {
+export async function formatAccountContextForPrompt(
+  context: AccountContext,
+): Promise<string> {
   const lines: string[] = [];
 
   lines.push(`COMPANY CONTEXT:`);
@@ -143,8 +152,10 @@ export async function formatAccountContextForPrompt(context: AccountContext): Pr
         const addressStr = `${office.address.street}, ${office.address.city}, ${office.address.state}, ${office.address.country}`;
         officeInfo.push(addressStr);
       }
-      if (office.phoneNumbers?.main) officeInfo.push(`Phone: ${office.phoneNumbers.main}`);
-      if (office.emailAddresses?.info) officeInfo.push(`Email: ${office.emailAddresses.info}`);
+      if (office.phoneNumbers?.main)
+        officeInfo.push(`Phone: ${office.phoneNumbers.main}`);
+      if (office.emailAddresses?.info)
+        officeInfo.push(`Email: ${office.emailAddresses.info}`);
 
       if (officeInfo.length > 0) {
         lines.push(`  ${index + 1}. ${officeInfo.join(" - ")}`);
@@ -152,13 +163,21 @@ export async function formatAccountContextForPrompt(context: AccountContext): Pr
     });
   }
 
-  lines.push('');
-  lines.push('INSTRUCTIONS FOR USING COMPANY CONTEXT:');
-  lines.push('- Naturally incorporate the agency name when appropriate (e.g., "Contact [Agency Name] for more information")');
-  lines.push('- Include relevant contact information in call-to-action phrases');
-  lines.push('- Match the professional tone that represents this specific agency');
-  lines.push('- Make the description feel authentic to this company\'s brand identity');
-  lines.push('- Do not force company information if it doesn\'t flow naturally');
+  lines.push("");
+  lines.push("INSTRUCTIONS FOR USING COMPANY CONTEXT:");
+  lines.push(
+    '- Naturally incorporate the agency name when appropriate (e.g., "Contact [Agency Name] for more information")',
+  );
+  lines.push(
+    "- Include relevant contact information in call-to-action phrases",
+  );
+  lines.push(
+    "- Match the professional tone that represents this specific agency",
+  );
+  lines.push(
+    "- Make the description feel authentic to this company's brand identity",
+  );
+  lines.push("- Do not force company information if it doesn't flow naturally");
 
-  return lines.join('\n');
+  return lines.join("\n");
 }

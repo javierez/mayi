@@ -485,7 +485,6 @@ export const organizations = singlestoreTable("organizations", {
   country: varchar("country", { length: 100 }),
 });
 
-
 // Deals (potential or closed transaction)
 export const deals = singlestoreTable("deals", {
   // Primary Key
@@ -503,7 +502,10 @@ export const deals = singlestoreTable("deals", {
   finalPrice: decimal("final_price", { precision: 12, scale: 2 }), // Final agreed sale/rental price (may differ from listing price)
 
   // Financial Fields - Commission
-  commissionPercentage: decimal("commission_percentage", { precision: 5, scale: 2 }), // Agency commission percentage (e.g., 3.00, 5.00)
+  commissionPercentage: decimal("commission_percentage", {
+    precision: 5,
+    scale: 2,
+  }), // Agency commission percentage (e.g., 3.00, 5.00)
   commissionAmount: decimal("commission_amount", { precision: 12, scale: 2 }), // Calculated commission in euros
   commissionPaidDate: timestamp("commission_paid_date"), // When commission was received
 
@@ -539,8 +541,14 @@ export const deals = singlestoreTable("deals", {
   // Parties & Professionals - Agents
   listingAgentId: varchar("listing_agent_id", { length: 36 }), // FK → users (captador)
   sellingAgentId: varchar("selling_agent_id", { length: 36 }), // FK → users (vendedor/closer)
-  commissionSplitListingAgent: decimal("commission_split_listing_agent", { precision: 5, scale: 2 }), // % for listing agent
-  commissionSplitSellingAgent: decimal("commission_split_selling_agent", { precision: 5, scale: 2 }), // % for selling agent
+  commissionSplitListingAgent: decimal("commission_split_listing_agent", {
+    precision: 5,
+    scale: 2,
+  }), // % for listing agent
+  commissionSplitSellingAgent: decimal("commission_split_selling_agent", {
+    precision: 5,
+    scale: 2,
+  }), // % for selling agent
 
   // Status & Workflow
   financingStatus: varchar("financing_status", { length: 20 }), // 'not_needed' | 'pending' | 'pre_approved' | 'approved' | 'denied'
@@ -568,7 +576,10 @@ export const deals = singlestoreTable("deals", {
   // Referrals
   referralSource: varchar("referral_source", { length: 100 }), // Where deal came from
   referralPartnerId: bigint("referral_partner_id", { mode: "bigint" }), // FK → contacts/organizations
-  referralFeePercentage: decimal("referral_fee_percentage", { precision: 5, scale: 2 }), // Fee owed to referral partner
+  referralFeePercentage: decimal("referral_fee_percentage", {
+    precision: 5,
+    scale: 2,
+  }), // Fee owed to referral partner
   referralFeePaid: boolean("referral_fee_paid"), // Whether referral fee was paid
 
   // System Fields
@@ -626,7 +637,9 @@ export const userIntegrations = singlestoreTable("user_integrations", {
   channelId: varchar("channel_id", { length: 64 }), // Webhook channel ID
   resourceId: varchar("resource_id", { length: 255 }), // Webhook resource ID
   channelExpiration: timestamp("channel_expiration"),
-  syncDirection: varchar("sync_direction", { length: 20 }).default("vesta_to_google"), // "bidirectional", "vesta_to_google", "google_to_vesta", "none" - Default is vesta_to_google (recommended)
+  syncDirection: varchar("sync_direction", { length: 20 }).default(
+    "vesta_to_google",
+  ), // "bidirectional", "vesta_to_google", "google_to_vesta", "none" - Default is vesta_to_google (recommended)
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
@@ -773,7 +786,7 @@ export const websiteProperties = singlestoreTable("website_config", {
   contactProps: text("contact_props"), // JSON containing contact section properties
   footerProps: text("footer_props").notNull(), // JSON containing footer configuration
   headProps: text("head_props").notNull(), // JSON containing head section properties
-  watermarkProps: text("watermark_props").notNull().default('{}'), // JSON containing watermark configuration
+  watermarkProps: text("watermark_props").notNull().default("{}"), // JSON containing watermark configuration
   metadata: text("metadata"), // JSON containing metadata configuration
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
@@ -781,7 +794,9 @@ export const websiteProperties = singlestoreTable("website_config", {
 
 // Comments table
 export const comments = singlestoreTable("comments", {
-  commentId: bigint("comment_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  commentId: bigint("comment_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   listingId: bigint("listing_id", { mode: "bigint" }).notNull(), // FK → listings.listing_id
   propertyId: bigint("property_id", { mode: "bigint" }).notNull(), // FK → properties.property_id
   userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
@@ -795,10 +810,27 @@ export const comments = singlestoreTable("comments", {
 
 // User Comments table (Contact-based comments)
 export const userComments = singlestoreTable("user_comments", {
-  commentId: bigint("comment_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  commentId: bigint("comment_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
   userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
   content: text("content").notNull(),
+  parentId: bigint("parent_id", { mode: "bigint" }), // Self-reference for replies
+  isDeleted: boolean("is_deleted").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+// Listing Contact Comments table (Comments on listing-contact relationships)
+export const listingContactComments = singlestoreTable("listing_contact_comments", {
+  commentId: bigint("comment_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
+  listingContactId: bigint("listing_contact_id", { mode: "bigint" }).notNull(), // FK → listing_contacts.listing_contact_id
+  userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
+  content: text("content").notNull(),
+  category: varchar("category", { length: 100 }), // e.g., "general", "offer", "viewing", "negotiation", "follow_up", "internal"
   parentId: bigint("parent_id", { mode: "bigint" }), // Self-reference for replies
   isDeleted: boolean("is_deleted").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -839,7 +871,9 @@ export const feedback = singlestoreTable("feedback", {
 
 // Account-specific roles table
 export const accountRoles = singlestoreTable("account_roles", {
-  accountRoleId: bigint("account_role_id", { mode: "bigint" }).primaryKey().autoincrement(),
+  accountRoleId: bigint("account_role_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   roleId: bigint("role_id", { mode: "bigint" }).notNull(), // References the role type (1=Superadmin [internal only], 2=Agent, 3=Account Admin, 4=Office Manager, 5=Inactive)
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
   permissions: json("permissions").notNull().default({}), // JSON with all permissions for this role in this account
@@ -855,47 +889,49 @@ export const notifications = singlestoreTable("notifications", {
   notificationId: bigint("notification_id", { mode: "bigint" })
     .primaryKey()
     .autoincrement(),
-  
+
   // Account for multi-tenant security
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
-  
+
   // User targeting
   userId: varchar("user_id", { length: 36 }), // FK → users.id (null = broadcast to all account users)
   fromUserId: varchar("from_user_id", { length: 36 }), // FK → users.id (who triggered it, can be system)
-  
+
   // Notification content
   type: varchar("type", { length: 50 }).notNull(), // 'appointment_reminder', 'new_lead', 'property_update', 'task_due', 'deal_status', 'document_uploaded', 'comment_reply', 'portal_sync', 'system_alert'
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message").notNull(),
   actionUrl: varchar("action_url", { length: 500 }), // Where to navigate when clicked
-  
+
   // Priority and categorization
   priority: varchar("priority", { length: 20 }).default("normal"), // 'low', 'normal', 'high', 'urgent'
   category: varchar("category", { length: 50 }).notNull(), // 'appointments', 'properties', 'contacts', 'deals', 'tasks', 'system'
-  
+
   // Entity relationships (polymorphic references)
   entityType: varchar("entity_type", { length: 50 }), // 'property', 'listing', 'contact', 'appointment', 'task', 'deal', 'prospect', 'document'
   entityId: bigint("entity_id", { mode: "bigint" }), // ID of the related entity
-  
+
   // Additional metadata
   metadata: json("metadata").default({}), // Flexible field for extra data (e.g., appointment time, property address)
-  
+
   // Notification state
   isRead: boolean("is_read").default(false),
   readAt: timestamp("read_at"),
   isDismissed: boolean("is_dismissed").default(false),
   dismissedAt: timestamp("dismissed_at"),
-  
+
   // Delivery tracking
-  deliveryChannel: varchar("delivery_channel", { length: 50 }).default("in_app"), // 'in_app', 'email', 'push', 'sms'
+  deliveryChannel: varchar("delivery_channel", { length: 50 }).default(
+    "in_app",
+  ), // 'in_app', 'email', 'push', 'sms'
   isDelivered: boolean("is_delivered").default(false),
   deliveredAt: timestamp("delivered_at"),
   deliveryError: text("delivery_error"), // Error message if delivery failed
-  
+
   // Scheduling (for future notifications)
   scheduledFor: timestamp("scheduled_for"), // When to send (null = immediate)
   expiresAt: timestamp("expires_at"), // Auto-dismiss after this time
-  
+
   // System fields
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),

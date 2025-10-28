@@ -37,17 +37,25 @@ export function LoadConfigurationDropdown({
   disabled = false,
 }: LoadConfigurationDropdownProps) {
   const handleLoad = (configId: string) => {
-    const config = configurations.find(c => c.id === configId);
+    const config = configurations.find((c) => c.id === configId);
     if (config) {
       onLoad(config);
       toast.success(`Configuración "${config.name}" cargada`);
     }
   };
 
-  const handleDelete = async (configId: string, configName: string, event: React.MouseEvent) => {
+  const handleDelete = async (
+    configId: string,
+    configName: string,
+    event: React.MouseEvent,
+  ) => {
     event.stopPropagation();
-    
-    if (window.confirm(`¿Estás seguro de que quieres eliminar la configuración "${configName}"?`)) {
+
+    if (
+      window.confirm(
+        `¿Estás seguro de que quieres eliminar la configuración "${configName}"?`,
+      )
+    ) {
       try {
         await onDelete(configId);
         toast.success("Configuración eliminada");
@@ -58,12 +66,18 @@ export function LoadConfigurationDropdown({
     }
   };
 
-  const handleSetDefault = async (configId: string, configName: string, event: React.MouseEvent) => {
+  const handleSetDefault = async (
+    configId: string,
+    configName: string,
+    event: React.MouseEvent,
+  ) => {
     event.stopPropagation();
-    
+
     try {
       await onSetDefault(configId);
-      toast.success(`"${configName}" establecida como configuración por defecto`);
+      toast.success(
+        `"${configName}" establecida como configuración por defecto`,
+      );
     } catch (error) {
       console.error("Error setting default configuration:", error);
       toast.error("Error al establecer configuración por defecto");
@@ -95,7 +109,7 @@ export function LoadConfigurationDropdown({
                 <span>{config.name}</span>
                 {config.isDefault && (
                   <Badge variant="secondary" className="text-xs">
-                    <Star className="w-3 h-3 mr-1" />
+                    <Star className="mr-1 h-3 w-3" />
                     Por defecto
                   </Badge>
                 )}
@@ -115,13 +129,13 @@ export function LoadConfigurationDropdown({
           <div key={config.id} className="flex items-center gap-1">
             <Badge
               variant={config.isDefault ? "default" : "secondary"}
-              className="text-xs cursor-pointer hover:bg-opacity-80 transition-colors"
+              className="cursor-pointer text-xs transition-colors hover:bg-opacity-80"
               onClick={() => handleLoad(config.id)}
             >
-              {config.isDefault && <Star className="w-3 h-3 mr-1" />}
+              {config.isDefault && <Star className="mr-1 h-3 w-3" />}
               {config.name}
             </Badge>
-            
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -129,17 +143,19 @@ export function LoadConfigurationDropdown({
                   size="sm"
                   className="h-5 w-5 p-0 hover:bg-muted"
                 >
-                  <Settings2 className="w-3 h-3" />
+                  <Settings2 className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 {!config.isDefault && (
                   <>
                     <DropdownMenuItem
-                      onClick={(e) => handleSetDefault(config.id, config.name, e)}
+                      onClick={(e) =>
+                        handleSetDefault(config.id, config.name, e)
+                      }
                       className="text-sm"
                     >
-                      <Star className="w-4 h-4 mr-2" />
+                      <Star className="mr-2 h-4 w-4" />
                       Establecer por defecto
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -149,7 +165,7 @@ export function LoadConfigurationDropdown({
                   onClick={(e) => handleDelete(config.id, config.name, e)}
                   className="text-sm text-destructive hover:text-destructive"
                 >
-                  <Trash2 className="w-4 h-4 mr-2" />
+                  <Trash2 className="mr-2 h-4 w-4" />
                   Eliminar
                 </DropdownMenuItem>
               </DropdownMenuContent>

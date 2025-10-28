@@ -12,7 +12,7 @@ import { useSearchParams } from "next/navigation";
 
 export default function TemplatesPage() {
   const searchParams = useSearchParams();
-  
+
   // Try to parse config and data from query parameters
   let config: TemplateConfiguration;
   let data: ExtendedTemplatePropertyData;
@@ -162,10 +162,10 @@ export default function TemplatesPage() {
   const getTemplateComponent = () => {
     const templateStyle = config.templateStyle || "classic";
     const orientation = config.orientation || "vertical";
-    
+
     // Create template identifier
     const templateKey = `${templateStyle}-${orientation}`;
-    
+
     switch (templateKey) {
       case "basic-vertical":
         return <BasicTemplate data={data} config={config} />;
@@ -184,8 +184,9 @@ export default function TemplatesPage() {
 
   return (
     <div style={{ margin: 0, padding: 0, backgroundColor: "white" }}>
-      <style dangerouslySetInnerHTML={{
-        __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
           @page {
             size: A4 ${config.orientation === "horizontal" ? "landscape" : "portrait"};
             margin: 0;
@@ -207,8 +208,9 @@ export default function TemplatesPage() {
             padding: 0;
             box-sizing: border-box;
           }
-        `
-      }} />
+        `,
+        }}
+      />
       {getTemplateComponent()}
       <script
         dangerouslySetInnerHTML={{

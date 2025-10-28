@@ -64,7 +64,9 @@ export function VideoGallery({
   const [selectedVideos, setSelectedVideos] = useState<Set<number>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isTogglingVisibility, setIsTogglingVisibility] = useState<Set<number>>(new Set());
+  const [isTogglingVisibility, setIsTogglingVisibility] = useState<Set<number>>(
+    new Set(),
+  );
 
   // Drag and drop state
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -190,12 +192,16 @@ export function VideoGallery({
 
     // Check file sizes (100MB limit per file)
     const maxFileSize = 100 * 1024 * 1024; // 100MB in bytes
-    const oversizedFiles = Array.from(files).filter(file => file.size > maxFileSize);
-    
+    const oversizedFiles = Array.from(files).filter(
+      (file) => file.size > maxFileSize,
+    );
+
     if (oversizedFiles.length > 0) {
-      alert(`Los siguientes archivos exceden el límite de 100MB:\n${oversizedFiles.map(f => `${f.name} (${Math.round(f.size / 1024 / 1024)}MB)`).join('\n')}`);
+      alert(
+        `Los siguientes archivos exceden el límite de 100MB:\n${oversizedFiles.map((f) => `${f.name} (${Math.round(f.size / 1024 / 1024)}MB)`).join("\n")}`,
+      );
       // Reset the input
-      e.target.value = '';
+      e.target.value = "";
       return;
     }
 
@@ -304,19 +310,22 @@ export function VideoGallery({
     // Optimistic update
     setVideos((prev) =>
       prev.map((vid, i) =>
-        i === index ? { ...vid, isActive: newActiveStatus } : vid
-      )
+        i === index ? { ...vid, isActive: newActiveStatus } : vid,
+      ),
     );
 
     try {
-      await togglePropertyImageVisibility(video.propertyImageId, newActiveStatus);
+      await togglePropertyImageVisibility(
+        video.propertyImageId,
+        newActiveStatus,
+      );
     } catch (error) {
       console.error("Error toggling video visibility:", error);
       // Revert optimistic update
       setVideos((prev) =>
         prev.map((vid, i) =>
-          i === index ? { ...vid, isActive: !newActiveStatus } : vid
-        )
+          i === index ? { ...vid, isActive: !newActiveStatus } : vid,
+        ),
       );
       // TODO: Show error toast
     } finally {
@@ -475,7 +484,7 @@ export function VideoGallery({
                   src={videoSources[idx]}
                   className={cn(
                     "h-40 w-full object-cover transition-opacity duration-200",
-                    !video.isActive && "opacity-50"
+                    !video.isActive && "opacity-50",
                   )}
                   onError={() => handleVideoError(idx)}
                   onLoadedData={() => handleVideoLoad(idx)}
@@ -557,7 +566,9 @@ export function VideoGallery({
                       void handleToggleVisibility(idx);
                     }}
                     disabled={isTogglingVisibility.has(idx)}
-                    aria-label={video.isActive ? "Ocultar vídeo" : "Mostrar vídeo"}
+                    aria-label={
+                      video.isActive ? "Ocultar vídeo" : "Mostrar vídeo"
+                    }
                   >
                     {isTogglingVisibility.has(idx) ? (
                       <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -738,26 +749,28 @@ export function VideoGallery({
               para salir.
             </DialogDescription>
           </DialogHeader>
-          {expandedVideo !== null && videos[expandedVideo] && videoSources[expandedVideo] && (
-            <div className="relative">
-              <video
-                src={videoSources[expandedVideo]}
-                className="h-auto max-h-[90vh] w-full rounded-lg object-contain"
-                controls
-                onError={() => handleVideoError(expandedVideo)}
-                onLoadedData={() => handleVideoLoad(expandedVideo)}
-                autoPlay
-              />
-              <button
-                type="button"
-                className="absolute right-4 top-4 rounded-full bg-white p-2.5 text-gray-800 shadow-lg transition-all hover:scale-110 hover:bg-gray-100"
-                onClick={() => setExpandedVideo(null)}
-                aria-label="Cerrar vista ampliada"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-          )}
+          {expandedVideo !== null &&
+            videos[expandedVideo] &&
+            videoSources[expandedVideo] && (
+              <div className="relative">
+                <video
+                  src={videoSources[expandedVideo]}
+                  className="h-auto max-h-[90vh] w-full rounded-lg object-contain"
+                  controls
+                  onError={() => handleVideoError(expandedVideo)}
+                  onLoadedData={() => handleVideoLoad(expandedVideo)}
+                  autoPlay
+                />
+                <button
+                  type="button"
+                  className="absolute right-4 top-4 rounded-full bg-white p-2.5 text-gray-800 shadow-lg transition-all hover:scale-110 hover:bg-gray-100"
+                  onClick={() => setExpandedVideo(null)}
+                  aria-label="Cerrar vista ampliada"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+            )}
         </DialogContent>
       </Dialog>
 

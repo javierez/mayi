@@ -1,7 +1,12 @@
 "use server";
 
 import { db } from "~/server/db";
-import { websiteProperties, users, testimonials, accounts } from "~/server/db/schema";
+import {
+  websiteProperties,
+  users,
+  testimonials,
+  accounts,
+} from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import type {
   WebsiteConfigurationInput,
@@ -37,9 +42,9 @@ function safeJsonParse<T>(
       // Second attempt: sanitize control characters
       // Remove or escape literal newlines, tabs, and other control characters
       const sanitized = jsonString
-        .replace(/\n/g, " ")       // Replace literal newlines with spaces
-        .replace(/\r/g, " ")       // Replace carriage returns with spaces
-        .replace(/\t/g, " ")       // Replace tabs with spaces
+        .replace(/\n/g, " ") // Replace literal newlines with spaces
+        .replace(/\r/g, " ") // Replace carriage returns with spaces
+        .replace(/\t/g, " ") // Replace tabs with spaces
         .replace(/[\x00-\x1F\x7F]/g, ""); // Remove other control characters
 
       const parsed = JSON.parse(sanitized) as T;
@@ -126,8 +131,11 @@ export async function getWebsiteConfigurationAction(
         .from(accounts)
         .where(eq(accounts.accountId, accountId));
 
-      console.log("🔍 ACTIONS: No config found, using default with account name:", account?.name);
-      
+      console.log(
+        "🔍 ACTIONS: No config found, using default with account name:",
+        account?.name,
+      );
+
       // Return default configuration if none exists
       return {
         success: true,
@@ -302,18 +310,21 @@ export async function getWebsiteConfigurationAction(
     console.log("🏢 ACTIONS: Account name:", config.accountName);
 
     // Parse JSON fields and construct the configuration using safe parser
-    console.log("✅ ACTIONS: Adding account name to config:", config.accountName);
+    console.log(
+      "✅ ACTIONS: Adding account name to config:",
+      config.accountName,
+    );
     const websiteConfig: WebsiteConfigurationInput = {
       accountName: config.accountName ?? "",
       socialLinks: safeJsonParse<Record<string, string>>(
         config.socialLinks,
         {},
-        "socialLinks"
+        "socialLinks",
       ),
       seoProps: safeJsonParse<Record<string, string>>(
         config.seoProps,
         {},
-        "seoProps"
+        "seoProps",
       ),
       logo: config.logo ?? "",
       favicon: config.favicon ?? "",
@@ -328,12 +339,12 @@ export async function getWebsiteConfigurationAction(
           findPropertyButton: "Explorar Propiedades",
           contactButton: "Contáctanos",
         },
-        "heroProps"
+        "heroProps",
       ),
       featuredProps: safeJsonParse<FeaturedProps>(
         config.featuredProps,
         { title: "Propiedades Destacadas", subtitle: "", maxItems: 6 },
-        "featuredProps"
+        "featuredProps",
       ),
       aboutProps: safeJsonParse<AboutProps>(
         config.aboutProps,
@@ -358,7 +369,7 @@ export async function getWebsiteConfigurationAction(
           kpi4Name: "",
           kpi4Data: "",
         },
-        "aboutProps"
+        "aboutProps",
       ),
       propertiesProps: safeJsonParse<PropertiesProps>(
         config.propertiesProps,
@@ -369,12 +380,17 @@ export async function getWebsiteConfigurationAction(
           defaultSort: "price-desc",
           buttonText: "Ver Todas las Propiedades",
         },
-        "propertiesProps"
+        "propertiesProps",
       ),
       testimonialProps: safeJsonParse<TestimonialProps>(
         config.testimonialProps,
-        { title: "Lo que dicen nuestros clientes", subtitle: "", itemsPerPage: 3, testimonials: [] },
-        "testimonialProps"
+        {
+          title: "Lo que dicen nuestros clientes",
+          subtitle: "",
+          itemsPerPage: 3,
+          testimonials: [],
+        },
+        "testimonialProps",
       ),
       contactProps: safeJsonParse<ContactProps>(
         config.contactProps,
@@ -389,7 +405,7 @@ export async function getWebsiteConfigurationAction(
           map: true,
           offices: [],
         },
-        "contactProps"
+        "contactProps",
       ),
       footerProps: safeJsonParse<FooterProps>(
         config.footerProps,
@@ -418,17 +434,17 @@ export async function getWebsiteConfigurationAction(
           copyright: "",
           links: [],
         },
-        "footerProps"
+        "footerProps",
       ),
       headProps: safeJsonParse<HeadProps>(
         config.headProps,
         { customScripts: "", googleAnalytics: "", facebookPixel: "" },
-        "headProps"
+        "headProps",
       ),
       watermarkProps: safeJsonParse<WatermarkProps>(
         config.watermarkProps,
         { enabled: false, position: "southeast", sizePercentage: 30 },
-        "watermarkProps"
+        "watermarkProps",
       ),
       metadata: {
         id: config.id?.toString(),

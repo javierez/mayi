@@ -1,14 +1,22 @@
-
 import React, { useState } from "react";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { cn } from "~/lib/utils";
-import { ChevronDown, Loader, Search, AlertTriangle, CheckCircle } from "lucide-react";
+import {
+  ChevronDown,
+  Loader,
+  Search,
+  AlertTriangle,
+  CheckCircle,
+} from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { ModernSaveIndicator } from "../common/modern-save-indicator";
-import { AddressAutocomplete, type LocationData } from "../address-autocomplete";
+import {
+  AddressAutocomplete,
+  type LocationData,
+} from "../address-autocomplete";
 import { CadastralSelectionModal } from "../cadastral-selection-modal";
 import type { PropertyListing } from "~/types/property-listing";
 import type { SaveState } from "~/types/save-state";
@@ -18,7 +26,7 @@ import {
   searchCadastralByCoordinates,
   compareCadastralData,
   type CadastralComparisonResult,
-  type CadastralSearchResult
+  type CadastralSearchResult,
 } from "~/server/cadastral/retrieve_cadastral";
 
 interface LocationCardProps {
@@ -60,33 +68,44 @@ export function LocationCard({
 }: LocationCardProps) {
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
   const [streetValue, setStreetValue] = useState(listing.street ?? "");
-  const [neighborhoodValue, setNeighborhoodValue] = useState(listing.neighborhood ?? "");
+  const [neighborhoodValue, setNeighborhoodValue] = useState(
+    listing.neighborhood ?? "",
+  );
 
   // Coordinate state for cadastral search (obtained from Google Maps or Nominatim autocomplete, or loaded from database)
   const [latitude, setLatitude] = useState<number | null>(
-    listing.latitude ? parseFloat(listing.latitude) : null
+    listing.latitude ? parseFloat(listing.latitude) : null,
   );
   const [longitude, setLongitude] = useState<number | null>(
-    listing.longitude ? parseFloat(listing.longitude) : null
+    listing.longitude ? parseFloat(listing.longitude) : null,
   );
 
   // Cadastral validation state
-  const [cadastralDiscrepancies, setCadastralDiscrepancies] = useState<CadastralComparisonResult | null>(null);
-  const [cadastralValidationStatus, setCadastralValidationStatus] = useState<'none' | 'validating' | 'valid' | 'invalid'>('none');
+  const [cadastralDiscrepancies, setCadastralDiscrepancies] =
+    useState<CadastralComparisonResult | null>(null);
+  const [cadastralValidationStatus, setCadastralValidationStatus] = useState<
+    "none" | "validating" | "valid" | "invalid"
+  >("none");
 
   // Helper to get discrepancy for a specific field
   const getFieldDiscrepancy = (fieldName: string) => {
-    return cadastralDiscrepancies?.differences.find(diff => diff.field === fieldName);
+    return cadastralDiscrepancies?.differences.find(
+      (diff) => diff.field === fieldName,
+    );
   };
-  
+
   // Cadastral search state
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
-  const [potentialReferences, setPotentialReferences] = useState<CadastralSearchResult[]>([]);
+  const [potentialReferences, setPotentialReferences] = useState<
+    CadastralSearchResult[]
+  >([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isCadastralLoading, setIsCadastralLoading] = useState(false);
-  
+
   // Controlled state for cadastral reference input
-  const [cadastralReferenceValue, setCadastralReferenceValue] = useState(listing.cadastralReference ?? "");
+  const [cadastralReferenceValue, setCadastralReferenceValue] = useState(
+    listing.cadastralReference ?? "",
+  );
 
   // Log component load/render data
   console.log("🏠 [LocationCard] Component loaded with data:", {
@@ -103,11 +122,13 @@ export function LocationCard({
   // Handle cadastral reference button click (copied from third.tsx)
   const handleCadastralLookup = async () => {
     const reference = cadastralReferenceValue.trim();
-    
+
     // Check if we have all key info (street, city, postal code)
-    const postalCodeValue = (document.getElementById("postalCode") as HTMLInputElement)?.value || "";
-    const hasKeyInfo = streetValue.trim() && city.trim() && postalCodeValue.trim();
-    
+    const postalCodeValue =
+      (document.getElementById("postalCode") as HTMLInputElement)?.value || "";
+    const hasKeyInfo =
+      streetValue.trim() && city.trim() && postalCodeValue.trim();
+
     if (hasKeyInfo) {
       // If we have all key info, do comparison
       await validateCadastralReference(reference);
@@ -125,33 +146,40 @@ export function LocationCard({
     console.log("📋 [LocationCard] Input cadastral reference:", cadastralRef);
 
     if (!cadastralRef.trim()) {
-      console.log("⚠️ [LocationCard] Empty cadastral reference, clearing validation");
+      console.log(
+        "⚠️ [LocationCard] Empty cadastral reference, clearing validation",
+      );
       setCadastralDiscrepancies(null);
-      setCadastralValidationStatus('none');
+      setCadastralValidationStatus("none");
       return;
     }
 
     setIsCadastralLoading(true);
-    setCadastralValidationStatus('validating');
+    setCadastralValidationStatus("validating");
 
     try {
       // Get current form data
       const currentData = {
         street: streetValue,
-        postalCode: (document.getElementById("postalCode") as HTMLInputElement)?.value || "",
+        postalCode:
+          (document.getElementById("postalCode") as HTMLInputElement)?.value ||
+          "",
         city: city,
         province: province,
       };
 
-      console.log("📋 [LocationCard] Current form data to compare:", currentData);
+      console.log(
+        "📋 [LocationCard] Current form data to compare:",
+        currentData,
+      );
 
       // Fetch official cadastral data
       console.log("📡 [LocationCard] Calling retrieveCadastralData...");
       const cadastralData = await retrieveCadastralData(cadastralRef);
-      
+
       if (!cadastralData) {
         console.log("❌ [LocationCard] No cadastral data found for reference");
-        setCadastralValidationStatus('invalid');
+        setCadastralValidationStatus("invalid");
         setCadastralDiscrepancies(null);
         return;
       }
@@ -161,22 +189,31 @@ export function LocationCard({
       // Compare data
       console.log("🔍 [LocationCard] Calling compareCadastralData...");
       const comparison = await compareCadastralData(currentData, cadastralData);
-      
+
       console.log("📊 [LocationCard] Comparison result:", comparison);
-      
+
       setCadastralDiscrepancies(comparison);
-      setCadastralValidationStatus(comparison.hasDiscrepancies ? 'invalid' : 'valid');
+      setCadastralValidationStatus(
+        comparison.hasDiscrepancies ? "invalid" : "valid",
+      );
 
       console.log("✅ [LocationCard] ========================================");
       console.log("✅ [LocationCard] VALIDATION COMPLETED SUCCESSFULLY");
       console.log("✅ [LocationCard] ========================================");
-      console.log("✅ [LocationCard] Final validation status:", comparison.hasDiscrepancies ? 'invalid' : 'valid');
+      console.log(
+        "✅ [LocationCard] Final validation status:",
+        comparison.hasDiscrepancies ? "invalid" : "valid",
+      );
     } catch (error) {
-      console.error("❌ [LocationCard] ========================================");
+      console.error(
+        "❌ [LocationCard] ========================================",
+      );
       console.error("❌ [LocationCard] VALIDATION FAILED WITH ERROR");
-      console.error("❌ [LocationCard] ========================================");
+      console.error(
+        "❌ [LocationCard] ========================================",
+      );
       console.error("❌ [LocationCard] Validation error:", error);
-      setCadastralValidationStatus('invalid');
+      setCadastralValidationStatus("invalid");
       setCadastralDiscrepancies(null);
     } finally {
       setIsCadastralLoading(false);
@@ -201,11 +238,12 @@ export function LocationCard({
     try {
       console.log("📡 [LocationCard] Calling retrieveCadastralData...");
       const cadastralData = await retrieveCadastralData(cadastralRef);
-      
+
       if (!cadastralData) {
         console.log("❌ [LocationCard] No cadastral data found for reference");
         toast.error("Referencia no encontrada", {
-          description: "No se encontraron datos para esta referencia catastral. Verifica que sea correcta.",
+          description:
+            "No se encontraron datos para esta referencia catastral. Verifica que sea correcta.",
         });
         return;
       }
@@ -215,9 +253,11 @@ export function LocationCard({
       // Update form fields with cadastral data
       setStreetValue(cadastralData.street);
       setNeighborhoodValue(cadastralData.neighborhood);
-      
+
       // Update other fields
-      const postalCodeInput = document.getElementById("postalCode") as HTMLInputElement;
+      const postalCodeInput = document.getElementById(
+        "postalCode",
+      ) as HTMLInputElement;
       if (postalCodeInput) {
         postalCodeInput.value = cadastralData.postalCode;
       }
@@ -225,7 +265,8 @@ export function LocationCard({
       // Update city, province, municipality
       if (cadastralData.city) setCity(cadastralData.city);
       if (cadastralData.province) setProvince(cadastralData.province);
-      if (cadastralData.municipality) setMunicipality(cadastralData.municipality);
+      if (cadastralData.municipality)
+        setMunicipality(cadastralData.municipality);
 
       // Mark as having changes
       onUpdateModule(true);
@@ -233,15 +274,19 @@ export function LocationCard({
       console.log("✅ [LocationCard] ========================================");
       console.log("✅ [LocationCard] FILL DATA COMPLETED SUCCESSFULLY");
       console.log("✅ [LocationCard] ========================================");
-      
-      toast.success("Datos catastrales cargados", {
-        description: "La información del inmueble se ha completado automáticamente",
-      });
 
+      toast.success("Datos catastrales cargados", {
+        description:
+          "La información del inmueble se ha completado automáticamente",
+      });
     } catch (error) {
-      console.error("❌ [LocationCard] ========================================");
+      console.error(
+        "❌ [LocationCard] ========================================",
+      );
       console.error("❌ [LocationCard] FILL DATA FAILED WITH ERROR");
-      console.error("❌ [LocationCard] ========================================");
+      console.error(
+        "❌ [LocationCard] ========================================",
+      );
       console.error("❌ [LocationCard] Fill error:", error);
       toast.error("Error al consultar el catastro", {
         description: "No se pudo conectar con el servicio. Inténtalo de nuevo.",
@@ -265,7 +310,9 @@ export function LocationCard({
     // Check if we have coordinates
     if (latitude === null || longitude === null) {
       console.log("⚠️ [LocationCard] Missing coordinates for search");
-      toast.error("Por favor, usa el autocompletado de Google Maps o Nominatim para obtener coordenadas precisas.");
+      toast.error(
+        "Por favor, usa el autocompletado de Google Maps o Nominatim para obtener coordenadas precisas.",
+      );
       return;
     }
 
@@ -278,7 +325,10 @@ export function LocationCard({
         longitude,
       };
 
-      console.log("📡 [LocationCard] Calling searchCadastralByCoordinates with params:", searchParams);
+      console.log(
+        "📡 [LocationCard] Calling searchCadastralByCoordinates with params:",
+        searchParams,
+      );
 
       const results = await searchCadastralByCoordinates(searchParams);
 
@@ -288,19 +338,31 @@ export function LocationCard({
       console.log("✅ [LocationCard] ========================================");
       console.log("✅ [LocationCard] SEARCH COMPLETED SUCCESSFULLY");
       console.log("✅ [LocationCard] ========================================");
-      console.log(`✅ [LocationCard] Found ${results.length} cadastral references`);
+      console.log(
+        `✅ [LocationCard] Found ${results.length} cadastral references`,
+      );
 
       if (results.length === 0) {
-        toast.info("No se encontraron referencias catastrales en estas coordenadas.", {
-          description: "El Catastro no encontró propiedades en un radio de 50 metros.",
-        });
+        toast.info(
+          "No se encontraron referencias catastrales en estas coordenadas.",
+          {
+            description:
+              "El Catastro no encontró propiedades en un radio de 50 metros.",
+          },
+        );
       }
     } catch (error) {
-      console.error("❌ [LocationCard] ========================================");
+      console.error(
+        "❌ [LocationCard] ========================================",
+      );
       console.error("❌ [LocationCard] SEARCH FAILED WITH ERROR");
-      console.error("❌ [LocationCard] ========================================");
+      console.error(
+        "❌ [LocationCard] ========================================",
+      );
       console.error("❌ [LocationCard] Search error:", error);
-      toast.error("Error al buscar referencias catastrales. Inténtalo de nuevo.");
+      toast.error(
+        "Error al buscar referencias catastrales. Inténtalo de nuevo.",
+      );
       setPotentialReferences([]);
     } finally {
       setIsSearching(false);
@@ -308,20 +370,26 @@ export function LocationCard({
   };
 
   // Handle cadastral reference selection from modal
-  const handleCadastralReferenceSelect = (selectedRef: CadastralSearchResult) => {
+  const handleCadastralReferenceSelect = (
+    selectedRef: CadastralSearchResult,
+  ) => {
     console.log("✅ [LocationCard] Selected cadastral reference:", selectedRef);
 
     // Update ONLY cadastral reference state
     setCadastralReferenceValue(selectedRef.cadastralReference);
 
     // Update ONLY cadastral reference field
-    const cadastralInput = document.getElementById("cadastralReference") as HTMLInputElement;
+    const cadastralInput = document.getElementById(
+      "cadastralReference",
+    ) as HTMLInputElement;
     if (cadastralInput) {
       cadastralInput.value = selectedRef.cadastralReference;
     }
 
     // Update ONLY addressDetails field (floor, door, etc.)
-    const addressDetailsInput = document.getElementById("addressDetails") as HTMLInputElement;
+    const addressDetailsInput = document.getElementById(
+      "addressDetails",
+    ) as HTMLInputElement;
     if (addressDetailsInput && selectedRef.addressDetails) {
       addressDetailsInput.value = selectedRef.addressDetails;
     }
@@ -340,20 +408,25 @@ export function LocationCard({
 
   // Apply suggestion for a specific field
   const applyFieldSuggestion = (fieldName: string, suggestedValue: string) => {
-    console.log(`✅ [LocationCard] Applying suggestion for ${fieldName}:`, suggestedValue);
+    console.log(
+      `✅ [LocationCard] Applying suggestion for ${fieldName}:`,
+      suggestedValue,
+    );
 
     switch (fieldName) {
-      case 'street':
+      case "street":
         setStreetValue(suggestedValue);
         break;
-      case 'postalCode':
-        const postalInput = document.getElementById("postalCode") as HTMLInputElement;
+      case "postalCode":
+        const postalInput = document.getElementById(
+          "postalCode",
+        ) as HTMLInputElement;
         if (postalInput) postalInput.value = suggestedValue;
         break;
-      case 'city':
+      case "city":
         setCity(suggestedValue);
         break;
-      case 'province':
+      case "province":
         setProvince(suggestedValue);
         break;
     }
@@ -361,13 +434,13 @@ export function LocationCard({
     // Remove the applied discrepancy from the list
     if (cadastralDiscrepancies) {
       const remainingDifferences = cadastralDiscrepancies.differences.filter(
-        diff => diff.field !== fieldName
+        (diff) => diff.field !== fieldName,
       );
 
       if (remainingDifferences.length === 0) {
         // All discrepancies resolved
         setCadastralDiscrepancies(null);
-        setCadastralValidationStatus('valid');
+        setCadastralValidationStatus("valid");
       } else {
         // Update with remaining discrepancies
         setCadastralDiscrepancies({
@@ -388,8 +461,11 @@ export function LocationCard({
     console.log("💾 [LocationCard] Save button clicked!");
     console.log("📋 [LocationCard] Current form values before save:", {
       street: streetValue,
-      addressDetails: (document.getElementById("addressDetails") as HTMLInputElement)?.value,
-      postalCode: (document.getElementById("postalCode") as HTMLInputElement)?.value,
+      addressDetails: (
+        document.getElementById("addressDetails") as HTMLInputElement
+      )?.value,
+      postalCode: (document.getElementById("postalCode") as HTMLInputElement)
+        ?.value,
       neighborhood: neighborhoodValue,
       city: city,
       province: province,
@@ -408,18 +484,24 @@ export function LocationCard({
     // Store coordinates for cadastral search
     setLatitude(data.lat);
     setLongitude(data.lng);
-    console.log("📍 [LocationCard] Coordinates stored:", { lat: data.lat, lng: data.lng });
+    console.log("📍 [LocationCard] Coordinates stored:", {
+      lat: data.lat,
+      lng: data.lng,
+    });
 
     // Parse the street with number from address components
-    const streetWithNumber = data.addressComponents.streetNumber && data.addressComponents.route
-      ? `${data.addressComponents.route} ${data.addressComponents.streetNumber}`
-      : data.addressComponents.route || streetValue;
+    const streetWithNumber =
+      data.addressComponents.streetNumber && data.addressComponents.route
+        ? `${data.addressComponents.route} ${data.addressComponents.streetNumber}`
+        : data.addressComponents.route || streetValue;
 
     // Update street value state
     setStreetValue(streetWithNumber);
 
     // Update form fields
-    const postalCodeInput = document.getElementById("postalCode") as HTMLInputElement;
+    const postalCodeInput = document.getElementById(
+      "postalCode",
+    ) as HTMLInputElement;
     if (postalCodeInput && data.addressComponents.postalCode) {
       postalCodeInput.value = data.addressComponents.postalCode;
     }
@@ -430,9 +512,15 @@ export function LocationCard({
     } else {
       // Fetch neighborhood from Nominatim using coordinates
       console.log("🔄 [LocationCard] Fetching neighborhood from Nominatim...");
-      const neighborhood = await getNeighborhoodFromCoordinates(data.lat, data.lng);
+      const neighborhood = await getNeighborhoodFromCoordinates(
+        data.lat,
+        data.lng,
+      );
       if (neighborhood) {
-        console.log("✅ [LocationCard] Neighborhood from Nominatim:", neighborhood);
+        console.log(
+          "✅ [LocationCard] Neighborhood from Nominatim:",
+          neighborhood,
+        );
         setNeighborhoodValue(neighborhood);
       } else {
         console.log("⚠️ [LocationCard] No neighborhood found from Nominatim");
@@ -446,8 +534,14 @@ export function LocationCard({
     if (data.addressComponents.administrativeAreaLevel1) {
       setProvince(data.addressComponents.administrativeAreaLevel1);
     }
-    if (data.addressComponents.administrativeAreaLevel2 || data.addressComponents.locality) {
-      setMunicipality(data.addressComponents.administrativeAreaLevel2 || data.addressComponents.locality);
+    if (
+      data.addressComponents.administrativeAreaLevel2 ||
+      data.addressComponents.locality
+    ) {
+      setMunicipality(
+        data.addressComponents.administrativeAreaLevel2 ||
+          data.addressComponents.locality,
+      );
     }
 
     // Mark the module as having changes
@@ -458,7 +552,9 @@ export function LocationCard({
 
   const autoCompleteAddress = async () => {
     // Get current street value from the input
-    const addressDetailsInput = document.getElementById("addressDetails") as HTMLInputElement;
+    const addressDetailsInput = document.getElementById(
+      "addressDetails",
+    ) as HTMLInputElement;
     const currentStreetValue = streetValue.trim();
 
     if (!currentStreetValue) {
@@ -478,9 +574,9 @@ export function LocationCard({
       let searchAddress = currentStreetValue;
 
       if (addressMatch?.[1] && addressMatch[2]) {
-        const streetName = addressMatch[1].trim();    // "Calle Gran Vía"
-        const streetNumber = addressMatch[2];         // "123"
-        const detailsPart = addressMatch[3]?.trim() ?? "";   // ", 4º B" or "4º B"
+        const streetName = addressMatch[1].trim(); // "Calle Gran Vía"
+        const streetNumber = addressMatch[2]; // "123"
+        const detailsPart = addressMatch[3]?.trim() ?? ""; // ", 4º B" or "4º B"
 
         streetWithNumber = `${streetName} ${streetNumber}`;
         searchAddress = streetWithNumber;
@@ -537,7 +633,10 @@ export function LocationCard({
         const parsedLon = parseFloat(result.lon);
         setLatitude(parsedLat);
         setLongitude(parsedLon);
-        console.log("📍 [LocationCard] Coordinates from Nominatim stored:", { lat: parsedLat, lng: parsedLon });
+        console.log("📍 [LocationCard] Coordinates from Nominatim stored:", {
+          lat: parsedLat,
+          lng: parsedLon,
+        });
       }
 
       // Update street value state
@@ -548,19 +647,23 @@ export function LocationCard({
         addressDetailsInput.value = parsedDetails;
       }
 
-      const postalCodeInput = document.getElementById("postalCode") as HTMLInputElement;
+      const postalCodeInput = document.getElementById(
+        "postalCode",
+      ) as HTMLInputElement;
       if (postalCodeInput && result.address?.postcode) {
         postalCodeInput.value = result.address.postcode;
       }
 
       // Update neighborhood value
-      const updatedNeighborhood = result.address?.suburb ?? result.address?.quarter ?? "";
+      const updatedNeighborhood =
+        result.address?.suburb ?? result.address?.quarter ?? "";
       setNeighborhoodValue(updatedNeighborhood);
 
       // Get the updated location values
       const updatedCity = result.address?.city ?? result.address?.town ?? city;
       const updatedProvince = result.address?.state ?? province;
-      const updatedMunicipality = result.address?.city ?? result.address?.town ?? municipality;
+      const updatedMunicipality =
+        result.address?.city ?? result.address?.town ?? municipality;
 
       // Update state variables for city, province, municipality
       setCity(updatedCity);
@@ -578,7 +681,6 @@ export function LocationCard({
       onUpdateModule(true);
 
       toast.success("Campos autocompletados. Guarda para aplicar los cambios.");
-
     } catch (error) {
       console.error("Error auto-completing address:", error);
       alert(
@@ -596,10 +698,7 @@ export function LocationCard({
         getCardStyles("location"),
       )}
     >
-      <ModernSaveIndicator
-        state={saveState}
-        onSave={handleSave}
-      />
+      <ModernSaveIndicator state={saveState} onSave={handleSave} />
       <div className="mb-3 flex items-center justify-between">
         <button
           type="button"
@@ -615,7 +714,7 @@ export function LocationCard({
                 e.stopPropagation();
                 setIsMapsPopupOpen(true);
               }}
-              className="flex h-6 w-6 items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground cursor-pointer"
+              className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
             >
               <Image
                 src="https://vesta-configuration-files.s3.amazonaws.com/logos/googlemapsicon.png"
@@ -655,29 +754,31 @@ export function LocationCard({
               placeholder="Buscar dirección..."
               disabled={!canEdit}
             />
-            {getFieldDiscrepancy('street') && (
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+            {getFieldDiscrepancy("street") && (
+              <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
               </div>
             )}
           </div>
           {/* Hidden input to maintain compatibility with parent form's DOM reading */}
-          <input
-            type="hidden"
-            id="street"
-            value={streetValue}
-            readOnly
-          />
+          <input type="hidden" id="street" value={streetValue} readOnly />
           {/* Field-level warning */}
-          {getFieldDiscrepancy('street') && (
-            <div className="flex items-center gap-2 rounded bg-amber-50/50 px-2 py-1 text-xs border border-amber-200/50">
+          {getFieldDiscrepancy("street") && (
+            <div className="flex items-center gap-2 rounded border border-amber-200/50 bg-amber-50/50 px-2 py-1 text-xs">
               <span className="flex-1 text-amber-900">
-                <span className="font-medium">{getFieldDiscrepancy('street')!.suggested}</span>
+                <span className="font-medium">
+                  {getFieldDiscrepancy("street")!.suggested}
+                </span>
               </span>
               <button
                 type="button"
-                className="text-[10px] px-1.5 py-0.5 rounded border border-amber-400/50 bg-white hover:bg-amber-50 text-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={() => applyFieldSuggestion('street', getFieldDiscrepancy('street')!.suggested)}
+                className="rounded border border-amber-400/50 bg-white px-1.5 py-0.5 text-[10px] text-amber-700 transition-colors hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() =>
+                  applyFieldSuggestion(
+                    "street",
+                    getFieldDiscrepancy("street")!.suggested,
+                  )
+                }
                 disabled={!canEdit}
               >
                 Aplicar
@@ -709,27 +810,35 @@ export function LocationCard({
                 defaultValue={listing.postalCode}
                 className={cn(
                   "h-8 text-gray-500",
-                  getFieldDiscrepancy('postalCode') && "border-amber-500 focus:border-amber-500 pr-8"
+                  getFieldDiscrepancy("postalCode") &&
+                    "border-amber-500 pr-8 focus:border-amber-500",
                 )}
                 onChange={() => onUpdateModule(true)}
                 disabled={!canEdit}
               />
-              {getFieldDiscrepancy('postalCode') && (
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+              {getFieldDiscrepancy("postalCode") && (
+                <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
                 </div>
               )}
             </div>
             {/* Field-level warning */}
-            {getFieldDiscrepancy('postalCode') && (
-              <div className="flex items-center gap-2 rounded bg-amber-50/50 px-2 py-1 text-xs border border-amber-200/50">
+            {getFieldDiscrepancy("postalCode") && (
+              <div className="flex items-center gap-2 rounded border border-amber-200/50 bg-amber-50/50 px-2 py-1 text-xs">
                 <span className="flex-1 text-amber-900">
-                  <span className="font-medium">{getFieldDiscrepancy('postalCode')!.suggested}</span>
+                  <span className="font-medium">
+                    {getFieldDiscrepancy("postalCode")!.suggested}
+                  </span>
                 </span>
                 <button
                   type="button"
-                  className="text-[10px] px-1.5 py-0.5 rounded border border-amber-400/50 bg-white hover:bg-amber-50 text-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={() => applyFieldSuggestion('postalCode', getFieldDiscrepancy('postalCode')!.suggested)}
+                  className="rounded border border-amber-400/50 bg-white px-1.5 py-0.5 text-[10px] text-amber-700 transition-colors hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={() =>
+                    applyFieldSuggestion(
+                      "postalCode",
+                      getFieldDiscrepancy("postalCode")!.suggested,
+                    )
+                  }
                   disabled={!canEdit}
                 >
                   Aplicar
@@ -749,14 +858,14 @@ export function LocationCard({
                   setNeighborhoodValue(e.target.value);
                   onUpdateModule(true);
                 }}
-                className="h-8 text-gray-500 pr-10"
+                className="h-8 pr-10 text-gray-500"
                 disabled={!canEdit}
               />
               <button
                 type="button"
                 onClick={autoCompleteAddress}
                 disabled={!canEdit || isUpdatingAddress}
-                className="absolute right-2 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isUpdatingAddress ? (
                   <Loader className="h-4 w-4 animate-spin" />
@@ -782,26 +891,34 @@ export function LocationCard({
                 }}
                 className={cn(
                   "h-8 text-gray-500",
-                  getFieldDiscrepancy('city') && "border-amber-500 focus:border-amber-500 pr-8"
+                  getFieldDiscrepancy("city") &&
+                    "border-amber-500 pr-8 focus:border-amber-500",
                 )}
                 disabled={!canEdit}
               />
-              {getFieldDiscrepancy('city') && (
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+              {getFieldDiscrepancy("city") && (
+                <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
                 </div>
               )}
             </div>
             {/* Field-level warning */}
-            {getFieldDiscrepancy('city') && (
-              <div className="flex items-center gap-2 rounded bg-amber-50/50 px-2 py-1 text-xs border border-amber-200/50">
+            {getFieldDiscrepancy("city") && (
+              <div className="flex items-center gap-2 rounded border border-amber-200/50 bg-amber-50/50 px-2 py-1 text-xs">
                 <span className="flex-1 text-amber-900">
-                  <span className="font-medium">{getFieldDiscrepancy('city')!.suggested}</span>
+                  <span className="font-medium">
+                    {getFieldDiscrepancy("city")!.suggested}
+                  </span>
                 </span>
                 <button
                   type="button"
-                  className="text-[10px] px-1.5 py-0.5 rounded border border-amber-400/50 bg-white hover:bg-amber-50 text-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={() => applyFieldSuggestion('city', getFieldDiscrepancy('city')!.suggested)}
+                  className="rounded border border-amber-400/50 bg-white px-1.5 py-0.5 text-[10px] text-amber-700 transition-colors hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={() =>
+                    applyFieldSuggestion(
+                      "city",
+                      getFieldDiscrepancy("city")!.suggested,
+                    )
+                  }
                   disabled={!canEdit}
                 >
                   Aplicar
@@ -839,26 +956,34 @@ export function LocationCard({
               }}
               className={cn(
                 "h-8 text-gray-500",
-                getFieldDiscrepancy('province') && "border-amber-500 focus:border-amber-500 pr-8"
+                getFieldDiscrepancy("province") &&
+                  "border-amber-500 pr-8 focus:border-amber-500",
               )}
               disabled={!canEdit}
             />
-            {getFieldDiscrepancy('province') && (
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+            {getFieldDiscrepancy("province") && (
+              <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
               </div>
             )}
           </div>
           {/* Field-level warning */}
-          {getFieldDiscrepancy('province') && (
-            <div className="flex items-center gap-2 rounded bg-amber-50/50 px-2 py-1 text-xs border border-amber-200/50">
+          {getFieldDiscrepancy("province") && (
+            <div className="flex items-center gap-2 rounded border border-amber-200/50 bg-amber-50/50 px-2 py-1 text-xs">
               <span className="flex-1 text-amber-900">
-                <span className="font-medium">{getFieldDiscrepancy('province')!.suggested}</span>
+                <span className="font-medium">
+                  {getFieldDiscrepancy("province")!.suggested}
+                </span>
               </span>
               <button
                 type="button"
-                className="text-[10px] px-1.5 py-0.5 rounded border border-amber-400/50 bg-white hover:bg-amber-50 text-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={() => applyFieldSuggestion('province', getFieldDiscrepancy('province')!.suggested)}
+                className="rounded border border-amber-400/50 bg-white px-1.5 py-0.5 text-[10px] text-amber-700 transition-colors hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() =>
+                  applyFieldSuggestion(
+                    "province",
+                    getFieldDiscrepancy("province")!.suggested,
+                  )
+                }
                 disabled={!canEdit}
               >
                 Aplicar
@@ -881,9 +1006,12 @@ export function LocationCard({
                 onUpdateModule(true);
               }}
               className={cn(
-                "h-8 text-gray-500 pr-20",
-                cadastralValidationStatus === 'invalid' && cadastralDiscrepancies && "border-amber-500 focus:border-amber-500",
-                cadastralValidationStatus === 'valid' && "border-green-500 focus:border-green-500"
+                "h-8 pr-20 text-gray-500",
+                cadastralValidationStatus === "invalid" &&
+                  cadastralDiscrepancies &&
+                  "border-amber-500 focus:border-amber-500",
+                cadastralValidationStatus === "valid" &&
+                  "border-green-500 focus:border-green-500",
               )}
               onBlur={(e) => {
                 const value = e.target.value.trim();
@@ -891,34 +1019,36 @@ export function LocationCard({
                   void validateCadastralReference(value);
                 } else {
                   setCadastralDiscrepancies(null);
-                  setCadastralValidationStatus('none');
+                  setCadastralValidationStatus("none");
                 }
               }}
               disabled={!canEdit}
             />
 
             {/* Loading spinner centered in input */}
-            {cadastralValidationStatus === 'validating' && (
-              <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded-md">
+            {cadastralValidationStatus === "validating" && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-md bg-background/50">
                 <Loader className="h-5 w-5 animate-spin text-blue-500" />
               </div>
             )}
 
             {/* Success indicator */}
-            {cadastralValidationStatus === 'valid' && (
+            {cadastralValidationStatus === "valid" && (
               <div className="absolute right-8 top-1/2 -translate-y-1/2">
                 <CheckCircle className="h-4 w-4 text-green-500" />
               </div>
             )}
 
             {/* Conditional button: Search (lupa) when empty and has coordinates, Catastro logo when filled */}
-            {!cadastralReferenceValue.trim() && latitude !== null && longitude !== null ? (
+            {!cadastralReferenceValue.trim() &&
+            latitude !== null &&
+            longitude !== null ? (
               /* Search button for cadastral references (when field is empty but has coordinates) */
               <button
                 type="button"
                 onClick={searchCadastralReferences}
                 disabled={!canEdit || isSearching}
-                className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded bg-background hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50"
                 title="Buscar referencias catastrales por coordenadas"
               >
                 {isSearching ? (
@@ -933,7 +1063,7 @@ export function LocationCard({
                 type="button"
                 onClick={handleCadastralLookup}
                 disabled={!canEdit || isCadastralLoading}
-                className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded bg-background hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded bg-background hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50"
                 title="Conectar con Catastro"
               >
                 <Image
@@ -941,28 +1071,16 @@ export function LocationCard({
                   alt="Catastro"
                   width={16}
                   height={16}
-                  className={`object-contain transition-opacity duration-200 ${isCadastralLoading ? 'opacity-50 animate-pulse' : 'opacity-100'}`}
+                  className={`object-contain transition-opacity duration-200 ${isCadastralLoading ? "animate-pulse opacity-50" : "opacity-100"}`}
                 />
               </button>
             ) : null}
           </div>
-
         </div>
 
         {/* Hidden input fields for coordinates */}
-        <input
-          type="hidden"
-          id="latitude"
-          value={latitude ?? ""}
-          readOnly
-        />
-        <input
-          type="hidden"
-          id="longitude"
-          value={longitude ?? ""}
-          readOnly
-        />
-
+        <input type="hidden" id="latitude" value={latitude ?? ""} readOnly />
+        <input type="hidden" id="longitude" value={longitude ?? ""} readOnly />
       </div>
 
       {/* Cadastral Selection Modal */}

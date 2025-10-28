@@ -1,4 +1,10 @@
-import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  useMemo,
+} from "react";
 import {
   Table,
   TableBody,
@@ -8,14 +14,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { Button } from "~/components/ui/button";
-import {
-  Euro,
-  Bed,
-  Bath,
-  Square,
-  ChevronDown,
-  MapPin,
-} from "lucide-react";
+import { Euro, Bed, Bath, Square, ChevronDown, MapPin } from "lucide-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
   DropdownMenu,
@@ -195,75 +194,78 @@ export function ProspectTable({
   };
 
   // Transform prospects and listings into unified format
-  const transformToOperations = useCallback((
-    prospects: ProspectWithContact[],
-    listings: ListingWithDetails[],
-  ): OperationItem[] => {
-    const prospectOperations: OperationItem[] = prospects.map((prospect) => {
-      const operationId = `prospect-${prospect.prospects.id}`;
-      const optimisticStatus = optimisticStatuses[operationId];
+  const transformToOperations = useCallback(
+    (
+      prospects: ProspectWithContact[],
+      listings: ListingWithDetails[],
+    ): OperationItem[] => {
+      const prospectOperations: OperationItem[] = prospects.map((prospect) => {
+        const operationId = `prospect-${prospect.prospects.id}`;
+        const optimisticStatus = optimisticStatuses[operationId];
 
-      return {
-        id: operationId,
-        type: "prospect" as const,
-        operationType: getOperationTypeDisplay(
-          prospect.prospects.listingType,
-          prospect.prospects.propertyType,
-        ),
-        contact: {
-          id: prospect.contacts.contactId,
-          name: `${prospect.contacts.firstName} ${prospect.contacts.lastName}`,
-          email: prospect.contacts.email ?? undefined,
-        },
-        status: optimisticStatus
-          ? getStatusDisplay(optimisticStatus)
-          : getStatusDisplay(prospect.prospects.status),
-        location:
-          parsePreferredAreas(prospect.prospects.preferredAreas).join(", ") ||
-          "Sin especificar",
-        summary: createProspectSummary(prospect),
-        createdAt: prospect.prospects.createdAt,
-        rawData: prospect,
-      };
-    });
+        return {
+          id: operationId,
+          type: "prospect" as const,
+          operationType: getOperationTypeDisplay(
+            prospect.prospects.listingType,
+            prospect.prospects.propertyType,
+          ),
+          contact: {
+            id: prospect.contacts.contactId,
+            name: `${prospect.contacts.firstName} ${prospect.contacts.lastName}`,
+            email: prospect.contacts.email ?? undefined,
+          },
+          status: optimisticStatus
+            ? getStatusDisplay(optimisticStatus)
+            : getStatusDisplay(prospect.prospects.status),
+          location:
+            parsePreferredAreas(prospect.prospects.preferredAreas).join(", ") ||
+            "Sin especificar",
+          summary: createProspectSummary(prospect),
+          createdAt: prospect.prospects.createdAt,
+          rawData: prospect,
+        };
+      });
 
-    const listingOperations: OperationItem[] = listings.map((listing) => {
-      const operationId = `listing-${listing.listings.id}`;
-      const optimisticStatus = optimisticStatuses[operationId];
+      const listingOperations: OperationItem[] = listings.map((listing) => {
+        const operationId = `listing-${listing.listings.id}`;
+        const optimisticStatus = optimisticStatuses[operationId];
 
-      return {
-        id: operationId,
-        type: "listing" as const,
-        operationType: getListingOperationType(
-          listing.listings.listingType,
-          listing.properties.propertyType,
-        ),
-        contact: listing.ownerContact
-          ? {
-              id: listing.ownerContact.contactId,
-              name: `${listing.ownerContact.firstName} ${listing.ownerContact.lastName}`,
-              email: listing.ownerContact.email ?? undefined,
-            }
-          : null,
-        status: optimisticStatus
-          ? getListingStatus(optimisticStatus)
-          : getListingStatus(
-              listing.listings.prospectStatus,
-              listing.listings.status,
-            ),
-        location: listing.locations.neighborhood || "Sin especificar",
-        summary: createListingSummary(listing),
-        createdAt: listing.listings.createdAt,
-        rawData: listing,
-      };
-    });
+        return {
+          id: operationId,
+          type: "listing" as const,
+          operationType: getListingOperationType(
+            listing.listings.listingType,
+            listing.properties.propertyType,
+          ),
+          contact: listing.ownerContact
+            ? {
+                id: listing.ownerContact.contactId,
+                name: `${listing.ownerContact.firstName} ${listing.ownerContact.lastName}`,
+                email: listing.ownerContact.email ?? undefined,
+              }
+            : null,
+          status: optimisticStatus
+            ? getListingStatus(optimisticStatus)
+            : getListingStatus(
+                listing.listings.prospectStatus,
+                listing.listings.status,
+              ),
+          location: listing.locations.neighborhood || "Sin especificar",
+          summary: createListingSummary(listing),
+          createdAt: listing.listings.createdAt,
+          rawData: listing,
+        };
+      });
 
-    // Combine and sort by creation date (newest first)
-    return [...prospectOperations, ...listingOperations].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-  }, [optimisticStatuses]);
+      // Combine and sort by creation date (newest first)
+      return [...prospectOperations, ...listingOperations].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+    },
+    [optimisticStatuses],
+  );
 
   // Helper functions for operation type display
   const getOperationTypeDisplay = (
@@ -514,7 +516,10 @@ export function ProspectTable({
   };
 
   // Get combined operations (memoized)
-  const allOperations = useMemo(() => transformToOperations(prospects, listings), [prospects, listings, transformToOperations]);
+  const allOperations = useMemo(
+    () => transformToOperations(prospects, listings),
+    [prospects, listings, transformToOperations],
+  );
 
   // Filter operations based on URL filters
   const searchParams = useSearchParams();
@@ -523,87 +528,102 @@ export function ProspectTable({
   const statusFilter = searchParams.get("status");
   const urgencyLevelFilter = searchParams.get("urgencyLevel");
 
-  const filteredOperations = useMemo(() => allOperations.filter((operation) => {
-    // Filter by prospectType (search/listing)
-    if (prospectTypeFilter && prospectTypeFilter !== "all") {
-      const filterValues = prospectTypeFilter.split(",");
-      const showProspects = filterValues.includes("search");
-      const showListings = filterValues.includes("listing");
+  const filteredOperations = useMemo(
+    () =>
+      allOperations.filter((operation) => {
+        // Filter by prospectType (search/listing)
+        if (prospectTypeFilter && prospectTypeFilter !== "all") {
+          const filterValues = prospectTypeFilter.split(",");
+          const showProspects = filterValues.includes("search");
+          const showListings = filterValues.includes("listing");
 
-      if (operation.type === "prospect" && !showProspects) return false;
-      if (operation.type === "listing" && !showListings) return false;
-    }
-
-    // Filter by listingType (Sale/Rent)
-    if (listingTypeFilter && listingTypeFilter !== "all") {
-      const filterValues = listingTypeFilter.split(",");
-
-      if (operation.type === "prospect") {
-        const prospect = operation.rawData as ProspectWithContact;
-        if (!filterValues.includes(prospect.prospects.listingType ?? ""))
-          return false;
-      } else {
-        const listing = operation.rawData as ListingWithDetails;
-        if (!filterValues.includes(listing.listings.listingType)) return false;
-      }
-    }
-
-    // Filter by status
-    if (statusFilter && statusFilter !== "all") {
-      const filterValues = statusFilter.split(",");
-
-      if (operation.type === "prospect") {
-        const prospect = operation.rawData as ProspectWithContact;
-        // Map the filter status values to database status values
-        const mappedStatuses = filterValues.map((status) => {
-          switch (status) {
-            case "En búsqueda":
-              return "new";
-            case "En preparación":
-              return "working";
-            case "Finalizado":
-              return "qualified";
-            case "Archivado":
-              return "archived";
-            default:
-              return status.toLowerCase();
-          }
-        });
-        if (!mappedStatuses.includes(prospect.prospects.status.toLowerCase()))
-          return false;
-      } else {
-        const listing = operation.rawData as ListingWithDetails;
-        // Check prospect status first, fall back to mapped regular status
-        if (listing.listings.prospectStatus) {
-          // If we have a prospect status, check against it directly
-          if (!filterValues.includes(listing.listings.prospectStatus)) return false;
-        } else {
-          // Fall back to mapping regular status to display status for comparison
-          const displayStatus = getListingStatus(
-            listing.listings.prospectStatus,
-            listing.listings.status,
-          );
-          if (!filterValues.includes(displayStatus)) return false;
+          if (operation.type === "prospect" && !showProspects) return false;
+          if (operation.type === "listing" && !showListings) return false;
         }
-      }
-    }
 
-    // Filter by urgency level (prospects only)
-    if (
-      urgencyLevelFilter &&
-      urgencyLevelFilter !== "all" &&
-      operation.type === "prospect"
-    ) {
-      const filterValues = urgencyLevelFilter
-        .split(",")
-        .map((v) => parseInt(v, 10));
-      const prospect = operation.rawData as ProspectWithContact;
-      if (prospect.prospects.urgencyLevel === null) return false;
-      if (!filterValues.includes(prospect.prospects.urgencyLevel)) return false;
-    }
+        // Filter by listingType (Sale/Rent)
+        if (listingTypeFilter && listingTypeFilter !== "all") {
+          const filterValues = listingTypeFilter.split(",");
 
-    return true;
-  }), [allOperations, prospectTypeFilter, listingTypeFilter, statusFilter, urgencyLevelFilter]);
+          if (operation.type === "prospect") {
+            const prospect = operation.rawData as ProspectWithContact;
+            if (!filterValues.includes(prospect.prospects.listingType ?? ""))
+              return false;
+          } else {
+            const listing = operation.rawData as ListingWithDetails;
+            if (!filterValues.includes(listing.listings.listingType))
+              return false;
+          }
+        }
+
+        // Filter by status
+        if (statusFilter && statusFilter !== "all") {
+          const filterValues = statusFilter.split(",");
+
+          if (operation.type === "prospect") {
+            const prospect = operation.rawData as ProspectWithContact;
+            // Map the filter status values to database status values
+            const mappedStatuses = filterValues.map((status) => {
+              switch (status) {
+                case "En búsqueda":
+                  return "new";
+                case "En preparación":
+                  return "working";
+                case "Finalizado":
+                  return "qualified";
+                case "Archivado":
+                  return "archived";
+                default:
+                  return status.toLowerCase();
+              }
+            });
+            if (
+              !mappedStatuses.includes(prospect.prospects.status.toLowerCase())
+            )
+              return false;
+          } else {
+            const listing = operation.rawData as ListingWithDetails;
+            // Check prospect status first, fall back to mapped regular status
+            if (listing.listings.prospectStatus) {
+              // If we have a prospect status, check against it directly
+              if (!filterValues.includes(listing.listings.prospectStatus))
+                return false;
+            } else {
+              // Fall back to mapping regular status to display status for comparison
+              const displayStatus = getListingStatus(
+                listing.listings.prospectStatus,
+                listing.listings.status,
+              );
+              if (!filterValues.includes(displayStatus)) return false;
+            }
+          }
+        }
+
+        // Filter by urgency level (prospects only)
+        if (
+          urgencyLevelFilter &&
+          urgencyLevelFilter !== "all" &&
+          operation.type === "prospect"
+        ) {
+          const filterValues = urgencyLevelFilter
+            .split(",")
+            .map((v) => parseInt(v, 10));
+          const prospect = operation.rawData as ProspectWithContact;
+          if (prospect.prospects.urgencyLevel === null) return false;
+          if (!filterValues.includes(prospect.prospects.urgencyLevel))
+            return false;
+        }
+
+        return true;
+      }),
+    [
+      allOperations,
+      prospectTypeFilter,
+      listingTypeFilter,
+      statusFilter,
+      urgencyLevelFilter,
+    ],
+  );
 
   const resizeStartRef = useRef<{ x: number; width: number } | null>(null);
   const formatDate = (date: Date) => {
@@ -727,20 +747,23 @@ export function ProspectTable({
   );
 
   // Intersection Observer for lazy loading
-  const observeRow = useCallback((element: HTMLElement | null, operationId: string) => {
-    if (!element || !observerRef.current) return;
+  const observeRow = useCallback(
+    (element: HTMLElement | null, operationId: string) => {
+      if (!element || !observerRef.current) return;
 
-    // Add dataset to track which operation this element represents
-    element.dataset.operationId = operationId;
-    observerRef.current.observe(element);
-  }, []);
+      // Add dataset to track which operation this element represents
+      element.dataset.operationId = operationId;
+      observerRef.current.observe(element);
+    },
+    [],
+  );
 
   // Initialize Intersection Observer
   useEffect(() => {
     observerRef.current = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          const operationId = entry.target.getAttribute('data-operation-id');
+          const operationId = entry.target.getAttribute("data-operation-id");
           if (!operationId) return;
 
           if (entry.isIntersecting) {
@@ -750,9 +773,9 @@ export function ProspectTable({
       },
       {
         root: null,
-        rootMargin: '100px', // Start loading content 100px before they come into view
+        rootMargin: "100px", // Start loading content 100px before they come into view
         threshold: 0.1,
-      }
+      },
     );
 
     // Clean up observer on unmount
@@ -765,7 +788,7 @@ export function ProspectTable({
 
   // Initialize visible rows for first few items (above fold)
   useEffect(() => {
-    const initialVisibleIds = allOperations.slice(0, 5).map(op => op.id);
+    const initialVisibleIds = allOperations.slice(0, 5).map((op) => op.id);
     setVisibleRows(new Set(initialVisibleIds));
   }, [allOperations]);
 
@@ -794,8 +817,8 @@ export function ProspectTable({
       requestAnimationFrame(prefetchNextPage);
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [currentPage, totalPages, onPrefetchPage]);
 
   // Prefetch adjacent pages on component mount
@@ -816,7 +839,7 @@ export function ProspectTable({
       }
 
       // Prefetch in background without blocking UI
-      pagesToPrefetch.forEach(page => {
+      pagesToPrefetch.forEach((page) => {
         setTimeout(() => {
           onPrefetchPage(page).catch(() => {
             // Silently handle prefetch errors
@@ -968,7 +991,9 @@ export function ProspectTable({
                                 disabled={updatingStatus === operation.id}
                                 onClick={(e) => e.stopPropagation()}
                               >
-                                <span className="truncate">{operation.status}</span>
+                                <span className="truncate">
+                                  {operation.status}
+                                </span>
                                 <ChevronDown className="ml-1 h-3 w-3 opacity-40 transition-opacity group-hover:opacity-70" />
                               </Button>
                             </DropdownMenuTrigger>
@@ -996,7 +1021,7 @@ export function ProspectTable({
                                 : // Listing status options (custom for listings)
                                   [
                                     "Completar datos",
-                                    "Visita o llaves pendiente", 
+                                    "Visita o llaves pendiente",
                                     "Valoración pendiente",
                                     "Firma encargo pendiente",
                                   ].map((status) => (
@@ -1025,7 +1050,7 @@ export function ProspectTable({
                         style={getColumnStyle("ubicacion")}
                       >
                         <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                          <MapPin className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                          <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-gray-400" />
                           <div className="min-w-0 flex-1">
                             {operation.type === "prospect" ? (
                               (() => {
@@ -1036,7 +1061,7 @@ export function ProspectTable({
 
                                 if (areas.length === 0) {
                                   return (
-                                    <span className="text-muted-foreground text-xs">
+                                    <span className="text-xs text-muted-foreground">
                                       Sin especificar
                                     </span>
                                   );
@@ -1044,7 +1069,10 @@ export function ProspectTable({
 
                                 if (areas.length === 1) {
                                   return (
-                                    <div className="truncate text-xs" title={areas[0]}>
+                                    <div
+                                      className="truncate text-xs"
+                                      title={areas[0]}
+                                    >
                                       {areas[0]}
                                     </div>
                                   );
@@ -1070,7 +1098,10 @@ export function ProspectTable({
                                 );
                               })()
                             ) : (
-                              <div className="truncate text-xs" title={operation.location}>
+                              <div
+                                className="truncate text-xs"
+                                title={operation.location}
+                              >
                                 {operation.location}
                               </div>
                             )}
@@ -1099,7 +1130,6 @@ export function ProspectTable({
                           {formatDate(operation.createdAt)}
                         </div>
                       </TableCell>
-
                     </TableRow>
                   );
                 })

@@ -13,19 +13,14 @@ interface RecordatoriosProps {
   }>;
 }
 
-export function Recordatorios({
-  isActive,
-  tasks = [],
-}: RecordatoriosProps) {
+export function Recordatorios({ isActive, tasks = [] }: RecordatoriosProps) {
   const [tasksList, setTasksList] = useState(tasks);
 
   const handleToggleTask = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setTasksList((prev) => {
       const updated = prev.map((task) =>
-        task.id === id
-          ? { ...task, completed: !task.completed }
-          : task,
+        task.id === id ? { ...task, completed: !task.completed } : task,
       );
 
       // Sort: incomplete first, then completed
@@ -74,9 +69,7 @@ export function Recordatorios({
               className={cn(
                 "truncate text-[12px] transition-all",
                 task.completed && "text-gray-400 line-through",
-                !task.completed && isActive
-                  ? "text-gray-800"
-                  : "text-gray-500",
+                !task.completed && isActive ? "text-gray-800" : "text-gray-500",
               )}
             >
               {task.title}

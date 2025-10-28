@@ -2,14 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { cn } from "~/lib/utils";
-import {
-  Mic,
-  Pause,
-  Play,
-  Square,
-  RotateCcw,
-  Send,
-} from "lucide-react";
+import { Mic, Pause, Play, Square, RotateCcw, Send } from "lucide-react";
 
 interface VoiceRecordingProps {
   className?: string;
@@ -22,7 +15,7 @@ export function VoiceRecording({ className }: VoiceRecordingProps) {
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioLevel, setAudioLevel] = useState(0);
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
-  
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -59,14 +52,14 @@ export function VoiceRecording({ className }: VoiceRecordingProps) {
 
       const visualize = () => {
         if (!analyserRef.current) return;
-        
+
         const bufferLength = analyserRef.current.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
         analyserRef.current.getByteFrequencyData(dataArray);
-        
+
         const average = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
         setAudioLevel(average / 255);
-        
+
         animationFrameRef.current = requestAnimationFrame(visualize);
       };
       visualize();
@@ -76,10 +69,12 @@ export function VoiceRecording({ className }: VoiceRecordingProps) {
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: "audio/wav",
+        });
         setAudioBlob(audioBlob);
-        stream.getTracks().forEach(track => track.stop());
-        
+        stream.getTracks().forEach((track) => track.stop());
+
         if (animationFrameRef.current) {
           cancelAnimationFrame(animationFrameRef.current);
         }
@@ -92,23 +87,30 @@ export function VoiceRecording({ className }: VoiceRecordingProps) {
       mediaRecorder.start();
       setIsRecording(true);
       setIsPaused(false);
-      
+
       timerRef.current = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
+        setRecordingTime((prev) => prev + 1);
       }, 1000);
 
       setCurrentSuggestionIndex(0);
       suggestionTimerRef.current = setInterval(() => {
-        setCurrentSuggestionIndex(prev => (prev + 1) % recordingSuggestions.length);
+        setCurrentSuggestionIndex(
+          (prev) => (prev + 1) % recordingSuggestions.length,
+        );
       }, 4000);
     } catch (error) {
-      console.error('Error accessing microphone:', error);
-      alert('No se pudo acceder al micrófono. Por favor, verifica los permisos.');
+      console.error("Error accessing microphone:", error);
+      alert(
+        "No se pudo acceder al micrófono. Por favor, verifica los permisos.",
+      );
     }
   };
 
   const pauseRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state === "recording"
+    ) {
       mediaRecorderRef.current.pause();
       setIsPaused(true);
       if (timerRef.current) {
@@ -121,14 +123,19 @@ export function VoiceRecording({ className }: VoiceRecordingProps) {
   };
 
   const resumeRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'paused') {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state === "paused"
+    ) {
       mediaRecorderRef.current.resume();
       setIsPaused(false);
       timerRef.current = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
+        setRecordingTime((prev) => prev + 1);
       }, 1000);
       suggestionTimerRef.current = setInterval(() => {
-        setCurrentSuggestionIndex(prev => (prev + 1) % recordingSuggestions.length);
+        setCurrentSuggestionIndex(
+          (prev) => (prev + 1) % recordingSuggestions.length,
+        );
       }, 4000);
     }
   };
@@ -167,15 +174,15 @@ export function VoiceRecording({ className }: VoiceRecordingProps) {
 
   const sendRecording = () => {
     if (audioBlob) {
-      console.log('Sending audio for processing...', audioBlob);
-      alert('Grabación enviada para procesamiento');
+      console.log("Sending audio for processing...", audioBlob);
+      alert("Grabación enviada para procesamiento");
     }
   };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
   useEffect(() => {
@@ -191,34 +198,43 @@ export function VoiceRecording({ className }: VoiceRecordingProps) {
 
   return (
     <div className={cn("w-full max-w-lg", className)}>
-      <div className="bg-white rounded-xl shadow-sm p-8">
+      <div className="rounded-xl bg-white p-8 shadow-sm">
         <div className="text-center">
           <div className="mb-6">
-            <div className={cn(
-              "mx-auto w-32 h-32 rounded-full flex items-center justify-center transition-all",
-              isRecording 
-                ? "bg-gradient-to-br from-red-100 to-red-200 animate-pulse" 
-                : audioBlob 
-                ? "bg-gradient-to-br from-green-100 to-green-200"
-                : "bg-gradient-to-br from-amber-100 to-rose-100"
-            )}>
-              <Mic className={cn(
-                "h-16 w-16 transition-colors",
-                isRecording ? "text-red-600" : audioBlob ? "text-green-600" : "text-amber-600"
-              )} />
+            <div
+              className={cn(
+                "mx-auto flex h-32 w-32 items-center justify-center rounded-full transition-all",
+                isRecording
+                  ? "animate-pulse bg-gradient-to-br from-red-100 to-red-200"
+                  : audioBlob
+                    ? "bg-gradient-to-br from-green-100 to-green-200"
+                    : "bg-gradient-to-br from-amber-100 to-rose-100",
+              )}
+            >
+              <Mic
+                className={cn(
+                  "h-16 w-16 transition-colors",
+                  isRecording
+                    ? "text-red-600"
+                    : audioBlob
+                      ? "text-green-600"
+                      : "text-amber-600",
+                )}
+              />
             </div>
           </div>
 
-          <div className="text-3xl font-mono font-bold text-gray-900 mb-2">
+          <div className="mb-2 font-mono text-3xl font-bold text-gray-900">
             {formatTime(recordingTime)}
           </div>
 
           {isRecording && (
-            <div className="mb-4 h-20 flex items-center justify-center gap-1">
+            <div className="mb-4 flex h-20 items-center justify-center gap-1">
               {Array.from({ length: 40 }, (_, i) => {
-                const barHeight = isRecording && !isPaused
-                  ? Math.random() * audioLevel * 100 + 10
-                  : 10;
+                const barHeight =
+                  isRecording && !isPaused
+                    ? Math.random() * audioLevel * 100 + 10
+                    : 10;
                 return (
                   <div
                     key={i}
@@ -226,7 +242,7 @@ export function VoiceRecording({ className }: VoiceRecordingProps) {
                       "w-1 bg-gradient-to-t transition-all duration-100",
                       isRecording && !isPaused
                         ? "from-rose-400 to-amber-400"
-                        : "from-gray-300 to-gray-400"
+                        : "from-gray-300 to-gray-400",
                     )}
                     style={{
                       height: `${barHeight}%`,
@@ -238,18 +254,24 @@ export function VoiceRecording({ className }: VoiceRecordingProps) {
             </div>
           )}
 
-          <p className="text-sm text-gray-600 mb-6">
-            {isRecording && !isPaused && "Grabando... Habla claramente sobre la propiedad"}
+          <p className="mb-6 text-sm text-gray-600">
+            {isRecording &&
+              !isPaused &&
+              "Grabando... Habla claramente sobre la propiedad"}
             {isPaused && "Grabación pausada"}
-            {!isRecording && audioBlob && "Grabación completa - Lista para procesar"}
-            {!isRecording && !audioBlob && "Presiona el botón para comenzar a grabar"}
+            {!isRecording &&
+              audioBlob &&
+              "Grabación completa - Lista para procesar"}
+            {!isRecording &&
+              !audioBlob &&
+              "Presiona el botón para comenzar a grabar"}
           </p>
 
           <div className="flex items-center justify-center gap-3">
             {!isRecording && !audioBlob && (
               <button
                 onClick={startRecording}
-                className="p-4 bg-gradient-to-r from-amber-400 to-rose-400 text-white rounded-full hover:from-amber-500 hover:to-rose-500 transition-all hover:scale-105 shadow-lg"
+                className="rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-4 text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500"
               >
                 <Mic className="h-6 w-6" />
               </button>
@@ -259,13 +281,13 @@ export function VoiceRecording({ className }: VoiceRecordingProps) {
               <>
                 <button
                   onClick={pauseRecording}
-                  className="p-4 bg-amber-100 text-amber-700 rounded-full hover:bg-amber-200 transition-all"
+                  className="rounded-full bg-amber-100 p-4 text-amber-700 transition-all hover:bg-amber-200"
                 >
                   <Pause className="h-6 w-6" />
                 </button>
                 <button
                   onClick={stopRecording}
-                  className="p-4 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-all"
+                  className="rounded-full bg-red-100 p-4 text-red-700 transition-all hover:bg-red-200"
                 >
                   <Square className="h-6 w-6" />
                 </button>
@@ -276,13 +298,13 @@ export function VoiceRecording({ className }: VoiceRecordingProps) {
               <>
                 <button
                   onClick={resumeRecording}
-                  className="p-4 bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-all"
+                  className="rounded-full bg-green-100 p-4 text-green-700 transition-all hover:bg-green-200"
                 >
                   <Play className="h-6 w-6" />
                 </button>
                 <button
                   onClick={stopRecording}
-                  className="p-4 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-all"
+                  className="rounded-full bg-red-100 p-4 text-red-700 transition-all hover:bg-red-200"
                 >
                   <Square className="h-6 w-6" />
                 </button>
@@ -293,13 +315,13 @@ export function VoiceRecording({ className }: VoiceRecordingProps) {
               <>
                 <button
                   onClick={resetRecording}
-                  className="p-4 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-all"
+                  className="rounded-full bg-gray-100 p-4 text-gray-700 transition-all hover:bg-gray-200"
                 >
                   <RotateCcw className="h-6 w-6" />
                 </button>
                 <button
                   onClick={sendRecording}
-                  className="p-4 bg-gradient-to-r from-amber-400 to-rose-400 text-white rounded-full hover:from-amber-500 hover:to-rose-500 transition-all hover:scale-105 shadow-lg"
+                  className="rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-4 text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500"
                 >
                   <Send className="h-6 w-6" />
                 </button>
@@ -308,20 +330,21 @@ export function VoiceRecording({ className }: VoiceRecordingProps) {
           </div>
 
           {isRecording && !isPaused && (
-            <div className="mt-8 p-4 bg-gradient-to-r from-amber-50 to-rose-50 rounded-lg border border-amber-200">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-                <p className="text-xs font-semibold text-amber-800">Sugerencia:</p>
+            <div className="mt-8 rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50 to-rose-50 p-4">
+              <div className="mb-2 flex items-center gap-2">
+                <div className="h-2 w-2 animate-pulse rounded-full bg-amber-500"></div>
+                <p className="text-xs font-semibold text-amber-800">
+                  Sugerencia:
+                </p>
               </div>
-              <p 
+              <p
                 key={currentSuggestionIndex}
-                className="text-sm text-amber-700 animate-in fade-in slide-in-from-bottom-2 duration-300"
+                className="animate-in fade-in slide-in-from-bottom-2 text-sm text-amber-700 duration-300"
               >
                 {recordingSuggestions[currentSuggestionIndex]}
               </p>
             </div>
           )}
-
         </div>
       </div>
     </div>

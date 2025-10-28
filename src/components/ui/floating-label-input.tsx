@@ -48,7 +48,7 @@ export function FloatingLabelInput({
             animate={{ opacity: 1, y: -12 }}
             exit={{ opacity: 0, y: 0 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute left-0 -top-2 z-10 px-2 text-xs font-medium text-gray-600"
+            className="absolute -top-2 left-0 z-10 px-2 text-xs font-medium text-gray-600"
           >
             {placeholder}
             {required && <span className="ml-1 text-red-500">*</span>}

@@ -1,4 +1,3 @@
-
 import { Card } from "~/components/ui/card";
 import { Textarea } from "~/components/ui/textarea";
 import { cn } from "~/lib/utils";
@@ -55,4 +54,3 @@ export function ContactNotesCard({
     </Card>
   );
 }
-

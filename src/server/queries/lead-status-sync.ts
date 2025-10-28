@@ -84,7 +84,10 @@ export async function findOrCreateLeadForAppointment(
     );
 
     if (existingLead) {
-      return { listingContactId: existingLead.listingContactId, created: false };
+      return {
+        listingContactId: existingLead.listingContactId,
+        created: false,
+      };
     }
 
     // PATTERN: Use auth wrapper for database operations (see lead.ts)
@@ -99,7 +102,9 @@ export async function findOrCreateLeadForAppointment(
     });
 
     if (!newLead?.listing_contacts?.listingContactId) {
-      throw new Error("Failed to create new lead - no listingContactId returned");
+      throw new Error(
+        "Failed to create new lead - no listingContactId returned",
+      );
     }
 
     console.log("🆕 Created new lead for appointment:", {
@@ -109,7 +114,10 @@ export async function findOrCreateLeadForAppointment(
       status: DEFAULT_APPOINTMENT_LEAD_STATUS,
     });
 
-    return { listingContactId: newLead.listing_contacts.listingContactId, created: true };
+    return {
+      listingContactId: newLead.listing_contacts.listingContactId,
+      created: true,
+    };
   } catch (error) {
     console.error("Error finding or creating lead for appointment:", error);
     throw error;

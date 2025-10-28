@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface MiniEnergyCertificateProps {
   energyRating: string;
@@ -19,18 +19,20 @@ export const MiniEnergyCertificate: React.FC<MiniEnergyCertificateProps> = ({
       F: "#f97316", // orange-500
       G: "#ef4444", // red-500
     };
-    return baseColors[rating.toUpperCase() as keyof typeof baseColors] || "#6b7280";
+    return (
+      baseColors[rating.toUpperCase() as keyof typeof baseColors] || "#6b7280"
+    );
   };
 
   const getArrowWidth = (rating: string): string => {
     const widths = {
       A: "40px", // Double the width for wider display
-      B: "44px", 
-      C: "48px", 
-      D: "52px", 
-      E: "56px", 
-      F: "60px", 
-      G: "64px", 
+      B: "44px",
+      C: "48px",
+      D: "52px",
+      E: "56px",
+      F: "60px",
+      G: "64px",
     };
     return widths[rating.toUpperCase() as keyof typeof widths] || "48px";
   };
@@ -42,28 +44,31 @@ export const MiniEnergyCertificate: React.FC<MiniEnergyCertificateProps> = ({
       {/* All Energy Rating Arrows */}
       {ratings.map((rating) => {
         const isSelected = rating === energyRating.toUpperCase();
-        const backgroundColor = isSelected ? getEnergyRatingColor(rating) : "#e5e7eb"; // gray-200 for unselected
+        const backgroundColor = isSelected
+          ? getEnergyRatingColor(rating)
+          : "#e5e7eb"; // gray-200 for unselected
         const arrowWidth = getArrowWidth(rating);
 
         return (
           <div key={rating} className="flex items-center">
             {/* Letter - Outside to the left, bigger */}
             <div
-              className="flex items-center justify-center font-bold text-sm w-4 h-4 mr-1"
+              className="mr-1 flex h-4 w-4 items-center justify-center text-sm font-bold"
               style={{
                 color: isSelected ? getEnergyRatingColor(rating) : "#9ca3af", // Colored when selected, gray when not
               }}
             >
               {isSelected ? rating : ""}
             </div>
-            
+
             {/* Arrow - Fixed width, left aligned */}
             <div
               className="h-2 rounded-sm"
               style={{
                 backgroundColor,
                 width: arrowWidth,
-                clipPath: "polygon(0 0, calc(100% - 4px) 0, 100% 50%, calc(100% - 4px) 100%, 0 100%)",
+                clipPath:
+                  "polygon(0 0, calc(100% - 4px) 0, 100% 50%, calc(100% - 4px) 100%, 0 100%)",
               }}
             />
           </div>

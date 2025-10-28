@@ -4,11 +4,11 @@ import { db } from "../db";
 import { cartelConfigurations } from "../db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { getCurrentUserAccountId } from "~/lib/dal";
-import type { 
-  SavedCartelConfiguration, 
+import type {
+  SavedCartelConfiguration,
   SaveConfigurationRequest,
   TemplateConfiguration,
-  ExtendedTemplatePropertyData 
+  ExtendedTemplatePropertyData,
 } from "~/types/template-data";
 
 // Database row type from Drizzle
@@ -29,7 +29,9 @@ interface CartelConfigurationRow {
 }
 
 // Convert database row to SavedCartelConfiguration
-function dbRowToConfiguration(row: CartelConfigurationRow): SavedCartelConfiguration {
+function dbRowToConfiguration(
+  row: CartelConfigurationRow,
+): SavedCartelConfiguration {
   return {
     id: row.id.toString(),
     name: row.name,
@@ -37,8 +39,12 @@ function dbRowToConfiguration(row: CartelConfigurationRow): SavedCartelConfigura
     accountId: row.accountId.toString(),
     propertyId: row.propertyId?.toString(),
     templateConfig: row.templateConfig as TemplateConfiguration,
-    propertyOverrides: row.propertyOverrides as Partial<ExtendedTemplatePropertyData>,
-    selectedContacts: row.selectedContacts as { phone?: string; email?: string },
+    propertyOverrides:
+      row.propertyOverrides as Partial<ExtendedTemplatePropertyData>,
+    selectedContacts: row.selectedContacts as {
+      phone?: string;
+      email?: string;
+    },
     selectedImageIndices: row.selectedImageIndices as number[],
     isDefault: row.isDefault ?? false,
     isGlobal: row.isGlobal ?? true,
@@ -50,21 +56,33 @@ function dbRowToConfiguration(row: CartelConfigurationRow): SavedCartelConfigura
 // Wrapper functions that automatically get accountId from current session
 export async function saveCartelConfigurationWithAuth(
   request: SaveConfigurationRequest,
-): Promise<{ success: boolean; data?: SavedCartelConfiguration; error?: string }> {
+): Promise<{
+  success: boolean;
+  data?: SavedCartelConfiguration;
+  error?: string;
+}> {
   const accountId = await getCurrentUserAccountId();
   return saveCartelConfiguration(accountId, request);
 }
 
 export async function getCartelConfigurationsWithAuth(
   propertyId?: string,
-): Promise<{ success: boolean; data?: SavedCartelConfiguration[]; error?: string }> {
+): Promise<{
+  success: boolean;
+  data?: SavedCartelConfiguration[];
+  error?: string;
+}> {
   const accountId = await getCurrentUserAccountId();
   return getCartelConfigurations(accountId, propertyId);
 }
 
 export async function getCartelConfigurationWithAuth(
   configId: string,
-): Promise<{ success: boolean; data?: SavedCartelConfiguration; error?: string }> {
+): Promise<{
+  success: boolean;
+  data?: SavedCartelConfiguration;
+  error?: string;
+}> {
   const accountId = await getCurrentUserAccountId();
   return getCartelConfiguration(configId, accountId);
 }
@@ -72,7 +90,11 @@ export async function getCartelConfigurationWithAuth(
 export async function updateCartelConfigurationWithAuth(
   configId: string,
   updates: Partial<SaveConfigurationRequest>,
-): Promise<{ success: boolean; data?: SavedCartelConfiguration; error?: string }> {
+): Promise<{
+  success: boolean;
+  data?: SavedCartelConfiguration;
+  error?: string;
+}> {
   const accountId = await getCurrentUserAccountId();
   return updateCartelConfiguration(configId, accountId, updates);
 }
@@ -84,8 +106,11 @@ export async function deleteCartelConfigurationWithAuth(
   return deleteCartelConfiguration(configId, accountId);
 }
 
-export async function getDefaultCartelConfigurationWithAuth(
-): Promise<{ success: boolean; data?: SavedCartelConfiguration; error?: string }> {
+export async function getDefaultCartelConfigurationWithAuth(): Promise<{
+  success: boolean;
+  data?: SavedCartelConfiguration;
+  error?: string;
+}> {
   const accountId = await getCurrentUserAccountId();
   return getDefaultCartelConfiguration(accountId);
 }
@@ -101,43 +126,49 @@ export async function setDefaultCartelConfigurationWithAuth(
 async function saveCartelConfiguration(
   accountId: number | bigint,
   request: SaveConfigurationRequest,
-): Promise<{ success: boolean; data?: SavedCartelConfiguration; error?: string }> {
+): Promise<{
+  success: boolean;
+  data?: SavedCartelConfiguration;
+  error?: string;
+}> {
   try {
     // If setting as default, unset any existing default for this account
     if (request.isDefault) {
       await db
         .update(cartelConfigurations)
         .set({ isDefault: false })
-        .where(and(
-          eq(cartelConfigurations.accountId, BigInt(accountId)),
-          eq(cartelConfigurations.isDefault, true)
-        ));
+        .where(
+          and(
+            eq(cartelConfigurations.accountId, BigInt(accountId)),
+            eq(cartelConfigurations.isDefault, true),
+          ),
+        );
     }
 
     // Insert new configuration without userId
-    await db
-      .insert(cartelConfigurations)
-      .values({
-        userId: null,
-        accountId: BigInt(accountId),
-        propertyId: request.propertyId ? BigInt(request.propertyId) : null,
-        name: request.name,
-        templateConfig: request.templateConfig,
-        propertyOverrides: request.propertyOverrides ?? {},
-        selectedContacts: request.selectedContacts ?? {},
-        selectedImageIndices: request.selectedImageIndices,
-        isDefault: request.isDefault ?? false,
-        isGlobal: request.isGlobal ?? true,
-      });
+    await db.insert(cartelConfigurations).values({
+      userId: null,
+      accountId: BigInt(accountId),
+      propertyId: request.propertyId ? BigInt(request.propertyId) : null,
+      name: request.name,
+      templateConfig: request.templateConfig,
+      propertyOverrides: request.propertyOverrides ?? {},
+      selectedContacts: request.selectedContacts ?? {},
+      selectedImageIndices: request.selectedImageIndices,
+      isDefault: request.isDefault ?? false,
+      isGlobal: request.isGlobal ?? true,
+    });
 
     // Fetch the created configuration by name and accountId (most recent)
     const [savedConfig] = await db
       .select()
       .from(cartelConfigurations)
-      .where(and(
-        eq(cartelConfigurations.accountId, BigInt(accountId)),
-        eq(cartelConfigurations.name, request.name)
-      ))
+      .where(
+        and(
+          eq(cartelConfigurations.accountId, BigInt(accountId)),
+          eq(cartelConfigurations.name, request.name),
+        ),
+      )
       .orderBy(desc(cartelConfigurations.createdAt))
       .limit(1);
 
@@ -159,7 +190,11 @@ async function saveCartelConfiguration(
 async function getCartelConfigurations(
   accountId: number | bigint,
   propertyId?: string,
-): Promise<{ success: boolean; data?: SavedCartelConfiguration[]; error?: string }> {
+): Promise<{
+  success: boolean;
+  data?: SavedCartelConfiguration[];
+  error?: string;
+}> {
   try {
     // Get configurations - include global configs and property-specific if propertyId provided
     if (propertyId) {
@@ -167,23 +202,33 @@ async function getCartelConfigurations(
       const configs = await db
         .select()
         .from(cartelConfigurations)
-        .where(and(
-          eq(cartelConfigurations.accountId, BigInt(accountId)),
-          eq(cartelConfigurations.isGlobal, true)
-        ))
-        .orderBy(desc(cartelConfigurations.isDefault), desc(cartelConfigurations.updatedAt));
+        .where(
+          and(
+            eq(cartelConfigurations.accountId, BigInt(accountId)),
+            eq(cartelConfigurations.isGlobal, true),
+          ),
+        )
+        .orderBy(
+          desc(cartelConfigurations.isDefault),
+          desc(cartelConfigurations.updatedAt),
+        );
 
       const propertyConfigs = await db
         .select()
         .from(cartelConfigurations)
-        .where(and(
-          eq(cartelConfigurations.accountId, BigInt(accountId)),
-          eq(cartelConfigurations.propertyId, BigInt(propertyId))
-        ))
-        .orderBy(desc(cartelConfigurations.isDefault), desc(cartelConfigurations.updatedAt));
+        .where(
+          and(
+            eq(cartelConfigurations.accountId, BigInt(accountId)),
+            eq(cartelConfigurations.propertyId, BigInt(propertyId)),
+          ),
+        )
+        .orderBy(
+          desc(cartelConfigurations.isDefault),
+          desc(cartelConfigurations.updatedAt),
+        );
 
       const allConfigs = [...configs, ...propertyConfigs];
-      
+
       return {
         success: true,
         data: allConfigs.map(dbRowToConfiguration),
@@ -193,11 +238,16 @@ async function getCartelConfigurations(
       const configs = await db
         .select()
         .from(cartelConfigurations)
-        .where(and(
-          eq(cartelConfigurations.accountId, BigInt(accountId)),
-          eq(cartelConfigurations.isGlobal, true)
-        ))
-        .orderBy(desc(cartelConfigurations.isDefault), desc(cartelConfigurations.updatedAt));
+        .where(
+          and(
+            eq(cartelConfigurations.accountId, BigInt(accountId)),
+            eq(cartelConfigurations.isGlobal, true),
+          ),
+        )
+        .orderBy(
+          desc(cartelConfigurations.isDefault),
+          desc(cartelConfigurations.updatedAt),
+        );
 
       return {
         success: true,
@@ -214,15 +264,21 @@ async function getCartelConfigurations(
 async function getCartelConfiguration(
   configId: string,
   accountId: number | bigint,
-): Promise<{ success: boolean; data?: SavedCartelConfiguration; error?: string }> {
+): Promise<{
+  success: boolean;
+  data?: SavedCartelConfiguration;
+  error?: string;
+}> {
   try {
     const [config] = await db
       .select()
       .from(cartelConfigurations)
-      .where(and(
-        eq(cartelConfigurations.id, BigInt(configId)),
-        eq(cartelConfigurations.accountId, BigInt(accountId))
-      ));
+      .where(
+        and(
+          eq(cartelConfigurations.id, BigInt(configId)),
+          eq(cartelConfigurations.accountId, BigInt(accountId)),
+        ),
+      );
 
     if (!config) {
       return { success: false, error: "Configuration not found" };
@@ -243,16 +299,22 @@ async function updateCartelConfiguration(
   configId: string,
   accountId: number | bigint,
   updates: Partial<SaveConfigurationRequest>,
-): Promise<{ success: boolean; data?: SavedCartelConfiguration; error?: string }> {
+): Promise<{
+  success: boolean;
+  data?: SavedCartelConfiguration;
+  error?: string;
+}> {
   try {
     // Validate configuration exists and belongs to account
     const [existingConfig] = await db
       .select()
       .from(cartelConfigurations)
-      .where(and(
-        eq(cartelConfigurations.id, BigInt(configId)),
-        eq(cartelConfigurations.accountId, BigInt(accountId))
-      ));
+      .where(
+        and(
+          eq(cartelConfigurations.id, BigInt(configId)),
+          eq(cartelConfigurations.accountId, BigInt(accountId)),
+        ),
+      );
 
     if (!existingConfig) {
       return { success: false, error: "Configuration not found" };
@@ -263,10 +325,12 @@ async function updateCartelConfiguration(
       await db
         .update(cartelConfigurations)
         .set({ isDefault: false })
-        .where(and(
-          eq(cartelConfigurations.accountId, BigInt(accountId)),
-          eq(cartelConfigurations.isDefault, true)
-        ));
+        .where(
+          and(
+            eq(cartelConfigurations.accountId, BigInt(accountId)),
+            eq(cartelConfigurations.isDefault, true),
+          ),
+        );
     }
 
     // Update the configuration
@@ -280,16 +344,23 @@ async function updateCartelConfiguration(
       isGlobal: boolean;
       propertyId: bigint | null;
     }> = {};
-    
+
     if (updates.name) updateData.name = updates.name;
-    if (updates.templateConfig) updateData.templateConfig = updates.templateConfig;
-    if (updates.propertyOverrides) updateData.propertyOverrides = updates.propertyOverrides;
-    if (updates.selectedContacts) updateData.selectedContacts = updates.selectedContacts;
-    if (updates.selectedImageIndices) updateData.selectedImageIndices = updates.selectedImageIndices;
-    if (updates.isDefault !== undefined) updateData.isDefault = updates.isDefault;
+    if (updates.templateConfig)
+      updateData.templateConfig = updates.templateConfig;
+    if (updates.propertyOverrides)
+      updateData.propertyOverrides = updates.propertyOverrides;
+    if (updates.selectedContacts)
+      updateData.selectedContacts = updates.selectedContacts;
+    if (updates.selectedImageIndices)
+      updateData.selectedImageIndices = updates.selectedImageIndices;
+    if (updates.isDefault !== undefined)
+      updateData.isDefault = updates.isDefault;
     if (updates.isGlobal !== undefined) updateData.isGlobal = updates.isGlobal;
     if (updates.propertyId !== undefined) {
-      updateData.propertyId = updates.propertyId ? BigInt(updates.propertyId) : null;
+      updateData.propertyId = updates.propertyId
+        ? BigInt(updates.propertyId)
+        : null;
     }
 
     await db
@@ -327,10 +398,12 @@ async function deleteCartelConfiguration(
     const [existingConfig] = await db
       .select()
       .from(cartelConfigurations)
-      .where(and(
-        eq(cartelConfigurations.id, BigInt(configId)),
-        eq(cartelConfigurations.accountId, BigInt(accountId))
-      ));
+      .where(
+        and(
+          eq(cartelConfigurations.id, BigInt(configId)),
+          eq(cartelConfigurations.accountId, BigInt(accountId)),
+        ),
+      );
 
     if (!existingConfig) {
       return { success: false, error: "Configuration not found" };
@@ -338,10 +411,12 @@ async function deleteCartelConfiguration(
 
     await db
       .delete(cartelConfigurations)
-      .where(and(
-        eq(cartelConfigurations.id, BigInt(configId)),
-        eq(cartelConfigurations.accountId, BigInt(accountId))
-      ));
+      .where(
+        and(
+          eq(cartelConfigurations.id, BigInt(configId)),
+          eq(cartelConfigurations.accountId, BigInt(accountId)),
+        ),
+      );
 
     return { success: true };
   } catch (error) {
@@ -353,15 +428,21 @@ async function deleteCartelConfiguration(
 // Get default configuration for account
 async function getDefaultCartelConfiguration(
   accountId: number | bigint,
-): Promise<{ success: boolean; data?: SavedCartelConfiguration; error?: string }> {
+): Promise<{
+  success: boolean;
+  data?: SavedCartelConfiguration;
+  error?: string;
+}> {
   try {
     const [defaultConfig] = await db
       .select()
       .from(cartelConfigurations)
-      .where(and(
-        eq(cartelConfigurations.accountId, BigInt(accountId)),
-        eq(cartelConfigurations.isDefault, true)
-      ));
+      .where(
+        and(
+          eq(cartelConfigurations.accountId, BigInt(accountId)),
+          eq(cartelConfigurations.isDefault, true),
+        ),
+      );
 
     if (!defaultConfig) {
       return { success: false, error: "No default configuration found" };
@@ -387,19 +468,23 @@ async function setDefaultCartelConfiguration(
     await db
       .update(cartelConfigurations)
       .set({ isDefault: false })
-      .where(and(
-        eq(cartelConfigurations.accountId, BigInt(accountId)),
-        eq(cartelConfigurations.isDefault, true)
-      ));
+      .where(
+        and(
+          eq(cartelConfigurations.accountId, BigInt(accountId)),
+          eq(cartelConfigurations.isDefault, true),
+        ),
+      );
 
     // Check if configuration exists first
     const [existingConfig] = await db
       .select()
       .from(cartelConfigurations)
-      .where(and(
-        eq(cartelConfigurations.id, BigInt(configId)),
-        eq(cartelConfigurations.accountId, BigInt(accountId))
-      ));
+      .where(
+        and(
+          eq(cartelConfigurations.id, BigInt(configId)),
+          eq(cartelConfigurations.accountId, BigInt(accountId)),
+        ),
+      );
 
     if (!existingConfig) {
       return { success: false, error: "Configuration not found" };
@@ -409,10 +494,12 @@ async function setDefaultCartelConfiguration(
     await db
       .update(cartelConfigurations)
       .set({ isDefault: true })
-      .where(and(
-        eq(cartelConfigurations.id, BigInt(configId)),
-        eq(cartelConfigurations.accountId, BigInt(accountId))
-      ));
+      .where(
+        and(
+          eq(cartelConfigurations.id, BigInt(configId)),
+          eq(cartelConfigurations.accountId, BigInt(accountId)),
+        ),
+      );
 
     return { success: true };
   } catch (error) {

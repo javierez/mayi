@@ -11,23 +11,17 @@ export async function POST(
   try {
     // Use optimized DAL function for session retrieval
     const session = await getSecureSession();
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-
     const { id } = await params;
 
-    const result = await setDefaultCartelConfigurationWithAuth(
-      id
-    );
+    const result = await setDefaultCartelConfigurationWithAuth(id);
 
     if (!result.success) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: result.error }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -38,7 +32,7 @@ export async function POST(
     console.error("Error setting default cartel configuration:", error);
     return NextResponse.json(
       { error: "Failed to set default configuration" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

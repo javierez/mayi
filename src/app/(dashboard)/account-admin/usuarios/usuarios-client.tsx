@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Users, ChevronRight, UserCircle, Mail } from "lucide-react";
 import { ROLE_NAMES, ROLE_COLORS } from "~/types/account-roles";
@@ -39,20 +45,20 @@ const AVAILABLE_ROLES = [2, 4, 5];
 
 export default function UsuariosClient({ initialUsers }: Props) {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(
-    initialUsers.length > 0 ? initialUsers[0]!.id : null
+    initialUsers.length > 0 ? initialUsers[0]!.id : null,
   );
   const [users, setUsers] = useState<UserWithRole[]>(initialUsers);
   const [hasChanges, setHasChanges] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selectedRole, setSelectedRole] = useState<number | null>(
-    initialUsers.length > 0 ? initialUsers[0]!.roleId : null
+    initialUsers.length > 0 ? initialUsers[0]!.roleId : null,
   );
 
-  const selectedUser = users.find(u => u.id === selectedUserId);
+  const selectedUser = users.find((u) => u.id === selectedUserId);
 
   const handleUserSelect = (userId: string) => {
     setSelectedUserId(userId);
-    const user = users.find(u => u.id === userId);
+    const user = users.find((u) => u.id === userId);
     setSelectedRole(user?.roleId ?? null);
     setHasChanges(false);
   };
@@ -71,12 +77,12 @@ export default function UsuariosClient({ initialUsers }: Props) {
 
       if (result.success) {
         // Update local state
-        setUsers(prevUsers =>
-          prevUsers.map(user =>
+        setUsers((prevUsers) =>
+          prevUsers.map((user) =>
             user.id === selectedUserId
               ? { ...user, roleId: selectedRole }
-              : user
-          )
+              : user,
+          ),
         );
 
         setHasChanges(false);
@@ -103,9 +109,7 @@ export default function UsuariosClient({ initialUsers }: Props) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Usuarios
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900">Usuarios</h1>
           <p className="mt-1 text-sm text-gray-500">
             Gestiona los roles de los usuarios en tu organización
           </p>
@@ -131,7 +135,8 @@ export default function UsuariosClient({ initialUsers }: Props) {
               <Users className="mx-auto h-12 w-12 text-gray-400" />
               <p className="mt-4">No hay usuarios disponibles para gestionar</p>
               <p className="mt-2 text-sm">
-                Los usuarios con roles de Comercial y Administrador de Cuenta no se muestran aquí
+                Los usuarios con roles de Comercial y Administrador de Cuenta no
+                se muestran aquí
               </p>
             </div>
           </CardContent>
@@ -176,14 +181,18 @@ export default function UsuariosClient({ initialUsers }: Props) {
                             </div>
                           )}
                           <div>
-                            <p className="font-medium text-gray-900">{user.name}</p>
-                            <p className="text-xs text-gray-500 flex items-center gap-1">
+                            <p className="font-medium text-gray-900">
+                              {user.name}
+                            </p>
+                            <p className="flex items-center gap-1 text-xs text-gray-500">
                               <Mail className="h-3 w-3" />
                               {user.email}
                             </p>
                             {user.roleId && (
                               <div className="mt-1 flex items-center gap-2">
-                                <div className={`h-2 w-2 rounded-full ${ROLE_COLORS[user.roleId] ?? "bg-gray-500"}`} />
+                                <div
+                                  className={`h-2 w-2 rounded-full ${ROLE_COLORS[user.roleId] ?? "bg-gray-500"}`}
+                                />
                                 <span className="text-xs text-gray-600">
                                   {ROLE_NAMES[user.roleId] ?? "Sin rol"}
                                 </span>
@@ -236,12 +245,17 @@ export default function UsuariosClient({ initialUsers }: Props) {
                           <h3 className="text-lg font-semibold text-gray-900">
                             {selectedUser.name}
                           </h3>
-                          <p className="text-sm text-gray-600">{selectedUser.email}</p>
+                          <p className="text-sm text-gray-600">
+                            {selectedUser.email}
+                          </p>
                           {selectedUser.roleId && (
                             <div className="mt-2 flex items-center gap-2">
-                              <div className={`h-2 w-2 rounded-full ${ROLE_COLORS[selectedUser.roleId] ?? "bg-gray-500"}`} />
+                              <div
+                                className={`h-2 w-2 rounded-full ${ROLE_COLORS[selectedUser.roleId] ?? "bg-gray-500"}`}
+                              />
                               <span className="text-sm text-gray-700">
-                                Rol actual: {ROLE_NAMES[selectedUser.roleId] ?? "Sin rol"}
+                                Rol actual:{" "}
+                                {ROLE_NAMES[selectedUser.roleId] ?? "Sin rol"}
                               </span>
                             </div>
                           )}
@@ -251,7 +265,10 @@ export default function UsuariosClient({ initialUsers }: Props) {
 
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="role-select" className="text-sm font-medium">
+                        <Label
+                          htmlFor="role-select"
+                          className="text-sm font-medium"
+                        >
                           Seleccionar Rol
                         </Label>
                         <Select
@@ -263,9 +280,14 @@ export default function UsuariosClient({ initialUsers }: Props) {
                           </SelectTrigger>
                           <SelectContent>
                             {AVAILABLE_ROLES.map((roleId) => (
-                              <SelectItem key={roleId} value={roleId.toString()}>
+                              <SelectItem
+                                key={roleId}
+                                value={roleId.toString()}
+                              >
                                 <div className="flex items-center gap-2">
-                                  <div className={`h-2 w-2 rounded-full ${ROLE_COLORS[roleId] ?? "bg-gray-500"}`} />
+                                  <div
+                                    className={`h-2 w-2 rounded-full ${ROLE_COLORS[roleId] ?? "bg-gray-500"}`}
+                                  />
                                   {ROLE_NAMES[roleId] ?? `Rol ${roleId}`}
                                 </div>
                               </SelectItem>
@@ -276,14 +298,17 @@ export default function UsuariosClient({ initialUsers }: Props) {
 
                       {selectedRole && (
                         <div className="rounded-lg border border-gray-200 bg-white p-4">
-                          <h4 className="font-medium text-gray-900 mb-2">
+                          <h4 className="mb-2 font-medium text-gray-900">
                             Descripción del Rol
                           </h4>
                           <div className="space-y-2 text-sm text-gray-600">
                             {selectedRole === 2 && (
                               <>
-                                <p><strong>Agente:</strong> Agente inmobiliario con acceso a gestión de propiedades.</p>
-                                <ul className="list-disc list-inside ml-2 space-y-1">
+                                <p>
+                                  <strong>Agente:</strong> Agente inmobiliario
+                                  con acceso a gestión de propiedades.
+                                </p>
+                                <ul className="ml-2 list-inside list-disc space-y-1">
                                   <li>Ver y gestionar sus propias tareas</li>
                                   <li>Crear y editar propiedades</li>
                                   <li>Ver y gestionar sus propios contactos</li>
@@ -293,10 +318,15 @@ export default function UsuariosClient({ initialUsers }: Props) {
                             )}
                             {selectedRole === 4 && (
                               <>
-                                <p><strong>Gestor de Oficina:</strong> Gestión de oficina y coordinación de equipo.</p>
-                                <ul className="list-disc list-inside ml-2 space-y-1">
+                                <p>
+                                  <strong>Gestor de Oficina:</strong> Gestión de
+                                  oficina y coordinación de equipo.
+                                </p>
+                                <ul className="ml-2 list-inside list-disc space-y-1">
                                   <li>Ver todas las tareas y propiedades</li>
-                                  <li>Gestionar usuarios (sin cambiar roles)</li>
+                                  <li>
+                                    Gestionar usuarios (sin cambiar roles)
+                                  </li>
                                   <li>Acceso a reportes</li>
                                   <li>No puede eliminar datos críticos</li>
                                 </ul>
@@ -304,8 +334,11 @@ export default function UsuariosClient({ initialUsers }: Props) {
                             )}
                             {selectedRole === 5 && (
                               <>
-                                <p><strong>Inactivo:</strong> Usuario sin permisos activos.</p>
-                                <ul className="list-disc list-inside ml-2 space-y-1">
+                                <p>
+                                  <strong>Inactivo:</strong> Usuario sin
+                                  permisos activos.
+                                </p>
+                                <ul className="ml-2 list-inside list-disc space-y-1">
                                   <li>Sin acceso a funcionalidades</li>
                                   <li>No puede ver ni gestionar datos</li>
                                   <li>Cuenta desactivada temporalmente</li>

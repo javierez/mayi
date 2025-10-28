@@ -16,7 +16,9 @@ interface CartelEditorPageProps {
   }>;
 }
 
-export default async function CartelEditorPage({ params }: CartelEditorPageProps) {
+export default async function CartelEditorPage({
+  params,
+}: CartelEditorPageProps) {
   const unwrappedParams = await params;
   const listingId = parseInt(unwrappedParams.id);
   await getSecureSession();
@@ -62,7 +64,10 @@ export default async function CartelEditorPage({ params }: CartelEditorPageProps
 
       {/* Main Content */}
       <div className="mt-6">
-        <CartelEditorPhase1 listingId={unwrappedParams.id} images={images as PropertyImage[]} />
+        <CartelEditorPhase1
+          listingId={unwrappedParams.id}
+          images={images as PropertyImage[]}
+        />
       </div>
     </>
   );

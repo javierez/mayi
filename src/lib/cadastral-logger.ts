@@ -35,7 +35,11 @@ class CadastralLogger {
     }
   }
 
-  private formatMessage(level: string, message: string, data?: unknown): string {
+  private formatMessage(
+    level: string,
+    message: string,
+    data?: unknown,
+  ): string {
     const timestamp = new Date().toISOString();
     let formatted = `[${timestamp}] [${level}] ${message}`;
 

@@ -1,7 +1,10 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { uploadDocument } from "~/app/actions/upload";
-import { getDocumentsByFolderType, hardDeleteDocument } from "~/server/queries/document";
+import {
+  getDocumentsByFolderType,
+  hardDeleteDocument,
+} from "~/server/queries/document";
 import { getListingDocumentsData } from "~/server/queries/listing";
 import { getSecureSession } from "~/lib/dal";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
@@ -33,10 +36,7 @@ export async function POST(
     const file = formData.get("file") as File;
 
     if (!file) {
-      return NextResponse.json(
-        { error: "File is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "File is required" }, { status: 400 });
     }
 
     // Validate file type
@@ -74,9 +74,9 @@ export async function POST(
       appointmentId: document.appointmentId?.toString(),
     };
 
-    return NextResponse.json({ 
-      success: true, 
-      document: serializedDocument 
+    return NextResponse.json({
+      success: true,
+      document: serializedDocument,
     });
   } catch (error) {
     console.error("Error uploading cartel:", error);
@@ -119,9 +119,9 @@ export async function GET(
       appointmentId: doc.appointmentId?.toString(),
     }));
 
-    return NextResponse.json({ 
-      success: true, 
-      documents: serializedDocuments 
+    return NextResponse.json({
+      success: true,
+      documents: serializedDocuments,
     });
   } catch (error) {
     console.error("Error fetching carteles:", error);
@@ -153,7 +153,10 @@ export async function DELETE(
       );
     }
 
-    const body = await request.json() as { docId: string; documentKey: string };
+    const body = (await request.json()) as {
+      docId: string;
+      documentKey: string;
+    };
     const { docId, documentKey } = body;
 
     if (!docId || !documentKey) {
@@ -167,7 +170,7 @@ export async function DELETE(
     try {
       // Get dynamic bucket name
       const bucketName = await getDynamicBucketName();
-      
+
       await s3Client.send(
         new DeleteObjectCommand({
           Bucket: bucketName,
@@ -182,9 +185,9 @@ export async function DELETE(
     // Delete from database
     await hardDeleteDocument(BigInt(docId));
 
-    return NextResponse.json({ 
-      success: true, 
-      message: "Cartel deleted successfully" 
+    return NextResponse.json({
+      success: true,
+      message: "Cartel deleted successfully",
     });
   } catch (error) {
     console.error("Error deleting cartel:", error);

@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  type ReactNode,
+} from "react";
 
 // Form data interfaces - centralized definitions
 export interface ListingDetails {
@@ -28,7 +34,7 @@ export interface Contact {
 export interface CompleteFormData {
   // Meta data
   formPosition?: number;
-  
+
   // Page 1 - Basic Info & IDs
   propertyId?: number | string;
   listingId?: number | string;
@@ -167,11 +173,11 @@ export interface CompleteFormData {
 export interface GlobalFormState {
   // Single source of truth - ALL form data (fetched + user changes)
   formData: CompleteFormData;
-  
+
   // Supporting data
   agents: Agent[];
   currentContacts: string[];
-  
+
   // Flags
   hasUnsavedChanges: boolean;
   isLoading: boolean;
@@ -180,7 +186,10 @@ export interface GlobalFormState {
 interface FormContextType {
   state: GlobalFormState;
   updateFormData: (updates: Partial<CompleteFormData>) => void;
-  updateField: <K extends keyof CompleteFormData>(field: K, value: CompleteFormData[K]) => void;
+  updateField: <K extends keyof CompleteFormData>(
+    field: K,
+    value: CompleteFormData[K],
+  ) => void;
   resetForm: () => void;
   markAsSaved: () => void;
   setLoading: (loading: boolean) => void;
@@ -216,26 +225,29 @@ export function FormProvider({ children }: FormProviderProps) {
   });
 
   const updateFormData = useCallback((updates: Partial<CompleteFormData>) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       formData: { ...prev.formData, ...updates },
       hasUnsavedChanges: true,
     }));
   }, []);
 
-  const updateField = useCallback(<K extends keyof CompleteFormData>(
-    field: K, 
-    value: CompleteFormData[K]
-  ) => {
-    setState(prev => ({
-      ...prev,
-      formData: { ...prev.formData, [field]: value },
-      hasUnsavedChanges: true,
-    }));
-  }, []);
+  const updateField = useCallback(
+    <K extends keyof CompleteFormData>(
+      field: K,
+      value: CompleteFormData[K],
+    ) => {
+      setState((prev) => ({
+        ...prev,
+        formData: { ...prev.formData, [field]: value },
+        hasUnsavedChanges: true,
+      }));
+    },
+    [],
+  );
 
   const resetForm = useCallback(() => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       formData: {},
       hasUnsavedChanges: false,
@@ -243,37 +255,40 @@ export function FormProvider({ children }: FormProviderProps) {
   }, []);
 
   const markAsSaved = useCallback(() => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       hasUnsavedChanges: false,
     }));
   }, []);
 
   const setLoading = useCallback((loading: boolean) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       isLoading: loading,
     }));
   }, []);
 
-  const setInitialData = useCallback((data: {
-    fetchedFormData?: CompleteFormData;
-    agents: Agent[];
-    currentContacts: string[];
-  }) => {
-    setState(prev => ({
-      ...prev,
-      agents: data.agents,
-      currentContacts: data.currentContacts,
-      // Simple: Set the fetched data as our single local working copy
-      formData: data.fetchedFormData ?? {},
-      hasUnsavedChanges: false,
-      isLoading: false,
-    }));
-  }, []);
+  const setInitialData = useCallback(
+    (data: {
+      fetchedFormData?: CompleteFormData;
+      agents: Agent[];
+      currentContacts: string[];
+    }) => {
+      setState((prev) => ({
+        ...prev,
+        agents: data.agents,
+        currentContacts: data.currentContacts,
+        // Simple: Set the fetched data as our single local working copy
+        formData: data.fetchedFormData ?? {},
+        hasUnsavedChanges: false,
+        isLoading: false,
+      }));
+    },
+    [],
+  );
 
   const updateAgents = useCallback((agents: Agent[]) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       agents,
     }));
@@ -291,8 +306,6 @@ export function FormProvider({ children }: FormProviderProps) {
   };
 
   return (
-    <FormContext.Provider value={contextValue}>
-      {children}
-    </FormContext.Provider>
+    <FormContext.Provider value={contextValue}>{children}</FormContext.Provider>
   );
 }

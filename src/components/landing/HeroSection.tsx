@@ -78,20 +78,24 @@ export function HeroSection() {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
               >
-                El CRM más completo y potente para agentes y agencias inmobiliarias en
-                España. Automatiza, optimiza y crece tu negocio con todas las herramientas disponibles.
+                El CRM más completo y potente para agentes y agencias
+                inmobiliarias en España. Automatiza, optimiza y crece tu negocio
+                con todas las herramientas disponibles.
               </motion.p>
             </motion.div>
 
             <motion.div
-              className="flex flex-col gap-6 sm:grid sm:grid-cols-2 sm:gap-4 sm:max-w-md"
+              className="flex flex-col gap-6 sm:grid sm:max-w-md sm:grid-cols-2 sm:gap-4"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.6 }}
             >
               <Dialog open={isLoginOpen} onOpenChange={setIsLoginOpen}>
                 <DialogTrigger asChild>
-                  <Button size="lg" className="group text-lg px-8 py-6 bg-gradient-to-r from-amber-400 to-rose-400 text-white font-medium hover:from-amber-500 hover:to-rose-500 transition-all hover:scale-105 shadow-lg border-0">
+                  <Button
+                    size="lg"
+                    className="group border-0 bg-gradient-to-r from-amber-400 to-rose-400 px-8 py-6 text-lg font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500"
+                  >
                     Comenzar Gratis
                   </Button>
                 </DialogTrigger>
@@ -139,7 +143,10 @@ export function HeroSection() {
                 </DialogContent>
               </Dialog>
 
-              <Button size="lg" className="group text-lg px-8 py-6 bg-white text-gray-700 hover:bg-gray-50 shadow-md hover:shadow-lg transition-all">
+              <Button
+                size="lg"
+                className="group bg-white px-8 py-6 text-lg text-gray-700 shadow-md transition-all hover:bg-gray-50 hover:shadow-lg"
+              >
                 <Play className="mr-2 h-5 w-5" />
                 Ver Demo
               </Button>
@@ -168,7 +175,12 @@ export function HeroSection() {
                 <motion.div
                   className="h-2 w-2 rounded-full bg-gradient-to-r from-amber-400 to-rose-400"
                   animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 1, delay: 0.3 }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    repeatDelay: 1,
+                    delay: 0.3,
+                  }}
                 />
                 Aumenta eficiencia y productividad
               </motion.div>
@@ -181,7 +193,12 @@ export function HeroSection() {
                 <motion.div
                   className="h-2 w-2 rounded-full bg-gradient-to-r from-amber-400 to-rose-400"
                   animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 1, delay: 0.6 }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    repeatDelay: 1,
+                    delay: 0.6,
+                  }}
                 />
                 Soporte 24h
               </motion.div>
@@ -259,7 +276,12 @@ export function HeroSection() {
             <motion.div
               className="absolute -bottom-4 -left-4 h-32 w-32 rounded-full bg-gradient-to-r from-amber-200/20 to-rose-200/20 blur-3xl"
               animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0.7, 0.5] }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+              transition={{
+                duration: 5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 1,
+              }}
             />
           </motion.div>
         </div>

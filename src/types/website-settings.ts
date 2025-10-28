@@ -213,7 +213,9 @@ export const headPropsSchema = z.object({
 // Watermark Schema
 export const watermarkPropsSchema = z.object({
   enabled: z.boolean().default(false),
-  position: z.enum(["southeast", "northeast", "southwest", "northwest", "center"]).default("southeast"),
+  position: z
+    .enum(["southeast", "northeast", "southwest", "northwest", "center"])
+    .default("southeast"),
   sizePercentage: z.number().min(10).max(50).default(30),
 });
 

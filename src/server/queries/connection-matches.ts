@@ -77,9 +77,7 @@ function calculateTolerance(
 }
 
 // Helper function to parse preferred areas JSON (new format: [{name: "..."}])
-function parsePreferredAreas(
-  preferredAreas: unknown,
-): Array<{ name: string }> {
+function parsePreferredAreas(preferredAreas: unknown): Array<{ name: string }> {
   if (!preferredAreas) return [];
 
   try {
@@ -152,7 +150,7 @@ function calculateStringSimilarity(str1: string, str2: string): number {
   if (normalized1 === normalized2) return 100;
 
   // Calculate Levenshtein distance
-  const distance = levenshteinDistance(normalized1, normalized2);
+  const distance: number = levenshteinDistance(normalized1, normalized2);
   const maxLength = Math.max(normalized1.length, normalized2.length);
 
   // Convert to similarity percentage
@@ -168,7 +166,10 @@ function isLocationSimilar(
   threshold = 80,
 ): boolean {
   if (!candidateLocation) return false;
-  const similarity = calculateStringSimilarity(targetLocation, candidateLocation);
+  const similarity = calculateStringSimilarity(
+    targetLocation,
+    candidateLocation,
+  );
   return similarity >= threshold;
 }
 
@@ -564,22 +565,26 @@ export async function getMatchesForProspects(
     const allPreferredCities = new Set<string>();
 
     for (const result of rawResults) {
-      const preferredCities = parsePreferredCities(result.prospectPreferredCities);
+      const preferredCities = parsePreferredCities(
+        result.prospectPreferredCities,
+      );
       const preferredAreas = parsePreferredAreas(result.prospectPreferredAreas);
 
-      preferredCities.forEach(city => allPreferredCities.add(city));
-      preferredAreas.forEach(area => allPreferredAreas.add(area.name));
+      preferredCities.forEach((city) => allPreferredCities.add(city));
+      preferredAreas.forEach((area) => allPreferredAreas.add(area.name));
     }
 
     // Fetch coordinates for all preferred neighborhoods once
     const neighborhoodCoordinates = await getNeighborhoodCoordinates(
-      Array.from(allPreferredAreas).map(name => ({ name })),
+      Array.from(allPreferredAreas).map((name) => ({ name })),
       Array.from(allPreferredCities),
     );
 
     for (const result of rawResults) {
       // Check location matching with string similarity AND distance-based matching
-      const preferredCities = parsePreferredCities(result.prospectPreferredCities);
+      const preferredCities = parsePreferredCities(
+        result.prospectPreferredCities,
+      );
       const preferredAreas = parsePreferredAreas(result.prospectPreferredAreas);
 
       let isLocationMatch = false;
@@ -805,10 +810,14 @@ export async function getMatchesForProspects(
 
     // BATCH QUERY: Check for existing leads for all matches
     if (processedMatches.length > 0) {
-      console.log("🔍 Checking for existing leads for", processedMatches.length, "matches");
-      
+      console.log(
+        "🔍 Checking for existing leads for",
+        processedMatches.length,
+        "matches",
+      );
+
       // Get all prospect-listing pairs to check
-      const matchPairs = processedMatches.map(match => ({
+      const matchPairs = processedMatches.map((match) => ({
         prospectId: match.prospectId,
         listingId: match.listingId,
       }));
@@ -831,22 +840,22 @@ export async function getMatchesForProspects(
             eq(listingContacts.isActive, true),
             eq(contacts.accountId, accountId),
             or(
-              ...matchPairs.map(pair => 
+              ...matchPairs.map((pair) =>
                 and(
                   eq(listingContacts.prospectId, pair.prospectId),
-                  eq(listingContacts.listingId, pair.listingId)
-                )
-              )
-            )
+                  eq(listingContacts.listingId, pair.listingId),
+                ),
+              ),
+            ),
           ),
         );
 
       console.log("📊 Found", existingLeads.length, "existing leads");
 
       // Create a map for quick lookup
-      const leadMap = new Map<string, typeof existingLeads[0]>();
-      
-      existingLeads.forEach(lead => {
+      const leadMap = new Map<string, (typeof existingLeads)[0]>();
+
+      existingLeads.forEach((lead) => {
         if (lead.prospectId !== null && lead.listingId !== null) {
           const key = `${lead.prospectId.toString()}-${lead.listingId.toString()}`;
           leadMap.set(key, lead);
@@ -854,10 +863,10 @@ export async function getMatchesForProspects(
       });
 
       // Update matches with lead information
-      processedMatches.forEach(match => {
+      processedMatches.forEach((match) => {
         const key = `${match.prospectId.toString()}-${match.listingId.toString()}`;
         const existingLead = leadMap.get(key);
-        
+
         if (existingLead) {
           match.hasExistingLead = true;
           match.existingLead = {
@@ -933,11 +942,11 @@ export async function dismissMatchWithAuth(
 ) {
   console.log("🗑️ Dismissing lead for match:", { prospectId, listingId });
   const accountId = await getCurrentUserAccountId();
-  
+
   try {
     // Find the existing lead (listing_contact with buyer type) for this prospect-listing pair
     const [existingLead] = await db
-      .select({ 
+      .select({
         listingContactId: listingContacts.listingContactId,
         contactId: listingContacts.contactId,
       })
@@ -955,27 +964,33 @@ export async function dismissMatchWithAuth(
       );
 
     if (!existingLead) {
-      return { 
-        success: false, 
-        message: "No se encontró ningún lead para descartar" 
+      return {
+        success: false,
+        message: "No se encontró ningún lead para descartar",
       };
     }
 
     // Delete the listing_contact record (this removes the lead)
     await db
       .delete(listingContacts)
-      .where(eq(listingContacts.listingContactId, existingLead.listingContactId));
+      .where(
+        eq(listingContacts.listingContactId, existingLead.listingContactId),
+      );
 
-    console.log("✅ Lead dismissed successfully:", existingLead.listingContactId);
-    return { 
-      success: true, 
-      message: "Lead descartado exitosamente" 
+    console.log(
+      "✅ Lead dismissed successfully:",
+      existingLead.listingContactId,
+    );
+    return {
+      success: true,
+      message: "Lead descartado exitosamente",
     };
   } catch (error) {
     console.error("❌ Error dismissing lead:", error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : "Error al descartar lead" 
+    return {
+      success: false,
+      message:
+        error instanceof Error ? error.message : "Error al descartar lead",
     };
   }
 }
@@ -996,7 +1011,7 @@ export async function createLeadFromMatchWithAuth(
 ) {
   console.log("🔐 Creating lead from match:", { prospectId, listingId });
   const accountId = await getCurrentUserAccountId();
-  
+
   try {
     // Get the prospect's contact ID
     const [prospect] = await db
@@ -1028,9 +1043,10 @@ export async function createLeadFromMatchWithAuth(
       );
 
     if (existingLead) {
-      return { 
-        success: false, 
-        message: "Ya existe un lead para esta combinación de prospecto y propiedad" 
+      return {
+        success: false,
+        message:
+          "Ya existe un lead para esta combinación de prospecto y propiedad",
       };
     }
 
@@ -1045,23 +1061,26 @@ export async function createLeadFromMatchWithAuth(
       isActive: true,
     };
 
-    const [result] = await db.insert(listingContacts).values(leadData).$returningId();
-    
+    const [result] = await db
+      .insert(listingContacts)
+      .values(leadData)
+      .$returningId();
+
     if (!result) {
       throw new Error("Failed to create lead");
     }
 
     console.log("✅ Lead created successfully:", result);
-    return { 
-      success: true, 
+    return {
+      success: true,
       message: "Lead creado exitosamente",
       leadId: result.listingContactId,
     };
   } catch (error) {
     console.error("❌ Error creating lead from match:", error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : "Error creating lead" 
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Error creating lead",
     };
   }
 }

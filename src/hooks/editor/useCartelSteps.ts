@@ -4,7 +4,8 @@ export const useCartelSteps = (initialStep = 0) => {
   const [currentStep, setCurrentStep] = useState(initialStep);
 
   const goToNextStep = () => {
-    if (currentStep < 2) { // 0, 1, 2 are the valid steps
+    if (currentStep < 2) {
+      // 0, 1, 2 are the valid steps
       setCurrentStep(currentStep + 1);
     }
   };

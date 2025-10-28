@@ -5,7 +5,14 @@ import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Card, CardContent } from "~/components/ui/card";
-import { MessageCircle, Reply, Edit2, Trash2, Loader2, CheckCircle2 } from "lucide-react";
+import {
+  MessageCircle,
+  Reply,
+  Edit2,
+  Trash2,
+  Loader2,
+  CheckCircle2,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -14,7 +21,7 @@ import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 
 // Extended UserComment type with status
 interface CommentWithStatus extends UserCommentWithUser {
-  status?: 'sending' | 'sent' | 'error';
+  status?: "sending" | "sent" | "error";
 }
 
 interface ContactCommentsProps {
@@ -26,9 +33,16 @@ interface ContactCommentsProps {
     name?: string;
     image?: string;
   };
-  onAddComment: (comment: UserCommentWithUser) => Promise<{ success: boolean; error?: string }>;
-  onEditComment: (commentId: bigint, content: string) => Promise<{ success: boolean; error?: string }>;
-  onDeleteComment: (commentId: bigint) => Promise<{ success: boolean; error?: string }>;
+  onAddComment: (
+    comment: UserCommentWithUser,
+  ) => Promise<{ success: boolean; error?: string }>;
+  onEditComment: (
+    commentId: bigint,
+    content: string,
+  ) => Promise<{ success: boolean; error?: string }>;
+  onDeleteComment: (
+    commentId: bigint,
+  ) => Promise<{ success: boolean; error?: string }>;
 }
 
 interface UserCommentItemProps {
@@ -151,18 +165,22 @@ function UserCommentItem({
               >
                 {comment.user.name}
               </span>
-              
+
               {/* Status indicator */}
-              {comment.status === 'sending' && (
+              {comment.status === "sending" && (
                 <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
               )}
-              {comment.status === 'sent' && currentUserId === comment.userId && (
-                <CheckCircle2 className="h-3 w-3 text-green-500" />
+              {comment.status === "sent" &&
+                currentUserId === comment.userId && (
+                  <CheckCircle2 className="h-3 w-3 text-green-500" />
+                )}
+              {comment.status === "error" && (
+                <div
+                  className="h-3 w-3 rounded-full bg-red-500"
+                  title="Error al enviar"
+                />
               )}
-              {comment.status === 'error' && (
-                <div className="h-3 w-3 rounded-full bg-red-500" title="Error al enviar" />
-              )}
-              
+
               <span
                 className={`text-gray-500 ${isReply ? "text-xs" : "text-xs"}`}
               >
@@ -306,14 +324,14 @@ export function ContactComments({
 
   // Optimistic comments with status tracking
   const [optimisticComments, addOptimisticComment] = useOptimistic(
-    initialComments.map(comment => ({ ...comment, status: 'sent' as const })),
+    initialComments.map((comment) => ({ ...comment, status: "sent" as const })),
     (
       state: CommentWithStatus[],
       action: {
         type: string;
         comment?: CommentWithStatus;
         commentId?: string;
-        status?: 'sending' | 'sent' | 'error';
+        status?: "sending" | "sent" | "error";
         updatedComment?: CommentWithStatus;
         parentId?: string;
         reply?: CommentWithStatus;
@@ -332,7 +350,13 @@ export function ContactComments({
             ) {
               return {
                 ...comment,
-                replies: [...comment.replies.map(r => ({ ...r, status: 'sent' as const })), action.reply],
+                replies: [
+                  ...comment.replies.map((r) => ({
+                    ...r,
+                    status: "sent" as const,
+                  })),
+                  action.reply,
+                ],
               };
             }
             return comment;
@@ -424,7 +448,7 @@ export function ContactComments({
         image: currentUser?.image,
       },
       replies: [],
-      status: 'sending',
+      status: "sending",
     };
 
     // Clear form immediately so user can type more
@@ -442,7 +466,7 @@ export function ContactComments({
           addOptimisticComment({
             type: "UPDATE_STATUS",
             commentId: tempComment.commentId.toString(),
-            status: 'error'
+            status: "error",
           });
           toast.error(result.error ?? "Error al crear la nota");
         } else {
@@ -450,7 +474,7 @@ export function ContactComments({
           addOptimisticComment({
             type: "UPDATE_STATUS",
             commentId: tempComment.commentId.toString(),
-            status: 'sent'
+            status: "sent",
           });
         }
       } catch (error) {
@@ -459,7 +483,7 @@ export function ContactComments({
         addOptimisticComment({
           type: "UPDATE_STATUS",
           commentId: tempComment.commentId.toString(),
-          status: 'error'
+          status: "error",
         });
         toast.error("Error interno del servidor");
       }
@@ -487,7 +511,7 @@ export function ContactComments({
         image: currentUser?.image,
       },
       replies: [],
-      status: 'sending',
+      status: "sending",
     };
 
     // Clear form and close reply UI immediately so user can continue
@@ -510,7 +534,7 @@ export function ContactComments({
           addOptimisticComment({
             type: "UPDATE_STATUS",
             commentId: tempReply.commentId.toString(),
-            status: 'error'
+            status: "error",
           });
           toast.error(result.error ?? "Error al crear la respuesta");
         } else {
@@ -518,7 +542,7 @@ export function ContactComments({
           addOptimisticComment({
             type: "UPDATE_STATUS",
             commentId: tempReply.commentId.toString(),
-            status: 'sent'
+            status: "sent",
           });
         }
       } catch (error) {
@@ -527,7 +551,7 @@ export function ContactComments({
         addOptimisticComment({
           type: "UPDATE_STATUS",
           commentId: tempReply.commentId.toString(),
-          status: 'error'
+          status: "error",
         });
         toast.error("Error interno del servidor");
       }
@@ -588,7 +612,7 @@ export function ContactComments({
   };
 
   return (
-    <div className="space-y-1 mt-7">
+    <div className="mt-7 space-y-1">
       <Card>
         <CardContent className="p-4">
           <div className="flex space-x-3">
@@ -607,7 +631,7 @@ export function ContactComments({
                 <Button
                   onClick={handleAddComment}
                   disabled={!newComment.trim()}
-                  className="flex items-center gap-2 h-8"
+                  className="flex h-8 items-center gap-2"
                 >
                   <MessageCircle className="h-4 w-4" />
                   Añadir nota

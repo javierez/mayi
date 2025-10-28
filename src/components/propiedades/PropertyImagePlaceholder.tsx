@@ -29,14 +29,16 @@ const getPropertyIcon = (propertyType?: string | null) => {
   }
 };
 
-export function PropertyImagePlaceholder({ 
-  propertyType, 
-  className = "" 
+export function PropertyImagePlaceholder({
+  propertyType,
+  className = "",
 }: PropertyImagePlaceholderProps) {
   const IconComponent = getPropertyIcon(propertyType);
-  
+
   return (
-    <div className={`flex items-center justify-center bg-gradient-to-br from-amber-400/10 to-rose-400/10 border border-amber-200/20 ${className}`}>
+    <div
+      className={`flex items-center justify-center border border-amber-200/20 bg-gradient-to-br from-amber-400/10 to-rose-400/10 ${className}`}
+    >
       <div className="flex items-center justify-center">
         <IconComponent className="h-5 w-5 text-amber-500/60" />
       </div>

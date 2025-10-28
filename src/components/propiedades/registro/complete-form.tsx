@@ -38,45 +38,52 @@ export function CompleteForm({ className }: CompleteFormProps) {
 
   return (
     <div className={cn("w-full max-w-md", className)}>
-      <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+      <div className="rounded-xl bg-white p-8 text-center shadow-sm">
         {/* Icon container with smooth transitions */}
-        <div className={cn(
-          "mb-6 mx-auto rounded-full flex items-center justify-center transition-all duration-700 ease-in-out",
-          isLoading 
-            ? "w-24 h-24 bg-gradient-to-r from-amber-400 to-rose-400" 
-            : "w-20 h-20 bg-gradient-to-br from-amber-100 to-rose-100"
-        )}>
-          <FileText 
+        <div
+          className={cn(
+            "mx-auto mb-6 flex items-center justify-center rounded-full transition-all duration-700 ease-in-out",
+            isLoading
+              ? "h-24 w-24 bg-gradient-to-r from-amber-400 to-rose-400"
+              : "h-20 w-20 bg-gradient-to-br from-amber-100 to-rose-100",
+          )}
+        >
+          <FileText
             className={cn(
               "transition-all duration-700 ease-in-out",
-              isLoading 
-                ? "h-14 w-14 text-white scale-110" 
-                : "h-10 w-10 text-amber-600"
-            )} 
+              isLoading
+                ? "h-14 w-14 scale-110 text-white"
+                : "h-10 w-10 text-amber-600",
+            )}
           />
         </div>
-        
+
         {/* Text content with fade transition */}
-        <div className={cn(
-          "transition-all duration-500 ease-in-out transform",
-          isLoading 
-            ? "opacity-0 translate-y-2 scale-95" 
-            : "opacity-100 translate-y-0 scale-100"
-        )}>
-          <h4 className="text-lg font-semibold text-gray-900 mb-2">
+        <div
+          className={cn(
+            "transform transition-all duration-500 ease-in-out",
+            isLoading
+              ? "translate-y-2 scale-95 opacity-0"
+              : "translate-y-0 scale-100 opacity-100",
+          )}
+        >
+          <h4 className="mb-2 text-lg font-semibold text-gray-900">
             Información completa y detallada
           </h4>
-          <p className="text-gray-600 text-sm mb-6">
-            Registra los detalles y maximiza el atractivo de tu propiedad y descuida, puedes cargar la fotos luego.
+          <p className="mb-6 text-sm text-gray-600">
+            Registra los detalles y maximiza el atractivo de tu propiedad y
+            descuida, puedes cargar la fotos luego.
           </p>
         </div>
 
         {/* Loading state */}
         {isLoading && (
-          <div className={cn(
-            "flex items-center justify-center gap-2 text-gray-600 transition-all duration-300 ease-in-out",
-            "animate-in fade-in slide-in-from-bottom-2"
-          )}>
+          <div
+            className={cn(
+              "flex items-center justify-center gap-2 text-gray-600 transition-all duration-300 ease-in-out",
+              "animate-in fade-in slide-in-from-bottom-2",
+            )}
+          >
             <Loader2 className="h-4 w-4 animate-spin" />
             <span className="text-sm">Creando propiedad...</span>
           </div>
@@ -84,7 +91,7 @@ export function CompleteForm({ className }: CompleteFormProps) {
 
         {/* Error state */}
         {error && (
-          <div className="text-red-600 text-sm mb-4 p-3 bg-red-50 rounded-lg animate-in fade-in slide-in-from-bottom-2">
+          <div className="animate-in fade-in slide-in-from-bottom-2 mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
             {error}
           </div>
         )}
@@ -95,10 +102,10 @@ export function CompleteForm({ className }: CompleteFormProps) {
             onClick={handleStartCompleteForm}
             disabled={isLoading}
             className={cn(
-              "w-full px-6 py-3 bg-gradient-to-r from-amber-400 to-rose-400 text-white font-medium rounded-lg",
-              "hover:from-amber-500 hover:to-rose-500 transition-all duration-200 hover:scale-105 shadow-lg",
-              "disabled:opacity-50 disabled:cursor-not-allowed",
-              "animate-in fade-in slide-in-from-bottom-2"
+              "w-full rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-3 font-medium text-white",
+              "shadow-lg transition-all duration-200 hover:scale-105 hover:from-amber-500 hover:to-rose-500",
+              "disabled:cursor-not-allowed disabled:opacity-50",
+              "animate-in fade-in slide-in-from-bottom-2",
             )}
           >
             Comenzar ahora

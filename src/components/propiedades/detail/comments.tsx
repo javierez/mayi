@@ -4,7 +4,18 @@ import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Card, CardContent } from "~/components/ui/card";
-import { MessageCircle, Reply, Edit2, Trash2, Loader2, CheckCircle2, Key, ChevronDown, ChevronUp, FileImage } from "lucide-react";
+import {
+  MessageCircle,
+  Reply,
+  Edit2,
+  Trash2,
+  Loader2,
+  CheckCircle2,
+  Key,
+  ChevronDown,
+  ChevronUp,
+  FileImage,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -14,7 +25,7 @@ import { CommentsSkeleton } from "~/components/ui/skeletons";
 
 // Extended Comment type with status
 interface CommentWithStatus extends CommentWithUser {
-  status?: 'sending' | 'sent' | 'error';
+  status?: "sending" | "sent" | "error";
 }
 
 interface CommentsProps {
@@ -29,9 +40,16 @@ interface CommentsProps {
     name?: string;
     image?: string;
   };
-  onAddComment: (comment: CommentWithUser) => Promise<{ success: boolean; error?: string }>;
-  onEditComment: (commentId: bigint, content: string) => Promise<{ success: boolean; error?: string }>;
-  onDeleteComment: (commentId: bigint) => Promise<{ success: boolean; error?: string }>;
+  onAddComment: (
+    comment: CommentWithUser,
+  ) => Promise<{ success: boolean; error?: string }>;
+  onEditComment: (
+    commentId: bigint,
+    content: string,
+  ) => Promise<{ success: boolean; error?: string }>;
+  onDeleteComment: (
+    commentId: bigint,
+  ) => Promise<{ success: boolean; error?: string }>;
 }
 
 interface CommentItemProps {
@@ -167,20 +185,26 @@ function CommentItem({
               <span
                 className={`font-semibold ${isReply ? "text-xs" : "text-sm"}`}
               >
-                {Number(comment.userId) === 0 ? "Sistema" : comment.user?.name ?? "Usuario"}
+                {Number(comment.userId) === 0
+                  ? "Sistema"
+                  : (comment.user?.name ?? "Usuario")}
               </span>
-              
+
               {/* Status indicator */}
-              {comment.status === 'sending' && (
+              {comment.status === "sending" && (
                 <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
               )}
-              {comment.status === 'sent' && currentUserId === comment.userId && (
-                <CheckCircle2 className="h-3 w-3 text-green-500" />
+              {comment.status === "sent" &&
+                currentUserId === comment.userId && (
+                  <CheckCircle2 className="h-3 w-3 text-green-500" />
+                )}
+              {comment.status === "error" && (
+                <div
+                  className="h-3 w-3 rounded-full bg-red-500"
+                  title="Error al enviar"
+                />
               )}
-              {comment.status === 'error' && (
-                <div className="h-3 w-3 rounded-full bg-red-500" title="Error al enviar" />
-              )}
-              
+
               <span
                 className={`text-gray-500 ${isReply ? "text-xs" : "text-xs"}`}
               >
@@ -223,7 +247,7 @@ function CommentItem({
             <div className="mt-3 flex space-x-3">
               <div className="flex-1">
                 <Textarea
-                  placeholder={`Responder a ${Number(comment.userId) === 0 ? "Sistema" : comment.user?.name ?? "Usuario"}...`}
+                  placeholder={`Responder a ${Number(comment.userId) === 0 ? "Sistema" : (comment.user?.name ?? "Usuario")}...`}
                   value={replyContents[comment.commentId.toString()] ?? ""}
                   onChange={(e) =>
                     setReplyContents((prev) => ({
@@ -327,14 +351,14 @@ export function Comments({
 
   // Optimistic comments with status tracking
   const [optimisticComments, addOptimisticComment] = useOptimistic(
-    initialComments.map(comment => ({ ...comment, status: 'sent' as const })),
+    initialComments.map((comment) => ({ ...comment, status: "sent" as const })),
     (
       state: CommentWithStatus[],
       action: {
         type: string;
         comment?: CommentWithStatus;
         commentId?: string;
-        status?: 'sending' | 'sent' | 'error';
+        status?: "sending" | "sent" | "error";
         updatedComment?: CommentWithStatus;
         parentId?: string;
         reply?: CommentWithStatus;
@@ -353,7 +377,13 @@ export function Comments({
             ) {
               return {
                 ...comment,
-                replies: [...comment.replies.map(r => ({ ...r, status: 'sent' as const })), action.reply],
+                replies: [
+                  ...comment.replies.map((r) => ({
+                    ...r,
+                    status: "sent" as const,
+                  })),
+                  action.reply,
+                ],
               };
             }
             return comment;
@@ -427,7 +457,9 @@ export function Comments({
   const [editContent, setEditContent] = useState("");
   const [keysCollapsed, setKeysCollapsed] = useState(false);
   const [cartelCollapsed, setCartelCollapsed] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<null | 'keys' | 'cartel'>(null);
+  const [selectedCategory, setSelectedCategory] = useState<
+    null | "keys" | "cartel"
+  >(null);
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
@@ -450,7 +482,7 @@ export function Comments({
         image: currentUser?.image,
       },
       replies: [],
-      status: 'sending',
+      status: "sending",
     };
 
     // Clear form and reset category immediately so user can type more
@@ -469,7 +501,7 @@ export function Comments({
           addOptimisticComment({
             type: "UPDATE_STATUS",
             commentId: tempComment.commentId.toString(),
-            status: 'error'
+            status: "error",
           });
           toast.error(result.error ?? "Error al crear la nota");
         } else {
@@ -477,7 +509,7 @@ export function Comments({
           addOptimisticComment({
             type: "UPDATE_STATUS",
             commentId: tempComment.commentId.toString(),
-            status: 'sent'
+            status: "sent",
           });
         }
       } catch (error) {
@@ -486,7 +518,7 @@ export function Comments({
         addOptimisticComment({
           type: "UPDATE_STATUS",
           commentId: tempComment.commentId.toString(),
-          status: 'error'
+          status: "error",
         });
         toast.error("Error interno del servidor");
       }
@@ -515,7 +547,7 @@ export function Comments({
         image: currentUser?.image,
       },
       replies: [],
-      status: 'sending',
+      status: "sending",
     };
 
     // Clear form and close reply UI immediately so user can continue
@@ -538,7 +570,7 @@ export function Comments({
           addOptimisticComment({
             type: "UPDATE_STATUS",
             commentId: tempReply.commentId.toString(),
-            status: 'error'
+            status: "error",
           });
           toast.error(result.error ?? "Error al crear la respuesta");
         } else {
@@ -546,7 +578,7 @@ export function Comments({
           addOptimisticComment({
             type: "UPDATE_STATUS",
             commentId: tempReply.commentId.toString(),
-            status: 'sent'
+            status: "sent",
           });
         }
       } catch (error) {
@@ -555,7 +587,7 @@ export function Comments({
         addOptimisticComment({
           type: "UPDATE_STATUS",
           commentId: tempReply.commentId.toString(),
-          status: 'error'
+          status: "error",
         });
         toast.error("Error interno del servidor");
       }
@@ -621,17 +653,20 @@ export function Comments({
 
   // Separate keys comment, cartel comment, and regular comments
   const keysComment = optimisticComments.find(
-    (comment) => comment.category === 'keys' && comment.parentId === null
+    (comment) => comment.category === "keys" && comment.parentId === null,
   );
   const cartelComment = optimisticComments.find(
-    (comment) => comment.category === 'cartel' && comment.parentId === null
+    (comment) => comment.category === "cartel" && comment.parentId === null,
   );
   const regularComments = optimisticComments.filter(
-    (comment) => comment.category !== 'keys' && comment.category !== 'cartel' && comment.parentId === null
+    (comment) =>
+      comment.category !== "keys" &&
+      comment.category !== "cartel" &&
+      comment.parentId === null,
   );
 
   return (
-    <div className="space-y-1 mt-7">
+    <div className="mt-7 space-y-1">
       <Card>
         <CardContent className="p-4">
           <div className="flex space-x-3">
@@ -652,11 +687,15 @@ export function Comments({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setSelectedCategory(selectedCategory === 'keys' ? null : 'keys')}
+                    onClick={() =>
+                      setSelectedCategory(
+                        selectedCategory === "keys" ? null : "keys",
+                      )
+                    }
                     className={`h-8 transition-all ${
-                      selectedCategory === 'keys'
-                        ? 'bg-gray-100 text-amber-600 border-amber-200 hover:bg-gray-100 hover:text-amber-600 hover:border-amber-200'
-                        : 'text-gray-500 hover:text-amber-600 hover:border-amber-200'
+                      selectedCategory === "keys"
+                        ? "border-amber-200 bg-gray-100 text-amber-600 hover:border-amber-200 hover:bg-gray-100 hover:text-amber-600"
+                        : "text-gray-500 hover:border-amber-200 hover:text-amber-600"
                     }`}
                     title="Comentario sobre llaves"
                   >
@@ -666,11 +705,15 @@ export function Comments({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setSelectedCategory(selectedCategory === 'cartel' ? null : 'cartel')}
+                    onClick={() =>
+                      setSelectedCategory(
+                        selectedCategory === "cartel" ? null : "cartel",
+                      )
+                    }
                     className={`h-8 transition-all ${
-                      selectedCategory === 'cartel'
-                        ? 'bg-gray-100 text-orange-600 border-orange-200 hover:bg-gray-100 hover:text-orange-600 hover:border-orange-200'
-                        : 'text-gray-500 hover:text-orange-600 hover:border-orange-200'
+                      selectedCategory === "cartel"
+                        ? "border-orange-200 bg-gray-100 text-orange-600 hover:border-orange-200 hover:bg-gray-100 hover:text-orange-600"
+                        : "text-gray-500 hover:border-orange-200 hover:text-orange-600"
                     }`}
                     title="Comentario sobre cartel"
                   >
@@ -680,7 +723,7 @@ export function Comments({
                 <Button
                   onClick={handleAddComment}
                   disabled={!newComment.trim()}
-                  className="flex items-center gap-2 h-8"
+                  className="flex h-8 items-center gap-2"
                 >
                   <MessageCircle className="h-4 w-4" />
                   Añadir nota
@@ -693,10 +736,10 @@ export function Comments({
 
       {/* Keys Section */}
       {keysComment && (
-        <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
+        <Card className="border-0 shadow-md transition-shadow hover:shadow-lg">
           <CardContent className="p-3">
             <div
-              className="flex cursor-pointer items-center justify-between group"
+              className="group flex cursor-pointer items-center justify-between"
               onClick={() => setKeysCollapsed(!keysCollapsed)}
             >
               <div className="flex items-center gap-3">
@@ -712,7 +755,7 @@ export function Comments({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 w-7 p-0 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                className="h-7 w-7 p-0 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
               >
                 {keysCollapsed ? (
                   <ChevronDown className="h-4 w-4" />
@@ -723,7 +766,7 @@ export function Comments({
             </div>
 
             {!keysCollapsed && (
-              <div className="border-t border-gray-200 mt-3 pt-3">
+              <div className="mt-3 border-t border-gray-200 pt-3">
                 <CommentItem
                   comment={keysComment}
                   currentUserId={currentUserId}
@@ -753,10 +796,10 @@ export function Comments({
 
       {/* Cartel Section */}
       {cartelComment && (
-        <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
+        <Card className="border-0 shadow-md transition-shadow hover:shadow-lg">
           <CardContent className="p-3">
             <div
-              className="flex cursor-pointer items-center justify-between group"
+              className="group flex cursor-pointer items-center justify-between"
               onClick={() => setCartelCollapsed(!cartelCollapsed)}
             >
               <div className="flex items-center gap-3">
@@ -772,7 +815,7 @@ export function Comments({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 w-7 p-0 text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                className="h-7 w-7 p-0 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
               >
                 {cartelCollapsed ? (
                   <ChevronDown className="h-4 w-4" />
@@ -783,7 +826,7 @@ export function Comments({
             </div>
 
             {!cartelCollapsed && (
-              <div className="border-t border-gray-200 mt-3 pt-3">
+              <div className="mt-3 border-t border-gray-200 pt-3">
                 <CommentItem
                   comment={cartelComment}
                   currentUserId={currentUserId}

@@ -24,7 +24,7 @@ export function CartelStepNavigation({
   const isLastStep = currentStep === totalSteps - 1;
 
   return (
-    <div className="flex justify-between mt-6">
+    <div className="mt-6 flex justify-between">
       <Button
         variant="outline"
         onClick={onPrevious}

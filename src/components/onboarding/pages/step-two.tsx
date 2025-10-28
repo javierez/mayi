@@ -50,10 +50,10 @@ export default function StepTwo({ onNext, onBack }: StepTwoProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <h3 className="mb-4 text-lg font-semibold text-gray-900">
           Configuración Técnica
         </h3>
-        <p className="text-sm text-gray-600 mb-6">
+        <p className="mb-6 text-sm text-gray-600">
           Información sobre tu infraestructura digital actual.
         </p>
       </div>
@@ -141,8 +141,8 @@ export default function StepTwo({ onNext, onBack }: StepTwoProps) {
           <div className="relative flex h-full">
             <button
               onClick={() => {
-                updateFormData({ 
-                  hasWebsiteDomain: false, 
+                updateFormData({
+                  hasWebsiteDomain: false,
                   websiteDomainName: "",
                   websiteDomainManaged: false,
                 });
@@ -197,10 +197,14 @@ export default function StepTwo({ onNext, onBack }: StepTwoProps) {
               />
               <div className="relative flex h-full">
                 <button
-                  onClick={() => updateFormData({ websiteDomainManaged: false })}
+                  onClick={() =>
+                    updateFormData({ websiteDomainManaged: false })
+                  }
                   className={cn(
                     "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
-                    !formData.websiteDomainManaged ? "text-gray-900" : "text-gray-600",
+                    !formData.websiteDomainManaged
+                      ? "text-gray-900"
+                      : "text-gray-600",
                   )}
                 >
                   No
@@ -209,7 +213,9 @@ export default function StepTwo({ onNext, onBack }: StepTwoProps) {
                   onClick={() => updateFormData({ websiteDomainManaged: true })}
                   className={cn(
                     "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
-                    formData.websiteDomainManaged ? "text-gray-900" : "text-gray-600",
+                    formData.websiteDomainManaged
+                      ? "text-gray-900"
+                      : "text-gray-600",
                   )}
                 >
                   Sí
@@ -236,7 +242,7 @@ export default function StepTwo({ onNext, onBack }: StepTwoProps) {
           <div className="relative flex h-full">
             <button
               onClick={() => {
-                updateFormData({ 
+                updateFormData({
                   hasEmailDomain: false,
                   emailDomainName: "",
                   emailDomainManaged: false,
@@ -295,7 +301,9 @@ export default function StepTwo({ onNext, onBack }: StepTwoProps) {
                   onClick={() => updateFormData({ emailDomainManaged: false })}
                   className={cn(
                     "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
-                    !formData.emailDomainManaged ? "text-gray-900" : "text-gray-600",
+                    !formData.emailDomainManaged
+                      ? "text-gray-900"
+                      : "text-gray-600",
                   )}
                 >
                   No
@@ -304,7 +312,9 @@ export default function StepTwo({ onNext, onBack }: StepTwoProps) {
                   onClick={() => updateFormData({ emailDomainManaged: true })}
                   className={cn(
                     "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
-                    formData.emailDomainManaged ? "text-gray-900" : "text-gray-600",
+                    formData.emailDomainManaged
+                      ? "text-gray-900"
+                      : "text-gray-600",
                   )}
                 >
                   Sí
@@ -346,4 +356,3 @@ export default function StepTwo({ onNext, onBack }: StepTwoProps) {
     </div>
   );
 }
-

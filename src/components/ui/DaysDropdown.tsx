@@ -1,6 +1,12 @@
 "use client";
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 interface DaysDropdownProps {
   value: number;
@@ -20,7 +26,7 @@ export default function DaysDropdown({
       value={value.toString()}
       onValueChange={(val) => onChange(parseInt(val))}
     >
-      <SelectTrigger className={`w-20 h-8 text-xs ${className}`}>
+      <SelectTrigger className={`h-8 w-20 text-xs ${className}`}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

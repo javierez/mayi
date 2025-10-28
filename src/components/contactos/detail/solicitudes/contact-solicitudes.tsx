@@ -38,7 +38,8 @@ export function ContactSolicitudes({ contactId }: ContactSolicitudesProps) {
     const loadProspects = async () => {
       setIsLoading(true);
       try {
-        const existingProspects = await getProspectsByContactWithAuth(contactId);
+        const existingProspects =
+          await getProspectsByContactWithAuth(contactId);
         setProspects(
           existingProspects.map((item) => item.prospects) as ProspectData[],
         );
@@ -72,7 +73,8 @@ export function ContactSolicitudes({ contactId }: ContactSolicitudesProps) {
     // Reload prospects
     const loadProspects = async () => {
       try {
-        const existingProspects = await getProspectsByContactWithAuth(contactId);
+        const existingProspects =
+          await getProspectsByContactWithAuth(contactId);
         setProspects(
           existingProspects.map((item) => item.prospects) as ProspectData[],
         );

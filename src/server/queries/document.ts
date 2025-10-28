@@ -6,7 +6,7 @@ import type { Document } from "../../lib/data";
 // Helper function to serialize document with BigInt values
 export function serializeDocument(document: Document | null | undefined) {
   if (!document) return null;
-  
+
   return {
     ...document,
     docId: document.docId.toString(),
@@ -137,9 +137,14 @@ export async function getListingDocuments(listingId: number, isActive = true) {
 }
 
 // Get documents by lead ID
-export async function getLeadDocuments(listingContactId: number, isActive = true) {
+export async function getLeadDocuments(
+  listingContactId: number,
+  isActive = true,
+) {
   try {
-    const conditions = [eq(documents.listingContactId, BigInt(listingContactId))];
+    const conditions = [
+      eq(documents.listingContactId, BigInt(listingContactId)),
+    ];
     if (isActive !== undefined) {
       conditions.push(eq(documents.isActive, isActive));
     }
@@ -344,7 +349,9 @@ export async function listDocuments(
         );
       }
       if (filters.listingContactId) {
-        whereConditions.push(eq(documents.listingContactId, BigInt(filters.listingContactId)));
+        whereConditions.push(
+          eq(documents.listingContactId, BigInt(filters.listingContactId)),
+        );
       }
       if (filters.dealId) {
         whereConditions.push(eq(documents.dealId, BigInt(filters.dealId)));

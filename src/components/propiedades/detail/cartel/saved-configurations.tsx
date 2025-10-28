@@ -1,12 +1,6 @@
-
 import React, { useState } from "react";
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -56,11 +50,12 @@ export function SavedConfigurations({
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showManagement, setShowManagement] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [configToDelete, setConfigToDelete] = useState<SavedCartelConfiguration | null>(null);
+  const [configToDelete, setConfigToDelete] =
+    useState<SavedCartelConfiguration | null>(null);
 
   const handleSetDefault = async (configId: string) => {
     setActionLoading(configId);
-    
+
     try {
       await onSetDefaultConfiguration(configId);
       await onRefreshConfigurations();
@@ -80,9 +75,9 @@ export function SavedConfigurations({
 
   const handleDelete = async () => {
     if (!configToDelete) return;
-    
+
     setActionLoading(configToDelete.id);
-    
+
     try {
       await onDeleteConfiguration(configToDelete.id);
       await onRefreshConfigurations();
@@ -107,8 +102,8 @@ export function SavedConfigurations({
       <div className="mt-6">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-center py-4 text-muted-foreground">
-              <Package className="h-8 w-8 mx-auto mb-3 opacity-50" />
+            <div className="py-4 text-center text-muted-foreground">
+              <Package className="mx-auto mb-3 h-8 w-8 opacity-50" />
               <p className="text-sm">No hay configuraciones guardadas</p>
             </div>
           </CardContent>
@@ -121,7 +116,7 @@ export function SavedConfigurations({
     <div className="mt-6">
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
             <Package className="h-4 w-4 text-muted-foreground" />
             Configuraciones
           </CardTitle>
@@ -138,7 +133,9 @@ export function SavedConfigurations({
                 <Select
                   value={selectedConfigurationId ?? ""}
                   onValueChange={(value) => {
-                    const config = savedConfigurations.find(c => c.id === value);
+                    const config = savedConfigurations.find(
+                      (c) => c.id === value,
+                    );
                     if (config) {
                       handleLoadConfiguration(config);
                     }
@@ -153,7 +150,7 @@ export function SavedConfigurations({
                         <div className="flex items-center gap-2">
                           <span className="truncate">{config.name}</span>
                           {config.isDefault && (
-                            <Star className="h-3 w-3 fill-current text-yellow-500 flex-shrink-0" />
+                            <Star className="h-3 w-3 flex-shrink-0 fill-current text-yellow-500" />
                           )}
                         </div>
                       </SelectItem>
@@ -168,43 +165,47 @@ export function SavedConfigurations({
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowManagement(!showManagement)}
-                  className="h-auto p-2 justify-start text-sm font-medium text-muted-foreground hover:text-foreground"
+                  className="h-auto justify-start p-2 text-sm font-medium text-muted-foreground hover:text-foreground"
                 >
                   {showManagement ? (
-                    <ChevronDown className="h-4 w-4 mr-2" />
+                    <ChevronDown className="mr-2 h-4 w-4" />
                   ) : (
-                    <ChevronRight className="h-4 w-4 mr-2" />
+                    <ChevronRight className="mr-2 h-4 w-4" />
                   )}
                   Gestionar Configuraciones
                 </Button>
 
                 {/* Collapsible Management List */}
                 {showManagement && (
-                  <div className="space-y-2 pl-6 border-l-2 border-muted">
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                  <div className="space-y-2 border-l-2 border-muted pl-6">
+                    <div className="max-h-64 space-y-2 overflow-y-auto">
                       {savedConfigurations.map((config) => (
                         <div
                           key={config.id}
-                          className={`flex items-center justify-between p-2 sm:p-3 rounded-lg border transition-colors hover:bg-muted/50 ${
-                            selectedConfigurationId === config.id ? "border-primary bg-primary/5" : ""
+                          className={`flex items-center justify-between rounded-lg border p-2 transition-colors hover:bg-muted/50 sm:p-3 ${
+                            selectedConfigurationId === config.id
+                              ? "border-primary bg-primary/5"
+                              : ""
                           }`}
                         >
-                          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                            <div className="flex-1 min-w-0">
+                          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+                            <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium truncate">{config.name}</span>
+                                <span className="truncate text-sm font-medium">
+                                  {config.name}
+                                </span>
                                 {config.isDefault && (
-                                  <Star className="h-3 w-3 fill-current text-yellow-500 flex-shrink-0" />
+                                  <Star className="h-3 w-3 flex-shrink-0 fill-current text-yellow-500" />
                                 )}
                               </div>
                             </div>
-                            
+
                             {selectedConfigurationId === config.id && (
-                              <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                              <Check className="h-4 w-4 flex-shrink-0 text-primary" />
                             )}
                           </div>
 
-                          <div className="flex items-center gap-1 sm:gap-2 ml-2">
+                          <div className="ml-2 flex items-center gap-1 sm:gap-2">
                             {!config.isDefault && (
                               <Button
                                 variant="ghost"
@@ -219,15 +220,17 @@ export function SavedConfigurations({
                                 ) : (
                                   <Star className="h-3 w-3 sm:mr-1" />
                                 )}
-                                <span className="hidden sm:inline text-xs">Predeterminada</span>
+                                <span className="hidden text-xs sm:inline">
+                                  Predeterminada
+                                </span>
                               </Button>
                             )}
-                            
+
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteClick(config)}
-                              className="h-8 w-8 p-0 sm:h-auto sm:w-auto sm:px-2 text-destructive hover:text-destructive"
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive sm:h-auto sm:w-auto sm:px-2"
                               disabled={actionLoading === config.id}
                               title="Eliminar configuración"
                             >
@@ -236,7 +239,9 @@ export function SavedConfigurations({
                               ) : (
                                 <Trash2 className="h-3 w-3 sm:mr-1" />
                               )}
-                              <span className="hidden sm:inline text-xs">Eliminar</span>
+                              <span className="hidden text-xs sm:inline">
+                                Eliminar
+                              </span>
                             </Button>
                           </div>
                         </div>
@@ -256,11 +261,15 @@ export function SavedConfigurations({
           <DialogHeader>
             <DialogTitle>¿Eliminar configuración?</DialogTitle>
             <DialogDescription>
-              Se eliminará permanentemente &ldquo;{configToDelete?.name}&rdquo;. Esta acción no se puede deshacer.
+              Se eliminará permanentemente &ldquo;{configToDelete?.name}&rdquo;.
+              Esta acción no se puede deshacer.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
               Cancelar
             </Button>
             <Button
@@ -270,7 +279,7 @@ export function SavedConfigurations({
             >
               {actionLoading === configToDelete?.id ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Eliminando...
                 </>
               ) : (

@@ -58,18 +58,13 @@ export default async function PlanosPage({ params }: DocumentPageProps) {
 
       {/* Section header */}
       <div className="mb-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
-          Planos
-        </h3>
+        <h3 className="mb-2 text-xl font-semibold text-gray-900">Planos</h3>
         <p className="text-gray-600">
           Gestiona todos los planos de la propiedad.
         </p>
       </div>
 
-      <DocumentsSection
-        listing={documentsData}
-        folderType="planos"
-      />
+      <DocumentsSection listing={documentsData} folderType="planos" />
     </div>
   );
 }

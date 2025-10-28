@@ -48,7 +48,11 @@ interface PortalSelectionProps {
   initialPlatformStates?: Record<string, boolean>;
   initialVisibilityModes?: Record<string, number>;
   initialHidePriceModes?: Record<string, boolean>;
-  onPortalStateChange?: (platformStates: Record<string, boolean>, visibilityModes: Record<string, number>, hidePriceModes: Record<string, boolean>) => void;
+  onPortalStateChange?: (
+    platformStates: Record<string, boolean>,
+    visibilityModes: Record<string, number>,
+    hidePriceModes: Record<string, boolean>,
+  ) => void;
 }
 
 // Mock default settings - in real app this would come from configuration
@@ -113,19 +117,21 @@ export function PortalSelection({
     Record<string, boolean>
   >({});
   // Type guard for fotocasaProps
-  const parsedFotocasaProps = fotocasaProps as { visibilityMode?: number; hidePrice?: boolean } | undefined;
+  const parsedFotocasaProps = fotocasaProps as
+    | { visibilityMode?: number; hidePrice?: boolean }
+    | undefined;
 
   const [visibilityModes, setVisibilityModes] = useState<
     Record<string, number>
   >(
     initialVisibilityModes ?? {
       fotocasa: parsedFotocasaProps?.visibilityMode ?? 1, // Use database value or default to Exact
-    }
+    },
   );
   const [hidePriceModes, setHidePriceModes] = useState<Record<string, boolean>>(
     initialHidePriceModes ?? {
       fotocasa: parsedFotocasaProps?.hidePrice ?? false, // Use database value or default to show price
-    }
+    },
   );
   const [refreshingPlatforms, setRefreshingPlatforms] = useState<
     Record<string, boolean>
@@ -138,7 +144,8 @@ export function PortalSelection({
 
       const initializedPlatforms = platformConfig.map((config) => {
         // Check if we have cached platform state from parent first
-        const hasCachedState = initialPlatformStates && config.id in initialPlatformStates;
+        const hasCachedState =
+          initialPlatformStates && config.id in initialPlatformStates;
         const isActive = hasCachedState
           ? (initialPlatformStates[config.id] ?? false)
           : (portalValues[config.id as keyof typeof portalValues] ?? false);
@@ -220,7 +227,7 @@ export function PortalSelection({
     // Notify parent component to persist platform toggle states
     const platformStates = updatedPlatforms.reduce(
       (acc, p) => ({ ...acc, [p.id]: p.isActive }),
-      {} as Record<string, boolean>
+      {} as Record<string, boolean>,
     );
     onPortalStateChange?.(platformStates, visibilityModes, hidePriceModes);
   };
@@ -229,14 +236,24 @@ export function PortalSelection({
     setIsLoading(true);
 
     try {
-      const currentFotocasaState = platforms.find((p) => p.id === "fotocasa")?.isActive ?? false;
+      const currentFotocasaState =
+        platforms.find((p) => p.id === "fotocasa")?.isActive ?? false;
 
       // Debug logging
       console.log("=== handleConfirmChanges DEBUG ===");
-      console.log("currentFotocasaState (from UI toggle):", currentFotocasaState);
+      console.log(
+        "currentFotocasaState (from UI toggle):",
+        currentFotocasaState,
+      );
       console.log("fotocasa prop (from database):", fotocasa);
-      console.log("Condition for POST (currentFotocasaState && !fotocasa):", currentFotocasaState && !fotocasa);
-      console.log("Condition for DELETE (!currentFotocasaState && fotocasa):", !currentFotocasaState && fotocasa);
+      console.log(
+        "Condition for POST (currentFotocasaState && !fotocasa):",
+        currentFotocasaState && !fotocasa,
+      );
+      console.log(
+        "Condition for DELETE (!currentFotocasaState && fotocasa):",
+        !currentFotocasaState && fotocasa,
+      );
 
       // Track if Fotocasa API call was successful
       let fotocasaApiSuccess = true;
@@ -255,8 +272,13 @@ export function PortalSelection({
             console.log("Successfully published to Fotocasa");
             toast.success("Correctamente subido a Fotocasa");
           } else {
-            console.error("Failed to publish to Fotocasa:", fotocasaResult.error);
-            toast.error(`Error al publicar en Fotocasa: ${fotocasaResult.error}`);
+            console.error(
+              "Failed to publish to Fotocasa:",
+              fotocasaResult.error,
+            );
+            toast.error(
+              `Error al publicar en Fotocasa: ${fotocasaResult.error}`,
+            );
             fotocasaApiSuccess = false;
           }
         } catch (error) {
@@ -273,8 +295,13 @@ export function PortalSelection({
             console.log("Successfully deleted from Fotocasa");
             toast.success("Borrado correctamente de Fotocasa");
           } else {
-            console.error("Failed to delete from Fotocasa:", fotocasaResult.error);
-            toast.error(`Error al eliminar de Fotocasa: ${fotocasaResult.error}`);
+            console.error(
+              "Failed to delete from Fotocasa:",
+              fotocasaResult.error,
+            );
+            toast.error(
+              `Error al eliminar de Fotocasa: ${fotocasaResult.error}`,
+            );
             fotocasaApiSuccess = false;
           }
         } catch (error) {
@@ -317,7 +344,9 @@ export function PortalSelection({
         }
         return {
           ...platform,
-          status: platform.isActive ? ("active" as const) : ("inactive" as const),
+          status: platform.isActive
+            ? ("active" as const)
+            : ("inactive" as const),
         };
       });
 
@@ -364,9 +393,13 @@ export function PortalSelection({
     // Notify parent component to persist state
     const platformStates = updatedPlatforms.reduce(
       (acc, p) => ({ ...acc, [p.id]: p.isActive }),
-      {} as Record<string, boolean>
+      {} as Record<string, boolean>,
     );
-    onPortalStateChange?.(platformStates, updatedVisibilityModes, hidePriceModes);
+    onPortalStateChange?.(
+      platformStates,
+      updatedVisibilityModes,
+      hidePriceModes,
+    );
   };
 
   const handleHidePriceChange = (platformId: string, hidePrice: boolean) => {
@@ -386,9 +419,13 @@ export function PortalSelection({
     // Notify parent component to persist state
     const platformStates = updatedPlatforms.reduce(
       (acc, p) => ({ ...acc, [p.id]: p.isActive }),
-      {} as Record<string, boolean>
+      {} as Record<string, boolean>,
     );
-    onPortalStateChange?.(platformStates, visibilityModes, updatedHidePriceModes);
+    onPortalStateChange?.(
+      platformStates,
+      visibilityModes,
+      updatedHidePriceModes,
+    );
   };
 
   const handleRefresh = async (platformId: string) => {
@@ -396,7 +433,9 @@ export function PortalSelection({
     const platform = platforms.find((p) => p.id === platformId);
 
     if (platformId === "fotocasa" && !fotocasa) {
-      toast.error("Fotocasa no está publicado. Usa el botón Confirmar para publicar.");
+      toast.error(
+        "Fotocasa no está publicado. Usa el botón Confirmar para publicar.",
+      );
       return;
     }
 
@@ -409,7 +448,9 @@ export function PortalSelection({
 
     try {
       if (platformId === "fotocasa") {
-        console.log(`Updating Fotocasa with current settings (PUT operation)...`);
+        console.log(
+          `Updating Fotocasa with current settings (PUT operation)...`,
+        );
         const result = await updateFotocasa(
           Number(listingId),
           visibilityModes.fotocasa ?? 1,
@@ -607,28 +648,37 @@ export function PortalSelection({
                             className="space-y-1"
                           >
                             <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="1" id={`${platform.id}-exact`} />
+                              <RadioGroupItem
+                                value="1"
+                                id={`${platform.id}-exact`}
+                              />
                               <Label
                                 htmlFor={`${platform.id}-exact`}
-                                className="text-xs font-normal cursor-pointer"
+                                className="cursor-pointer text-xs font-normal"
                               >
                                 Exacta
                               </Label>
                             </div>
                             <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="2" id={`${platform.id}-street`} />
+                              <RadioGroupItem
+                                value="2"
+                                id={`${platform.id}-street`}
+                              />
                               <Label
                                 htmlFor={`${platform.id}-street`}
-                                className="text-xs font-normal cursor-pointer"
+                                className="cursor-pointer text-xs font-normal"
                               >
                                 Calle
                               </Label>
                             </div>
                             <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="3" id={`${platform.id}-zone`} />
+                              <RadioGroupItem
+                                value="3"
+                                id={`${platform.id}-zone`}
+                              />
                               <Label
                                 htmlFor={`${platform.id}-zone`}
-                                className="text-xs font-normal cursor-pointer"
+                                className="cursor-pointer text-xs font-normal"
                               >
                                 Zona
                               </Label>
@@ -640,7 +690,7 @@ export function PortalSelection({
                         <div className="flex items-center justify-between">
                           <Label
                             htmlFor={`${platform.id}-hide-price`}
-                            className="text-xs font-medium text-gray-700 cursor-pointer"
+                            className="cursor-pointer text-xs font-medium text-gray-700"
                           >
                             Ocultar precio
                           </Label>

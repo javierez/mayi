@@ -959,7 +959,14 @@ export const mockAccounts: Account[] = [
     paymentSettings: {},
     preferences: {
       brandingUpdatedAt: "2025-09-14T22:17:01.505Z",
-      colorPalette: ["#dd7a26", "#744314", "#f6ecda", "#a19484", "#2D3748", "#4A5568"],
+      colorPalette: [
+        "#dd7a26",
+        "#744314",
+        "#f6ecda",
+        "#a19484",
+        "#2D3748",
+        "#4A5568",
+      ],
     },
     terms: {
       commission: 3.5,
@@ -1029,7 +1036,13 @@ export type Listing = {
   agentId: string; // Changed from bigint to match users.id type
   listingType: "Sale" | "Rent" | "Sold";
   price: string;
-  status: "En Venta" | "En Alquiler" | "Vendido" | "Alquilado" | "Descartado" | "Draft";
+  status:
+    | "En Venta"
+    | "En Alquiler"
+    | "Vendido"
+    | "Alquilado"
+    | "Descartado"
+    | "Draft";
   isFeatured: boolean;
   isBankOwned: boolean;
   publishToWebsite: boolean;
@@ -1766,14 +1779,25 @@ export const mockWebsiteConfigs = [
       facebook: "https://www.facebook.com/javierperez",
       linkedin: "https://linkedin.com/javierez_98",
       twitter: "https://twitter.com/acropolisRE",
-      instagram: "https://instagram.com/javierez_98"
+      instagram: "https://instagram.com/javierez_98",
     }),
     seoProps: JSON.stringify({
-      description: "Tu inmobiliaria de confianza en el León. Profesionales del sector durante más de 35 años.",
+      description:
+        "Tu inmobiliaria de confianza en el León. Profesionales del sector durante más de 35 años.",
       email: "info@acropolis-realestate.com",
-      keywords: JSON.stringify(["inmobiliaria", "propiedades", "pisos", "casas", "venta", "alquiler", "León", "España"]),
+      keywords: JSON.stringify([
+        "inmobiliaria",
+        "propiedades",
+        "pisos",
+        "casas",
+        "venta",
+        "alquiler",
+        "León",
+        "España",
+      ]),
       name: "Acropolis Bienes Raíces",
-      ogDescription: "Descubre propiedades premium en las mejores ubicaciones de España. Más de 15 años de experiencia en el sector inmobiliario.",
+      ogDescription:
+        "Descubre propiedades premium en las mejores ubicaciones de España. Más de 15 años de experiencia en el sector inmobiliario.",
       ogImage: "/images/og-image.jpg",
       ogLocale: "es_ES",
       ogSiteName: "Acropolis Bienes Raíces",
@@ -1781,28 +1805,34 @@ export const mockWebsiteConfigs = [
       ogType: "website",
       ogUrl: "https://acropolis-realestate.com",
       telephone: "+34 987 123 456",
-      title: "Inmobiliaria Acrópolis - Alquiler y venta de pisos en León, Benavente y Bilbao.",
-      url: "https://acropolis-realestate.com"
+      title:
+        "Inmobiliaria Acrópolis - Alquiler y venta de pisos en León, Benavente y Bilbao.",
+      url: "https://acropolis-realestate.com",
     }),
     logo: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/branding/logo_transparent_1757888219206_JsKpko.png",
-    favicon: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/branding/logo_transparent_1754307054237_gBmkUg.png",
+    favicon:
+      "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/branding/logo_transparent_1754307054237_gBmkUg.png",
     heroProps: JSON.stringify({
       title: "Venta y alquiler de pisos en León",
       subtitle: "Busca tu piso o casa ideal",
-      backgroundImage: "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/hero/background_1757747327782_gCz1yi.png",
+      backgroundImage:
+        "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/hero/background_1757747327782_gCz1yi.png",
       findPropertyButton: "Explorar Propiedades",
-      contactButton: "Contáctanos"
+      contactButton: "Contáctanos",
     }),
     featuredProps: JSON.stringify({
       title: "Propiedades Destacadas",
-      subtitle: "Descubre nuestra selección de propiedades premium en las ubicaciones más deseables",
-      maxItems: 6
+      subtitle:
+        "Descubre nuestra selección de propiedades premium en las ubicaciones más deseables",
+      maxItems: 6,
     }),
     aboutProps: JSON.stringify({
       title: "Sobre Inmobiliaria Acropolis",
       subtitle: "Tu socio de confianza en el viaje inmobiliario desde 1970",
-      content: "En Inmobiliaria Acropolis, creemos que encontrar la propiedad perfecta debe ser una experiencia emocionante y gratificante. Con más de 25 años de experiencia en la industria, nuestro dedicado equipo de profesionales está comprometido a proporcionar un servicio y orientación excepcionales a lo largo de tu viaje inmobiliario.",
-      content2: "Nuestro enfoque personalizado y atención al detalle nos distingue en el mercado. Nos enorgullece ofrecer un servicio integral que abarca desde la búsqueda inicial hasta el cierre de la operación.",
+      content:
+        "En Inmobiliaria Acropolis, creemos que encontrar la propiedad perfecta debe ser una experiencia emocionante y gratificante. Con más de 25 años de experiencia en la industria, nuestro dedicado equipo de profesionales está comprometido a proporcionar un servicio y orientación excepcionales a lo largo de tu viaje inmobiliario.",
+      content2:
+        "Nuestro enfoque personalizado y atención al detalle nos distingue en el mercado. Nos enorgullece ofrecer un servicio integral que abarca desde la búsqueda inicial hasta el cierre de la operación.",
       image: "/properties/thoughtful-man.png",
       services: JSON.stringify([
         { title: "Conocimiento local experto", icon: "map" },
@@ -1810,7 +1840,7 @@ export const mockWebsiteConfigs = [
         { title: "Comunicación transparente", icon: "message-square" },
         { title: "Experiencia en negociación", icon: "handshake" },
         { title: "Marketing integral", icon: "megaphone" },
-        { title: "Soporte continuo", icon: "help-circle" }
+        { title: "Soporte continuo", icon: "help-circle" },
       ]),
       maxServicesDisplayed: 6,
       servicesSectionTitle: "Nuestros Servicios",
@@ -1824,32 +1854,34 @@ export const mockWebsiteConfigs = [
       kpi3Name: "Agentes Profesionales",
       kpi3Data: "50+",
       kpi4Name: "Clientes Satisfechos",
-      kpi4Data: "98%"
+      kpi4Data: "98%",
     }),
     propertiesProps: JSON.stringify({
       title: "Nuestras propiedades",
       subtitle: "Encuentra tu opción ideal",
       itemsPerPage: 6,
       defaultSort: "price-desc",
-      buttonText: "Ver Todas"
+      buttonText: "Ver Todas",
     }),
     testimonialProps: JSON.stringify({
       title: "Lo Que Dicen Nuestros Clientes",
-      subtitle: "No solo tomes nuestra palabra. Escucha a algunos de nuestros clientes satisfechos.",
+      subtitle:
+        "No solo tomes nuestra palabra. Escucha a algunos de nuestros clientes satisfechos.",
       itemsPerPage: 3,
       testimonials: [
         {
           testimonial_id: "testimonial-1755447444834",
           name: "María",
           role: "Propietaria satisfecha",
-          content: "Excelente servicio, encontraron el comprador perfecto para mi propiedad.",
+          content:
+            "Excelente servicio, encontraron el comprador perfecto para mi propiedad.",
           avatar: "/properties/confident-leader.png",
           rating: 5,
           is_verified: true,
           sort_order: 1,
-          is_active: true
-        }
-      ]
+          is_active: true,
+        },
+      ],
     }),
     contactProps: JSON.stringify({
       title: "Contacta con Nosotros",
@@ -1868,42 +1900,44 @@ export const mockWebsiteConfigs = [
             street: "123 Avenida Inmobiliaria",
             city: "León",
             state: "CL",
-            country: "España"
+            country: "España",
           },
           phoneNumbers: {
             main: "+34 987 123 456",
-            sales: "+34 987 123 457"
+            sales: "+34 987 123 457",
           },
           emailAddresses: {
             info: "leon@acropolis-realestate.com",
-            sales: "ventas.leon@acropolis-realestate.com"
+            sales: "ventas.leon@acropolis-realestate.com",
           },
           scheduleInfo: {
             weekdays: "Lunes a Viernes: 9:00 - 18:00",
             saturday: "Sábado: 12:00 - 14:00",
-            sunday: "Domingo: Cerrado"
+            sunday: "Domingo: Cerrado",
           },
-          mapUrl: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2923.8278533985427!2d-5.569259684526154!3d42.59872697917133!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd374a0c2c000001%3A0x400f8d1ce997580!2sLe%C3%B3n!5e0!3m2!1ses!2ses!4v1647881234567!5m2!1ses!2ses",
-          isDefault: true
-        }
-      ]
+          mapUrl:
+            "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2923.8278533985427!2d-5.569259684526154!3d42.59872697917133!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd374a0c2c000001%3A0x400f8d1ce997580!2sLe%C3%B3n!5e0!3m2!1ses!2ses!4v1647881234567!5m2!1ses!2ses",
+          isDefault: true,
+        },
+      ],
     }),
     footerProps: JSON.stringify({
       companyName: "Acropolis Bienes Raíces",
-      description: "Tu socio de confianza para encontrar la propiedad perfecta. Con años de experiencia y dedicación a la excelencia.",
+      description:
+        "Tu socio de confianza para encontrar la propiedad perfecta. Con años de experiencia y dedicación a la excelencia.",
       socialLinks: {
         facebook: "https://facebook.com/acropolisrealestate",
         linkedin: "https://linkedin.com/company/acropolisrealestate",
         twitter: "https://twitter.com/acropolisRE",
-        instagram: "https://instagram.com/acropolisrealestate"
+        instagram: "https://instagram.com/acropolisrealestate",
       },
       officeLocations: [
         {
           name: "León",
           address: ["123 Avenida Inmobiliaria", "León, CL 24001", "España"],
           phone: "+34 987 123 456",
-          email: "leon@acropolis-realestate.com"
-        }
+          email: "leon@acropolis-realestate.com",
+        },
       ],
       quickLinksVisibility: {
         inicio: true,
@@ -1913,59 +1947,78 @@ export const mockWebsiteConfigs = [
         contacto: true,
         comprar: false,
         alquilar: false,
-        vender: false
+        vender: false,
       },
       propertyTypesVisibility: {
         pisos: true,
         casas: true,
         locales: true,
         solares: true,
-        garajes: true
+        garajes: true,
       },
-      copyright: "© 2025 Acropolis Bienes Raíces. Todos los derechos reservados."
+      copyright:
+        "© 2025 Acropolis Bienes Raíces. Todos los derechos reservados.",
     }),
     headProps: JSON.stringify({
       title: "idealista — Casas y pisos, alquiler y venta. Anuncios gratis",
-      description: "¿Buscas casa? Con idealista es más fácil. Más de 1.200.000 anuncios de pisos y casas en venta o alquiler."
+      description:
+        "¿Buscas casa? Con idealista es más fácil. Más de 1.200.000 anuncios de pisos y casas en venta o alquiler.",
     }),
     metadata: JSON.stringify({
       mainpage: {
         alternates: { canonical: "/" },
-        description: "¿Buscas casa? Con Inmobiliaria Acropolis es más fácil. Pisos y casas en venta o alquiler.",
-        keywords: ["inmobiliaria", "casas", "pisos", "alquiler", "venta", "propiedades", "inmuebles", "acropolis"],
+        description:
+          "¿Buscas casa? Con Inmobiliaria Acropolis es más fácil. Pisos y casas en venta o alquiler.",
+        keywords: [
+          "inmobiliaria",
+          "casas",
+          "pisos",
+          "alquiler",
+          "venta",
+          "propiedades",
+          "inmuebles",
+          "acropolis",
+        ],
         openGraph: {
           description: "¿Buscas casa? Con Inmobiliaria Acropolis es más fácil.",
-          images: [{
-            alt: "Inmobiliaria Acropolis - Casas y pisos en venta y alquiler",
-            height: 630,
-            url: "/properties/sleek-city-tower.png",
-            width: 1200
-          }],
+          images: [
+            {
+              alt: "Inmobiliaria Acropolis - Casas y pisos en venta y alquiler",
+              height: 630,
+              url: "/properties/sleek-city-tower.png",
+              width: 1200,
+            },
+          ],
           locale: "es_ES",
           siteName: "Inmobiliaria Acropolis",
           title: "Casas y pisos en venta y alquiler - Inmobiliaria Acropolis",
-          type: "website"
+          type: "website",
         },
         robots: {
           follow: 1,
-          googleBot: { follow: 1, index: 1, "max-image-preview": "large", "max-snippet": -1 },
-          index: 1
+          googleBot: {
+            follow: 1,
+            index: 1,
+            "max-image-preview": "large",
+            "max-snippet": -1,
+          },
+          index: 1,
         },
         title: "Casas y pisos, alquiler y venta",
         twitter: {
           card: "summary_large_image",
           description: "Encuentra tu hogar ideal con Inmobiliaria Acropolis.",
           images: ["/properties/sleek-city-tower.png"],
-          title: "Casas y pisos en venta y alquiler - Inmobiliaria Acropolis"
-        }
-      }
+          title: "Casas y pisos en venta y alquiler - Inmobiliaria Acropolis",
+        },
+      },
     }),
     watermarkProps: JSON.stringify({
       enabled: true,
       position: "center",
-      sizePercentage: 15
-    })
-  }
+      sizePercentage: 15,
+    }),
+  },
 ];
 
 // Mock data for prospects

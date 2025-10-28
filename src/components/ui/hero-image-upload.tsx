@@ -20,15 +20,18 @@ export function HeroImageUpload({
   const [isDragActive, setIsDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const validateFile = useCallback((file: File): "image" | "video" | null => {
-    if (file.type.startsWith("image/")) {
-      return "image";
-    }
-    if (acceptVideo && file.type.startsWith("video/")) {
-      return "video";
-    }
-    return null;
-  }, [acceptVideo]);
+  const validateFile = useCallback(
+    (file: File): "image" | "video" | null => {
+      if (file.type.startsWith("image/")) {
+        return "image";
+      }
+      if (acceptVideo && file.type.startsWith("video/")) {
+        return "video";
+      }
+      return null;
+    },
+    [acceptVideo],
+  );
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -54,7 +57,7 @@ export function HeroImageUpload({
           setError(
             acceptVideo
               ? "Por favor selecciona un archivo de imagen o video válido"
-              : "Por favor selecciona un archivo de imagen válido"
+              : "Por favor selecciona un archivo de imagen válido",
           );
           return;
         }
@@ -76,7 +79,7 @@ export function HeroImageUpload({
           setError(
             acceptVideo
               ? "Por favor selecciona un archivo de imagen o video válido"
-              : "Por favor selecciona un archivo de imagen válido"
+              : "Por favor selecciona un archivo de imagen válido",
           );
           return;
         }

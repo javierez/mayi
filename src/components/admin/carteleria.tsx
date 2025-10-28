@@ -207,7 +207,10 @@ export const Carteleria: FC = () => {
         format_ids: state.selections.formatIds,
       };
 
-      const result = await updatePosterPreferenceFields(accountId, minimalUpdates);
+      const result = await updatePosterPreferenceFields(
+        accountId,
+        minimalUpdates,
+      );
 
       if (result.success) {
         setHasUnsavedChanges(false);
@@ -228,12 +231,7 @@ export const Carteleria: FC = () => {
     } finally {
       setSavingPreferences(false);
     }
-  }, [
-    accountId,
-    state.selections.styleId,
-    state.selections.formatIds,
-    toast,
-  ]);
+  }, [accountId, state.selections.styleId, state.selections.formatIds, toast]);
 
   const currentStepIndex = steps.findIndex(
     (step) => step.id === state.currentStep,

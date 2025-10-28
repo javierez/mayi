@@ -16,7 +16,10 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 import { cn } from "~/lib/utils";
-import type { ExtractedFieldResult, EnhancedExtractedPropertyData } from "~/types/textract-enhanced";
+import type {
+  ExtractedFieldResult,
+  EnhancedExtractedPropertyData,
+} from "~/types/textract-enhanced";
 import { saveVoiceProperty } from "~/server/queries/forms/voice/save-voice-property";
 import { searchContactsForFormWithAuth } from "~/server/queries/contact";
 import ContactPopup from "~/components/crear/pages/contact-popup";
@@ -124,19 +127,23 @@ export function VoiceFieldValidationModal({
   const [checkedFields, setCheckedFields] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  
+
   // Contact selection state
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
   const [contactSearch, setContactSearch] = useState("");
   const [searchResults, setSearchResults] = useState<Contact[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(
+    null,
+  );
   const [showContactPopup, setShowContactPopup] = useState(false);
 
   // Initialize checked fields when modal opens or fields change
   useEffect(() => {
     if (isOpen && extractedFields.length > 0) {
-      const allFieldIds = extractedFields.map(field => `${field.dbTable}.${field.dbColumn}`);
+      const allFieldIds = extractedFields.map(
+        (field) => `${field.dbTable}.${field.dbColumn}`,
+      );
       setCheckedFields(new Set(allFieldIds));
     }
   }, [isOpen, extractedFields]);
@@ -151,10 +158,12 @@ export function VoiceFieldValidationModal({
     try {
       setIsSearching(true);
       const results = await searchContactsForFormWithAuth(query, 6);
-      setSearchResults(results.map(contact => ({
-        id: Number(contact.id),
-        name: contact.name,
-      })));
+      setSearchResults(
+        results.map((contact) => ({
+          id: Number(contact.id),
+          name: contact.name,
+        })),
+      );
     } catch (error) {
       console.error("Error searching contacts:", error);
       setSearchResults([]);
@@ -164,21 +173,24 @@ export function VoiceFieldValidationModal({
   }, []);
 
   // Handle search input with debouncing
-  const handleContactSearchChange = useCallback((value: string) => {
-    setContactSearch(value);
-    
-    // Clear existing timeout
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-    }
+  const handleContactSearchChange = useCallback(
+    (value: string) => {
+      setContactSearch(value);
 
-    // Set new timeout for debounced search
-    const timeout = setTimeout(() => {
-      void performContactSearch(value);
-    }, 300);
-    
-    setSearchTimeout(timeout);
-  }, [searchTimeout, performContactSearch]);
+      // Clear existing timeout
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+
+      // Set new timeout for debounced search
+      const timeout = setTimeout(() => {
+        void performContactSearch(value);
+      }, 300);
+
+      setSearchTimeout(timeout);
+    },
+    [searchTimeout, performContactSearch],
+  );
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -192,7 +204,9 @@ export function VoiceFieldValidationModal({
   // Helper function to toggle contact selection
   const toggleContact = (contactId: string) => {
     if (selectedContactIds.includes(contactId)) {
-      setSelectedContactIds(selectedContactIds.filter(id => id !== contactId));
+      setSelectedContactIds(
+        selectedContactIds.filter((id) => id !== contactId),
+      );
     } else {
       setSelectedContactIds([...selectedContactIds, contactId]);
     }
@@ -222,7 +236,10 @@ export function VoiceFieldValidationModal({
       setSearchResults((prev) => [newContactForList, ...prev].slice(0, 6));
 
       // Auto-select the new contact
-      setSelectedContactIds([...selectedContactIds, contact.contactId.toString()]);
+      setSelectedContactIds([
+        ...selectedContactIds,
+        contact.contactId.toString(),
+      ]);
     }
   };
 
@@ -231,7 +248,7 @@ export function VoiceFieldValidationModal({
     if (typeof field.value === "boolean") {
       return field.value ? "Sí" : "No";
     }
-    
+
     if (field.dbColumn === "price" && typeof field.value === "number") {
       return field.value.toLocaleString("es-ES", {
         style: "currency",
@@ -239,85 +256,95 @@ export function VoiceFieldValidationModal({
         minimumFractionDigits: 0,
       });
     }
-    
-    if ((field.dbColumn === "squareMeter" || field.dbColumn === "builtSurfaceArea") && typeof field.value === "number") {
+
+    if (
+      (field.dbColumn === "squareMeter" ||
+        field.dbColumn === "builtSurfaceArea") &&
+      typeof field.value === "number"
+    ) {
       return `${field.value} m²`;
     }
-    
+
     if (field.dbColumn === "bedrooms" && typeof field.value === "number") {
-      return `${field.value} dormitorio${field.value !== 1 ? 's' : ''}`;
+      return `${field.value} dormitorio${field.value !== 1 ? "s" : ""}`;
     }
-    
+
     if (field.dbColumn === "bathrooms" && typeof field.value === "number") {
-      return `${field.value} baño${field.value !== 1 ? 's' : ''}`;
+      return `${field.value} baño${field.value !== 1 ? "s" : ""}`;
     }
-    
+
     if (field.dbColumn === "yearBuilt" && typeof field.value === "number") {
       return `Año ${field.value}`;
     }
-    
+
     if (field.dbColumn === "listingType" && typeof field.value === "string") {
       const typeMap: Record<string, string> = {
-        "Sale": "Venta",
-        "Rent": "Alquiler", 
-        "RentWithOption": "Alquiler con Opción",
-        "Transfer": "Traspaso",
-        "RoomSharing": "Compartir Habitación"
+        Sale: "Venta",
+        Rent: "Alquiler",
+        RentWithOption: "Alquiler con Opción",
+        Transfer: "Traspaso",
+        RoomSharing: "Compartir Habitación",
       };
       return typeMap[field.value] ?? field.value;
     }
-    
+
     if (field.dbColumn === "propertyType" && typeof field.value === "string") {
       const typeMap: Record<string, string> = {
-        "piso": "Piso",
-        "casa": "Casa",
-        "chalet": "Chalet",
-        "apartamento": "Apartamento",
-        "local": "Local",
-        "garaje": "Garaje",
-        "estudio": "Estudio",
-        "loft": "Loft",
-        "dúplex": "Dúplex",
-        "ático": "Ático"
+        piso: "Piso",
+        casa: "Casa",
+        chalet: "Chalet",
+        apartamento: "Apartamento",
+        local: "Local",
+        garaje: "Garaje",
+        estudio: "Estudio",
+        loft: "Loft",
+        dúplex: "Dúplex",
+        ático: "Ático",
       };
       return typeMap[field.value] ?? field.value;
     }
-    
-    if (field.dbColumn === "energyConsumptionScale" && typeof field.value === "string") {
+
+    if (
+      field.dbColumn === "energyConsumptionScale" &&
+      typeof field.value === "string"
+    ) {
       return `Certificado ${field.value}`;
     }
-    
-    if (field.dbColumn === "conservationStatus" && typeof field.value === "number") {
+
+    if (
+      field.dbColumn === "conservationStatus" &&
+      typeof field.value === "number"
+    ) {
       const statusMap: Record<number, string> = {
         1: "Excelente",
-        2: "Bueno", 
+        2: "Bueno",
         3: "Regular",
         4: "Malo",
-        6: "Obra Nueva"
+        6: "Obra Nueva",
       };
       return statusMap[field.value] ?? field.value.toString();
     }
-    
+
     if (field.dbColumn === "orientation" && typeof field.value === "string") {
       const orientationMap: Record<string, string> = {
-        "norte": "Norte",
-        "sur": "Sur",
-        "este": "Este", 
-        "oeste": "Oeste",
-        "noreste": "Noreste",
-        "noroeste": "Noroeste",
-        "sureste": "Sureste",
-        "suroeste": "Suroeste"
+        norte: "Norte",
+        sur: "Sur",
+        este: "Este",
+        oeste: "Oeste",
+        noreste: "Noreste",
+        noroeste: "Noroeste",
+        sureste: "Sureste",
+        suroeste: "Suroeste",
       };
       return orientationMap[field.value] ?? field.value;
     }
-    
+
     return String(field.value);
   };
 
   // Handle checkbox toggle
   const handleCheckboxChange = (fieldId: string, checked: boolean) => {
-    setCheckedFields(prev => {
+    setCheckedFields((prev) => {
       const newSet = new Set(prev);
       if (checked) {
         newSet.add(fieldId);
@@ -331,7 +358,7 @@ export function VoiceFieldValidationModal({
   // Build final data object with only checked fields
   const buildConfirmedData = (): EnhancedExtractedPropertyData => {
     const data: EnhancedExtractedPropertyData = {};
-    extractedFields.forEach(field => {
+    extractedFields.forEach((field) => {
       const fieldId = `${field.dbTable}.${field.dbColumn}`;
       if (checkedFields.has(fieldId) && field.dbTable === "properties") {
         (data as Record<string, unknown>)[field.dbColumn] = field.value;
@@ -343,7 +370,7 @@ export function VoiceFieldValidationModal({
   // Handle confirm and create property
   const handleConfirm = async () => {
     setIsLoading(true);
-    
+
     try {
       // Validate contact selection
       if (selectedContactIds.length === 0) {
@@ -351,23 +378,23 @@ export function VoiceFieldValidationModal({
         setIsLoading(false);
         return;
       }
-      
+
       // Filter only checked fields
-      const fieldsToSave = extractedFields.filter(field => {
+      const fieldsToSave = extractedFields.filter((field) => {
         const fieldId = `${field.dbTable}.${field.dbColumn}`;
         return checkedFields.has(fieldId);
       });
-      
+
       // Save property with voice data and contact IDs
       const result = await saveVoiceProperty(fieldsToSave, selectedContactIds);
-      
+
       if (result.success && result.propertyId) {
         toast.success("Propiedad creada exitosamente");
-        
+
         // Call the original onConfirm for compatibility
         const confirmedData = buildConfirmedData();
         onConfirm(confirmedData);
-        
+
         // Redirect to property detail page
         if (result.listingId) {
           router.push(`/propiedades/${result.listingId}`);
@@ -387,7 +414,7 @@ export function VoiceFieldValidationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="flex max-h-[80vh] max-w-2xl flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-lg font-medium">
             Campos identificados
@@ -454,7 +481,7 @@ export function VoiceFieldValidationModal({
         {/* Fields Checklist */}
         <div className="flex-1 overflow-y-auto py-4">
           {extractedFields.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
+            <div className="py-12 text-center text-gray-500">
               No se encontraron campos
             </div>
           ) : (
@@ -462,22 +489,22 @@ export function VoiceFieldValidationModal({
               {extractedFields.map((field) => {
                 const fieldId = `${field.dbTable}.${field.dbColumn}`;
                 const isChecked = checkedFields.has(fieldId);
-                
+
                 return (
                   <div
                     key={fieldId}
-                    className="flex items-center space-x-3 px-4 py-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="flex items-center space-x-3 rounded-lg bg-gray-50 px-4 py-3 transition-colors hover:bg-gray-100"
                   >
                     <Checkbox
                       id={fieldId}
                       checked={isChecked}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked) =>
                         handleCheckboxChange(fieldId, checked as boolean)
                       }
                     />
                     <Label
                       htmlFor={fieldId}
-                      className="flex-1 flex items-center justify-between cursor-pointer"
+                      className="flex flex-1 cursor-pointer items-center justify-between"
                     >
                       <span className="text-sm font-normal text-gray-600">
                         {FIELD_LABELS[field.dbColumn] ?? field.dbColumn}
@@ -493,7 +520,7 @@ export function VoiceFieldValidationModal({
           )}
         </div>
 
-        <DialogFooter className="pt-4 border-t">
+        <DialogFooter className="border-t pt-4">
           <Button
             onClick={handleConfirm}
             disabled={checkedFields.size === 0 || isLoading}
@@ -501,12 +528,12 @@ export function VoiceFieldValidationModal({
           >
             {isLoading ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Creando...
               </>
             ) : (
               <>
-                <Check className="h-4 w-4 mr-2" />
+                <Check className="mr-2 h-4 w-4" />
                 Crear Propiedad
               </>
             )}

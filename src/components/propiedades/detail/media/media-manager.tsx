@@ -40,7 +40,8 @@ export function MediaManager({
   onMediaTypeChange,
   canEdit = true, // Default to true for backward compatibility
 }: MediaManagerProps) {
-  const [selectedMediaType, setSelectedMediaType] = useState<MediaType>("images");
+  const [selectedMediaType, setSelectedMediaType] =
+    useState<MediaType>("images");
 
   const handleMediaTypeChange = (type: MediaType) => {
     setSelectedMediaType(type);

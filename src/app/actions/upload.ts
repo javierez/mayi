@@ -1,6 +1,11 @@
 "use server";
 
-import { uploadImageToS3, uploadVideoToS3, uploadDocumentToS3, renameS3Folder } from "~/lib/s3";
+import {
+  uploadImageToS3,
+  uploadVideoToS3,
+  uploadDocumentToS3,
+  renameS3Folder,
+} from "~/lib/s3";
 import {
   createPropertyImage,
   getPropertyImageById,
@@ -100,7 +105,7 @@ export async function uploadPropertyVideo(
       imageKey: videoKey,
       s3key,
       imageOrder: videoOrder,
-      imageTag: 'video', // This is the key difference
+      imageTag: "video", // This is the key difference
     });
 
     if (!result) {
@@ -205,19 +210,20 @@ export async function addYouTubeLink(
 ): Promise<PropertyImage> {
   try {
     // Validate YouTube URL format
-    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    const youtubeRegex =
+      /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
     if (!youtubeRegex.test(youtubeUrl)) {
       throw new Error("Invalid YouTube URL format");
     }
 
     // Normalize the URL to standard format
-    let videoId = '';
-    if (youtubeUrl.includes('youtu.be/')) {
-      videoId = youtubeUrl.split('youtu.be/')[1]?.split('?')[0] ?? '';
-    } else if (youtubeUrl.includes('watch?v=')) {
-      videoId = youtubeUrl.split('watch?v=')[1]?.split('&')[0] ?? '';
-    } else if (youtubeUrl.includes('embed/')) {
-      videoId = youtubeUrl.split('embed/')[1]?.split('?')[0] ?? '';
+    let videoId = "";
+    if (youtubeUrl.includes("youtu.be/")) {
+      videoId = youtubeUrl.split("youtu.be/")[1]?.split("?")[0] ?? "";
+    } else if (youtubeUrl.includes("watch?v=")) {
+      videoId = youtubeUrl.split("watch?v=")[1]?.split("&")[0] ?? "";
+    } else if (youtubeUrl.includes("embed/")) {
+      videoId = youtubeUrl.split("embed/")[1]?.split("?")[0] ?? "";
     }
 
     if (!videoId) {
@@ -234,14 +240,15 @@ export async function addYouTubeLink(
       .where(
         and(
           eq(propertyImages.propertyId, propertyId),
-          eq(propertyImages.imageTag, 'youtube'),
-          eq(propertyImages.isActive, true)
-        )
+          eq(propertyImages.imageTag, "youtube"),
+          eq(propertyImages.isActive, true),
+        ),
       );
 
-    const maxOrder = existingYouTubeLinks.length > 0
-      ? Math.max(...existingYouTubeLinks.map(link => link.imageOrder ?? 0))
-      : 0;
+    const maxOrder =
+      existingYouTubeLinks.length > 0
+        ? Math.max(...existingYouTubeLinks.map((link) => link.imageOrder ?? 0))
+        : 0;
 
     // Create record in database with imageTag = 'youtube'
     const result = await createPropertyImage({
@@ -252,7 +259,7 @@ export async function addYouTubeLink(
       imageKey: `youtube_${videoId}`, // Use video ID as key
       s3key: `youtube://${videoId}`, // Special S3 key to indicate YouTube
       imageOrder: maxOrder + 1,
-      imageTag: 'youtube',
+      imageTag: "youtube",
     });
 
     if (!result) {
@@ -296,7 +303,9 @@ export async function addVirtualTourLink(
     // Validate virtual tour URL format
     const urlPattern = /^https?:\/\/.+/;
     if (!urlPattern.test(tourUrl)) {
-      throw new Error("Invalid URL format. Please provide a valid virtual tour URL.");
+      throw new Error(
+        "Invalid URL format. Please provide a valid virtual tour URL.",
+      );
     }
 
     // Common virtual tour platforms validation
@@ -310,26 +319,26 @@ export async function addVirtualTourLink(
     //   'momento360.com',
     // ];
 
-    let tourId = '';
-    let platform = 'generic';
-    
+    let tourId = "";
+    let platform = "generic";
+
     // Extract tour ID based on platform
     try {
       const url = new URL(tourUrl);
-      const hostname = url.hostname.replace('www.', '');
-      
-      if (hostname.includes('matterport.com')) {
-        platform = 'matterport';
+      const hostname = url.hostname.replace("www.", "");
+
+      if (hostname.includes("matterport.com")) {
+        platform = "matterport";
         const match = /m=([^&]+)/.exec(tourUrl);
         tourId = match?.[1] ?? Date.now().toString();
-      } else if (hostname.includes('kuula.co')) {
-        platform = 'kuula';
-        const pathParts = url.pathname.split('/');
+      } else if (hostname.includes("kuula.co")) {
+        platform = "kuula";
+        const pathParts = url.pathname.split("/");
         tourId = pathParts[pathParts.length - 1] ?? Date.now().toString();
       } else {
         // Generic platform - use hash of URL
-        platform = 'generic';
-        tourId = Buffer.from(tourUrl).toString('base64').slice(0, 10);
+        platform = "generic";
+        tourId = Buffer.from(tourUrl).toString("base64").slice(0, 10);
       }
     } catch {
       // Fallback to generic if URL parsing fails
@@ -343,14 +352,15 @@ export async function addVirtualTourLink(
       .where(
         and(
           eq(propertyImages.propertyId, propertyId),
-          eq(propertyImages.imageTag, 'tour'),
-          eq(propertyImages.isActive, true)
-        )
+          eq(propertyImages.imageTag, "tour"),
+          eq(propertyImages.isActive, true),
+        ),
       );
 
-    const maxOrder = existingTours.length > 0
-      ? Math.max(...existingTours.map(tour => tour.imageOrder ?? 0))
-      : 0;
+    const maxOrder =
+      existingTours.length > 0
+        ? Math.max(...existingTours.map((tour) => tour.imageOrder ?? 0))
+        : 0;
 
     // Create record in database with imageTag = 'tour'
     const result = await createPropertyImage({
@@ -361,7 +371,7 @@ export async function addVirtualTourLink(
       imageKey: `tour_${platform}_${tourId}`,
       s3key: `tour://${platform}/${tourId}`,
       imageOrder: maxOrder + 1,
-      imageTag: 'tour',
+      imageTag: "tour",
     });
 
     if (!result) {
@@ -537,35 +547,42 @@ export async function deleteDocument(documentKey: string, docId: bigint) {
   }
 }
 
-export async function deleteDocumentAction(docId: bigint, documentKey: string, propertyId?: bigint) {
+export async function deleteDocumentAction(
+  docId: bigint,
+  documentKey: string,
+  propertyId?: bigint,
+) {
   "use server";
-  
+
   try {
     // Use optimized DAL function for session retrieval
     const session = await getSecureSession();
-    
+
     if (!session?.user?.id) {
       return {
         success: false,
         error: "Usuario no autenticado",
       };
     }
-    
+
     // Call the existing deleteDocument function
     await deleteDocument(documentKey, docId);
-    
+
     // Revalidate the property page if propertyId is provided
     if (propertyId) {
       const { revalidatePath } = await import("next/cache");
       revalidatePath(`/propiedades/${propertyId}`);
     }
-    
+
     return { success: true };
   } catch (error) {
     console.error("Error in deleteDocumentAction:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Error al eliminar el documento",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error al eliminar el documento",
     };
   }
 }

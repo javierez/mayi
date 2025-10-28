@@ -8,7 +8,7 @@ import { saveExtractedDataToDatabase } from "~/server/queries/textract-database-
 import { getSecureSession } from "~/lib/dal";
 import type { EnhancedExtractedPropertyData } from "~/types/textract-enhanced";
 
-type CreateFichaEncargoResult = 
+type CreateFichaEncargoResult =
   | {
       success: true;
       data: {
@@ -25,11 +25,13 @@ type CreateFichaEncargoResult =
     };
 
 export async function createFichaEncargoPropertyAction(
-  files: File[]
+  files: File[],
 ): Promise<CreateFichaEncargoResult> {
   try {
-    console.log("🏠 Starting ficha de encargo property creation with OCR processing...");
-    
+    console.log(
+      "🏠 Starting ficha de encargo property creation with OCR processing...",
+    );
+
     // 1. Get current user session
     const session = await getSecureSession();
     if (!session?.user?.id) {
@@ -40,8 +42,10 @@ export async function createFichaEncargoPropertyAction(
     console.log("📝 Creating minimal property and listing...");
     const propertyResult = await createMinimalPropertyWithListing();
     const { propertyId, listingId, referenceNumber } = propertyResult;
-    
-    console.log(`✅ Property created: ${propertyId}, Listing: ${listingId}, Reference: ${referenceNumber}`);
+
+    console.log(
+      `✅ Property created: ${propertyId}, Listing: ${listingId}, Reference: ${referenceNumber}`,
+    );
 
     // 3. Upload all files to the proper property folder
     console.log("📤 Uploading documents to property folder...");
@@ -58,46 +62,57 @@ export async function createFichaEncargoPropertyAction(
         undefined, // dealId
         undefined, // appointmentId
         BigInt(propertyId), // propertyId
-        "initial-docs" // folderType
+        "initial-docs", // folderType
       );
     });
 
     const uploadedDocuments = await Promise.all(uploadPromises);
-    console.log(`✅ Uploaded ${uploadedDocuments.length} documents successfully`);
+    console.log(
+      `✅ Uploaded ${uploadedDocuments.length} documents successfully`,
+    );
 
     // 4. Process documents with OCR/Textract for data extraction
     console.log("🔍 Processing documents with OCR...");
     let extractedData: EnhancedExtractedPropertyData | undefined;
-    
+
     // Process the first PDF document for data extraction
-    const pdfDocument = uploadedDocuments.find(doc => 
-      doc.fileType === 'application/pdf' || doc.documentKey.toLowerCase().includes('.pdf')
+    const pdfDocument = uploadedDocuments.find(
+      (doc) =>
+        doc.fileType === "application/pdf" ||
+        doc.documentKey.toLowerCase().includes(".pdf"),
     );
 
     if (pdfDocument) {
       try {
         console.log(`🎯 Processing document: ${pdfDocument.filename}`);
-        
+
         // Extract S3 key from documentKey for Textract
         const s3Key = pdfDocument.documentKey;
-        
+
         // Process document with Textract
         const ocrResult = await extractTextFromDocument(s3Key);
-        
+
         if (ocrResult.success) {
-          console.log("✅ OCR processing successful, extracting property data...");
-          
+          console.log(
+            "✅ OCR processing successful, extracting property data...",
+          );
+
           // Extract structured data using the field extractor
-          const fieldExtractionResult = await extractEnhancedPropertyDataWithGPT4({
-            extractedText: ocrResult.extractedText,
-            detectedFields: ocrResult.detectedFields,
-            blocks: ocrResult.blocks,
-            confidence: ocrResult.confidence,
-          });
+          const fieldExtractionResult =
+            await extractEnhancedPropertyDataWithGPT4({
+              extractedText: ocrResult.extractedText,
+              detectedFields: ocrResult.detectedFields,
+              blocks: ocrResult.blocks,
+              confidence: ocrResult.confidence,
+            });
 
           if (fieldExtractionResult.extractedFields.length > 0) {
             extractedData = fieldExtractionResult.propertyData;
-            console.log("✅ Data extraction successful:", fieldExtractionResult.extractedFields.length, "fields extracted");
+            console.log(
+              "✅ Data extraction successful:",
+              fieldExtractionResult.extractedFields.length,
+              "fields extracted",
+            );
 
             // 5. Update property and listing with extracted data
             console.log("💾 Saving extracted data to property and listing...");
@@ -106,11 +121,13 @@ export async function createFichaEncargoPropertyAction(
               Number(listingId),
               Number(session.user.id),
               fieldExtractionResult.extractedFields,
-              80 // confidence threshold
+              80, // confidence threshold
             );
-            
+
             if (saveResult.success) {
-              console.log("✅ Property and listing updated with extracted data");
+              console.log(
+                "✅ Property and listing updated with extracted data",
+              );
             } else {
               console.warn("⚠️ Some fields could not be saved:", saveResult);
             }
@@ -139,20 +156,22 @@ export async function createFichaEncargoPropertyAction(
         documentsUploaded: uploadedDocuments.length,
       },
     };
-
   } catch (error) {
     console.error("❌ Error in createFichaEncargoPropertyAction:", error);
-    
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to create property from ficha de encargo",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to create property from ficha de encargo",
     };
   }
 }
 
 // Helper function to get processing status
 export async function getFichaEncargoProcessingStatus(
-  _referenceNumber: string
+  _referenceNumber: string,
 ): Promise<{
   propertyCreated: boolean;
   documentsUploaded: boolean;

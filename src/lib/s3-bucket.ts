@@ -8,8 +8,8 @@ import { getCurrentUserAccountId } from "~/lib/dal";
 export function normalizeAccountNameForS3(accountName: string): string {
   return accountName
     .toLowerCase()
-    .replace(/[^a-z0-9]/g, '') // Remove spaces, hyphens, quotes, slashes, etc.
-    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens (if any remain)
+    .replace(/[^a-z0-9]/g, "") // Remove spaces, hyphens, quotes, slashes, etc.
+    .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens (if any remain)
 }
 
 /**
@@ -19,11 +19,11 @@ export function normalizeAccountNameForS3(accountName: string): string {
 export async function getDynamicBucketName(): Promise<string> {
   const accountId = await getCurrentUserAccountId();
   const account = await getAccountById(accountId);
-  
+
   if (!account) {
     throw new Error("Account not found for current user");
   }
-  
+
   return normalizeAccountNameForS3(account.name);
 }
 
@@ -31,12 +31,14 @@ export async function getDynamicBucketName(): Promise<string> {
  * Gets the dynamic S3 bucket name for a specific account ID
  * Useful when you already have the account ID
  */
-export async function getDynamicBucketNameForAccount(accountId: number | bigint): Promise<string> {
+export async function getDynamicBucketNameForAccount(
+  accountId: number | bigint,
+): Promise<string> {
   const account = await getAccountById(accountId);
-  
+
   if (!account) {
     throw new Error(`Account not found: ${accountId}`);
   }
-  
+
   return normalizeAccountNameForS3(account.name);
 }

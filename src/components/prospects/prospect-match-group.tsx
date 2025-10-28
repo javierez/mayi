@@ -1,8 +1,6 @@
 "use client";
 
 import React from "react";
-import { Badge } from "~/components/ui/badge";
-import { Card, CardContent } from "~/components/ui/card";
 import { Euro, Bed, Bath, MapPin } from "lucide-react";
 import type { ProspectMatch, MatchAction } from "~/types/connection-matches";
 import { MatchCard } from "./match-card";
@@ -63,7 +61,7 @@ export function ProspectMatchGroup({
   return (
     <div className="space-y-3">
       {/* Prospect Header with Criteria Summary */}
-      <div className="flex items-center justify-between gap-3 pb-2 border-b border-gray-100">
+      <div className="flex items-center justify-between gap-3 border-b border-gray-100 pb-2">
         <div className="flex flex-wrap items-center gap-2.5 text-xs text-gray-500">
           <span className="text-xs font-medium text-gray-700">
             {prospectType}
@@ -74,29 +72,33 @@ export function ProspectMatchGroup({
               <span>{priceDisplay}</span>
             </div>
           )}
-          {prospectDetails.minBedrooms !== null && prospectDetails.minBedrooms !== undefined && (
-            <div className="flex items-center gap-1">
-              <Bed className="h-3 w-3" />
-              <span>≥ {prospectDetails.minBedrooms}</span>
-            </div>
-          )}
-          {prospectDetails.minBathrooms !== null && prospectDetails.minBathrooms !== undefined && (
-            <div className="flex items-center gap-1">
-              <Bath className="h-3 w-3" />
-              <span>≥ {Math.floor(prospectDetails.minBathrooms)}</span>
-            </div>
-          )}
-          {prospectDetails.preferredAreas && prospectDetails.preferredAreas.length > 0 && (
-            <div className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
-              <span>
-                {prospectDetails.preferredAreas.slice(0, 2).join(", ")}
-                {prospectDetails.preferredAreas.length > 2 && ` +${prospectDetails.preferredAreas.length - 2}`}
-              </span>
-            </div>
-          )}
+          {prospectDetails.minBedrooms !== null &&
+            prospectDetails.minBedrooms !== undefined && (
+              <div className="flex items-center gap-1">
+                <Bed className="h-3 w-3" />
+                <span>≥ {prospectDetails.minBedrooms}</span>
+              </div>
+            )}
+          {prospectDetails.minBathrooms !== null &&
+            prospectDetails.minBathrooms !== undefined && (
+              <div className="flex items-center gap-1">
+                <Bath className="h-3 w-3" />
+                <span>≥ {Math.floor(prospectDetails.minBathrooms)}</span>
+              </div>
+            )}
+          {prospectDetails.preferredAreas &&
+            prospectDetails.preferredAreas.length > 0 && (
+              <div className="flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                <span>
+                  {prospectDetails.preferredAreas.slice(0, 2).join(", ")}
+                  {prospectDetails.preferredAreas.length > 2 &&
+                    ` +${prospectDetails.preferredAreas.length - 2}`}
+                </span>
+              </div>
+            )}
         </div>
-        <span className="text-xs text-gray-400 flex-shrink-0">
+        <span className="flex-shrink-0 text-xs text-gray-400">
           {matchCount} {matchCount === 1 ? "match" : "matches"}
         </span>
       </div>

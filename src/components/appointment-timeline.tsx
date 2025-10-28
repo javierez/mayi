@@ -16,11 +16,13 @@ interface AppointmentTimelineProps {
   appointments: TimelineAppointment[];
 }
 
-export function AppointmentTimeline({ appointments }: AppointmentTimelineProps) {
+export function AppointmentTimeline({
+  appointments,
+}: AppointmentTimelineProps) {
   if (appointments.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-        <Calendar className="h-12 w-12 mb-3 opacity-50" />
+        <Calendar className="mb-3 h-12 w-12 opacity-50" />
         <p className="text-sm">No hay visitas programadas para este contacto</p>
       </div>
     );
@@ -76,7 +78,7 @@ export function AppointmentTimeline({ appointments }: AppointmentTimelineProps) 
   return (
     <div className="relative space-y-6 pl-8">
       {/* Vertical connecting line */}
-      <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-gray-200" />
+      <div className="absolute bottom-2 left-[15px] top-2 w-0.5 bg-gray-200" />
 
       {appointments.map((appointment, index) => {
         const statusConfig = getStatusConfig(appointment.status);
@@ -86,20 +88,24 @@ export function AppointmentTimeline({ appointments }: AppointmentTimelineProps) 
           <div key={appointment.appointmentId.toString()} className="relative">
             {/* Timeline dot */}
             <div className="absolute left-[-28px] top-1">
-              <div className={`h-5 w-5 rounded-full ${statusConfig.color} border-4 border-white shadow-sm flex items-center justify-center`}>
-                <div className="text-white">
-                  {statusConfig.icon}
-                </div>
+              <div
+                className={`h-5 w-5 rounded-full ${statusConfig.color} flex items-center justify-center border-4 border-white shadow-sm`}
+              >
+                <div className="text-white">{statusConfig.icon}</div>
               </div>
             </div>
 
             {/* Compact card */}
-            <div className={`rounded-lg border bg-white p-3 shadow-sm hover:shadow-md transition-all ${isLast ? "" : "mb-6"}`}>
+            <div
+              className={`rounded-lg border bg-white p-3 shadow-sm transition-all hover:shadow-md ${isLast ? "" : "mb-6"}`}
+            >
               <div className="space-y-2">
                 {/* Date and time */}
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-gray-900">
-                    {format(appointment.datetimeStart, "d 'de' MMMM, yyyy", { locale: es })}
+                    {format(appointment.datetimeStart, "d 'de' MMMM, yyyy", {
+                      locale: es,
+                    })}
                   </p>
                   <Badge className={`${statusConfig.badgeColor} text-xs`}>
                     {statusConfig.label}
@@ -107,7 +113,8 @@ export function AppointmentTimeline({ appointments }: AppointmentTimelineProps) 
                 </div>
 
                 <div className="text-xs text-muted-foreground">
-                  {format(appointment.datetimeStart, "HH:mm", { locale: es })} - {format(appointment.datetimeEnd, "HH:mm", { locale: es })}
+                  {format(appointment.datetimeStart, "HH:mm", { locale: es })} -{" "}
+                  {format(appointment.datetimeEnd, "HH:mm", { locale: es })}
                 </div>
 
                 {/* Appointment type */}
@@ -119,7 +126,7 @@ export function AppointmentTimeline({ appointments }: AppointmentTimelineProps) 
 
                 {/* Notes preview */}
                 {appointment.notes && (
-                  <p className="text-xs text-muted-foreground line-clamp-2">
+                  <p className="line-clamp-2 text-xs text-muted-foreground">
                     {appointment.notes}
                   </p>
                 )}

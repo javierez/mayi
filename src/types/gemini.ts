@@ -15,13 +15,21 @@ export interface GeminiRenovationResponse {
 }
 
 export interface GeminiTaskStatus {
-  status: 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  status: "PROCESSING" | "COMPLETED" | "FAILED";
   renovatedImageBase64?: string;
   error?: string;
 }
 
 // Renovation types for different room prompts - 8 specific room types
-export type RenovationType = 'living_room' | 'bedroom' | 'bathroom' | 'entrance_hall' | 'terrace' | 'balcony' | 'kitchen' | 'dining_room';
+export type RenovationType =
+  | "living_room"
+  | "bedroom"
+  | "bathroom"
+  | "entrance_hall"
+  | "terrace"
+  | "balcony"
+  | "kitchen"
+  | "dining_room";
 
 // Room detection interface
 export interface RoomDetectionResponse {
@@ -97,7 +105,7 @@ export const RENOVATION_STYLES = {
 
     CRITICAL: Transform ALL wall colors and finishes completely - no wall should remain the same color or finish as the original image. Paint every wall surface with the specified Scandinavian aesthetic.
   `,
-  
+
   mediterranean: `
     STYLE AESTHETIC - MEDITERRANEAN COASTAL:
 
@@ -128,7 +136,7 @@ export const RENOVATION_STYLES = {
 
     CRITICAL: Transform ALL wall colors and finishes completely - no wall should remain the same color or finish as the original image. Paint every wall surface with the specified Mediterranean aesthetic.
   `,
-  
+
   industrial: `
     STYLE AESTHETIC - MODERN INDUSTRIAL:
 
@@ -159,7 +167,7 @@ export const RENOVATION_STYLES = {
 
     CRITICAL: Transform ALL wall colors and finishes completely - no wall should remain the same color or finish as the original image. Paint every wall surface with the specified Industrial aesthetic.
   `,
-  
+
   transitional: `
     STYLE AESTHETIC - TRANSITIONAL CONTEMPORARY:
 
@@ -189,7 +197,7 @@ export const RENOVATION_STYLES = {
     - Layered lighting with dimmer controls for ambiance
 
     CRITICAL: Transform ALL wall colors and finishes completely - no wall should remain the same color or finish as the original image. Paint every wall surface with the specified Transitional aesthetic.
-  `
+  `,
 } as const;
 
 export type RenovationStyle = keyof typeof RENOVATION_STYLES;
@@ -211,8 +219,8 @@ export interface RenovationComparisonState {
   sliderPosition: number; // 0-100 percentage
 }
 
-// Renovation status type for UI components  
-export type RenovationStatus = 'idle' | 'processing' | 'success' | 'error';
+// Renovation status type for UI components
+export type RenovationStatus = "idle" | "processing" | "success" | "error";
 
 // Renovated image data structure
 export interface RenovatedImageData {
@@ -234,13 +242,17 @@ export interface RoomAssemblyPrompt {
 }
 
 // Room assembly prompts organized by style, then by room type
-export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationType, RoomAssemblyPrompt>> = {
+export const ROOM_ASSEMBLY_PROMPTS: Record<
+  RenovationStyle,
+  Record<RenovationType, RoomAssemblyPrompt>
+> = {
   // SCANDINAVIAN STYLE - All 8 room types
   default: {
     living_room: {
       prompt_name: "Scandinavian Living Room",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A large sunlit Scandinavian living room with white walls and light wood floors.",
+      room_description:
+        "A large sunlit Scandinavian living room with white walls and light wood floors.",
       camera_setup: "Marketing-quality, wide-angle shot with natural lighting.",
       assembled_elements: [
         "white/beige sofa with white cushions",
@@ -257,15 +269,16 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "beige throw blankets",
         "minimalist white-framed art",
         "simple white/beige decorative objects",
-        "potted green plants"
+        "potted green plants",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     bedroom: {
       prompt_name: "Scandinavian Bedroom",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A large sunlit Scandinavian bedroom with white walls and light wood floors.",
+      room_description:
+        "A large sunlit Scandinavian bedroom with white walls and light wood floors.",
       camera_setup: "Marketing-quality, wide-angle shot with natural lighting.",
       assembled_elements: [
         "bed with white duvet",
@@ -278,15 +291,16 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "minimalist white-framed art",
         "white/cream area rug",
         "white/cream curtains",
-        "potted green plants"
+        "potted green plants",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     kitchen: {
       prompt_name: "Scandinavian Kitchen",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A large sunlit Scandinavian kitchen with white walls and light wood floors.",
+      room_description:
+        "A large sunlit Scandinavian kitchen with white walls and light wood floors.",
       camera_setup: "Marketing-quality, wide-angle shot with natural lighting.",
       assembled_elements: [
         "white Shaker-style kitchen cabinets",
@@ -302,15 +316,16 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "potted green herbs",
         "light wood cutting boards",
         "white/clear storage containers",
-        "white/cream window treatments"
+        "white/cream window treatments",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     bathroom: {
       prompt_name: "Scandinavian Bathroom",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A large sunlit Scandinavian bathroom with white walls and light wood floors.",
+      room_description:
+        "A large sunlit Scandinavian bathroom with white walls and light wood floors.",
       camera_setup: "Marketing-quality, wide-angle shot with natural lighting.",
       assembled_elements: [
         "white vanity cabinet with light wood accents",
@@ -326,15 +341,16 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "white/clear decorative containers",
         "potted green plants",
         "white wall-mounted shelves",
-        "minimalist white-framed artwork"
+        "minimalist white-framed artwork",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     dining_room: {
       prompt_name: "Scandinavian Dining Room",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A large sunlit Scandinavian dining room with white walls and light wood floors.",
+      room_description:
+        "A large sunlit Scandinavian dining room with white walls and light wood floors.",
       camera_setup: "Marketing-quality, wide-angle shot with natural lighting.",
       assembled_elements: [
         "light wood dining table",
@@ -350,15 +366,16 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "white dinnerware display",
         "light wood wine storage",
         "potted green plants",
-        "white/light wood mirrors"
+        "white/light wood mirrors",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     entrance_hall: {
       prompt_name: "Scandinavian Entrance Hall",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A large sunlit Scandinavian entrance hall with white walls and light wood floors.",
+      room_description:
+        "A large sunlit Scandinavian entrance hall with white walls and light wood floors.",
       camera_setup: "Marketing-quality, wide-angle shot with natural lighting.",
       assembled_elements: [
         "light wood console table",
@@ -373,15 +390,16 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "potted green plants",
         "white key holder",
         "white/beige storage baskets",
-        "white ceiling light fixture"
+        "white ceiling light fixture",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     terrace: {
       prompt_name: "Scandinavian Terrace",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A large sunlit Scandinavian outdoor terrace with natural lighting and clean, open space.",
+      room_description:
+        "A large sunlit Scandinavian outdoor terrace with natural lighting and clean, open space.",
       camera_setup: "Marketing-quality, wide-angle shot with natural lighting.",
       assembled_elements: [
         "light wood outdoor dining table",
@@ -396,15 +414,16 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "white/beige outdoor storage",
         "white decorative lanterns",
         "white/beige outdoor textiles",
-        "simple white/beige garden accessories"
+        "simple white/beige garden accessories",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     balcony: {
       prompt_name: "Scandinavian Balcony",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A cozy compact Scandinavian balcony with natural lighting and space-efficient design.",
+      room_description:
+        "A cozy compact Scandinavian balcony with natural lighting and space-efficient design.",
       camera_setup: "Marketing-quality, wide-angle shot with natural lighting.",
       assembled_elements: [
         "light wood compact outdoor table",
@@ -417,10 +436,10 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "white/cream outdoor rug",
         "simple white/beige decorative elements",
         "white/beige privacy screen",
-        "white wall-mounted shelves"
+        "white wall-mounted shelves",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
-    }
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
+    },
   },
 
   // MEDITERRANEAN STYLE - All 8 room types
@@ -428,8 +447,10 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
     living_room: {
       prompt_name: "Mediterranean Living Room",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A warm inviting Mediterranean living room with terracotta or cream walls and natural stone or tile floors.",
-      camera_setup: "Marketing-quality, wide-angle shot with warm natural lighting.",
+      room_description:
+        "A warm inviting Mediterranean living room with terracotta or cream walls and natural stone or tile floors.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with warm natural lighting.",
       assembled_elements: [
         "comfortable sofa in warm earth tones (terracotta, cream, sage)",
         "dark wood coffee table (walnut or mahogany)",
@@ -445,16 +466,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "textured throw blankets",
         "rustic framed artwork",
         "ceramic decorative objects",
-        "potted plants (olive trees, succulents)"
+        "potted plants (olive trees, succulents)",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     bedroom: {
       prompt_name: "Mediterranean Bedroom",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A warm inviting Mediterranean bedroom with terracotta or cream walls and natural stone or tile floors.",
-      camera_setup: "Marketing-quality, wide-angle shot with warm natural lighting.",
+      room_description:
+        "A warm inviting Mediterranean bedroom with terracotta or cream walls and natural stone or tile floors.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with warm natural lighting.",
       assembled_elements: [
         "bed with warm-toned bedding (cream, terracotta, sage)",
         "textured throw blanket in earth tones",
@@ -466,16 +489,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "rustic framed artwork",
         "Persian or natural fiber area rug",
         "warm-toned curtains",
-        "potted plants"
+        "potted plants",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     kitchen: {
       prompt_name: "Mediterranean Kitchen",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A warm inviting Mediterranean kitchen with terracotta or cream walls and natural stone or tile floors.",
-      camera_setup: "Marketing-quality, wide-angle shot with warm natural lighting.",
+      room_description:
+        "A warm inviting Mediterranean kitchen with terracotta or cream walls and natural stone or tile floors.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with warm natural lighting.",
       assembled_elements: [
         "dark wood or warm-painted kitchen cabinets",
         "granite or butcher block countertops in warm tones",
@@ -490,16 +515,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "potted herbs",
         "wooden cutting boards",
         "ceramic storage containers",
-        "warm-toned window treatments"
+        "warm-toned window treatments",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     bathroom: {
       prompt_name: "Mediterranean Bathroom",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A warm inviting Mediterranean bathroom with textured plaster walls and natural stone or tile floors.",
-      camera_setup: "Marketing-quality, wide-angle shot with warm natural lighting.",
+      room_description:
+        "A warm inviting Mediterranean bathroom with textured plaster walls and natural stone or tile floors.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with warm natural lighting.",
       assembled_elements: [
         "dark wood or warm-painted vanity cabinet",
         "carved wood or wrought iron bathroom mirror",
@@ -514,16 +541,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "ceramic decorative containers",
         "potted plants",
         "wood or wrought iron wall-mounted shelves",
-        "rustic framed artwork"
+        "rustic framed artwork",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     dining_room: {
       prompt_name: "Mediterranean Dining Room",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A warm inviting Mediterranean dining room with terracotta or cream walls and natural stone or tile floors.",
-      camera_setup: "Marketing-quality, wide-angle shot with warm natural lighting.",
+      room_description:
+        "A warm inviting Mediterranean dining room with terracotta or cream walls and natural stone or tile floors.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with warm natural lighting.",
       assembled_elements: [
         "dark wood dining table (walnut, mahogany)",
         "upholstered or wrought iron dining chairs",
@@ -538,16 +567,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "ceramic dinnerware display",
         "dark wood wine storage",
         "potted plants",
-        "carved wood or wrought iron mirrors"
+        "carved wood or wrought iron mirrors",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     entrance_hall: {
       prompt_name: "Mediterranean Entrance Hall",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A warm inviting Mediterranean entrance hall with terracotta or cream walls and natural stone or tile floors.",
-      camera_setup: "Marketing-quality, wide-angle shot with warm natural lighting.",
+      room_description:
+        "A warm inviting Mediterranean entrance hall with terracotta or cream walls and natural stone or tile floors.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with warm natural lighting.",
       assembled_elements: [
         "dark wood or wrought iron console table",
         "carved wood or wrought iron entry mirror",
@@ -561,16 +592,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "potted plants (olive trees, succulents)",
         "wrought iron key holder",
         "woven storage baskets",
-        "wrought iron or ceramic ceiling light fixture"
+        "wrought iron or ceramic ceiling light fixture",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     terrace: {
       prompt_name: "Mediterranean Terrace",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A warm inviting Mediterranean outdoor terrace with natural stone or terracotta tile floors and warm ambient lighting.",
-      camera_setup: "Marketing-quality, wide-angle shot with warm natural lighting.",
+      room_description:
+        "A warm inviting Mediterranean outdoor terrace with natural stone or terracotta tile floors and warm ambient lighting.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with warm natural lighting.",
       assembled_elements: [
         "dark wood or wrought iron outdoor dining table",
         "wrought iron outdoor chairs with cushions",
@@ -584,16 +617,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "outdoor storage with warm finishes",
         "decorative lanterns",
         "warm-toned outdoor textiles",
-        "ceramic garden accessories"
+        "ceramic garden accessories",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     balcony: {
       prompt_name: "Mediterranean Balcony",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A cozy compact Mediterranean balcony with warm colors and space-efficient design.",
-      camera_setup: "Marketing-quality, wide-angle shot with warm natural lighting.",
+      room_description:
+        "A cozy compact Mediterranean balcony with warm colors and space-efficient design.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with warm natural lighting.",
       assembled_elements: [
         "small dark wood or wrought iron outdoor table",
         "wrought iron folding chairs with cushions",
@@ -605,10 +640,10 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "natural fiber outdoor rug",
         "ceramic decorative elements",
         "canvas or fabric privacy screen in warm tones",
-        "wrought iron wall-mounted shelves"
+        "wrought iron wall-mounted shelves",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
-    }
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
+    },
   },
 
   // INDUSTRIAL STYLE - All 8 room types
@@ -616,8 +651,10 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
     living_room: {
       prompt_name: "Industrial Living Room",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A modern industrial living room with exposed brick or concrete walls and polished concrete or reclaimed wood floors.",
-      camera_setup: "Marketing-quality, wide-angle shot with dramatic lighting.",
+      room_description:
+        "A modern industrial living room with exposed brick or concrete walls and polished concrete or reclaimed wood floors.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with dramatic lighting.",
       assembled_elements: [
         "leather sofa in brown, black, or charcoal",
         "reclaimed wood coffee table with steel pipe or beam base",
@@ -633,16 +670,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "canvas or leather throws",
         "industrial-style framed art or metal wall decor",
         "metal or concrete decorative objects",
-        "minimal plants in concrete or metal planters"
+        "minimal plants in concrete or metal planters",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     bedroom: {
       prompt_name: "Industrial Bedroom",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A modern industrial bedroom with exposed brick or concrete walls and polished concrete or reclaimed wood floors.",
-      camera_setup: "Marketing-quality, wide-angle shot with dramatic lighting.",
+      room_description:
+        "A modern industrial bedroom with exposed brick or concrete walls and polished concrete or reclaimed wood floors.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with dramatic lighting.",
       assembled_elements: [
         "bed with dark gray or black bedding",
         "leather or canvas throw blanket",
@@ -654,16 +693,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "industrial-style framed art",
         "leather or canvas area rug",
         "minimal window treatments or metal blinds",
-        "minimal plants in concrete or metal planters"
+        "minimal plants in concrete or metal planters",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     kitchen: {
       prompt_name: "Industrial Kitchen",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A modern industrial kitchen with exposed brick or concrete walls and polished concrete floors.",
-      camera_setup: "Marketing-quality, wide-angle shot with dramatic lighting.",
+      room_description:
+        "A modern industrial kitchen with exposed brick or concrete walls and polished concrete floors.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with dramatic lighting.",
       assembled_elements: [
         "dark stained wood or metal-front kitchen cabinets",
         "concrete, butcher block, or steel countertops",
@@ -678,16 +719,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "minimal herbs in metal containers",
         "reclaimed wood cutting boards",
         "glass or metal storage containers",
-        "minimal or industrial window treatments"
+        "minimal or industrial window treatments",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     bathroom: {
       prompt_name: "Industrial Bathroom",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A modern industrial bathroom with exposed brick or concrete walls and concrete or dark tile floors.",
-      camera_setup: "Marketing-quality, wide-angle shot with dramatic lighting.",
+      room_description:
+        "A modern industrial bathroom with exposed brick or concrete walls and concrete or dark tile floors.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with dramatic lighting.",
       assembled_elements: [
         "reclaimed wood or concrete vanity cabinet",
         "industrial metal or reclaimed wood bathroom mirror",
@@ -702,16 +745,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "glass or metal decorative containers",
         "minimal plants in concrete or metal planters",
         "pipe shelving with reclaimed wood",
-        "industrial-style framed artwork"
+        "industrial-style framed artwork",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     dining_room: {
       prompt_name: "Industrial Dining Room",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A modern industrial dining room with exposed brick or concrete walls and polished concrete or reclaimed wood floors.",
-      camera_setup: "Marketing-quality, wide-angle shot with dramatic lighting.",
+      room_description:
+        "A modern industrial dining room with exposed brick or concrete walls and polished concrete or reclaimed wood floors.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with dramatic lighting.",
       assembled_elements: [
         "reclaimed wood dining table with steel pipe or beam base",
         "metal chairs or leather upholstered seating",
@@ -726,16 +771,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "metal or concrete dinnerware display",
         "reclaimed wood and metal wine storage",
         "minimal plants in concrete or metal planters",
-        "industrial metal mirrors"
+        "industrial metal mirrors",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     entrance_hall: {
       prompt_name: "Industrial Entrance Hall",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A modern industrial entrance hall with exposed brick or concrete walls and polished concrete or reclaimed wood floors.",
-      camera_setup: "Marketing-quality, wide-angle shot with dramatic lighting.",
+      room_description:
+        "A modern industrial entrance hall with exposed brick or concrete walls and polished concrete or reclaimed wood floors.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with dramatic lighting.",
       assembled_elements: [
         "reclaimed wood and steel console table",
         "industrial metal or reclaimed wood entry mirror",
@@ -749,16 +796,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "minimal plants in concrete or metal planters",
         "metal key holder",
         "wire or metal storage baskets",
-        "exposed bulb or industrial ceiling light fixture"
+        "exposed bulb or industrial ceiling light fixture",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     terrace: {
       prompt_name: "Industrial Terrace",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A modern industrial outdoor terrace with concrete or steel grating floors and exposed structural elements.",
-      camera_setup: "Marketing-quality, wide-angle shot with dramatic lighting.",
+      room_description:
+        "A modern industrial outdoor terrace with concrete or steel grating floors and exposed structural elements.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with dramatic lighting.",
       assembled_elements: [
         "reclaimed wood or metal outdoor dining table",
         "metal outdoor chairs with dark cushions",
@@ -772,16 +821,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "metal outdoor storage",
         "metal decorative lanterns",
         "canvas or leather outdoor textiles",
-        "metal garden accessories"
+        "metal garden accessories",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     balcony: {
       prompt_name: "Industrial Balcony",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A cozy compact industrial balcony with concrete or metal grating floors and exposed elements.",
-      camera_setup: "Marketing-quality, wide-angle shot with dramatic lighting.",
+      room_description:
+        "A cozy compact industrial balcony with concrete or metal grating floors and exposed elements.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with dramatic lighting.",
       assembled_elements: [
         "small metal or reclaimed wood outdoor table",
         "metal folding chairs with dark cushions",
@@ -793,10 +844,10 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "dark outdoor rug or rubber mat",
         "metal decorative elements",
         "metal mesh or canvas privacy screen",
-        "pipe or metal wall-mounted shelves"
+        "pipe or metal wall-mounted shelves",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
-    }
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
+    },
   },
 
   // TRANSITIONAL STYLE - All 8 room types
@@ -804,8 +855,10 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
     living_room: {
       prompt_name: "Transitional Living Room",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "An elegant transitional living room with soft neutral walls (greige, warm gray, cream) and medium-toned hardwood floors.",
-      camera_setup: "Marketing-quality, wide-angle shot with balanced natural lighting.",
+      room_description:
+        "An elegant transitional living room with soft neutral walls (greige, warm gray, cream) and medium-toned hardwood floors.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with balanced natural lighting.",
       assembled_elements: [
         "comfortable sofa in updated neutrals (greige, taupe, soft blue)",
         "wood coffee table with classic shape but clean lines",
@@ -821,16 +874,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "quality fabric throws",
         "traditional-style framed art",
         "mixed metal decorative objects",
-        "potted plants in ceramic containers"
+        "potted plants in ceramic containers",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     bedroom: {
       prompt_name: "Transitional Bedroom",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "An elegant transitional bedroom with soft neutral walls (greige, warm gray, cream) and medium-toned hardwood floors.",
-      camera_setup: "Marketing-quality, wide-angle shot with balanced natural lighting.",
+      room_description:
+        "An elegant transitional bedroom with soft neutral walls (greige, warm gray, cream) and medium-toned hardwood floors.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with balanced natural lighting.",
       assembled_elements: [
         "bed with neutral bedding in quality fabrics",
         "textured throw blanket",
@@ -842,16 +897,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "traditional-style framed artwork",
         "traditional patterned area rug in contemporary colors",
         "layered window treatments",
-        "potted plants in ceramic containers"
+        "potted plants in ceramic containers",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     kitchen: {
       prompt_name: "Transitional Kitchen",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "An elegant transitional kitchen with soft neutral walls and medium-toned hardwood or stone-look tile floors.",
-      camera_setup: "Marketing-quality, wide-angle shot with balanced natural lighting.",
+      room_description:
+        "An elegant transitional kitchen with soft neutral walls and medium-toned hardwood or stone-look tile floors.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with balanced natural lighting.",
       assembled_elements: [
         "Shaker or raised panel kitchen cabinets in painted or stained finishes",
         "quartz or granite countertops in neutral tones with subtle veining",
@@ -866,16 +923,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "potted herbs in ceramic containers",
         "wood cutting boards",
         "ceramic or glass storage containers",
-        "layered window treatments"
+        "layered window treatments",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     bathroom: {
       prompt_name: "Transitional Bathroom",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "An elegant transitional bathroom with soft neutral walls and stone-look or classic tile floors.",
-      camera_setup: "Marketing-quality, wide-angle shot with balanced natural lighting.",
+      room_description:
+        "An elegant transitional bathroom with soft neutral walls and stone-look or classic tile floors.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with balanced natural lighting.",
       assembled_elements: [
         "painted or stained wood vanity cabinet with traditional details",
         "framed bathroom mirror with traditional styling",
@@ -890,16 +949,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "ceramic decorative containers",
         "potted plants in ceramic containers",
         "wood or painted wall-mounted shelves",
-        "traditional-style framed artwork"
+        "traditional-style framed artwork",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     dining_room: {
       prompt_name: "Transitional Dining Room",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "An elegant transitional dining room with soft neutral walls (greige, warm gray, cream) and medium-toned hardwood floors.",
-      camera_setup: "Marketing-quality, wide-angle shot with balanced natural lighting.",
+      room_description:
+        "An elegant transitional dining room with soft neutral walls (greige, warm gray, cream) and medium-toned hardwood floors.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with balanced natural lighting.",
       assembled_elements: [
         "wood dining table with classic shape but clean lines",
         "upholstered dining chairs in neutral fabrics",
@@ -914,16 +975,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "ceramic or glass dinnerware display",
         "wood wine storage with traditional details",
         "potted plants in ceramic containers",
-        "framed mirrors with traditional styling"
+        "framed mirrors with traditional styling",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     entrance_hall: {
       prompt_name: "Transitional Entrance Hall",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "An elegant transitional entrance hall with soft neutral walls (greige, warm gray, cream) and medium-toned hardwood floors.",
-      camera_setup: "Marketing-quality, wide-angle shot with balanced natural lighting.",
+      room_description:
+        "An elegant transitional entrance hall with soft neutral walls (greige, warm gray, cream) and medium-toned hardwood floors.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with balanced natural lighting.",
       assembled_elements: [
         "wood console table with traditional details",
         "framed entry mirror with traditional styling",
@@ -937,16 +1000,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "potted plants in ceramic containers",
         "decorative key holder",
         "woven or ceramic storage baskets",
-        "updated traditional ceiling light fixture"
+        "updated traditional ceiling light fixture",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     terrace: {
       prompt_name: "Transitional Terrace",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "An elegant transitional outdoor terrace with stone or wood-look tile floors and classic architectural details.",
-      camera_setup: "Marketing-quality, wide-angle shot with balanced natural lighting.",
+      room_description:
+        "An elegant transitional outdoor terrace with stone or wood-look tile floors and classic architectural details.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with balanced natural lighting.",
       assembled_elements: [
         "wood or mixed material outdoor dining table",
         "classic outdoor chairs with comfortable cushions",
@@ -960,16 +1025,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "outdoor storage with traditional styling",
         "decorative lanterns in mixed metals",
         "quality outdoor textiles",
-        "classic garden accessories"
+        "classic garden accessories",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
     },
 
     balcony: {
       prompt_name: "Transitional Balcony",
       base_style: "cinematic, photorealistic, 4K",
-      room_description: "A cozy compact transitional balcony with classic styling and space-efficient design.",
-      camera_setup: "Marketing-quality, wide-angle shot with balanced natural lighting.",
+      room_description:
+        "A cozy compact transitional balcony with classic styling and space-efficient design.",
+      camera_setup:
+        "Marketing-quality, wide-angle shot with balanced natural lighting.",
       assembled_elements: [
         "small wood or mixed material outdoor table",
         "classic folding chairs with comfortable cushions",
@@ -981,30 +1048,35 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<RenovationStyle, Record<RenovationTyp
         "outdoor rug in classic pattern",
         "ceramic or metal decorative elements",
         "fabric privacy screen in neutral tones",
-        "decorative wall-mounted shelves"
+        "decorative wall-mounted shelves",
       ],
-      negative_prompts: ["no people", "no text overlays", "no clutter"]
-    }
-  }
+      negative_prompts: ["no people", "no text overlays", "no clutter"],
+    },
+  },
 } as const;
 
 // Function to generate assembly renovation prompt
 export function getAssemblyRenovationPrompt(
   roomType: RenovationType,
   selectedElements?: string[], // Optional: only modify specific elements
-  style: RenovationStyle = 'default'
+  style: RenovationStyle = "default",
 ): string {
   // 2-level lookup: style first, then room type
   const assemblyPrompt = ROOM_ASSEMBLY_PROMPTS[style][roomType];
   const styleInstructions = RENOVATION_STYLES[style];
 
   // If specific elements are selected, focus on those
-  const elementsToInclude = selectedElements && selectedElements.length > 0
-    ? selectedElements
-    : assemblyPrompt.assembled_elements;
+  const elementsToInclude =
+    selectedElements && selectedElements.length > 0
+      ? selectedElements
+      : assemblyPrompt.assembled_elements;
 
-  const elementsText = elementsToInclude.map(element => `- ${element}`).join('\n');
-  const negativeText = assemblyPrompt.negative_prompts.map(neg => `- ${neg}`).join('\n');
+  const elementsText = elementsToInclude
+    .map((element) => `- ${element}`)
+    .join("\n");
+  const negativeText = assemblyPrompt.negative_prompts
+    .map((neg) => `- ${neg}`)
+    .join("\n");
 
   return `
 ASSEMBLY RENOVATION - ${assemblyPrompt.prompt_name}

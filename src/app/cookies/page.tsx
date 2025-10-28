@@ -2,7 +2,16 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Cookie, Shield, Settings, Eye, Clock, Database, Info, ChevronRight } from "lucide-react";
+import {
+  Cookie,
+  Shield,
+  Settings,
+  Eye,
+  Clock,
+  Database,
+  Info,
+  ChevronRight,
+} from "lucide-react";
 import Navbar from "~/components/navbar";
 import { Footer } from "~/components/landing/Footer";
 
@@ -15,7 +24,7 @@ const sections = [
       <p>Las cookies son pequeños archivos de texto que se almacenan en su dispositivo (ordenador, tablet o móvil) cuando visita un sitio web. Permiten al sitio web recordar sus acciones y preferencias (como el inicio de sesión, idioma, tamaño de fuente y otras preferencias de visualización) durante un período de tiempo, para que no tenga que volver a configurarlas cada vez que regrese al sitio o navegue de una página a otra.</p>
 
       <p class="mt-3">Las cookies son utilizadas ampliamente por los propietarios de sitios web para hacer que sus sitios funcionen de manera más eficiente, así como para proporcionar información de informes.</p>
-    `
+    `,
   },
   {
     id: "tipos",
@@ -73,7 +82,7 @@ const sections = [
           </p>
         </div>
       </div>
-    `
+    `,
   },
   {
     id: "clasificacion",
@@ -99,7 +108,7 @@ const sections = [
           </ul>
         </div>
       </div>
-    `
+    `,
   },
   {
     id: "finalidad",
@@ -114,7 +123,7 @@ const sections = [
         <li><strong>Rendimiento:</strong> Para monitorear la velocidad de carga y optimizar el rendimiento del sitio.</li>
         <li><strong>Funcionalidad:</strong> Para proporcionar características y funcionalidades mejoradas.</li>
       </ul>
-    `
+    `,
   },
   {
     id: "base-legal",
@@ -131,7 +140,7 @@ const sections = [
       <p class="mt-4 text-sm bg-blue-50 p-3 rounded-lg border border-blue-200">
         <strong>Importante:</strong> Según el Reglamento General de Protección de Datos (RGPD) y la Ley de Servicios de la Sociedad de la Información (LSSI), solo instalamos cookies analíticas y de marketing tras obtener su consentimiento explícito.
       </p>
-    `
+    `,
   },
   {
     id: "gestion",
@@ -171,7 +180,7 @@ const sections = [
       <p class="mt-4 text-sm bg-amber-50 p-3 rounded-lg border border-amber-200">
         <strong>Nota:</strong> Si rechaza o elimina las cookies, algunas funcionalidades del sitio web pueden no funcionar correctamente.
       </p>
-    `
+    `,
   },
   {
     id: "duracion",
@@ -203,7 +212,7 @@ const sections = [
           </tbody>
         </table>
       </div>
-    `
+    `,
   },
   {
     id: "terceros",
@@ -233,7 +242,7 @@ const sections = [
       <p class="mt-4 text-sm">
         Estos terceros pueden utilizar cookies para recopilar información sobre su actividad en línea a lo largo del tiempo y en diferentes sitios web. Le recomendamos revisar sus políticas de privacidad.
       </p>
-    `
+    `,
   },
   {
     id: "derechos",
@@ -265,7 +274,7 @@ const sections = [
         Para ejercer sus derechos o para cualquier consulta sobre cookies, puede contactarnos en:
         <a href="mailto:javier@vesta-crm.com" class="text-amber-600 underline hover:text-amber-700">javier@vesta-crm.com</a>
       </p>
-    `
+    `,
   },
   {
     id: "actualizaciones",
@@ -277,8 +286,8 @@ const sections = [
       <p class="mt-3">Cuando realicemos cambios significativos, se lo notificaremos mediante un aviso destacado en nuestro sitio web.</p>
 
       <p class="mt-3"><strong>Fecha de última actualización:</strong> Enero 2025</p>
-    `
-  }
+    `,
+  },
 ];
 
 export default function CookiesPage() {
@@ -304,8 +313,8 @@ export default function CookiesPage() {
               Política de Cookies
             </h1>
             <p className="text-xl text-gray-600">
-              Información transparente sobre cómo utilizamos cookies en Vesta CRM
-              y cómo puede gestionar sus preferencias.
+              Información transparente sobre cómo utilizamos cookies en Vesta
+              CRM y cómo puede gestionar sus preferencias.
             </p>
             <div className="mt-6 flex items-center justify-center gap-2 text-sm text-gray-500">
               <Clock className="h-4 w-4" />
@@ -318,7 +327,9 @@ export default function CookiesPage() {
       {/* Table of Contents */}
       <section className="border-b border-gray-200 bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
-          <h2 className="mb-6 text-lg font-semibold text-gray-900">Índice de Contenidos</h2>
+          <h2 className="mb-6 text-lg font-semibold text-gray-900">
+            Índice de Contenidos
+          </h2>
           <nav className="grid gap-2 sm:grid-cols-2">
             {sections.map((section, index) => (
               <motion.a

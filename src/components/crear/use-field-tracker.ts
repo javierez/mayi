@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect } from "react";
 
 interface UseFieldTrackerOptions {
   onFieldChange?: (field: string, value: unknown, prevValue: unknown) => void;
@@ -6,7 +6,7 @@ interface UseFieldTrackerOptions {
 
 export function useFieldTracker<T extends Record<string, unknown>>(
   initialData: T,
-  options?: UseFieldTrackerOptions
+  options?: UseFieldTrackerOptions,
 ) {
   const [formData, setFormData] = useState<T>(initialData);
   const [changedFields, setChangedFields] = useState<Set<keyof T>>(new Set());
@@ -16,7 +16,8 @@ export function useFieldTracker<T extends Record<string, unknown>>(
   // Update initial data when it changes (e.g., when data loads from server)
   useEffect(() => {
     // Only update if the data has actually changed
-    const hasDataChanged = JSON.stringify(initialData) !== JSON.stringify(initialDataRef.current);
+    const hasDataChanged =
+      JSON.stringify(initialData) !== JSON.stringify(initialDataRef.current);
     if (hasDataChanged) {
       initialDataRef.current = initialData;
       previousDataRef.current = initialData;
@@ -29,18 +30,20 @@ export function useFieldTracker<T extends Record<string, unknown>>(
   const updateField = useCallback(
     (field: keyof T, value: unknown) => {
       const prevValue = previousDataRef.current[field];
-      
-      setFormData(prev => {
+
+      setFormData((prev) => {
         const updated = { ...prev, [field]: value };
         previousDataRef.current = updated;
         return updated;
       });
 
       // Track if field has changed from initial value
-      if (JSON.stringify(value) !== JSON.stringify(initialDataRef.current[field])) {
-        setChangedFields(prev => new Set(prev).add(field));
+      if (
+        JSON.stringify(value) !== JSON.stringify(initialDataRef.current[field])
+      ) {
+        setChangedFields((prev) => new Set(prev).add(field));
       } else {
-        setChangedFields(prev => {
+        setChangedFields((prev) => {
           const newSet = new Set(prev);
           newSet.delete(field);
           return newSet;
@@ -50,47 +53,50 @@ export function useFieldTracker<T extends Record<string, unknown>>(
       // Call the callback if provided
       options?.onFieldChange?.(String(field), value, prevValue);
     },
-    [options]
+    [options],
   );
 
   // Update multiple fields at once
   const updateFields = useCallback(
     (updates: Partial<T>) => {
       const prevData = previousDataRef.current;
-      
-      setFormData(prev => {
+
+      setFormData((prev) => {
         const updated = { ...prev, ...updates };
         previousDataRef.current = updated;
         return updated;
       });
 
       // Track which fields have changed from initial values
-      setChangedFields(prev => {
+      setChangedFields((prev) => {
         const newChangedFields = new Set(prev);
-        
+
         Object.entries(updates).forEach(([field, value]) => {
           const fieldKey = field as keyof T;
-          if (JSON.stringify(value) !== JSON.stringify(initialDataRef.current[fieldKey])) {
+          if (
+            JSON.stringify(value) !==
+            JSON.stringify(initialDataRef.current[fieldKey])
+          ) {
             newChangedFields.add(fieldKey);
           } else {
             newChangedFields.delete(fieldKey);
           }
-          
+
           // Call the callback for each field if provided
           const prevValue = prevData[fieldKey];
           options?.onFieldChange?.(String(fieldKey), value, prevValue);
         });
-        
+
         return newChangedFields;
       });
     },
-    [options]
+    [options],
   );
 
   // Get only the fields that have changed
   const getChangedData = useCallback((): Partial<T> => {
     const changed: Partial<T> = {};
-    changedFields.forEach(field => {
+    changedFields.forEach((field) => {
       changed[field] = formData[field];
     });
     return changed;
@@ -101,7 +107,7 @@ export function useFieldTracker<T extends Record<string, unknown>>(
     (field: keyof T): boolean => {
       return changedFields.has(field);
     },
-    [changedFields]
+    [changedFields],
   );
 
   // Check if any fields have changed
@@ -123,17 +129,21 @@ export function useFieldTracker<T extends Record<string, unknown>>(
   }, [formData]);
 
   // Get a comparison of current vs initial
-  const getDiff = useCallback((): { field: string; initial: unknown; current: unknown }[] => {
+  const getDiff = useCallback((): {
+    field: string;
+    initial: unknown;
+    current: unknown;
+  }[] => {
     const diff: { field: string; initial: unknown; current: unknown }[] = [];
-    
-    changedFields.forEach(field => {
+
+    changedFields.forEach((field) => {
       diff.push({
         field: String(field),
         initial: initialDataRef.current[field],
         current: formData[field],
       });
     });
-    
+
     return diff;
   }, [formData, changedFields]);
 

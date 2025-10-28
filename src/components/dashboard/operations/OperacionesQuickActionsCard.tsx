@@ -18,7 +18,9 @@ interface OperacionesQuickActionsCardProps {
   onTaskCreated?: () => void;
 }
 
-export default function OperacionesQuickActionsCard({ onTaskCreated }: OperacionesQuickActionsCardProps = {}) {
+export default function OperacionesQuickActionsCard({
+  onTaskCreated,
+}: OperacionesQuickActionsCardProps = {}) {
   const router = useRouter();
   const [isCreatingProperty, setIsCreatingProperty] = useState(false);
 
@@ -83,11 +85,14 @@ export default function OperacionesQuickActionsCard({ onTaskCreated }: Operacion
           {actions.map((action) => {
             if (action.isModal && action.label === "Crear Tarea") {
               return (
-                <GlobalTaskModalTrigger key={action.label} onSuccess={onTaskCreated}>
+                <GlobalTaskModalTrigger
+                  key={action.label}
+                  onSuccess={onTaskCreated}
+                >
                   <motion.div
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md cursor-pointer"
+                    className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md"
                   >
                     <action.icon className="mb-2 h-6 w-6" />
                     <span className="text-center text-[10px] font-medium uppercase tracking-wide text-gray-600">
@@ -105,14 +110,14 @@ export default function OperacionesQuickActionsCard({ onTaskCreated }: Operacion
                   whileHover={action.isDisabled ? {} : { scale: 1.02 }}
                   whileTap={action.isDisabled ? {} : { scale: 0.98 }}
                   className={`relative flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 ${
-                    action.isDisabled 
-                      ? 'opacity-50 cursor-not-allowed' 
-                      : 'hover:shadow-md cursor-pointer opacity-90'
+                    action.isDisabled
+                      ? "cursor-not-allowed opacity-50"
+                      : "cursor-pointer opacity-90 hover:shadow-md"
                   }`}
                   onClick={() => {
                     if (action.isDisabled) return;
                     // Mock button - just show an alert for now
-                    alert('Funcionalidad próximamente disponible');
+                    alert("Funcionalidad próximamente disponible");
                   }}
                 >
                   <action.icon className="mb-2 h-6 w-6" />
@@ -127,7 +132,7 @@ export default function OperacionesQuickActionsCard({ onTaskCreated }: Operacion
               return (
                 <motion.div
                   key={action.label}
-                  className="flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 opacity-50 cursor-not-allowed"
+                  className="flex cursor-not-allowed flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 opacity-50 shadow-sm transition-all duration-200"
                 >
                   <action.icon className="mb-2 h-6 w-6" />
                   <span className="text-center text-[10px] font-medium uppercase tracking-wide text-gray-600">
@@ -143,16 +148,22 @@ export default function OperacionesQuickActionsCard({ onTaskCreated }: Operacion
                 <motion.button
                   key={action.label}
                   onClick={action.onClick}
-                  disabled={action.label === "Añadir Propiedad" && isCreatingProperty}
+                  disabled={
+                    action.label === "Añadir Propiedad" && isCreatingProperty
+                  }
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className={`flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md ${
-                    action.label === "Añadir Propiedad" && isCreatingProperty ? "opacity-50 cursor-wait" : ""
+                    action.label === "Añadir Propiedad" && isCreatingProperty
+                      ? "cursor-wait opacity-50"
+                      : ""
                   }`}
                 >
                   <action.icon className="mb-2 h-6 w-6" />
                   <span className="text-center text-[10px] font-medium uppercase tracking-wide text-gray-600">
-                    {action.label === "Añadir Propiedad" && isCreatingProperty ? "Creando..." : action.label}
+                    {action.label === "Añadir Propiedad" && isCreatingProperty
+                      ? "Creando..."
+                      : action.label}
                   </span>
                 </motion.button>
               );

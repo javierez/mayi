@@ -109,7 +109,9 @@ export function ContactSpreadsheetTable({
   const observerRef = useRef<IntersectionObserver | null>(null);
   const [isHoveringTable, setIsHoveringTable] = useState(false);
   const [editingSourceId, setEditingSourceId] = useState<string | null>(null);
-  const [optimisticSources, setOptimisticSources] = useState<Record<string, string>>({});
+  const [optimisticSources, setOptimisticSources] = useState<
+    Record<string, string>
+  >({});
 
   const handleResizeStart = useCallback(
     (column: string, e: React.MouseEvent) => {
@@ -175,20 +177,23 @@ export function ContactSpreadsheetTable({
   );
 
   // Intersection Observer for lazy loading
-  const observeRow = useCallback((element: HTMLElement | null, contactId: string) => {
-    if (!element || !observerRef.current) return;
+  const observeRow = useCallback(
+    (element: HTMLElement | null, contactId: string) => {
+      if (!element || !observerRef.current) return;
 
-    // Add dataset to track which contact this element represents
-    element.dataset.contactId = contactId;
-    observerRef.current.observe(element);
-  }, []);
+      // Add dataset to track which contact this element represents
+      element.dataset.contactId = contactId;
+      observerRef.current.observe(element);
+    },
+    [],
+  );
 
   // Initialize Intersection Observer
   useEffect(() => {
     observerRef.current = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          const contactId = entry.target.getAttribute('data-contact-id');
+          const contactId = entry.target.getAttribute("data-contact-id");
           if (!contactId) return;
 
           if (entry.isIntersecting) {
@@ -198,9 +203,9 @@ export function ContactSpreadsheetTable({
       },
       {
         root: null,
-        rootMargin: '100px', // Start loading content 100px before they come into view
+        rootMargin: "100px", // Start loading content 100px before they come into view
         threshold: 0.1,
-      }
+      },
     );
 
     // Clean up observer on unmount
@@ -213,7 +218,9 @@ export function ContactSpreadsheetTable({
 
   // Initialize visible rows for first few items (above fold)
   useEffect(() => {
-    const initialVisibleIds = contacts.slice(0, 5).map(c => c.contactId.toString());
+    const initialVisibleIds = contacts
+      .slice(0, 5)
+      .map((c) => c.contactId.toString());
     setVisibleRows(new Set(initialVisibleIds));
   }, [contacts]);
 
@@ -223,7 +230,7 @@ export function ContactSpreadsheetTable({
       if (editingSourceId) {
         // Check if click is outside the source editor
         const target = event.target as HTMLElement;
-        const isInsideSourceEditor = target.closest('[data-source-editor]');
+        const isInsideSourceEditor = target.closest("[data-source-editor]");
 
         if (!isInsideSourceEditor) {
           setEditingSourceId(null);
@@ -231,9 +238,9 @@ export function ContactSpreadsheetTable({
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [editingSourceId]);
 
@@ -244,15 +251,25 @@ export function ContactSpreadsheetTable({
       await onExport();
     } else {
       // Fallback: export only current page data
-      const headers = ["Nombre", "Email", "Teléfono", "Tipo", "Propiedades", "Última Actualización"];
+      const headers = [
+        "Nombre",
+        "Email",
+        "Teléfono",
+        "Tipo",
+        "Propiedades",
+        "Última Actualización",
+      ];
 
-      const rows = contacts.map(contact => {
+      const rows = contacts.map((contact) => {
         const types = [];
         if (contact.isOwner) types.push("Propietario");
         if (contact.isBuyer) types.push("Comprador");
         if (contact.isInteresado) types.push("Interesado");
 
-        const propertiesCount = (contact.ownerCount ?? 0) + (contact.buyerCount ?? 0) + (contact.prospectCount ?? 0);
+        const propertiesCount =
+          (contact.ownerCount ?? 0) +
+          (contact.buyerCount ?? 0) +
+          (contact.prospectCount ?? 0);
 
         return [
           `"${contact.firstName} ${contact.lastName}"`,
@@ -270,7 +287,10 @@ export function ContactSpreadsheetTable({
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);
       link.setAttribute("href", url);
-      link.setAttribute("download", `contactos-${new Date().toISOString().split("T")[0]}.csv`);
+      link.setAttribute(
+        "download",
+        `contactos-${new Date().toISOString().split("T")[0]}.csv`,
+      );
       link.style.visibility = "hidden";
       document.body.appendChild(link);
       link.click();
@@ -279,29 +299,32 @@ export function ContactSpreadsheetTable({
   }, [contacts, onExport]);
 
   // Handle source update with optimistic UI
-  const handleSourceUpdate = useCallback(async (contactId: bigint, newSource: string) => {
-    const contactIdStr = contactId.toString();
+  const handleSourceUpdate = useCallback(
+    async (contactId: bigint, newSource: string) => {
+      const contactIdStr = contactId.toString();
 
-    // Optimistically update the UI
-    setOptimisticSources((prev) => ({
-      ...prev,
-      [contactIdStr]: newSource,
-    }));
-    setEditingSourceId(null);
+      // Optimistically update the UI
+      setOptimisticSources((prev) => ({
+        ...prev,
+        [contactIdStr]: newSource,
+      }));
+      setEditingSourceId(null);
 
-    try {
-      await updateContactWithAuth(Number(contactId), { source: newSource });
-      // Success - the optimistic update is now confirmed
-    } catch (error) {
-      console.error("Failed to update contact source:", error);
-      // Rollback optimistic update on error
-      setOptimisticSources((prev) => {
-        const newState = { ...prev };
-        delete newState[contactIdStr];
-        return newState;
-      });
-    }
-  }, []);
+      try {
+        await updateContactWithAuth(Number(contactId), { source: newSource });
+        // Success - the optimistic update is now confirmed
+      } catch (error) {
+        console.error("Failed to update contact source:", error);
+        // Rollback optimistic update on error
+        setOptimisticSources((prev) => {
+          const newState = { ...prev };
+          delete newState[contactIdStr];
+          return newState;
+        });
+      }
+    },
+    [],
+  );
 
   // Pagination controls component
   const PaginationControls = () => {
@@ -332,7 +355,10 @@ export function ContactSpreadsheetTable({
         </div>
         <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-center">
           <div>
-            <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+            <nav
+              className="isolate inline-flex -space-x-px rounded-md shadow-sm"
+              aria-label="Pagination"
+            >
               <Button
                 variant="ghost"
                 size="sm"
@@ -368,7 +394,7 @@ export function ContactSpreadsheetTable({
                       "relative inline-flex items-center px-4 py-2 text-sm font-semibold",
                       isCurrentPage
                         ? "z-10 bg-primary text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                        : "text-gray-900 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
+                        : "text-gray-900 hover:bg-gray-50 focus:z-20 focus:outline-offset-0",
                     )}
                     onClick={() => onPageChange(pageNum)}
                   >
@@ -404,7 +430,9 @@ export function ContactSpreadsheetTable({
       <div
         className={cn(
           "absolute right-2 top-2 z-10 transition-all duration-300",
-          isHoveringTable ? "opacity-60 hover:opacity-100" : "opacity-0 pointer-events-none"
+          isHoveringTable
+            ? "opacity-60 hover:opacity-100"
+            : "pointer-events-none opacity-0",
         )}
       >
         <Button
@@ -445,10 +473,7 @@ export function ContactSpreadsheetTable({
                 </div>
                 <ResizeHandle column="propiedades" />
               </TableHead>
-              <TableHead
-                className="relative"
-                style={getColumnStyle("origen")}
-              >
+              <TableHead className="relative" style={getColumnStyle("origen")}>
                 <div className="truncate">Origen</div>
                 <ResizeHandle column="origen" />
               </TableHead>
@@ -466,143 +491,157 @@ export function ContactSpreadsheetTable({
               const contactId = contact.contactId.toString();
               const isVisible = visibleRows.has(contactId);
               // Use optimistic source if available, otherwise use contact source
-              const displaySource = optimisticSources[contactId] ?? contact.source;
+              const displaySource =
+                optimisticSources[contactId] ?? contact.source;
 
               return (
-              <TableRow
-                key={contactId}
-                ref={(el) => observeRow(el, contactId)}
-                className={cn(
-                  "cursor-pointer transition-colors",
-                  contact.isActive
-                    ? "hover:bg-muted/50"
-                    : "opacity-60 hover:bg-gray-100/50",
-                )}
-                onClick={() => router.push(`/contactos/${contact.contactId}`)}
-              >
-                <TableCell
-                  className="overflow-hidden py-2.5"
-                  style={getColumnStyle("nombre")}
+                <TableRow
+                  key={contactId}
+                  ref={(el) => observeRow(el, contactId)}
+                  className={cn(
+                    "cursor-pointer transition-colors",
+                    contact.isActive
+                      ? "hover:bg-muted/50"
+                      : "opacity-60 hover:bg-gray-100/50",
+                  )}
+                  onClick={() => router.push(`/contactos/${contact.contactId}`)}
                 >
-                  <div className="truncate">
-                    <Nombre
-                      firstName={contact.firstName}
-                      lastName={contact.lastName}
-                      isActive={contact.isActive}
-                      lastContact={contact.lastContact}
-                      updatedAt={contact.updatedAt}
-                      isOwner={contact.isOwner}
-                      isBuyer={contact.isBuyer}
-                      isInteresado={contact.isInteresado}
-                      notes={contact.additionalInfo?.notes}
-                    />
-                  </div>
-                </TableCell>
-
-                <TableCell
-                  className="overflow-hidden py-2.5"
-                  style={getColumnStyle("contacto")}
-                >
-                  <div className="truncate">
-                    <Contacto
-                      email={contact.email}
-                      phone={contact.phone}
-                      isActive={contact.isActive}
-                      contactId={contact.contactId}
-                    />
-                  </div>
-                </TableCell>
-
-                <TableCell
-                  className="overflow-hidden py-2.5"
-                  style={getColumnStyle("propiedades")}
-                >
-                  <div className="truncate">
-                    {isVisible ? (
-                      <Propiedades
+                  <TableCell
+                    className="overflow-hidden py-2.5"
+                    style={getColumnStyle("nombre")}
+                  >
+                    <div className="truncate">
+                      <Nombre
+                        firstName={contact.firstName}
+                        lastName={contact.lastName}
                         isActive={contact.isActive}
-                        allListings={contact.allListings}
-                        currentFilter={currentFilter}
-                        prospectTitles={contact.prospectTitles}
+                        lastContact={contact.lastContact}
+                        updatedAt={contact.updatedAt}
+                        isOwner={contact.isOwner}
+                        isBuyer={contact.isBuyer}
+                        isInteresado={contact.isInteresado}
+                        notes={contact.additionalInfo?.notes}
                       />
-                    ) : (
-                      <Skeleton className="h-8 w-full" />
-                    )}
-                  </div>
-                </TableCell>
+                    </div>
+                  </TableCell>
 
-                <TableCell
-                  className="group/source relative overflow-visible py-2.5"
-                  style={getColumnStyle("origen")}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="relative flex items-center justify-start" data-source-editor>
-                    {/* Current source display */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingSourceId(editingSourceId === contactId ? null : contactId);
-                      }}
-                      className={cn(
-                        "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-all",
-                        displaySource
-                          ? "bg-muted/50 text-muted-foreground hover:bg-muted"
-                          : "text-muted-foreground/40 hover:bg-muted/30",
-                        editingSourceId === contactId && "bg-muted"
-                      )}
-                    >
-                      {displaySource ? (
-                        CONTACT_SOURCE_LABELS[displaySource as keyof typeof CONTACT_SOURCE_LABELS] ?? displaySource
+                  <TableCell
+                    className="overflow-hidden py-2.5"
+                    style={getColumnStyle("contacto")}
+                  >
+                    <div className="truncate">
+                      <Contacto
+                        email={contact.email}
+                        phone={contact.phone}
+                        isActive={contact.isActive}
+                        contactId={contact.contactId}
+                      />
+                    </div>
+                  </TableCell>
+
+                  <TableCell
+                    className="overflow-hidden py-2.5"
+                    style={getColumnStyle("propiedades")}
+                  >
+                    <div className="truncate">
+                      {isVisible ? (
+                        <Propiedades
+                          isActive={contact.isActive}
+                          allListings={contact.allListings}
+                          currentFilter={currentFilter}
+                          prospectTitles={contact.prospectTitles}
+                        />
                       ) : (
-                        <>
-                          <ChevronDown className="h-3 w-3" />
-                          <span className="text-xs">Añadir</span>
-                        </>
+                        <Skeleton className="h-8 w-full" />
                       )}
-                    </button>
+                    </div>
+                  </TableCell>
 
-                    {/* Inline source options */}
-                    {editingSourceId === contactId && (
-                      <div
-                        className="absolute left-0 top-full z-50 mt-1 flex flex-col gap-0.5 rounded-md border bg-background p-1 shadow-lg min-w-[140px]"
-                        onMouseDown={(e) => e.stopPropagation()}
+                  <TableCell
+                    className="group/source relative overflow-visible py-2.5"
+                    style={getColumnStyle("origen")}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div
+                      className="relative flex items-center justify-start"
+                      data-source-editor
+                    >
+                      {/* Current source display */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingSourceId(
+                            editingSourceId === contactId ? null : contactId,
+                          );
+                        }}
+                        className={cn(
+                          "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-all",
+                          displaySource
+                            ? "bg-muted/50 text-muted-foreground hover:bg-muted"
+                            : "text-muted-foreground/40 hover:bg-muted/30",
+                          editingSourceId === contactId && "bg-muted",
+                        )}
                       >
-                        {CONTACT_SOURCES.map((sourceOption) => (
-                          <button
-                            key={sourceOption}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              void handleSourceUpdate(contact.contactId, sourceOption);
-                            }}
-                            className={cn(
-                              "rounded px-2.5 py-1.5 text-xs text-left transition-colors hover:bg-muted",
-                              displaySource === sourceOption
-                                ? "bg-primary/10 text-primary font-medium"
-                                : "text-muted-foreground"
-                            )}
-                          >
-                            {CONTACT_SOURCE_LABELS[sourceOption]}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </TableCell>
+                        {displaySource ? (
+                          (CONTACT_SOURCE_LABELS[
+                            displaySource as keyof typeof CONTACT_SOURCE_LABELS
+                          ] ?? displaySource)
+                        ) : (
+                          <>
+                            <ChevronDown className="h-3 w-3" />
+                            <span className="text-xs">Añadir</span>
+                          </>
+                        )}
+                      </button>
 
-                <TableCell
-                  className="overflow-hidden py-2.5"
-                  style={getColumnStyle("recordatorios")}
-                >
-                  <div className="truncate">
-                    {isVisible ? (
-                      <Recordatorios isActive={contact.isActive} tasks={contact.tasks} />
-                    ) : (
-                      <Skeleton className="h-8 w-full" />
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            );
+                      {/* Inline source options */}
+                      {editingSourceId === contactId && (
+                        <div
+                          className="absolute left-0 top-full z-50 mt-1 flex min-w-[140px] flex-col gap-0.5 rounded-md border bg-background p-1 shadow-lg"
+                          onMouseDown={(e) => e.stopPropagation()}
+                        >
+                          {CONTACT_SOURCES.map((sourceOption) => (
+                            <button
+                              key={sourceOption}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void handleSourceUpdate(
+                                  contact.contactId,
+                                  sourceOption,
+                                );
+                              }}
+                              className={cn(
+                                "rounded px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-muted",
+                                displaySource === sourceOption
+                                  ? "bg-primary/10 font-medium text-primary"
+                                  : "text-muted-foreground",
+                              )}
+                            >
+                              {CONTACT_SOURCE_LABELS[sourceOption]}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+
+                  <TableCell
+                    className="overflow-hidden py-2.5"
+                    style={getColumnStyle("recordatorios")}
+                  >
+                    <div className="truncate">
+                      {isVisible ? (
+                        <Recordatorios
+                          isActive={contact.isActive}
+                          tasks={contact.tasks}
+                        />
+                      ) : (
+                        <Skeleton className="h-8 w-full" />
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
             })}
           </TableBody>
         </Table>

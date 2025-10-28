@@ -19,13 +19,11 @@ import {
 import { motion } from "framer-motion";
 import { useFormContext } from "../form-context";
 
-
 interface SixthPageProps {
   listingId: string;
   onNext: () => void;
   onBack?: () => void;
 }
-
 
 const kitchenTypeOptions = [
   { value: "gas", label: "Gas" },
@@ -36,12 +34,9 @@ const kitchenTypeOptions = [
   { value: "mixto", label: "Mixto" },
 ];
 
-export default function SixthPage({
-  onNext,
-  onBack,
-}: SixthPageProps) {
+export default function SixthPage({ onNext, onBack }: SixthPageProps) {
   const { state, updateFormData } = useFormContext();
-  
+
   const propertyType = state.formData.propertyType ?? "";
 
   // Get current form data from context (following first.tsx pattern)
@@ -67,7 +62,6 @@ export default function SixthPage({
     updateFormData({ [field]: value });
   };
 
-
   // Handle property type-specific logic
   useEffect(() => {
     // For solar properties, skip this page entirely
@@ -81,7 +75,6 @@ export default function SixthPage({
     // Navigate immediately - no saves, completely instant!
     onNext();
   };
-
 
   return (
     <motion.div
@@ -154,9 +147,7 @@ export default function SixthPage({
               <Checkbox
                 id="doorman"
                 checked={formData.doorman}
-                onCheckedChange={(checked) =>
-                  updateField("doorman", !!checked)
-                }
+                onCheckedChange={(checked) => updateField("doorman", !!checked)}
               />
               <Label htmlFor="doorman" className="text-sm">
                 Conserjería
@@ -311,7 +302,6 @@ export default function SixthPage({
 
         {/* Utilities - Hide for garage properties */}
       </motion.div>
-
 
       <motion.div
         className="flex justify-between border-t pt-4"

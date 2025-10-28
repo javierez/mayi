@@ -1,13 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { Button } from "~/components/ui/button";
-import { Shield, Users, Eye, Edit, Trash2, ImageIcon, Calendar, ChevronRight } from "lucide-react";
-import { ROLE_NAMES, ROLE_DESCRIPTIONS, ROLE_COLORS, type AccountRole, type AccountRolePermissions } from "~/types/account-roles";
+import {
+  Shield,
+  Users,
+  Eye,
+  Edit,
+  Trash2,
+  ImageIcon,
+  Calendar,
+  ChevronRight,
+} from "lucide-react";
+import {
+  ROLE_NAMES,
+  ROLE_DESCRIPTIONS,
+  ROLE_COLORS,
+  type AccountRole,
+  type AccountRolePermissions,
+} from "~/types/account-roles";
 import { upsertAccountRolePermissionsWithAuth } from "~/server/queries/account-roles";
 
 type Permission = {
@@ -246,36 +267,46 @@ interface Props {
 export default function PrivacyPermissionsClient({ initialRoles }: Props) {
   // Set initial selected role to the first available role, fallback to 1
   const [selectedRoleId, setSelectedRoleId] = useState<number>(
-    initialRoles.length > 0 ? initialRoles[0]!.roleId : 1
+    initialRoles.length > 0 ? initialRoles[0]!.roleId : 1,
   );
   const [roles, setRoles] = useState<AccountRole[]>(initialRoles);
   const [hasChanges, setHasChanges] = useState(false);
   const [saving, setSaving] = useState(false);
 
-
-  const selectedRole = roles.find(r => r.roleId === selectedRoleId);
+  const selectedRole = roles.find((r) => r.roleId === selectedRoleId);
 
   const handlePermissionToggle = (category: string, permissionKey: string) => {
     if (!selectedRole || selectedRole.roleId === 3) return; // Admin de Cuenta has all permissions
 
-    setRoles(prevRoles => {
-      return prevRoles.map(role => {
+    setRoles((prevRoles) => {
+      return prevRoles.map((role) => {
         if (role.roleId !== selectedRoleId) return role;
 
         const updatedPermissions = { ...role.permissions };
-        
-        // Ensure category exists as an object
-        if (!updatedPermissions[category as keyof AccountRolePermissions] || 
-            typeof updatedPermissions[category as keyof AccountRolePermissions] !== 'object') {
-          (updatedPermissions as Record<string, Record<string, boolean>>)[category] = {};
-        }
-        
-        const categoryPerms = { ...updatedPermissions[category as keyof AccountRolePermissions] };
-        
-        // Toggle the permission
-        (categoryPerms as Record<string, boolean>)[permissionKey] = !(categoryPerms as Record<string, boolean>)[permissionKey];
-        (updatedPermissions as Record<string, Record<string, boolean>>)[category] = categoryPerms;
 
+        // Ensure category exists as an object
+        if (
+          !updatedPermissions[category as keyof AccountRolePermissions] ||
+          typeof updatedPermissions[
+            category as keyof AccountRolePermissions
+          ] !== "object"
+        ) {
+          (updatedPermissions as Record<string, Record<string, boolean>>)[
+            category
+          ] = {};
+        }
+
+        const categoryPerms = {
+          ...updatedPermissions[category as keyof AccountRolePermissions],
+        };
+
+        // Toggle the permission
+        (categoryPerms as Record<string, boolean>)[permissionKey] = !(
+          categoryPerms as Record<string, boolean>
+        )[permissionKey];
+        (updatedPermissions as Record<string, Record<string, boolean>>)[
+          category
+        ] = categoryPerms;
 
         return { ...role, permissions: updatedPermissions };
       });
@@ -288,7 +319,10 @@ export default function PrivacyPermissionsClient({ initialRoles }: Props) {
     try {
       // Use upsert to insert new roles or update existing ones
       for (const role of roles) {
-        await upsertAccountRolePermissionsWithAuth(role.roleId, role.permissions);
+        await upsertAccountRolePermissionsWithAuth(
+          role.roleId,
+          role.permissions,
+        );
       }
       setHasChanges(false);
     } catch (error) {
@@ -303,11 +337,14 @@ export default function PrivacyPermissionsClient({ initialRoles }: Props) {
     setHasChanges(false);
   };
 
-  const groupedPermissions = permissions.reduce((acc, permission) => {
-    acc[permission.category] ??= [];
-    acc[permission.category]!.push(permission);
-    return acc;
-  }, {} as Record<string, Permission[]>);
+  const groupedPermissions = permissions.reduce(
+    (acc, permission) => {
+      acc[permission.category] ??= [];
+      acc[permission.category]!.push(permission);
+      return acc;
+    },
+    {} as Record<string, Permission[]>,
+  );
 
   return (
     <div className="space-y-6">
@@ -360,11 +397,17 @@ export default function PrivacyPermissionsClient({ initialRoles }: Props) {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         {role.roleId !== 4 && (
-                          <div className={`h-2 w-2 rounded-full ${ROLE_COLORS[role.roleId] ?? "bg-blue-500"}`} />
+                          <div
+                            className={`h-2 w-2 rounded-full ${ROLE_COLORS[role.roleId] ?? "bg-blue-500"}`}
+                          />
                         )}
                         <div className={role.roleId === 4 ? "ml-5" : ""}>
-                          <p className="font-medium text-gray-900">{ROLE_NAMES[role.roleId] ?? `Role ${role.roleId}`}</p>
-                          <p className="text-sm text-gray-500">{ROLE_DESCRIPTIONS[role.roleId] ?? "Custom role"}</p>
+                          <p className="font-medium text-gray-900">
+                            {ROLE_NAMES[role.roleId] ?? `Role ${role.roleId}`}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {ROLE_DESCRIPTIONS[role.roleId] ?? "Custom role"}
+                          </p>
                         </div>
                       </div>
                       {selectedRoleId === role.roleId && (
@@ -397,78 +440,100 @@ export default function PrivacyPermissionsClient({ initialRoles }: Props) {
                 </TabsList>
 
                 <TabsContent value="all" className="mt-6 space-y-6">
-                  {Object.entries(groupedPermissions).map(([category, perms]) => (
-                    <div key={category} className="space-y-4">
-                      <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                        {categoryLabels[category] ?? category}
-                      </h3>
-                      <div className="space-y-3">
-                        {perms.map((permission) => {
-                          const Icon = permission.icon;
-                          const categoryPerms = selectedRole?.permissions[category as keyof AccountRolePermissions];
-                          const isEnabled = categoryPerms && typeof categoryPerms === 'object' 
-                            ? (categoryPerms as Record<string, boolean>)[permission.id] === true 
-                            : false;
+                  {Object.entries(groupedPermissions).map(
+                    ([category, perms]) => (
+                      <div key={category} className="space-y-4">
+                        <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-700">
+                          {categoryLabels[category] ?? category}
+                        </h3>
+                        <div className="space-y-3">
+                          {perms.map((permission) => {
+                            const Icon = permission.icon;
+                            const categoryPerms =
+                              selectedRole?.permissions[
+                                category as keyof AccountRolePermissions
+                              ];
+                            const isEnabled =
+                              categoryPerms && typeof categoryPerms === "object"
+                                ? (categoryPerms as Record<string, boolean>)[
+                                    permission.id
+                                  ] === true
+                                : false;
 
-                          
-                          return (
-                            <div
-                              key={`${category}-${permission.id}`}
-                              className="group flex items-center justify-between py-4 px-1 border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors"
-                            >
-                              <div className="flex items-center gap-3">
-                                <Icon className={`h-5 w-5 ${isEnabled ? "text-slate-600" : "text-gray-400"}`} />
-                                <div>
-                                  <Label 
-                                    htmlFor={`${category}-${permission.id}`} 
-                                    className="text-sm font-medium text-gray-900 cursor-pointer block"
-                                  >
-                                    {permission.name}
-                                  </Label>
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    {permission.description}
-                                  </p>
+                            return (
+                              <div
+                                key={`${category}-${permission.id}`}
+                                className="group flex items-center justify-between border-b border-gray-100 px-1 py-4 transition-colors last:border-b-0 hover:bg-gray-50/50"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Icon
+                                    className={`h-5 w-5 ${isEnabled ? "text-slate-600" : "text-gray-400"}`}
+                                  />
+                                  <div>
+                                    <Label
+                                      htmlFor={`${category}-${permission.id}`}
+                                      className="block cursor-pointer text-sm font-medium text-gray-900"
+                                    >
+                                      {permission.name}
+                                    </Label>
+                                    <p className="mt-1 text-xs text-gray-500">
+                                      {permission.description}
+                                    </p>
+                                  </div>
                                 </div>
+                                <Switch
+                                  id={`${category}-${permission.id}`}
+                                  checked={isEnabled}
+                                  onCheckedChange={() =>
+                                    handlePermissionToggle(
+                                      category,
+                                      permission.id,
+                                    )
+                                  }
+                                  disabled={selectedRoleId === 3}
+                                  className="data-[state=checked]:bg-slate-600"
+                                />
                               </div>
-                              <Switch
-                                id={`${category}-${permission.id}`}
-                                checked={isEnabled}
-                                onCheckedChange={() => handlePermissionToggle(category, permission.id)}
-                                disabled={selectedRoleId === 3}
-                                className="data-[state=checked]:bg-slate-600"
-                              />
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ),
+                  )}
                 </TabsContent>
 
                 {["properties", "contacts", "admin"].map((tab) => (
                   <TabsContent key={tab} value={tab} className="mt-6 space-y-4">
                     {groupedPermissions[tab]?.map((permission) => {
                       const Icon = permission.icon;
-                      const categoryPerms = selectedRole?.permissions[tab as keyof AccountRolePermissions];
-                      const isEnabled = categoryPerms && typeof categoryPerms === 'object' 
-                        ? (categoryPerms as Record<string, boolean>)[permission.id] === true 
-                        : false;
-                      
+                      const categoryPerms =
+                        selectedRole?.permissions[
+                          tab as keyof AccountRolePermissions
+                        ];
+                      const isEnabled =
+                        categoryPerms && typeof categoryPerms === "object"
+                          ? (categoryPerms as Record<string, boolean>)[
+                              permission.id
+                            ] === true
+                          : false;
+
                       return (
                         <div
                           key={`${tab}-${permission.id}`}
-                          className="group flex items-center justify-between py-4 px-1 border-b border-gray-100 last:border-b-0 hover:bg-gray-50/50 transition-colors"
+                          className="group flex items-center justify-between border-b border-gray-100 px-1 py-4 transition-colors last:border-b-0 hover:bg-gray-50/50"
                         >
                           <div className="flex items-center gap-3">
-                            <Icon className={`h-5 w-5 ${isEnabled ? "text-slate-600" : "text-gray-400"}`} />
+                            <Icon
+                              className={`h-5 w-5 ${isEnabled ? "text-slate-600" : "text-gray-400"}`}
+                            />
                             <div>
-                              <Label 
-                                htmlFor={`${tab}-${permission.id}`} 
-                                className="text-sm font-medium text-gray-900 cursor-pointer block"
+                              <Label
+                                htmlFor={`${tab}-${permission.id}`}
+                                className="block cursor-pointer text-sm font-medium text-gray-900"
                               >
                                 {permission.name}
                               </Label>
-                              <p className="text-xs text-gray-500 mt-1">
+                              <p className="mt-1 text-xs text-gray-500">
                                 {permission.description}
                               </p>
                             </div>
@@ -476,7 +541,9 @@ export default function PrivacyPermissionsClient({ initialRoles }: Props) {
                           <Switch
                             id={`${tab}-${permission.id}`}
                             checked={isEnabled}
-                            onCheckedChange={() => handlePermissionToggle(tab, permission.id)}
+                            onCheckedChange={() =>
+                              handlePermissionToggle(tab, permission.id)
+                            }
                             disabled={selectedRoleId === 3}
                             className="data-[state=checked]:bg-slate-600"
                           />
@@ -488,9 +555,11 @@ export default function PrivacyPermissionsClient({ initialRoles }: Props) {
               </Tabs>
 
               {selectedRoleId === 3 && (
-                <div className="mt-6 rounded-lg bg-green-50 border border-green-200 p-4">
+                <div className="mt-6 rounded-lg border border-green-200 bg-green-50 p-4">
                   <p className="text-sm text-green-800">
-                    <strong>Nota:</strong> El rol de Admin de Cuenta tiene acceso completo a todas las funcionalidades y no puede ser restringido.
+                    <strong>Nota:</strong> El rol de Admin de Cuenta tiene
+                    acceso completo a todas las funcionalidades y no puede ser
+                    restringido.
                   </p>
                 </div>
               )}

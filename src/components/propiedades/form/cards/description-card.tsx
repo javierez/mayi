@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
@@ -22,7 +21,10 @@ import {
 } from "~/components/ui/dialog";
 import { ModernSaveIndicator } from "../common/modern-save-indicator";
 import type { SaveState } from "~/types/save-state";
-import { DescriptionFeedbackModal, type DescriptionFeedback } from "./description-feedback-modal";
+import {
+  DescriptionFeedbackModal,
+  type DescriptionFeedback,
+} from "./description-feedback-modal";
 import { toast } from "sonner";
 
 interface DescriptionCardProps {
@@ -74,18 +76,19 @@ export function DescriptionCard({
 
   const handleFeedbackSubmit = (feedback: DescriptionFeedback) => {
     setLastFeedback(feedback);
-    
+
     // Apply immediate changes if there's specific feedback
     if (feedback.shortDescriptionFeedback || feedback.longDescriptionFeedback) {
       toast.success("Feedback recibido", {
-        description: "Las sugerencias se aplicarán en la próxima generación de descripciones",
+        description:
+          "Las sugerencias se aplicarán en la próxima generación de descripciones",
       });
     }
 
     // If signature is included, add it to descriptions
     if (feedback.includeSignature && feedback.signatureText) {
       const signatureToAdd = `\n\n${feedback.signatureText}`;
-      
+
       if (!description.includes(feedback.signatureText)) {
         setDescription(description + signatureToAdd);
       }
@@ -96,8 +99,12 @@ export function DescriptionCard({
     }
 
     // Store preferences for future use (could be saved to localStorage or backend)
-    if (feedback.generalInstructions || feedback.avoidMentions || feedback.emphasize) {
-      localStorage.setItem('descriptionPreferences', JSON.stringify(feedback));
+    if (
+      feedback.generalInstructions ||
+      feedback.avoidMentions ||
+      feedback.emphasize
+    ) {
+      localStorage.setItem("descriptionPreferences", JSON.stringify(feedback));
       toast.info("Preferencias guardadas para futuras generaciones");
     }
   };
@@ -110,10 +117,7 @@ export function DescriptionCard({
           getCardStyles("description"),
         )}
       >
-        <ModernSaveIndicator
-          state={saveState}
-          onSave={onSave}
-        />
+        <ModernSaveIndicator state={saveState} onSave={onSave} />
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold tracking-wide">DESCRIPCIÓN</h3>
@@ -125,7 +129,7 @@ export function DescriptionCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={() => setIsFeedbackModalOpen(true)}
                 className="flex items-center gap-2"
               >
@@ -133,7 +137,7 @@ export function DescriptionCard({
                 Dar Feedback y Preferencias
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={() => setIsSignatureDialogOpen(true)}
                 className="flex items-center gap-2"
               >
@@ -154,7 +158,7 @@ export function DescriptionCard({
                 <Textarea
                   id="shortDescription"
                   defaultValue={shortDescription}
-                  className="min-h-[80px] resize-y border-gray-200 transition-colors focus:border-gray-400 focus:ring-gray-300 pr-32"
+                  className="min-h-[80px] resize-y border-gray-200 pr-32 transition-colors focus:border-gray-400 focus:ring-gray-300"
                   placeholder="Breve resumen de la propiedad para carteles y vistas previas (máximo 200 caracteres)"
                   maxLength={200}
                   onChange={(e) => {
@@ -167,7 +171,7 @@ export function DescriptionCard({
                   type="button"
                   onClick={onGenerateShortDescription}
                   disabled={!canEdit || isGeneratingShort}
-                  className="absolute bottom-2 right-2 h-8 bg-gray-200 hover:bg-gradient-to-r hover:from-amber-400 hover:to-rose-400 transition-all duration-300 px-2 text-xs font-medium text-gray-600 hover:text-white rounded shadow-sm hover:shadow-md disabled:opacity-50 flex items-center"
+                  className="absolute bottom-2 right-2 flex h-8 items-center rounded bg-gray-200 px-2 text-xs font-medium text-gray-600 shadow-sm transition-all duration-300 hover:bg-gradient-to-r hover:from-amber-400 hover:to-rose-400 hover:text-white hover:shadow-md disabled:opacity-50"
                 >
                   {isGeneratingShort ? (
                     <>
@@ -194,7 +198,7 @@ export function DescriptionCard({
                 <Textarea
                   id="description"
                   defaultValue={description}
-                  className="min-h-[200px] resize-y border-gray-200 transition-colors focus:border-gray-400 focus:ring-gray-300 pr-32"
+                  className="min-h-[200px] resize-y border-gray-200 pr-32 transition-colors focus:border-gray-400 focus:ring-gray-300"
                   placeholder="Describe las características principales de la propiedad, su ubicación, y cualquier detalle relevante que pueda interesar a los potenciales compradores o inquilinos."
                   onChange={(e) => {
                     setDescription(e.target.value);
@@ -206,7 +210,7 @@ export function DescriptionCard({
                   type="button"
                   onClick={onGenerateDescription}
                   disabled={!canEdit || isGenerating}
-                  className="absolute bottom-2 right-2 h-8 bg-gray-200 hover:bg-gradient-to-r hover:from-amber-400 hover:to-rose-400 transition-all duration-300 px-2 text-xs font-medium text-gray-600 hover:text-white rounded shadow-sm hover:shadow-md disabled:opacity-50 flex items-center"
+                  className="absolute bottom-2 right-2 flex h-8 items-center rounded bg-gray-200 px-2 text-xs font-medium text-gray-600 shadow-sm transition-all duration-300 hover:bg-gradient-to-r hover:from-amber-400 hover:to-rose-400 hover:text-white hover:shadow-md disabled:opacity-50"
                 >
                   {isGenerating ? (
                     <>

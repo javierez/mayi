@@ -1,13 +1,28 @@
 import { type Metadata } from "next";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import Link from "next/link";
-import { ArrowRight, Check, Globe, FileText, Cloud, Zap, Shield } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Globe,
+  FileText,
+  Cloud,
+  Zap,
+  Shield,
+} from "lucide-react";
 import Navbar from "~/components/navbar";
 
 export const metadata: Metadata = {
   title: "Integraciones - Vesta Real Estate Platform",
-  description: "Conecta Vesta con los principales portales inmobiliarios y herramientas de productividad. Integración perfecta con Fotocasa, Idealista, y más.",
+  description:
+    "Conecta Vesta con los principales portales inmobiliarios y herramientas de productividad. Integración perfecta con Fotocasa, Idealista, y más.",
 };
 
 export default function IntegracionesPage() {
@@ -15,50 +30,70 @@ export default function IntegracionesPage() {
     {
       name: "Fotocasa",
       description: "Portal líder en España con millones de visitas mensuales",
-      features: ["Publicación automática", "Sincronización de estados", "Gestión de leads", "Analytics integrado"],
-      status: "Activo"
+      features: [
+        "Publicación automática",
+        "Sincronización de estados",
+        "Gestión de leads",
+        "Analytics integrado",
+      ],
+      status: "Activo",
     },
     {
       name: "Idealista",
       description: "El portal inmobiliario más visitado de España",
-      features: ["Publicación masiva", "Actualización en tiempo real", "Control de presupuesto", "Informes detallados"],
-      status: "Activo"
+      features: [
+        "Publicación masiva",
+        "Actualización en tiempo real",
+        "Control de presupuesto",
+        "Informes detallados",
+      ],
+      status: "Activo",
     },
     {
       name: "Habitaclia",
       description: "Portal especializado en el mercado catalán",
-      features: ["Multi-idioma", "Gestión de destacados", "Sincronización bidireccional", "Control de calidad"],
-      status: "Activo"
+      features: [
+        "Multi-idioma",
+        "Gestión de destacados",
+        "Sincronización bidireccional",
+        "Control de calidad",
+      ],
+      status: "Activo",
     },
     {
       name: "Milanuncios",
       description: "Plataforma de anuncios clasificados más popular",
-      features: ["Publicación gratuita", "Renovación automática", "Gestión de respuestas", "Detección de duplicados"],
-      status: "Activo"
-    }
+      features: [
+        "Publicación gratuita",
+        "Renovación automática",
+        "Gestión de respuestas",
+        "Detección de duplicados",
+      ],
+      status: "Activo",
+    },
   ];
 
   const technicalIntegrations = [
     {
       category: "Almacenamiento",
       icon: Cloud,
-      integrations: ["AWS S3", "Google Drive", "Dropbox Business"]
+      integrations: ["AWS S3", "Google Drive", "Dropbox Business"],
     },
     {
       category: "Comunicación",
       icon: Globe,
-      integrations: ["WhatsApp Business", "Telegram", "SMS Gateway"]
+      integrations: ["WhatsApp Business", "Telegram", "SMS Gateway"],
     },
     {
       category: "Productividad",
       icon: FileText,
-      integrations: ["Google Calendar", "Microsoft Outlook", "Slack"]
+      integrations: ["Google Calendar", "Microsoft Outlook", "Slack"],
     },
     {
       category: "Análisis",
       icon: Zap,
-      integrations: ["Google Analytics", "Hotjar", "Mixpanel"]
-    }
+      integrations: ["Google Analytics", "Hotjar", "Mixpanel"],
+    },
   ];
 
   return (
@@ -75,12 +110,12 @@ export default function IntegracionesPage() {
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-xl text-gray-600">
-              Conecta Vesta con los principales portales inmobiliarios y herramientas 
-              empresariales. Todo sincronizado, todo automático.
+              Conecta Vesta con los principales portales inmobiliarios y
+              herramientas empresariales. Todo sincronizado, todo automático.
             </p>
             <div className="mt-10 flex items-center justify-center gap-4">
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 className="bg-gradient-to-r from-amber-400 to-rose-400 text-white hover:from-amber-500 hover:to-rose-500"
                 asChild
               >
@@ -90,9 +125,7 @@ export default function IntegracionesPage() {
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/producto/api">
-                  Ver Documentación API
-                </Link>
+                <Link href="/producto/api">Ver Documentación API</Link>
               </Button>
             </div>
           </div>
@@ -102,21 +135,29 @@ export default function IntegracionesPage() {
       {/* Portal Integrations */}
       <section className="px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900">Portales Inmobiliarios</h2>
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-bold text-gray-900">
+              Portales Inmobiliarios
+            </h2>
             <p className="mt-4 text-lg text-gray-600">
-              Publica tus propiedades en los principales portales con un solo click
+              Publica tus propiedades en los principales portales con un solo
+              click
             </p>
           </div>
-          
+
           <div className="grid gap-6 md:grid-cols-2">
             {portalIntegrations.map((portal) => (
-              <Card key={portal.name} className="overflow-hidden hover:shadow-lg transition-all">
+              <Card
+                key={portal.name}
+                className="overflow-hidden transition-all hover:shadow-lg"
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div>
                       <CardTitle className="text-xl">{portal.name}</CardTitle>
-                      <CardDescription className="mt-2">{portal.description}</CardDescription>
+                      <CardDescription className="mt-2">
+                        {portal.description}
+                      </CardDescription>
                     </div>
                     <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800">
                       {portal.status}
@@ -142,13 +183,16 @@ export default function IntegracionesPage() {
       {/* Technical Integrations */}
       <section className="border-t border-gray-200 px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900">Integraciones Técnicas</h2>
+          <div className="mb-12 text-center">
+            <h2 className="text-3xl font-bold text-gray-900">
+              Integraciones Técnicas
+            </h2>
             <p className="mt-4 text-lg text-gray-600">
-              Conecta con las herramientas que ya usas para maximizar tu productividad
+              Conecta con las herramientas que ya usas para maximizar tu
+              productividad
             </p>
           </div>
-          
+
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {technicalIntegrations.map((category) => {
               const Icon = category.icon;
@@ -157,7 +201,9 @@ export default function IntegracionesPage() {
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
                     <Icon className="h-6 w-6 text-amber-600" />
                   </div>
-                  <h3 className="mt-4 text-lg font-semibold">{category.category}</h3>
+                  <h3 className="mt-4 text-lg font-semibold">
+                    {category.category}
+                  </h3>
                   <ul className="mt-4 space-y-2">
                     {category.integrations.map((integration) => (
                       <li key={integration} className="text-sm text-gray-600">
@@ -180,8 +226,9 @@ export default function IntegracionesPage() {
             API REST Completa
           </h2>
           <p className="mt-4 text-lg text-gray-600">
-            Crea integraciones personalizadas con nuestra API REST documentada. 
-            Webhooks en tiempo real, SDKs disponibles, y soporte técnico dedicado.
+            Crea integraciones personalizadas con nuestra API REST documentada.
+            Webhooks en tiempo real, SDKs disponibles, y soporte técnico
+            dedicado.
           </p>
           <div className="mt-10">
             <Button size="lg" variant="outline" asChild>

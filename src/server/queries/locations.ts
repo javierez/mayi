@@ -43,9 +43,14 @@ export async function findOrCreateLocation(
           ...(locationData.longitude && { longitude: locationData.longitude }),
           updatedAt: new Date(),
         })
-        .where(eq(locations.neighborhoodId, existingLocation[0].neighborhoodId));
+        .where(
+          eq(locations.neighborhoodId, existingLocation[0].neighborhoodId),
+        );
 
-      console.log("🔄 Updated existing location:", existingLocation[0].neighborhoodId);
+      console.log(
+        "🔄 Updated existing location:",
+        existingLocation[0].neighborhoodId,
+      );
       return Number(existingLocation[0].neighborhoodId);
     }
 
@@ -274,13 +279,13 @@ export async function getCitiesFromAccountProperties(accountId: number) {
       .from(locations)
       .innerJoin(
         properties,
-        eq(properties.neighborhoodId, locations.neighborhoodId)
+        eq(properties.neighborhoodId, locations.neighborhoodId),
       )
       .where(
         and(
           eq(locations.isActive, true),
-          eq(properties.accountId, BigInt(accountId))
-        )
+          eq(properties.accountId, BigInt(accountId)),
+        ),
       )
       .orderBy(locations.city);
     return cities.map((c) => c.city);
@@ -338,7 +343,10 @@ export async function getCitiesFromAccountPropertiesWithAuth() {
     const accountId = await getCurrentUserAccountId();
     return getCitiesFromAccountProperties(accountId);
   } catch (error) {
-    console.error("Error fetching cities from account properties with auth:", error);
+    console.error(
+      "Error fetching cities from account properties with auth:",
+      error,
+    );
     throw error;
   }
 }

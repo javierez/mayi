@@ -16,7 +16,10 @@ import {
 import { cn } from "~/lib/utils";
 
 // Simple fallback template component
-const FallbackTemplate: FC<BaseTemplateProps> = ({ data: _data, className }) => {
+const FallbackTemplate: FC<BaseTemplateProps> = ({
+  data: _data,
+  className,
+}) => {
   return (
     <div
       className={cn(
@@ -80,7 +83,6 @@ const ClassicTemplateWrapper: FC<BaseTemplateProps> = ({
   );
 };
 
-
 // Minimalist template wrapper with black background
 const MinimalistTemplateWrapper: FC<BaseTemplateProps> = ({
   data: _data,
@@ -94,15 +96,17 @@ const MinimalistTemplateWrapper: FC<BaseTemplateProps> = ({
       )}
     >
       <div className="flex h-full w-full items-center justify-center">
-        <span className="text-2xl font-bold text-white">Minimalist Template</span>
+        <span className="text-2xl font-bold text-white">
+          Minimalist Template
+        </span>
       </div>
     </div>
   );
 };
 
-const LuxuryTemplateWrapper: FC<BaseTemplateProps> = ({ 
-  data: _data, 
-  className 
+const LuxuryTemplateWrapper: FC<BaseTemplateProps> = ({
+  data: _data,
+  className,
 }) => {
   return (
     <div
@@ -148,7 +152,9 @@ const ProfessionalTemplateWrapper: FC<BaseTemplateProps> = ({
       )}
     >
       <div className="flex h-full w-full items-center justify-center">
-        <span className="text-2xl font-bold text-white">Professional Template</span>
+        <span className="text-2xl font-bold text-white">
+          Professional Template
+        </span>
       </div>
     </div>
   );

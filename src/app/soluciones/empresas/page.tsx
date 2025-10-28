@@ -2,23 +2,24 @@ import { type Metadata } from "next";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import Link from "next/link";
-import { 
-  ArrowRight, 
-  Building, 
-  Users, 
-  Shield, 
-  BarChart3, 
+import {
+  ArrowRight,
+  Building,
+  Users,
+  Shield,
+  BarChart3,
   Globe,
   Settings,
   Zap,
   Lock,
-  CheckCircle
+  CheckCircle,
 } from "lucide-react";
 import Navbar from "~/components/navbar";
 
 export const metadata: Metadata = {
   title: "Solución Empresarial - Vesta",
-  description: "Plataforma escalable para grandes organizaciones inmobiliarias. Seguridad enterprise, integración avanzada y soporte dedicado.",
+  description:
+    "Plataforma escalable para grandes organizaciones inmobiliarias. Seguridad enterprise, integración avanzada y soporte dedicado.",
 };
 
 export default function EmpresasPage() {
@@ -26,33 +27,39 @@ export default function EmpresasPage() {
     {
       icon: Users,
       title: "Gestión Multi-Equipo",
-      description: "Gestiona múltiples oficinas, equipos y departamentos desde una plataforma unificada"
+      description:
+        "Gestiona múltiples oficinas, equipos y departamentos desde una plataforma unificada",
     },
     {
       icon: Shield,
       title: "Seguridad Enterprise",
-      description: "Cumplimiento SOC 2, SSO, auditorías de seguridad y controles de acceso avanzados"
+      description:
+        "Cumplimiento SOC 2, SSO, auditorías de seguridad y controles de acceso avanzados",
     },
     {
       icon: BarChart3,
       title: "Analytics Avanzado",
-      description: "Dashboards ejecutivos, reportes personalizados y BI integrado para toma de decisiones"
+      description:
+        "Dashboards ejecutivos, reportes personalizados y BI integrado para toma de decisiones",
     },
     {
       icon: Globe,
       title: "Multi-Región",
-      description: "Soporte para operaciones en múltiples países con localización completa"
+      description:
+        "Soporte para operaciones en múltiples países con localización completa",
     },
     {
       icon: Settings,
       title: "Integración Personalizada",
-      description: "APIs dedicadas, webhooks empresariales y conectores para sistemas legacy"
+      description:
+        "APIs dedicadas, webhooks empresariales y conectores para sistemas legacy",
     },
     {
       icon: Zap,
       title: "Rendimiento Optimizado",
-      description: "Infraestructura dedicada, CDN global y garantías de SLA del 99.99%"
-    }
+      description:
+        "Infraestructura dedicada, CDN global y garantías de SLA del 99.99%",
+    },
   ];
 
   const enterpriseBenefits = [
@@ -61,11 +68,16 @@ export default function EmpresasPage() {
     "Tiempo de implementación reducido a 30 días",
     "ROI del 300% en el primer año",
     "Cumplimiento automático de normativas",
-    "Soporte 24/7 con SLA garantizado"
+    "Soporte 24/7 con SLA garantizado",
   ];
 
   const companyLogos = [
-    "Remax", "Century 21", "Coldwell Banker", "Engel & Völkers", "Keller Williams", "Sotheby's"
+    "Remax",
+    "Century 21",
+    "Coldwell Banker",
+    "Engel & Völkers",
+    "Keller Williams",
+    "Sotheby's",
   ];
 
   return (
@@ -85,12 +97,13 @@ export default function EmpresasPage() {
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-xl text-gray-600">
-              Plataforma escalable para grandes organizaciones inmobiliarias. 
-              Seguridad enterprise, integración avanzada y soporte dedicado para tu crecimiento.
+              Plataforma escalable para grandes organizaciones inmobiliarias.
+              Seguridad enterprise, integración avanzada y soporte dedicado para
+              tu crecimiento.
             </p>
             <div className="mt-10 flex items-center justify-center gap-4">
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 className="bg-gradient-to-r from-amber-400 to-rose-400 text-white hover:from-amber-500 hover:to-rose-500"
                 asChild
               >
@@ -100,9 +113,7 @@ export default function EmpresasPage() {
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/precios">
-                  Ver Precios Enterprise
-                </Link>
+                <Link href="/precios">Ver Precios Enterprise</Link>
               </Button>
             </div>
           </div>
@@ -112,8 +123,8 @@ export default function EmpresasPage() {
       {/* Trusted By */}
       <section className="border-t border-gray-200 bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="text-center mb-8">
-            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+          <div className="mb-8 text-center">
+            <p className="text-sm font-medium uppercase tracking-wider text-gray-500">
               Confianza de las principales inmobiliarias
             </p>
           </div>
@@ -121,7 +132,7 @@ export default function EmpresasPage() {
             {companyLogos.map((company) => (
               <div key={company} className="flex items-center justify-center">
                 <div className="rounded-lg bg-white px-4 py-2 shadow-sm">
-                  <span className="text-gray-400 font-medium">{company}</span>
+                  <span className="font-medium text-gray-400">{company}</span>
                 </div>
               </div>
             ))}
@@ -132,7 +143,7 @@ export default function EmpresasPage() {
       {/* Enterprise Features */}
       <section className="px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="text-center mb-12">
+          <div className="mb-12 text-center">
             <h2 className="text-3xl font-bold text-gray-900">
               Características Enterprise
             </h2>
@@ -140,19 +151,24 @@ export default function EmpresasPage() {
               Herramientas avanzadas para organizaciones que requieren lo mejor
             </p>
           </div>
-          
+
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {enterpriseFeatures.map((feature) => {
               const Icon = feature.icon;
               return (
-                <Card key={feature.title} className="hover:shadow-lg transition-all border-l-4 border-l-amber-400">
+                <Card
+                  key={feature.title}
+                  className="border-l-4 border-l-amber-400 transition-all hover:shadow-lg"
+                >
                   <CardHeader>
                     <div className="flex items-start gap-4">
                       <div className="rounded-lg bg-amber-100 p-2">
                         <Icon className="h-6 w-6 text-amber-600" />
                       </div>
                       <div className="flex-1">
-                        <CardTitle className="text-lg">{feature.title}</CardTitle>
+                        <CardTitle className="text-lg">
+                          {feature.title}
+                        </CardTitle>
                       </div>
                     </div>
                   </CardHeader>
@@ -175,7 +191,8 @@ export default function EmpresasPage() {
                 Resultados Empresariales Comprobados
               </h2>
               <p className="mt-4 text-lg text-gray-600">
-                Las organizaciones más grandes confían en Vesta para sus operaciones críticas
+                Las organizaciones más grandes confían en Vesta para sus
+                operaciones críticas
               </p>
               <ul className="mt-8 space-y-4">
                 {enterpriseBenefits.map((benefit) => (
@@ -196,12 +213,12 @@ export default function EmpresasPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700">
-                    Cumplimiento SOC 2 Type II, ISO 27001, GDPR y todas las normativas 
-                    de seguridad empresarial más exigentes.
+                    Cumplimiento SOC 2 Type II, ISO 27001, GDPR y todas las
+                    normativas de seguridad empresarial más exigentes.
                   </p>
                 </CardContent>
               </Card>
-              
+
               <Card className="border-blue-200 bg-blue-50/50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -211,8 +228,8 @@ export default function EmpresasPage() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-700">
-                    Customer Success Manager dedicado, soporte 24/7 y SLA garantizado 
-                    del 99.99% de uptime.
+                    Customer Success Manager dedicado, soporte 24/7 y SLA
+                    garantizado del 99.99% de uptime.
                   </p>
                 </CardContent>
               </Card>
@@ -224,7 +241,7 @@ export default function EmpresasPage() {
       {/* Implementation Process */}
       <section className="border-t border-gray-200 bg-gray-50 px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="text-center mb-12">
+          <div className="mb-12 text-center">
             <h2 className="text-3xl font-bold text-gray-900">
               Proceso de Implementación Enterprise
             </h2>
@@ -232,17 +249,35 @@ export default function EmpresasPage() {
               Migración sin interrupciones con nuestro equipo especializado
             </p>
           </div>
-          
+
           <div className="grid gap-8 md:grid-cols-4">
             {[
-              { step: "1", title: "Análisis", description: "Evaluamos tu infraestructura actual" },
-              { step: "2", title: "Planificación", description: "Diseñamos la migración personalizada" },
-              { step: "3", title: "Implementación", description: "Migración supervisada por expertos" },
-              { step: "4", title: "Optimización", description: "Fine-tuning y capacitación del equipo" }
+              {
+                step: "1",
+                title: "Análisis",
+                description: "Evaluamos tu infraestructura actual",
+              },
+              {
+                step: "2",
+                title: "Planificación",
+                description: "Diseñamos la migración personalizada",
+              },
+              {
+                step: "3",
+                title: "Implementación",
+                description: "Migración supervisada por expertos",
+              },
+              {
+                step: "4",
+                title: "Optimización",
+                description: "Fine-tuning y capacitación del equipo",
+              },
             ].map((phase) => (
               <div key={phase.step} className="text-center">
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-amber-400 to-rose-400">
-                  <span className="text-lg font-bold text-white">{phase.step}</span>
+                  <span className="text-lg font-bold text-white">
+                    {phase.step}
+                  </span>
                 </div>
                 <h3 className="mt-4 text-lg font-semibold">{phase.title}</h3>
                 <p className="mt-2 text-gray-600">{phase.description}</p>
@@ -259,12 +294,12 @@ export default function EmpresasPage() {
             ¿Listo para la Transformación Digital?
           </h2>
           <p className="mt-4 text-lg text-gray-600">
-            Habla con nuestros especialistas en soluciones enterprise y descubre 
+            Habla con nuestros especialistas en soluciones enterprise y descubre
             cómo Vesta puede transformar tu organización.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="bg-gradient-to-r from-amber-400 to-rose-400 text-white hover:from-amber-500 hover:to-rose-500"
               asChild
             >
@@ -274,9 +309,7 @@ export default function EmpresasPage() {
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <Link href="/producto/seguridad">
-                Ver Seguridad Enterprise
-              </Link>
+              <Link href="/producto/seguridad">Ver Seguridad Enterprise</Link>
             </Button>
           </div>
           <p className="mt-6 text-sm text-gray-500">

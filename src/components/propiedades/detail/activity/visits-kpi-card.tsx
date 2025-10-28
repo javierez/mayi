@@ -34,9 +34,7 @@ export function VisitsKPICard({
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         className={`flex w-full flex-col items-center rounded-2xl p-6 transition-all duration-200 ${
-          isActive
-            ? "bg-gray-100 shadow-xl"
-            : "bg-white shadow hover:shadow-lg"
+          isActive ? "bg-gray-100 shadow-xl" : "bg-white shadow hover:shadow-lg"
         }`}
         onClick={onClick}
         type="button"
@@ -55,19 +53,19 @@ export function VisitsKPICard({
         <div className="flex w-full items-center justify-center gap-3">
           <div className="flex items-center gap-1.5">
             <div className="h-2 w-2 rounded-full bg-gradient-to-r from-rose-400 to-orange-400" />
-            <span className="text-[10px] text-gray-600 uppercase tracking-wide">
+            <span className="text-[10px] uppercase tracking-wide text-gray-600">
               {completedCount} realizadas
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="h-2 w-2 rounded-full bg-gradient-to-r from-orange-400 to-amber-400" />
-            <span className="text-[10px] text-gray-600 uppercase tracking-wide">
+            <span className="text-[10px] uppercase tracking-wide text-gray-600">
               {scheduledCount} pendientes
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="h-2 w-2 rounded-full bg-gradient-to-r from-gray-400 to-gray-500" />
-            <span className="text-[10px] text-gray-600 uppercase tracking-wide">
+            <span className="text-[10px] uppercase tracking-wide text-gray-600">
               {cancelledCount} canceladas
             </span>
           </div>

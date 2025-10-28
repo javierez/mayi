@@ -7,7 +7,10 @@ import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-bre
 import { PropertyHeader } from "~/components/propiedades/detail/property-header";
 import { EnergyCertificatePage } from "~/components/propiedades/detail/energy-certificate-page";
 import { getSecureSession } from "~/lib/dal";
-import { getEnergyData, getEnergyCertificateDocument } from "~/server/queries/energy";
+import {
+  getEnergyData,
+  getEnergyCertificateDocument,
+} from "~/server/queries/energy";
 
 interface DocumentPageProps {
   params: Promise<{
@@ -15,7 +18,9 @@ interface DocumentPageProps {
   }>;
 }
 
-export default async function CertificadoEnergeticoPage({ params }: DocumentPageProps) {
+export default async function CertificadoEnergeticoPage({
+  params,
+}: DocumentPageProps) {
   const unwrappedParams = await params;
   const listingId = parseInt(unwrappedParams.id);
   const session = await getSecureSession();
@@ -32,7 +37,9 @@ export default async function CertificadoEnergeticoPage({ params }: DocumentPage
   }
 
   // Get energy certificate document
-  const energyCertificate = await getEnergyCertificateDocument(Number(headerData.propertyId));
+  const energyCertificate = await getEnergyCertificateDocument(
+    Number(headerData.propertyId),
+  );
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -66,11 +73,15 @@ export default async function CertificadoEnergeticoPage({ params }: DocumentPage
         listingId={BigInt(listingId)}
         userId={session?.user?.id ?? "1"}
         referenceNumber={breadcrumbData.referenceNumber ?? ""}
-        uploadedDocument={energyCertificate ? {
-          docId: energyCertificate.docId,
-          documentKey: energyCertificate.documentKey,
-          fileUrl: energyCertificate.fileUrl,
-        } : null}
+        uploadedDocument={
+          energyCertificate
+            ? {
+                docId: energyCertificate.docId,
+                documentKey: energyCertificate.documentKey,
+                fileUrl: energyCertificate.fileUrl,
+              }
+            : null
+        }
         energyCertificateStatus={energyData.energyCertificateStatus}
         energyConsumptionScale={energyData.energyConsumptionScale}
         energyConsumptionValue={

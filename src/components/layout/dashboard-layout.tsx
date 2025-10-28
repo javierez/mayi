@@ -9,7 +9,10 @@ import { Button } from "~/components/ui/button";
 import { useSession, signOut } from "~/lib/auth-client";
 import { useUserRole } from "~/hooks/use-user-role";
 import { FeedbackModal } from "~/components/feedback/feedback-modal";
-import { getAccountDetailsAction, getCurrentUserAccountId } from "~/app/actions/account-settings";
+import {
+  getAccountDetailsAction,
+  getCurrentUserAccountId,
+} from "~/app/actions/account-settings";
 import { AccountSetupRedirect } from "~/components/auth/account-setup-redirect";
 import OnboardingModal from "~/components/onboarding/onboarding-modal";
 import { Toaster } from "sonner";
@@ -72,7 +75,7 @@ const operacionesItems: NavigationItem[] = [
     name: "Acuerdos",
     href: "/operaciones/deals",
     icon: HandHeart,
-    disabled: true,
+    disabled: false,
   },
 ];
 
@@ -135,53 +138,60 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
   useEffect(() => {
     const checkOnboarding = async () => {
       if (!session?.user?.id || onboardingChecked) return;
-      
+
       try {
         console.log("🔍 Checking onboarding status for user...");
-        
+
         // Check sessionStorage first to avoid unnecessary API calls
-        const cachedStatus = sessionStorage.getItem('onboarding_completed');
-        if (cachedStatus === 'true') {
+        const cachedStatus = sessionStorage.getItem("onboarding_completed");
+        if (cachedStatus === "true") {
           console.log("✅ Onboarding already completed (from cache)");
           setOnboardingChecked(true);
           return;
         }
-        
+
         // Fetch accountId from user
         const accountId = await getCurrentUserAccountId(session.user.id);
         if (!accountId) {
           console.log("❌ No account ID found");
           return;
         }
-        
+
         const details = await getAccountDetailsAction(accountId);
         if (!details.success || !details.data) {
           console.log("❌ Failed to fetch account details");
           return;
         }
-        
+
         const onboardingData = details.data.onboardingData;
-        const completed = onboardingData && typeof onboardingData === 'object' && 'completed' in onboardingData
-          ? Boolean(onboardingData.completed)
-          : false;
-        
-        console.log("📋 Onboarding status:", { accountId: accountId.toString(), completed, onboardingData });
-        
+        const completed =
+          onboardingData &&
+          typeof onboardingData === "object" &&
+          "completed" in onboardingData
+            ? Boolean(onboardingData.completed)
+            : false;
+
+        console.log("📋 Onboarding status:", {
+          accountId: accountId.toString(),
+          completed,
+          onboardingData,
+        });
+
         // Cache the result in sessionStorage
-        sessionStorage.setItem('onboarding_completed', completed.toString());
-        
+        sessionStorage.setItem("onboarding_completed", completed.toString());
+
         if (!completed) {
           console.log("🎯 Showing onboarding modal");
           setShowOnboarding(true);
         }
-        
+
         setOnboardingChecked(true);
       } catch (error) {
         console.error("❌ Error checking onboarding status:", error);
         setOnboardingChecked(true);
       }
     };
-    
+
     void checkOnboarding();
   }, [session, onboardingChecked]);
 
@@ -208,7 +218,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
 
   const handleSignOut = async () => {
     // Clear onboarding cache on logout
-    sessionStorage.removeItem('onboarding_completed');
+    sessionStorage.removeItem("onboarding_completed");
     await signOut();
     router.push("/");
   };
@@ -229,8 +239,8 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
           onClick={() => setSidebarOpen(false)}
         />
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white">
-          <div className="flex h-16 items-center justify-between px-4 mt-6">
-            <div className="flex items-center justify-center h-16 w-40 relative">
+          <div className="mt-6 flex h-16 items-center justify-between px-4">
+            <div className="relative flex h-16 w-40 items-center justify-center">
               <Image
                 src={accountLogo ?? "/vestazoomin.jpeg"}
                 alt="Vesta CRM Logo"
@@ -247,46 +257,49 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
             </Button>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
-            {navigation.filter(item => !item.href.includes('admin')).slice(0, 3).map((item) => {
-              const isActive = pathname === item.href;
-              if (item.disabled) {
+            {navigation
+              .filter((item) => !item.href.includes("admin"))
+              .slice(0, 3)
+              .map((item) => {
+                const isActive = pathname === item.href;
+                if (item.disabled) {
+                  return (
+                    <div
+                      key={item.name}
+                      className="group flex cursor-not-allowed items-center rounded-md px-2 py-2 text-sm font-medium text-gray-400 opacity-50"
+                    >
+                      <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                      <span className="flex-1">{item.name}</span>
+                      <span className="text-[10px] text-gray-400">
+                        (próximamente)
+                      </span>
+                    </div>
+                  );
+                }
                 return (
-                  <div
+                  <Link
                     key={item.name}
-                    className="group flex cursor-not-allowed items-center rounded-md px-2 py-2 text-sm font-medium text-gray-400 opacity-50"
-                  >
-                    <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                    <span className="flex-1">{item.name}</span>
-                    <span className="text-[10px] text-gray-400">
-                      (próximamente)
-                    </span>
-                  </div>
-                );
-              }
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "group flex items-center rounded-md px-2 py-2 text-sm font-medium",
-                    isActive
-                      ? "bg-gray-100 text-gray-900"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                  )}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <item.icon
+                    href={item.href}
                     className={cn(
-                      "mr-3 h-5 w-5 flex-shrink-0",
+                      "group flex items-center rounded-md px-2 py-2 text-sm font-medium",
                       isActive
-                        ? "text-gray-500"
-                        : "text-gray-400 group-hover:text-gray-500",
+                        ? "bg-gray-100 text-gray-900"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
                     )}
-                  />
-                  {item.name}
-                </Link>
-              );
-            })}
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <item.icon
+                      className={cn(
+                        "mr-3 h-5 w-5 flex-shrink-0",
+                        isActive
+                          ? "text-gray-500"
+                          : "text-gray-400 group-hover:text-gray-500",
+                      )}
+                    />
+                    {item.name}
+                  </Link>
+                );
+              })}
 
             {/* Operaciones Section - Mobile */}
             <div className="space-y-1">
@@ -368,74 +381,79 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
             </div>
 
             {/* Remaining non-admin items */}
-            {navigation.filter(item => !item.href.includes('admin')).slice(3).map((item) => {
-              const isActive = pathname === item.href;
-              if (item.disabled) {
+            {navigation
+              .filter((item) => !item.href.includes("admin"))
+              .slice(3)
+              .map((item) => {
+                const isActive = pathname === item.href;
+                if (item.disabled) {
+                  return (
+                    <div
+                      key={item.name}
+                      className="group flex cursor-not-allowed items-center rounded-md px-2 py-2 text-sm font-medium text-gray-400 opacity-50"
+                    >
+                      <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                      <span className="flex-1">{item.name}</span>
+                      <span className="text-[10px] text-gray-400">
+                        (próximamente)
+                      </span>
+                    </div>
+                  );
+                }
                 return (
-                  <div
+                  <Link
                     key={item.name}
-                    className="group flex cursor-not-allowed items-center rounded-md px-2 py-2 text-sm font-medium text-gray-400 opacity-50"
-                  >
-                    <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                    <span className="flex-1">{item.name}</span>
-                    <span className="text-[10px] text-gray-400">
-                      (próximamente)
-                    </span>
-                  </div>
-                );
-              }
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "group flex items-center rounded-md px-2 py-2 text-sm font-medium",
-                    isActive
-                      ? "bg-gray-100 text-gray-900"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                  )}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <item.icon
+                    href={item.href}
                     className={cn(
-                      "mr-3 h-5 w-5 flex-shrink-0",
+                      "group flex items-center rounded-md px-2 py-2 text-sm font-medium",
                       isActive
-                        ? "text-gray-500"
-                        : "text-gray-400 group-hover:text-gray-500",
+                        ? "bg-gray-100 text-gray-900"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
                     )}
-                  />
-                  {item.name}
-                </Link>
-              );
-            })}
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <item.icon
+                      className={cn(
+                        "mr-3 h-5 w-5 flex-shrink-0",
+                        isActive
+                          ? "text-gray-500"
+                          : "text-gray-400 group-hover:text-gray-500",
+                      )}
+                    />
+                    {item.name}
+                  </Link>
+                );
+              })}
 
             {/* Admin buttons at the end */}
-            {navigation.filter(item => item.href.includes('admin')).map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "group flex items-center rounded-md px-2 py-2 text-sm font-medium",
-                    isActive
-                      ? "bg-gray-100 text-gray-900"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                  )}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <item.icon
+            {navigation
+              .filter((item) => item.href.includes("admin"))
+              .map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
                     className={cn(
-                      "mr-3 h-5 w-5 flex-shrink-0",
+                      "group flex items-center rounded-md px-2 py-2 text-sm font-medium",
                       isActive
-                        ? "text-gray-500"
-                        : "text-gray-400 group-hover:text-gray-500",
+                        ? "bg-gray-100 text-gray-900"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
                     )}
-                  />
-                  {item.name}
-                </Link>
-              );
-            })}
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <item.icon
+                      className={cn(
+                        "mr-3 h-5 w-5 flex-shrink-0",
+                        isActive
+                          ? "text-gray-500"
+                          : "text-gray-400 group-hover:text-gray-500",
+                      )}
+                    />
+                    {item.name}
+                  </Link>
+                );
+              })}
           </nav>
           {/* Mobile Feedback button */}
           <div className="px-2 pb-2">
@@ -481,8 +499,8 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex min-h-0 flex-1 flex-col border-r border-gray-200 bg-white">
-          <div className="flex h-16 items-center px-4 mt-4">
-            <div className="flex items-center justify-center h-16 w-40 relative">
+          <div className="mt-4 flex h-16 items-center px-4">
+            <div className="relative flex h-16 w-40 items-center justify-center">
               <Image
                 src={accountLogo ?? "/vestazoomin.jpeg"}
                 alt="Vesta CRM Logo"
@@ -492,45 +510,48 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
             </div>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
-            {navigation.filter(item => !item.href.includes('admin')).slice(0, 3).map((item) => {
-              const isActive = pathname === item.href;
-              if (item.disabled) {
+            {navigation
+              .filter((item) => !item.href.includes("admin"))
+              .slice(0, 3)
+              .map((item) => {
+                const isActive = pathname === item.href;
+                if (item.disabled) {
+                  return (
+                    <div
+                      key={item.name}
+                      className="group flex cursor-not-allowed items-center rounded-md px-2 py-2 text-sm font-medium text-gray-400 opacity-50"
+                    >
+                      <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                      <span className="flex-1">{item.name}</span>
+                      <span className="text-[10px] text-gray-400">
+                        (próximamente)
+                      </span>
+                    </div>
+                  );
+                }
                 return (
-                  <div
+                  <Link
                     key={item.name}
-                    className="group flex cursor-not-allowed items-center rounded-md px-2 py-2 text-sm font-medium text-gray-400 opacity-50"
-                  >
-                    <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                    <span className="flex-1">{item.name}</span>
-                    <span className="text-[10px] text-gray-400">
-                      (próximamente)
-                    </span>
-                  </div>
-                );
-              }
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "group flex items-center rounded-md px-2 py-2 text-sm font-medium",
-                    isActive
-                      ? "bg-gray-100 text-gray-900"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                  )}
-                >
-                  <item.icon
+                    href={item.href}
                     className={cn(
-                      "mr-3 h-5 w-5 flex-shrink-0",
+                      "group flex items-center rounded-md px-2 py-2 text-sm font-medium",
                       isActive
-                        ? "text-gray-500"
-                        : "text-gray-400 group-hover:text-gray-500",
+                        ? "bg-gray-100 text-gray-900"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
                     )}
-                  />
-                  {item.name}
-                </Link>
-              );
-            })}
+                  >
+                    <item.icon
+                      className={cn(
+                        "mr-3 h-5 w-5 flex-shrink-0",
+                        isActive
+                          ? "text-gray-500"
+                          : "text-gray-400 group-hover:text-gray-500",
+                      )}
+                    />
+                    {item.name}
+                  </Link>
+                );
+              })}
 
             {/* Operaciones Section - Desktop */}
             <div className="space-y-1">
@@ -607,72 +628,77 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
               )}
             </div>
 
-            {navigation.filter(item => !item.href.includes('admin')).slice(3).map((item) => {
-              const isActive = pathname === item.href;
-              if (item.disabled) {
+            {navigation
+              .filter((item) => !item.href.includes("admin"))
+              .slice(3)
+              .map((item) => {
+                const isActive = pathname === item.href;
+                if (item.disabled) {
+                  return (
+                    <div
+                      key={item.name}
+                      className="group flex cursor-not-allowed items-center rounded-md px-2 py-2 text-sm font-medium text-gray-400 opacity-50"
+                    >
+                      <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                      <span className="flex-1">{item.name}</span>
+                      <span className="text-[10px] text-gray-400">
+                        (próximamente)
+                      </span>
+                    </div>
+                  );
+                }
                 return (
-                  <div
+                  <Link
                     key={item.name}
-                    className="group flex cursor-not-allowed items-center rounded-md px-2 py-2 text-sm font-medium text-gray-400 opacity-50"
-                  >
-                    <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                    <span className="flex-1">{item.name}</span>
-                    <span className="text-[10px] text-gray-400">
-                      (próximamente)
-                    </span>
-                  </div>
-                );
-              }
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "group flex items-center rounded-md px-2 py-2 text-sm font-medium",
-                    isActive
-                      ? "bg-gray-100 text-gray-900"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                  )}
-                >
-                  <item.icon
+                    href={item.href}
                     className={cn(
-                      "mr-3 h-5 w-5 flex-shrink-0",
+                      "group flex items-center rounded-md px-2 py-2 text-sm font-medium",
                       isActive
-                        ? "text-gray-500"
-                        : "text-gray-400 group-hover:text-gray-500",
+                        ? "bg-gray-100 text-gray-900"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
                     )}
-                  />
-                  {item.name}
-                </Link>
-              );
-            })}
+                  >
+                    <item.icon
+                      className={cn(
+                        "mr-3 h-5 w-5 flex-shrink-0",
+                        isActive
+                          ? "text-gray-500"
+                          : "text-gray-400 group-hover:text-gray-500",
+                      )}
+                    />
+                    {item.name}
+                  </Link>
+                );
+              })}
 
             {/* Admin buttons at the end */}
-            {navigation.filter(item => item.href.includes('admin')).map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={cn(
-                    "group flex items-center rounded-md px-2 py-2 text-sm font-medium",
-                    isActive
-                      ? "bg-gray-100 text-gray-900"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                  )}
-                >
-                  <item.icon
+            {navigation
+              .filter((item) => item.href.includes("admin"))
+              .map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
                     className={cn(
-                      "mr-3 h-5 w-5 flex-shrink-0",
+                      "group flex items-center rounded-md px-2 py-2 text-sm font-medium",
                       isActive
-                        ? "text-gray-500"
-                        : "text-gray-400 group-hover:text-gray-500",
+                        ? "bg-gray-100 text-gray-900"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
                     )}
-                  />
-                  {item.name}
-                </Link>
-              );
-            })}
+                  >
+                    <item.icon
+                      className={cn(
+                        "mr-3 h-5 w-5 flex-shrink-0",
+                        isActive
+                          ? "text-gray-500"
+                          : "text-gray-400 group-hover:text-gray-500",
+                      )}
+                    />
+                    {item.name}
+                  </Link>
+                );
+              })}
           </nav>
           {/* Desktop Feedback button */}
           <div className="px-2 pb-2">
@@ -746,7 +772,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
         onComplete={() => {
           console.log("✅ Onboarding completed, closing modal");
           // Update sessionStorage to mark as completed
-          sessionStorage.setItem('onboarding_completed', 'true');
+          sessionStorage.setItem("onboarding_completed", "true");
           setShowOnboarding(false);
         }}
       />

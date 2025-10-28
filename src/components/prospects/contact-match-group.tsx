@@ -19,7 +19,7 @@ interface ContactMatchGroupProps {
 
 export function ContactMatchGroup({
   contactName,
-  matches,
+  matches: _matches,
   children,
 }: ContactMatchGroupProps) {
   const [isOpen, setIsOpen] = useState(true);
@@ -27,16 +27,14 @@ export function ContactMatchGroup({
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
       <div>
-        <CollapsibleTrigger className="group flex w-full items-center gap-2 py-2 hover:opacity-70 transition-opacity">
+        <CollapsibleTrigger className="group flex w-full items-center gap-2 py-2 transition-opacity hover:opacity-70">
           <ChevronDown
             className={cn(
               "h-3.5 w-3.5 text-gray-400 transition-transform duration-200",
-              isOpen && "rotate-180"
+              isOpen && "rotate-180",
             )}
           />
-          <h3 className="text-sm font-medium text-gray-700">
-            {contactName}
-          </h3>
+          <h3 className="text-sm font-medium text-gray-700">{contactName}</h3>
         </CollapsibleTrigger>
         <CollapsibleContent className="mt-3">
           <div className="space-y-6">{children}</div>

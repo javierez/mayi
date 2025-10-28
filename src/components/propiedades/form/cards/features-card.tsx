@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
@@ -157,10 +156,7 @@ export function FeaturesCard({
         getCardStyles("features"),
       )}
     >
-      <ModernSaveIndicator
-        state={saveState}
-        onSave={onSave}
-      />
+      <ModernSaveIndicator state={saveState} onSave={onSave} />
       <div className="mb-3 flex items-center justify-between">
         <button
           type="button"
@@ -188,16 +184,27 @@ export function FeaturesCard({
       >
         {propertyType === "solar" && (
           <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="rounded-full bg-muted p-3 mb-3">
-              <svg className="h-6 w-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.44-.896-6-2.364M3 15.364C4.56 14.896 6.66 14 9 14s4.44.896 6 2.364" />
+            <div className="mb-3 rounded-full bg-muted p-3">
+              <svg
+                className="h-6 w-6 text-muted-foreground"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.44-.896-6-2.364M3 15.364C4.56 14.896 6.66 14 9 14s4.44.896 6 2.364"
+                />
               </svg>
             </div>
-            <p className="text-sm text-muted-foreground font-medium">
+            <p className="text-sm font-medium text-muted-foreground">
               No aplicable para solares
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Los equipamientos y servicios no se aplican a este tipo de propiedad
+            <p className="mt-1 text-xs text-muted-foreground">
+              Los equipamientos y servicios no se aplican a este tipo de
+              propiedad
             </p>
           </div>
         )}
@@ -217,7 +224,7 @@ export function FeaturesCard({
                 Ascensor
               </Label>
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="hasGarage"
@@ -245,7 +252,11 @@ export function FeaturesCard({
                     <Label htmlFor="garageType" className="text-xs">
                       Tipo
                     </Label>
-                    <Select value={garageType} onValueChange={setGarageType} disabled={!canEdit}>
+                    <Select
+                      value={garageType}
+                      onValueChange={setGarageType}
+                      disabled={!canEdit}
+                    >
                       <SelectTrigger className="h-7 text-xs">
                         <SelectValue placeholder="Seleccionar" />
                       </SelectTrigger>
@@ -317,7 +328,10 @@ export function FeaturesCard({
                     type="number"
                     value={optionalGaragePrice || ""}
                     onChange={(e) => {
-                      const value = e.target.value === "" ? 0 : Math.round(Number(e.target.value));
+                      const value =
+                        e.target.value === ""
+                          ? 0
+                          : Math.round(Number(e.target.value));
                       setOptionalGaragePrice(value);
                       onUpdateModule(true);
                     }}
@@ -330,7 +344,7 @@ export function FeaturesCard({
                 </div>
               </div>
             )}
-            
+
             {/* Storage Room - only for non-garaje properties */}
             {propertyType !== "garaje" && (
               <>
@@ -364,7 +378,10 @@ export function FeaturesCard({
                           type="number"
                           value={storageRoomSize || ""}
                           onChange={(e) => {
-                            const value = e.target.value === "" ? 0 : parseInt(e.target.value);
+                            const value =
+                              e.target.value === ""
+                                ? 0
+                                : parseInt(e.target.value);
                             setStorageRoomSize(value);
                             onUpdateModule(true);
                           }}
@@ -393,7 +410,10 @@ export function FeaturesCard({
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="optionalStorageRoomPrice" className="text-xs">
+                      <Label
+                        htmlFor="optionalStorageRoomPrice"
+                        className="text-xs"
+                      >
                         Precio
                       </Label>
                       <Input
@@ -401,7 +421,10 @@ export function FeaturesCard({
                         type="number"
                         value={optionalStorageRoomPrice || ""}
                         onChange={(e) => {
-                          const value = e.target.value === "" ? 0 : Math.round(Number(e.target.value));
+                          const value =
+                            e.target.value === ""
+                              ? 0
+                              : Math.round(Number(e.target.value));
                           setOptionalStorageRoomPrice(value);
                           onUpdateModule(true);
                         }}
@@ -416,7 +439,7 @@ export function FeaturesCard({
                 )}
               </>
             )}
-            
+
             {/* Heating, Hot Water, AC, Furniture - only for non-garaje properties */}
             {propertyType !== "garaje" && (
               <>
@@ -457,7 +480,7 @@ export function FeaturesCard({
                     </Select>
                   </div>
                 )}
-                
+
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="hasHotWater"
@@ -498,7 +521,7 @@ export function FeaturesCard({
                     </Select>
                   </div>
                 )}
-                
+
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="hasAirConditioning"
@@ -540,7 +563,7 @@ export function FeaturesCard({
                     </Select>
                   </div>
                 )}
-                
+
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <Checkbox

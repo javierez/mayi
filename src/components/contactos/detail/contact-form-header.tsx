@@ -3,7 +3,19 @@
 import { Badge } from "~/components/ui/badge";
 import { Card } from "~/components/ui/card";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
-import { Mail, Phone, Calendar, User, Copy, Check, Star, Ban, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Mail,
+  Phone,
+  Calendar,
+  User,
+  Copy,
+  Check,
+  Star,
+  Ban,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { useState } from "react";
 import { cn } from "~/lib/utils";
 import {
@@ -289,7 +301,9 @@ export function ContactFormHeader({
                       <RefreshCw className="h-4 w-4" />
                       <span>
                         Actualizado:{" "}
-                        {new Date(contact.updatedAt).toLocaleDateString("es-ES")}
+                        {new Date(contact.updatedAt).toLocaleDateString(
+                          "es-ES",
+                        )}
                       </span>
                     </div>
                   )}

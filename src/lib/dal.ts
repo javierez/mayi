@@ -40,14 +40,14 @@ export interface SecureSession {
  *
  * Flow: User authenticates -> Session contains user info -> User belongs to account
  * This function verifies the user session and extracts their account context
- * 
+ *
  * Optimization: First checks middleware headers (fast) before calling auth.api.getSession (slower)
  */
 export async function getSecureSession(): Promise<SecureSession | null> {
   try {
     // Check if middleware found a session token (Edge Runtime compatible check)
     const headersList = await headers();
-    
+
     // Try legacy header approach first (for compatibility)
     const userId = headersList.get("x-user-id");
     const userEmail = headersList.get("x-user-email");
@@ -81,14 +81,19 @@ export async function getSecureSession(): Promise<SecureSession | null> {
       });
     } catch (dbError) {
       // Database connection failed - this should trigger a redirect
-      console.error("Database connection failed during session validation:", dbError);
+      console.error(
+        "Database connection failed during session validation:",
+        dbError,
+      );
       return null;
     }
 
     if (!session?.user) {
       // If middleware said there's a session token but we can't validate it,
       // the session might be expired or invalid
-      console.warn("Middleware found session token but session validation failed");
+      console.warn(
+        "Middleware found session token but session validation failed",
+      );
       return null;
     }
 
@@ -274,11 +279,11 @@ export async function getSessionFromHeaders(): Promise<SecureSession | null> {
  */
 export async function requireSecureSession(): Promise<SecureSession> {
   const session = await getSecureSession();
-  
+
   if (!session) {
     throw new UnauthorizedError("Authentication required");
   }
-  
+
   return session;
 }
 
@@ -286,15 +291,17 @@ export async function requireSecureSession(): Promise<SecureSession> {
  * Get secure session with cached roles included
  * Combines session data with role information for complete auth context
  */
-export async function getSecureSessionWithRoles(): Promise<SecureSession & { roles: string[] }> {
+export async function getSecureSessionWithRoles(): Promise<
+  SecureSession & { roles: string[] }
+> {
   const session = await requireSecureSession();
-  
+
   // Try to get roles from headers first (may not be set by middleware due to Edge Runtime)
   const headersList = await headers();
   const rolesHeader = headersList.get("x-user-roles");
-  
+
   let roles: string[] = [];
-  
+
   if (rolesHeader) {
     try {
       roles = JSON.parse(rolesHeader) as string[];
@@ -302,7 +309,7 @@ export async function getSecureSessionWithRoles(): Promise<SecureSession & { rol
       console.warn("Failed to parse roles from header");
     }
   }
-  
+
   // Middleware doesn't set roles due to Edge Runtime, so fetch from cache
   if (roles.length === 0) {
     const { getCachedUserRoles } = await import("~/lib/auth-cache");

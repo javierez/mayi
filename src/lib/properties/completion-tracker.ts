@@ -37,7 +37,7 @@ export const fieldRules: FieldRule[] = [
     importance: "mandatory",
     category: "Información Básica",
     // Applies to all property types
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
   {
     id: "propertyType",
@@ -46,7 +46,7 @@ export const fieldRules: FieldRule[] = [
     importance: "mandatory",
     category: "Información Básica",
     // Applies to all property types
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
   {
     id: "street",
@@ -55,7 +55,7 @@ export const fieldRules: FieldRule[] = [
     importance: "mandatory",
     category: "Dirección",
     // Applies to all property types
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
   {
     id: "city",
@@ -64,7 +64,7 @@ export const fieldRules: FieldRule[] = [
     importance: "mandatory",
     category: "Dirección",
     // Applies to all property types
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
   {
     id: "province",
@@ -73,7 +73,7 @@ export const fieldRules: FieldRule[] = [
     importance: "mandatory",
     category: "Dirección",
     // Applies to all property types
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
   {
     id: "postalCode",
@@ -82,7 +82,7 @@ export const fieldRules: FieldRule[] = [
     importance: "mandatory",
     category: "Dirección",
     // Applies to all property types
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
 
   // ========== PROPERTY TYPE-SPECIFIC MANDATORY FIELDS ==========
@@ -141,7 +141,7 @@ export const fieldRules: FieldRule[] = [
     // Applies to all property types
     validator: (v) => {
       if (!v) return false;
-      if (typeof v === 'string') return v.trim().length >= 20;
+      if (typeof v === "string") return v.trim().length >= 20;
       return false;
     },
   },
@@ -159,7 +159,11 @@ export const fieldRules: FieldRule[] = [
       const propertyType = listing?.propertyType as PropertyType | undefined;
 
       // Residential properties (piso, casa) and commercial (local) need minimum 5 images
-      if (propertyType === "piso" || propertyType === "casa" || propertyType === "local") {
+      if (
+        propertyType === "piso" ||
+        propertyType === "casa" ||
+        propertyType === "local"
+      ) {
         return count >= 5;
       }
 
@@ -182,7 +186,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "title",
     importance: "nth",
     category: "Información Básica",
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
   {
     id: "shortDescription",
@@ -190,7 +194,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "shortDescription",
     importance: "nth",
     category: "Descripción",
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
   {
     id: "propertySubtype",
@@ -198,7 +202,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "propertySubtype",
     importance: "nth",
     category: "Información Básica",
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
   {
     id: "yearBuilt",
@@ -246,7 +250,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "cadastralReference",
     importance: "nth",
     category: "Información Básica",
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
   {
     id: "newConstruction",
@@ -262,7 +266,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "neighborhood",
     importance: "nth",
     category: "Dirección",
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
   {
     id: "municipality",
@@ -270,7 +274,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "municipality",
     importance: "nth",
     category: "Dirección",
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
   {
     id: "addressDetails",
@@ -278,7 +282,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "addressDetails",
     importance: "nth",
     category: "Dirección",
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
   {
     id: "hasElevator",
@@ -302,7 +306,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "garageType",
     importance: "nth",
     category: "Características",
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
   {
     id: "garageSpaces",
@@ -342,7 +346,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "heatingType",
     importance: "nth",
     category: "Características",
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
   {
     id: "hotWaterType",
@@ -350,7 +354,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "hotWaterType",
     importance: "nth",
     category: "Características",
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
   {
     id: "airConditioningType",
@@ -358,7 +362,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "airConditioningType",
     importance: "nth",
     category: "Características",
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
   {
     id: "isFurnished",
@@ -390,7 +394,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "orientation",
     importance: "nth",
     category: "Orientación",
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
   {
     id: "disabledAccessible",
@@ -430,7 +434,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "kitchenType",
     importance: "nth",
     category: "Características Adicionales",
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
   {
     id: "views",
@@ -510,7 +514,7 @@ export const fieldRules: FieldRule[] = [
     fieldPath: "mainFloorType",
     importance: "nth",
     category: "Materiales",
-    validator: (v) => !!v && typeof v === 'string' && v.trim().length > 0,
+    validator: (v) => !!v && typeof v === "string" && v.trim().length > 0,
   },
 ];
 
@@ -561,7 +565,9 @@ function getImageLabel(propertyType?: string): string {
   return "Imágenes (mínimo 5)";
 }
 
-export function calculateCompletion(listing: Record<string, unknown>): CompletionResult {
+export function calculateCompletion(
+  listing: Record<string, unknown>,
+): CompletionResult {
   const mandatory = {
     completed: [] as Array<FieldRule & { isCompleted: boolean }>,
     pending: [] as Array<FieldRule & { isCompleted: boolean }>,
@@ -605,7 +611,7 @@ export function calculateCompletion(listing: Record<string, unknown>): Completio
     const fieldInfo = {
       ...rule,
       label: rule.id === "images" ? getImageLabel(propertyType) : rule.label,
-      isCompleted: isValid
+      isCompleted: isValid,
     };
 
     if (rule.importance === "mandatory") {
@@ -633,7 +639,10 @@ export function calculateCompletion(listing: Record<string, unknown>): Completio
   return {
     mandatory,
     nth,
-    overallPercentage: overallTotal > 0 ? Math.round((overallCompleted / overallTotal) * 100) : 0,
+    overallPercentage:
+      overallTotal > 0
+        ? Math.round((overallCompleted / overallTotal) * 100)
+        : 0,
     overallCompleted,
     overallTotal,
     canPublishToPortals: mandatory.pending.length === 0,

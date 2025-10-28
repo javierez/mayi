@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React from "react";
 
 interface Props {
   data: unknown;
@@ -8,7 +8,7 @@ interface Props {
 
 export function NotaEncargoDocumentTest({ data: _data }: Props) {
   return (
-    <div className="bg-white text-black font-sans">
+    <div className="bg-white font-sans text-black">
       <p>Test component</p>
     </div>
   );

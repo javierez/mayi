@@ -9,7 +9,7 @@ import { getCurrentUserAccountId } from "~/lib/dal";
  */
 export async function getEnergyData(listingId: number) {
   const accountId = await getCurrentUserAccountId();
-  
+
   try {
     const [energyData] = await db
       .select({
@@ -17,7 +17,7 @@ export async function getEnergyData(listingId: number) {
         listingId: listings.listingId,
         propertyId: listings.propertyId,
         referenceNumber: properties.referenceNumber,
-        
+
         // Energy certificate specific fields
         energyCertificateStatus: properties.energyCertificateStatus,
         energyConsumptionScale: properties.energyConsumptionScale,
@@ -63,7 +63,7 @@ export async function getEnergyCertificateDocument(propertyId: number) {
         ),
       )
       .orderBy(desc(documents.uploadedAt));
-    
+
     return document ?? null;
   } catch (error) {
     console.error("Error fetching energy certificate document:", error);

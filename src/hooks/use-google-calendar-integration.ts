@@ -3,16 +3,18 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/prefer-nullish-coalescing */
 
 import { useState, useEffect } from "react";
-import { 
-  updateGoogleCalendarSyncDirectionAction 
-} from "~/server/actions/google-calendar-settings";
+import { updateGoogleCalendarSyncDirectionAction } from "~/server/actions/google-calendar-settings";
 
 export interface GoogleCalendarIntegration {
   connected: boolean;
   lastSync: Date | null;
   loading: boolean;
   error: string | null;
-  syncDirection: "bidirectional" | "vesta_to_google" | "google_to_vesta" | "none";
+  syncDirection:
+    | "bidirectional"
+    | "vesta_to_google"
+    | "google_to_vesta"
+    | "none";
 }
 
 export function useGoogleCalendarIntegration() {
@@ -37,7 +39,11 @@ export function useGoogleCalendarIntegration() {
       const data = (await response.json()) as {
         connected: boolean;
         lastSync?: string;
-        syncDirection?: "bidirectional" | "vesta_to_google" | "google_to_vesta" | "none";
+        syncDirection?:
+          | "bidirectional"
+          | "vesta_to_google"
+          | "google_to_vesta"
+          | "none";
         error?: string;
       };
 
@@ -159,13 +165,13 @@ export function useGoogleCalendarIntegration() {
   };
 
   const updateSyncDirection = async (
-    direction: "bidirectional" | "vesta_to_google" | "google_to_vesta" | "none"
+    direction: "bidirectional" | "vesta_to_google" | "google_to_vesta" | "none",
   ) => {
     try {
       setIntegration((prev) => ({ ...prev, loading: true, error: null }));
 
       const result = await updateGoogleCalendarSyncDirectionAction(direction);
-      
+
       if (result.success) {
         setIntegration((prev) => ({
           ...prev,

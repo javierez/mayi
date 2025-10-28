@@ -21,12 +21,9 @@ interface SeventhPageProps {
   onBack?: () => void;
 }
 
-export default function SeventhPage({
-  onNext,
-  onBack,
-}: SeventhPageProps) {
+export default function SeventhPage({ onNext, onBack }: SeventhPageProps) {
   const { state, updateFormData } = useFormContext();
-  
+
   const propertyType = state.formData.propertyType ?? "";
 
   // Get current form data from context
@@ -35,8 +32,14 @@ export default function SeventhPage({
     mountainViews: !!state.formData.mountainViews,
     seaViews: !!state.formData.seaViews,
     beachfront: !!state.formData.beachfront,
-    jacuzzi: Array.isArray(state.formData.luxuryFeatures) && state.formData.luxuryFeatures.includes("jacuzzi") || false,
-    hydromassage: Array.isArray(state.formData.luxuryFeatures) && state.formData.luxuryFeatures.includes("hydromassage") || false,
+    jacuzzi:
+      (Array.isArray(state.formData.luxuryFeatures) &&
+        state.formData.luxuryFeatures.includes("jacuzzi")) ||
+      false,
+    hydromassage:
+      (Array.isArray(state.formData.luxuryFeatures) &&
+        state.formData.luxuryFeatures.includes("hydromassage")) ||
+      false,
     fireplace: !!state.formData.fireplace,
     garden: !!state.formData.hasGarden,
     pool: !!state.formData.hasSwimmingPool,
@@ -58,10 +61,10 @@ export default function SeventhPage({
   const updateField = (field: string, value: boolean) => {
     if (field === "jacuzzi" || field === "hydromassage") {
       // Handle luxury features array
-      const currentFeatures = Array.isArray(state.formData.luxuryFeatures) 
-        ? [...state.formData.luxuryFeatures] 
+      const currentFeatures = Array.isArray(state.formData.luxuryFeatures)
+        ? [...state.formData.luxuryFeatures]
         : [];
-      
+
       if (value) {
         if (!currentFeatures.includes(field)) {
           currentFeatures.push(field);
@@ -72,10 +75,10 @@ export default function SeventhPage({
           currentFeatures.splice(index, 1);
         }
       }
-      updateFormData({ 
+      updateFormData({
         luxuryFeatures: currentFeatures,
         // Also save individual boolean fields for database
-        [field]: value
+        [field]: value,
       });
     } else if (field === "garden") {
       updateFormData({ hasGarden: value });
@@ -103,7 +106,6 @@ export default function SeventhPage({
     // Navigate IMMEDIATELY - no saves, completely instant!
     onNext();
   };
-
 
   return (
     <motion.div
@@ -140,9 +142,7 @@ export default function SeventhPage({
               <Checkbox
                 id="views"
                 checked={formData.views}
-                onCheckedChange={(checked) =>
-                  updateField("views", !!checked)
-                }
+                onCheckedChange={(checked) => updateField("views", !!checked)}
               />
               <Label htmlFor="views" className="text-sm">
                 Vistas
@@ -271,9 +271,7 @@ export default function SeventhPage({
                 <Checkbox
                   id="pool"
                   checked={formData.pool}
-                  onCheckedChange={(checked) =>
-                    updateField("pool", !!checked)
-                  }
+                  onCheckedChange={(checked) => updateField("pool", !!checked)}
                 />
                 <Label htmlFor="pool" className="text-sm">
                   Piscina
@@ -333,9 +331,7 @@ export default function SeventhPage({
                 <Checkbox
                   id="gym"
                   checked={formData.gym}
-                  onCheckedChange={(checked) =>
-                    updateField("gym", !!checked)
-                  }
+                  onCheckedChange={(checked) => updateField("gym", !!checked)}
                 />
                 <Label htmlFor="gym" className="text-sm">
                   Gimnasio
@@ -463,7 +459,6 @@ export default function SeventhPage({
           </div>
         )}
       </motion.div>
-
 
       <motion.div
         className="flex justify-between border-t pt-4"

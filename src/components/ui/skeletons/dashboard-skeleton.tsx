@@ -15,7 +15,8 @@ export function OngoingOperationsCardSkeleton({ className = "" }) {
         {/* Centered large number and label - exactly like line 25-38 */}
         <div className="my-4 mb-6 mt-8 flex flex-col items-center">
           <Skeleton className="h-12 w-16" /> {/* text-5xl size */}
-          <Skeleton className="mt-1 h-3 w-40" /> {/* text-xs uppercase tracking-widest */}
+          <Skeleton className="mt-1 h-3 w-40" />{" "}
+          {/* text-xs uppercase tracking-widest */}
         </div>
 
         {/* Two clickable cards for Venta and Alquiler - exactly like line 40-78 */}
@@ -28,8 +29,10 @@ export function OngoingOperationsCardSkeleton({ className = "" }) {
               transition={{ duration: 0.3, delay: 0.1 }}
               className="flex flex-1 flex-col items-center rounded-2xl bg-gray-100 p-2 shadow-xl"
             >
-              <Skeleton className="mb-0.5 h-4 w-6" /> {/* text-base font-bold */}
-              <Skeleton className="h-3 w-12" /> {/* text-xs uppercase tracking-widest */}
+              <Skeleton className="mb-0.5 h-4 w-6" />{" "}
+              {/* text-base font-bold */}
+              <Skeleton className="h-3 w-12" />{" "}
+              {/* text-xs uppercase tracking-widest */}
             </motion.div>
 
             {/* Inactive Alquiler Card - bg-white shadow */}
@@ -39,8 +42,10 @@ export function OngoingOperationsCardSkeleton({ className = "" }) {
               transition={{ duration: 0.3, delay: 0.15 }}
               className="flex flex-1 flex-col items-center rounded-2xl bg-white p-2 shadow"
             >
-              <Skeleton className="mb-0.5 h-4 w-6" /> {/* text-base font-bold */}
-              <Skeleton className="h-3 w-16" /> {/* text-xs uppercase tracking-widest */}
+              <Skeleton className="mb-0.5 h-4 w-6" />{" "}
+              {/* text-base font-bold */}
+              <Skeleton className="h-3 w-16" />{" "}
+              {/* text-xs uppercase tracking-widest */}
             </motion.div>
           </div>
 
@@ -56,7 +61,8 @@ export function OngoingOperationsCardSkeleton({ className = "" }) {
                 <div className="flex w-full items-center justify-between rounded-lg border border-transparent bg-white px-3 py-1.5 shadow-sm">
                   <div className="flex items-center gap-2">
                     <Skeleton className="h-4 w-4" /> {/* Icon h-4 w-4 */}
-                    <Skeleton className="h-3.5 w-28" /> {/* text-sm font-medium */}
+                    <Skeleton className="h-3.5 w-28" />{" "}
+                    {/* text-sm font-medium */}
                   </div>
                   <div className="flex items-center gap-2">
                     <Skeleton className="h-3.5 w-6" /> {/* text-sm font-bold */}
@@ -83,7 +89,8 @@ export function PublishedPropertiesCardSkeleton() {
         {/* Centered large number and label - exactly like line 15-20 */}
         <div className="my-4 mb-6 mt-8 flex flex-col items-center">
           <Skeleton className="h-12 w-20" /> {/* text-5xl font-extrabold */}
-          <Skeleton className="mt-1 h-3 w-44" /> {/* text-xs uppercase tracking-widest */}
+          <Skeleton className="mt-1 h-3 w-44" />{" "}
+          {/* text-xs uppercase tracking-widest */}
         </div>
 
         {/* Portal cards - exactly like line 21-46 */}
@@ -125,7 +132,8 @@ export function QuickActionsCardSkeleton() {
               className="flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm"
             >
               <Skeleton className="mb-2 h-6 w-6" /> {/* Icon h-6 w-6 */}
-              <Skeleton className="h-2.5 w-20" /> {/* text-[10px] font-medium uppercase tracking-wide */}
+              <Skeleton className="h-2.5 w-20" />{" "}
+              {/* text-[10px] font-medium uppercase tracking-wide */}
             </motion.div>
           ))}
         </div>
@@ -166,13 +174,15 @@ export function PerformanceMetricsCardSkeleton() {
               >
                 {/* Label with icon - line 61-65 */}
                 <div className="flex items-center justify-between">
-                  <Skeleton className="h-3.5 w-40" /> {/* text-sm font-medium */}
+                  <Skeleton className="h-3.5 w-40" />{" "}
+                  {/* text-sm font-medium */}
                   <Skeleton className="h-4 w-4" /> {/* TrendingUp icon */}
                 </div>
                 {/* Large value - line 67 */}
                 <Skeleton className="h-8 w-16" /> {/* text-2xl font-bold */}
                 {/* Description - line 68-70 */}
-                <Skeleton className="h-3 w-full" /> {/* text-xs text-muted-foreground */}
+                <Skeleton className="h-3 w-full" />{" "}
+                {/* text-xs text-muted-foreground */}
               </motion.div>
             ))}
           </div>

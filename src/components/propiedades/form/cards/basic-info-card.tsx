@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from "react";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
@@ -34,7 +32,9 @@ interface BasicInfoCardProps {
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
   onToggleListingType: (type: string) => void;
-  onHandleSecondaryListingType: (type: "RentWithOption" | "RoomSharing" | "Transfer") => void;
+  onHandleSecondaryListingType: (
+    type: "RentWithOption" | "RoomSharing" | "Transfer",
+  ) => void;
   onPropertyTypeChange: (newType: string) => Promise<void>;
   onTitleChange?: (newTitle: string) => void;
   setIsBankOwned: (value: boolean) => void;
@@ -68,12 +68,18 @@ export function BasicInfoCard({
 
   // Local state for the displayed (formatted) price
   const [displayPrice, setDisplayPrice] = useState(() =>
-    formFormatters.formatPriceInput(listing.price ? parseFloat(listing.price.toString()) : 0)
+    formFormatters.formatPriceInput(
+      listing.price ? parseFloat(listing.price.toString()) : 0,
+    ),
   );
 
   // Sync display price when listing.price changes externally
   useEffect(() => {
-    setDisplayPrice(formFormatters.formatPriceInput(listing.price ? parseFloat(listing.price.toString()) : 0));
+    setDisplayPrice(
+      formFormatters.formatPriceInput(
+        listing.price ? parseFloat(listing.price.toString()) : 0,
+      ),
+    );
   }, [listing.price]);
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,7 +96,9 @@ export function BasicInfoCard({
 
   const handlePriceBlur = () => {
     // Reformat on blur to ensure proper formatting (preserving decimals)
-    const formattedPrice = formFormatters.formatPriceInput(listing.price ? parseFloat(listing.price.toString()) : 0);
+    const formattedPrice = formFormatters.formatPriceInput(
+      listing.price ? parseFloat(listing.price.toString()) : 0,
+    );
     setDisplayPrice(formattedPrice);
   };
 
@@ -101,10 +109,7 @@ export function BasicInfoCard({
         getCardStyles("basicInfo"),
       )}
     >
-      <ModernSaveIndicator
-        state={saveState}
-        onSave={onSave}
-      />
+      <ModernSaveIndicator state={saveState} onSave={onSave} />
       <div className="mb-3 flex items-center justify-between">
         <button
           type="button"

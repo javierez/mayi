@@ -52,11 +52,16 @@ export default function ContactDraftsPage() {
           "~/server/queries/contact"
         );
         const contacts = await getDraftContactsWithAuth();
-        setDraftContacts(contacts.map(contact => ({
-          ...contact,
-          additionalInfo: contact.additionalInfo as Record<string, unknown> | null | undefined,
-          isActive: contact.isActive ?? false
-        })));
+        setDraftContacts(
+          contacts.map((contact) => ({
+            ...contact,
+            additionalInfo: contact.additionalInfo as
+              | Record<string, unknown>
+              | null
+              | undefined,
+            isActive: contact.isActive ?? false,
+          })),
+        );
       } catch (error) {
         console.error("Error fetching draft contacts:", error);
         toast({

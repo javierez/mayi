@@ -3,10 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import {
-  Collapsible,
-  CollapsibleContent,
-} from "~/components/ui/collapsible";
+import { Collapsible, CollapsibleContent } from "~/components/ui/collapsible";
 import { Badge } from "~/components/ui/badge";
 import {
   Search,
@@ -80,7 +77,9 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
     setLastContactFilter(lastContact ?? "all");
     setSelectedSources(sources ? sources.split(",") : []);
     setSelectedRatings(ratings ? ratings.split(",").map(Number) : []);
-    setSelectedStatuses(statuses ? statuses.split(",").map(s => s === "true") : []);
+    setSelectedStatuses(
+      statuses ? statuses.split(",").map((s) => s === "true") : [],
+    );
 
     // Clean up any view parameter from URL since we only have table view
     if (searchParams.get("view")) {
@@ -157,7 +156,14 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    updateUrlParams(selectedRole, value, lastContactFilter, selectedSources, selectedRatings, selectedStatuses);
+    updateUrlParams(
+      selectedRole,
+      value,
+      lastContactFilter,
+      selectedSources,
+      selectedRatings,
+      selectedStatuses,
+    );
 
     // When 'buyer' is selected, include both 'buyer' and 'interested'
     const rolesToFilter =
@@ -183,7 +189,14 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
 
     const newSelectedRole = selectedRole === value ? null : value;
     setSelectedRole(newSelectedRole);
-    updateUrlParams(newSelectedRole, searchQuery, lastContactFilter, selectedSources, selectedRatings, selectedStatuses);
+    updateUrlParams(
+      newSelectedRole,
+      searchQuery,
+      lastContactFilter,
+      selectedSources,
+      selectedRatings,
+      selectedStatuses,
+    );
 
     // When 'buyer' is selected, include both 'buyer' and 'interested'
     const rolesToFilter =
@@ -205,7 +218,14 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
 
   const handleLastContactFilterChange = (value: string) => {
     setLastContactFilter(value);
-    updateUrlParams(selectedRole, searchQuery, value, selectedSources, selectedRatings, selectedStatuses);
+    updateUrlParams(
+      selectedRole,
+      searchQuery,
+      value,
+      selectedSources,
+      selectedRatings,
+      selectedStatuses,
+    );
 
     // When 'buyer' is selected, include both 'buyer' and 'interested'
     const rolesToFilter =
@@ -231,7 +251,14 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
       : [...selectedSources, source];
 
     setSelectedSources(newSelectedSources);
-    updateUrlParams(selectedRole, searchQuery, lastContactFilter, newSelectedSources, selectedRatings, selectedStatuses);
+    updateUrlParams(
+      selectedRole,
+      searchQuery,
+      lastContactFilter,
+      newSelectedSources,
+      selectedRatings,
+      selectedStatuses,
+    );
 
     // When 'buyer' is selected, include both 'buyer' and 'interested'
     const rolesToFilter =
@@ -257,7 +284,14 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
       : [...selectedRatings, rating];
 
     setSelectedRatings(newSelectedRatings);
-    updateUrlParams(selectedRole, searchQuery, lastContactFilter, selectedSources, newSelectedRatings, selectedStatuses);
+    updateUrlParams(
+      selectedRole,
+      searchQuery,
+      lastContactFilter,
+      selectedSources,
+      newSelectedRatings,
+      selectedStatuses,
+    );
 
     // When 'buyer' is selected, include both 'buyer' and 'interested'
     const rolesToFilter =
@@ -283,7 +317,14 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
       : [...selectedStatuses, status];
 
     setSelectedStatuses(newSelectedStatuses);
-    updateUrlParams(selectedRole, searchQuery, lastContactFilter, selectedSources, selectedRatings, newSelectedStatuses);
+    updateUrlParams(
+      selectedRole,
+      searchQuery,
+      lastContactFilter,
+      selectedSources,
+      selectedRatings,
+      newSelectedStatuses,
+    );
 
     // When 'buyer' is selected, include both 'buyer' and 'interested'
     const rolesToFilter =
@@ -353,7 +394,7 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
     onClick: () => void;
   }) => (
     <div
-      className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 hover:bg-accent transition-colors"
+      className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 transition-colors hover:bg-accent"
       onClick={onClick}
     >
       <div
@@ -382,11 +423,11 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
   }) => (
     <div className="space-y-1">
       <div
-        className="flex cursor-pointer items-center gap-1 group"
+        className="group flex cursor-pointer items-center gap-1"
         onClick={() => toggleCategory(category)}
       >
-        <Icon className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
-        <h5 className="text-[12px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+        <Icon className="h-3 w-3 text-muted-foreground transition-colors group-hover:text-foreground" />
+        <h5 className="text-[12px] font-medium text-muted-foreground transition-colors group-hover:text-foreground">
           {title}
         </h5>
         <ChevronDown
@@ -405,7 +446,7 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 items-center gap-2">
-          <div className="relative w-full md:flex-1 md:max-w-sm">
+          <div className="relative w-full md:max-w-sm md:flex-1">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por nombre, email, teléfono o DNI..."
@@ -482,11 +523,15 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
 
       <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
         <CollapsibleContent className="space-y-2">
-          <div className="rounded-lg shadow-md bg-card p-2">
+          <div className="rounded-lg bg-card p-2 shadow-md">
             <div className="space-y-2">
               {/* Filter Categories Row */}
-              <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-                <FilterCategory title="Último contacto" category="lastContact" icon={Clock}>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                <FilterCategory
+                  title="Último contacto"
+                  category="lastContact"
+                  icon={Clock}
+                >
                   <div className="grid grid-cols-1 gap-y-0.5 pt-1">
                     <FilterOption
                       value="today"
@@ -521,9 +566,13 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
                   </div>
                 </FilterCategory>
 
-                <FilterCategory title="Origen" category="sources" icon={TagIcon}>
+                <FilterCategory
+                  title="Origen"
+                  category="sources"
+                  icon={TagIcon}
+                >
                   <div className="pt-1">
-                    <div className="max-h-[110px] overflow-y-auto custom-scrollbar pr-1">
+                    <div className="custom-scrollbar max-h-[110px] overflow-y-auto pr-1">
                       <div className="grid grid-cols-1 gap-y-0.5">
                         {CONTACT_SOURCES.map((source) => (
                           <FilterOption
@@ -539,24 +588,35 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
                   </div>
                 </FilterCategory>
 
-                <FilterCategory title="Valoración" category="rating" icon={Star}>
+                <FilterCategory
+                  title="Valoración"
+                  category="rating"
+                  icon={Star}
+                >
                   <div className="grid grid-cols-1 gap-y-0.5 pt-1">
                     {[1, 2, 3, 4, 5].map((rating) => (
                       <div
                         key={rating}
-                        className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 hover:bg-accent transition-colors"
+                        className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 transition-colors hover:bg-accent"
                         onClick={() => toggleRatingFilter(rating)}
                       >
                         <div
                           className={`flex h-3 w-3 items-center justify-center rounded border ${
-                            selectedRatings.includes(rating) ? "border-primary bg-primary" : "border-input"
+                            selectedRatings.includes(rating)
+                              ? "border-primary bg-primary"
+                              : "border-input"
                           }`}
                         >
-                          {selectedRatings.includes(rating) && <Check className="h-2 w-2 text-primary-foreground" />}
+                          {selectedRatings.includes(rating) && (
+                            <Check className="h-2 w-2 text-primary-foreground" />
+                          )}
                         </div>
                         <div className="flex items-center gap-0.5">
                           {Array.from({ length: rating }).map((_, i) => (
-                            <Star key={i} className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />
+                            <Star
+                              key={i}
+                              className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400"
+                            />
                           ))}
                         </div>
                       </div>
@@ -564,7 +624,11 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
                   </div>
                 </FilterCategory>
 
-                <FilterCategory title="Estado" category="status" icon={ToggleLeft}>
+                <FilterCategory
+                  title="Estado"
+                  category="status"
+                  icon={ToggleLeft}
+                >
                   <div className="grid grid-cols-1 gap-y-0.5 pt-1">
                     <FilterOption
                       value="active"
@@ -591,7 +655,7 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
                 variant="ghost"
                 size="sm"
                 onClick={clearAllFilters}
-                className="h-auto py-1 px-2 text-[12px]"
+                className="h-auto px-2 py-1 text-[12px]"
               >
                 <FilterX className="mr-1 h-3 w-3" />
                 Borrar filtros

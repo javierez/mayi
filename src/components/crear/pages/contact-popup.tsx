@@ -46,7 +46,9 @@ export default function ContactPopup({
   const [formData, setFormData] = useState<ContactFormData>(initialFormData);
   const [isCreating, setIsCreating] = useState(false);
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
-  const [duplicateContacts, setDuplicateContacts] = useState<DuplicateContact[]>([]);
+  const [duplicateContacts, setDuplicateContacts] = useState<
+    DuplicateContact[]
+  >([]);
 
   const updateFormData = (field: keyof ContactFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -138,14 +140,14 @@ export default function ContactPopup({
     try {
       // Fetch the full contact details
       const existingContact = await getContactByIdWithAuth(contactId);
-      
+
       if (existingContact) {
         // Reset form
         setFormData(initialFormData);
-        
+
         // Notify parent component with existing contact
         onContactCreated(existingContact);
-        
+
         // Close both dialogs
         setShowDuplicateDialog(false);
         onClose();

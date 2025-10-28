@@ -8,7 +8,11 @@ import { ContactBasicInfoCard } from "../cards/contact-basic-info-card";
 import { ContactDetailsCard } from "../cards/contact-details-card";
 import { ContactNotesCard } from "../cards/contact-notes-card";
 import { DeleteConfirmationModal } from "~/components/ui/delete-confirmation-modal";
-import { updateContactWithAuth, softDeleteContactWithAuth, deleteContactWithAuth } from "~/server/queries/contact";
+import {
+  updateContactWithAuth,
+  softDeleteContactWithAuth,
+  deleteContactWithAuth,
+} from "~/server/queries/contact";
 import { canDeleteContacts } from "~/app/actions/permissions/check-permissions";
 
 type SaveState = "idle" | "modified" | "saving" | "saved" | "error";
@@ -41,15 +45,20 @@ interface ContactInformationTabProps {
   canEdit: boolean;
 }
 
-export function ContactInformationTab({ contact, canEdit }: ContactInformationTabProps) {
+export function ContactInformationTab({
+  contact,
+  canEdit,
+}: ContactInformationTabProps) {
   const router = useRouter();
 
   // Module states
-  const [moduleStates, setModuleStates] = useState<Record<string, ModuleState>>({
-    basicInfo: { saveState: "idle", hasChanges: false },
-    contactDetails: { saveState: "idle", hasChanges: false },
-    notes: { saveState: "idle", hasChanges: false },
-  });
+  const [moduleStates, setModuleStates] = useState<Record<string, ModuleState>>(
+    {
+      basicInfo: { saveState: "idle", hasChanges: false },
+      contactDetails: { saveState: "idle", hasChanges: false },
+      notes: { saveState: "idle", hasChanges: false },
+    },
+  );
 
   // Form states
   const [firstName, setFirstName] = useState(contact.firstName ?? "");
@@ -59,8 +68,12 @@ export function ContactInformationTab({ contact, canEdit }: ContactInformationTa
   const [email, setEmail] = useState(contact.email ?? "");
   const [phone, setPhone] = useState(contact.phone ?? "");
   const [phoneNotes, setPhoneNotes] = useState(contact.phoneNotes ?? "");
-  const [secondaryPhone, setSecondaryPhone] = useState(contact.secondaryPhone ?? "");
-  const [secondaryPhoneNotes, setSecondaryPhoneNotes] = useState(contact.secondaryPhoneNotes ?? "");
+  const [secondaryPhone, setSecondaryPhone] = useState(
+    contact.secondaryPhone ?? "",
+  );
+  const [secondaryPhoneNotes, setSecondaryPhoneNotes] = useState(
+    contact.secondaryPhoneNotes ?? "",
+  );
   const additionalInfo = contact.additionalInfo ?? {};
 
   // Notes state
@@ -107,7 +120,13 @@ export function ContactInformationTab({ contact, canEdit }: ContactInformationTa
           contactData = { firstName, lastName, nif, source };
           break;
         case "contactDetails":
-          contactData = { email, phone, phoneNotes, secondaryPhone, secondaryPhoneNotes };
+          contactData = {
+            email,
+            phone,
+            phoneNotes,
+            secondaryPhone,
+            secondaryPhoneNotes,
+          };
           break;
         case "notes":
           contactData = {
@@ -271,7 +290,9 @@ export function ContactInformationTab({ contact, canEdit }: ContactInformationTa
           setSource={setSource}
           saveState={moduleStates.basicInfo?.saveState ?? "idle"}
           onSave={() => saveModule("basicInfo")}
-          onUpdateModule={(hasChanges) => updateModuleState("basicInfo", hasChanges)}
+          onUpdateModule={(hasChanges) =>
+            updateModuleState("basicInfo", hasChanges)
+          }
           getCardStyles={getCardStyles}
           canEdit={canEdit}
         />
@@ -290,7 +311,9 @@ export function ContactInformationTab({ contact, canEdit }: ContactInformationTa
           setSecondaryPhoneNotes={setSecondaryPhoneNotes}
           saveState={moduleStates.contactDetails?.saveState ?? "idle"}
           onSave={() => saveModule("contactDetails")}
-          onUpdateModule={(hasChanges) => updateModuleState("contactDetails", hasChanges)}
+          onUpdateModule={(hasChanges) =>
+            updateModuleState("contactDetails", hasChanges)
+          }
           getCardStyles={getCardStyles}
           canEdit={canEdit}
         />
@@ -310,7 +333,7 @@ export function ContactInformationTab({ contact, canEdit }: ContactInformationTa
       {/* Action Buttons - Deactivate and Delete Contact */}
       {(canEdit || canDelete) && (
         <div className="mt-6">
-          <div className="flex justify-center gap-4 flex-wrap">
+          <div className="flex flex-wrap justify-center gap-4">
             {canEdit && (
               <Button
                 type="button"

@@ -22,7 +22,8 @@ export async function getCurrentUserPermissionsAction(): Promise<PermissionsObje
  */
 export async function canDeleteProperties(): Promise<boolean> {
   try {
-    const permissions = (await getUserPermissionsForCurrentUser()) as PermissionsObject;
+    const permissions =
+      (await getUserPermissionsForCurrentUser()) as PermissionsObject;
     return Boolean(permissions.properties?.delete);
   } catch (error) {
     console.error("❌ Error checking delete permission:", error);
@@ -35,7 +36,8 @@ export async function canDeleteProperties(): Promise<boolean> {
  */
 export async function canEditProperties(): Promise<boolean> {
   try {
-    const permissions = (await getUserPermissionsForCurrentUser()) as PermissionsObject;
+    const permissions =
+      (await getUserPermissionsForCurrentUser()) as PermissionsObject;
     return Boolean(permissions.properties?.edit);
   } catch (error) {
     console.error("❌ Error checking edit permission:", error);
@@ -48,7 +50,8 @@ export async function canEditProperties(): Promise<boolean> {
  */
 export async function canEditAllTasks(): Promise<boolean> {
   try {
-    const permissions = (await getUserPermissionsForCurrentUser()) as PermissionsObject;
+    const permissions =
+      (await getUserPermissionsForCurrentUser()) as PermissionsObject;
     return Boolean(permissions.tasks?.editAll);
   } catch (error) {
     console.error("❌ Error checking edit all tasks permission:", error);
@@ -61,7 +64,8 @@ export async function canEditAllTasks(): Promise<boolean> {
  */
 export async function canDeleteAllTasks(): Promise<boolean> {
   try {
-    const permissions = (await getUserPermissionsForCurrentUser()) as PermissionsObject;
+    const permissions =
+      (await getUserPermissionsForCurrentUser()) as PermissionsObject;
     return Boolean(permissions.tasks?.deleteAll);
   } catch (error) {
     console.error("❌ Error checking delete all tasks permission:", error);
@@ -74,7 +78,8 @@ export async function canDeleteAllTasks(): Promise<boolean> {
  */
 export async function canEditCalendar(): Promise<boolean> {
   try {
-    const permissions = (await getUserPermissionsForCurrentUser()) as PermissionsObject;
+    const permissions =
+      (await getUserPermissionsForCurrentUser()) as PermissionsObject;
     const canEdit = Boolean(permissions.calendar?.edit);
     console.log("🔐 [Server] canEditCalendar check:", {
       calendarPermissions: permissions.calendar,
@@ -82,7 +87,10 @@ export async function canEditCalendar(): Promise<boolean> {
     });
     return canEdit;
   } catch (error) {
-    console.error("❌ [Server] Error checking edit calendar permission:", error);
+    console.error(
+      "❌ [Server] Error checking edit calendar permission:",
+      error,
+    );
     return false;
   }
 }
@@ -92,7 +100,8 @@ export async function canEditCalendar(): Promise<boolean> {
  */
 export async function canDeleteCalendar(): Promise<boolean> {
   try {
-    const permissions = (await getUserPermissionsForCurrentUser()) as PermissionsObject;
+    const permissions =
+      (await getUserPermissionsForCurrentUser()) as PermissionsObject;
     const canDelete = Boolean(permissions.calendar?.delete);
     console.log("🔐 [Server] canDeleteCalendar check:", {
       calendarPermissions: permissions.calendar,
@@ -100,7 +109,10 @@ export async function canDeleteCalendar(): Promise<boolean> {
     });
     return canDelete;
   } catch (error) {
-    console.error("❌ [Server] Error checking delete calendar permission:", error);
+    console.error(
+      "❌ [Server] Error checking delete calendar permission:",
+      error,
+    );
     return false;
   }
 }
@@ -110,7 +122,8 @@ export async function canDeleteCalendar(): Promise<boolean> {
  */
 export async function canEditContacts(): Promise<boolean> {
   try {
-    const permissions = (await getUserPermissionsForCurrentUser()) as PermissionsObject;
+    const permissions =
+      (await getUserPermissionsForCurrentUser()) as PermissionsObject;
     return Boolean(permissions.contacts?.edit);
   } catch (error) {
     console.error("❌ Error checking edit contacts permission:", error);
@@ -123,7 +136,8 @@ export async function canEditContacts(): Promise<boolean> {
  */
 export async function canDeleteContacts(): Promise<boolean> {
   try {
-    const permissions = (await getUserPermissionsForCurrentUser()) as PermissionsObject;
+    const permissions =
+      (await getUserPermissionsForCurrentUser()) as PermissionsObject;
     return Boolean(permissions.contacts?.delete);
   } catch (error) {
     console.error("❌ Error checking delete contacts permission:", error);

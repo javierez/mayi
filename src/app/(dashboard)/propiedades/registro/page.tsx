@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
-import { 
-  RegistrationOptions, 
+import {
+  RegistrationOptions,
   OptionDetails,
-  type RegistrationOption 
+  type RegistrationOption,
 } from "~/components/propiedades/registro/registration-options";
 import { VoiceRecordingEnhanced } from "~/components/propiedades/registro/voice-recording-enhanced";
 import type { EnhancedExtractedPropertyData } from "~/types/textract-enhanced";
@@ -17,15 +17,22 @@ import { CompleteForm } from "~/components/propiedades/registro/complete-form";
 export default function CapturaPage() {
   const router = useRouter();
   const [activeOption, setActiveOption] = useState<string | null>("quick");
-  
+
   // Handle voice recording completion
-  const handleVoiceProcessingComplete = (extractedData: EnhancedExtractedPropertyData) => {
-    console.log("🎉 Voice processing completed with extracted data:", extractedData);
-    
+  const handleVoiceProcessingComplete = (
+    extractedData: EnhancedExtractedPropertyData,
+  ) => {
+    console.log(
+      "🎉 Voice processing completed with extracted data:",
+      extractedData,
+    );
+
     // TODO: Navigate to property creation form with pre-populated data
     // For now, we'll just log the data and show an alert
-    alert(`¡Datos extraídos correctamente! Se encontraron ${Object.keys(extractedData).length} campos.`);
-    
+    alert(
+      `¡Datos extraídos correctamente! Se encontraron ${Object.keys(extractedData).length} campos.`,
+    );
+
     // In the future, you can navigate to the form with the data:
     // router.push(`/propiedades/crear?voiceData=${encodeURIComponent(JSON.stringify(extractedData))}`);
   };
@@ -48,11 +55,12 @@ export default function CapturaPage() {
       id: "quick",
       title: "Formulario Rápido",
       icon: () => <></>, // Will be handled by RegistrationOptions component
-      description: "Captura los datos esenciales para crear la propiedad en un instante",
+      description:
+        "Captura los datos esenciales para crear la propiedad en un instante",
       features: [
         "Venta o alquiler, casa o piso",
         "Información de contacto",
-        "Dirección y precio"
+        "Dirección y precio",
       ],
       gradient: "from-amber-400 to-rose-400",
       bgActive: "from-amber-50 to-rose-50",
@@ -66,10 +74,7 @@ export default function CapturaPage() {
       title: "Formulario Completo",
       icon: () => <></>,
       description: "Registra todos los detalles y características del inmueble",
-      features: [
-        "Información completa",
-        "Características detalladas",
-      ],
+      features: ["Información completa", "Características detalladas"],
       gradient: "from-amber-400 to-rose-400",
       bgActive: "from-amber-50 to-rose-50",
       action: () => console.log("Navigate to long form"),
@@ -78,14 +83,16 @@ export default function CapturaPage() {
       id: "recording",
       title: "Grabación de Voz",
       icon: () => <></>,
-      description: "Habla con nuesetro sistema y la IA registrará la información automáticamente",
+      description:
+        "Habla con nuesetro sistema y la IA registrará la información automáticamente",
       features: [
         "Transcripción automática",
         "Procesamiento con IA",
         "Extracción de datos",
         "Ahorra 10 minutos por propiedad",
       ],
-      additionalInfo: "Dirección, tipo de propiedad, habitaciones, baños, precio y características especiales.",
+      additionalInfo:
+        "Dirección, tipo de propiedad, habitaciones, baños, precio y características especiales.",
       gradient: "from-amber-400 to-rose-400",
       bgActive: "from-amber-50 to-rose-50",
       action: () => console.log("Open recording panel"),
@@ -94,7 +101,8 @@ export default function CapturaPage() {
       id: "upload",
       title: "Ficha de Encargo",
       icon: () => <></>,
-      description: "Carga documentos existentes y extrae información automáticamente",
+      description:
+        "Carga documentos existentes y extrae información automáticamente",
       features: [
         "OCR inteligente",
         "Extracción automática",
@@ -103,13 +111,14 @@ export default function CapturaPage() {
       ],
       gradient: "from-amber-400 to-rose-400",
       bgActive: "from-amber-50 to-rose-50",
-      action: () => setActiveOption(activeOption === "upload" ? null : "upload"),
+      action: () =>
+        setActiveOption(activeOption === "upload" ? null : "upload"),
     },
   ];
 
   const toggleOption = (optionId: string) => {
     setActiveOption(activeOption === optionId ? null : optionId);
-    const option = options.find(o => o.id === optionId);
+    const option = options.find((o) => o.id === optionId);
     if (option && optionId !== "upload") {
       option.action();
     }
@@ -121,26 +130,25 @@ export default function CapturaPage() {
     // which uploads them to the API and shows progress
   };
 
-
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
-      <div className="w-full max-w-7xl max-h-[95vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 backdrop-blur-sm sm:p-4">
+      <div className="max-h-[95vh] w-full max-w-7xl overflow-y-auto">
         <div className="rounded-2xl bg-white shadow-2xl">
           <div className="relative p-4 sm:p-6 md:p-8">
             {/* Close button */}
             <button
               onClick={() => router.back()}
-              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="absolute right-4 top-4 rounded-full p-2 transition-colors hover:bg-gray-100"
             >
               <X className="h-5 w-5 text-gray-500" />
             </button>
 
             {/* Header */}
-            <div className="text-center mb-6 sm:mb-8 md:mb-12">
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
+            <div className="mb-6 text-center sm:mb-8 md:mb-12">
+              <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl md:text-4xl">
                 Registro de Propiedad
               </h2>
-              <p className="mt-2 sm:mt-3 md:mt-4 text-sm sm:text-base md:text-lg text-gray-600">
+              <p className="mt-2 text-sm text-gray-600 sm:mt-3 sm:text-base md:mt-4 md:text-lg">
                 Selecciona cómo quieres registrar la nueva propiedad
               </p>
             </div>
@@ -155,13 +163,15 @@ export default function CapturaPage() {
             {/* Expanded Content */}
             {activeOption && activeOption !== "upload" && (
               <div className="animate-in slide-in-from-top-4 duration-300">
-                <div className="rounded-2xl bg-gradient-to-br from-amber-50/50 to-rose-50/50 shadow-lg p-4 sm:p-6 md:p-8">
+                <div className="rounded-2xl bg-gradient-to-br from-amber-50/50 to-rose-50/50 p-4 shadow-lg sm:p-6 md:p-8">
                   <div className="grid gap-4 sm:gap-6 md:gap-8 lg:grid-cols-3">
                     {/* Description and Features */}
                     {(() => {
-                      const selectedOption = options.find(o => o.id === activeOption);
+                      const selectedOption = options.find(
+                        (o) => o.id === activeOption,
+                      );
                       return selectedOption ? (
-                        <OptionDetails 
+                        <OptionDetails
                           option={selectedOption}
                           onStart={() => selectedOption.action()}
                         />
@@ -169,9 +179,9 @@ export default function CapturaPage() {
                     })()}
 
                     {/* Visual Preview */}
-                    <div className="lg:col-span-2 flex items-center justify-center">
+                    <div className="flex items-center justify-center lg:col-span-2">
                       {activeOption === "recording" && (
-                        <VoiceRecordingEnhanced 
+                        <VoiceRecordingEnhanced
                           onProcessingComplete={handleVoiceProcessingComplete}
                           onRetryRecording={handleRetryRecording}
                           onManualEntry={handleManualEntry}

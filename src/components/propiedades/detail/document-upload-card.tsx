@@ -21,11 +21,11 @@ interface DocumentUploadCardProps {
   className?: string;
 }
 
-export function DocumentUploadCard({ 
-  listingId, 
-  folderType, 
-  onDocumentsUploaded, 
-  className 
+export function DocumentUploadCard({
+  listingId,
+  folderType,
+  onDocumentsUploaded,
+  className,
 }: DocumentUploadCardProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -54,13 +54,10 @@ export function DocumentUploadCard({
         formData.append("file", file);
         formData.append("folderType", apiFolderType);
 
-        const response = await fetch(
-          `/api/properties/${listingId}/documents`,
-          {
-            method: "POST",
-            body: formData,
-          },
-        );
+        const response = await fetch(`/api/properties/${listingId}/documents`, {
+          method: "POST",
+          body: formData,
+        });
 
         if (!response.ok) {
           throw new Error(`Failed to upload ${file.name}`);
@@ -71,7 +68,9 @@ export function DocumentUploadCard({
 
       const uploadedDocuments = await Promise.all(uploadPromises);
       onDocumentsUploaded(uploadedDocuments);
-      toast.success(`${uploadedDocuments.length} documento(s) subido(s) correctamente`);
+      toast.success(
+        `${uploadedDocuments.length} documento(s) subido(s) correctamente`,
+      );
     } catch (error) {
       console.error("Error uploading files:", error);
       setError("Error al subir los archivos. Por favor, inténtalo de nuevo.");
@@ -116,11 +115,11 @@ export function DocumentUploadCard({
 
   return (
     <div className={cn("w-full", className)}>
-      <div 
+      <div
         className={cn(
-          "border-2 border-dashed border-gray-300 rounded-lg bg-gray-50/50 hover:bg-gray-100/50 transition-all duration-200 cursor-pointer h-[200px] flex flex-col items-center justify-center p-6",
+          "flex h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50/50 p-6 transition-all duration-200 hover:bg-gray-100/50",
           isDragOver && "border-blue-400 bg-blue-50/50",
-          isUploading && "cursor-not-allowed border-gray-400 bg-gray-100/50"
+          isUploading && "cursor-not-allowed border-gray-400 bg-gray-100/50",
         )}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -129,17 +128,17 @@ export function DocumentUploadCard({
       >
         {/* Upload icon and text */}
         <div className="text-center">
-          <Upload 
+          <Upload
             className={cn(
               "mx-auto mb-3 transition-all duration-200",
-              isUploading 
-                ? "h-8 w-8 text-gray-500 animate-pulse" 
+              isUploading
+                ? "h-8 w-8 animate-pulse text-gray-500"
                 : isDragOver
-                ? "h-10 w-10 text-blue-500"
-                : "h-8 w-8 text-gray-400"
-            )} 
+                  ? "h-10 w-10 text-blue-500"
+                  : "h-8 w-8 text-gray-400",
+            )}
           />
-          
+
           {isUploading ? (
             <div className="flex items-center justify-center gap-2 text-gray-600">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -147,8 +146,10 @@ export function DocumentUploadCard({
             </div>
           ) : (
             <>
-              <p className="text-sm text-gray-600 mb-1">
-                {isDragOver ? "Suelta los archivos aquí" : "Arrastra archivos aquí"}
+              <p className="mb-1 text-sm text-gray-600">
+                {isDragOver
+                  ? "Suelta los archivos aquí"
+                  : "Arrastra archivos aquí"}
               </p>
               <p className="text-xs text-gray-500">
                 o haz clic para seleccionar
@@ -159,7 +160,7 @@ export function DocumentUploadCard({
 
         {/* Error state */}
         {error && (
-          <div className="mt-3 text-red-600 text-xs text-center max-w-xs">
+          <div className="mt-3 max-w-xs text-center text-xs text-red-600">
             {error}
           </div>
         )}

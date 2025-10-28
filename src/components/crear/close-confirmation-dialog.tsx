@@ -56,19 +56,22 @@ export default function CloseConfirmationDialog({
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          transition={{ 
-            duration: 0.3, 
+          transition={{
+            duration: 0.3,
             ease: [0.4, 0, 0.2, 1],
             type: "spring",
             damping: 25,
-            stiffness: 300
+            stiffness: 300,
           }}
           className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-gray-200"
         >
           {/* Close button */}
           <motion.button
             onClick={onClose}
-            whileHover={{ scale: 1.05, backgroundColor: "rgba(243, 244, 246, 0.8)" }}
+            whileHover={{
+              scale: 1.05,
+              backgroundColor: "rgba(243, 244, 246, 0.8)",
+            }}
             whileTap={{ scale: 0.95 }}
             className="absolute right-4 top-4 z-20 rounded-full p-2 text-gray-400 transition-all duration-200 hover:text-gray-600"
           >
@@ -77,7 +80,7 @@ export default function CloseConfirmationDialog({
 
           {/* Content */}
           <div className="p-8">
-            <motion.div 
+            <motion.div
               className="text-center"
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
@@ -85,7 +88,7 @@ export default function CloseConfirmationDialog({
             >
               {/* Icon with elegant gradient background */}
               <div className="mb-6 flex justify-center">
-                <motion.div 
+                <motion.div
                   className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-gray-100 to-gray-50 ring-8 ring-gray-50"
                   whileHover={{ scale: 1.05 }}
                   transition={{ type: "spring", stiffness: 400, damping: 25 }}
@@ -95,13 +98,17 @@ export default function CloseConfirmationDialog({
                   <motion.div
                     className="absolute inset-0 rounded-full bg-gradient-to-br from-gray-200/30 to-gray-100/30"
                     animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
                   />
                 </motion.div>
               </div>
 
               {/* Title with gradient text */}
-              <motion.h3 
+              <motion.h3
                 className="mb-3 bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-xl font-bold tracking-tight text-transparent"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -111,7 +118,7 @@ export default function CloseConfirmationDialog({
               </motion.h3>
 
               {/* Elegant divider */}
-              <motion.div 
+              <motion.div
                 className="mx-auto mb-4 h-0.5 w-16 rounded-full bg-gradient-to-r from-gray-300 to-gray-400"
                 initial={{ width: 0 }}
                 animate={{ width: 64 }}
@@ -119,7 +126,7 @@ export default function CloseConfirmationDialog({
               />
 
               {/* Message */}
-              <motion.p 
+              <motion.p
                 className="mb-8 text-sm leading-relaxed text-gray-600"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -129,17 +136,17 @@ export default function CloseConfirmationDialog({
                   <>
                     Tienes cambios sin guardar que se perderán si continúas.
                     <br />
-                    <span className="font-medium text-gray-700">¿Qué deseas hacer?</span>
+                    <span className="font-medium text-gray-700">
+                      ¿Qué deseas hacer?
+                    </span>
                   </>
                 ) : (
-                  <>
-                    ¿Estás seguro de que quieres cerrar el formulario?
-                  </>
+                  <>¿Estás seguro de que quieres cerrar el formulario?</>
                 )}
               </motion.p>
 
               {/* Buttons with staggered animation */}
-              <motion.div 
+              <motion.div
                 className="space-y-3"
                 initial="hidden"
                 animate="visible"
@@ -149,20 +156,20 @@ export default function CloseConfirmationDialog({
                     opacity: 1,
                     transition: {
                       staggerChildren: 0.1,
-                      delayChildren: 0.5
-                    }
-                  }
+                      delayChildren: 0.5,
+                    },
+                  },
                 }}
               >
                 {hasUnsavedChanges && (
                   <>
                     {/* Save and Close */}
-                    <motion.div 
+                    <motion.div
                       variants={{
                         hidden: { opacity: 0, y: 10 },
-                        visible: { opacity: 1, y: 0 }
+                        visible: { opacity: 1, y: 0 },
                       }}
-                      whileHover={{ scale: 1.02 }} 
+                      whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
                       <Button
@@ -179,7 +186,9 @@ export default function CloseConfirmationDialog({
                           ) : (
                             <>
                               <Save className="h-4 w-4 transition-transform group-hover:scale-110" />
-                              <span className="font-medium">Guardar y cerrar</span>
+                              <span className="font-medium">
+                                Guardar y cerrar
+                              </span>
                             </>
                           )}
                         </div>
@@ -194,17 +203,17 @@ export default function CloseConfirmationDialog({
                     </motion.div>
 
                     {/* Discard and Close */}
-                    <motion.div 
+                    <motion.div
                       variants={{
                         hidden: { opacity: 0, y: 10 },
-                        visible: { opacity: 1, y: 0 }
+                        visible: { opacity: 1, y: 0 },
                       }}
-                      whileHover={{ scale: 1.02 }} 
+                      whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
                       <Button
                         onClick={handleDiscardAndClose}
-                        className="group w-full py-3 bg-gray-400 text-white shadow-md transition-all duration-300 hover:bg-gray-500 hover:shadow-lg"
+                        className="group w-full bg-gray-400 py-3 text-white shadow-md transition-all duration-300 hover:bg-gray-500 hover:shadow-lg"
                       >
                         <div className="flex items-center justify-center space-x-2">
                           <Trash2 className="h-4 w-4 transition-transform group-hover:scale-110" />
@@ -216,12 +225,12 @@ export default function CloseConfirmationDialog({
                 )}
 
                 {!hasUnsavedChanges && (
-                  <motion.div 
+                  <motion.div
                     variants={{
                       hidden: { opacity: 0, y: 10 },
-                      visible: { opacity: 1, y: 0 }
+                      visible: { opacity: 1, y: 0 },
                     }}
-                    whileHover={{ scale: 1.02 }} 
+                    whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
                     <Button
@@ -241,12 +250,12 @@ export default function CloseConfirmationDialog({
                 )}
 
                 {/* Cancel */}
-                <motion.div 
+                <motion.div
                   variants={{
                     hidden: { opacity: 0, y: 10 },
-                    visible: { opacity: 1, y: 0 }
+                    visible: { opacity: 1, y: 0 },
                   }}
-                  whileHover={{ scale: 1.02 }} 
+                  whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <Button

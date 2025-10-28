@@ -60,11 +60,12 @@ export default async function DocumentacionInicialPage({
 
       {/* Section header */}
       <div className="mb-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        <h3 className="mb-2 text-xl font-semibold text-gray-900">
           Documentación Inicial
         </h3>
         <p className="text-gray-600">
-          Gestiona todos los documentos iniciales de la propiedad y genera la hoja de encargo.
+          Gestiona todos los documentos iniciales de la propiedad y genera la
+          hoja de encargo.
         </p>
       </div>
 

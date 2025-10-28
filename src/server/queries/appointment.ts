@@ -604,8 +604,14 @@ export async function getAppointmentsByDateRangeSecure(
       .leftJoin(contacts, eq(appointments.contactId, contacts.contactId))
       .leftJoin(listings, eq(appointments.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(sql`users AS creator_user`, sql`${appointments.userId} = creator_user.id`)
-      .leftJoin(sql`users AS assigned_user`, sql`${appointments.assignedTo} = assigned_user.id`)
+      .leftJoin(
+        sql`users AS creator_user`,
+        sql`${appointments.userId} = creator_user.id`,
+      )
+      .leftJoin(
+        sql`users AS assigned_user`,
+        sql`${appointments.assignedTo} = assigned_user.id`,
+      )
       .where(
         and(
           inArray(appointments.userId, userIds), // Only appointments from users in this account

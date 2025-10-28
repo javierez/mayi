@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { 
+import {
   Bed,
   Bath,
   Square,
@@ -13,7 +13,7 @@ import {
   Globe,
   Loader2,
   DoorOpen,
-  Pencil
+  Pencil,
 } from "lucide-react";
 
 import type { PropertyListing } from "~/types/property-listing";
@@ -66,14 +66,17 @@ export function PropertySummaryCard({
   const isGarageOrSolar = propertyType === "garaje" || propertyType === "solar";
   const shouldShowBedsAndBaths = !isGarageOrSolar;
   const isLocal = propertyType === "local";
-  const rawAreaValue = isGarageOrSolar ? listing.builtSurfaceArea : listing.squareMeter;
-  const areaValue = propertyType === "solar" && rawAreaValue != null
-    ? Math.round(rawAreaValue)
-    : rawAreaValue;
+  const rawAreaValue = isGarageOrSolar
+    ? listing.builtSurfaceArea
+    : listing.squareMeter;
+  const areaValue =
+    propertyType === "solar" && rawAreaValue != null
+      ? Math.round(rawAreaValue)
+      : rawAreaValue;
 
   // Format area with thousand separators (e.g., 1000 -> "1.000")
   const formatAreaDisplay = (value: number | null | undefined): string => {
-    if (value == null) return '-';
+    if (value == null) return "-";
     const numValue = Math.round(value);
     return numValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   };
@@ -84,25 +87,25 @@ export function PropertySummaryCard({
       navigateToPage(`/contactos/${ownerId}`, router);
     }
   };
-  
+
   return (
-    <Card className="col-span-full bg-gradient-to-br from-amber-50/50 to-rose-50/50 border-gradient-to-r border-amber-200/30 shadow-lg mb-2 md:mb-3">
+    <Card className="border-gradient-to-r col-span-full mb-2 border-amber-200/30 bg-gradient-to-br from-amber-50/50 to-rose-50/50 shadow-lg md:mb-3">
       <div className="p-4 md:p-6">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
           {/* Property Metrics - First row on mobile, left on desktop */}
-          <div className="flex items-center justify-center md:justify-start gap-4 sm:gap-5 md:gap-6 lg:gap-8">
+          <div className="flex items-center justify-center gap-4 sm:gap-5 md:justify-start md:gap-6 lg:gap-8">
             {/* Bedrooms - only show for non-garage/solar properties */}
             {shouldShowBedsAndBaths && (
               <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
-                <div className="flex h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200 sm:h-9 sm:w-9 md:h-10 md:w-10">
                   {isLocal ? (
-                    <DoorOpen className="h-4 w-4 sm:h-4.5 sm:w-4.5 md:h-5 md:w-5 text-amber-800" />
+                    <DoorOpen className="sm:h-4.5 sm:w-4.5 h-4 w-4 text-amber-800 md:h-5 md:w-5" />
                   ) : (
-                    <Bed className="h-4 w-4 sm:h-4.5 sm:w-4.5 md:h-5 md:w-5 text-amber-800" />
+                    <Bed className="sm:h-4.5 sm:w-4.5 h-4 w-4 text-amber-800 md:h-5 md:w-5" />
                   )}
                 </div>
-                <p className="text-sm sm:text-base md:text-lg font-bold text-gray-900">
-                  {listing.bedrooms ?? '-'}
+                <p className="text-sm font-bold text-gray-900 sm:text-base md:text-lg">
+                  {listing.bedrooms ?? "-"}
                 </p>
               </div>
             )}
@@ -110,22 +113,22 @@ export function PropertySummaryCard({
             {/* Bathrooms - only show for non-garage/solar properties */}
             {shouldShowBedsAndBaths && (
               <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
-                <div className="flex h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
-                  <Bath className="h-4 w-4 sm:h-4.5 sm:w-4.5 md:h-5 md:w-5 text-amber-800" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200 sm:h-9 sm:w-9 md:h-10 md:w-10">
+                  <Bath className="sm:h-4.5 sm:w-4.5 h-4 w-4 text-amber-800 md:h-5 md:w-5" />
                 </div>
-                <p className="text-sm sm:text-base md:text-lg font-bold text-gray-900">
-                  {listing.bathrooms ? Math.round(listing.bathrooms) : '-'}
+                <p className="text-sm font-bold text-gray-900 sm:text-base md:text-lg">
+                  {listing.bathrooms ? Math.round(listing.bathrooms) : "-"}
                 </p>
               </div>
             )}
 
             {/* Area - use buildSurfaceArea for garage/solar, squareMeter for others */}
             <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
-              <div className="flex h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
-                <Square className="h-4 w-4 sm:h-4.5 sm:w-4.5 md:h-5 md:w-5 text-amber-800" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200 sm:h-9 sm:w-9 md:h-10 md:w-10">
+                <Square className="sm:h-4.5 sm:w-4.5 h-4 w-4 text-amber-800 md:h-5 md:w-5" />
               </div>
               <div className="flex items-baseline gap-1">
-                <p className="text-sm sm:text-base md:text-lg font-bold text-gray-900">
+                <p className="text-sm font-bold text-gray-900 sm:text-base md:text-lg">
                   {formatAreaDisplay(areaValue)}
                 </p>
                 {areaValue != null && (
@@ -138,25 +141,27 @@ export function PropertySummaryCard({
           {/* Second row on mobile: Owner/Agent group and Toggle buttons group with space between */}
           <div className="flex items-center justify-between md:justify-center md:gap-4">
             {/* Owner and Agent - grouped together */}
-            <div className="flex items-center gap-2 sm:gap-3 ml-2 md:ml-0">
+            <div className="ml-2 flex items-center gap-2 sm:gap-3 md:ml-0">
               {/* Owner */}
-              <div className="group/owner relative flex items-center gap-1.5 sm:gap-2 bg-white/70 rounded-lg px-2 sm:px-2.5 md:px-3 py-1.5 sm:py-2 shadow-sm min-w-0">
+              <div className="group/owner relative flex min-w-0 items-center gap-1.5 rounded-lg bg-white/70 px-2 py-1.5 shadow-sm sm:gap-2 sm:px-2.5 sm:py-2 md:px-3">
                 <button
                   onClick={handleOwnerClick}
-                  className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200 transition-transform duration-200 hover:scale-125 cursor-pointer"
+                  className="flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200 transition-transform duration-200 hover:scale-125 sm:h-6 sm:w-6"
                   title="Ver propietario"
                 >
-                  <Users className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-amber-800" />
+                  <Users className="h-2.5 w-2.5 text-amber-800 sm:h-3 sm:w-3" />
                 </button>
-                <p className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-16 sm:max-w-20 md:max-w-32 lg:max-w-40">
+                <p className="max-w-16 truncate text-xs font-medium text-gray-900 sm:max-w-20 sm:text-sm md:max-w-32 lg:max-w-40">
                   {selectedOwnerIds.length > 0
-                    ? owners.find(o => o.id.toString() === selectedOwnerIds[0])?.name ?? 'Sin asignar'
-                    : 'Sin asignar'}
+                    ? (owners.find(
+                        (o) => o.id.toString() === selectedOwnerIds[0],
+                      )?.name ?? "Sin asignar")
+                    : "Sin asignar"}
                 </p>
                 {onEditOwner && canEdit && (
                   <button
                     onClick={onEditOwner}
-                    className="absolute -top-1 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400/60 text-white shadow-md opacity-0 group-hover/owner:opacity-100 transition-opacity duration-200 hover:bg-amber-500/70"
+                    className="absolute -right-2 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400/60 text-white opacity-0 shadow-md transition-opacity duration-200 hover:bg-amber-500/70 group-hover/owner:opacity-100"
                     title="Editar propietario"
                   >
                     <Pencil className="h-3 w-3" />
@@ -165,19 +170,20 @@ export function PropertySummaryCard({
               </div>
 
               {/* Agent */}
-              <div className="group/agent relative flex items-center gap-1.5 sm:gap-2 bg-white/70 rounded-lg px-2 sm:px-2.5 md:px-3 py-1.5 sm:py-2 shadow-sm min-w-0">
-                <div className="flex h-5 w-5 sm:h-6 sm:w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200">
-                  <Briefcase className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-amber-800" />
+              <div className="group/agent relative flex min-w-0 items-center gap-1.5 rounded-lg bg-white/70 px-2 py-1.5 shadow-sm sm:gap-2 sm:px-2.5 sm:py-2 md:px-3">
+                <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200 sm:h-6 sm:w-6">
+                  <Briefcase className="h-2.5 w-2.5 text-amber-800 sm:h-3 sm:w-3" />
                 </div>
-                <p className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-16 sm:max-w-20 md:max-w-32 lg:max-w-40">
+                <p className="max-w-16 truncate text-xs font-medium text-gray-900 sm:max-w-20 sm:text-sm md:max-w-32 lg:max-w-40">
                   {selectedAgentId
-                    ? agents.find(a => a.id === selectedAgentId)?.name ?? 'Sin asignar'
-                    : 'Sin asignar'}
+                    ? (agents.find((a) => a.id === selectedAgentId)?.name ??
+                      "Sin asignar")
+                    : "Sin asignar"}
                 </p>
                 {onEditOwner && canEdit && (
                   <button
                     onClick={onEditOwner}
-                    className="absolute -top-1 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400/60 text-white shadow-md opacity-0 group-hover/agent:opacity-100 transition-opacity duration-200 hover:bg-amber-500/70"
+                    className="absolute -right-2 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400/60 text-white opacity-0 shadow-md transition-opacity duration-200 hover:bg-amber-500/70 group-hover/agent:opacity-100"
                     title="Editar agente"
                   >
                     <Pencil className="h-3 w-3" />
@@ -187,22 +193,22 @@ export function PropertySummaryCard({
             </div>
 
             {/* Toggle buttons - grouped together */}
-            <div className="flex items-center gap-2 sm:gap-3 mr-6 md:mr-0">
+            <div className="mr-6 flex items-center gap-2 sm:gap-3 md:mr-0">
               {/* Keys toggle button */}
               <Button
                 onClick={onToggleKeys}
                 disabled={!canEdit || keysLoading}
                 size="sm"
                 variant="ghost"
-                className={`w-7 h-7 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full p-0 transition-all duration-200 flex-shrink-0 ${
+                className={`h-7 w-7 flex-shrink-0 rounded-full p-0 transition-all duration-200 sm:h-10 sm:w-10 md:h-11 md:w-11 ${
                   hasKeys
-                    ? "bg-white hover:bg-gray-50 text-black shadow-xl scale-105"
-                    : "bg-transparent hover:bg-gray-50 text-gray-400 shadow-sm"
+                    ? "scale-105 bg-white text-black shadow-xl hover:bg-gray-50"
+                    : "bg-transparent text-gray-400 shadow-sm hover:bg-gray-50"
                 }`}
                 title={hasKeys ? "Tenemos las llaves" : "No tenemos las llaves"}
               >
                 {keysLoading ? (
-                  <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                  <Loader2 className="h-3 w-3 animate-spin sm:h-4 sm:w-4" />
                 ) : (
                   <Key className="h-3 w-3 sm:h-4 sm:w-4" />
                 )}
@@ -214,15 +220,17 @@ export function PropertySummaryCard({
                 disabled={!canEdit || websiteLoading}
                 size="sm"
                 variant="ghost"
-                className={`w-7 h-7 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-full p-0 transition-all duration-200 flex-shrink-0 ${
+                className={`h-7 w-7 flex-shrink-0 rounded-full p-0 transition-all duration-200 sm:h-10 sm:w-10 md:h-11 md:w-11 ${
                   publishToWebsite
-                    ? "bg-white hover:bg-gray-50 text-black shadow-xl scale-105"
-                    : "bg-transparent hover:bg-gray-50 text-gray-400 shadow-sm"
+                    ? "scale-105 bg-white text-black shadow-xl hover:bg-gray-50"
+                    : "bg-transparent text-gray-400 shadow-sm hover:bg-gray-50"
                 }`}
-                title={publishToWebsite ? "Publicar en web" : "No publicar en web"}
+                title={
+                  publishToWebsite ? "Publicar en web" : "No publicar en web"
+                }
               >
                 {websiteLoading ? (
-                  <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                  <Loader2 className="h-3 w-3 animate-spin sm:h-4 sm:w-4" />
                 ) : (
                   <Globe className="h-3 w-3 sm:h-4 sm:w-4" />
                 )}

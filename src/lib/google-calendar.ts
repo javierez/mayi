@@ -19,7 +19,11 @@ export interface GoogleCalendarIntegration {
   channelId: string | null;
   resourceId: string | null;
   channelExpiration: Date | null;
-  syncDirection: "bidirectional" | "vesta_to_google" | "google_to_vesta" | "none";
+  syncDirection:
+    | "bidirectional"
+    | "vesta_to_google"
+    | "google_to_vesta"
+    | "none";
   isActive: boolean;
 }
 
@@ -58,9 +62,7 @@ const REDIRECT_URI =
 // Calendar API scopes
 // Using calendar.events which provides read/write access to calendar events
 // Note: Google does not offer write-only scope - read access is unavoidable
-const SCOPES = [
-  "https://www.googleapis.com/auth/calendar.events",
-];
+const SCOPES = ["https://www.googleapis.com/auth/calendar.events"];
 
 /**
  * Get OAuth2 client instance
@@ -128,7 +130,12 @@ export async function getUserIntegration(
     channelId: row.channelId,
     resourceId: row.resourceId,
     channelExpiration: row.channelExpiration,
-    syncDirection: (row.syncDirection as "bidirectional" | "vesta_to_google" | "google_to_vesta" | "none") ?? "vesta_to_google", // Default to recommended one-way sync
+    syncDirection:
+      (row.syncDirection as
+        | "bidirectional"
+        | "vesta_to_google"
+        | "google_to_vesta"
+        | "none") ?? "vesta_to_google", // Default to recommended one-way sync
     isActive: row.isActive ?? true,
   };
 }

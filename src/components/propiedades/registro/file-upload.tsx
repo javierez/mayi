@@ -10,7 +10,7 @@ interface UploadedFile {
   id: string;
   file: File;
   progress: number;
-  status: 'pending' | 'uploading' | 'success' | 'error';
+  status: "pending" | "uploading" | "success" | "error";
   error?: string;
 }
 
@@ -26,16 +26,21 @@ interface UploadedDocument {
   referenceNumber?: string;
 }
 
-
 interface FileUploadProps {
   onFileUpload?: (files: File[]) => Promise<void>;
   className?: string;
   listingId?: string;
 }
 
-export function FileUpload({ onFileUpload, className, listingId }: FileUploadProps) {
+export function FileUpload({
+  onFileUpload,
+  className,
+  listingId,
+}: FileUploadProps) {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-  const [uploadedDocuments, setUploadedDocuments] = useState<UploadedDocument[]>([]);
+  const [uploadedDocuments, setUploadedDocuments] = useState<
+    UploadedDocument[]
+  >([]);
   const [createdPropertyId, setCreatedPropertyId] = useState<string>("");
   const [isDragOver, setIsDragOver] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -45,69 +50,84 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  const handleFileUpload = useCallback(async (files: File[]) => {
-    // Phase 1: Upload to existing property (original behavior)
-    const uploadFilesToExistingProperty = async (files: UploadedFile[]) => {
-      for (const uploadedFile of files) {
-        try {
-          setUploadedFiles(prev => prev.map(f => 
-            f.id === uploadedFile.id ? { ...f, status: 'uploading', progress: 50 } : f
-          ));
+  const handleFileUpload = useCallback(
+    async (files: File[]) => {
+      // Phase 1: Upload to existing property (original behavior)
+      const uploadFilesToExistingProperty = async (files: UploadedFile[]) => {
+        for (const uploadedFile of files) {
+          try {
+            setUploadedFiles((prev) =>
+              prev.map((f) =>
+                f.id === uploadedFile.id
+                  ? { ...f, status: "uploading", progress: 50 }
+                  : f,
+              ),
+            );
 
-          const formData = new FormData();
-          formData.append('file', uploadedFile.file);
-          formData.append('listingId', listingId!.toString());
+            const formData = new FormData();
+            formData.append("file", uploadedFile.file);
+            formData.append("listingId", listingId!.toString());
 
-          const response = await fetch('/api/documents/upload', {
-            method: 'POST',
-            body: formData,
-          });
+            const response = await fetch("/api/documents/upload", {
+              method: "POST",
+              body: formData,
+            });
 
-          if (!response.ok) {
-            throw new Error(`Upload failed: ${response.statusText}`);
+            if (!response.ok) {
+              throw new Error(`Upload failed: ${response.statusText}`);
+            }
+
+            const result = (await response.json()) as { url: string };
+
+            setUploadedFiles((prev) =>
+              prev.map((f) =>
+                f.id === uploadedFile.id
+                  ? { ...f, status: "success", progress: 100, url: result.url }
+                  : f,
+              ),
+            );
+          } catch (error) {
+            console.error("Upload error:", error);
+            setUploadedFiles((prev) =>
+              prev.map((f) =>
+                f.id === uploadedFile.id
+                  ? { ...f, status: "error", progress: 0 }
+                  : f,
+              ),
+            );
           }
-
-          const result = await response.json() as { url: string };
-          
-          setUploadedFiles(prev => prev.map(f => 
-            f.id === uploadedFile.id ? { ...f, status: 'success', progress: 100, url: result.url } : f
-          ));
-        } catch (error) {
-          console.error('Upload error:', error);
-          setUploadedFiles(prev => prev.map(f => 
-            f.id === uploadedFile.id ? { ...f, status: 'error', progress: 0 } : f
-          ));
         }
-      }
-    };
+      };
 
-    // Add files to state
-    const newFiles: UploadedFile[] = files.map((file, index) => ({
-      id: `${Date.now()}-${index}`,
-      file,
-      progress: 0,
-      status: 'pending'
-    }));
-    
-    setUploadedFiles(prev => [...prev, ...newFiles]);
-    setIsUploading(true);
-    setOverallUploadProgress(0);
+      // Add files to state
+      const newFiles: UploadedFile[] = files.map((file, index) => ({
+        id: `${Date.now()}-${index}`,
+        file,
+        progress: 0,
+        status: "pending",
+      }));
 
-    try {
-      // If we have a listingId, upload directly to existing property
-      if (listingId) {
-        await uploadFilesToExistingProperty(newFiles);
-      } else {
-        // Phase 1: Create property and upload to final location
-        await uploadFilesWithPropertyCreation(newFiles);
-        // Call the provided callback if any
-        await onFileUpload?.(files);
-      }
-    } finally {
-      setIsUploading(false);
+      setUploadedFiles((prev) => [...prev, ...newFiles]);
+      setIsUploading(true);
       setOverallUploadProgress(0);
-    }
-  }, [listingId, onFileUpload]);
+
+      try {
+        // If we have a listingId, upload directly to existing property
+        if (listingId) {
+          await uploadFilesToExistingProperty(newFiles);
+        } else {
+          // Phase 1: Create property and upload to final location
+          await uploadFilesWithPropertyCreation(newFiles);
+          // Call the provided callback if any
+          await onFileUpload?.(files);
+        }
+      } finally {
+        setIsUploading(false);
+        setOverallUploadProgress(0);
+      }
+    },
+    [listingId, onFileUpload],
+  );
 
   // Phase 1: Create property and upload files (ficha de encargo)
   const uploadFilesWithPropertyCreation = async (files: UploadedFile[]) => {
@@ -118,29 +138,35 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
         try {
           // Update overall progress
           setOverallUploadProgress(((i + 0.1) / files.length) * 100);
-          
-          setUploadedFiles(prev => prev.map(f => 
-            f.id === uploadedFile.id ? { ...f, status: 'uploading', progress: 30 } : f
-          ));
+
+          setUploadedFiles((prev) =>
+            prev.map((f) =>
+              f.id === uploadedFile.id
+                ? { ...f, status: "uploading", progress: 30 }
+                : f,
+            ),
+          );
 
           const formData = new FormData();
-          formData.append('file', uploadedFile.file);
-          
-          setUploadedFiles(prev => prev.map(f => 
-            f.id === uploadedFile.id ? { ...f, progress: 60 } : f
-          ));
-          
-          const response = await fetch('/api/documents/ficha-encargo', {
-            method: 'POST',
+          formData.append("file", uploadedFile.file);
+
+          setUploadedFiles((prev) =>
+            prev.map((f) =>
+              f.id === uploadedFile.id ? { ...f, progress: 60 } : f,
+            ),
+          );
+
+          const response = await fetch("/api/documents/ficha-encargo", {
+            method: "POST",
             body: formData,
           });
 
           if (!response.ok) {
-            const errorData = await response.json() as { error?: string };
-            throw new Error(errorData.error ?? 'Upload failed');
+            const errorData = (await response.json()) as { error?: string };
+            throw new Error(errorData.error ?? "Upload failed");
           }
 
-          const result = await response.json() as {
+          const result = (await response.json()) as {
             document: {
               docId: string;
               filename: string;
@@ -155,9 +181,13 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
             referenceNumber: string;
           };
 
-          setUploadedFiles(prev => prev.map(f => 
-            f.id === uploadedFile.id ? { ...f, status: 'success', progress: 100 } : f
-          ));
+          setUploadedFiles((prev) =>
+            prev.map((f) =>
+              f.id === uploadedFile.id
+                ? { ...f, status: "success", progress: 100 }
+                : f,
+            ),
+          );
 
           // Store property info from first upload
           if (i === 0) {
@@ -165,38 +195,52 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
           }
 
           // Add to uploaded documents list
-          setUploadedDocuments(prev => [...prev, {
-            docId: result.document.docId,
-            filename: result.document.filename,
-            fileType: result.document.fileType,
-            fileUrl: result.document.fileUrl,
-            documentKey: result.document.documentKey,
-            propertyId: result.propertyId,
-          }]);
+          setUploadedDocuments((prev) => [
+            ...prev,
+            {
+              docId: result.document.docId,
+              filename: result.document.filename,
+              fileType: result.document.fileType,
+              fileUrl: result.document.fileUrl,
+              documentKey: result.document.documentKey,
+              propertyId: result.propertyId,
+            },
+          ]);
 
           // Update overall progress
           setOverallUploadProgress(((i + 1) / files.length) * 100);
-          
+
           toast.success(`${uploadedFile.file.name} subido correctamente`);
         } catch (error) {
-          console.error('Upload error:', error);
-          const errorMessage = error instanceof Error ? error.message : 'Error al subir el archivo';
-          setUploadedFiles(prev => prev.map(f => 
-            f.id === uploadedFile.id ? { 
-              ...f, 
-              status: 'error', 
-              progress: 0,
-              error: errorMessage
-            } : f
-          ));
-          toast.error(`Error al subir ${uploadedFile.file.name}: ${errorMessage}`);
+          console.error("Upload error:", error);
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "Error al subir el archivo";
+          setUploadedFiles((prev) =>
+            prev.map((f) =>
+              f.id === uploadedFile.id
+                ? {
+                    ...f,
+                    status: "error",
+                    progress: 0,
+                    error: errorMessage,
+                  }
+                : f,
+            ),
+          );
+          toast.error(
+            `Error al subir ${uploadedFile.file.name}: ${errorMessage}`,
+          );
         }
       }
 
       // Show process button after successful uploads (check uploadedFiles state)
       setTimeout(() => {
-        setUploadedFiles(currentFiles => {
-          const hasSuccessfulUploads = currentFiles.some(f => f.status === 'success');
+        setUploadedFiles((currentFiles) => {
+          const hasSuccessfulUploads = currentFiles.some(
+            (f) => f.status === "success",
+          );
           if (hasSuccessfulUploads) {
             setShowProcessButton(true);
           }
@@ -204,8 +248,8 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
         });
       }, 100);
     } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('Error al subir los documentos');
+      console.error("Upload error:", error);
+      toast.error("Error al subir los documentos");
     }
   };
 
@@ -214,39 +258,42 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
     try {
       setIsProcessing(true);
 
-      const response = await fetch('/api/documents/ficha-encargo/process', {
-        method: 'POST',
+      const response = await fetch("/api/documents/ficha-encargo/process", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           propertyId: createdPropertyId,
-          documentIds: uploadedDocuments.map(doc => doc.docId),
+          documentIds: uploadedDocuments.map((doc) => doc.docId),
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json() as { error?: string };
-        throw new Error(errorData.error ?? 'Processing failed');
+        const errorData = (await response.json()) as { error?: string };
+        throw new Error(errorData.error ?? "Processing failed");
       }
 
       await response.json();
 
-      toast.success(`¡OCR iniciado correctamente! Los datos se guardarán automáticamente cuando estén listos.`);
+      toast.success(
+        `¡OCR iniciado correctamente! Los datos se guardarán automáticamente cuando estén listos.`,
+      );
 
       // Navigate to properties list
-      router.push('/propiedades');
-
+      router.push("/propiedades");
     } catch (error) {
-      console.error('Processing error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error al procesar los documentos';
-      
+      console.error("Processing error:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Error al procesar los documentos";
+
       toast.error(`Error: ${errorMessage}`);
     } finally {
       setIsProcessing(false);
     }
   };
-
 
   const handleDragEnter = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -264,32 +311,41 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
     e.preventDefault();
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    
-    const files = Array.from(e.dataTransfer.files);
-    const validFiles = files.filter(file => {
-      const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png'];
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      
-      if (!validTypes.includes(file.type)) {
-        toast.error(`${file.name}: Tipo de archivo no soportado`);
-        return false;
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragOver(false);
+
+      const files = Array.from(e.dataTransfer.files);
+      const validFiles = files.filter((file) => {
+        const validTypes = [
+          "application/pdf",
+          "application/msword",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "image/jpeg",
+          "image/png",
+        ];
+        const maxSize = 10 * 1024 * 1024; // 10MB
+
+        if (!validTypes.includes(file.type)) {
+          toast.error(`${file.name}: Tipo de archivo no soportado`);
+          return false;
+        }
+
+        if (file.size > maxSize) {
+          toast.error(`${file.name}: Archivo demasiado grande (máx. 10MB)`);
+          return false;
+        }
+
+        return true;
+      });
+
+      if (validFiles.length > 0) {
+        void handleFileUpload(validFiles);
       }
-      
-      if (file.size > maxSize) {
-        toast.error(`${file.name}: Archivo demasiado grande (máx. 10MB)`);
-        return false;
-      }
-      
-      return true;
-    });
-    
-    if (validFiles.length > 0) {
-      void handleFileUpload(validFiles);
-    }
-  }, [handleFileUpload]);
+    },
+    [handleFileUpload],
+  );
 
   const handleFileSelect = () => {
     fileInputRef.current?.click();
@@ -301,15 +357,20 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
       void handleFileUpload(files);
     }
     // Reset input value to allow re-selecting the same file
-    e.target.value = '';
+    e.target.value = "";
   };
 
   return (
-    <div className={cn("rounded-2xl bg-gradient-to-br from-amber-50/50 to-rose-50/50 shadow-lg p-8", className)}>
+    <div
+      className={cn(
+        "rounded-2xl bg-gradient-to-br from-amber-50/50 to-rose-50/50 p-8 shadow-lg",
+        className,
+      )}
+    >
       <div className="grid gap-8 lg:grid-cols-3">
         <FileUploadDescription />
-        <div className="lg:col-span-2 space-y-4">
-          <FileUploadArea 
+        <div className="space-y-4 lg:col-span-2">
+          <FileUploadArea
             onFileSelect={handleFileSelect}
             isDragOver={isDragOver}
             onDragEnter={handleDragEnter}
@@ -320,26 +381,25 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
             isUploading={isUploading}
             uploadProgress={overallUploadProgress}
           />
-          
+
           {/* Process Button - positioned under the FileUploadArea in right column */}
           {!listingId && showProcessButton && (
             <div className="flex justify-end">
               <button
                 onClick={processDocuments}
                 disabled={isProcessing}
-                className="px-6 py-2 bg-gradient-to-r from-amber-400 to-rose-400 text-white font-medium text-sm rounded-lg hover:from-amber-500 hover:to-rose-500 transition-all duration-200 hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
+                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-2 text-sm font-medium text-white shadow-lg transition-all duration-200 hover:scale-105 hover:from-amber-500 hover:to-rose-500 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
               >
                 {isProcessing && <Loader2 className="h-4 w-4 animate-spin" />}
-                {isProcessing ? 'Procesando...' : 'Procesar Documentos y Crear Propiedad'}
+                {isProcessing
+                  ? "Procesando..."
+                  : "Procesar Documentos y Crear Propiedad"}
               </button>
             </div>
           )}
         </div>
       </div>
-      
-      
 
-      
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -355,23 +415,24 @@ export function FileUpload({ onFileUpload, className, listingId }: FileUploadPro
 
 function FileUploadDescription() {
   const features = [
-    "Sistema Inteligente", 
-    "Extracción automática", 
-    "Múltiples formatos", 
-    "Procesamiento rápido"
+    "Sistema Inteligente",
+    "Extracción automática",
+    "Múltiples formatos",
+    "Procesamiento rápido",
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-2xl font-bold text-gray-900 mb-3">
+        <h3 className="mb-3 text-2xl font-bold text-gray-900">
           Ficha de Encargo
         </h3>
-        <p className="text-gray-600 leading-relaxed">
-          Si tienes la ficha de encargo, cargala y deja que la IA extraiga la información automáticamente.
+        <p className="leading-relaxed text-gray-600">
+          Si tienes la ficha de encargo, cargala y deja que la IA extraiga la
+          información automáticamente.
         </p>
       </div>
-      
+
       <div className="space-y-3">
         <h4 className="font-semibold text-gray-900">
           Características principales
@@ -403,32 +464,33 @@ interface FileUploadAreaProps {
   uploadProgress: number;
 }
 
-function FileUploadArea({ 
-  onFileSelect, 
-  isDragOver, 
-  onDragEnter, 
-  onDragLeave, 
-  onDragOver, 
+function FileUploadArea({
+  onFileSelect,
+  isDragOver,
+  onDragEnter,
+  onDragLeave,
+  onDragOver,
   onDrop,
   uploadedFiles,
   isUploading,
-  uploadProgress
+  uploadProgress,
 }: FileUploadAreaProps) {
-  
   // Determine current state
   const isEmpty = uploadedFiles.length === 0 && !isUploading;
   const hasFiles = uploadedFiles.length > 0 && !isUploading;
   return (
     <div className="lg:col-span-2">
-      <div 
+      <div
         className={cn(
-          "bg-white rounded-xl shadow-sm transition-all h-80", // Fixed height to match empty state
-          hasFiles ? "border border-gray-200" : "border-2 border-dashed cursor-pointer",
+          "h-80 rounded-xl bg-white shadow-sm transition-all", // Fixed height to match empty state
+          hasFiles
+            ? "border border-gray-200"
+            : "cursor-pointer border-2 border-dashed",
           isDragOver && isEmpty
-            ? "border-amber-400 bg-amber-50 scale-105" 
+            ? "scale-105 border-amber-400 bg-amber-50"
             : isEmpty
-            ? "border-gray-300 hover:border-amber-300"
-            : "border-gray-200"
+              ? "border-gray-300 hover:border-amber-300"
+              : "border-gray-200",
         )}
         onDragEnter={isEmpty ? onDragEnter : undefined}
         onDragLeave={isEmpty ? onDragLeave : undefined}
@@ -440,18 +502,22 @@ function FileUploadArea({
         {isEmpty && (
           <div className="p-8">
             <div className="flex flex-col items-center justify-center">
-              <Upload className={cn(
-                "h-16 w-16 mb-4 transition-colors",
-                isDragOver ? "text-amber-500" : "text-gray-400"
-              )} />
-              <p className="text-gray-700 font-medium mb-2 text-lg">
-                {isDragOver ? "Suelta los archivos aquí" : "Arrastra tus documentos aquí"}
+              <Upload
+                className={cn(
+                  "mb-4 h-16 w-16 transition-colors",
+                  isDragOver ? "text-amber-500" : "text-gray-400",
+                )}
+              />
+              <p className="mb-2 text-lg font-medium text-gray-700">
+                {isDragOver
+                  ? "Suelta los archivos aquí"
+                  : "Arrastra tus documentos aquí"}
               </p>
-              <p className="text-sm text-gray-500 mb-6">
+              <p className="mb-6 text-sm text-gray-500">
                 o haz clic para seleccionar archivos
               </p>
               <button
-                className="px-6 py-3 bg-gradient-to-r from-amber-400 to-rose-400 text-white font-medium rounded-lg hover:from-amber-500 hover:to-rose-500 transition-all hover:scale-105 shadow-lg"
+                className="rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-3 font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500"
                 onClick={(e) => {
                   e.stopPropagation();
                   onFileSelect();
@@ -464,7 +530,7 @@ function FileUploadArea({
               <p className="text-xs text-gray-500">
                 Formatos aceptados: PDF, DOC, DOCX, JPG, PNG
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="mt-1 text-xs text-gray-500">
                 Tamaño máximo: 10MB por archivo
               </p>
             </div>
@@ -475,23 +541,23 @@ function FileUploadArea({
         {isUploading && (
           <div className="p-8">
             <div className="flex flex-col items-center justify-center">
-              <Loader2 className="h-16 w-16 mb-4 text-amber-500 animate-spin" />
-              <p className="text-gray-700 font-medium mb-2 text-lg">
+              <Loader2 className="mb-4 h-16 w-16 animate-spin text-amber-500" />
+              <p className="mb-2 text-lg font-medium text-gray-700">
                 Subiendo documentos...
               </p>
-              <p className="text-sm text-gray-500 mb-6">
+              <p className="mb-6 text-sm text-gray-500">
                 Por favor espera mientras se procesan tus archivos
               </p>
-              
+
               {/* Progress Bar */}
               <div className="w-full max-w-md">
-                <div className="flex justify-between text-sm text-gray-600 mb-2">
+                <div className="mb-2 flex justify-between text-sm text-gray-600">
                   <span>Progreso</span>
                   <span>{Math.round(uploadProgress)}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div 
-                    className="bg-gradient-to-r from-amber-400 to-rose-400 h-3 rounded-full transition-all duration-300"
+                <div className="h-3 w-full rounded-full bg-gray-200">
+                  <div
+                    className="h-3 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 transition-all duration-300"
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
@@ -502,7 +568,7 @@ function FileUploadArea({
 
         {/* State 3: Files Uploaded - Full Preview */}
         {hasFiles && (
-          <div className="p-8 h-full">
+          <div className="h-full p-8">
             <EnhancedFilePreviewGrid files={uploadedFiles} />
           </div>
         )}
@@ -516,35 +582,35 @@ interface FilePreviewGridProps {
 }
 
 function EnhancedFilePreviewGrid({ files }: FilePreviewGridProps) {
-  const successfulFiles = files.filter(f => f.status === 'success');
-  
+  const successfulFiles = files.filter((f) => f.status === "success");
+
   const renderFilePreview = (file: UploadedFile) => {
     const fileType = file.file.type;
-    
-    if (fileType.startsWith('image/')) {
+
+    if (fileType.startsWith("image/")) {
       // For images, fit to horizontal width and allow vertical scrolling
       const previewUrl = URL.createObjectURL(file.file);
       return (
-        <div className="relative w-full h-full rounded-xl bg-white shadow-lg border-2 border-amber-200 overflow-y-auto overflow-x-hidden">
+        <div className="relative h-full w-full overflow-y-auto overflow-x-hidden rounded-xl border-2 border-amber-200 bg-white shadow-lg">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={previewUrl}
             alt={file.file.name}
-            className="w-full h-auto object-cover"
+            className="h-auto w-full object-cover"
           />
           {/* Success indicator overlay - fixed position */}
-          <div className="absolute top-4 right-4 z-10">
+          <div className="absolute right-4 top-4 z-10">
             <div className="rounded-full bg-green-500 p-2 shadow-lg">
               <Check className="h-4 w-4 text-white" />
             </div>
           </div>
           {/* File name overlay - fixed at bottom */}
-          <div className="absolute bottom-0 left-0 right-4 bg-gradient-to-t from-black/60 to-transparent p-3 z-10">
-            <p className="text-white font-medium text-sm truncate">
+          <div className="absolute bottom-0 left-0 right-4 z-10 bg-gradient-to-t from-black/60 to-transparent p-3">
+            <p className="truncate text-sm font-medium text-white">
               {file.file.name}
             </p>
-            <div className="flex items-center text-xs text-green-300 mt-1">
-              <CheckCircle2 className="h-3 w-3 mr-1" />
+            <div className="mt-1 flex items-center text-xs text-green-300">
+              <CheckCircle2 className="mr-1 h-3 w-3" />
               <span>Subido</span>
             </div>
           </div>
@@ -553,43 +619,45 @@ function EnhancedFilePreviewGrid({ files }: FilePreviewGridProps) {
     } else {
       // For documents (PDF, Word, etc.), show large document preview
       const getDocumentIcon = () => {
-        if (fileType === 'application/pdf') {
+        if (fileType === "application/pdf") {
           return <FileText className="h-24 w-24 text-red-600" />;
-        } else if (fileType.includes('word') || fileType.includes('document')) {
+        } else if (fileType.includes("word") || fileType.includes("document")) {
           return <FileText className="h-24 w-24 text-blue-600" />;
         } else {
           return <FileText className="h-24 w-24 text-gray-600" />;
         }
       };
-      
+
       const getBackgroundGradient = () => {
-        if (fileType === 'application/pdf') {
-          return 'from-red-100 to-rose-100';
-        } else if (fileType.includes('word') || fileType.includes('document')) {
-          return 'from-blue-100 to-indigo-100';
+        if (fileType === "application/pdf") {
+          return "from-red-100 to-rose-100";
+        } else if (fileType.includes("word") || fileType.includes("document")) {
+          return "from-blue-100 to-indigo-100";
         } else {
-          return 'from-gray-100 to-slate-100';
+          return "from-gray-100 to-slate-100";
         }
       };
-      
+
       return (
-        <div className={`relative w-full h-full flex flex-col items-center justify-center rounded-xl bg-gradient-to-br ${getBackgroundGradient()} shadow-lg border-2 border-amber-200 p-6 overflow-hidden`}>
+        <div
+          className={`relative flex h-full w-full flex-col items-center justify-center rounded-xl bg-gradient-to-br ${getBackgroundGradient()} overflow-hidden border-2 border-amber-200 p-6 shadow-lg`}
+        >
           {getDocumentIcon()}
-          
+
           {/* Success indicator overlay */}
-          <div className="absolute top-4 right-4">
+          <div className="absolute right-4 top-4">
             <div className="rounded-full bg-green-500 p-2 shadow-lg">
               <Check className="h-4 w-4 text-white" />
             </div>
           </div>
-          
+
           {/* File info */}
           <div className="mt-3 text-center">
-            <p className="font-semibold text-gray-900 text-sm truncate max-w-full">
+            <p className="max-w-full truncate text-sm font-semibold text-gray-900">
               {file.file.name}
             </p>
-            <div className="flex items-center justify-center text-xs text-green-600 mt-1">
-              <CheckCircle2 className="h-3 w-3 mr-1" />
+            <div className="mt-1 flex items-center justify-center text-xs text-green-600">
+              <CheckCircle2 className="mr-1 h-3 w-3" />
               <span>Subido</span>
             </div>
           </div>
@@ -603,21 +671,25 @@ function EnhancedFilePreviewGrid({ files }: FilePreviewGridProps) {
   }
 
   return (
-    <div className="w-full h-full">
+    <div className="h-full w-full">
       {successfulFiles.length === 1 ? (
         // Single file - use full available space with scroll
-        <div className="w-full h-full">
+        <div className="h-full w-full">
           {renderFilePreview(successfulFiles[0]!)}
         </div>
       ) : (
         // Multiple files - grid layout with individual scroll areas
-        <div className={`grid gap-2 h-full ${
-          successfulFiles.length === 2 ? 'grid-cols-2' :
-          successfulFiles.length === 3 ? 'grid-cols-3' :
-          'grid-cols-2'
-        }`}>
+        <div
+          className={`grid h-full gap-2 ${
+            successfulFiles.length === 2
+              ? "grid-cols-2"
+              : successfulFiles.length === 3
+                ? "grid-cols-3"
+                : "grid-cols-2"
+          }`}
+        >
           {successfulFiles.map((file) => (
-            <div key={file.id} className="w-full h-full min-h-0">
+            <div key={file.id} className="h-full min-h-0 w-full">
               {renderFilePreview(file)}
             </div>
           ))}
