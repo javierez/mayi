@@ -30,41 +30,41 @@ Create `src/server/queries/agent-summary.ts` with:
 
 1. **`getAgentSummaryStats(userId, accountId)`** - Returns counts:
 
-      - Active assigned listings (status != 'Draft' AND isActive = true)
-      - Contact listings count
-      - Deals count
-      - Contacts count
-      - Tasks assigned count
-      - Calendar events count
+                        - Active assigned listings (status != 'Draft' AND isActive = true)
+                        - Contact listings count
+                        - Deals count
+                        - Contacts count
+                        - Tasks assigned count
+                        - Calendar events count
 
 2. **`getAgentContactsOwners(userId, accountId)`** - Returns contacts that are owners:
 
-      - Contact info (firstName, lastName, email, phone)
-      - Linked to listings where agent is assigned
-      - Filter: contactType = 'owner' only
+                        - Contact info (firstName, lastName, email, phone)
+                        - Linked to listings where agent is assigned
+                        - Filter: contactType = 'owner' only
 
 3. **`getAgentListingsWithDetails(userId, accountId)`** - Returns listings:
 
-      - Where agent is assigned (agentId = userId)
-      - Status != 'Draft' AND isActive = true
-      - Include property details, price, status
-      - Include owner contact info via JOIN
+                        - Where agent is assigned (agentId = userId)
+                        - Status != 'Draft' AND isActive = true
+                        - Include property details, price, status
+                        - Include owner contact info via JOIN
 
 4. **`getAgentListingContacts(listingIds, accountId)`** - Returns listing contacts:
 
-      - For the specified listings
-      - Include contact info and type (buyer/owner/viewer)
+                        - For the specified listings
+                        - Include contact info and type (buyer/owner/viewer)
 
 5. **`getAgentTasksAndAppointments(userId, accountId)`** - Returns:
 
-      - Tasks where userId matches AND related to agent's listings
-      - Appointments assigned to agent or related to agent's listings
+                        - Tasks where userId matches AND related to agent's listings
+                        - Appointments assigned to agent or related to agent's listings
 
 6. **`getUrgentAgentActions(userId, accountId)`** - Returns:
 
-      - Tasks due in next 5 working days
-      - Upcoming appointments
-      - Overdue tasks
+                        - Tasks due in next 5 working days
+                        - Upcoming appointments
+                        - Overdue tasks
 
 ## UI Components
 
@@ -72,8 +72,8 @@ Create `src/server/queries/agent-summary.ts` with:
 
 - Use `"use client"` directive
 - Implement role-based rendering:
-    - If roleId = 3 (Account Admin): Show agent selector
-    - Otherwise: Show current user's info only
+                - If roleId = 3 (Account Admin): Show agent selector
+                - Otherwise: Show current user's info only
 - Fetch data using queries above
 - Display using summary cards + hierarchy view
 
@@ -87,28 +87,28 @@ Create `src/server/queries/agent-summary.ts` with:
 ### `AgentSummaryCards` Component
 
 - Display 6 stat cards:
-    - Active Listings count
-    - Contacts count
-    - Deals count
-    - Tasks count
-    - Appointments count
+                - Active Listings count
+                - Contacts count
+                - Deals count
+                - Tasks count
+                - Appointments count
 - Use existing Card UI components from `src/components/ui/card.tsx`
 
 ### `AgentHierarchyView` Component
 
 - Collapsible/expandable sections:
 
-    1. Contacts (owners only)
+                1. Contacts (owners only)
 
-          - Contact name, email, phone
-          - Expand → Show their listings
+                                        - Contact name, email, phone
+                                        - Expand → Show their listings
 
-    1. For each listing:
+                1. For each listing:
 
-          - Listing title, price, status
-          - Expand → Show listing contacts (buyers/viewers)
-          - Expand further → Show related tasks
-          - Expand further → Show related appointments
+                                        - Listing title, price, status
+                                        - Expand → Show listing contacts (buyers/viewers)
+                                        - Expand further → Show related tasks
+                                        - Expand further → Show related appointments
 - Use Accordion component from `src/components/ui/accordion.tsx`
 - Follow existing UI patterns from leads/operations pages
 
@@ -122,26 +122,26 @@ Create `src/server/queries/agent-summary.ts` with:
 
 1. **Create query file** (`agent-summary.ts`):
 
-      - Implement all 6 query functions
-      - Use existing patterns from `src/server/queries/`
-      - Follow accountId filtering pattern
-      - Handle userId filtering for non-Admin users
+                        - Implement all 6 query functions
+                        - Use existing patterns from `src/server/queries/`
+                        - Follow accountId filtering pattern
+                        - Handle userId filtering for non-Admin users
 
 2. **Create agent components directory**:
 
-      - Build components following existing UI patterns
-      - Use Lucide icons for consistency
-      - Implement loading states
+                        - Build components following existing UI patterns
+                        - Use Lucide icons for consistency
+                        - Implement loading states
 
 3. **Create main page** (`page.tsx`):
 
-      - Implement role checking
-      - Fetch data on mount and agent selection change
-      - Render appropriate view based on role
+                        - Implement role checking
+                        - Fetch data on mount and agent selection change
+                        - Render appropriate view based on role
 
 4. **Add route to navigation** (if needed):
 
-      - Update dashboard navigation to include "Agentes" link
+                        - Update dashboard navigation to include "Agentes" link
 
 ## Follow Existing Patterns
 

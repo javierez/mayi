@@ -444,13 +444,13 @@ export function AppointmentDetailSheet({
           <div className="flex gap-2 pt-3 sm:pt-4">
             {showVisitaButton && (
               <Button
-                size="default"
-                variant="default"
+                variant="ghost"
+                size="sm"
+                className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
                 onClick={handleVisitaClick}
-                className="h-10 min-w-0 flex-1 !text-xs font-semibold uppercase sm:h-9"
-                style={{ letterSpacing: '0.15em' }}
               >
-                Registro de Visita
+                <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                <span className="truncate">Registrar Visita</span>
               </Button>
             )}
             {!showVisitaButton &&

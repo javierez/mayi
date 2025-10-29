@@ -65,6 +65,7 @@ export interface ContactWithDetails {
   createdAt: Date;
   visitCount: number;
   hasUpcomingVisit: boolean;
+  upcomingAppointmentId?: bigint;
   hasMissedVisit: boolean;
   hasCompletedVisit: boolean;
   hasCancelledVisit: boolean;
@@ -92,6 +93,7 @@ export interface ContactSheetData {
     createdAt: Date;
   };
   hasUpcomingVisit: boolean;
+  upcomingAppointmentId?: bigint;
   hasMissedVisit: boolean;
   hasCompletedVisit: boolean;
   hasCancelledVisit: boolean;
@@ -117,6 +119,7 @@ export interface CompactContactCardProps {
     contactType: "buyer" | "owner" | "viewer";
   };
   hasUpcomingVisit: boolean;
+  upcomingAppointmentId?: bigint;
   hasMissedVisit: boolean;
   hasCompletedVisit: boolean;
   hasCancelledVisit: boolean;

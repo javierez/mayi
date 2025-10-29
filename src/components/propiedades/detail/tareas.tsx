@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { TareasSkeleton } from "~/components/ui/skeletons";
-import { PushToTalkButton } from "~/components/shared/push-to-talk-button";
+import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 import { createTaskWithAuth, updateTaskWithAuth } from "~/server/queries/task";
 import {
   getAllPotentialOwnersWithAuth,
@@ -951,7 +951,7 @@ export function Tareas({
             }
             className="min-h-[80px] pr-10 text-sm"
           />
-          <PushToTalkButton
+          <PushToTalkWhisperButton
             onTranscript={(text) => {
               setNewTask((prev) => ({
                 ...prev,

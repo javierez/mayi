@@ -26,6 +26,7 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
 import { Search, Filter } from "lucide-react";
+import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 import {
   Popover,
   PopoverContent,
@@ -538,14 +539,28 @@ export default function ContactForm() {
               >
                 Notas adicionales
               </Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={handleEventInputChange("notes")}
-                placeholder="Información adicional sobre el contacto..."
-                rows={4}
-                className="resize-none border-gray-200 focus:border-amber-300 focus:ring-amber-200"
-              />
+              <div className="relative">
+                <Textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={handleEventInputChange("notes")}
+                  placeholder="Información adicional sobre el contacto..."
+                  rows={4}
+                  className="resize-none border-gray-200 pr-10 focus:border-amber-300 focus:ring-amber-200"
+                />
+                <PushToTalkWhisperButton
+                  onTranscript={(text) => {
+                    handleEventInputChange("notes")({
+                      target: {
+                        value: formData.notes
+                          ? `${formData.notes} ${text}`.trim()
+                          : text,
+                      },
+                    } as React.ChangeEvent<HTMLTextAreaElement>);
+                  }}
+                  language="es"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">

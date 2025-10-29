@@ -165,6 +165,7 @@ export function LeadTable({
         createdAt: lead.createdAt,
       },
       hasUpcomingVisit: lead.hasUpcomingVisit ?? false,
+      upcomingAppointmentId: undefined,
       hasMissedVisit: lead.hasMissedVisit ?? false,
       hasCompletedVisit: lead.hasCompletedVisit ?? false,
       hasCancelledVisit: lead.hasCancelledVisit ?? false,

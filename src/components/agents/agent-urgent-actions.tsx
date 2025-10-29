@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { KanbanSquare } from "lucide-react";
 
 interface UrgentAction {
   type: "task" | "appointment";
@@ -19,6 +21,7 @@ interface UrgentAction {
 
 interface AgentUrgentActionsProps {
   actions: UrgentAction[];
+  selectedAgentId: string;
 }
 
 function formatDate(date: string) {
@@ -61,7 +64,7 @@ function getUrgencyText(action: UrgentAction) {
   }
 }
 
-export function AgentUrgentActions({ actions }: AgentUrgentActionsProps) {
+export function AgentUrgentActions({ actions, selectedAgentId }: AgentUrgentActionsProps) {
   if (actions.length === 0) {
     return (
       <Card className="border-gray-200">
@@ -90,12 +93,20 @@ export function AgentUrgentActions({ actions }: AgentUrgentActionsProps) {
     <Card className="border-gray-200">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-semibold">
-            Acciones Urgentes
-          </CardTitle>
-          <Badge variant="outline" className="text-xs">
-            {actions.length}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-base font-semibold">
+              Acciones Urgentes
+            </CardTitle>
+            <Badge variant="outline" className="text-xs">
+              {actions.length}
+            </Badge>
+          </div>
+          <Link href={`/agents/tareas/${selectedAgentId}`}>
+            <Button variant="outline" size="sm">
+              <KanbanSquare className="mr-2 h-4 w-4" />
+              Organizar
+            </Button>
+          </Link>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

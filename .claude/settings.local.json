@@ -42,7 +42,9 @@
       "WebFetch(domain:nominatim.org)",
       "WebFetch(domain:wiki.openstreetmap.org)",
       "WebFetch(domain:overpass-api.de)",
-      "mcp__context7__get-library-docs"
+      "mcp__context7__get-library-docs",
+      "WebFetch(domain:developers.deepgram.com)",
+      "mcp__context7__resolve-library-id"
     ],
     "deny": [],
     "ask": []

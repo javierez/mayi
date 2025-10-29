@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { Send, X } from "lucide-react";
+import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 
 interface ReplyComposerProps {
   parentId: string;
@@ -43,15 +44,25 @@ export function ReplyComposer({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
-      <div className="rounded-lg border bg-background p-3">
+      <div className="relative rounded-lg border bg-background p-3">
         <Textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder={placeholder}
           maxLength={maxLength}
-          className="min-h-[80px] resize-none border-0 p-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="min-h-[80px] resize-none border-0 p-0 pr-10 focus-visible:ring-0 focus-visible:ring-offset-0"
           disabled={isSubmitting}
           autoFocus
+        />
+        <PushToTalkWhisperButton
+          onTranscript={(text) => {
+            setContent((prev) => {
+              const newContent = prev ? `${prev} ${text}`.trim() : text;
+              return newContent.slice(0, maxLength);
+            });
+          }}
+          language="es"
+          disabled={isSubmitting}
         />
 
         <div className="mt-3 flex items-center justify-between border-t pt-3">

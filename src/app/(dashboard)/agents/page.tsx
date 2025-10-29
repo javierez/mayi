@@ -250,7 +250,10 @@ export default function AgentsPage() {
           <AgentSummaryCards stats={agentData.stats} />
 
           {/* Urgent Actions */}
-          <AgentUrgentActions actions={agentData.urgentActions} />
+          <AgentUrgentActions
+            actions={agentData.urgentActions}
+            selectedAgentId={selectedAgentId}
+          />
 
           {/* Hierarchy View */}
           <AgentHierarchyView

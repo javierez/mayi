@@ -11,6 +11,7 @@ import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import type { ListingContactCommentWithUser } from "~/types/listing-contact-comments";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
+import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 
 // Extended Comment type with status
 interface CommentWithStatus extends ListingContactCommentWithUser {
@@ -126,11 +127,21 @@ function CommentItem({
             </div>
             {editingComment === comment.commentId ? (
               <div className="space-y-2">
-                <Textarea
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                  className="min-h-[50px] sm:min-h-[60px] w-full resize-none text-sm"
-                />
+                <div className="relative">
+                  <Textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="min-h-[50px] sm:min-h-[60px] w-full resize-none text-sm pr-10"
+                  />
+                  <PushToTalkWhisperButton
+                    onTranscript={(text) => {
+                      setEditContent((prev) =>
+                        prev ? `${prev} ${text}`.trim() : text
+                      );
+                    }}
+                    language="es"
+                  />
+                </div>
                 <div className="mt-2 flex flex-wrap justify-end gap-2">
                   <Button size="sm" variant="outline" onClick={cancelEditing}>
                     Cancelar
@@ -201,8 +212,8 @@ function CommentItem({
           </div>
 
           {replyingTo === comment.commentId && (
-            <div className="mt-2 sm:mt-3 flex w-full max-w-full gap-2 sm:gap-3">
-              <div className="flex-1 min-w-0 max-w-full">
+            <div className="mt-2 sm:mt-3 w-full max-w-full">
+              <div className="relative flex-1 min-w-0 max-w-full">
                 <Textarea
                   placeholder={`Responder a ${comment.user?.name}...`}
                   value={replyContents[comment.commentId.toString()] ?? ""}
@@ -212,32 +223,46 @@ function CommentItem({
                       [comment.commentId.toString()]: e.target.value,
                     }))
                   }
-                  className="min-h-[50px] sm:min-h-[60px] w-full resize-none border-gray-200 text-sm"
+                  className="min-h-[50px] sm:min-h-[60px] w-full resize-none border-gray-200 text-sm pr-10"
                 />
-                <div className="mt-2 flex flex-wrap justify-end gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setReplyingTo(null);
-                      setReplyContents((prev) => ({
+                <PushToTalkWhisperButton
+                  onTranscript={(text) => {
+                    setReplyContents((prev) => {
+                      const current = prev[comment.commentId.toString()] ?? "";
+                      return {
                         ...prev,
-                        [comment.commentId.toString()]: "",
-                      }));
-                    }}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => handleAddReply(comment.commentId)}
-                    disabled={
-                      !(replyContents[comment.commentId.toString()] ?? "").trim()
-                    }
-                  >
-                    Responder
-                  </Button>
-                </div>
+                        [comment.commentId.toString()]: current
+                          ? `${current} ${text}`.trim()
+                          : text,
+                      };
+                    });
+                  }}
+                  language="es"
+                />
+              </div>
+              <div className="mt-2 flex flex-wrap justify-end gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setReplyingTo(null);
+                    setReplyContents((prev) => ({
+                      ...prev,
+                      [comment.commentId.toString()]: "",
+                    }));
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => handleAddReply(comment.commentId)}
+                  disabled={
+                    !(replyContents[comment.commentId.toString()] ?? "").trim()
+                  }
+                >
+                  Responder
+                </Button>
               </div>
             </div>
           )}
@@ -618,12 +643,19 @@ export function ListingContactComments({
               <AvatarImage src={currentUser?.image ?? undefined} />
               <AvatarFallback className="text-xs sm:text-sm">{getCurrentUserInitials()}</AvatarFallback>
             </Avatar>
-            <div className="flex-1 min-w-0 space-y-2">
+            <div className="relative flex-1 min-w-0 space-y-2">
               <Textarea
                 placeholder="Escribe una nota..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                className="min-h-[60px] sm:min-h-[80px] w-full resize-none border-gray-200 text-sm"
+                className="min-h-[60px] sm:min-h-[80px] w-full resize-none border-gray-200 text-sm pr-10"
+              />
+              <PushToTalkWhisperButton
+                onTranscript={(text) => {
+                  setNewComment((prev) => (prev ? `${prev} ${text}`.trim() : text));
+                }}
+                language="es"
+                disabled={isPending}
               />
               <div className="flex flex-wrap justify-end gap-2">
                 <Button

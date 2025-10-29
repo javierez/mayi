@@ -1299,6 +1299,7 @@ export function ActivityTabContent({
                           | "viewer",
                       }}
                       hasUpcomingVisit={contact.hasUpcomingVisit}
+                      upcomingAppointmentId={contact.upcomingAppointmentId}
                       hasMissedVisit={contact.hasMissedVisit}
                       hasCompletedVisit={contact.hasCompletedVisit}
                       hasCancelledVisit={contact.hasCancelledVisit}

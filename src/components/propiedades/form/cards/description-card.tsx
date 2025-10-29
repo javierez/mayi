@@ -26,6 +26,7 @@ import {
   type DescriptionFeedback,
 } from "./description-feedback-modal";
 import { toast } from "sonner";
+import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 
 interface DescriptionCardProps {
   description: string;
@@ -158,7 +159,7 @@ export function DescriptionCard({
                 <Textarea
                   id="shortDescription"
                   defaultValue={shortDescription}
-                  className="min-h-[80px] resize-y border-gray-200 pr-32 transition-colors focus:border-gray-400 focus:ring-gray-300"
+                  className="min-h-[80px] resize-y border-gray-200 pr-40 transition-colors focus:border-gray-400 focus:ring-gray-300"
                   placeholder="Breve resumen de la propiedad para carteles y vistas previas (máximo 200 caracteres)"
                   maxLength={200}
                   onChange={(e) => {
@@ -167,21 +168,35 @@ export function DescriptionCard({
                   }}
                   disabled={!canEdit}
                 />
-                <button
-                  type="button"
-                  onClick={onGenerateShortDescription}
-                  disabled={!canEdit || isGeneratingShort}
-                  className="absolute bottom-2 right-2 flex h-8 items-center rounded bg-gray-200 px-2 text-xs font-medium text-gray-600 shadow-sm transition-all duration-300 hover:bg-gradient-to-r hover:from-amber-400 hover:to-rose-400 hover:text-white hover:shadow-md disabled:opacity-50"
-                >
-                  {isGeneratingShort ? (
-                    <>
-                      <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                      Generando...
-                    </>
-                  ) : (
-                    "Generar descripción corta"
-                  )}
-                </button>
+                <div className="absolute right-2 top-2 flex items-center gap-1">
+                  <PushToTalkWhisperButton
+                    onTranscript={(text) => {
+                      setShortDescription((prev) => {
+                        const newValue = prev ? `${prev} ${text}`.trim() : text;
+                        const truncated = newValue.slice(0, 200);
+                        onUpdateModule(true);
+                        return truncated;
+                      });
+                    }}
+                    language="es"
+                    disabled={!canEdit}
+                  />
+                  <button
+                    type="button"
+                    onClick={onGenerateShortDescription}
+                    disabled={!canEdit || isGeneratingShort}
+                    className="flex h-7 items-center rounded bg-gray-200 px-2 text-xs font-medium text-gray-600 shadow-sm transition-all duration-300 hover:bg-gradient-to-r hover:from-amber-400 hover:to-rose-400 hover:text-white hover:shadow-md disabled:opacity-50"
+                  >
+                    {isGeneratingShort ? (
+                      <>
+                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        Generar
+                      </>
+                    ) : (
+                      "Generar"
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -198,7 +213,7 @@ export function DescriptionCard({
                 <Textarea
                   id="description"
                   defaultValue={description}
-                  className="min-h-[200px] resize-y border-gray-200 pr-32 transition-colors focus:border-gray-400 focus:ring-gray-300"
+                  className="min-h-[200px] resize-y border-gray-200 pr-40 transition-colors focus:border-gray-400 focus:ring-gray-300"
                   placeholder="Describe las características principales de la propiedad, su ubicación, y cualquier detalle relevante que pueda interesar a los potenciales compradores o inquilinos."
                   onChange={(e) => {
                     setDescription(e.target.value);
@@ -206,21 +221,34 @@ export function DescriptionCard({
                   }}
                   disabled={!canEdit}
                 />
-                <button
-                  type="button"
-                  onClick={onGenerateDescription}
-                  disabled={!canEdit || isGenerating}
-                  className="absolute bottom-2 right-2 flex h-8 items-center rounded bg-gray-200 px-2 text-xs font-medium text-gray-600 shadow-sm transition-all duration-300 hover:bg-gradient-to-r hover:from-amber-400 hover:to-rose-400 hover:text-white hover:shadow-md disabled:opacity-50"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                      Generando...
-                    </>
-                  ) : (
-                    "Generar descripción completa"
-                  )}
-                </button>
+                <div className="absolute right-2 top-2 flex items-center gap-1">
+                  <PushToTalkWhisperButton
+                    onTranscript={(text) => {
+                      setDescription((prev) => {
+                        const newValue = prev ? `${prev} ${text}`.trim() : text;
+                        onUpdateModule(true);
+                        return newValue;
+                      });
+                    }}
+                    language="es"
+                    disabled={!canEdit}
+                  />
+                  <button
+                    type="button"
+                    onClick={onGenerateDescription}
+                    disabled={!canEdit || isGenerating}
+                    className="flex h-7 items-center rounded bg-gray-200 px-2 text-xs font-medium text-gray-600 shadow-sm transition-all duration-300 hover:bg-gradient-to-r hover:from-amber-400 hover:to-rose-400 hover:text-white hover:shadow-md disabled:opacity-50"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        Generar
+                      </>
+                    ) : (
+                      "Generar"
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

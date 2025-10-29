@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import type { CommentWithUser } from "~/types/comments";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { CommentsSkeleton } from "~/components/ui/skeletons";
+import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 
 // Extended Comment type with status
 interface CommentWithStatus extends CommentWithUser {
@@ -216,11 +217,21 @@ function CommentItem({
             </div>
             {editingComment === comment.commentId ? (
               <div className="mt-2">
-                <Textarea
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                  className="min-h-[60px] resize-none"
-                />
+                <div className="relative">
+                  <Textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="min-h-[60px] resize-none pr-10"
+                  />
+                  <PushToTalkWhisperButton
+                    onTranscript={(text) => {
+                      setEditContent((prev) =>
+                        prev ? `${prev} ${text}`.trim() : text
+                      );
+                    }}
+                    language="es"
+                  />
+                </div>
                 <div className="mt-2 flex justify-end space-x-2">
                   <Button size="sm" variant="outline" onClick={cancelEditing}>
                     Cancelar
@@ -245,7 +256,7 @@ function CommentItem({
 
           {replyingTo === comment.commentId && (
             <div className="mt-3 flex space-x-3">
-              <div className="flex-1">
+              <div className="relative flex-1">
                 <Textarea
                   placeholder={`Responder a ${Number(comment.userId) === 0 ? "Sistema" : (comment.user?.name ?? "Usuario")}...`}
                   value={replyContents[comment.commentId.toString()] ?? ""}
@@ -255,7 +266,21 @@ function CommentItem({
                       [comment.commentId.toString()]: e.target.value,
                     }))
                   }
-                  className="min-h-[60px] resize-none border-gray-200"
+                  className="min-h-[60px] resize-none border-gray-200 pr-10"
+                />
+                <PushToTalkWhisperButton
+                  onTranscript={(text) => {
+                    setReplyContents((prev) => {
+                      const current = prev[comment.commentId.toString()] ?? "";
+                      return {
+                        ...prev,
+                        [comment.commentId.toString()]: current
+                          ? `${current} ${text}`.trim()
+                          : text,
+                      };
+                    });
+                  }}
+                  language="es"
                 />
                 <div className="mt-2 flex justify-end space-x-2">
                   <Button
@@ -674,12 +699,19 @@ export function Comments({
               <AvatarImage src={currentUser?.image ?? undefined} />
               <AvatarFallback>{getCurrentUserInitials()}</AvatarFallback>
             </Avatar>
-            <div className="flex-1">
+            <div className="relative flex-1">
               <Textarea
                 placeholder="Escribe una nota..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                className="min-h-[80px] resize-none border-gray-200"
+                className="min-h-[80px] resize-none border-gray-200 pr-10"
+              />
+              <PushToTalkWhisperButton
+                onTranscript={(text) => {
+                  setNewComment((prev) => (prev ? `${prev} ${text}`.trim() : text));
+                }}
+                language="es"
+                disabled={isPending}
               />
               <div className="mt-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">

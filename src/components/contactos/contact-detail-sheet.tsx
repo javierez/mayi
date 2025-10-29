@@ -164,6 +164,20 @@ export function ContactDetailSheet({
   // Fetch comments when sheet opens
   useEffect(() => {
     if (isOpen && contact) {
+      console.log("📄 [ContactDetailSheet] Sheet opened with contact data:", {
+        contactName: `${contact.contact.firstName} ${contact.contact.lastName ?? ""}`,
+        listingContactId: contact.listingContactId.toString(),
+        contactId: contact.contact.contactId.toString(),
+        hasUpcomingVisit: contact.hasUpcomingVisit,
+        upcomingAppointmentId: contact.upcomingAppointmentId?.toString(),
+        hasMissedVisit: contact.hasMissedVisit,
+        hasCompletedVisit: contact.hasCompletedVisit,
+        hasCancelledVisit: contact.hasCancelledVisit,
+        hasOffer: contact.hasOffer,
+        offer: contact.offer,
+        offerAccepted: contact.offerAccepted,
+        isActive: contact.isActive,
+      });
       setIsLoadingComments(true);
       getListingContactCommentsByIdWithAuth(contact.listingContactId)
         .then((data) => setComments(data))
@@ -468,6 +482,13 @@ export function ContactDetailSheet({
     };
   }
 
+  console.log("🏷️ [ContactDetailSheet] Badge type determined:", {
+    badgeType,
+    badgeTitle: badgeConfig.title,
+    contactHasUpcomingVisit: contact.hasUpcomingVisit,
+    upcomingAppointmentId: contact.upcomingAppointmentId?.toString(),
+  });
+
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="flex flex-col w-full max-w-full sm:max-w-md md:max-w-2xl p-0">
@@ -524,15 +545,43 @@ export function ContactDetailSheet({
             )}
 
             {/* Offer Input for Visita Pendiente (upcoming visit) */}
-            {badgeType === "upcoming" &&
-              !contact.hasOffer &&
-              permissions.canEditContacts && (
-                <OfferInputCard
-                  label="Registrar Oferta"
-                  onSubmit={handleAddOffer}
-                  isSubmitting={isSubmittingOffer}
-                />
-              )}
+            {badgeType === "upcoming" && (
+              <div className="space-y-3">
+                {(() => {
+                  console.log("🔍 [Registrar Visita Button] Checking conditions:", {
+                    badgeType,
+                    hasUpcomingAppointmentId: !!contact.upcomingAppointmentId,
+                    upcomingAppointmentId: contact.upcomingAppointmentId?.toString(),
+                  });
+                  return null;
+                })()}
+                {contact.upcomingAppointmentId && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
+                    onClick={() => {
+                      console.log("🔘 [Registrar Visita] Button clicked, navigating to:", `/calendario/visita/${contact.upcomingAppointmentId}`);
+                      navigateToPage(
+                        `/calendario/visita/${contact.upcomingAppointmentId}`,
+                        router,
+                      );
+                      onClose();
+                    }}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                    <span className="truncate">Registrar Visita</span>
+                  </Button>
+                )}
+                {!contact.hasOffer && permissions.canEditContacts && (
+                  <OfferInputCard
+                    label="Registrar Oferta"
+                    onSubmit={handleAddOffer}
+                    isSubmitting={isSubmittingOffer}
+                  />
+                )}
+              </div>
+            )}
 
             {badgeType === "offer" && contact.offer && (
               <OfferComparisonCard

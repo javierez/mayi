@@ -18,6 +18,7 @@ import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import type { UserCommentWithUser } from "~/types/user-comments";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
+import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 
 // Extended UserComment type with status
 interface CommentWithStatus extends UserCommentWithUser {
@@ -192,11 +193,21 @@ function UserCommentItem({
             </div>
             {editingComment === comment.commentId ? (
               <div className="mt-2">
-                <Textarea
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                  className="min-h-[60px] resize-none"
-                />
+                <div className="relative">
+                  <Textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="min-h-[60px] resize-none pr-10"
+                  />
+                  <PushToTalkWhisperButton
+                    onTranscript={(text) => {
+                      setEditContent((prev) =>
+                        prev ? `${prev} ${text}`.trim() : text
+                      );
+                    }}
+                    language="es"
+                  />
+                </div>
                 <div className="mt-2 flex justify-end space-x-2">
                   <Button size="sm" variant="outline" onClick={cancelEditing}>
                     Cancelar
@@ -221,7 +232,7 @@ function UserCommentItem({
 
           {replyingTo === comment.commentId && (
             <div className="mt-3 flex space-x-3 max-w-full">
-              <div className="flex-1 min-w-0 max-w-full">
+              <div className="relative flex-1 min-w-0 max-w-full">
                 <Textarea
                   placeholder={`Responder a ${comment.user.name}...`}
                   value={replyContents[comment.commentId.toString()] ?? ""}
@@ -231,9 +242,24 @@ function UserCommentItem({
                       [comment.commentId.toString()]: e.target.value,
                     }))
                   }
-                  className="min-h-[60px] resize-none border-gray-200"
+                  className="min-h-[60px] resize-none border-gray-200 pr-10"
                 />
-                <div className="mt-2 flex justify-end space-x-2">
+                <PushToTalkWhisperButton
+                  onTranscript={(text) => {
+                    setReplyContents((prev) => {
+                      const current = prev[comment.commentId.toString()] ?? "";
+                      return {
+                        ...prev,
+                        [comment.commentId.toString()]: current
+                          ? `${current} ${text}`.trim()
+                          : text,
+                      };
+                    });
+                  }}
+                  language="es"
+                />
+              </div>
+              <div className="mt-2 flex justify-end space-x-2">
                   <Button
                     size="sm"
                     variant="outline"
@@ -620,12 +646,19 @@ export function ContactComments({
               <AvatarImage src={currentUser?.image ?? undefined} />
               <AvatarFallback>{getCurrentUserInitials()}</AvatarFallback>
             </Avatar>
-            <div className="flex-1">
+            <div className="relative flex-1">
               <Textarea
                 placeholder="Escribe una nota..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                className="min-h-[80px] resize-none border-gray-200"
+                className="min-h-[80px] resize-none border-gray-200 pr-10"
+              />
+              <PushToTalkWhisperButton
+                onTranscript={(text) => {
+                  setNewComment((prev) => (prev ? `${prev} ${text}`.trim() : text));
+                }}
+                language="es"
+                disabled={isPending}
               />
               <div className="mt-3 flex justify-end">
                 <Button

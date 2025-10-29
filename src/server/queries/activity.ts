@@ -212,6 +212,63 @@ export async function getListingContactsSummary(listingId: bigint) {
       visitCounts.map((v) => [v.contactId.toString(), v]),
     );
 
+    // Get the earliest upcoming appointment for each contact
+    let upcomingAppointments: Array<{
+      contactId: bigint;
+      appointmentId: bigint;
+    }> = [];
+
+    if (contactIds.length > 0) {
+      const upcomingAppointmentResults = await db
+        .select({
+          contactId: appointments.contactId,
+          appointmentId: appointments.appointmentId,
+          datetimeStart: appointments.datetimeStart,
+        })
+        .from(appointments)
+        .where(
+          and(
+            inArray(appointments.contactId, contactIds),
+            eq(appointments.listingId, listingId),
+            sql`${appointments.datetimeStart} > NOW()`,
+            eq(appointments.status, "Scheduled"),
+            eq(appointments.isActive, true),
+          ),
+        )
+        .orderBy(appointments.datetimeStart);
+
+      // Group by contactId and take the first (earliest) appointment
+      const appointmentsByContact = new Map<string, bigint>();
+      for (const apt of upcomingAppointmentResults) {
+        if (apt.contactId) {
+          const contactIdStr = apt.contactId.toString();
+          if (!appointmentsByContact.has(contactIdStr)) {
+            appointmentsByContact.set(contactIdStr, apt.appointmentId);
+          }
+        }
+      }
+
+      upcomingAppointments = Array.from(appointmentsByContact.entries()).map(
+        ([contactIdStr, appointmentId]) => ({
+          contactId: BigInt(contactIdStr),
+          appointmentId,
+        }),
+      );
+    }
+
+    const upcomingAppointmentMap = new Map(
+      upcomingAppointments.map((a) => [a.contactId.toString(), a.appointmentId]),
+    );
+
+    console.log(
+      `🔍 [getListingContactsSummary] Found ${upcomingAppointments.length} upcoming appointments for listingId: ${listingId}`,
+    );
+    upcomingAppointments.forEach((apt) => {
+      console.log(
+        `  - ContactId: ${apt.contactId.toString()}, AppointmentId: ${apt.appointmentId.toString()}`,
+      );
+    });
+
     const contactsWithVisitStatus = allContacts.map((contact) => {
       const visitStats = visitMap.get(contact.contactId.toString());
       const hasUpcomingVisit = (visitStats?.upcomingVisits ?? 0) > 0;
@@ -219,6 +276,15 @@ export async function getListingContactsSummary(listingId: bigint) {
       const hasCompletedVisit = (visitStats?.completedVisits ?? 0) > 0;
       const hasCancelledVisit = (visitStats?.cancelledVisits ?? 0) > 0;
       const hasOffer = contact.offer !== null && contact.offer !== undefined;
+      const upcomingAppointmentId = upcomingAppointmentMap.get(
+        contact.contactId.toString(),
+      );
+
+      if (hasUpcomingVisit) {
+        console.log(
+          `📅 [Contact: ${contact.firstName} ${contact.lastName ?? ""}] hasUpcomingVisit: true, upcomingAppointmentId: ${upcomingAppointmentId?.toString() ?? "undefined"}`,
+        );
+      }
 
       // Priority for sorting: 1=upcoming, 2=offer made, 3=cancelled, 4=missed, 5=completed, 6=crear visita
       let sortPriority = 6;
@@ -238,6 +304,7 @@ export async function getListingContactsSummary(listingId: bigint) {
         ...contact,
         visitCount: visitStats?.totalVisits ?? 0,
         hasUpcomingVisit,
+        upcomingAppointmentId,
         hasMissedVisit,
         hasCompletedVisit,
         hasCancelledVisit,

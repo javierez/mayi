@@ -19,11 +19,12 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Label } from "~/components/ui/label";
-import { Mic, AlertCircle, Loader2, User, Building } from "lucide-react";
+import { AlertCircle, Loader2, User, Building } from "lucide-react";
 import { createTaskWithAuth } from "~/server/queries/task";
 import { searchContactsWithAuth } from "~/server/queries/contact";
 import { getContactListingsForTasksWithAuth } from "~/server/queries/user-comments";
 import { useSession } from "~/lib/auth-client";
+import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 
 interface Contact {
   contactId: bigint;
@@ -382,13 +383,18 @@ export function GlobalTaskModal({
                   }
                   className="min-h-[80px] pr-10"
                 />
-                <button
-                  type="button"
-                  className="absolute right-2 top-2 p-1 text-gray-400 transition-colors hover:text-gray-600"
-                  title="Próximamente: Grabación de voz"
-                >
-                  <Mic className="h-4 w-4" />
-                </button>
+                <PushToTalkWhisperButton
+                  onTranscript={(text) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      description: prev.description
+                        ? `${prev.description} ${text}`.trim()
+                        : text,
+                    }));
+                  }}
+                  language="es"
+                  disabled={loading.saving}
+                />
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

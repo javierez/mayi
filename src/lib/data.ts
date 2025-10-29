@@ -1170,6 +1170,7 @@ export type Task = {
   editedBy?: string | null; // FK → users.id (who last edited the task)
   category?: string | null; // Task category/type
   urgency?: number | null; // Urgency rating (1-5: 1=Low, 5=Critical)
+  status?: string | null; // Task status: 'backlog' | 'blocked' | 'ready' | 'in_progress' | 'validation' | 'finished'
   listingId?: bigint;
   listingContactId?: bigint;
   dealId?: bigint;

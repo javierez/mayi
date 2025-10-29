@@ -18,6 +18,7 @@ import {
   Heart,
   CheckCircle,
 } from "lucide-react";
+import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -114,14 +115,26 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                 >
                   Cuéntanos tu experiencia...
                 </label>
-                <Textarea
-                  id="feedback-comment"
-                  placeholder="Comparte tus comentarios, sugerencias o problemas que hayas encontrado..."
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  className="min-h-[100px] resize-none focus:border-gray-400 focus:ring-gray-400"
-                  maxLength={500}
-                />
+                <div className="relative">
+                  <Textarea
+                    id="feedback-comment"
+                    placeholder="Comparte tus comentarios, sugerencias o problemas que hayas encontrado..."
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    className="min-h-[100px] resize-none pr-10 focus:border-gray-400 focus:ring-gray-400"
+                    maxLength={500}
+                  />
+                  <PushToTalkWhisperButton
+                    onTranscript={(text) => {
+                      setComment((prev) => {
+                        const newValue = prev ? `${prev} ${text}`.trim() : text;
+                        return newValue.slice(0, 500);
+                      });
+                    }}
+                    language="es"
+                    disabled={isSubmitting}
+                  />
+                </div>
                 <div className="text-right text-xs text-gray-500">
                   {comment.length}/500 caracteres
                 </div>

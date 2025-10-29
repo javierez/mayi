@@ -36,8 +36,6 @@ export const env = createEnv({
     LINKEDIN_CLIENT_SECRET: z.string().optional(),
     // Email Service Configuration
     RESEND_API_KEY: z.string().optional(),
-    // Deepgram API
-    DEEPGRAM_API_KEY: z.string(),
   },
 
   /**
@@ -47,7 +45,6 @@ export const env = createEnv({
    */
   client: {
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: z.string(),
-    NEXT_PUBLIC_DEEPGRAM_API_KEY: z.string(),
   },
 
   /**
@@ -82,13 +79,9 @@ export const env = createEnv({
     LINKEDIN_CLIENT_SECRET: process.env.LINKEDIN_CLIENT_SECRET,
     // Email Service Configuration
     RESEND_API_KEY: process.env.RESEND_API_KEY,
-    // Deepgram API
-    DEEPGRAM_API_KEY: process.env.DEEPGRAM_API_KEY,
     // Client variables
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:
       process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
-    NEXT_PUBLIC_DEEPGRAM_API_KEY:
-      process.env.NEXT_PUBLIC_DEEPGRAM_API_KEY,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

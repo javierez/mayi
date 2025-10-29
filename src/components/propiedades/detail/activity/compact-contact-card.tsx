@@ -14,6 +14,7 @@ export function CompactContactCard({
   contact,
   listingContact: _listingContact,
   hasUpcomingVisit,
+  upcomingAppointmentId,
   hasMissedVisit,
   hasCompletedVisit,
   hasCancelledVisit,
@@ -63,17 +64,26 @@ export function CompactContactCard({
 
   const handleCardClick = () => {
     if (onContactClick) {
-      onContactClick({
+      const contactSheetData = {
         listingContactId,
         contact,
         hasUpcomingVisit,
+        upcomingAppointmentId,
         hasMissedVisit,
         hasCompletedVisit,
         hasCancelledVisit,
         hasOffer,
         offer,
         offerAccepted,
+      };
+      console.log("📋 [CompactContactCard] Opening contact sheet with data:", {
+        contactName: `${contact.firstName} ${contact.lastName ?? ""}`,
+        hasUpcomingVisit,
+        upcomingAppointmentId: upcomingAppointmentId?.toString(),
+        listingContactId: listingContactId.toString(),
+        contactId: contact.contactId.toString(),
       });
+      onContactClick(contactSheetData);
     }
   };
 

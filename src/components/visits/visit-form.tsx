@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { createVisitAction } from "~/server/actions/visits";
 import { Save, Loader } from "lucide-react";
 import type { AppointmentWithDetails, VisitFormData } from "~/types/visits";
+import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 
 interface VisitFormProps {
   appointment: AppointmentWithDetails;
@@ -162,15 +163,29 @@ export function VisitForm({ appointment }: VisitFormProps) {
               <label className="text-sm font-medium text-gray-900">
                 Notas de la Visita
               </label>
-              <Textarea
-                value={formData.notes ?? ""}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, notes: e.target.value }))
-                }
-                placeholder="Observaciones, comentarios del cliente, detalles relevantes..."
-                className="mt-1"
-                rows={4}
-              />
+              <div className="relative mt-1">
+                <Textarea
+                  value={formData.notes ?? ""}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, notes: e.target.value }))
+                  }
+                  placeholder="Observaciones, comentarios del cliente, detalles relevantes..."
+                  className="pr-10"
+                  rows={4}
+                />
+                <PushToTalkWhisperButton
+                  onTranscript={(text) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      notes: prev.notes
+                        ? `${prev.notes} ${text}`.trim()
+                        : text,
+                    }));
+                  }}
+                  language="es"
+                  disabled={isLoading}
+                />
+              </div>
             </div>
           </div>
 

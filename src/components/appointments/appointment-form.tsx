@@ -28,6 +28,7 @@ import {
   validateAppointmentForm,
 } from "~/server/actions/appointments";
 import { searchContactsWithAuth } from "~/server/queries/contact";
+import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 import { listListingsCompactWithAuth } from "~/server/queries/listing";
 import { getAgentsForSelectionWithAuth } from "~/server/queries/users";
 import { ScrollArea } from "~/components/ui/scroll-area";
@@ -1175,12 +1176,22 @@ export default function AppointmentForm({
               <label className="absolute -top-5 left-0 z-10 px-2 text-xs font-medium text-gray-600">
                 Notas
               </label>
-              <Textarea
-                value={formData.notes ?? ""}
-                onChange={(e) => handleInputChange("notes")(e.target.value)}
-                placeholder="Notas adicionales sobre la cita..."
-                className="min-h-[60px] border-gray-200 shadow-md"
-              />
+              <div className="relative">
+                <Textarea
+                  value={formData.notes ?? ""}
+                  onChange={(e) => handleInputChange("notes")(e.target.value)}
+                  placeholder="Notas adicionales sobre la cita..."
+                  className="min-h-[60px] border-gray-200 shadow-md pr-10"
+                />
+                <PushToTalkWhisperButton
+                  onTranscript={(text) => {
+                    handleInputChange("notes")(
+                      formData.notes ? `${formData.notes} ${text}`.trim() : text
+                    );
+                  }}
+                  language="es"
+                />
+              </div>
             </div>
           </div>
         );

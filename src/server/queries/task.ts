@@ -27,9 +27,17 @@ export async function getTaskByIdWithAuth(taskId: number) {
   return getTaskById(taskId, accountId);
 }
 
-export async function getUserTasksWithAuth(userId: string) {
+export async function getUserTasksWithAuth(
+  userId: string,
+  filters?: {
+    createdBy?: string[];
+    category?: string[];
+    urgency?: number[];
+    completed?: boolean;
+  },
+) {
   const accountId = await getCurrentUserAccountId();
-  return getUserTasks(userId, accountId);
+  return getUserTasks(userId, accountId, filters);
 }
 
 export async function getListingTasksWithAuth(listingId: number) {
@@ -314,8 +322,58 @@ export async function getTaskById(taskId: number, accountId: number) {
 }
 
 // Get tasks by user ID
-export async function getUserTasks(userId: string, accountId: number) {
+export async function getUserTasks(
+  userId: string,
+  accountId: number,
+  filters?: {
+    createdBy?: string[];
+    category?: string[];
+    urgency?: number[];
+    completed?: boolean;
+  },
+) {
   try {
+    // Build the where conditions array
+    const whereConditions = [
+      eq(tasks.userId, userId),
+      eq(tasks.isActive, true),
+      or(
+        // Task belongs to account through prospect->contact
+        eq(contacts.accountId, BigInt(accountId)),
+        // Task belongs to account through listing->property
+        eq(properties.accountId, BigInt(accountId)),
+      ),
+    ];
+
+    // Apply filters if provided
+    if (filters) {
+      // Filter by completed status
+      if (filters.completed !== undefined) {
+        whereConditions.push(eq(tasks.completed, filters.completed));
+      }
+
+      // Filter by createdBy
+      if (filters.createdBy && filters.createdBy.length > 0) {
+        whereConditions.push(
+          sql`${tasks.createdBy} IN (${sql.join(filters.createdBy.map((id) => sql`${id}`), sql`, `)})`,
+        );
+      }
+
+      // Filter by category
+      if (filters.category && filters.category.length > 0) {
+        whereConditions.push(
+          sql`${tasks.category} IN (${sql.join(filters.category.map((cat) => sql`${cat}`), sql`, `)})`,
+        );
+      }
+
+      // Filter by urgency
+      if (filters.urgency && filters.urgency.length > 0) {
+        whereConditions.push(
+          sql`${tasks.urgency} IN (${sql.join(filters.urgency.map((urg) => sql`${urg}`), sql`, `)})`,
+        );
+      }
+    }
+
     const userTasks = await db
       .select()
       .from(tasks)
@@ -333,18 +391,7 @@ export async function getUserTasks(userId: string, accountId: number) {
       )
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .where(
-        and(
-          eq(tasks.userId, userId),
-          eq(tasks.isActive, true),
-          or(
-            // Task belongs to account through prospect->contact
-            eq(contacts.accountId, BigInt(accountId)),
-            // Task belongs to account through listing->property
-            eq(properties.accountId, BigInt(accountId)),
-          ),
-        ),
-      );
+      .where(and(...whereConditions));
     return userTasks;
   } catch (error) {
     console.error("Error fetching user tasks:", error);
