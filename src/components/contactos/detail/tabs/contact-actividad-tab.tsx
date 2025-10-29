@@ -638,13 +638,12 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
                                   {activeVisits.length > 0 && (
                                     <div className="space-y-3">
                                       <div className="flex items-center gap-2 px-1">
-                                        <div className="h-2 w-2 rounded-full bg-emerald-500" />
                                         <h3 className="text-sm font-semibold uppercase tracking-wide text-emerald-700">
                                           Próximas Visitas (
                                           {activeVisits.length})
                                         </h3>
                                       </div>
-                                      <div className="space-y-3 pl-4">
+                                      <div className="space-y-3">
                                         {activeVisits.map((visit) => {
                                           const appointmentData: AppointmentData =
                                             {
@@ -1081,13 +1080,12 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
                                   {activeVisits.length > 0 && (
                                     <div className="space-y-3">
                                       <div className="flex items-center gap-2 px-1">
-                                        <div className="h-2 w-2 rounded-full bg-emerald-500" />
                                         <h3 className="text-sm font-semibold uppercase tracking-wide text-emerald-700">
                                           Próximas Visitas (
                                           {activeVisits.length})
                                         </h3>
                                       </div>
-                                      <div className="space-y-3 pl-4">
+                                      <div className="space-y-3">
                                         {activeVisits.map((visit) => {
                                           const appointmentData: AppointmentData =
                                             {

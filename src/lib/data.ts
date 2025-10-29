@@ -1169,6 +1169,7 @@ export type Task = {
   completedBy?: string | null; // FK → users.id (who completed the task)
   editedBy?: string | null; // FK → users.id (who last edited the task)
   category?: string | null; // Task category/type
+  urgency?: number | null; // Urgency rating (1-5: 1=Low, 5=Critical)
   listingId?: bigint;
   listingContactId?: bigint;
   dealId?: bigint;

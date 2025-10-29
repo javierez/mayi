@@ -136,21 +136,188 @@ export function DealTable({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border">
+      {/* Mobile: Card view (< md), Desktop: Table view (>= md) */}
+
+      {/* Mobile Card View */}
+      <div className="block md:hidden space-y-3">
+        {deals.length === 0 ? (
+          <div className="rounded-md border p-8 text-center text-muted-foreground">
+            No se encontraron acuerdos
+          </div>
+        ) : (
+          deals.map((deal) => (
+            <div
+              key={deal.dealId.toString()}
+              className="rounded-md border p-4 space-y-3"
+            >
+              {/* Status Badge */}
+              <div className="flex items-center justify-between">
+                {getStatusBadge(deal.status)}
+                <span className="text-xs text-muted-foreground">
+                  {formatDate(deal.createdAt)}
+                </span>
+              </div>
+
+              {/* Property Info */}
+              {deal.listing && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <Building2 className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                    {deal.listing.referenceNumber && (
+                      <span className="text-xs font-medium text-muted-foreground">
+                        #{deal.listing.referenceNumber}
+                      </span>
+                    )}
+                  </div>
+                  {deal.listing.title && (
+                    <p className="text-sm font-medium break-words">
+                      {deal.listing.title}
+                    </p>
+                  )}
+                  {deal.listing.street && (
+                    <div className="flex items-start gap-1 text-xs text-muted-foreground">
+                      <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                      <span className="break-words min-w-0">
+                        {deal.listing.street}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    {deal.listing.propertyType && (
+                      <span>
+                        {getPropertyTypeLabel(deal.listing.propertyType)}
+                      </span>
+                    )}
+                    {deal.listing.bedrooms && (
+                      <span>{deal.listing.bedrooms} hab.</span>
+                    )}
+                    {deal.listing.squareMeter && (
+                      <span>{deal.listing.squareMeter} m²</span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Price & Commission */}
+              <div className="flex items-center justify-between pt-2 border-t">
+                <div>
+                  <p className="text-xs text-muted-foreground">Precio Final</p>
+                  <p className="text-sm font-semibold">
+                    {formatCurrency(
+                      deal.finalPrice ??
+                        (deal.listing?.price
+                          ? parseFloat(deal.listing.price)
+                          : null),
+                    )}
+                  </p>
+                </div>
+                {deal.commissionAmount && (
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Comisión</p>
+                    <p className="text-sm font-medium">
+                      {formatCurrency(deal.commissionAmount)}
+                    </p>
+                    {deal.commissionPercentage && (
+                      <p className="text-xs text-muted-foreground">
+                        {formatPercentage(deal.commissionPercentage)}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Buyer & Owner */}
+              <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Comprador
+                  </p>
+                  {deal.buyer ? (
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium break-words">
+                        {deal.buyer.firstName} {deal.buyer.lastName}
+                      </p>
+                      {deal.buyer.phone && (
+                        <p className="text-xs text-muted-foreground break-words">
+                          {deal.buyer.phone}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">—</span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Propietario
+                  </p>
+                  {deal.owner ? (
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium break-words">
+                        {deal.owner.firstName} {deal.owner.lastName}
+                      </p>
+                      {deal.owner.phone && (
+                        <p className="text-xs text-muted-foreground break-words">
+                          {deal.owner.phone}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">—</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer: Close Date & Participants */}
+              <div className="flex items-center justify-between pt-2 border-t text-xs">
+                <div>
+                  <span className="text-muted-foreground">Fecha Cierre: </span>
+                  <span>{formatDate(deal.closeDate)}</span>
+                </div>
+                {deal.participants && deal.participants.length > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <Users className="h-3 w-3 text-muted-foreground" />
+                    <span>{deal.participants.length}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Table View - with horizontal scroll for very wide content */}
+      <div className="hidden md:block rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[200px]">Propiedad</TableHead>
-              <TableHead className="w-[120px]">Estado</TableHead>
-              <TableHead className="w-[180px]">Comprador</TableHead>
-              <TableHead className="w-[180px]">Propietario</TableHead>
-              <TableHead className="w-[120px] text-right">
+              <TableHead className="min-w-[180px] lg:min-w-[200px]">
+                Propiedad
+              </TableHead>
+              <TableHead className="min-w-[100px] lg:min-w-[120px]">
+                Estado
+              </TableHead>
+              <TableHead className="min-w-[160px] lg:min-w-[180px]">
+                Comprador
+              </TableHead>
+              <TableHead className="min-w-[160px] lg:min-w-[180px]">
+                Propietario
+              </TableHead>
+              <TableHead className="min-w-[110px] lg:min-w-[120px] text-right">
                 Precio Final
               </TableHead>
-              <TableHead className="w-[140px] text-right">Comisión</TableHead>
-              <TableHead className="w-[120px]">Fecha Cierre</TableHead>
-              <TableHead className="w-[100px]">Participantes</TableHead>
-              <TableHead className="w-[100px]">Creado</TableHead>
+              <TableHead className="min-w-[120px] lg:min-w-[140px] text-right">
+                Comisión
+              </TableHead>
+              <TableHead className="min-w-[110px] lg:min-w-[120px]">
+                Fecha Cierre
+              </TableHead>
+              <TableHead className="min-w-[90px] lg:min-w-[100px]">
+                Participantes
+              </TableHead>
+              <TableHead className="min-w-[90px] lg:min-w-[100px]">
+                Creado
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -168,9 +335,9 @@ export function DealTable({
                 <TableRow key={deal.dealId.toString()} className="group">
                   {/* Propiedad */}
                   <TableCell>
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <Building2 className="h-3 w-3 text-muted-foreground" />
+                        <Building2 className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                         {deal.listing?.referenceNumber && (
                           <span className="text-xs font-medium text-muted-foreground">
                             #{deal.listing.referenceNumber}
@@ -178,20 +345,20 @@ export function DealTable({
                         )}
                       </div>
                       {deal.listing?.title && (
-                        <p className="text-sm font-medium line-clamp-1">
+                        <p className="text-sm font-medium line-clamp-1 break-words">
                           {deal.listing.title}
                         </p>
                       )}
                       {deal.listing?.street && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <MapPin className="h-3 w-3" />
-                          <span className="line-clamp-1">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground min-w-0">
+                          <MapPin className="h-3 w-3 flex-shrink-0" />
+                          <span className="line-clamp-1 break-words min-w-0">
                             {deal.listing.street}
                           </span>
                         </div>
                       )}
                       {deal.listing && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                           {deal.listing.propertyType && (
                             <span>
                               {getPropertyTypeLabel(deal.listing.propertyType)}
@@ -214,17 +381,17 @@ export function DealTable({
                   {/* Comprador */}
                   <TableCell>
                     {deal.buyer ? (
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium">
+                      <div className="space-y-1 min-w-0">
+                        <p className="text-sm font-medium break-words">
                           {deal.buyer.firstName} {deal.buyer.lastName}
                         </p>
                         {deal.buyer.email && (
-                          <p className="text-xs text-muted-foreground line-clamp-1">
+                          <p className="text-xs text-muted-foreground line-clamp-1 break-words">
                             {deal.buyer.email}
                           </p>
                         )}
                         {deal.buyer.phone && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground break-words">
                             {deal.buyer.phone}
                           </p>
                         )}
@@ -237,12 +404,12 @@ export function DealTable({
                   {/* Propietario */}
                   <TableCell>
                     {deal.owner ? (
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium">
+                      <div className="space-y-1 min-w-0">
+                        <p className="text-sm font-medium break-words">
                           {deal.owner.firstName} {deal.owner.lastName}
                         </p>
                         {deal.owner.phone && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground break-words">
                             {deal.owner.phone}
                           </p>
                         )}
@@ -254,7 +421,7 @@ export function DealTable({
 
                   {/* Precio Final */}
                   <TableCell className="text-right">
-                    <span className="text-sm font-semibold">
+                    <span className="text-sm font-semibold whitespace-nowrap">
                       {formatCurrency(
                         deal.finalPrice ??
                           (deal.listing?.price
@@ -268,7 +435,7 @@ export function DealTable({
                   <TableCell className="text-right">
                     {deal.commissionAmount ? (
                       <div className="space-y-1">
-                        <p className="text-sm font-medium">
+                        <p className="text-sm font-medium whitespace-nowrap">
                           {formatCurrency(deal.commissionAmount)}
                         </p>
                         {deal.commissionPercentage && (
@@ -284,7 +451,7 @@ export function DealTable({
 
                   {/* Fecha Cierre */}
                   <TableCell>
-                    <span className="text-sm">
+                    <span className="text-sm whitespace-nowrap">
                       {formatDate(deal.closeDate)}
                     </span>
                   </TableCell>
@@ -293,7 +460,7 @@ export function DealTable({
                   <TableCell>
                     {deal.participants && deal.participants.length > 0 ? (
                       <div className="flex items-center gap-1.5">
-                        <Users className="h-3 w-3 text-muted-foreground" />
+                        <Users className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                         <span className="text-sm">
                           {deal.participants.length}
                         </span>
@@ -305,7 +472,7 @@ export function DealTable({
 
                   {/* Creado */}
                   <TableCell>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
                       {formatDate(deal.createdAt)}
                     </span>
                   </TableCell>

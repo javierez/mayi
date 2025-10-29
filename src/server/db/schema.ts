@@ -681,6 +681,8 @@ export const tasks = singlestoreTable("tasks", {
   completedBy: varchar("completed_by", { length: 36 }), // FK → users.id (who completed the task)
   editedBy: varchar("edited_by", { length: 36 }), // FK → users.id (who last edited the task)
   category: varchar("category", { length: 100 }), // Task category/type
+  urgency: smallint("urgency"), // Urgency rating (1-5: 1=Low, 5=Critical)
+  status: varchar("status", { length: 20 }).default("backlog"), // Task status: 'backlog' | 'blocked' | 'ready' | 'in_progress' | 'validation' | 'finished'
   listingId: bigint("listing_id", { mode: "bigint" }), // FK → listings.listing_id (nullable)
   listingContactId: bigint("listing_contact_id", { mode: "bigint" }), // FK → listing_contacts.listing_contact_id (nullable)
   dealId: bigint("deal_id", { mode: "bigint" }), // FK → deals.deal_id (nullable)
@@ -959,6 +961,26 @@ export const notifications = singlestoreTable("notifications", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
+});
+
+// Deal Activity (track important deal changes and milestones)
+export const dealActivity = singlestoreTable("deal_activity", {
+  id: bigint("id", { mode: "bigint" }).primaryKey().autoincrement(),
+  dealId: bigint("deal_id", { mode: "bigint" }).notNull(), // FK → deals.deal_id
+  userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id (WHO changed it)
+  action: varchar("action", { length: 50 }).notNull(), // 'deal_created', 'status_changed', 'price_changed', 'commission_paid', 'arras_received', 'deed_signed', 'deal_closed', 'deal_cancelled', etc.
+  details: json("details").notNull(), // Action-specific data: { oldValue, newValue, reason, etc. }
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Contact Activity (track contact lifecycle and GDPR compliance)
+export const contactActivity = singlestoreTable("contact_activity", {
+  id: bigint("id", { mode: "bigint" }).primaryKey().autoincrement(),
+  contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
+  userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id (WHO changed it, or 'system' for automated)
+  action: varchar("action", { length: 50 }).notNull(), // 'contact_created', 'contact_deactivated', 'consent_given', 'consent_withdrawn', 'gdpr_data_export_requested', etc.
+  details: json("details").notNull(), // Action-specific data: { reason, method, compliance info, etc. }
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Mappings table (for data ingestion column mappings)

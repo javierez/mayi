@@ -305,17 +305,17 @@ export function AppointmentDetailSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent>
+      <SheetContent className="w-full max-w-full sm:max-w-md">
         <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            {typeConfig.icon}
-            <span>
+          <SheetTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <span className="shrink-0">{typeConfig.icon}</span>
+            <span className="min-w-0 break-words">
               {appointment.type} - {appointment.contactName}
             </span>
           </SheetTitle>
         </SheetHeader>
 
-        <div className="mt-4 space-y-4">
+        <div className="mt-3 space-y-3 sm:mt-4 sm:space-y-4">
           {/* Type and Status */}
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">{appointment.type}</p>
@@ -400,24 +400,24 @@ export function AppointmentDetailSheet({
           {/* Appointment Details */}
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm">
-              <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+              <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
               <span>{formatDate(appointment.datetimeStart)}</span>
             </div>
             <div className="flex items-center gap-2 text-sm">
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
               <span>
                 {formatTime(appointment.datetimeStart)} -{" "}
                 {formatTime(appointment.datetimeEnd)}
               </span>
             </div>
             {appointment.propertyAddress && (
-              <div className="flex items-center gap-2 text-sm">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-start gap-2 text-sm">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(appointment.propertyAddress)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline decoration-dotted underline-offset-2 transition-all hover:decoration-solid"
+                  className="min-w-0 break-words underline decoration-dotted underline-offset-2 transition-all hover:decoration-solid"
                 >
                   {appointment.propertyAddress}
                 </a>
@@ -425,7 +425,7 @@ export function AppointmentDetailSheet({
             )}
             {appointment.tripTimeMinutes && (
               <div className="flex items-center gap-2 text-sm">
-                <Clock className="h-4 w-4 text-muted-foreground" />
+                <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span>Tiempo de viaje: {appointment.tripTimeMinutes} min</span>
               </div>
             )}
@@ -433,37 +433,38 @@ export function AppointmentDetailSheet({
 
           {/* Notes */}
           {appointment.notes && (
-            <div className="mt-6 border-l-2 border-gray-300 py-1 pl-4">
-              <p className="text-sm italic leading-relaxed text-gray-600">
+            <div className="mt-4 border-l-2 border-gray-300 py-1 pl-3 sm:mt-6 sm:pl-4">
+              <p className="break-words text-sm italic leading-relaxed text-gray-600">
                 &ldquo;{appointment.notes}&rdquo;
               </p>
             </div>
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-2 pt-4">
+          <div className="flex gap-2 pt-3 sm:pt-4">
             {showVisitaButton && (
               <Button
                 size="default"
                 variant="default"
                 onClick={handleVisitaClick}
-                className="flex-1"
+                className="h-10 min-w-0 flex-1 !text-xs font-semibold uppercase sm:h-9"
+                style={{ letterSpacing: '0.15em' }}
               >
-                Visita
+                Registro de Visita
               </Button>
             )}
             {!showVisitaButton &&
             (canEditAppointment || canDeleteAppointment) ? (
-              <div className="flex w-full items-center justify-center gap-3">
+              <div className="flex w-full items-center justify-center gap-2 sm:gap-3">
                 {canEditAppointment && onEdit && (
                   <Button
                     size="default"
                     variant="outline"
                     onClick={handleEditClick}
-                    className="flex-1 gap-2"
+                    className="h-10 min-w-0 flex-1 gap-2 sm:h-9"
                   >
-                    <Pencil className="h-4 w-4" />
-                    Editar cita
+                    <Pencil className="h-4 w-4 shrink-0" />
+                    <span className="truncate">Editar cita</span>
                   </Button>
                 )}
                 {canDeleteAppointment && (
@@ -474,14 +475,14 @@ export function AppointmentDetailSheet({
                       void handleDeleteAppointment();
                     }}
                     disabled={isDeletingAppointment}
-                    className="flex-1 gap-2 border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700"
+                    className="h-10 min-w-0 flex-1 gap-2 border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700 sm:h-9"
                   >
                     {isDeletingAppointment ? (
-                      <Loader className="h-4 w-4 animate-spin" />
+                      <Loader className="h-4 w-4 shrink-0 animate-spin" />
                     ) : (
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 shrink-0" />
                     )}
-                    Eliminar cita
+                    <span className="truncate">Eliminar cita</span>
                   </Button>
                 )}
               </div>
@@ -492,7 +493,7 @@ export function AppointmentDetailSheet({
                     size="sm"
                     variant="ghost"
                     onClick={handleEditClick}
-                    className="h-8 w-8 p-0 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    className="h-10 w-10 p-0 text-gray-600 hover:bg-gray-100 hover:text-gray-900 sm:h-8 sm:w-8"
                     title="Editar"
                   >
                     <Pencil className="h-4 w-4" />
@@ -506,7 +507,7 @@ export function AppointmentDetailSheet({
                       void handleDeleteAppointment();
                     }}
                     disabled={isDeletingAppointment}
-                    className="h-8 w-8 p-0 text-red-600 hover:bg-red-50 hover:text-red-700"
+                    className="h-10 w-10 p-0 text-red-600 hover:bg-red-50 hover:text-red-700 sm:h-8 sm:w-8"
                     title="Eliminar"
                   >
                     {isDeletingAppointment ? (

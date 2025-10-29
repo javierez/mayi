@@ -123,13 +123,13 @@ function OfferInputCard({
           value={inputValue}
           onChange={handleInputChange}
           disabled={isSubmitting}
-          className="h-9 flex-1 border-gray-200 bg-gray-50"
+          className="h-9 min-w-0 flex-1 border-gray-200 bg-gray-50"
         />
         <Button
           size="sm"
           onClick={handleSubmit}
           disabled={isSubmitting || rawValue <= 0}
-          className="h-9 w-9 p-0"
+          className="h-9 w-9 shrink-0 p-0"
         >
           {isSubmitting ? (
             <Loader className="h-4 w-4 animate-spin" />
@@ -406,63 +406,63 @@ export function ContactDetailSheet({
   if (contact.isActive === false) {
     badgeType = "inactive";
     badgeConfig = {
-      color: "bg-gray-200 text-gray-600 border border-gray-400",
+      color: "bg-gray-200 text-gray-600 border border-gray-400 hover:bg-gray-300",
       icon: <UserX className="h-4 w-4" />,
       title: "Inactivo",
     };
   } else if (contact.hasUpcomingVisit) {
     badgeType = "upcoming";
     badgeConfig = {
-      color: "bg-blue-100 text-blue-800",
+      color: "bg-blue-100 text-blue-800 hover:bg-blue-200",
       icon: <CalendarIcon className="h-4 w-4" />,
       title: "Visita Pendiente",
     };
   } else if (contact.offerAccepted === true) {
     badgeType = "offerAccepted";
     badgeConfig = {
-      color: "bg-green-100 text-green-800",
+      color: "bg-green-100 text-green-800 hover:bg-green-200",
       icon: <ThumbsUp className="h-4 w-4" />,
       title: "Oferta Aceptada",
     };
   } else if (contact.offerAccepted === false) {
     badgeType = "offerRejected";
     badgeConfig = {
-      color: "bg-rose-100 text-rose-800",
+      color: "bg-rose-100 text-rose-800 hover:bg-rose-200",
       icon: <ThumbsDown className="h-4 w-4" />,
       title: "Oferta Rechazada",
     };
   } else if (contact.hasOffer) {
     badgeType = "offer";
     badgeConfig = {
-      color: "bg-amber-100 text-amber-800",
+      color: "bg-amber-100 text-amber-800 hover:bg-amber-200",
       icon: <Handshake className="h-4 w-4" />,
       title: "Oferta Pendiente",
     };
   } else if (contact.hasCancelledVisit) {
     badgeType = "cancelled";
     badgeConfig = {
-      color: "bg-orange-100 text-orange-800",
+      color: "bg-orange-100 text-orange-800 hover:bg-orange-200",
       icon: <X className="h-4 w-4" />,
       title: "Visita Cancelada",
     };
   } else if (contact.hasMissedVisit) {
     badgeType = "missed";
     badgeConfig = {
-      color: "bg-red-100 text-red-800",
+      color: "bg-red-100 text-red-800 hover:bg-red-200",
       icon: <Clock className="h-4 w-4" />,
       title: "Visita Perdida",
     };
   } else if (contact.hasCompletedVisit) {
     badgeType = "completed";
     badgeConfig = {
-      color: "bg-gray-100 text-gray-700",
+      color: "bg-gray-100 text-gray-700 hover:bg-gray-200",
       icon: <Check className="h-4 w-4" />,
       title: "Visita Completada",
     };
   } else {
     badgeType = "none";
     badgeConfig = {
-      color: "bg-gray-100 text-gray-700",
+      color: "bg-gray-100 text-gray-700 hover:bg-gray-200",
       icon: <CalendarPlus className="h-4 w-4" />,
       title: "Sin Visitas",
     };
@@ -470,15 +470,15 @@ export function ContactDetailSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="flex flex-col max-w-2xl p-0">
-        <SheetHeader className="px-6 pt-6">
-          <SheetTitle className="flex items-center gap-2">
+      <SheetContent className="flex flex-col w-full max-w-full sm:max-w-md md:max-w-2xl p-0">
+        <SheetHeader className="px-4 pt-4 sm:px-6 sm:pt-6">
+          <SheetTitle className="flex items-center gap-2 text-base sm:text-lg break-words">
             <span>{contactName}</span>
           </SheetTitle>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 mt-4">
-          <div className="space-y-4 px-6 pb-6">
+        <ScrollArea className="flex-1 mt-3 sm:mt-4">
+          <div className="space-y-3 px-4 pb-4 sm:space-y-4 sm:px-6 sm:pb-6">
             {/* Badge Status - Only show if not "none" */}
             {badgeType !== "none" && (
               <div className="flex items-center justify-between">
@@ -506,7 +506,7 @@ export function ContactDetailSheet({
                   <Button
                     variant="default"
                     size="sm"
-                    className="w-full"
+                    className="h-10 w-full sm:h-9"
                     onClick={() => {
                       void handleReactivateContact();
                     }}
@@ -552,32 +552,32 @@ export function ContactDetailSheet({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                      className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
                       onClick={() => {
                         const calendarUrl = `/calendario?new=true&listingId=${listingId}&contactId=${contact.contact.contactId}&type=Firma`;
                         navigateToPage(calendarUrl, router);
                         onClose();
                       }}
                     >
-                      <CalendarPlus className="mr-2 h-4 w-4" />
-                      Programar Firma
+                      <CalendarPlus className="mr-2 h-4 w-4 shrink-0" />
+                      <span className="truncate">Programar Firma</span>
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                      className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
                       onClick={() => {
                         // TODO: Implement contract generation
                         toast.error("Funcionalidad en desarrollo");
                       }}
                     >
-                      <FileText className="mr-2 h-4 w-4" />
-                      Generar Contrato Arras
+                      <FileText className="mr-2 h-4 w-4 shrink-0" />
+                      <span className="truncate">Generar Contrato Arras</span>
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                      className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
                       onClick={() => {
                         if (
                           confirm(
@@ -592,9 +592,9 @@ export function ContactDetailSheet({
                       {isUpdatingOffer ? (
                         <Loader className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
-                        <X className="mr-2 h-4 w-4" />
+                        <X className="mr-2 h-4 w-4 shrink-0" />
                       )}
-                      Revocar Decisión
+                      <span className="truncate">Revocar Decisión</span>
                     </Button>
                   </div>
                 )}
@@ -619,7 +619,7 @@ export function ContactDetailSheet({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                        className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
                         onClick={() => {
                           if (
                             confirm(
@@ -634,14 +634,14 @@ export function ContactDetailSheet({
                         {isUpdatingOffer ? (
                           <Loader className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
-                          <X className="mr-2 h-4 w-4" />
+                          <X className="mr-2 h-4 w-4 shrink-0" />
                         )}
-                        Revocar Decisión
+                        <span className="truncate">Revocar Decisión</span>
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
+                        className="h-10 w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700 sm:h-9"
                         onClick={() => {
                           void handleDeactivateContact();
                         }}
@@ -650,9 +650,9 @@ export function ContactDetailSheet({
                         {isDeactivating ? (
                           <Loader className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
-                          <UserX className="mr-2 h-4 w-4" />
+                          <UserX className="mr-2 h-4 w-4 shrink-0" />
                         )}
-                        Dar de baja
+                        <span className="truncate">Dar de baja</span>
                       </Button>
                     </div>
                   </div>
@@ -665,21 +665,21 @@ export function ContactDetailSheet({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
                   onClick={() => {
                     const calendarUrl = `/calendario?new=true&listingId=${listingId}&contactId=${contact.contact.contactId}`;
                     navigateToPage(calendarUrl, router);
                     onClose();
                   }}
                 >
-                  <CalendarPlus className="mr-2 h-4 w-4" />
-                  Añadir visita
+                  <CalendarPlus className="mr-2 h-4 w-4 shrink-0" />
+                  <span className="truncate">Añadir visita</span>
                 </Button>
                 {permissions.canEditContacts && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
+                    className="h-10 w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700 sm:h-9"
                     onClick={() => {
                       void handleDeactivateContact();
                     }}
@@ -688,9 +688,9 @@ export function ContactDetailSheet({
                     {isDeactivating ? (
                       <Loader className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
-                      <UserX className="mr-2 h-4 w-4" />
+                      <UserX className="mr-2 h-4 w-4 shrink-0" />
                     )}
-                    Dar de baja
+                    <span className="truncate">Dar de baja</span>
                   </Button>
                 )}
               </div>
@@ -701,21 +701,21 @@ export function ContactDetailSheet({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
                   onClick={() => {
                     const calendarUrl = `/calendario?new=true&listingId=${listingId}&contactId=${contact.contact.contactId}`;
                     navigateToPage(calendarUrl, router);
                     onClose();
                   }}
                 >
-                  <CalendarPlus className="mr-2 h-4 w-4" />
-                  Añadir visita
+                  <CalendarPlus className="mr-2 h-4 w-4 shrink-0" />
+                  <span className="truncate">Añadir visita</span>
                 </Button>
                 {permissions.canEditContacts && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
+                    className="h-10 w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700 sm:h-9"
                     onClick={() => {
                       void handleDeactivateContact();
                     }}
@@ -724,9 +724,9 @@ export function ContactDetailSheet({
                     {isDeactivating ? (
                       <Loader className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
-                      <UserX className="mr-2 h-4 w-4" />
+                      <UserX className="mr-2 h-4 w-4 shrink-0" />
                     )}
-                    Dar de baja
+                    <span className="truncate">Dar de baja</span>
                   </Button>
                 )}
               </div>
@@ -747,7 +747,7 @@ export function ContactDetailSheet({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
+                      className="h-10 w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700 sm:h-9"
                       onClick={() => {
                         void handleDeactivateContact();
                       }}
@@ -756,9 +756,9 @@ export function ContactDetailSheet({
                       {isDeactivating ? (
                         <Loader className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
-                        <UserX className="mr-2 h-4 w-4" />
+                        <UserX className="mr-2 h-4 w-4 shrink-0" />
                       )}
-                      Dar de baja
+                      <span className="truncate">Dar de baja</span>
                     </Button>
                   </div>
                 )}
@@ -770,21 +770,21 @@ export function ContactDetailSheet({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
                   onClick={() => {
                     const calendarUrl = `/calendario?new=true&listingId=${listingId}&contactId=${contact.contact.contactId}`;
                     navigateToPage(calendarUrl, router);
                     onClose();
                   }}
                 >
-                  <CalendarPlus className="mr-2 h-4 w-4" />
-                  Añadir visita
+                  <CalendarPlus className="mr-2 h-4 w-4 shrink-0" />
+                  <span className="truncate">Añadir visita</span>
                 </Button>
                 {permissions.canEditContacts && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700"
+                    className="h-10 w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700 sm:h-9"
                     onClick={() => {
                       void handleDeactivateContact();
                     }}
@@ -793,9 +793,9 @@ export function ContactDetailSheet({
                     {isDeactivating ? (
                       <Loader className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
-                      <UserX className="mr-2 h-4 w-4" />
+                      <UserX className="mr-2 h-4 w-4 shrink-0" />
                     )}
-                    Dar de baja
+                    <span className="truncate">Dar de baja</span>
                   </Button>
                 )}
               </div>
@@ -804,7 +804,7 @@ export function ContactDetailSheet({
             {/* Owner Contact Section */}
             {ownerContact && (
               <div className="space-y-2 border-t pt-4">
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-gray-900 break-words">
                   {ownerContact.firstName} {ownerContact.lastName ?? ""}
                 </p>
 
@@ -814,11 +814,11 @@ export function ContactDetailSheet({
                       onClick={() =>
                         window.open(`mailto:${ownerContact.email}`, "_blank")
                       }
-                      className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gray-900"
+                      className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gray-900"
                       title="Enviar email"
                     >
-                      <Mail className="h-4 w-4" />
-                      <span className="underline decoration-dotted underline-offset-2 hover:decoration-solid">
+                      <Mail className="h-4 w-4 shrink-0" />
+                      <span className="truncate underline decoration-dotted underline-offset-2 hover:decoration-solid">
                         {ownerContact.email}
                       </span>
                     </button>
@@ -826,16 +826,16 @@ export function ContactDetailSheet({
                 )}
 
                 {ownerContact.phone && (
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                     <button
                       onClick={() =>
                         window.open(`tel:${ownerContact.phone}`, "_blank")
                       }
-                      className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gray-900"
+                      className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gray-900"
                       title="Llamar"
                     >
-                      <Phone className="h-4 w-4" />
-                      <span className="underline decoration-dotted underline-offset-2 hover:decoration-solid">
+                      <Phone className="h-4 w-4 shrink-0" />
+                      <span className="truncate underline decoration-dotted underline-offset-2 hover:decoration-solid">
                         {ownerContact.phone}
                       </span>
                     </button>
@@ -850,7 +850,7 @@ export function ContactDetailSheet({
                       className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-green-600"
                       title="Enviar WhatsApp"
                     >
-                      <MessageCircle className="h-4 w-4" />
+                      <MessageCircle className="h-4 w-4 shrink-0" />
                       <span>WhatsApp</span>
                     </button>
                   </div>
@@ -862,7 +862,7 @@ export function ContactDetailSheet({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-9 flex-1 justify-center gap-2 text-gray-700 shadow-sm transition-all hover:bg-gray-100 hover:text-gray-900 hover:shadow-md"
+                      className="h-10 min-w-0 flex-1 justify-center gap-2 text-gray-700 shadow-sm transition-all hover:bg-gray-100 hover:text-gray-900 hover:shadow-md sm:h-9"
                       onClick={() => {
                         void handleUpdateOfferStatus(true);
                       }}
@@ -871,14 +871,14 @@ export function ContactDetailSheet({
                       {isUpdatingOffer ? (
                         <Loader className="h-4 w-4 animate-spin" />
                       ) : (
-                        <ThumbsUp className="h-4 w-4" />
+                        <ThumbsUp className="h-4 w-4 shrink-0" />
                       )}
-                      Aceptar
+                      <span className="truncate">Aceptar</span>
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-9 flex-1 justify-center gap-2 text-gray-700 shadow-sm transition-all hover:bg-gray-100 hover:text-gray-900 hover:shadow-md"
+                      className="h-10 min-w-0 flex-1 justify-center gap-2 text-gray-700 shadow-sm transition-all hover:bg-gray-100 hover:text-gray-900 hover:shadow-md sm:h-9"
                       onClick={() => {
                         void handleUpdateOfferStatus(false);
                       }}
@@ -887,9 +887,9 @@ export function ContactDetailSheet({
                       {isUpdatingOffer ? (
                         <Loader className="h-4 w-4 animate-spin" />
                       ) : (
-                        <ThumbsDown className="h-4 w-4" />
+                        <ThumbsDown className="h-4 w-4 shrink-0" />
                       )}
-                      Rechazar
+                      <span className="truncate">Rechazar</span>
                     </Button>
                   </div>
                 )}

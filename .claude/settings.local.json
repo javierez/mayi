@@ -41,7 +41,8 @@
       "Bash(git checkout src/components/propiedades/property-filter.tsx)",
       "WebFetch(domain:nominatim.org)",
       "WebFetch(domain:wiki.openstreetmap.org)",
-      "WebFetch(domain:overpass-api.de)"
+      "WebFetch(domain:overpass-api.de)",
+      "mcp__context7__get-library-docs"
     ],
     "deny": [],
     "ask": []

@@ -164,26 +164,26 @@ export default function ProspectsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold">Demandas y Prospectos</h1>
+          <h1 className="text-xl font-bold sm:text-2xl">Demandas y Prospectos</h1>
         </div>
-        <div className="flex gap-2">
-          <Button variant="default" disabled>
-            <Users className="mr-2 h-4 w-4" />
-            Demandas
+        <div className="flex flex-wrap gap-2">
+          <Button variant="default" disabled size="sm" className="sm:size-default">
+            <Users className="mr-1 h-4 w-4 sm:mr-2" />
+            <span className="text-xs sm:text-sm">Demandas</span>
           </Button>
-          <Button asChild>
+          <Button asChild size="sm" className="sm:size-default">
             <Link href="/leads">
-              <Users className="mr-2 h-4 w-4" />
-              Conexiones
+              <Users className="mr-1 h-4 w-4 sm:mr-2" />
+              <span className="text-xs sm:text-sm">Conexiones</span>
             </Link>
           </Button>
-          <Button asChild>
+          <Button asChild size="sm" className="sm:size-default">
             <Link href="/deals">
-              <Briefcase className="mr-2 h-4 w-4" />
-              Operaciones
+              <Briefcase className="mr-1 h-4 w-4 sm:mr-2" />
+              <span className="text-xs sm:text-sm">Operaciones</span>
             </Link>
           </Button>
         </div>
@@ -191,16 +191,16 @@ export default function ProspectsPage() {
 
       {isLoading ? (
         view === "kanban" ? (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
             {[
               "Informacion basica",
               "En busqueda",
               "Valoracion",
               "Hoja de encargo",
             ].map((status, _idx) => (
-              <div key={status} className="space-y-4">
-                <div className="h-12 animate-pulse rounded bg-gray-200" />
-                <div className="space-y-3">
+              <div key={status} className="space-y-3 sm:space-y-4">
+                <div className="h-10 animate-pulse rounded bg-gray-200 sm:h-12" />
+                <div className="space-y-2 sm:space-y-3">
                   {Array.from({ length: 3 }).map((_, cardIdx) => (
                     <ProspectCardSkeleton key={cardIdx} />
                   ))}
@@ -209,11 +209,11 @@ export default function ProspectsPage() {
             ))}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {Array.from({ length: 8 }).map((_, idx) => (
               <div
                 key={idx}
-                className="h-16 animate-pulse rounded bg-gray-100"
+                className="h-14 animate-pulse rounded bg-gray-100 sm:h-16"
               />
             ))}
           </div>
@@ -241,7 +241,7 @@ export default function ProspectsPage() {
           }}
         />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <ConexionesPotenciales />
 
           <ProspectFilter view={view} onViewChange={handleViewChange} />

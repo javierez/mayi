@@ -272,20 +272,20 @@ export default function LeadsPage() {
   // Error state
   if (error) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-bold">Conexiones</h1>
-            <p className="text-sm text-muted-foreground">
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 space-y-1">
+            <h1 className="truncate text-xl font-bold sm:text-2xl">Conexiones</h1>
+            <p className="text-xs text-muted-foreground sm:text-sm">
               Gestiona las conexiones entre demandantes y propietarios
             </p>
           </div>
         </div>
 
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 sm:p-4">
           <div className="text-red-800">
-            <p className="font-medium">Error al cargar datos</p>
-            <p className="text-sm">{error}</p>
+            <p className="text-sm font-medium sm:text-base">Error al cargar datos</p>
+            <p className="mt-1 break-words text-xs sm:text-sm">{error}</p>
           </div>
         </div>
       </div>
@@ -298,21 +298,22 @@ export default function LeadsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold">Conexiones</h1>
-          <p className="text-sm text-muted-foreground">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 space-y-1">
+          <h1 className="truncate text-xl font-bold sm:text-2xl">Conexiones</h1>
+          <p className="text-xs text-muted-foreground sm:text-sm">
             Gestiona las conexiones entre demandantes y propietarios
           </p>
         </div>
 
         {/* Future: Add create lead button */}
         <div className="flex gap-2">
-          <Button variant="outline" disabled>
+          <Button variant="outline" disabled className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
-            Crear lead
+            <span className="hidden sm:inline">Crear lead</span>
+            <span className="sm:hidden">Crear</span>
           </Button>
         </div>
       </div>
@@ -332,10 +333,10 @@ export default function LeadsPage() {
         />
       ) : (
         // Future: Kanban view will be implemented here
-        <div className="rounded-lg border bg-gray-50 p-12 text-center">
-          <TrendingUp className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-4 text-lg font-medium">Vista Kanban</h3>
-          <p className="text-muted-foreground">
+        <div className="rounded-lg border bg-gray-50 p-6 text-center sm:p-12">
+          <TrendingUp className="mx-auto h-10 w-10 text-gray-400 sm:h-12 sm:w-12" />
+          <h3 className="mt-4 text-base font-medium sm:text-lg">Vista Kanban</h3>
+          <p className="mt-1 text-sm text-muted-foreground sm:text-base">
             La vista Kanban para conexiones estará disponible próximamente.
           </p>
         </div>

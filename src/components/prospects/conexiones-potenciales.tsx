@@ -314,17 +314,17 @@ export function ConexionesPotenciales({
 
   // Render loading skeleton
   const renderLoadingSkeleton = () => (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: 6 }).map((_, index) => (
         <Card key={index} className="overflow-hidden">
-          <Skeleton className="h-48 w-full" />
-          <CardContent className="p-4">
+          <Skeleton className="h-36 w-full sm:h-48" />
+          <CardContent className="p-3 sm:p-4">
             <Skeleton className="mb-2 h-4 w-3/4" />
-            <Skeleton className="mb-4 h-4 w-1/2" />
-            <div className="flex justify-between">
-              <Skeleton className="h-4 w-16" />
-              <Skeleton className="h-4 w-16" />
-              <Skeleton className="h-4 w-16" />
+            <Skeleton className="mb-3 h-4 w-1/2 sm:mb-4" />
+            <div className="flex flex-wrap justify-between gap-2">
+              <Skeleton className="h-4 w-14 sm:w-16" />
+              <Skeleton className="h-4 w-14 sm:w-16" />
+              <Skeleton className="h-4 w-14 sm:w-16" />
             </div>
           </CardContent>
         </Card>
@@ -334,22 +334,22 @@ export function ConexionesPotenciales({
 
   // Render statistics
   const renderStats = () => (
-    <div className="mb-4 grid grid-cols-2 gap-3">
+    <div className="mb-4 grid grid-cols-2 gap-2 sm:gap-3">
       <Card
         className={`cursor-pointer border-0 shadow-sm transition-all hover:shadow-md ${
           selectedView === "internal" ? "bg-gray-100 ring-2 ring-gray-800" : ""
         }`}
         onClick={() => setSelectedView("internal")}
       >
-        <CardContent className="p-3">
+        <CardContent className="p-2.5 sm:p-3">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-lg font-semibold text-gray-900">
+            <div className="min-w-0 flex-1">
+              <p className="text-base font-semibold text-gray-900 sm:text-lg">
                 {stats.internalMatches}
               </p>
-              <p className="text-xs text-muted-foreground">Internas</p>
+              <p className="truncate text-xs text-muted-foreground">Internas</p>
             </div>
-            <Search className="h-4 w-4 text-gray-400" />
+            <Search className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
           </div>
         </CardContent>
       </Card>
@@ -360,15 +360,15 @@ export function ConexionesPotenciales({
         }`}
         onClick={() => setSelectedView("external")}
       >
-        <CardContent className="p-3">
+        <CardContent className="p-2.5 sm:p-3">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-lg font-semibold text-gray-900">
+            <div className="min-w-0 flex-1">
+              <p className="text-base font-semibold text-gray-900 sm:text-lg">
                 {stats.externalMatches}
               </p>
-              <p className="text-xs text-muted-foreground">Externas</p>
+              <p className="truncate text-xs text-muted-foreground">Externas</p>
             </div>
-            <Users className="h-4 w-4 text-gray-400" />
+            <Users className="ml-2 h-4 w-4 shrink-0 text-gray-400" />
           </div>
         </CardContent>
       </Card>
@@ -377,13 +377,13 @@ export function ConexionesPotenciales({
 
   // Render empty state
   const renderEmptyState = () => (
-    <Card className="py-12 text-center">
+    <Card className="py-8 text-center sm:py-12">
       <CardContent>
-        <Search className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-        <h3 className="mb-2 text-lg font-semibold">
+        <Search className="mx-auto mb-3 h-12 w-12 text-muted-foreground sm:mb-4 sm:h-16 sm:w-16" />
+        <h3 className="mb-2 text-base font-semibold sm:text-lg">
           No se encontraron coincidencias
         </h3>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground sm:text-base">
           No hay propiedades que coincidan con los criterios actuales.
         </p>
       </CardContent>
@@ -392,12 +392,12 @@ export function ConexionesPotenciales({
 
   return (
     <Card className={`w-full ${className}`}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-        <div>
-          <CardTitle className="text-xl font-semibold text-gray-900">
+      <CardHeader className="flex flex-col gap-4 pb-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+        <div className="min-w-0 flex-1">
+          <CardTitle className="text-lg font-semibold text-gray-900 sm:text-xl">
             Buscador de Conexiones
           </CardTitle>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground sm:text-sm">
             Conexiones automáticas entre prospectos y propiedades disponibles
           </p>
         </div>
@@ -416,21 +416,21 @@ export function ConexionesPotenciales({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4 sm:space-y-6">
         {/* Error State */}
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription className="text-sm">{error}</AlertDescription>
           </Alert>
         )}
 
         {/* Loading State */}
         {isLoading ? (
           <>
-            <div className="mb-4 grid grid-cols-2 gap-3">
+            <div className="mb-4 grid grid-cols-2 gap-2 sm:gap-3">
               {Array.from({ length: 2 }).map((_, index) => (
-                <Skeleton key={index} className="h-16" />
+                <Skeleton key={index} className="h-14 sm:h-16" />
               ))}
             </div>
             {renderLoadingSkeleton()}
@@ -555,12 +555,12 @@ export function ConexionesPotenciales({
                   </div>
                 </>
               ) : (
-                <div className="py-12 text-center">
-                  <Users className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
-                  <h3 className="mb-2 text-lg font-semibold">
+                <div className="py-8 text-center sm:py-12">
+                  <Users className="mx-auto mb-3 h-12 w-12 text-muted-foreground sm:mb-4 sm:h-16 sm:w-16" />
+                  <h3 className="mb-2 text-base font-semibold sm:text-lg">
                     Sin coincidencias externas
                   </h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-sm text-muted-foreground sm:text-base">
                     No se encontraron propiedades de otras cuentas que coincidan
                     con los criterios
                   </p>
@@ -577,10 +577,10 @@ export function ConexionesPotenciales({
 
         {/* Action Loading Indicator */}
         {actionLoading && (
-          <div className="fixed bottom-4 right-4 rounded-lg border bg-background p-3 shadow-lg">
+          <div className="fixed bottom-3 right-3 rounded-lg border bg-background p-2.5 shadow-lg sm:bottom-4 sm:right-4 sm:p-3">
             <div className="flex items-center space-x-2">
-              <RefreshCw className="h-4 w-4 animate-spin" />
-              <span className="text-sm">Procesando acción...</span>
+              <RefreshCw className="h-4 w-4 shrink-0 animate-spin" />
+              <span className="text-xs sm:text-sm">Procesando acción...</span>
             </div>
           </div>
         )}

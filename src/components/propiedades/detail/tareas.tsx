@@ -23,7 +23,6 @@ import {
   Plus,
   Trash2,
   Check,
-  Mic,
   AlertCircle,
   CheckCircle2,
   Loader2,
@@ -37,6 +36,7 @@ import {
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { TareasSkeleton } from "~/components/ui/skeletons";
+import { PushToTalkButton } from "~/components/shared/push-to-talk-button";
 import { createTaskWithAuth, updateTaskWithAuth } from "~/server/queries/task";
 import {
   getAllPotentialOwnersWithAuth,
@@ -73,6 +73,7 @@ interface Task {
   createdAt: Date;
   updatedAt?: Date;
   createdBy?: string;
+  urgency?: number;
   // User info for "Asignado a"
   userName?: string;
   userFirstName?: string;
@@ -146,6 +147,7 @@ export function Tareas({
     contactId: "",
     appointmentId: "",
     agentId: "",
+    urgency: "",
   });
   const [taskStates, setTaskStates] = useState<
     Record<string, "saving" | "saved" | "error">
@@ -466,6 +468,7 @@ export function Tareas({
       appointmentId: newTask.appointmentId
         ? BigInt(newTask.appointmentId)
         : undefined,
+      urgency: newTask.urgency ? Number(newTask.urgency) : undefined,
       isActive: true,
       relatedContact,
       relatedAppointment,
@@ -485,6 +488,7 @@ export function Tareas({
       contactId: "",
       appointmentId: "",
       agentId: "",
+      urgency: "",
     });
     setIsAdding(false);
 
@@ -508,6 +512,7 @@ export function Tareas({
         appointmentId: formData.appointmentId
           ? BigInt(formData.appointmentId)
           : undefined,
+        urgency: formData.urgency ? Number(formData.urgency) : undefined,
         isActive: true,
       });
 
@@ -656,6 +661,7 @@ export function Tareas({
       contactId: task.relatedContact?.contactId.toString() ?? "",
       appointmentId: task.appointmentId?.toString() ?? "",
       agentId: task.userId,
+      urgency: task.urgency?.toString() ?? "",
     });
   };
 
@@ -749,6 +755,7 @@ export function Tareas({
       appointmentId: newTask.appointmentId
         ? BigInt(newTask.appointmentId)
         : undefined,
+      urgency: newTask.urgency ? Number(newTask.urgency) : undefined,
       relatedContact,
       relatedAppointment,
       updatedAt: new Date(),
@@ -775,6 +782,7 @@ export function Tareas({
           appointmentId: newTask.appointmentId
             ? BigInt(newTask.appointmentId)
             : undefined,
+          urgency: newTask.urgency ? Number(newTask.urgency) : undefined,
         },
       );
 
@@ -795,6 +803,7 @@ export function Tareas({
         contactId: "",
         appointmentId: "",
         agentId: "",
+        urgency: "",
       });
       setEditingTask(null);
       setIsAdding(false);
@@ -942,44 +951,96 @@ export function Tareas({
             }
             className="min-h-[80px] pr-10 text-sm"
           />
-          <button
-            type="button"
-            className="absolute right-2 top-2 p-1 text-gray-400 transition-colors hover:text-gray-600"
-            title="Próximamente: Grabación de voz"
-          >
-            <Mic className="h-4 w-4" />
-          </button>
+          <PushToTalkButton
+            onTranscript={(text) => {
+              setNewTask((prev) => ({
+                ...prev,
+                description: prev.description
+                  ? `${prev.description} ${text}`.trim()
+                  : text,
+              }));
+            }}
+            language="es"
+            disabled={isSaving}
+          />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="agent-select">Asignar a</Label>
-          <Select
-            value={newTask.agentId}
-            onValueChange={(value) =>
-              setNewTask({ ...newTask, agentId: value })
-            }
-            disabled={externalLoading ?? loadingAgents}
-          >
-            <SelectTrigger className="h-8 text-gray-500">
-              <SelectValue
-                placeholder={
-                  externalLoading || loadingAgents
-                    ? "Cargando agentes..."
-                    : agents.length === 0
-                      ? "No hay agentes"
-                      : "Seleccionar agente"
-                }
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {agents.map((agent) => (
-                <SelectItem key={agent.id} value={agent.id}>
-                  {agent.name ??
-                    (`${agent.firstName ?? ""} ${agent.lastName ?? ""}`.trim() ||
-                      agent.id)}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="agent-select">Asignar a</Label>
+            <Select
+              value={newTask.agentId}
+              onValueChange={(value) =>
+                setNewTask({ ...newTask, agentId: value })
+              }
+              disabled={externalLoading ?? loadingAgents}
+            >
+              <SelectTrigger className="h-8 text-gray-500">
+                <SelectValue
+                  placeholder={
+                    externalLoading || loadingAgents
+                      ? "Cargando agentes..."
+                      : agents.length === 0
+                        ? "No hay agentes"
+                        : "Seleccionar agente"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {agents.map((agent) => (
+                  <SelectItem key={agent.id} value={agent.id}>
+                    {agent.name ??
+                      (`${agent.firstName ?? ""} ${agent.lastName ?? ""}`.trim() ||
+                        agent.id)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="urgency-select">Urgencia</Label>
+            <Select
+              value={newTask.urgency}
+              onValueChange={(value) =>
+                setNewTask({ ...newTask, urgency: value })
+              }
+            >
+              <SelectTrigger className="h-8 text-gray-500">
+                <SelectValue placeholder="Seleccionar urgencia" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">
+                  <span className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-gray-400" />
+                    Baja
+                  </span>
                 </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                <SelectItem value="2">
+                  <span className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-blue-400" />
+                    Media-Baja
+                  </span>
+                </SelectItem>
+                <SelectItem value="3">
+                  <span className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-yellow-400" />
+                    Media
+                  </span>
+                </SelectItem>
+                <SelectItem value="4">
+                  <span className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-orange-500" />
+                    Media-Alta
+                  </span>
+                </SelectItem>
+                <SelectItem value="5">
+                  <span className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-red-500" />
+                    Crítica
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

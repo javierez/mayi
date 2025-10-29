@@ -33,6 +33,7 @@ import {
   HandHeart,
   Coins,
   MessageCircle,
+  UserCog,
 } from "lucide-react";
 import type { FC, ReactNode } from "react";
 
@@ -60,6 +61,7 @@ const baseNavigation: NavigationItem[] = [
   { name: "Propiedades", href: "/propiedades", icon: Building2 },
   { name: "Contactos", href: "/contactos", icon: Users },
   { name: "Calendario", href: "/calendario", icon: Calendar },
+  { name: "Agentes", href: "/agents", icon: UserCog },
   { name: "Contabilidad", href: "/contabilidad", icon: Coins, disabled: true },
 ];
 

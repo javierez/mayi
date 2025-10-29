@@ -180,7 +180,7 @@ export function LeadTable({
     // Highest priority: Check if lead is inactive
     if (lead.isActive === false) {
       return {
-        color: "bg-transparent text-gray-500 border border-gray-300",
+        color: "bg-transparent text-gray-500 border border-gray-300 hover:bg-gray-50 hover:border-gray-400",
         icon: <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />,
         title: "Inactivo",
       };
@@ -189,25 +189,25 @@ export function LeadTable({
     // Priority matching activity tab exactly
     if (lead.hasUpcomingVisit) {
       return {
-        color: "bg-blue-100 text-blue-800",
+        color: "bg-blue-100 text-blue-800 hover:bg-blue-200",
         icon: <CalendarIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />,
         title: "Visita pendiente",
       };
     } else if (lead.offerAccepted === true) {
       return {
-        color: "bg-green-100 text-green-800",
+        color: "bg-green-100 text-green-800 hover:bg-green-200",
         icon: <ThumbsUp className="h-2.5 w-2.5 sm:h-3 sm:w-3" />,
         title: "Oferta aceptada",
       };
     } else if (lead.offerAccepted === false) {
       return {
-        color: "bg-rose-100 text-rose-800",
+        color: "bg-rose-100 text-rose-800 hover:bg-rose-200",
         icon: <ThumbsDown className="h-2.5 w-2.5 sm:h-3 sm:w-3" />,
         title: "Oferta rechazada",
       };
     } else if (lead.hasOffer && lead.offerAccepted === null) {
       return {
-        color: "bg-amber-100 text-amber-800",
+        color: "bg-amber-100 text-amber-800 hover:bg-amber-200",
         icon: <Handshake className="h-2.5 w-2.5 sm:h-3 sm:w-3" />,
         title: "Oferta pendiente",
       };
@@ -218,7 +218,7 @@ export function LeadTable({
     ) {
       return {
         color:
-          "bg-white text-orange-700 border-2 border-dashed border-orange-400",
+          "bg-white text-orange-700 border-2 border-dashed border-orange-400 hover:bg-orange-50",
         icon: <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />,
         title: "Visita cancelada",
       };
@@ -230,7 +230,7 @@ export function LeadTable({
     ) {
       return {
         color:
-          "bg-white text-amber-700 border-2 border-dashed border-amber-400",
+          "bg-white text-amber-700 border-2 border-dashed border-amber-400 hover:bg-amber-50",
         icon: <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" />,
         title: "Visita perdida",
       };
@@ -242,13 +242,13 @@ export function LeadTable({
       !lead.hasCancelledVisit
     ) {
       return {
-        color: "bg-gray-100 text-gray-700",
+        color: "bg-gray-100 text-gray-700 hover:bg-gray-200",
         icon: <Check className="h-2.5 w-2.5 sm:h-3 sm:w-3" />,
         title: "Visita completada",
       };
     } else {
       return {
-        color: "bg-gray-100 text-gray-700",
+        color: "bg-gray-100 text-gray-700 hover:bg-gray-200",
         icon: <CalendarPlus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />,
         title: "Sin visitas",
       };
@@ -400,16 +400,16 @@ export function LeadTable({
   return (
     <TooltipProvider>
       <div className="space-y-4">
-        <div className="rounded-lg border">
+        <div className="overflow-x-auto rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Contacto</TableHead>
-                <TableHead>Propiedad</TableHead>
-                <TableHead>Propietario</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Origen</TableHead>
-                <TableHead>Creado</TableHead>
+                <TableHead className="min-w-[120px]">Contacto</TableHead>
+                <TableHead className="min-w-[200px] md:min-w-[280px]">Propiedad</TableHead>
+                <TableHead className="hidden min-w-[120px] lg:table-cell">Propietario</TableHead>
+                <TableHead className="min-w-[120px]">Estado</TableHead>
+                <TableHead className="hidden min-w-[80px] sm:table-cell">Origen</TableHead>
+                <TableHead className="min-w-[90px]">Creado</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -427,15 +427,15 @@ export function LeadTable({
                     onClick={() => handleRowClick(lead)}
                   >
                     {/* Contact */}
-                    <TableCell>
+                    <TableCell className="min-w-0">
                       {isVisible ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <div className="cursor-pointer">
-                              <div className="font-medium">
+                            <div className="min-w-0 cursor-pointer">
+                              <div className="truncate text-sm font-medium md:text-base">
                                 {lead.contact.firstName} {lead.contact.lastName}
                               </div>
-                              <div className="text-xs text-muted-foreground">
+                              <div className="truncate text-xs text-muted-foreground">
                                 {lead.contact.email ?? "Sin email"}
                               </div>
                             </div>
@@ -459,27 +459,27 @@ export function LeadTable({
                     </TableCell>
 
                     {/* Property */}
-                    <TableCell>
+                    <TableCell className="min-w-0">
                       {isVisible ? (
                         lead.listing ? (
                           <div
-                            className="cursor-pointer rounded-lg bg-gray-50 p-2 shadow-sm transition-all hover:bg-gray-100 hover:shadow-md"
+                            className="cursor-pointer rounded-lg bg-gray-50 p-1.5 shadow-sm transition-all hover:bg-gray-100 hover:shadow-md md:p-2"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleViewListing(lead.listingId);
                             }}
                           >
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
                               <div className="min-w-0 flex-1">
-                                <div className="truncate text-sm font-medium">
+                                <div className="truncate text-xs font-medium sm:text-sm">
                                   {lead.listing.title ?? "Sin título"}
                                 </div>
                                 <div className="flex items-center truncate text-xs text-muted-foreground">
-                                  <MapPin className="mr-1 h-3 w-3 flex-shrink-0 text-gray-400" />
-                                  {lead.listing.street ?? "Sin dirección"}
+                                  <MapPin className="mr-1 h-2.5 w-2.5 flex-shrink-0 text-gray-400 sm:h-3 sm:w-3" />
+                                  <span className="truncate">{lead.listing.street ?? "Sin dirección"}</span>
                                 </div>
                               </div>
-                              <div className="ml-2 text-right">
+                              <div className="flex-shrink-0 text-left sm:ml-2 sm:text-right">
                                 <div className="text-xs font-medium text-gray-900">
                                   {lead.listing.price
                                     ? new Intl.NumberFormat("es-ES").format(
@@ -509,16 +509,16 @@ export function LeadTable({
                     </TableCell>
 
                     {/* Owner */}
-                    <TableCell>
+                    <TableCell className="hidden min-w-0 lg:table-cell">
                       {isVisible ? (
                         lead.owner ? (
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className="cursor-pointer">
-                                <div className="font-medium">
+                              <div className="min-w-0 cursor-pointer">
+                                <div className="truncate text-sm font-medium">
                                   {lead.owner.firstName} {lead.owner.lastName}
                                 </div>
-                                <div className="text-xs text-muted-foreground">
+                                <div className="truncate text-xs text-muted-foreground">
                                   {lead.owner.email ?? "Sin email"}
                                 </div>
                               </div>
@@ -537,7 +537,7 @@ export function LeadTable({
                             </TooltipContent>
                           </Tooltip>
                         ) : (
-                          <div className="text-muted-foreground">
+                          <div className="text-sm text-muted-foreground">
                             No disponible
                           </div>
                         )
@@ -547,7 +547,7 @@ export function LeadTable({
                     </TableCell>
 
                     {/* Status */}
-                    <TableCell>
+                    <TableCell className="min-w-0">
                       {isVisible ? (
                         <Badge
                           className={cn(
@@ -557,18 +557,18 @@ export function LeadTable({
                         >
                           <span className="flex items-center gap-0.5 sm:gap-1">
                             {badgeConfig.icon}
-                            <span className="max-w-[15ch] truncate">
+                            <span className="max-w-[12ch] truncate sm:max-w-[15ch]">
                               {badgeConfig.title}
                             </span>
                           </span>
                         </Badge>
                       ) : (
-                        <Skeleton className="h-6 w-32" />
+                        <Skeleton className="h-6 w-20 sm:w-32" />
                       )}
                     </TableCell>
 
                     {/* Source */}
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       {isVisible ? (
                         <Badge variant="outline" className="text-xs">
                           {lead.source}
@@ -579,7 +579,7 @@ export function LeadTable({
                     </TableCell>
 
                     {/* Created */}
-                    <TableCell className="text-xs">
+                    <TableCell className="text-xs sm:text-sm">
                       {formatDate(lead.createdAt)}
                     </TableCell>
                   </TableRow>
@@ -591,11 +591,13 @@ export function LeadTable({
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <PaginationControls
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={onPageChange}
-          />
+          <div className="px-2 sm:px-0">
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={onPageChange}
+            />
+          </div>
         )}
       </div>
 
