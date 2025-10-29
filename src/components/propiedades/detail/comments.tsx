@@ -19,6 +19,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
+import { clsx } from "clsx";
 import type { CommentWithUser } from "~/types/comments";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { CommentsSkeleton } from "~/components/ui/skeletons";
@@ -101,9 +102,9 @@ function CommentItem({
   setDeleteConfirmOpen,
 }: CommentItemProps) {
   return (
-    <div className={`${isReply ? "ml-8 pl-2" : ""}`}>
+    <div className={clsx(isReply && "ml-8 pl-2")}>
       <div className="flex space-x-3">
-        <Avatar className={`${isReply ? "h-8 w-8" : "h-10 w-10"}`}>
+        <Avatar className={clsx(isReply ? "h-8 w-8" : "h-10 w-10")}>
           {Number(comment.userId) === 0 ? (
             <div className="flex h-full w-full items-center justify-center bg-gray-100">
               <Image
@@ -111,13 +112,13 @@ function CommentItem({
                 alt="Vesta"
                 width={isReply ? 24 : 32}
                 height={isReply ? 24 : 32}
-                className={`${isReply ? "h-6 w-6" : "h-8 w-8"} object-contain`}
+                className={clsx("object-contain", isReply ? "h-6 w-6" : "h-8 w-8")}
               />
             </div>
           ) : (
             <>
               <AvatarImage src={comment.user?.image ?? undefined} />
-              <AvatarFallback className={`${isReply ? "text-xs" : "text-sm"}`}>
+              <AvatarFallback className={clsx(isReply ? "text-xs" : "text-sm")}>
                 {comment.user?.initials ?? "?"}
               </AvatarFallback>
             </>
@@ -126,13 +127,14 @@ function CommentItem({
 
         <div className="min-w-0 flex-1">
           <div
-            className={`group relative rounded-2xl px-4 py-3 ${
+            className={clsx(
+              "group relative rounded-2xl px-4 py-3",
               comment.userId === "temp"
                 ? "bg-blue-50 opacity-70 shadow-sm"
                 : isReply
                   ? "bg-white shadow-sm"
                   : "bg-gray-50 shadow-md"
-            }`}
+            )}
           >
             {/* Action buttons - top right */}
             <div className="absolute right-2 top-2 flex items-center space-x-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -184,7 +186,7 @@ function CommentItem({
 
             <div className="flex items-center space-x-2 pr-16">
               <span
-                className={`font-semibold ${isReply ? "text-xs" : "text-sm"}`}
+                className={clsx("font-semibold", isReply ? "text-xs" : "text-sm")}
               >
                 {Number(comment.userId) === 0
                   ? "Sistema"
@@ -207,7 +209,7 @@ function CommentItem({
               )}
 
               <span
-                className={`text-gray-500 ${isReply ? "text-xs" : "text-xs"}`}
+                className={clsx("text-gray-500", isReply ? "text-xs" : "text-xs")}
               >
                 {formatDistanceToNow(comment.createdAt, {
                   addSuffix: true,
@@ -225,8 +227,8 @@ function CommentItem({
                   />
                   <PushToTalkWhisperButton
                     onTranscript={(text) => {
-                      setEditContent((prev) =>
-                        prev ? `${prev} ${text}`.trim() : text
+                      setEditContent(
+                        editContent ? `${editContent} ${text}`.trim() : text
                       );
                     }}
                     language="es"
@@ -247,7 +249,7 @@ function CommentItem({
               </div>
             ) : (
               <p
-                className={`mt-1 text-gray-900 ${isReply ? "text-xs" : "text-sm"}`}
+                className={clsx("mt-1 text-gray-900", isReply ? "text-xs" : "text-sm")}
               >
                 {comment.content}
               </p>
@@ -724,11 +726,12 @@ export function Comments({
                         selectedCategory === "keys" ? null : "keys",
                       )
                     }
-                    className={`h-8 transition-all ${
+                    className={clsx(
+                      "h-8 transition-all",
                       selectedCategory === "keys"
                         ? "border-amber-200 bg-gray-100 text-amber-600 hover:border-amber-200 hover:bg-gray-100 hover:text-amber-600"
                         : "text-gray-500 hover:border-amber-200 hover:text-amber-600"
-                    }`}
+                    )}
                     title="Comentario sobre llaves"
                   >
                     <Key className="h-4 w-4" />
@@ -742,11 +745,12 @@ export function Comments({
                         selectedCategory === "cartel" ? null : "cartel",
                       )
                     }
-                    className={`h-8 transition-all ${
+                    className={clsx(
+                      "h-8 transition-all",
                       selectedCategory === "cartel"
                         ? "border-orange-200 bg-gray-100 text-orange-600 hover:border-orange-200 hover:bg-gray-100 hover:text-orange-600"
                         : "text-gray-500 hover:border-orange-200 hover:text-orange-600"
-                    }`}
+                    )}
                     title="Comentario sobre cartel"
                   >
                     <FileImage className="h-4 w-4" />

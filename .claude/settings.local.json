@@ -44,7 +44,8 @@
       "WebFetch(domain:overpass-api.de)",
       "mcp__context7__get-library-docs",
       "WebFetch(domain:developers.deepgram.com)",
-      "mcp__context7__resolve-library-id"
+      "mcp__context7__resolve-library-id",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

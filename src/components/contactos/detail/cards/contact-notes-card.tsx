@@ -52,11 +52,9 @@ export function ContactNotesCard({
           />
           <PushToTalkWhisperButton
             onTranscript={(text) => {
-              setNotes((prev) => {
-                const newValue = prev ? `${prev} ${text}`.trim() : text;
-                onUpdateModule(true);
-                return newValue;
-              });
+              const newValue = notes ? `${notes} ${text}`.trim() : text;
+              setNotes(newValue);
+              onUpdateModule(true);
             }}
             language="es"
             disabled={!canEdit}

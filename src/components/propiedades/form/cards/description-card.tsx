@@ -171,12 +171,10 @@ export function DescriptionCard({
                 <div className="absolute right-2 top-2 flex items-center gap-1">
                   <PushToTalkWhisperButton
                     onTranscript={(text) => {
-                      setShortDescription((prev) => {
-                        const newValue = prev ? `${prev} ${text}`.trim() : text;
-                        const truncated = newValue.slice(0, 200);
-                        onUpdateModule(true);
-                        return truncated;
-                      });
+                      const newValue = shortDescription ? `${shortDescription} ${text}`.trim() : text;
+                      const truncated = newValue.slice(0, 200);
+                      setShortDescription(truncated);
+                      onUpdateModule(true);
                     }}
                     language="es"
                     disabled={!canEdit}
@@ -224,11 +222,9 @@ export function DescriptionCard({
                 <div className="absolute right-2 top-2 flex items-center gap-1">
                   <PushToTalkWhisperButton
                     onTranscript={(text) => {
-                      setDescription((prev) => {
-                        const newValue = prev ? `${prev} ${text}`.trim() : text;
-                        onUpdateModule(true);
-                        return newValue;
-                      });
+                      const newValue = description ? `${description} ${text}`.trim() : text;
+                      setDescription(newValue);
+                      onUpdateModule(true);
                     }}
                     language="es"
                     disabled={!canEdit}

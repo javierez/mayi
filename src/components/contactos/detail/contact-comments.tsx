@@ -16,6 +16,7 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
+import { clsx } from "clsx";
 import type { UserCommentWithUser } from "~/types/user-comments";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
@@ -94,24 +95,25 @@ function UserCommentItem({
   setDeleteConfirmOpen,
 }: UserCommentItemProps) {
   return (
-    <div className={`max-w-full ${isReply ? "ml-12 pl-4" : ""}`}>
+    <div className={clsx("max-w-full", isReply && "ml-12 pl-4")}>
       <div className="flex space-x-3 max-w-full">
-        <Avatar className={`flex-shrink-0 ${isReply ? "h-8 w-8" : "h-10 w-10"}`}>
+        <Avatar className={clsx("flex-shrink-0", isReply ? "h-8 w-8" : "h-10 w-10")}>
           <AvatarImage src={comment.user.image ?? undefined} />
-          <AvatarFallback className={`${isReply ? "text-xs" : "text-sm"}`}>
+          <AvatarFallback className={clsx(isReply ? "text-xs" : "text-sm")}>
             {comment.user.initials}
           </AvatarFallback>
         </Avatar>
 
         <div className="min-w-0 flex-1 max-w-full overflow-hidden">
           <div
-            className={`group relative rounded-2xl px-4 py-3 ${
+            className={clsx(
+              "group relative rounded-2xl px-4 py-3",
               comment.userId === "temp"
                 ? "bg-blue-50 opacity-70 shadow-sm"
                 : isReply
                   ? "bg-white shadow-sm"
                   : "bg-gray-50 shadow-md"
-            }`}
+            )}
           >
             {/* Action buttons - top right */}
             <div className="absolute right-2 top-2 flex items-center space-x-1 opacity-0 transition-opacity group-hover:opacity-100">
@@ -162,7 +164,7 @@ function UserCommentItem({
 
             <div className="flex items-center space-x-2 pr-16">
               <span
-                className={`font-semibold ${isReply ? "text-xs" : "text-sm"}`}
+                className={clsx("font-semibold", isReply ? "text-xs" : "text-sm")}
               >
                 {comment.user.name}
               </span>
@@ -183,7 +185,7 @@ function UserCommentItem({
               )}
 
               <span
-                className={`text-gray-500 ${isReply ? "text-xs" : "text-xs"}`}
+                className={clsx("text-gray-500", isReply ? "text-xs" : "text-xs")}
               >
                 {formatDistanceToNow(comment.createdAt, {
                   addSuffix: true,
@@ -201,8 +203,8 @@ function UserCommentItem({
                   />
                   <PushToTalkWhisperButton
                     onTranscript={(text) => {
-                      setEditContent((prev) =>
-                        prev ? `${prev} ${text}`.trim() : text
+                      setEditContent(
+                        editContent ? `${editContent} ${text}`.trim() : text
                       );
                     }}
                     language="es"
@@ -223,7 +225,7 @@ function UserCommentItem({
               </div>
             ) : (
               <p
-                className={`mt-1 text-gray-900 break-words whitespace-pre-wrap ${isReply ? "text-xs" : "text-sm"}`}
+                className={clsx("mt-1 text-gray-900 break-words whitespace-pre-wrap", isReply ? "text-xs" : "text-sm")}
               >
                 {comment.content}
               </p>
@@ -285,7 +287,6 @@ function UserCommentItem({
                     Responder
                   </Button>
                 </div>
-              </div>
             </div>
           )}
 
