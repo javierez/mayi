@@ -3,12 +3,12 @@ import { getAccountAgentsWithAuth } from "~/server/queries/agent-summary";
 import { getSecureSession } from "~/lib/dal";
 
 // Helper function to convert BigInt to string in objects
-function serializeBigInt<T>(obj: T): unknown {
+function serializeBigInt<T>(obj: T): Record<string, unknown> {
   return JSON.parse(
-    JSON.stringify(obj, (_key, value) =>
+    JSON.stringify(obj, (_key, value: unknown) =>
       typeof value === "bigint" ? value.toString() : value,
     ),
-  );
+  ) as Record<string, unknown>;
 }
 
 export async function GET() {

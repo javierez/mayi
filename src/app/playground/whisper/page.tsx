@@ -2,9 +2,21 @@
 
 import { useState, useRef } from "react";
 
+interface TranscriptionSegment {
+  start: number;
+  end: number;
+  text: string;
+}
+
+interface TranscriptionResponse {
+  text?: string;
+  segments?: TranscriptionSegment[];
+  [key: string]: unknown;
+}
+
 export default function WhisperPlayground() {
   const [transcript, setTranscript] = useState("");
-  const [jsonResponse, setJsonResponse] = useState<any>(null);
+  const [jsonResponse, setJsonResponse] = useState<TranscriptionResponse | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -101,8 +113,8 @@ export default function WhisperPlayground() {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
 
-    } catch (error) {
-      addLog(`❌ Error: ${error}`);
+    } catch (error: unknown) {
+      addLog(`❌ Error: ${String(error)}`);
       console.error("Full error:", error);
     }
   };
@@ -197,7 +209,7 @@ export default function WhisperPlayground() {
         throw new Error(`API error: ${error}`);
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as TranscriptionResponse;
       addLog("✅ Transcription received");
 
       // Store full JSON response
@@ -210,7 +222,7 @@ export default function WhisperPlayground() {
         // Log segments if available
         if (data.segments) {
           addLog(`📝 Received ${data.segments.length} segments`);
-          data.segments.forEach((segment: { start: number; end: number; text: string }) => {
+          data.segments.forEach((segment) => {
             addLog(`  [${segment.start.toFixed(2)}s - ${segment.end.toFixed(2)}s] ${segment.text}`);
           });
         }
@@ -218,8 +230,8 @@ export default function WhisperPlayground() {
         addLog("⚠️ No transcript in response");
       }
 
-    } catch (error) {
-      addLog(`❌ Processing error: ${error}`);
+    } catch (error: unknown) {
+      addLog(`❌ Processing error: ${String(error)}`);
     } finally {
       setIsProcessing(false);
     }
@@ -261,8 +273,8 @@ export default function WhisperPlayground() {
     try {
       await navigator.clipboard.writeText(JSON.stringify(jsonResponse, null, 2));
       addLog("📋 JSON copied to clipboard");
-    } catch (error) {
-      addLog(`❌ Failed to copy: ${error}`);
+    } catch (error: unknown) {
+      addLog(`❌ Failed to copy: ${String(error)}`);
     }
   };
 
@@ -287,7 +299,7 @@ export default function WhisperPlayground() {
                 <label className="block text-sm font-medium mb-2">Model</label>
                 <select
                   value={selectedModel}
-                  onChange={(e) => setSelectedModel(e.target.value as any)}
+                  onChange={(e) => setSelectedModel(e.target.value as "whisper-1" | "gpt-4o-transcribe" | "gpt-4o-mini-transcribe")}
                   disabled={isRecording || isProcessing}
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 >
@@ -444,10 +456,10 @@ export default function WhisperPlayground() {
       <div className="mt-8 rounded-lg border border-blue-200 bg-blue-50 p-6">
         <h3 className="text-lg font-semibold mb-2">📝 Instructions</h3>
         <ol className="list-decimal list-inside space-y-2 text-sm">
-          <li>Click "Start Recording" to begin</li>
+          <li>Click &ldquo;Start Recording&rdquo; to begin</li>
           <li>Allow microphone access when prompted</li>
-          <li>Speak in Spanish (the model is configured for "es")</li>
-          <li>Click "Stop Recording" when done</li>
+          <li>Speak in Spanish (the model is configured for &ldquo;es&rdquo;)</li>
+          <li>Click &ldquo;Stop Recording&rdquo; when done</li>
           <li>Wait for the audio to be processed by Whisper</li>
           <li>The transcript will appear once processing is complete</li>
         </ol>

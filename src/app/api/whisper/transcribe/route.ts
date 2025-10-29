@@ -41,7 +41,16 @@ export async function POST(request: NextRequest) {
     const audioFile = new File([buffer], file.name, { type: file.type });
 
     // Build transcription options
-    const options: any = {
+    interface TranscriptionOptions {
+      file: File;
+      model: string;
+      response_format: "json" | "text" | "srt" | "verbose_json" | "vtt";
+      language?: string;
+      prompt?: string;
+      timestamp_granularities?: string[];
+    }
+
+    const options: TranscriptionOptions = {
       file: audioFile,
       model,
       response_format: (responseFormat as "json" | "text" | "srt" | "verbose_json" | "vtt") ?? "json",
@@ -64,10 +73,10 @@ export async function POST(request: NextRequest) {
 
     // Handle streaming
     if (stream && model !== "whisper-1") {
-      const transcriptionStream = await openai.audio.transcriptions.create({
+      const transcriptionStream = (await openai.audio.transcriptions.create({
         ...options,
         stream: true,
-      });
+      } as Parameters<typeof openai.audio.transcriptions.create>[0])) as unknown as AsyncIterable<unknown>;
 
       // Create a readable stream for the response
       const encoder = new TextEncoder();
@@ -95,20 +104,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Non-streaming transcription
-    const transcription = await openai.audio.transcriptions.create(options);
+    const transcription = await openai.audio.transcriptions.create(
+      options as Parameters<typeof openai.audio.transcriptions.create>[0]
+    );
 
-    console.log("Transcription successful:", {
-      textLength: typeof transcription === "string" ? transcription.length : transcription.text?.length,
-    });
+    console.log("Transcription successful");
 
     return NextResponse.json(transcription);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Whisper transcription error:", error);
 
     if (error instanceof OpenAI.APIError) {
+      const errorStatus = typeof error.status === "number" ? error.status : 500;
       return NextResponse.json(
-        { error: error.message, type: error.type },
-        { status: error.status ?? 500 }
+        {
+          error: error.message,
+          type: String(error.type ?? "unknown")
+        },
+        { status: errorStatus }
       );
     }
 

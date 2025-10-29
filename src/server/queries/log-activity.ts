@@ -122,7 +122,7 @@ export async function logStatusChanged(params: {
   daysToSell?: number;
 }) {
   return logListingActivity({
-    listingId,
+    listingId: params.listingId,
     userId: params.userId,
     action: "status_changed",
     details: {
@@ -151,7 +151,7 @@ export async function logAgentReassigned(params: {
   commissionImpact?: string;
 }) {
   return logListingActivity({
-    listingId,
+    listingId: params.listingId,
     userId: params.userId,
     action: "agent_reassigned",
     details: {
@@ -180,7 +180,7 @@ export async function logPortalPublished(params: {
   cost?: number;
 }) {
   return logListingActivity({
-    listingId,
+    listingId: params.listingId,
     userId: params.userId,
     action: "portal_published",
     details: {
@@ -211,7 +211,7 @@ export async function logPortalSyncError(params: {
   nextRetryAt?: string;
 }) {
   return logListingActivity({
-    listingId,
+    listingId: params.listingId,
     userId: params.userId,
     action: "portal_sync_error",
     details: {
