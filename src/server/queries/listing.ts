@@ -322,6 +322,35 @@ export async function updateListing(
   data: Omit<Partial<Listing>, "listingId" | "createdAt" | "updatedAt">,
 ) {
   try {
+    // Check if price is being updated to log the change
+    let shouldLogPriceChange = false;
+    let oldPrice: number | undefined;
+    let listingCreatedAt: Date | undefined;
+
+    if (data.price !== undefined) {
+      // Fetch current listing to compare price
+      const [listing] = await db
+        .select()
+        .from(listings)
+        .where(
+          and(
+            eq(listings.listingId, BigInt(listingId)),
+            eq(listings.accountId, BigInt(accountId)),
+            eq(listings.isActive, true),
+          ),
+        );
+
+      if (listing) {
+        oldPrice = Number(listing.price);
+        listingCreatedAt = listing.createdAt;
+        const newPrice = Number(data.price);
+
+        // Only log if price actually changed
+        shouldLogPriceChange = oldPrice !== newPrice;
+      }
+    }
+
+    // Perform the update
     await db
       .update(listings)
       .set(data)
@@ -332,6 +361,7 @@ export async function updateListing(
           eq(listings.isActive, true),
         ),
       );
+
     const [updatedListing] = await db
       .select()
       .from(listings)
@@ -341,6 +371,38 @@ export async function updateListing(
           eq(listings.accountId, BigInt(accountId)),
         ),
       );
+
+    // Log price change if applicable
+    if (shouldLogPriceChange && oldPrice !== undefined) {
+      try {
+        // Import getCurrentUser to get userId for logging
+        const { getCurrentUser } = await import("~/lib/dal");
+        const { logPriceChanged } = await import("~/server/queries/log-activity");
+
+        const currentUser = await getCurrentUser();
+        const newPrice = Number(data.price);
+
+        // Calculate days active (optional enhancement)
+        const daysActive = listingCreatedAt
+          ? Math.floor(
+              (Date.now() - listingCreatedAt.getTime()) /
+                (1000 * 60 * 60 * 24),
+            )
+          : undefined;
+
+        await logPriceChanged({
+          listingId: BigInt(listingId),
+          userId: currentUser.id,
+          oldPrice,
+          newPrice,
+          daysActive,
+        });
+      } catch (logError) {
+        // Don't fail the update if logging fails
+        console.error("Failed to log price change:", logError);
+      }
+    }
+
     return updatedListing;
   } catch (error) {
     console.error("Error updating listing:", error);

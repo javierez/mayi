@@ -24,6 +24,7 @@ export interface PriceChangedDetails {
   newValue: number;
   percentChange: number; // e.g., -6.0 for 6% reduction
   changeType: "reduction" | "increase" | "correction";
+  updatedBy: string; // User ID of the agent who made the change
   reason?: string;
   daysActive?: number; // How many days the listing has been active
 }

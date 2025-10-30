@@ -102,6 +102,7 @@ export async function logPriceChanged(params: {
       newValue: newPrice,
       percentChange: Number(percentChange.toFixed(2)),
       changeType,
+      updatedBy: userId,
       reason,
       daysActive,
     },
