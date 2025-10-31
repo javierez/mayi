@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -23,13 +23,10 @@ import {
   Trash2,
   Loader2,
   Home,
-  Users,
-  PenTool,
-  Handshake,
-  Train,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
 import type {
   UrgentTask,
   TodayAppointment,
@@ -39,9 +36,42 @@ import {
   updateTaskWithAuth,
   deleteTaskWithAuth,
 } from "~/server/queries/task";
-import DaysDropdown from "~/components/ui/DaysDropdown";
+import { TaskFilter, type TaskFilters } from "./TaskFilter";
+import { AppointmentFilter } from "./AppointmentFilter";
+import { transformUrgentActions } from "~/lib/operations/transform-urgent-actions";
+import { AgentSelector } from "~/components/agents/agent-selector";
 
 type DetailedTask = Awaited<ReturnType<typeof getMostUrgentTasksWithAuth>>[0];
+
+// Client-side type matching what comes from the API
+interface UrgentAction {
+  type: "task" | "appointment";
+  id: string | bigint;
+  title: string;
+  description?: string;
+  dueDate?: string | Date;
+  datetimeStart?: string | Date;
+  datetimeEnd?: string | Date;
+  status: string;
+  entityName?: string;
+  entityContactId?: string | bigint;
+  listingTitle?: string;
+  listingId?: string | bigint;
+  propertyTitle?: string;
+  contactId?: string | bigint;
+  contactFirstName?: string;
+  contactLastName?: string;
+  propertyAddress?: string;
+  daysUntilDue?: number;
+  isOverdue?: boolean;
+  urgency?: number;
+  category?: string;
+  completed?: boolean;
+  userId?: string;
+  userName?: string;
+  userFirstName?: string;
+  userLastName?: string;
+}
 
 interface WorkQueueCardProps {
   tasks: UrgentTask[];
@@ -49,7 +79,15 @@ interface WorkQueueCardProps {
   detailedTasks?: DetailedTask[];
   loading?: boolean;
   className?: string;
-  onDaysChange?: (days: number) => void;
+  users?: Array<{ id: string; name: string }>;
+  // New props for agent page context
+  urgentActions?: UrgentAction[];
+  selectedAgentId?: string;
+  agents?: Array<{ id: string; name: string; firstName?: string; lastName?: string; email?: string }>;
+  showAllTasks?: boolean; // When true, don't limit to 10 tasks
+  onAgentChange?: (agentId: string) => void;
+  currentUserId?: string;
+  standalone?: boolean; // Improve aesthetics when used outside dashboard grid
 }
 
 export default function WorkQueueCard({
@@ -58,27 +96,115 @@ export default function WorkQueueCard({
   detailedTasks = [],
   loading = false,
   className = "",
-  onDaysChange,
+  users = [],
+  urgentActions,
+  selectedAgentId,
+  agents,
+  showAllTasks = false,
+  onAgentChange,
+  currentUserId,
+  standalone = false,
 }: WorkQueueCardProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [taskStates, setTaskStates] = useState<
     Record<string, "saving" | "saved" | "error">
   >({});
-  const [selectedDays, setSelectedDays] = useState(7);
   const [optimisticTasks, setOptimisticTasks] = useState<DetailedTask[]>([]);
   const [draggingTask, setDraggingTask] = useState<string | null>(null);
   const [taskToDelete, setTaskToDelete] = useState<{
     id: number;
     title: string;
   } | null>(null);
+  const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
 
-  // Update optimistic tasks when detailed tasks change
+  // Transform urgentActions if provided (for agent page) - memoized to prevent recalculation
+  const transformedData = useMemo(() => {
+    return urgentActions
+      ? transformUrgentActions(urgentActions)
+      : null;
+  }, [urgentActions]);
+
+  // Use transformed data or fall back to provided props - memoized
+  const finalDetailedTasks = useMemo(() => {
+    return transformedData
+      ? transformedData.detailedTasks
+      : detailedTasks;
+  }, [transformedData, detailedTasks]);
+
+  const finalAppointments = useMemo(() => {
+    return transformedData
+      ? transformedData.appointments
+      : appointments;
+  }, [transformedData, appointments]);
+
+  // Backend handles filtering by agent (userId/assignedTo), so use data directly
+  // No client-side filtering needed
+
+  // Update optimistic tasks when source data changes
+  // Use stable dependencies to prevent infinite loops
   useEffect(() => {
-    setOptimisticTasks(detailedTasks);
-  }, [detailedTasks]);
+    setOptimisticTasks(finalDetailedTasks);
+  }, [finalDetailedTasks]);
 
-  // Use optimistic tasks or detailed tasks, sorted with completed tasks at the bottom
-  const tasksToDisplay = (
-    optimisticTasks.length > 0 ? optimisticTasks : detailedTasks
+  // Read filters from URL params - updates automatically when searchParams change
+  const taskFilters: TaskFilters = {
+    urgency: searchParams.get("urgency")
+      ? searchParams.get("urgency")!.split(",").map(Number)
+      : [],
+    status: searchParams.get("status")
+      ? searchParams.get("status")!.split(",")
+      : [],
+    assignedTo: searchParams.get("assignedTo")
+      ? searchParams.get("assignedTo")!.split(",")
+      : [],
+    category: searchParams.get("category")
+      ? searchParams.get("category")!.split(",")
+      : [],
+  };
+
+  // Apply filters to tasks
+  const applyFilters = (tasks: DetailedTask[]) => {
+    return tasks.filter((task) => {
+      // Filter by urgency
+      if (
+        taskFilters.urgency.length > 0 &&
+        !taskFilters.urgency.includes(task.urgency ?? 0)
+      ) {
+        return false;
+      }
+
+      // Filter by status
+      if (
+        taskFilters.status.length > 0 &&
+        !taskFilters.status.includes(task.status ?? "")
+      ) {
+        return false;
+      }
+
+      // Filter by assignedTo (userId)
+      if (
+        taskFilters.assignedTo.length > 0 &&
+        !taskFilters.assignedTo.includes(task.userId ?? "")
+      ) {
+        return false;
+      }
+
+      // Filter by category
+      if (
+        taskFilters.category.length > 0 &&
+        !taskFilters.category.includes(task.category ?? "")
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  };
+
+  // Use optimistic tasks or final tasks (already filtered by backend), apply filters, then sort with completed tasks at the bottom
+  const tasksToDisplay = applyFilters(
+    optimisticTasks.length > 0 ? optimisticTasks : finalDetailedTasks,
   ).sort((a, b) => {
     // Completed tasks go to the bottom
     if ((a.completed ?? false) !== (b.completed ?? false)) {
@@ -90,16 +216,28 @@ export default function WorkQueueCard({
     );
   });
 
-  const formatTime = (date: Date) => {
+  const formatTime = (date: Date | string) => {
+    const dateObj = new Date(date);
+
+    // Check if date is valid
+    if (isNaN(dateObj.getTime())) {
+      return "--:--";
+    }
+
     return new Intl.DateTimeFormat("es-ES", {
       hour: "2-digit",
       minute: "2-digit",
-    }).format(new Date(date));
+    }).format(dateObj);
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string) => {
     const today = new Date();
     const taskDate = new Date(date);
+
+    // Check if date is valid
+    if (isNaN(taskDate.getTime())) {
+      return "Fecha inválida";
+    }
 
     if (taskDate.toDateString() === today.toDateString()) {
       return "Hoy";
@@ -141,9 +279,14 @@ export default function WorkQueueCard({
     }
   };
 
-  const formatAppointmentDate = (date: Date) => {
+  const formatAppointmentDate = (date: Date | string) => {
     const today = new Date();
     const appointmentDate = new Date(date);
+
+    // Check if date is valid
+    if (isNaN(appointmentDate.getTime())) {
+      return "Fecha inválida";
+    }
 
     if (appointmentDate.toDateString() === today.toDateString()) {
       return "Hoy";
@@ -160,23 +303,6 @@ export default function WorkQueueCard({
       weekday: "short",
       day: "numeric",
     }).format(appointmentDate);
-  };
-
-  const getAppointmentIcon = (appointmentType: string) => {
-    switch (appointmentType) {
-      case "Visita":
-        return { icon: Home, color: "text-blue-600" };
-      case "Reunión":
-        return { icon: Users, color: "text-purple-600" };
-      case "Firma":
-        return { icon: PenTool, color: "text-green-600" };
-      case "Cierre":
-        return { icon: Handshake, color: "text-yellow-600" };
-      case "Viaje":
-        return { icon: Train, color: "text-emerald-600" };
-      default:
-        return { icon: Calendar, color: "text-gray-600" };
-    }
   };
 
   const getAppointmentTypeInSpanish = (appointmentType: string) => {
@@ -221,21 +347,22 @@ export default function WorkQueueCard({
     return "U";
   };
 
-  const getRemainingTime = (dueDate?: Date | null) => {
+  const getRemainingTime = (dueDate?: Date | string | null) => {
     if (!dueDate) return null;
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dueDateObj = new Date(dueDate);
     const taskDate = new Date(
-      dueDate.getFullYear(),
-      dueDate.getMonth(),
-      dueDate.getDate(),
+      dueDateObj.getFullYear(),
+      dueDateObj.getMonth(),
+      dueDateObj.getDate(),
     );
 
     const fullDueDateTime = new Date(
-      dueDate.getFullYear(),
-      dueDate.getMonth(),
-      dueDate.getDate(),
+      dueDateObj.getFullYear(),
+      dueDateObj.getMonth(),
+      dueDateObj.getDate(),
       23,
       59,
     );
@@ -388,26 +515,53 @@ export default function WorkQueueCard({
     await handleToggleCompleted(Number(taskId), false); // Assume task is not completed when using this legacy handler
   };
 
-  const handleDaysChange = (days: number) => {
-    setSelectedDays(days);
-    if (onDaysChange) {
-      onDaysChange(days);
-    }
+  const toggleDateCollapse = (dateLabel: string) => {
+    setCollapsedDates((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(dateLabel)) {
+        newSet.delete(dateLabel);
+      } else {
+        newSet.add(dateLabel);
+      }
+      return newSet;
+    });
   };
 
+  // Memoize agents mapping to prevent creating new objects on every render
+  const mappedAgents = useMemo(() => {
+    if (!agents || agents.length === 0) return undefined;
+    return agents.map((agent) => ({
+      id: agent.id,
+      firstName: agent.firstName ?? "",
+      lastName: agent.lastName ?? "",
+      name: agent.name,
+      email: agent.email ?? "",
+    }));
+  }, [agents]);
+
   return (
-    <Card className={className}>
-      <CardContent>
-        <div className="mt-4 grid gap-6 md:grid-cols-2">
+    <Card className={`${standalone ? "shadow-lg" : ""} ${className}`}>
+      <CardContent className={standalone ? "p-6 sm:p-8" : undefined}>
+        {/* Agent Selector - only shown when agents prop is provided */}
+        {mappedAgents && mappedAgents.length > 0 && selectedAgentId && onAgentChange && currentUserId && (
+          <div className="mb-4">
+            <AgentSelector
+              agents={mappedAgents}
+              selectedAgentId={selectedAgentId}
+              onAgentChange={onAgentChange}
+              currentUserId={currentUserId}
+            />
+          </div>
+        )}
+        <div className={`${standalone ? "mt-2" : "mt-4"} grid gap-6 md:grid-cols-2`}>
           {/* Columna de Tareas Urgentes */}
           <div>
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900">Tareas Urgentes</h3>
-              <div className="flex items-center gap-3">
-                <DaysDropdown
-                  value={selectedDays}
-                  onChange={handleDaysChange}
-                />
+            <div className="relative mb-4">
+              <div className="flex items-center">
+                <h3 className="font-semibold text-gray-900">Tareas Urgentes</h3>
+                <div className="ml-auto">
+                  <TaskFilter users={users} inline iconOnly />
+                </div>
               </div>
             </div>
 
@@ -435,8 +589,8 @@ export default function WorkQueueCard({
                 <p className="text-xs text-gray-500">No hay tareas urgentes</p>
               </div>
             ) : tasksToDisplay.length > 0 ? (
-              <div className="custom-scrollbar max-h-80 space-y-1.5 overflow-y-auto pr-1">
-                {tasksToDisplay.slice(0, 10).map((task) => {
+              <div className="custom-scrollbar max-h-80 space-y-1.5 overflow-y-auto px-1 py-1.5">
+                {(showAllTasks ? tasksToDisplay : tasksToDisplay.slice(0, 10)).map((task) => {
                   const taskIdStr = task.taskId.toString();
 
                   return (
@@ -482,38 +636,60 @@ export default function WorkQueueCard({
                           )
                         }
                       >
-                        {/* Avatar badge - top right */}
-                        <Avatar
-                          className="absolute right-2 top-2 h-4 w-4 ring-1 ring-gray-100 sm:h-5 sm:w-5"
-                          title={
-                            task.userName ??
-                            (`${task.userFirstName ?? ""} ${task.userLastName ?? ""}`.trim() ||
-                              "Usuario")
-                          }
-                        >
-                          <AvatarFallback className="text-[9px] font-medium sm:text-xs">
-                            {getInitials(
-                              task.userFirstName,
-                              task.userLastName ?? undefined,
-                              task.userName,
-                            )}
-                          </AvatarFallback>
-                        </Avatar>
+                        {/* Days remaining badge and Avatar - top right, side by side */}
+                        <div className="absolute right-2 top-2 mt-1.5 flex items-center gap-1">
+                          {task.dueDate && (() => {
+                            const now = new Date();
+                            const dueDate = new Date(task.dueDate);
+                            const fullDueDateTime = new Date(
+                              dueDate.getFullYear(),
+                              dueDate.getMonth(),
+                              dueDate.getDate(),
+                              23,
+                              59,
+                            );
+                            const diffMs = fullDueDateTime.getTime() - now.getTime();
+                            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
 
-                        {/* Days remaining badge - bottom right on mobile, top right stacked on desktop */}
-                        {task.dueDate && (
-                          <span
-                            className={`absolute bottom-2 right-2 whitespace-nowrap rounded-full border px-1.5 py-0.5 text-[10px] font-medium leading-none sm:bottom-auto sm:top-8 sm:text-xs ${
-                              getRemainingTime(task.dueDate)?.includes(
-                                "vencido",
-                              ) || getRemainingTime(task.dueDate) === "Vencido"
-                                ? "border-rose-200 bg-rose-50 text-rose-600"
-                                : "border-amber-200 bg-amber-50 text-amber-600"
-                            }`}
+                            // Determine color based on time remaining (matching tareas.tsx)
+                            let colorClasses = "";
+                            if (diffMs < 0) {
+                              // Overdue - rose
+                              colorClasses = "bg-rose-100 text-rose-800";
+                            } else if (diffHours < 24) {
+                              // Less than 1 day - orange
+                              colorClasses = "bg-orange-100 text-orange-800";
+                            } else {
+                              // More than 1 day - yellow
+                              colorClasses = "bg-yellow-100 text-yellow-800";
+                            }
+
+                            return (
+                              <span
+                                className={`whitespace-nowrap rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none ${colorClasses}`}
+                              >
+                                {getRemainingTime(task.dueDate)}
+                              </span>
+                            );
+                          })()}
+
+                          <Avatar
+                            className="h-4 w-4 ring-1 ring-gray-100"
+                            title={
+                              task.userName ??
+                              (`${task.userFirstName ?? ""} ${task.userLastName ?? ""}`.trim() ||
+                                "Usuario")
+                            }
                           >
-                            {getRemainingTime(task.dueDate)}
-                          </span>
-                        )}
+                            <AvatarFallback className="text-[10px] font-medium">
+                              {getInitials(
+                                task.userFirstName,
+                                task.userLastName ?? undefined,
+                                task.userName,
+                              )}
+                            </AvatarFallback>
+                          </Avatar>
+                        </div>
 
                         {/* Mobile: Compact layout, Desktop: Original layout */}
                         <div className="flex flex-col gap-1.5">
@@ -521,38 +697,26 @@ export default function WorkQueueCard({
                           <div className="flex items-start gap-1.5 sm:gap-2">
                             {/* Checkbox */}
                             <div
-                              className={`mt-0.5 flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center rounded border-2 transition-all duration-200 sm:h-4 sm:w-4 ${
+                              className={`mt-1 flex h-3 w-3 flex-shrink-0 items-center justify-center rounded border-2 transition-all duration-200 ${
                                 (task.completed ?? false)
                                   ? "border-emerald-500 bg-emerald-500 text-white shadow-sm"
                                   : "border-gray-300 hover:border-gray-400"
                               }`}
                             >
                               {(task.completed ?? false) && (
-                                <Check className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
+                                <Check className="h-2 w-2" />
                               )}
                             </div>
 
-                            {/* Title and status icons */}
+                            {/* Title */}
                             <div className="min-w-0 flex-1 pr-20 sm:pr-24">
-                              <div className="flex items-start justify-between gap-1.5">
-                                <h3
-                                  className={`min-w-0 flex-1 break-words text-xs font-semibold leading-tight sm:text-sm ${(task.completed ?? false) ? "text-gray-500 line-through" : "text-gray-900"}`}
-                                >
-                                  {task.title.length > 45
-                                    ? `${task.title.substring(0, 45)}...`
-                                    : task.title}
-                                </h3>
-
-                                {/* Status icons */}
-                                <div className="flex flex-shrink-0 items-center gap-1">
-                                  {taskStates[taskIdStr] === "saving" && (
-                                    <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
-                                  )}
-                                  {taskStates[taskIdStr] === "saved" && (
-                                    <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                                  )}
-                                </div>
-                              </div>
+                              <h3
+                                className={`min-w-0 flex-1 break-words text-xs font-semibold leading-tight sm:text-sm ${(task.completed ?? false) ? "text-gray-500 line-through" : "text-gray-900"}`}
+                              >
+                                {task.title.length > 45
+                                  ? `${task.title.substring(0, 45)}...`
+                                  : task.title}
+                              </h3>
                             </div>
                           </div>
 
@@ -576,7 +740,9 @@ export default function WorkQueueCard({
                                 >
                                   <Home className="h-2.5 w-2.5 flex-shrink-0 opacity-60 sm:h-3 sm:w-3" />
                                   <span className="break-words">
-                                    {task.propertyTitle}
+                                    {task.propertyTitle.length > 30
+                                      ? `${task.propertyTitle.substring(0, 30)}...`
+                                      : task.propertyTitle}
                                   </span>
                                 </Link>
                               )}
@@ -596,11 +762,26 @@ export default function WorkQueueCard({
                                   >
                                     <User className="h-2.5 w-2.5 flex-shrink-0 opacity-60 sm:h-3 sm:w-3" />
                                     <span className="break-words">
-                                      {`${task.contactFirstName ?? ""} ${task.contactLastName ?? ""}`.trim()}
+                                      {(() => {
+                                        const fullName = `${task.contactFirstName ?? ""} ${task.contactLastName ?? ""}`.trim();
+                                        return fullName.length > 20
+                                          ? `${fullName.substring(0, 20)}...`
+                                          : fullName;
+                                      })()}
                                     </span>
                                   </Link>
                                 )}
                             </div>
+                          )}
+                        </div>
+
+                        {/* Status icons - bottom right */}
+                        <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                          {taskStates[taskIdStr] === "saving" && (
+                            <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
+                          )}
+                          {taskStates[taskIdStr] === "saved" && (
+                            <CheckCircle2 className="h-3 w-3 text-emerald-500" />
                           )}
                         </div>
                       </motion.div>
@@ -608,7 +789,7 @@ export default function WorkQueueCard({
                   );
                 })}
 
-                {tasksToDisplay.length > 10 && (
+                {!showAllTasks && tasksToDisplay.length > 10 && (
                   <div className="pt-2 text-center">
                     <Button variant="ghost" size="sm">
                       Ver todas las {tasksToDisplay.length} tareas
@@ -679,12 +860,16 @@ export default function WorkQueueCard({
 
           {/* Columna de Citas */}
           <div>
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900">Próximos Eventos</h3>
-              <Badge variant="secondary">{appointments.length} eventos</Badge>
+            <div className="relative mb-4">
+              <div className="flex items-center">
+                <h3 className="font-semibold text-gray-900">Próximos Eventos</h3>
+                <div className="ml-auto">
+                  <AppointmentFilter users={users} inline iconOnly />
+                </div>
+              </div>
             </div>
 
-            {appointments.length === 0 ? (
+            {finalAppointments.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <Calendar className="mb-2 h-12 w-12 text-gray-400" />
                 <p className="text-sm font-medium text-gray-900">Sin eventos</p>
@@ -696,7 +881,7 @@ export default function WorkQueueCard({
               <div className="space-y-3">
                 {(() => {
                   // Group appointments by date
-                  const groupedAppointments = appointments.reduce(
+                  const groupedAppointments = finalAppointments.reduce(
                     (groups, appointment) => {
                       const dateLabel = formatAppointmentDate(
                         appointment.startTime,
@@ -705,25 +890,42 @@ export default function WorkQueueCard({
                       groups[dateLabel].push(appointment);
                       return groups;
                     },
-                    {} as Record<string, typeof appointments>,
+                    {} as Record<string, typeof finalAppointments>,
                   );
 
                   return Object.entries(groupedAppointments).map(
-                    ([dateLabel, dayAppointments]) => (
-                      <div key={dateLabel} className="space-y-2">
-                        {/* Date Separator */}
-                        <div className="flex items-center py-1">
-                          <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700">
-                            {dateLabel}
-                          </span>
-                        </div>
+                    ([dateLabel, dayAppointments]) => {
+                      const isCollapsed = collapsedDates.has(dateLabel);
 
-                        {/* Appointments for this date */}
-                        <div className="space-y-2">
+                      return (
+                        <div key={dateLabel} className="space-y-2">
+                          {/* Date Separator - Collapsible */}
+                          <button
+                            onClick={() => toggleDateCollapse(dateLabel)}
+                            className="flex w-full items-center py-1"
+                          >
+                            <span className="cursor-pointer rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700 transition-opacity hover:opacity-70">
+                              {dateLabel}
+                            </span>
+                          </button>
+
+                          {/* Appointments for this date */}
+                          {!isCollapsed && (
+                            <div className="space-y-2">
                           {dayAppointments.map((appointment, index) => {
-                            const { icon: Icon, color } = getAppointmentIcon(
-                              appointment.appointmentType,
-                            );
+                            // Check if this appointment is selected based on URL params
+                            // Selection logic: listingId must always match, and contactId must match if it exists in both
+                            const appointmentListingId = searchParams.get("appointmentListingId");
+                            const appointmentContactId = searchParams.get("appointmentContactId");
+                            
+                            const listingMatches = appointmentListingId &&
+                              appointment.listingId &&
+                              Number(appointment.listingId) === Number(appointmentListingId);
+                            
+                            const contactMatches = !appointmentContactId ? true : // No contact in filter = always matches
+                              (appointment.contactId && Number(appointment.contactId) === Number(appointmentContactId));
+                            
+                            const isSelected = listingMatches && contactMatches;
 
                             return (
                               <motion.div
@@ -731,56 +933,92 @@ export default function WorkQueueCard({
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.05 }}
-                                className="group relative cursor-pointer rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100 transition-all duration-200 hover:shadow-md hover:ring-gray-200"
+                                onClick={() => {
+                                  // Get current URL params
+                                  const params = new URLSearchParams(searchParams.toString());
+                                  
+                                  // Toggle filter: if already selected, clear it; otherwise set it
+                                  if (isSelected) {
+                                    params.delete("appointmentListingId");
+                                    params.delete("appointmentContactId");
+                                  } else {
+                                    // Remove any existing appointment filter first
+                                    params.delete("appointmentListingId");
+                                    params.delete("appointmentContactId");
+                                    
+                                    // Add new filter params
+                                    if (appointment.listingId) {
+                                      params.set("appointmentListingId", appointment.listingId.toString());
+                                    }
+                                    if (appointment.contactId) {
+                                      params.set("appointmentContactId", appointment.contactId.toString());
+                                    }
+                                  }
+                                  
+                                  // Update URL
+                                  router.push(`?${params.toString()}`);
+                                }}
+                                className={`group relative cursor-pointer rounded-lg p-4 transition-all duration-200 ${
+                                  isSelected
+                                    ? "bg-gray-100 shadow-lg"
+                                    : "bg-white shadow-sm hover:shadow-md"
+                                }`}
                               >
-                                {/* Icon and Type Badge */}
+                                {/* Type Badge */}
                                 <div className="absolute right-3 top-3 flex items-center gap-2">
-                                  <span className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
+                                  <span
+                                    className={`text-[10px] font-medium uppercase tracking-wide ${
+                                      isSelected ? "text-gray-800" : "text-gray-400"
+                                    }`}
+                                  >
                                     {getAppointmentTypeInSpanish(
                                       appointment.appointmentType,
                                     )}
                                   </span>
-                                  <div
-                                    className={`rounded-full bg-gray-50 p-1.5 ${color}`}
-                                  >
-                                    <Icon className="h-3 w-3" />
+                                </div>
+
+                                {/* Time - bottom right */}
+                                <div className="absolute bottom-3 right-3 flex items-center gap-1 font-mono">
+                                  <div className="text-[10px] font-medium tabular-nums text-gray-600">
+                                    {formatTime(appointment.startTime)}
+                                  </div>
+                                  <div className="text-[10px] text-gray-400">—</div>
+                                  <div className="text-[10px] tabular-nums text-gray-500">
+                                    {formatTime(appointment.endTime)}
                                   </div>
                                 </div>
 
                                 {/* Main content */}
                                 <div className="pr-16">
                                   {/* Contact name */}
-                                  <h3 className="mb-1 text-sm font-semibold text-gray-900">
+                                  <h3 className="mb-2.5 text-sm font-semibold text-gray-900">
                                     {appointment.contactName}
                                   </h3>
 
-                                  {/* Time */}
-                                  <div className="mb-2 flex items-center gap-1">
-                                    <div className="text-xs font-medium text-gray-600">
-                                      {formatTime(appointment.startTime)}
-                                    </div>
-                                    <div className="h-px w-3 bg-gray-300"></div>
-                                    <div className="text-xs text-gray-500">
-                                      {formatTime(appointment.endTime)}
-                                    </div>
-                                  </div>
-
                                   {/* Address */}
                                   {appointment.propertyAddress && (
-                                    <div className="flex items-start gap-1.5">
+                                    <a
+                                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(appointment.propertyAddress)}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="flex items-start gap-1 transition-colors hover:text-blue-600"
+                                    >
                                       <MapPin className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400" />
-                                      <span className="line-clamp-2 text-xs leading-relaxed text-gray-600">
+                                      <span className="line-clamp-2 text-xs leading-tight text-gray-600 hover:underline">
                                         {appointment.propertyAddress}
                                       </span>
-                                    </div>
+                                    </a>
                                   )}
                                 </div>
                               </motion.div>
                             );
                           })}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ),
+                      );
+                    },
                   );
                 })()}
               </div>

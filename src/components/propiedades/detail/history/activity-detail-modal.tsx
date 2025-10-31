@@ -140,7 +140,7 @@ function PriceChangeDetails({ details }: { details: Record<string, unknown> }) {
       <DetailField label="Cambio porcentual" value={`${(details.percentChange as number).toFixed(2)}%`} />
       <DetailField label="Tipo de cambio" value={details.changeType as string} />
       {details.daysActive ? (
-        <DetailField label="Días activo" value={`${details.daysActive} días`} />
+        <DetailField label="Días activo" value={`${Number(details.daysActive)} días`} />
       ) : null}
       {details.reason ? <DetailField label="Razón" value={details.reason as string} className="col-span-2" /> : null}
     </div>
@@ -155,7 +155,7 @@ function StatusChangeDetails({ details }: { details: Record<string, unknown> }) 
         <DetailField label="Estado anterior" value={details.oldStatus as string} />
         <DetailField label="Estado nuevo" value={details.newStatus as string} />
         {details.reason ? <DetailField label="Razón" value={details.reason as string} className="col-span-2" /> : null}
-        {details.dealId ? <DetailField label="ID de operación" value={String(details.dealId)} /> : null}
+        {details.dealId ? <DetailField label="ID de operación" value={String(details.dealId as number | bigint)} /> : null}
         {details.salePrice ? (
           <DetailField label="Precio de venta" value={`€${(details.salePrice as number).toLocaleString("es-ES")}`} />
         ) : null}
@@ -191,7 +191,7 @@ function PortalPublishedDetails({ details }: { details: Record<string, unknown> 
         {details.publicationDate ? (
           <DetailField label="Fecha de publicación" value={new Date(details.publicationDate as string).toLocaleDateString("es-ES")} />
         ) : null}
-        {details.cost ? <DetailField label="Coste" value={`€${details.cost}`} /> : null}
+        {details.cost ? <DetailField label="Coste" value={`€${Number(details.cost)}`} /> : null}
       </div>
     </div>
   );

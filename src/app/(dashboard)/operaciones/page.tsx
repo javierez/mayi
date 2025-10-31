@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import OperacionesSummaryCard from "~/components/dashboard/operations/OperacionesSummaryCard";
-import WorkQueueCard from "~/components/dashboard/WorkQueueCard";
+import WorkQueueCard from "~/components/dashboard/operations/WorkQueueCard";
 import OperacionesQuickActionsCard from "~/components/dashboard/operations/OperacionesQuickActionsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
@@ -21,8 +22,10 @@ import type {
   TodayAppointment,
 } from "~/server/queries/operaciones-dashboard";
 import { getMostUrgentTasksWithAuth } from "~/server/queries/task";
+import { getAgentsForSelectionWithAuth } from "~/server/queries/users";
 
 export default function OperacionesPage() {
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<OperacionesSummary | null>(null);
@@ -33,6 +36,9 @@ export default function OperacionesPage() {
   >([]);
   const [tasksDaysFilter, setTasksDaysFilter] = useState(7);
   const [tasksLoading, setTasksLoading] = useState(false);
+  const [users, setUsers] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
 
   // Initial data fetch (without detailed tasks)
   useEffect(() => {
@@ -40,19 +46,39 @@ export default function OperacionesPage() {
       setIsLoading(true);
       setError(null);
       try {
+        // Read appointment filter params from URL
+        const appointmentListingId = searchParams.get("appointmentListingId");
+        const appointmentContactId = searchParams.get("appointmentContactId");
+        
+        const filters = {
+          appointmentListingId: appointmentListingId ? Number(appointmentListingId) : undefined,
+          appointmentContactId: appointmentContactId ? Number(appointmentContactId) : undefined,
+        };
+        
+        // Read appointment filter params from URL
+        const appointmentType = searchParams.get("appointmentType");
+        const appointmentAssignedTo = searchParams.get("appointmentAssignedTo");
+        
+        const appointmentFilters = {
+          type: appointmentType ? appointmentType.split(",") : undefined,
+          assignedTo: appointmentAssignedTo ? appointmentAssignedTo.split(",") : undefined,
+        };
+        
         // Obtención de datos iniciales en paralelo para mejor rendimiento
-        const [summaryData, tasksData, appointmentsData, mostUrgentTasksData] =
+        const [summaryData, tasksData, appointmentsData, mostUrgentTasksData, usersData] =
           await Promise.all([
             getOperacionesSummaryWithAuth(),
             getUrgentTasksWithAuth(5), // 5 días laborables
-            getTodayAppointmentsWithAuth(),
-            getMostUrgentTasksWithAuth(10, tasksDaysFilter), // Initial detailed tasks
+            getTodayAppointmentsWithAuth(appointmentFilters),
+            getMostUrgentTasksWithAuth(10, tasksDaysFilter, filters), // Initial detailed tasks
+            getAgentsForSelectionWithAuth(),
           ]);
 
         setSummary(summaryData);
         setUrgentTasks(tasksData);
         setAppointments(appointmentsData);
         setMostUrgentTasks(mostUrgentTasksData);
+        setUsers(usersData);
       } catch (error) {
         console.error("Error al cargar datos de operaciones:", error);
         setError(
@@ -67,14 +93,24 @@ export default function OperacionesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Separate effect for fetching detailed tasks based on days filter
+  // Separate effect for fetching detailed tasks based on days filter and appointment filters
   useEffect(() => {
     const fetchDetailedTasks = async () => {
       setTasksLoading(true);
       try {
+        // Read appointment filter params from URL
+        const appointmentListingId = searchParams.get("appointmentListingId");
+        const appointmentContactId = searchParams.get("appointmentContactId");
+        
+        const filters = {
+          appointmentListingId: appointmentListingId ? Number(appointmentListingId) : undefined,
+          appointmentContactId: appointmentContactId ? Number(appointmentContactId) : undefined,
+        };
+        
         const mostUrgentTasksData = await getMostUrgentTasksWithAuth(
           10,
           tasksDaysFilter,
+          filters,
         );
         setMostUrgentTasks(mostUrgentTasksData);
       } catch (error) {
@@ -85,17 +121,45 @@ export default function OperacionesPage() {
     };
 
     void fetchDetailedTasks();
-  }, [tasksDaysFilter]);
+  }, [tasksDaysFilter, searchParams]);
 
-  const handleDaysFilterChange = (days: number) => {
-    setTasksDaysFilter(days);
-  };
+  // Separate effect for fetching appointments based on filters
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      try {
+        // Read appointment filter params from URL
+        const appointmentType = searchParams.get("appointmentType");
+        const appointmentAssignedTo = searchParams.get("appointmentAssignedTo");
+        
+        const appointmentFilters = {
+          type: appointmentType ? appointmentType.split(",") : undefined,
+          assignedTo: appointmentAssignedTo ? appointmentAssignedTo.split(",") : undefined,
+        };
+        
+        const appointmentsData = await getTodayAppointmentsWithAuth(appointmentFilters);
+        setAppointments(appointmentsData);
+      } catch (error) {
+        console.error("Error al cargar citas:", error);
+      }
+    };
+
+    void fetchAppointments();
+  }, [searchParams]);
 
   const refreshTasks = async () => {
     try {
+      // Read appointment filter params from URL
+      const appointmentListingId = searchParams.get("appointmentListingId");
+      const appointmentContactId = searchParams.get("appointmentContactId");
+      
+      const filters = {
+        appointmentListingId: appointmentListingId ? Number(appointmentListingId) : undefined,
+        appointmentContactId: appointmentContactId ? Number(appointmentContactId) : undefined,
+      };
+      
       const [urgentTasksData, mostUrgentTasksData] = await Promise.all([
         getUrgentTasksWithAuth(5),
-        getMostUrgentTasksWithAuth(10, tasksDaysFilter),
+        getMostUrgentTasksWithAuth(10, tasksDaysFilter, filters),
       ]);
       setUrgentTasks(urgentTasksData);
       setMostUrgentTasks(mostUrgentTasksData);
@@ -136,7 +200,7 @@ export default function OperacionesPage() {
             appointments={appointments}
             detailedTasks={mostUrgentTasks}
             loading={tasksLoading}
-            onDaysChange={handleDaysFilterChange}
+            users={users}
             className="md:col-span-2 lg:col-span-3"
           />
         </div>

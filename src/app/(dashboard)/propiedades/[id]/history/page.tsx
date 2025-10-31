@@ -7,7 +7,6 @@ import {
   getListingHeaderData,
 } from "~/server/queries/listing";
 import { getListingHistory } from "~/server/queries/listing-history";
-import { canEditProperties } from "~/app/actions/permissions/check-permissions";
 
 interface HistoryPageProps {
   params: Promise<{
@@ -20,12 +19,11 @@ export default async function HistoryPage({ params }: HistoryPageProps) {
   const listingId = parseInt(unwrappedParams.id);
 
   // Fetch breadcrumb, header data, and history in parallel
-  const [breadcrumbData, headerData, activities, hasEditPermission] =
+  const [breadcrumbData, headerData, activities] =
     await Promise.all([
       getListingBreadcrumbData(listingId),
       getListingHeaderData(listingId),
       getListingHistory(listingId),
-      canEditProperties(),
     ]);
 
   if (!breadcrumbData || !headerData) {

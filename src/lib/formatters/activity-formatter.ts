@@ -3,7 +3,6 @@ import { es } from "date-fns/locale";
 import type { ListingActivityAction } from "~/lib/constants/listing-activity-actions";
 import {
   TrendingDown,
-  TrendingUp,
   RefreshCw,
   Users,
   Upload,

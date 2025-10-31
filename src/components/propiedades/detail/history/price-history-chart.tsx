@@ -45,44 +45,61 @@ export function PriceHistoryChart({ priceHistory }: PriceHistoryChartProps) {
   }));
 
   // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (!active || !payload || !payload.length) return null;
+  interface TooltipPayload {
+    payload: {
+      dateLabel: string;
+      price: number;
+      percentChange: number;
+      changeType: "reduction" | "increase" | "correction";
+    };
+  }
 
-    const data = payload[0].payload;
-    const changeIcon =
-      data.changeType === "reduction" ? (
-        <TrendingDown className="h-4 w-4 text-red-500" />
-      ) : data.changeType === "increase" ? (
-        <TrendingUp className="h-4 w-4 text-green-500" />
-      ) : (
-        <Minus className="h-4 w-4 text-gray-500" />
+  interface CustomTooltipProps {
+    active?: boolean;
+    payload?: TooltipPayload[];
+  }
+
+  const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
+    if (Boolean(active) && Boolean(payload) && payload && payload.length > 0) {
+      const data = payload[0]?.payload;
+      if (!data) return null;
+
+      const changeIcon =
+        data.changeType === "reduction" ? (
+          <TrendingDown className="h-4 w-4 text-red-500" />
+        ) : data.changeType === "increase" ? (
+          <TrendingUp className="h-4 w-4 text-green-500" />
+        ) : (
+          <Minus className="h-4 w-4 text-gray-500" />
+        );
+
+      return (
+        <div className="rounded-lg border bg-background p-3 shadow-lg">
+          <p className="text-sm font-medium mb-1">{data.dateLabel}</p>
+          <p className="text-lg font-bold text-primary mb-1">
+            €{data.price.toLocaleString("es-ES")}
+          </p>
+          {data.percentChange !== 0 && (
+            <div className="flex items-center gap-1 text-sm">
+              {changeIcon}
+              <span
+                className={
+                  data.changeType === "reduction"
+                    ? "text-red-600"
+                    : data.changeType === "increase"
+                      ? "text-green-600"
+                      : "text-gray-600"
+                }
+              >
+                {data.percentChange > 0 ? "+" : ""}
+                {data.percentChange.toFixed(1)}%
+              </span>
+            </div>
+          )}
+        </div>
       );
-
-    return (
-      <div className="rounded-lg border bg-background p-3 shadow-lg">
-        <p className="text-sm font-medium mb-1">{data.dateLabel}</p>
-        <p className="text-lg font-bold text-primary mb-1">
-          €{data.price.toLocaleString("es-ES")}
-        </p>
-        {data.percentChange !== 0 && (
-          <div className="flex items-center gap-1 text-sm">
-            {changeIcon}
-            <span
-              className={
-                data.changeType === "reduction"
-                  ? "text-red-600"
-                  : data.changeType === "increase"
-                    ? "text-green-600"
-                    : "text-gray-600"
-              }
-            >
-              {data.percentChange > 0 ? "+" : ""}
-              {data.percentChange.toFixed(1)}%
-            </span>
-          </div>
-        )}
-      </div>
-    );
+    }
+    return null;
   };
 
   // Calculate price range for Y axis domain

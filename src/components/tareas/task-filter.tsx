@@ -223,7 +223,7 @@ export function TaskFilter({
         <CollapsibleContent className="space-y-2">
           <div className="rounded-lg bg-card p-2 shadow-md">
             <div className="space-y-2">
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-2 gap-2">
                 {/* Creado Por Filter */}
                 {users.length > 0 && (
                   <FilterCategory

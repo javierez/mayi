@@ -41,6 +41,8 @@ export interface UrgentTask {
 
 export interface TodayAppointment {
   appointmentId: bigint;
+  contactId?: bigint;
+  listingId?: bigint;
   contactName: string;
   propertyAddress?: string;
   startTime: Date;
@@ -48,6 +50,7 @@ export interface TodayAppointment {
   tripTimeMinutes?: number;
   status: "Scheduled" | "Completed" | "Cancelled" | "Rescheduled" | "NoShow";
   appointmentType: string; // viewing, valuation, etc.
+  assignedTo?: string; // userId of assigned agent
 }
 
 // Utility function to calculate working days difference (excluding weekends)
@@ -310,6 +313,10 @@ export async function getUrgentTasks(
 // Get today's and tomorrow's appointments
 export async function getTodayAppointments(
   accountId: bigint,
+  filters?: {
+    type?: string[];
+    assignedTo?: string | string[]; // Support single userId string or array
+  },
 ): Promise<TodayAppointment[]> {
   try {
     // Calculate date ranges for today and tomorrow
@@ -318,15 +325,56 @@ export async function getTodayAppointments(
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 2); // End of tomorrow
 
+    const whereConditions = [
+      // Account filtering
+      eq(contacts.accountId, accountId),
+      // Date range filtering (today and tomorrow)
+      gte(appointments.datetimeStart, today),
+      lte(appointments.datetimeStart, tomorrow),
+      // Only active appointments
+      eq(appointments.isActive, true),
+      // Exclude cancelled appointments
+      sql`${appointments.status} != 'Cancelled'`,
+    ];
+
+    // Add filter conditions if provided
+    if (filters?.type && filters.type.length > 0) {
+      whereConditions.push(
+        sql`${appointments.type} IN (${sql.join(
+          filters.type.map((t) => sql`${t}`),
+          sql`, `,
+        )})`,
+      );
+    }
+
+    if (filters?.assignedTo) {
+      // Handle both single string and array
+      const assignedToArray = Array.isArray(filters.assignedTo)
+        ? filters.assignedTo
+        : [filters.assignedTo];
+      
+      if (assignedToArray.length > 0) {
+        whereConditions.push(
+          sql`${appointments.userId} IN (${sql.join(
+            assignedToArray.map((a) => sql`${a}`),
+            sql`, `,
+          )})`,
+        );
+      }
+    }
+
     const appointmentsQuery = await db
       .select({
         appointmentId: appointments.appointmentId,
+        contactId: appointments.contactId,
+        listingId: appointments.listingId,
         startTime: appointments.datetimeStart,
         endTime: appointments.datetimeEnd,
         tripTimeMinutes: appointments.tripTimeMinutes,
         status: appointments.status,
         notes: appointments.notes,
         appointmentType: appointments.type,
+        assignedTo: appointments.userId, // Include userId (assignedTo)
         // Contact information
         contactName: sql<string>`CONCAT(contacts.first_name, ' ', contacts.last_name)`,
         // Property information (if linked to listing)
@@ -340,23 +388,13 @@ export async function getTodayAppointments(
       .innerJoin(contacts, eq(appointments.contactId, contacts.contactId))
       .leftJoin(listings, eq(appointments.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .where(
-        and(
-          // Account filtering
-          eq(contacts.accountId, accountId),
-          // Date range filtering (today and tomorrow)
-          gte(appointments.datetimeStart, today),
-          lte(appointments.datetimeStart, tomorrow),
-          // Only active appointments
-          eq(appointments.isActive, true),
-          // Exclude cancelled appointments
-          sql`${appointments.status} != 'Cancelled'`,
-        ),
-      )
+      .where(and(...whereConditions))
       .orderBy(appointments.datetimeStart);
 
     return appointmentsQuery.map((appt) => ({
       appointmentId: appt.appointmentId,
+      contactId: appt.contactId ?? undefined,
+      listingId: appt.listingId ?? undefined,
       contactName: appt.contactName,
       propertyAddress: appt.propertyAddress || undefined,
       startTime: appt.startTime,
@@ -364,6 +402,7 @@ export async function getTodayAppointments(
       tripTimeMinutes: appt.tripTimeMinutes ?? undefined,
       status: appt.status as TodayAppointment["status"],
       appointmentType: appt.appointmentType ?? "Visita", // Use actual type from database, default to "Visita"
+      assignedTo: appt.assignedTo ?? undefined,
     }));
   } catch (error) {
     console.error("Error fetching today's appointments:", error);
@@ -384,9 +423,12 @@ export async function getUrgentTasksWithAuth(
   return getUrgentTasks(BigInt(accountId), workingDaysLimit);
 }
 
-export async function getTodayAppointmentsWithAuth(): Promise<
-  TodayAppointment[]
-> {
+export async function getTodayAppointmentsWithAuth(
+  filters?: {
+    type?: string[];
+    assignedTo?: string | string[]; // Support single userId string or array
+  },
+): Promise<TodayAppointment[]> {
   const accountId = await getCurrentUserAccountId();
-  return getTodayAppointments(BigInt(accountId));
+  return getTodayAppointments(BigInt(accountId), filters);
 }

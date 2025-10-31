@@ -94,8 +94,18 @@ export interface UrgentAgentAction {
   datetimeStart?: Date;
   status: string;
   entityName?: string;
+  entityContactId?: bigint;
+  listingTitle?: string;
+  listingId?: bigint;
+  contactId?: bigint;
+  contactFirstName?: string;
+  contactLastName?: string;
+  propertyTitle?: string;
   daysUntilDue?: number;
   isOverdue?: boolean;
+  urgency?: number;
+  category?: string;
+  completed?: boolean;
 }
 
 /**
@@ -476,6 +486,8 @@ export async function getUrgentAgentActions(
     cutoffDate.setDate(today.getDate() + Number(workingDaysLimit));
 
     // Get urgent tasks (due within working days or overdue)
+    const directContacts = sql`direct_contacts`;
+    const lcContacts = sql`lc_contacts`;
     const urgentTasks = await db
       .select({
         taskId: tasks.taskId,
@@ -483,11 +495,45 @@ export async function getUrgentAgentActions(
         description: tasks.description,
         dueDate: tasks.dueDate,
         completed: tasks.completed,
+        urgency: tasks.urgency,
+        category: tasks.category,
+        listingId: tasks.listingId,
+        listingTitle: properties.title,
+        propertyTitle: properties.title,
+        // Contact information - check both direct contact and listing contact
+        contactId: sql<bigint | null>`
+          CASE
+            WHEN ${tasks.contactId} IS NOT NULL THEN ${tasks.contactId}
+            WHEN ${tasks.listingContactId} IS NOT NULL THEN ${lcContacts}.contact_id
+            ELSE NULL
+          END
+        `,
+        contactFirstName: sql<string | null>`
+          CASE
+            WHEN ${tasks.contactId} IS NOT NULL THEN ${directContacts}.first_name
+            WHEN ${tasks.listingContactId} IS NOT NULL THEN ${lcContacts}.first_name
+            ELSE NULL
+          END
+        `,
+        contactLastName: sql<string | null>`
+          CASE
+            WHEN ${tasks.contactId} IS NOT NULL THEN ${directContacts}.last_name
+            WHEN ${tasks.listingContactId} IS NOT NULL THEN ${lcContacts}.last_name
+            ELSE NULL
+          END
+        `,
+        // Keep entityName for backward compatibility
         entityName: sql<string | null>`
           CASE
-            WHEN ${tasks.listingId} IS NOT NULL THEN CONCAT(${properties.street}, ', ', ${properties.addressDetails})
-            WHEN ${tasks.listingContactId} IS NOT NULL THEN CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})
-            WHEN ${tasks.dealId} IS NOT NULL THEN CONCAT(${properties.street}, ', ', ${properties.addressDetails})
+            WHEN ${tasks.contactId} IS NOT NULL THEN CONCAT(${directContacts}.first_name, ' ', ${directContacts}.last_name)
+            WHEN ${tasks.listingContactId} IS NOT NULL THEN CONCAT(${lcContacts}.first_name, ' ', ${lcContacts}.last_name)
+            ELSE NULL
+          END
+        `,
+        entityContactId: sql<bigint | null>`
+          CASE
+            WHEN ${tasks.contactId} IS NOT NULL THEN ${tasks.contactId}
+            WHEN ${tasks.listingContactId} IS NOT NULL THEN ${lcContacts}.contact_id
             ELSE NULL
           END
         `,
@@ -499,7 +545,14 @@ export async function getUrgentAgentActions(
         listingContacts,
         eq(tasks.listingContactId, listingContacts.listingContactId),
       )
-      .leftJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .leftJoin(
+        sql`contacts AS lc_contacts`,
+        sql`${listingContacts.contactId} = ${lcContacts}.contact_id`,
+      )
+      .leftJoin(
+        sql`contacts AS direct_contacts`,
+        sql`${tasks.contactId} = ${directContacts}.contact_id`,
+      )
       .leftJoin(deals, eq(tasks.dealId, deals.dealId))
       .where(
         and(
@@ -511,6 +564,9 @@ export async function getUrgentAgentActions(
         ),
       )
       .orderBy(tasks.dueDate);
+
+    console.log("Raw urgent tasks from DB:", JSON.stringify(urgentTasks, (_key, value) =>
+      typeof value === "bigint" ? value.toString() : value));
 
     // Get upcoming appointments
     const upcomingAppointments = await db
@@ -546,17 +602,44 @@ export async function getUrgentAgentActions(
       );
       const isOverdue = daysUntilDue < 0;
 
-      urgentActions.push({
-        type: "task",
+      const action = {
+        type: "task" as const,
         id: task.taskId,
         title: task.title,
         description: task.description,
         dueDate: task.dueDate ?? undefined,
         status: task.completed ? "completed" : isOverdue ? "overdue" : "pending",
         entityName: task.entityName ?? undefined,
+        entityContactId: task.entityContactId ?? undefined,
+        listingTitle: task.listingTitle ?? undefined,
+        listingId: task.listingId ?? undefined,
+        contactId: task.contactId ?? undefined,
+        contactFirstName: task.contactFirstName ?? undefined,
+        contactLastName: task.contactLastName ?? undefined,
+        propertyTitle: task.propertyTitle ?? undefined,
+        urgency: task.urgency ?? undefined,
+        category: task.category ?? undefined,
+        completed: task.completed ?? false,
         daysUntilDue,
         isOverdue,
+      };
+
+      console.log(`Task ${task.taskId} transformation:`, {
+        rawTask: {
+          listingId: task.listingId?.toString(),
+          listingTitle: task.listingTitle,
+          entityName: task.entityName,
+          entityContactId: task.entityContactId?.toString(),
+        },
+        transformedAction: {
+          listingId: action.listingId?.toString(),
+          listingTitle: action.listingTitle,
+          entityName: action.entityName,
+          entityContactId: action.entityContactId?.toString(),
+        }
       });
+
+      urgentActions.push(action);
     });
 
     // Add upcoming appointments
@@ -578,6 +661,9 @@ export async function getUrgentAgentActions(
       if (!dateA || !dateB) return 0;
       return dateA.getTime() - dateB.getTime();
     });
+
+    console.log("Final urgent actions being returned:", JSON.stringify(urgentActions, (_key, value) =>
+      typeof value === "bigint" ? value.toString() : value));
 
     return urgentActions;
   } catch (error) {

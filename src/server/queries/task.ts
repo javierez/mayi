@@ -124,9 +124,17 @@ export async function listTasksWithAuth(
   return listTasks(page, limit, accountId, filters);
 }
 
-export async function getMostUrgentTasksWithAuth(limit = 10, daysAhead = 30) {
+export async function getMostUrgentTasksWithAuth(
+  limit = 10,
+  daysAhead = 30,
+  filters?: {
+    appointmentListingId?: number;
+    appointmentContactId?: number;
+    userId?: string; // Filter by task.userId (agent filter)
+  },
+) {
   const accountId = await getCurrentUserAccountId();
-  return getMostUrgentTasks(accountId, limit, daysAhead);
+  return getMostUrgentTasks(accountId, limit, daysAhead, filters);
 }
 
 export async function createAppointmentTaskWithAuth(
@@ -1073,12 +1081,53 @@ export async function getMostUrgentTasks(
   accountId: number,
   limit = 10,
   daysAhead = 30,
+  filters?: {
+    appointmentListingId?: number;
+    appointmentContactId?: number;
+    userId?: string; // Filter by task.userId (agent filter)
+  },
 ) {
   try {
     // Calculate the end date based on daysAhead parameter
     const today = new Date();
     const endDate = new Date(today);
     endDate.setDate(today.getDate() + daysAhead);
+
+    const whereConditions = [
+      eq(tasks.isActive, true),
+      eq(tasks.completed, false),
+      isNotNull(tasks.dueDate),
+      lte(tasks.dueDate, endDate),
+      or(
+        eq(contacts.accountId, BigInt(accountId)),
+        eq(properties.accountId, BigInt(accountId)),
+      ),
+    ];
+
+    // Add appointment-based filtering if provided
+    // Logic: Always match listingId. If contactId exists in filter, task must also have matching contactId.
+    // If no contactId in filter, show tasks with listingId regardless of contactId (including null).
+    if (filters?.appointmentListingId) {
+      const listingIdCondition = eq(tasks.listingId, BigInt(filters.appointmentListingId));
+      
+      if (filters.appointmentContactId) {
+        // Appointment has a contactId: require both listingId AND contactId to match
+        whereConditions.push(
+          and(
+            listingIdCondition,
+            eq(tasks.contactId, BigInt(filters.appointmentContactId))
+          )
+        );
+      } else {
+        // Appointment has no contactId: just match listingId (don't filter by contactId)
+        whereConditions.push(listingIdCondition);
+      }
+    }
+
+    // Add userId (agent) filtering if provided
+    if (filters?.userId) {
+      whereConditions.push(eq(tasks.userId, filters.userId));
+    }
 
     const urgentTasks = await db
       .select({
@@ -1089,6 +1138,9 @@ export async function getMostUrgentTasks(
         dueDate: tasks.dueDate,
         dueTime: tasks.dueTime,
         completed: tasks.completed,
+        urgency: tasks.urgency,
+        status: tasks.status,
+        category: tasks.category,
         listingId: sql<number>`CAST(${tasks.listingId} AS UNSIGNED)`,
         listingContactId: sql<number>`CAST(${tasks.listingContactId} AS UNSIGNED)`,
         dealId: sql<number>`CAST(${tasks.dealId} AS UNSIGNED)`,
@@ -1123,18 +1175,7 @@ export async function getMostUrgentTasks(
       )
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .where(
-        and(
-          eq(tasks.isActive, true),
-          eq(tasks.completed, false),
-          isNotNull(tasks.dueDate),
-          lte(tasks.dueDate, endDate),
-          or(
-            eq(contacts.accountId, BigInt(accountId)),
-            eq(properties.accountId, BigInt(accountId)),
-          ),
-        ),
-      )
+      .where(and(...whereConditions))
       .orderBy(asc(tasks.dueDate))
       .limit(limit);
 

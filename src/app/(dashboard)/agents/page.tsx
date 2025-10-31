@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "~/lib/auth-client";
-import { useUserRole } from "~/components/providers/user-role-provider";
+import { useUserRole } from "~/hooks/use-user-role";
 import { AgentSelector } from "~/components/agents/agent-selector";
 import { AgentSummaryCards } from "~/components/agents/agent-summary-cards";
 import { AgentHierarchyView } from "~/components/agents/agent-hierarchy-view";
-import { AgentUrgentActions } from "~/components/agents/agent-urgent-actions";
 import { Card, CardContent } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { AlertCircle } from "lucide-react";
+import WorkQueueCard from "~/components/dashboard/operations/WorkQueueCard";
+import type { UrgentAction } from "~/types/urgent-actions";
 
 interface AgentStats {
   activeListingsCount: number;
@@ -79,19 +80,6 @@ interface Appointment {
   contactName: string;
   propertyAddress: string | null;
   listingId: string | null;
-}
-
-interface UrgentAction {
-  type: "task" | "appointment";
-  id: string;
-  title: string;
-  description?: string;
-  dueDate?: string;
-  datetimeStart?: string;
-  status: string;
-  entityName?: string;
-  daysUntilDue?: number;
-  isOverdue?: boolean;
 }
 
 interface Agent {
@@ -250,10 +238,15 @@ export default function AgentsPage() {
           <AgentSummaryCards stats={agentData.stats} />
 
           {/* Urgent Actions */}
-          <AgentUrgentActions
-            actions={agentData.urgentActions}
-            selectedAgentId={selectedAgentId}
-          />
+          <div className="mt-6">
+            <WorkQueueCard
+              tasks={[]}
+              appointments={[]}
+              urgentActions={agentData.urgentActions}
+              selectedAgentId={selectedAgentId}
+              agents={agents}
+            />
+          </div>
 
           {/* Hierarchy View */}
           <AgentHierarchyView

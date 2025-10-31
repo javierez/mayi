@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -355,6 +356,11 @@ export function Tareas({
   const canUserDeleteTask = (task: Task): boolean => {
     // User can delete if they created the task OR have deleteAll permission
     return task.createdBy === session?.user?.id || hasDeleteAllPermission;
+  };
+
+  const canUserCompleteTask = (task: Task): boolean => {
+    // User can complete if they created the task OR have editAll permission
+    return task.createdBy === session?.user?.id || hasEditAllPermission;
   };
 
   const handleAddTask = async () => {
@@ -1461,13 +1467,17 @@ export function Tareas({
                 }
               };
 
+              const canComplete = canUserCompleteTask(task);
+
               return (
                 <div key={task.id}>
                   <div
-                    className={`group relative cursor-pointer rounded-xl p-3 shadow-md transition-all duration-200 hover:shadow-lg sm:p-4 ${
+                    className={`group relative rounded-xl p-3 shadow-md transition-all duration-200 sm:p-4 ${
                       task.completed ? "bg-gray-50/50 opacity-75" : "bg-white"
-                    } ${taskStates[task.id] === "saving" ? "opacity-70" : ""}`}
-                    onClick={() => handleToggleCompleted(task.id)}
+                    } ${taskStates[task.id] === "saving" ? "opacity-70" : ""} ${
+                      canComplete ? "cursor-pointer hover:shadow-lg" : "cursor-not-allowed"
+                    }`}
+                    onClick={() => canComplete && handleToggleCompleted(task.id)}
                   >
                     {/* User avatar - top right */}
                     <div className="absolute right-2 top-2 flex flex-col items-center gap-1 sm:right-3 sm:top-3">
@@ -1510,13 +1520,15 @@ export function Tareas({
                       <div className="mb-2 flex items-center gap-2 sm:gap-3">
                         {/* Checkbox */}
                         <div
-                          className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border-2 transition-all duration-200 ${
+                          className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-md border-2 transition-all duration-200 ${
                             task.completed
                               ? "border-emerald-500 bg-emerald-500 text-white shadow-sm"
-                              : "border-gray-300 hover:border-gray-400"
+                              : canComplete
+                                ? "border-gray-300 hover:border-gray-400"
+                                : "border-gray-200 bg-gray-100 cursor-not-allowed"
                           }`}
                         >
-                          {task.completed && <Check className="h-3 w-3" />}
+                          {task.completed && <Check className="h-2.5 w-2.5" />}
                         </div>
 
                         <h3
@@ -1546,7 +1558,7 @@ export function Tareas({
                           return (
                             <div className="group">
                               <p
-                                className={`text-sm leading-relaxed ${task.completed ? "text-gray-400 line-through" : "text-gray-600"}`}
+                                className={`text-[13px] leading-relaxed ${task.completed ? "text-gray-400 line-through" : "text-gray-500"}`}
                               >
                                 {displayText}
                               </p>
@@ -1555,22 +1567,16 @@ export function Tareas({
                                   onClick={(e) =>
                                     toggleDescriptionExpansion(task.id, e)
                                   }
-                                  className={`mt-1 flex items-center gap-1 text-xs transition-colors ${
+                                  className={`mt-1 transition-colors ${
                                     task.completed
                                       ? "text-gray-400 hover:text-gray-500"
                                       : "text-gray-500 hover:text-gray-700"
                                   }`}
                                 >
                                   {isExpanded ? (
-                                    <>
-                                      <span>Ver menos</span>
-                                      <ChevronUp className="h-3 w-3" />
-                                    </>
+                                    <ChevronUp className="h-3 w-3" />
                                   ) : (
-                                    <>
-                                      <span>Ver más</span>
-                                      <ChevronDown className="h-3 w-3" />
-                                    </>
+                                    <ChevronDown className="h-3 w-3" />
                                   )}
                                 </button>
                               )}
@@ -1584,18 +1590,48 @@ export function Tareas({
                         task.relatedAppointment ??
                         task.dueDate) && (
                         <div className="mb-1 ml-6 flex flex-wrap items-center gap-2 sm:ml-8">
-                          {task.dueDate && (
-                            <span className="inline-block min-w-[120px] whitespace-nowrap rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-center text-xs font-normal text-amber-600 sm:px-2.5">
-                              {getRemainingTime(task.dueDate)}
-                            </span>
-                          )}
+                          {task.dueDate && (() => {
+                            const now = new Date();
+                            const fullDueDateTime = new Date(
+                              task.dueDate.getFullYear(),
+                              task.dueDate.getMonth(),
+                              task.dueDate.getDate(),
+                              23,
+                              59,
+                            );
+                            const diffMs = fullDueDateTime.getTime() - now.getTime();
+                            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+
+                            // Determine color based on time remaining
+                            let colorClasses = "";
+                            if (diffMs < 0) {
+                              // Overdue - rose
+                              colorClasses = "bg-rose-100 text-rose-800";
+                            } else if (diffHours < 24) {
+                              // Less than 1 day - orange
+                              colorClasses = "bg-orange-100 text-orange-800";
+                            } else {
+                              // More than 1 day - yellow
+                              colorClasses = "bg-yellow-100 text-yellow-800";
+                            }
+
+                            return (
+                              <span className={`inline-block whitespace-nowrap rounded-full px-1.5 py-0.5 text-[9px] font-normal sm:text-[10px] sm:px-2 ${colorClasses}`}>
+                                {getRemainingTime(task.dueDate)}
+                              </span>
+                            );
+                          })()}
                           {task.relatedContact && (
-                            <span className="flex items-center gap-1 break-words text-xs font-normal text-gray-500">
+                            <Link
+                              href={`/contactos/${task.relatedContact.contactId}`}
+                              className="flex items-center gap-1 break-words text-xs font-normal text-gray-500 transition-colors hover:text-gray-700"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <User className="h-3 w-3 flex-shrink-0 opacity-60" />
                               <span className="max-w-32 truncate sm:max-w-none">
                                 {task.relatedContact.name}
                               </span>
-                            </span>
+                            </Link>
                           )}
                           {task.relatedAppointment && (
                             <Badge
