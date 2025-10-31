@@ -25,22 +25,22 @@ export function OfferComparisonCard({
   const getDifferenceColor = () => {
     if (difference < 0)
       return {
-        text: "text-rose-600",
-        bg: "bg-rose-50",
-        border: "border-rose-200",
-        badge: "bg-rose-500",
+        text: "text-gray-700",
+        bg: "bg-gray-50",
+        border: "border-gray-200",
+        badge: "bg-gray-500",
         icon: ArrowDownRight,
       };
     if (difference > 0)
       return {
-        text: "text-emerald-600",
-        bg: "bg-emerald-50",
-        border: "border-emerald-200",
-        badge: "bg-emerald-500",
+        text: "text-gray-700",
+        bg: "bg-gray-50",
+        border: "border-gray-200",
+        badge: "bg-gray-500",
         icon: ArrowUpRight,
       };
     return {
-      text: "text-gray-600",
+      text: "text-gray-700",
       bg: "bg-gray-50",
       border: "border-gray-200",
       badge: "bg-gray-500",
@@ -87,34 +87,34 @@ export function OfferComparisonCard({
       {/* Overlapping bars comparison */}
       <div className="relative space-y-3">
         {/* Listing Price Bar (Background/Reference) */}
-        <div className="relative h-12 w-full overflow-hidden rounded-lg bg-slate-100 shadow-inner">
+        <div className="relative h-10 w-full overflow-hidden rounded border border-gray-200 bg-gray-50">
           <div
-            className="absolute inset-y-0 left-0 flex items-center justify-between rounded-lg bg-gradient-to-r from-slate-300 via-slate-400 to-slate-500 px-3 shadow-sm transition-all duration-700 ease-out"
+            className="absolute inset-y-0 left-0 flex items-center justify-between bg-gray-200 px-3 transition-all duration-500 ease-out"
             style={{ width: `${listingWidth}%` }}
           >
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-white/90 drop-shadow-md">
+              <span className="text-[10px] font-medium uppercase tracking-wide text-gray-600">
                 Precio de Venta
               </span>
             </div>
-            <span className="text-xs font-bold text-white drop-shadow-md">
+            <span className="text-xs font-semibold text-gray-700">
               {formatCurrency(listingPriceNum)}
             </span>
           </div>
         </div>
 
         {/* Offer Bar (Foreground/Comparison) */}
-        <div className="relative h-12 w-full overflow-hidden rounded-lg border border-orange-100 bg-orange-50 shadow-inner">
+        <div className="relative h-10 w-full overflow-hidden rounded border border-gray-200 bg-gray-50">
           <div
-            className="absolute inset-y-0 left-0 flex items-center justify-between rounded-lg bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600 px-3 shadow-md transition-all delay-150 duration-700 ease-out"
+            className="absolute inset-y-0 left-0 flex items-center justify-between bg-gray-300 px-3 transition-all delay-75 duration-500 ease-out"
             style={{ width: `${offerWidth}%` }}
           >
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-white/90 drop-shadow-md">
+              <span className="text-[10px] font-medium uppercase tracking-wide text-gray-700">
                 Oferta Recibida
               </span>
             </div>
-            <span className="text-xs font-bold text-white drop-shadow-md">
+            <span className="text-xs font-semibold text-gray-800">
               {formatCurrency(offer)}
             </span>
           </div>

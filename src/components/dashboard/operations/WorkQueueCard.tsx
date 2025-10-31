@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -38,7 +38,6 @@ import {
 } from "~/server/queries/task";
 import { TaskFilter, type TaskFilters } from "./TaskFilter";
 import { AppointmentFilter } from "./AppointmentFilter";
-import { AgentSelector } from "~/components/agents/agent-selector";
 
 type DetailedTask = Awaited<ReturnType<typeof getMostUrgentTasksWithAuth>>[0];
 
@@ -51,10 +50,7 @@ interface WorkQueueCardProps {
   users?: Array<{ id: string; name: string }>;
   // New props for agent page context
   selectedAgentId?: string;
-  agents?: Array<{ id: string; name: string; firstName?: string; lastName?: string; email?: string }>;
   showAllTasks?: boolean; // When true, don't limit to 10 tasks
-  onAgentChange?: (agentId: string) => void;
-  currentUserId?: string;
   standalone?: boolean; // Improve aesthetics when used outside dashboard grid
 }
 
@@ -65,11 +61,8 @@ export default function WorkQueueCard({
   loading = false,
   className = "",
   users = [],
-  selectedAgentId,
-  agents,
+  selectedAgentId: _selectedAgentId,
   showAllTasks = false,
-  onAgentChange,
-  currentUserId,
   standalone = false,
 }: WorkQueueCardProps) {
   const searchParams = useSearchParams();
@@ -470,32 +463,9 @@ export default function WorkQueueCard({
     });
   };
 
-  // Memoize agents mapping to prevent creating new objects on every render
-  const mappedAgents = useMemo(() => {
-    if (!agents || agents.length === 0) return undefined;
-    return agents.map((agent) => ({
-      id: agent.id,
-      firstName: agent.firstName ?? "",
-      lastName: agent.lastName ?? "",
-      name: agent.name,
-      email: agent.email ?? "",
-    }));
-  }, [agents]);
-
   return (
-    <Card className={`mt-6 ${standalone ? "shadow-lg" : ""} ${className}`}>
+    <Card className={`${standalone ? "shadow-lg" : ""} ${className}`}>
       <CardContent className={standalone ? "p-6 sm:p-8" : "pt-2"}>
-        {/* Agent Selector - only shown when agents prop is provided */}
-        {mappedAgents && mappedAgents.length > 0 && selectedAgentId && onAgentChange && currentUserId && (
-          <div className="mb-4">
-            <AgentSelector
-              agents={mappedAgents}
-              selectedAgentId={selectedAgentId}
-              onAgentChange={onAgentChange}
-              currentUserId={currentUserId}
-            />
-          </div>
-        )}
         <div className={`${standalone ? "mt-2" : "mt-4"} grid gap-6 md:grid-cols-2`}>
           {/* Columna de Tareas Urgentes */}
           <div>
@@ -953,6 +923,30 @@ export default function WorkQueueCard({
                                       </span>
                                     </a>
                                   )}
+
+                                  {/* Registrar Visita Button - Only show when selected and it's a scheduled Visita */}
+                                  {isSelected &&
+                                    getAppointmentTypeInSpanish(
+                                      appointment.appointmentType,
+                                    ) === "visita" &&
+                                    appointment.status === "Scheduled" && (
+                                      <div className="mt-2 pt-2 border-t border-gray-200">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-7 w-full justify-start px-2 py-1 text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            router.push(
+                                              `/calendario/visita/${appointment.appointmentId}`,
+                                            );
+                                          }}
+                                        >
+                                          <Calendar className="mr-1.5 h-3 w-3 shrink-0" />
+                                          <span className="truncate">Registrar Visita</span>
+                                        </Button>
+                                      </div>
+                                    )}
                                 </div>
                               </motion.div>
                             );

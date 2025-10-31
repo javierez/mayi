@@ -112,19 +112,19 @@ export function PriceHistoryChart({ priceHistory }: PriceHistoryChartProps) {
     <div className="w-full">
       {/* Summary stats */}
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="rounded-lg border p-3">
+        <div className="rounded-lg shadow-sm p-3">
           <p className="text-xs text-muted-foreground mb-1">Precio actual</p>
           <p className="text-lg font-bold text-primary">
             €{priceHistory[priceHistory.length - 1]?.price.toLocaleString("es-ES")}
           </p>
         </div>
-        <div className="rounded-lg border p-3">
+        <div className="rounded-lg shadow-sm p-3">
           <p className="text-xs text-muted-foreground mb-1">Precio inicial</p>
           <p className="text-lg font-bold">
             €{priceHistory[0]?.price.toLocaleString("es-ES")}
           </p>
         </div>
-        <div className="rounded-lg border p-3">
+        <div className="rounded-lg shadow-sm p-3">
           <p className="text-xs text-muted-foreground mb-1">Total cambios</p>
           <p className="text-lg font-bold">{priceHistory.length}</p>
         </div>
@@ -136,10 +136,7 @@ export function PriceHistoryChart({ priceHistory }: PriceHistoryChartProps) {
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey="dateLabel"
-            tick={{ fontSize: 12 }}
-            angle={-45}
-            textAnchor="end"
-            height={80}
+            hide
           />
           <YAxis
             tick={{ fontSize: 12 }}
@@ -147,7 +144,6 @@ export function PriceHistoryChart({ priceHistory }: PriceHistoryChartProps) {
             tickFormatter={(value: number) => `€${(value / 1000).toFixed(0)}k`}
           />
           <Tooltip content={<CustomTooltip />} />
-          <Legend />
           <Line
             type="monotone"
             dataKey="price"

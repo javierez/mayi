@@ -66,10 +66,7 @@ export function ActivityDetailModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh]">
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <DialogTitle>{actionLabel}</DialogTitle>
-            <Badge variant={colorVariant}>{activity.action}</Badge>
-          </div>
+          <DialogTitle>{actionLabel}</DialogTitle>
           <DialogDescription>{absoluteTime}</DialogDescription>
         </DialogHeader>
 
@@ -77,10 +74,10 @@ export function ActivityDetailModal({
           <div className="space-y-6 pr-4">
             {/* User information */}
             <div>
-              <h4 className="text-sm font-medium mb-2">Realizado por</h4>
-              <div className="rounded-lg border p-3">
-                <p className="font-medium">{activity.user?.name ?? "Usuario desconocido"}</p>
-                <p className="text-sm text-muted-foreground">{activity.user?.email}</p>
+              <h4 className="text-xs text-muted-foreground mb-1.5">Realizado por</h4>
+              <div className="rounded-lg shadow-sm bg-muted/30 px-3 py-2">
+                <p className="text-sm font-medium">{activity.user?.name ?? "Usuario desconocido"}</p>
+                <p className="text-xs text-muted-foreground">{activity.user?.email}</p>
               </div>
             </div>
 
@@ -98,7 +95,6 @@ export function ActivityDetailModal({
                   <PriceHistoryChart priceHistory={priceHistory} />
                 )}
                 <Separator className="my-4" />
-                <h4 className="text-sm font-medium mb-3">Detalles del cambio</h4>
                 <PriceChangeDetails details={activity.details} />
               </div>
             )}

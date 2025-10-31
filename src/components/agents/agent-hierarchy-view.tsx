@@ -9,10 +9,15 @@ import {
   CollapsibleTrigger,
 } from "~/components/ui/collapsible";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import {
   ChevronDown,
   ChevronRight,
+  Info,
+  Search,
 } from "lucide-react";
+import { ContactInfoModal } from "./contact-info-modal";
 
 interface Contact {
   contactId: string;
@@ -124,6 +129,9 @@ export function AgentHierarchyView({
 }: AgentHierarchyViewProps) {
   const [openContacts, setOpenContacts] = useState<Set<string>>(new Set());
   const [openListings, setOpenListings] = useState<Set<string>>(new Set());
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const toggleContact = (contactId: string) => {
     const newOpen = new Set(openContacts);
@@ -144,6 +152,24 @@ export function AgentHierarchyView({
     }
     setOpenListings(newOpen);
   };
+
+  const handleContactInfoClick = (contact: Contact, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedContact(contact);
+    setIsModalOpen(true);
+  };
+
+  // Filter contacts based on search query
+  const filteredContacts = contacts.filter((contact) => {
+    if (!searchQuery) return true;
+
+    const query = searchQuery.toLowerCase();
+    const fullName = `${contact.firstName} ${contact.lastName}`.toLowerCase();
+    const email = (contact.email ?? "").toLowerCase();
+    const phone = (contact.phone ?? "").toLowerCase();
+
+    return fullName.includes(query) || email.includes(query) || phone.includes(query);
+  });
 
   // Get listings for a contact (owner)
   const getListingsForContact = (contactId: string) => {
@@ -193,16 +219,32 @@ export function AgentHierarchyView({
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-3">
           <CardTitle className="text-base font-semibold">
-            Contactos y sus Propiedades
+            Cartera de Clientes
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {contacts.map((contact) => {
-            const contactId = contact.contactId;
-            const isOpen = openContacts.has(contactId);
-            const contactListings = getListingsForContact(contact.contactId);
+        <div className="px-6 pb-4">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground/50" />
+            <Input
+              placeholder="Buscar contacto..."
+              className="h-8 pl-8 text-sm border-muted bg-muted/20 focus-visible:bg-background transition-colors"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+        <CardContent className="space-y-2 pt-0">
+          {filteredContacts.length === 0 ? (
+            <p className="text-center text-sm text-muted-foreground py-8">
+              No se encontraron contactos que coincidan con tu búsqueda.
+            </p>
+          ) : (
+            filteredContacts.map((contact) => {
+              const contactId = contact.contactId;
+              const isOpen = openContacts.has(contactId);
+              const contactListings = getListingsForContact(contact.contactId);
 
             return (
               <Collapsible
@@ -210,38 +252,40 @@ export function AgentHierarchyView({
                 open={isOpen}
                 onOpenChange={() => toggleContact(contactId)}
               >
-                <Card className="border">
+                <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
                   <CollapsibleTrigger className="w-full">
-                    <CardContent className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
+                    <CardContent className="flex items-center justify-between p-4 hover:bg-muted/30 transition-all duration-200">
                       <div className="flex items-center gap-3">
-                        {isOpen ? (
-                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        )}
                         <div className="text-left">
-                          <Link
-                            href={`/contactos/${contact.contactId}`}
-                            className="font-medium hover:underline"
-                          >
-                            {contact.firstName} {contact.lastName}
-                          </Link>
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                            {contact.email && (
-                              <span>{contact.email}</span>
-                            )}
-                            {contact.phone && (
-                              <span>{contact.phone}</span>
-                            )}
+                          <div className="flex items-center gap-2">
+                            <Link
+                              href={`/contactos/${contact.contactId}`}
+                              className="font-medium hover:underline transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {contact.firstName} {contact.lastName}
+                            </Link>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 hover:bg-muted/50"
+                              onClick={(e) => handleContactInfoClick(contact, e)}
+                            >
+                              <Info className="h-4 w-4 text-muted-foreground" />
+                            </Button>
                           </div>
                         </div>
                       </div>
-                      <Badge variant="outline">
-                        {contactListings.length}{" "}
-                        {contactListings.length === 1
-                          ? "propiedad"
-                          : "propiedades"}
-                      </Badge>
+                      <div className="flex items-center gap-1 font-mono">
+                        <div className="text-[10px] font-medium tabular-nums text-gray-400">
+                          {contactListings.length}
+                        </div>
+                        <div className="text-[10px] text-gray-400">
+                          {contactListings.length === 1
+                            ? "propiedad"
+                            : "propiedades"}
+                        </div>
+                      </div>
                     </CardContent>
                   </CollapsibleTrigger>
 
@@ -433,9 +477,16 @@ export function AgentHierarchyView({
                 </Card>
               </Collapsible>
             );
-          })}
+          })
+          )}
         </CardContent>
       </Card>
+
+      <ContactInfoModal
+        contact={selectedContact}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+      />
     </div>
   );
 }

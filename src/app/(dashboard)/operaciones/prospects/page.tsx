@@ -167,7 +167,7 @@ export default function ProspectsPage() {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <h1 className="text-xl font-bold sm:text-2xl">Demandas y Prospectos</h1>
+          <h1 className="text-xl font-bold sm:text-2xl">Ofertas y Demandas</h1>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="default" disabled size="sm" className="sm:size-default">

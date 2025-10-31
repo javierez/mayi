@@ -9,14 +9,6 @@ import { WorkQueueCardSkeleton } from "~/components/ui/skeletons";
 import type { getMostUrgentTasksWithAuth } from "~/server/queries/task";
 import type { TodayAppointment } from "~/server/queries/operaciones-dashboard";
 
-interface Agent {
-  id: string;
-  firstName: string;
-  lastName: string;
-  name: string;
-  email: string;
-}
-
 export default function AgentWorkQueuePage() {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
@@ -24,9 +16,7 @@ export default function AgentWorkQueuePage() {
   const [error, setError] = useState<string | null>(null);
   const [detailedTasks, setDetailedTasks] = useState<Awaited<ReturnType<typeof getMostUrgentTasksWithAuth>>>([]);
   const [appointments, setAppointments] = useState<TodayAppointment[]>([]);
-  const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string>("");
-  const currentUserId = session?.user?.id ?? "";
 
   // Fetch data from API
   useEffect(() => {
@@ -38,24 +28,31 @@ export default function AgentWorkQueuePage() {
         // Get selected agent from URL or use current user
         const agentIdParam = searchParams.get("userId");
 
-        // Fetch agents list
-        const agentsResponse = await fetch("/api/agents/list");
-        if (agentsResponse.ok) {
-          const agentsData = (await agentsResponse.json()) as Agent[];
-          setAgents(agentsData);
-
-          // Set selected agent
-          if (agentIdParam) {
-            setSelectedAgentId(agentIdParam);
-          } else if (agentsData.length > 0) {
-            setSelectedAgentId(agentsData[0]?.id ?? "");
-          }
+        // Set selected agent
+        if (agentIdParam) {
+          setSelectedAgentId(agentIdParam);
+        } else if (session?.user?.id) {
+          setSelectedAgentId(session.user.id);
         }
 
         // Fetch tasks and appointments for the agent
         const userId = agentIdParam ?? selectedAgentId;
         if (userId) {
-          const summaryResponse = await fetch(`/api/agents/summary?userId=${userId}`);
+          // Build URL with filters from searchParams
+          const url = new URL(`/api/agents/summary`, window.location.origin);
+          url.searchParams.set("userId", userId);
+
+          // Add appointment filters if present
+          const appointmentListingId = searchParams.get("appointmentListingId");
+          const appointmentContactId = searchParams.get("appointmentContactId");
+          if (appointmentListingId) {
+            url.searchParams.set("appointmentListingId", appointmentListingId);
+          }
+          if (appointmentContactId) {
+            url.searchParams.set("appointmentContactId", appointmentContactId);
+          }
+
+          const summaryResponse = await fetch(url.toString());
           if (!summaryResponse.ok) {
             throw new Error("Failed to fetch agent data");
           }
@@ -75,16 +72,7 @@ export default function AgentWorkQueuePage() {
     };
 
     void fetchData();
-  }, [searchParams, selectedAgentId]);
-
-  // Handle agent change
-  const handleAgentChange = (agentId: string) => {
-    setSelectedAgentId(agentId);
-    // Update URL
-    const params = new URLSearchParams(searchParams);
-    params.set("userId", agentId);
-    window.history.replaceState({}, "", `?${params.toString()}`);
-  };
+  }, [searchParams, selectedAgentId, session?.user?.id]);
 
   return (
     <div className="container mx-auto space-y-6 p-6">
@@ -111,10 +99,7 @@ export default function AgentWorkQueuePage() {
           appointments={appointments}
           detailedTasks={detailedTasks}
           selectedAgentId={selectedAgentId}
-          agents={agents}
           showAllTasks={true}
-          onAgentChange={handleAgentChange}
-          currentUserId={currentUserId}
           standalone={true}
         />
       )}

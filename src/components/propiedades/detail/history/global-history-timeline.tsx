@@ -1,31 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { ActivityCard } from "./activity-card";
+import { GlobalActivityCard } from "./global-activity-card";
 import { ActivityDetailModal } from "./activity-detail-modal";
 import type { ListingActivityRecord } from "~/server/queries/listing-history";
-import { FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import { FileText, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
-interface HistoryTimelineProps {
-  activities: ListingActivityRecord[];
+interface GlobalHistoryTimelineProps {
+  activities: Array<ListingActivityRecord & { listingTitle: string; referenceNumber: string | null }>;
   currentPage?: number;
   totalPages?: number;
-  listingId: number;
 }
 
-export function HistoryTimeline({
+export function GlobalHistoryTimeline({
   activities,
   currentPage = 1,
   totalPages = 1,
-  listingId
-}: HistoryTimelineProps) {
+}: GlobalHistoryTimelineProps) {
   const router = useRouter();
   const [selectedActivity, setSelectedActivity] =
     useState<ListingActivityRecord | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
+
+  // Group activities by date
+  const groupedActivities = useMemo(() => {
+    const groups = new Map<string, typeof activities>();
+
+    activities.forEach((activity) => {
+      const dateKey = format(activity.createdAt, "yyyy-MM-dd");
+      const dateLabel = format(activity.createdAt, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es });
+
+      if (!groups.has(dateKey)) {
+        groups.set(dateKey, []);
+      }
+      groups.get(dateKey)?.push(activity);
+    });
+
+    // Convert to array and sort by date (most recent first)
+    return Array.from(groups.entries())
+      .map(([dateKey, items]) => ({
+        dateKey,
+        dateLabel: format(new Date(dateKey), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es }),
+        activities: items,
+      }))
+      .sort((a, b) => b.dateKey.localeCompare(a.dateKey));
+  }, [activities]);
 
   const handleActivityClick = (activity: ListingActivityRecord) => {
     setSelectedActivity(activity);
@@ -40,7 +65,19 @@ export function HistoryTimeline({
   };
 
   const handlePageChange = (page: number) => {
-    router.push(`/propiedades/${listingId}/history?page=${page}`);
+    router.push(`/historial?page=${page}`);
+  };
+
+  const toggleDateCollapse = (dateKey: string) => {
+    setCollapsedDates((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(dateKey)) {
+        newSet.delete(dateKey);
+      } else {
+        newSet.add(dateKey);
+      }
+      return newSet;
+    });
   };
 
   if (activities.length === 0) {
@@ -51,8 +88,7 @@ export function HistoryTimeline({
         </div>
         <h3 className="text-lg font-semibold mb-2">No hay actividad registrada</h3>
         <p className="text-sm text-muted-foreground max-w-md">
-          Cuando se realicen cambios en esta propiedad (como modificaciones de precio,
-          cambios de estado, publicaciones en portales, etc.), aparecerán aquí.
+          Cuando se realicen cambios en las propiedades, aparecerán aquí.
         </p>
       </div>
     );
@@ -66,7 +102,7 @@ export function HistoryTimeline({
     const canGoNext = currentPage < totalPages;
 
     return (
-      <div className="flex items-center justify-between border-t bg-white px-4 py-3 sm:px-6">
+      <div className="flex items-center justify-between border-t bg-white px-4 py-3 sm:px-6 mt-6">
         <div className="flex flex-1 justify-between sm:hidden">
           <Button
             variant="outline"
@@ -154,14 +190,47 @@ export function HistoryTimeline({
 
   return (
     <>
-      <div className="space-y-3">
-        {activities.map((activity) => (
-          <ActivityCard
-            key={activity.id.toString()}
-            activity={activity}
-            onClick={() => handleActivityClick(activity)}
-          />
-        ))}
+      <div className="space-y-4">
+        {groupedActivities.map((group) => {
+          const isCollapsed = collapsedDates.has(group.dateKey);
+
+          return (
+            <div key={group.dateKey}>
+              {/* Date header - collapsible */}
+              <button
+                onClick={() => toggleDateCollapse(group.dateKey)}
+                className="flex w-full items-center gap-2 py-2 text-left transition-colors hover:text-foreground"
+              >
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 text-muted-foreground transition-transform",
+                    isCollapsed && "-rotate-90"
+                  )}
+                />
+                <span className="text-xs font-medium text-muted-foreground capitalize">
+                  {group.dateLabel}
+                </span>
+                <div className="ml-2 flex-1 border-t border-muted" />
+                <span className="text-xs text-muted-foreground">
+                  {group.activities.length}
+                </span>
+              </button>
+
+              {/* Activities for this date */}
+              {!isCollapsed && (
+                <div className="ml-6 space-y-3 mt-2">
+                  {group.activities.map((activity) => (
+                    <GlobalActivityCard
+                      key={activity.id.toString()}
+                      activity={activity}
+                      onClick={() => handleActivityClick(activity)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <PaginationControls />

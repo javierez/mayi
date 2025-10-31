@@ -397,9 +397,6 @@ export function ConexionesPotenciales({
           <CardTitle className="text-lg font-semibold text-gray-900 sm:text-xl">
             Buscador de Conexiones
           </CardTitle>
-          <p className="text-xs text-muted-foreground sm:text-sm">
-            Conexiones automáticas entre prospectos y propiedades disponibles
-          </p>
         </div>
 
         <div className="flex items-center space-x-2">

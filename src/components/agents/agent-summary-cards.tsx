@@ -35,7 +35,7 @@ export function AgentSummaryCards({ stats }: AgentSummaryCardsProps) {
     <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
       <StatCard title="Propiedades Activas" value={stats.activeListingsCount} />
       <StatCard title="Contactos" value={stats.contactsCount} />
-      <StatCard title="Operaciones" value={stats.dealsCount} />
+      <StatCard title="Acuerdos" value={stats.dealsCount} />
       <StatCard title="Tareas Pendientes" value={stats.tasksCount} />
       <StatCard title="Citas Programadas" value={stats.appointmentsCount} />
     </div>

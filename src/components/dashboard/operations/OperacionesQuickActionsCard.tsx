@@ -8,7 +8,7 @@ import {
   FileText,
   Calendar,
   Users,
-  TrendingUp,
+  Clock,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { GlobalTaskModalTrigger } from "~/components/tasks/global-task-modal";
@@ -71,10 +71,9 @@ export default function OperacionesQuickActionsCard({
       isDisabled: true,
     },
     {
-      icon: TrendingUp,
-      label: "Gestionar Leads",
-      href: "/operaciones/leads",
-      isDisabled: true,
+      icon: Clock,
+      label: "Historial",
+      href: "/historial",
     },
   ];
 

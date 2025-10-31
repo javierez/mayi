@@ -12,18 +12,23 @@ interface HistoryPageProps {
   params: Promise<{
     id: string;
   }>;
+  searchParams: Promise<{
+    page?: string;
+  }>;
 }
 
-export default async function HistoryPage({ params }: HistoryPageProps) {
+export default async function HistoryPage({ params, searchParams }: HistoryPageProps) {
   const unwrappedParams = await params;
+  const unwrappedSearchParams = await searchParams;
   const listingId = parseInt(unwrappedParams.id);
+  const currentPage = parseInt(unwrappedSearchParams.page ?? "1");
 
   // Fetch breadcrumb, header data, and history in parallel
-  const [breadcrumbData, headerData, activities] =
+  const [breadcrumbData, headerData, historyData] =
     await Promise.all([
       getListingBreadcrumbData(listingId),
       getListingHeaderData(listingId),
-      getListingHistory(listingId),
+      getListingHistory(listingId, currentPage, 50),
     ]);
 
   if (!breadcrumbData || !headerData) {
@@ -31,47 +36,38 @@ export default async function HistoryPage({ params }: HistoryPageProps) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Breadcrumb */}
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <PropertyBreadcrumb
         propertyType={breadcrumbData.propertyType ?? ""}
         street={breadcrumbData.street ?? ""}
-        referenceNumber={breadcrumbData.referenceNumber ?? undefined}
-        documentFolder={{ name: "Historial", propertyId: listingId.toString() }}
+        referenceNumber={breadcrumbData.referenceNumber ?? ""}
+        documentFolder={{
+          name: "Historial",
+          propertyId: headerData.listingId.toString(),
+        }}
       />
 
-      {/* Property Header */}
+      {/* Property Title - Always Visible */}
       <PropertyHeader
         title={headerData.title ?? ""}
         propertyId={headerData.propertyId}
         listingId={headerData.listingId}
-        propertyType={breadcrumbData.propertyType ?? ""}
         street={headerData.street ?? ""}
         city={headerData.city ?? ""}
         province={headerData.province ?? ""}
         postalCode={headerData.postalCode ?? ""}
         price={headerData.price}
         listingType={headerData.listingType}
-        status={headerData.status ?? undefined}
-        isBankOwned={false}
-        neighborhood=""
-        dynamicTitle={false}
+        status={headerData.status}
+        isBankOwned={headerData.isBankOwned ?? false}
       />
 
-      {/* Page Title and Description */}
-      <div className="space-y-1">
-        <h2 className="text-2xl font-bold tracking-tight">Historial de actividad</h2>
-        <p className="text-muted-foreground">
-          Registro completo de todos los cambios y eventos de esta propiedad
-        </p>
-      </div>
-
-      {/* History Timeline */}
-      <div className="rounded-lg border bg-card">
-        <div className="p-6">
-          <HistoryTimeline activities={activities} />
-        </div>
-      </div>
+      <HistoryTimeline
+        activities={historyData.activities}
+        currentPage={currentPage}
+        totalPages={historyData.totalPages}
+        listingId={listingId}
+      />
     </div>
   );
 }

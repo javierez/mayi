@@ -31,6 +31,21 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const userId = searchParams.get("userId") ?? session.user.id;
 
+    // Get appointment filter params from URL
+    const appointmentListingId = searchParams.get("appointmentListingId");
+    const appointmentContactId = searchParams.get("appointmentContactId");
+
+    // Build filters for tasks
+    const taskFilters = {
+      userId,
+      appointmentListingId: appointmentListingId
+        ? Number(appointmentListingId)
+        : undefined,
+      appointmentContactId: appointmentContactId
+        ? Number(appointmentContactId)
+        : undefined,
+    };
+
     // Fetch all data in parallel for better performance
     const [
       stats,
@@ -44,7 +59,7 @@ export async function GET(request: NextRequest) {
       getAgentContactsOwnersWithAuth(userId),
       getAgentListingsWithDetailsWithAuth(userId),
       getAgentTasksAndAppointmentsWithAuth(userId),
-      getMostUrgentTasksWithAuth(10, 7, { userId }), // Get detailed tasks for selected agent
+      getMostUrgentTasksWithAuth(10, 7, taskFilters), // Get detailed tasks with filters
       getTodayAppointmentsWithAuth({ assignedTo: userId }), // Get appointments for selected agent
     ]);
 

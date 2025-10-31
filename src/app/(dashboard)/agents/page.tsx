@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useSession } from "~/lib/auth-client";
 import { useUserRole } from "~/hooks/use-user-role";
 import { AgentSelector } from "~/components/agents/agent-selector";
@@ -103,6 +104,7 @@ interface AgentData {
 }
 
 export default function AgentsPage() {
+  const searchParams = useSearchParams();
   const { data: session, isPending: sessionLoading } = useSession();
   const { hasRoleId, loading: rolesLoading } = useUserRole();
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -144,7 +146,7 @@ export default function AgentsPage() {
     }
   }, [isAccountAdmin, rolesLoading]);
 
-  // Fetch agent data when selected agent changes
+  // Fetch agent data when selected agent or URL parameters change
   useEffect(() => {
     async function fetchAgentData() {
       if (!selectedAgentId) return;
@@ -153,7 +155,21 @@ export default function AgentsPage() {
       setError(null);
 
       try {
-        const response = await fetch(`/api/agents/summary?userId=${selectedAgentId}`);
+        // Build URL with filters from searchParams
+        const url = new URL(`/api/agents/summary`, window.location.origin);
+        url.searchParams.set("userId", selectedAgentId);
+
+        // Add appointment filters if present
+        const appointmentListingId = searchParams.get("appointmentListingId");
+        const appointmentContactId = searchParams.get("appointmentContactId");
+        if (appointmentListingId) {
+          url.searchParams.set("appointmentListingId", appointmentListingId);
+        }
+        if (appointmentContactId) {
+          url.searchParams.set("appointmentContactId", appointmentContactId);
+        }
+
+        const response = await fetch(url.toString());
         if (!response.ok) {
           throw new Error("Failed to fetch agent data");
         }
@@ -169,7 +185,7 @@ export default function AgentsPage() {
     }
 
     void fetchAgentData();
-  }, [selectedAgentId]);
+  }, [selectedAgentId, searchParams]);
 
   // Show loading state while session and roles are loading
   if (sessionLoading || rolesLoading) {
@@ -191,25 +207,29 @@ export default function AgentsPage() {
 
   return (
     <div className="container mx-auto space-y-6 p-6">
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Información de Agentes
-        </h1>
-        <p className="text-muted-foreground">
-          Visualiza estadísticas, propiedades, contactos y tareas de los agentes
-        </p>
-      </div>
+      {/* Header with Agent Selector */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Información de Agentes
+          </h1>
+          <p className="text-muted-foreground">
+            Visualiza estadísticas, propiedades, contactos y tareas de los agentes
+          </p>
+        </div>
 
-      {/* Agent Selector for Account Admins */}
-      {isAccountAdmin && agents.length > 0 && (
-        <AgentSelector
-          agents={agents}
-          selectedAgentId={selectedAgentId}
-          onAgentChange={setSelectedAgentId}
-          currentUserId={currentUserId}
-        />
-      )}
+        {/* Agent Selector for Account Admins */}
+        {isAccountAdmin && agents.length > 0 && (
+          <div className="mt-6">
+            <AgentSelector
+              agents={agents}
+              selectedAgentId={selectedAgentId}
+              onAgentChange={setSelectedAgentId}
+              currentUserId={currentUserId}
+            />
+          </div>
+        )}
+      </div>
 
       {/* Error State */}
       {error && (
@@ -245,10 +265,7 @@ export default function AgentsPage() {
             appointments={agentData.todayAppointments}
             detailedTasks={agentData.detailedTasks}
             selectedAgentId={selectedAgentId}
-            agents={agents}
             showAllTasks={true}
-            onAgentChange={setSelectedAgentId}
-            currentUserId={currentUserId}
           />
 
           {/* Hierarchy View */}

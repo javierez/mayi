@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
@@ -12,12 +13,12 @@ import {
   formatRelativeTime,
 } from "~/lib/formatters/activity-formatter";
 
-interface ActivityCardProps {
-  activity: ListingActivityRecord;
+interface GlobalActivityCardProps {
+  activity: ListingActivityRecord & { listingTitle: string; referenceNumber: string | null };
   onClick: () => void;
 }
 
-export function ActivityCard({ activity, onClick }: ActivityCardProps) {
+export function GlobalActivityCard({ activity, onClick }: GlobalActivityCardProps) {
   const Icon = getActivityActionIcon(activity.action);
   const actionLabel = getActivityActionLabel(activity.action);
   const colorVariant = getActivityActionColor(activity.action);
@@ -48,6 +49,15 @@ export function ActivityCard({ activity, onClick }: ActivityCardProps) {
 
           {/* Content */}
           <div className="flex-1 min-w-0">
+            {/* Property reference - clickable */}
+            <Link
+              href={`/propiedades/${activity.listingId}`}
+              className="text-[10px] text-muted-foreground hover:text-foreground hover:underline mb-0.5 block"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {activity.referenceNumber ?? `#${activity.listingId}`} · {activity.listingTitle}
+            </Link>
+
             {/* Summary */}
             <p className="text-sm font-medium text-foreground line-clamp-2 pr-8">
               {summary}
