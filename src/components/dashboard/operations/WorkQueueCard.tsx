@@ -38,40 +38,9 @@ import {
 } from "~/server/queries/task";
 import { TaskFilter, type TaskFilters } from "./TaskFilter";
 import { AppointmentFilter } from "./AppointmentFilter";
-import { transformUrgentActions } from "~/lib/operations/transform-urgent-actions";
 import { AgentSelector } from "~/components/agents/agent-selector";
 
 type DetailedTask = Awaited<ReturnType<typeof getMostUrgentTasksWithAuth>>[0];
-
-// Client-side type matching what comes from the API
-interface UrgentAction {
-  type: "task" | "appointment";
-  id: string | bigint;
-  title: string;
-  description?: string;
-  dueDate?: string | Date;
-  datetimeStart?: string | Date;
-  datetimeEnd?: string | Date;
-  status: string;
-  entityName?: string;
-  entityContactId?: string | bigint;
-  listingTitle?: string;
-  listingId?: string | bigint;
-  propertyTitle?: string;
-  contactId?: string | bigint;
-  contactFirstName?: string;
-  contactLastName?: string;
-  propertyAddress?: string;
-  daysUntilDue?: number;
-  isOverdue?: boolean;
-  urgency?: number;
-  category?: string;
-  completed?: boolean;
-  userId?: string;
-  userName?: string;
-  userFirstName?: string;
-  userLastName?: string;
-}
 
 interface WorkQueueCardProps {
   tasks: UrgentTask[];
@@ -81,7 +50,6 @@ interface WorkQueueCardProps {
   className?: string;
   users?: Array<{ id: string; name: string }>;
   // New props for agent page context
-  urgentActions?: UrgentAction[];
   selectedAgentId?: string;
   agents?: Array<{ id: string; name: string; firstName?: string; lastName?: string; email?: string }>;
   showAllTasks?: boolean; // When true, don't limit to 10 tasks
@@ -97,7 +65,6 @@ export default function WorkQueueCard({
   loading = false,
   className = "",
   users = [],
-  urgentActions,
   selectedAgentId,
   agents,
   showAllTasks = false,
@@ -118,34 +85,10 @@ export default function WorkQueueCard({
   } | null>(null);
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
 
-  // Transform urgentActions if provided (for agent page) - memoized to prevent recalculation
-  const transformedData = useMemo(() => {
-    return urgentActions
-      ? transformUrgentActions(urgentActions)
-      : null;
-  }, [urgentActions]);
-
-  // Use transformed data or fall back to provided props - memoized
-  const finalDetailedTasks = useMemo(() => {
-    return transformedData
-      ? transformedData.detailedTasks
-      : detailedTasks;
-  }, [transformedData, detailedTasks]);
-
-  const finalAppointments = useMemo(() => {
-    return transformedData
-      ? transformedData.appointments
-      : appointments;
-  }, [transformedData, appointments]);
-
-  // Backend handles filtering by agent (userId/assignedTo), so use data directly
-  // No client-side filtering needed
-
-  // Update optimistic tasks when source data changes
-  // Use stable dependencies to prevent infinite loops
+  // Update optimistic tasks when detailedTasks changes
   useEffect(() => {
-    setOptimisticTasks(finalDetailedTasks);
-  }, [finalDetailedTasks]);
+    setOptimisticTasks(detailedTasks);
+  }, [detailedTasks]);
 
   // Read filters from URL params - updates automatically when searchParams change
   const taskFilters: TaskFilters = {
@@ -202,9 +145,9 @@ export default function WorkQueueCard({
     });
   };
 
-  // Use optimistic tasks or final tasks (already filtered by backend), apply filters, then sort with completed tasks at the bottom
+  // Use optimistic tasks or detailedTasks (already filtered by backend), apply filters, then sort with completed tasks at the bottom
   const tasksToDisplay = applyFilters(
-    optimisticTasks.length > 0 ? optimisticTasks : finalDetailedTasks,
+    optimisticTasks.length > 0 ? optimisticTasks : detailedTasks,
   ).sort((a, b) => {
     // Completed tasks go to the bottom
     if ((a.completed ?? false) !== (b.completed ?? false)) {
@@ -540,8 +483,8 @@ export default function WorkQueueCard({
   }, [agents]);
 
   return (
-    <Card className={`${standalone ? "shadow-lg" : ""} ${className}`}>
-      <CardContent className={standalone ? "p-6 sm:p-8" : undefined}>
+    <Card className={`mt-6 ${standalone ? "shadow-lg" : ""} ${className}`}>
+      <CardContent className={standalone ? "p-6 sm:p-8" : "pt-2"}>
         {/* Agent Selector - only shown when agents prop is provided */}
         {mappedAgents && mappedAgents.length > 0 && selectedAgentId && onAgentChange && currentUserId && (
           <div className="mb-4">
@@ -869,7 +812,7 @@ export default function WorkQueueCard({
               </div>
             </div>
 
-            {finalAppointments.length === 0 ? (
+            {appointments.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <Calendar className="mb-2 h-12 w-12 text-gray-400" />
                 <p className="text-sm font-medium text-gray-900">Sin eventos</p>
@@ -881,7 +824,7 @@ export default function WorkQueueCard({
               <div className="space-y-3">
                 {(() => {
                   // Group appointments by date
-                  const groupedAppointments = finalAppointments.reduce(
+                  const groupedAppointments = appointments.reduce(
                     (groups, appointment) => {
                       const dateLabel = formatAppointmentDate(
                         appointment.startTime,
@@ -890,7 +833,7 @@ export default function WorkQueueCard({
                       groups[dateLabel].push(appointment);
                       return groups;
                     },
-                    {} as Record<string, typeof finalAppointments>,
+                    {} as Record<string, typeof appointments>,
                   );
 
                   return Object.entries(groupedAppointments).map(

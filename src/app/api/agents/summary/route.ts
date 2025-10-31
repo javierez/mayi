@@ -5,8 +5,9 @@ import {
   getAgentListingsWithDetailsWithAuth,
   getAgentListingContactsWithAuth,
   getAgentTasksAndAppointmentsWithAuth,
-  getUrgentAgentActionsWithAuth,
 } from "~/server/queries/agent-summary";
+import { getMostUrgentTasksWithAuth } from "~/server/queries/task";
+import { getTodayAppointmentsWithAuth } from "~/server/queries/operaciones-dashboard";
 import { getSecureSession } from "~/lib/dal";
 
 // Helper function to convert BigInt to string in objects
@@ -36,13 +37,15 @@ export async function GET(request: NextRequest) {
       contacts,
       listings,
       { tasks, appointments },
-      urgentActions,
+      detailedTasks,
+      todayAppointments,
     ] = await Promise.all([
       getAgentSummaryStatsWithAuth(userId),
       getAgentContactsOwnersWithAuth(userId),
       getAgentListingsWithDetailsWithAuth(userId),
       getAgentTasksAndAppointmentsWithAuth(userId),
-      getUrgentAgentActionsWithAuth(userId),
+      getMostUrgentTasksWithAuth(10, 7, { userId }), // Get detailed tasks for selected agent
+      getTodayAppointmentsWithAuth({ assignedTo: userId }), // Get appointments for selected agent
     ]);
 
     // Get listing contacts for all listings
@@ -57,7 +60,8 @@ export async function GET(request: NextRequest) {
       listingContacts,
       tasks,
       appointments,
-      urgentActions,
+      detailedTasks,
+      todayAppointments,
     });
 
     return NextResponse.json(response);

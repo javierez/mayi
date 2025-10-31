@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { useSession } from "~/lib/auth-client";
 import WorkQueueCard from "~/components/dashboard/operations/WorkQueueCard";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { WorkQueueCardSkeleton } from "~/components/ui/skeletons";
-import type { UrgentAction } from "~/types/urgent-actions";
+import type { getMostUrgentTasksWithAuth } from "~/server/queries/task";
+import type { TodayAppointment } from "~/server/queries/operaciones-dashboard";
 
 interface Agent {
   id: string;
@@ -17,11 +19,14 @@ interface Agent {
 
 export default function AgentWorkQueuePage() {
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [urgentActions, setUrgentActions] = useState<UrgentAction[]>([]);
+  const [detailedTasks, setDetailedTasks] = useState<Awaited<ReturnType<typeof getMostUrgentTasksWithAuth>>>([]);
+  const [appointments, setAppointments] = useState<TodayAppointment[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string>("");
+  const currentUserId = session?.user?.id ?? "";
 
   // Fetch data from API
   useEffect(() => {
@@ -47,7 +52,7 @@ export default function AgentWorkQueuePage() {
           }
         }
 
-        // Fetch urgent actions for the agent
+        // Fetch tasks and appointments for the agent
         const userId = agentIdParam ?? selectedAgentId;
         if (userId) {
           const summaryResponse = await fetch(`/api/agents/summary?userId=${userId}`);
@@ -55,9 +60,11 @@ export default function AgentWorkQueuePage() {
             throw new Error("Failed to fetch agent data");
           }
           const data = (await summaryResponse.json()) as {
-            urgentActions: UrgentAction[];
+            detailedTasks: Awaited<ReturnType<typeof getMostUrgentTasksWithAuth>>;
+            todayAppointments: TodayAppointment[];
           };
-          setUrgentActions(data.urgentActions);
+          setDetailedTasks(data.detailedTasks);
+          setAppointments(data.todayAppointments);
         }
       } catch (err) {
         console.error("Error fetching data:", err);
@@ -101,11 +108,14 @@ export default function AgentWorkQueuePage() {
       ) : (
         <WorkQueueCard
           tasks={[]}
-          appointments={[]}
-          urgentActions={urgentActions}
+          appointments={appointments}
+          detailedTasks={detailedTasks}
           selectedAgentId={selectedAgentId}
           agents={agents}
+          showAllTasks={true}
           onAgentChange={handleAgentChange}
+          currentUserId={currentUserId}
+          standalone={true}
         />
       )}
     </div>

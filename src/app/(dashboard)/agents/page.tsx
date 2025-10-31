@@ -10,7 +10,8 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { AlertCircle } from "lucide-react";
 import WorkQueueCard from "~/components/dashboard/operations/WorkQueueCard";
-import type { UrgentAction } from "~/types/urgent-actions";
+import type { getMostUrgentTasksWithAuth } from "~/server/queries/task";
+import type { TodayAppointment } from "~/server/queries/operaciones-dashboard";
 
 interface AgentStats {
   activeListingsCount: number;
@@ -97,7 +98,8 @@ interface AgentData {
   listingContacts: ListingContact[];
   tasks: Task[];
   appointments: Appointment[];
-  urgentActions: UrgentAction[];
+  detailedTasks: Awaited<ReturnType<typeof getMostUrgentTasksWithAuth>>;
+  todayAppointments: TodayAppointment[];
 }
 
 export default function AgentsPage() {
@@ -238,15 +240,16 @@ export default function AgentsPage() {
           <AgentSummaryCards stats={agentData.stats} />
 
           {/* Urgent Actions */}
-          <div className="mt-6">
-            <WorkQueueCard
-              tasks={[]}
-              appointments={[]}
-              urgentActions={agentData.urgentActions}
-              selectedAgentId={selectedAgentId}
-              agents={agents}
-            />
-          </div>
+          <WorkQueueCard
+            tasks={[]}
+            appointments={agentData.todayAppointments}
+            detailedTasks={agentData.detailedTasks}
+            selectedAgentId={selectedAgentId}
+            agents={agents}
+            showAllTasks={true}
+            onAgentChange={setSelectedAgentId}
+            currentUserId={currentUserId}
+          />
 
           {/* Hierarchy View */}
           <AgentHierarchyView

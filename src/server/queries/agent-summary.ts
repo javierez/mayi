@@ -92,6 +92,7 @@ export interface UrgentAgentAction {
   description?: string;
   dueDate?: Date;
   datetimeStart?: Date;
+  datetimeEnd?: Date;
   status: string;
   entityName?: string;
   entityContactId?: bigint;
@@ -101,11 +102,16 @@ export interface UrgentAgentAction {
   contactFirstName?: string;
   contactLastName?: string;
   propertyTitle?: string;
+  propertyAddress?: string;
   daysUntilDue?: number;
   isOverdue?: boolean;
   urgency?: number;
   category?: string;
   completed?: boolean;
+  userId?: string;
+  userName?: string;
+  userFirstName?: string;
+  userLastName?: string;
 }
 
 /**
@@ -491,15 +497,26 @@ export async function getUrgentAgentActions(
     const urgentTasks = await db
       .select({
         taskId: tasks.taskId,
+        userId: tasks.userId,
         title: tasks.title,
         description: tasks.description,
         dueDate: tasks.dueDate,
         completed: tasks.completed,
         urgency: tasks.urgency,
         category: tasks.category,
+        status: tasks.status,
         listingId: tasks.listingId,
         listingTitle: properties.title,
         propertyTitle: properties.title,
+        propertyAddress: sql<string | null>`
+          CASE WHEN ${tasks.listingId} IS NOT NULL
+          THEN CONCAT(${properties.street}, ', ', ${properties.addressDetails})
+          ELSE NULL END
+        `,
+        // User information
+        userName: users.name,
+        userFirstName: users.firstName,
+        userLastName: users.lastName,
         // Contact information - check both direct contact and listing contact
         contactId: sql<bigint | null>`
           CASE
@@ -539,6 +556,7 @@ export async function getUrgentAgentActions(
         `,
       })
       .from(tasks)
+      .innerJoin(users, eq(tasks.userId, users.id))
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .leftJoin(
@@ -565,9 +583,6 @@ export async function getUrgentAgentActions(
       )
       .orderBy(tasks.dueDate);
 
-    console.log("Raw urgent tasks from DB:", JSON.stringify(urgentTasks, (_key, value) =>
-      typeof value === "bigint" ? value.toString() : value));
-
     // Get upcoming appointments
     const upcomingAppointments = await db
       .select({
@@ -576,10 +591,19 @@ export async function getUrgentAgentActions(
         datetimeEnd: appointments.datetimeEnd,
         status: appointments.status,
         type: appointments.type,
+        contactId: appointments.contactId,
         contactName: sql<string>`CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})`,
+        listingId: appointments.listingId,
+        propertyAddress: sql<string | null>`
+          CASE WHEN ${appointments.listingId} IS NOT NULL
+          THEN CONCAT(${properties.street}, ', ', ${properties.addressDetails})
+          ELSE NULL END
+        `,
       })
       .from(appointments)
       .innerJoin(contacts, eq(appointments.contactId, contacts.contactId))
+      .leftJoin(listings, eq(appointments.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
         and(
           eq(appointments.userId, userId),
@@ -608,7 +632,7 @@ export async function getUrgentAgentActions(
         title: task.title,
         description: task.description,
         dueDate: task.dueDate ?? undefined,
-        status: task.completed ? "completed" : isOverdue ? "overdue" : "pending",
+        status: task.status ?? (task.completed ? "completed" : isOverdue ? "overdue" : "pending"),
         entityName: task.entityName ?? undefined,
         entityContactId: task.entityContactId ?? undefined,
         listingTitle: task.listingTitle ?? undefined,
@@ -617,27 +641,17 @@ export async function getUrgentAgentActions(
         contactFirstName: task.contactFirstName ?? undefined,
         contactLastName: task.contactLastName ?? undefined,
         propertyTitle: task.propertyTitle ?? undefined,
+        propertyAddress: task.propertyAddress ?? undefined,
         urgency: task.urgency ?? undefined,
         category: task.category ?? undefined,
         completed: task.completed ?? false,
+        userId: task.userId ?? undefined,
+        userName: task.userName ?? undefined,
+        userFirstName: task.userFirstName ?? undefined,
+        userLastName: task.userLastName ?? undefined,
         daysUntilDue,
         isOverdue,
       };
-
-      console.log(`Task ${task.taskId} transformation:`, {
-        rawTask: {
-          listingId: task.listingId?.toString(),
-          listingTitle: task.listingTitle,
-          entityName: task.entityName,
-          entityContactId: task.entityContactId?.toString(),
-        },
-        transformedAction: {
-          listingId: action.listingId?.toString(),
-          listingTitle: action.listingTitle,
-          entityName: action.entityName,
-          entityContactId: action.entityContactId?.toString(),
-        }
-      });
 
       urgentActions.push(action);
     });
@@ -649,8 +663,12 @@ export async function getUrgentAgentActions(
         id: appt.appointmentId,
         title: `${appt.type ?? "Cita"} - ${appt.contactName}`,
         datetimeStart: appt.datetimeStart,
+        datetimeEnd: appt.datetimeEnd,
         status: appt.status,
         entityName: appt.contactName,
+        contactId: appt.contactId ?? undefined,
+        listingId: appt.listingId ?? undefined,
+        propertyAddress: appt.propertyAddress ?? undefined,
       });
     });
 
@@ -661,9 +679,6 @@ export async function getUrgentAgentActions(
       if (!dateA || !dateB) return 0;
       return dateA.getTime() - dateB.getTime();
     });
-
-    console.log("Final urgent actions being returned:", JSON.stringify(urgentActions, (_key, value) =>
-      typeof value === "bigint" ? value.toString() : value));
 
     return urgentActions;
   } catch (error) {
