@@ -13,6 +13,7 @@ import { ProspectCardSkeleton } from "~/components/prospects/prospect-card-skele
 import { NoResults } from "~/components/prospects/no-results";
 import { getAllProspectsWithAuth } from "~/server/queries/prospect";
 import { getAllListingsWithAuth } from "~/server/queries/operations-listings";
+import { getMatchesForProspectsWithAuth } from "~/server/queries/connection-matches";
 import type { ListingWithDetails } from "~/server/queries/operations-listings";
 // Simple type for prospect with contact data (matching ACTUAL database structure)
 type ProspectWithContact = {
@@ -59,6 +60,7 @@ export default function ProspectsPage() {
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [prospects, setProspects] = useState<ProspectWithContact[]>([]);
+  const [filteredProspects, setFilteredProspects] = useState<ProspectWithContact[]>([]);
   const [listings, setListings] = useState<ListingWithDetails[]>([]);
   const [currentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -71,6 +73,8 @@ export default function ProspectsPage() {
   >(new Map());
 
   const view = (searchParams.get("view") ?? "list") as "kanban" | "list";
+  const hasMatchesParam = searchParams.get("hasMatches");
+  const typeParam = searchParams.get("type"); // "sale" or "rent"
 
   useEffect(() => {
     const fetchData = async () => {
@@ -104,8 +108,58 @@ export default function ProspectsPage() {
         setProspects(prospectsResult);
         setListings(listingsResult);
 
-        // Calculate total pages based on combined results
-        const totalItems = prospectsResult.length + listingsResult.length;
+        // Apply filters based on URL params
+        let filtered = prospectsResult;
+
+        // Filter by listing type (Sale/Rent) if typeParam is provided
+        if (typeParam === "sale" || typeParam === "rent") {
+          const listingType = typeParam === "sale" ? "Sale" : "Rent";
+          filtered = filtered.filter(
+            (p) => p.prospects.listingType === listingType,
+          );
+        }
+
+        // Filter by hasMatches if param is provided
+        if (hasMatchesParam !== null) {
+          const shouldHaveMatches = hasMatchesParam === "true";
+
+          // Fetch matches
+          const matchResults = await getMatchesForProspectsWithAuth({
+            filters: {
+              accountScope: "current",
+              includeNearStrict: true,
+              propertyTypes: [],
+              locationIds: [],
+              prospectTypes: [],
+              listingTypes: [],
+              statuses: [],
+              urgencyLevels: [],
+            },
+            pagination: {
+              offset: 0,
+              limit: 10000,
+            },
+          });
+
+          // Build set of prospect IDs that have matches
+          const prospectIdsWithMatches = new Set<string>();
+          matchResults.matches.forEach((match) => {
+            prospectIdsWithMatches.add(match.prospectId.toString());
+          });
+
+          // Filter based on whether prospect has matches
+          filtered = filtered.filter((p) => {
+            const hasMatch = prospectIdsWithMatches.has(
+              p.prospects.id.toString(),
+            );
+            return shouldHaveMatches ? hasMatch : !hasMatch;
+          });
+        }
+
+        setFilteredProspects(filtered);
+
+        // Calculate total pages based on filtered results and listings
+        const totalItems = filtered.length + listingsResult.length;
         setTotalPages(Math.ceil(totalItems / ITEMS_PER_PAGE) || 1);
 
         // If no results found, show a message
@@ -123,7 +177,7 @@ export default function ProspectsPage() {
     };
 
     void fetchData();
-  }, [searchParams]);
+  }, [searchParams, hasMatchesParam, typeParam]);
 
   // Prefetch handler
   const handlePrefetchPage = useCallback(async (page: number) => {
@@ -222,7 +276,7 @@ export default function ProspectsPage() {
         <NoResults message={error} />
       ) : view === "kanban" ? (
         <ProspectKanban
-          prospects={prospects}
+          prospects={filteredProspects.length > 0 ? filteredProspects : prospects}
           onProspectUpdate={() => {
             // Refresh data when prospects are updated
             const fetchData = async () => {
@@ -233,6 +287,7 @@ export default function ProspectsPage() {
                 ]);
                 setProspects(prospectsResult);
                 setListings(listingsResult);
+                setFilteredProspects(prospectsResult);
               } catch (error) {
                 console.error("Error refreshing prospects:", error);
               }
@@ -247,7 +302,7 @@ export default function ProspectsPage() {
           <ProspectFilter view={view} onViewChange={handleViewChange} />
 
           <ProspectTable
-            prospects={prospects}
+            prospects={filteredProspects.length > 0 ? filteredProspects : prospects}
             listings={listings}
             currentPage={currentPage}
             totalPages={totalPages}
@@ -263,6 +318,7 @@ export default function ProspectsPage() {
                   ]);
                   setProspects(prospectsResult);
                   setListings(listingsResult);
+                  setFilteredProspects(prospectsResult);
                 } catch (error) {
                   console.error("Error refreshing prospects:", error);
                 }

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Card, CardContent } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
 import { ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { OperacionesSummary } from "~/server/queries/operaciones-dashboard";
@@ -38,31 +38,71 @@ export default function OperacionesSummaryCard({
 
   const activeData = data[activeType];
 
-  // Definir secciones con iconos y colores de estado
+  // Helper function to pluralize status names
+  const pluralizeStatus = (status: string, count: number): string => {
+    if (count <= 1) return status;
+
+    const pluralMap: Record<string, string> = {
+      // Conexiones badge types
+      Inactivo: "Inactivos",
+      "Visita Pendiente": "Visitas Pendientes",
+      "Oferta Aceptada": "Ofertas Aceptadas",
+      "Oferta Rechazada": "Ofertas Rechazadas",
+      "Oferta Pendiente": "Ofertas Pendientes",
+      "Visita Cancelada": "Visitas Canceladas",
+      "Visita Perdida": "Visitas Perdidas",
+      "Visita Completada": "Visitas Completadas",
+      "Sin Visitas": "Sin Visitas", // Doesn't change
+      // Acuerdos status types
+      Offer: "Offers",
+      UnderContract: "UnderContract",
+      Closed: "Closed",
+      Lost: "Lost",
+    };
+
+    return pluralMap[status] ?? status;
+  };
+
+  // Define urgency order for conexiones statuses (from most to least urgent)
+  const conexionesUrgencyOrder = [
+    "Visita Pendiente",
+    "Oferta Pendiente",
+    "Oferta Aceptada",
+    "Oferta Rechazada",
+    "Visita Completada",
+    "Sin Visitas",
+    "Visita Cancelada",
+    "Visita Perdida",
+    "Inactivo",
+  ];
+
+  // Helper function to sort statuses by urgency
+  const sortByUrgency = (entries: [string, number][]): [string, number][] => {
+    return entries.sort((a, b) => {
+      const indexA = conexionesUrgencyOrder.indexOf(a[0]);
+      const indexB = conexionesUrgencyOrder.indexOf(b[0]);
+
+      // If status not in urgency order, put it at the end
+      const finalIndexA = indexA === -1 ? 999 : indexA;
+      const finalIndexB = indexB === -1 ? 999 : indexB;
+
+      return finalIndexA - finalIndexB;
+    });
+  };
+
+  // Definir secciones
   const sections = [
     {
       key: "leads",
       label: "Conexión",
       labelPlural: "Conexiones",
       data: activeData.leads,
-      statusColors: {
-        New: "bg-blue-100 text-blue-800",
-        Working: "bg-yellow-100 text-yellow-800",
-        Converted: "bg-green-100 text-green-800",
-        Disqualified: "bg-red-100 text-red-800",
-      },
     },
     {
       key: "deals",
       label: "Acuerdo",
       labelPlural: "Acuerdos",
       data: activeData.deals,
-      statusColors: {
-        Offer: "bg-purple-100 text-purple-800",
-        UnderContract: "bg-blue-100 text-blue-800",
-        Closed: "bg-green-100 text-green-800",
-        Lost: "bg-red-100 text-red-800",
-      },
     },
   ];
 
@@ -70,7 +110,7 @@ export default function OperacionesSummaryCard({
     <Card className={className + " group relative"}>
       <CardContent>
         {/* Alternar entre Venta y Alquiler */}
-        <div className="mt-4 flex flex-col items-center gap-3">
+        <div className="mt-5 flex flex-col items-center gap-3">
           <div className="flex w-full justify-center gap-2">
             {/* Tarjeta de Venta */}
             <motion.button
@@ -122,21 +162,81 @@ export default function OperacionesSummaryCard({
           </div>
 
           {/* Demandas y Propiedades en Oferta - Side by side */}
-          <div className="mt-4 flex w-full gap-2">
-            {/* Tarjeta de Demandas */}
-            <div className="flex flex-1 items-center justify-between rounded-lg border border-transparent bg-white px-3 py-2 shadow-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700">
-                  Demandas
-                </span>
-              </div>
-              <span className="text-sm font-bold text-primary">
-                {activeData.prospects}
-              </span>
+          <div className="mt-3 flex w-full gap-2">
+            {/* Tarjeta de Demandas - Expandable */}
+            <div className="flex flex-1 flex-col gap-1">
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                className={`flex w-full items-center justify-between rounded-lg border border-transparent bg-white px-3 py-2 shadow-sm transition-all duration-200 hover:bg-gray-50 focus:outline-none ${
+                  expandedSection === "prospects"
+                    ? "border-primary bg-gray-100"
+                    : ""
+                }`}
+                onClick={() =>
+                  setExpandedSection(
+                    expandedSection === "prospects" ? null : "prospects",
+                  )
+                }
+                type="button"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">
+                    Demandas
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-primary">
+                    {activeData.prospects}
+                  </span>
+                  <motion.div
+                    animate={{
+                      rotate: expandedSection === "prospects" ? 180 : 0,
+                    }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <ChevronDown className="h-3 w-3 text-gray-400" />
+                  </motion.div>
+                </div>
+              </motion.button>
+
+              {/* Expanded breakdown */}
+              <AnimatePresence>
+                {expandedSection === "prospects" && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="ml-6 flex flex-col gap-1 overflow-hidden"
+                  >
+                    <Link
+                      href={`/operaciones/prospects?hasMatches=true&type=${activeType}`}
+                      className="flex items-center justify-between rounded-md bg-gray-50 px-2 py-1.5 transition-colors duration-200 hover:bg-gray-100"
+                    >
+                      <span className="text-xs text-gray-700">Con Conexiones</span>
+                      <span className="font-mono text-xs text-primary">
+                        {activeData.prospectsWithMatches}
+                      </span>
+                    </Link>
+                    <Link
+                      href={`/operaciones/prospects?hasMatches=false&type=${activeType}`}
+                      className="flex items-center justify-between rounded-md bg-gray-50 px-2 py-1.5 transition-colors duration-200 hover:bg-gray-100"
+                    >
+                      <span className="text-xs text-gray-700">Sin Conexiones</span>
+                      <span className="font-mono text-xs text-primary">
+                        {activeData.prospectsWithoutMatches}
+                      </span>
+                    </Link>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Tarjeta de Propiedades en Oferta */}
-            <div className="flex flex-1 items-center justify-between rounded-lg border border-transparent bg-white px-3 py-2 shadow-sm">
+            <Link
+              href="/propiedades"
+              className="flex flex-1 items-center justify-between rounded-lg border border-transparent bg-white px-3 py-2 shadow-sm transition-all duration-200 hover:bg-gray-50"
+            >
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-gray-700">
                   Prop. en Oferta
@@ -145,16 +245,14 @@ export default function OperacionesSummaryCard({
               <span className="text-sm font-bold text-primary">
                 {activeData.listings}
               </span>
-            </div>
+            </Link>
           </div>
 
           {/* Desglose de Operaciones */}
-          <div className="mt-4 flex w-full flex-col gap-1.5">
+          <div className=" flex w-full flex-col gap-2">
             {sections.map((section, index) => {
               const sectionTotal = calculateTotal(section.data);
               const isExpanded = expandedSection === section.key;
-
-              if (sectionTotal === 0) return null; // Ocultar secciones sin datos
 
               return (
                 <motion.div
@@ -201,14 +299,9 @@ export default function OperacionesSummaryCard({
                         transition={{ duration: 0.2 }}
                         className="ml-6 mt-1 flex flex-col gap-1 overflow-hidden pr-4"
                       >
-                        {Object.entries(section.data).map(
+                        {sortByUrgency(Object.entries(section.data)).map(
                           ([status, count], statusIndex) => {
                             if (count === 0) return null;
-
-                            const colorClass =
-                              section.statusColors[
-                                status as keyof typeof section.statusColors
-                              ] ?? "bg-gray-100 text-gray-800";
 
                             return (
                               <motion.div
@@ -218,14 +311,12 @@ export default function OperacionesSummaryCard({
                                 transition={{ delay: statusIndex * 0.03 }}
                                 className="flex items-center justify-between rounded-md bg-gray-50 px-2 py-1.5 transition-colors duration-200 hover:bg-gray-100"
                               >
-                                <div className="flex items-center gap-2">
-                                  <Badge
-                                    variant="secondary"
-                                    className={`${colorClass} text-xs font-medium`}
-                                  >
-                                    {status}
-                                  </Badge>
-                                </div>
+                                <span className="text-xs text-gray-700">
+                                  {pluralizeStatus(status, count)}
+                                </span>
+                                <span className="font-mono text-xs text-primary">
+                                  {count}
+                                </span>
                               </motion.div>
                             );
                           },

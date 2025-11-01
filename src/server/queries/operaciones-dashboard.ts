@@ -13,17 +13,22 @@ import {
 } from "~/server/db/schema";
 import { eq, and, lte, gte, sql, isNotNull, ne } from "drizzle-orm";
 import { getCurrentUserAccountId } from "~/lib/dal";
+import { getMatchesForProspects } from "~/server/queries/connection-matches";
 
 // Dashboard-specific data types
 export interface OperacionesSummary {
   sale: {
     prospects: number;
+    prospectsWithMatches: number;
+    prospectsWithoutMatches: number;
     listings: number;
     leads: Record<string, number>;
     deals: Record<string, number>;
   };
   rent: {
     prospects: number;
+    prospectsWithMatches: number;
+    prospectsWithoutMatches: number;
     listings: number;
     leads: Record<string, number>;
     deals: Record<string, number>;
@@ -73,6 +78,28 @@ function calculateWorkingDays(from: Date, to: Date): number {
   return workingDays;
 }
 
+// Helper function to calculate badge type (mirrors logic from contact-detail-sheet.tsx)
+function calculateBadgeType(contact: {
+  isActive?: boolean | null;
+  hasUpcomingVisit: boolean;
+  hasMissedVisit: boolean;
+  hasCompletedVisit: boolean;
+  hasCancelledVisit: boolean;
+  hasOffer: boolean;
+  offerAccepted: boolean | null;
+}): string {
+  // Priority order (same as contact-detail-sheet.tsx lines 415-483)
+  if (contact.isActive === false) return "Inactivo";
+  if (contact.hasUpcomingVisit) return "Visita Pendiente";
+  if (contact.offerAccepted === true) return "Oferta Aceptada";
+  if (contact.offerAccepted === false) return "Oferta Rechazada";
+  if (contact.hasOffer) return "Oferta Pendiente";
+  if (contact.hasCancelledVisit) return "Visita Cancelada";
+  if (contact.hasMissedVisit) return "Visita Perdida";
+  if (contact.hasCompletedVisit) return "Visita Completada";
+  return "Sin Visitas";
+}
+
 // Get comprehensive operations summary for dashboard KPIs
 export async function getOperacionesSummary(
   accountId: bigint,
@@ -110,16 +137,55 @@ export async function getOperacionesSummary(
         listings.listingType,
       );
 
-    // Get leads summary by status and listing type (through listings)
-    const leadsData = await db
+    // Get leads data with appointment information to calculate badge types
+    const leadsDataRaw = await db
       .select({
-        status: listingContacts.status,
+        listingContactId: listingContacts.listingContactId,
         listingType: listings.listingType,
-        count: sql<number>`COUNT(*)`,
+        isActive: listingContacts.isActive,
+        offer: listingContacts.offer,
+        offerAccepted: listingContacts.offerAccepted,
+        // Calculate visit flags using SQL aggregation
+        hasUpcomingVisit: sql<boolean>`
+          CASE WHEN COUNT(CASE
+            WHEN ${appointments.status} = 'Scheduled'
+            AND ${appointments.datetimeStart} >= NOW()
+            AND ${appointments.type} = 'Visita'
+            THEN 1
+          END) > 0 THEN TRUE ELSE FALSE END
+        `,
+        hasMissedVisit: sql<boolean>`
+          CASE WHEN COUNT(CASE
+            WHEN ${appointments.status} = 'NoShow'
+            AND ${appointments.type} = 'Visita'
+            THEN 1
+          END) > 0 THEN TRUE ELSE FALSE END
+        `,
+        hasCompletedVisit: sql<boolean>`
+          CASE WHEN COUNT(CASE
+            WHEN ${appointments.status} = 'Completed'
+            AND ${appointments.type} = 'Visita'
+            THEN 1
+          END) > 0 THEN TRUE ELSE FALSE END
+        `,
+        hasCancelledVisit: sql<boolean>`
+          CASE WHEN COUNT(CASE
+            WHEN ${appointments.status} = 'Cancelled'
+            AND ${appointments.type} = 'Visita'
+            THEN 1
+          END) > 0 THEN TRUE ELSE FALSE END
+        `,
       })
       .from(listingContacts)
       .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
       .leftJoin(listings, eq(listingContacts.listingId, listings.listingId))
+      .leftJoin(
+        appointments,
+        and(
+          eq(appointments.contactId, listingContacts.contactId),
+          eq(appointments.listingId, listingContacts.listingId),
+        ),
+      )
       .where(
         and(
           eq(contacts.accountId, accountId),
@@ -127,7 +193,13 @@ export async function getOperacionesSummary(
           eq(listingContacts.isActive, true),
         ),
       )
-      .groupBy(listingContacts.status, listings.listingType);
+      .groupBy(
+        listingContacts.listingContactId,
+        listings.listingType,
+        listingContacts.isActive,
+        listingContacts.offer,
+        listingContacts.offerAccepted,
+      );
 
     // Get deals summary by status and listing type (through listings)
     const dealsData = await db
@@ -142,16 +214,86 @@ export async function getOperacionesSummary(
       .where(eq(properties.accountId, accountId))
       .groupBy(deals.status, listings.listingType);
 
+    // Get matches to determine prospects with/without connections
+    const matchResults = await getMatchesForProspects({
+      accountId,
+      filters: {
+        accountScope: "current",
+        includeNearStrict: true,
+        propertyTypes: [],
+        locationIds: [],
+        prospectTypes: [],
+        listingTypes: [],
+        statuses: [],
+        urgencyLevels: [],
+      },
+      pagination: {
+        offset: 0,
+        limit: 10000, // Large limit to get all matches
+      },
+    });
+
+    // Build a set of prospect IDs that have matches
+    const prospectIdsWithMatches = new Set<string>();
+    matchResults.matches.forEach((match) => {
+      prospectIdsWithMatches.add(match.prospectId.toString());
+    });
+
+    // Get all prospect IDs grouped by listing type
+    const saleProspectIds = new Set<string>();
+    const rentProspectIds = new Set<string>();
+
+    prospectsData.forEach((row) => {
+      // We need to get actual prospect IDs, so let's query them
+      const type = row.listingType === "Sale" ? "sale" : "rent";
+      if (type === "sale") {
+        // We'll populate this below
+      } else {
+        // We'll populate this below
+      }
+    });
+
+    // Get all prospects to map IDs to listing types
+    const allProspectsQuery = await db
+      .select({
+        id: prospects.id,
+        listingType: prospects.listingType,
+      })
+      .from(prospects)
+      .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
+      .where(eq(contacts.accountId, accountId));
+
+    allProspectsQuery.forEach((prospect) => {
+      const prospectId = prospect.id.toString();
+      if (prospect.listingType === "Sale") {
+        saleProspectIds.add(prospectId);
+      } else if (prospect.listingType === "Rent") {
+        rentProspectIds.add(prospectId);
+      }
+    });
+
+    // Calculate counts
+    const saleProspectsWithMatches = Array.from(saleProspectIds).filter((id) =>
+      prospectIdsWithMatches.has(id),
+    ).length;
+    const rentProspectsWithMatches = Array.from(rentProspectIds).filter((id) =>
+      prospectIdsWithMatches.has(id),
+    ).length;
+
     // Format the results into the expected structure
     const summary: OperacionesSummary = {
       sale: {
         prospects: 0,
+        prospectsWithMatches: saleProspectsWithMatches,
+        prospectsWithoutMatches: 0,
         listings: 0,
         leads: {},
         deals: {},
       },
       rent: {
         prospects: 0,
+        prospectsWithMatches: rentProspectsWithMatches,
+        prospectsWithoutMatches: 0,
         listings: 0,
         leads: {},
         deals: {},
@@ -164,18 +306,38 @@ export async function getOperacionesSummary(
       summary[type].prospects += row.count;
     });
 
+    // Calculate without matches
+    summary.sale.prospectsWithoutMatches =
+      summary.sale.prospects - summary.sale.prospectsWithMatches;
+    summary.rent.prospectsWithoutMatches =
+      summary.rent.prospects - summary.rent.prospectsWithMatches;
+
     // Process listings data - separate from prospects
     listingsData.forEach((row) => {
       const type = row.listingType === "Sale" ? "sale" : "rent";
       summary[type].listings += row.count;
     });
 
-    // Process leads data
-    leadsData.forEach((row) => {
+    // Process leads data - calculate badge types and group
+    leadsDataRaw.forEach((row) => {
+      if (!row.listingType) return;
+
       const type = row.listingType === "Sale" ? "sale" : "rent";
-      if (row.listingType && row.status) {
-        summary[type].leads[row.status] = row.count;
-      }
+
+      // Calculate badge type using the helper function
+      const badgeType = calculateBadgeType({
+        isActive: row.isActive,
+        hasUpcomingVisit: Boolean(row.hasUpcomingVisit),
+        hasMissedVisit: Boolean(row.hasMissedVisit),
+        hasCompletedVisit: Boolean(row.hasCompletedVisit),
+        hasCancelledVisit: Boolean(row.hasCancelledVisit),
+        hasOffer: row.offer !== null,
+        offerAccepted: row.offerAccepted,
+      });
+
+      // Increment count for this badge type
+      summary[type].leads[badgeType] =
+        (summary[type].leads[badgeType] ?? 0) + 1;
     });
 
     // Process deals data
