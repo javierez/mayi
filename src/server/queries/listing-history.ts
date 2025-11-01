@@ -25,8 +25,8 @@ export interface ListingActivityRecord {
  */
 export async function getListingHistory(
   listingId: number,
-  page: number = 1,
-  pageSize: number = 50,
+  page = 1,
+  pageSize = 50,
 ): Promise<{
   activities: ListingActivityRecord[];
   totalCount: number;
@@ -97,8 +97,8 @@ export async function getListingHistory(
  * Ordered by most recent first
  */
 export async function getAllListingsHistory(
-  page: number = 1,
-  pageSize: number = 50,
+  page = 1,
+  pageSize = 50,
 ): Promise<{
   activities: Array<ListingActivityRecord & { listingTitle: string; referenceNumber: string | null }>;
   totalCount: number;
@@ -112,7 +112,7 @@ export async function getAllListingsHistory(
       .select({ count: sql<number>`count(*)` })
       .from(listingActivity)
       .innerJoin(listings, eq(listingActivity.listingId, listings.listingId))
-      .where(eq(listings.accountId, accountId));
+      .where(eq(listings.accountId, BigInt(accountId)));
 
     const totalCount = countResult?.count ?? 0;
     const totalPages = Math.ceil(totalCount / pageSize);
@@ -135,7 +135,7 @@ export async function getAllListingsHistory(
       .innerJoin(listings, eq(listingActivity.listingId, listings.listingId))
       .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
       .leftJoin(users, sql`BINARY ${listingActivity.userId} = BINARY ${users.id}`)
-      .where(eq(listings.accountId, accountId))
+      .where(eq(listings.accountId, BigInt(accountId)))
       .orderBy(desc(listingActivity.createdAt))
       .limit(pageSize)
       .offset((page - 1) * pageSize);

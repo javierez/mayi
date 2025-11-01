@@ -465,13 +465,13 @@ export default function WorkQueueCard({
 
   return (
     <Card className={`${standalone ? "shadow-lg" : ""} ${className}`}>
-      <CardContent className={standalone ? "p-6 sm:p-8" : "pt-2"}>
-        <div className={`${standalone ? "mt-2" : "mt-4"} grid gap-6 md:grid-cols-2`}>
+      <CardContent className={standalone ? "p-4 sm:p-6 md:p-8" : "pt-2 px-4 sm:px-6"}>
+        <div className={`${standalone ? "mt-2" : "mt-4"} grid gap-4 sm:gap-6 lg:grid-cols-2`}>
           {/* Columna de Tareas Urgentes */}
           <div>
-            <div className="relative mb-4">
+            <div className="relative mb-3 sm:mb-4">
               <div className="flex items-center">
-                <h3 className="font-semibold text-gray-900">Tareas Urgentes</h3>
+                <h3 className="text-sm sm:text-base font-semibold text-gray-900">Tareas Urgentes</h3>
                 <div className="ml-auto">
                   <TaskFilter users={users} inline iconOnly />
                 </div>
@@ -773,9 +773,9 @@ export default function WorkQueueCard({
 
           {/* Columna de Citas */}
           <div>
-            <div className="relative mb-4">
+            <div className="relative mb-3 sm:mb-4">
               <div className="flex items-center">
-                <h3 className="font-semibold text-gray-900">Próximos Eventos</h3>
+                <h3 className="text-sm sm:text-base font-semibold text-gray-900">Próximos Eventos</h3>
                 <div className="ml-auto">
                   <AppointmentFilter users={users} inline iconOnly />
                 </div>
@@ -783,15 +783,15 @@ export default function WorkQueueCard({
             </div>
 
             {appointments.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <Calendar className="mb-2 h-12 w-12 text-gray-400" />
+              <div className="flex flex-col items-center justify-center py-6 sm:py-8 text-center">
+                <Calendar className="mb-2 h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
                 <p className="text-sm font-medium text-gray-900">Sin eventos</p>
                 <p className="text-xs text-gray-500">
                   No hay eventos programados para hoy o mañana
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {(() => {
                   // Group appointments by date
                   const groupedAppointments = appointments.reduce(
@@ -871,14 +871,14 @@ export default function WorkQueueCard({
                                   // Update URL
                                   router.push(`?${params.toString()}`);
                                 }}
-                                className={`group relative cursor-pointer rounded-lg p-4 transition-all duration-200 ${
+                                className={`group relative cursor-pointer rounded-lg p-3 sm:p-4 transition-all duration-200 ${
                                   isSelected
                                     ? "bg-gray-100 shadow-lg"
                                     : "bg-white shadow-sm hover:shadow-md"
                                 }`}
                               >
                                 {/* Type Badge */}
-                                <div className="absolute right-3 top-3 flex items-center gap-2">
+                                <div className="absolute right-2 sm:right-3 top-2 sm:top-3 flex items-center gap-2">
                                   <span
                                     className={`text-[10px] font-medium uppercase tracking-wide ${
                                       isSelected ? "text-gray-800" : "text-gray-400"
@@ -891,7 +891,7 @@ export default function WorkQueueCard({
                                 </div>
 
                                 {/* Time - bottom right */}
-                                <div className="absolute bottom-3 right-3 flex items-center gap-1 font-mono">
+                                <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-3 flex items-center gap-1 font-mono">
                                   <div className="text-[10px] font-medium tabular-nums text-gray-600">
                                     {formatTime(appointment.startTime)}
                                   </div>
@@ -902,9 +902,9 @@ export default function WorkQueueCard({
                                 </div>
 
                                 {/* Main content */}
-                                <div className="pr-16">
+                                <div className="pr-12 sm:pr-16">
                                   {/* Contact name */}
-                                  <h3 className="mb-2.5 text-sm font-semibold text-gray-900">
+                                  <h3 className="mb-2 sm:mb-2.5 text-sm font-semibold text-gray-900 break-words">
                                     {appointment.contactName}
                                   </h3>
 
@@ -915,10 +915,10 @@ export default function WorkQueueCard({
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       onClick={(e) => e.stopPropagation()}
-                                      className="flex items-start gap-1 transition-colors hover:text-blue-600"
+                                      className="flex items-start gap-1 transition-colors hover:text-blue-600 min-w-0"
                                     >
                                       <MapPin className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400" />
-                                      <span className="line-clamp-2 text-xs leading-tight text-gray-600 hover:underline">
+                                      <span className="line-clamp-2 text-xs leading-tight text-gray-600 hover:underline break-words min-w-0">
                                         {appointment.propertyAddress}
                                       </span>
                                     </a>

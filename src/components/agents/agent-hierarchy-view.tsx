@@ -9,7 +9,6 @@ import {
   CollapsibleTrigger,
 } from "~/components/ui/collapsible";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
   ChevronDown,
@@ -219,23 +218,23 @@ export function AgentHierarchyView({
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-3 px-4 md:px-6">
           <CardTitle className="text-base font-semibold">
             Cartera de Clientes
           </CardTitle>
         </CardHeader>
-        <div className="px-6 pb-4">
+        <div className="px-4 md:px-6 pb-4">
           <div className="relative">
             <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground/50" />
             <Input
               placeholder="Buscar contacto..."
-              className="h-8 pl-8 text-sm border-muted bg-muted/20 focus-visible:bg-background transition-colors"
+              className="h-8 w-full pl-8 text-sm border-muted bg-muted/20 focus-visible:bg-background transition-colors"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
-        <CardContent className="space-y-2 pt-0">
+        <CardContent className="space-y-0 pt-0 divide-y divide-gray-100">
           {filteredContacts.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground py-8">
               No se encontraron contactos que coincidan con tu búsqueda.
@@ -252,45 +251,43 @@ export function AgentHierarchyView({
                 open={isOpen}
                 onOpenChange={() => toggleContact(contactId)}
               >
-                <Card className="border-0 shadow-sm hover:shadow-md transition-shadow duration-200">
+                <Card className="border-0 shadow-none">
                   <CollapsibleTrigger className="w-full">
-                    <CardContent className="flex items-center justify-between p-4 hover:bg-muted/30 transition-all duration-200">
-                      <div className="flex items-center gap-3">
-                        <div className="text-left">
-                          <div className="flex items-center gap-2">
-                            <Link
-                              href={`/contactos/${contact.contactId}`}
-                              className="font-medium hover:underline transition-colors"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {contact.firstName} {contact.lastName}
-                            </Link>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 hover:bg-muted/50"
-                              onClick={(e) => handleContactInfoClick(contact, e)}
-                            >
-                              <Info className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                          </div>
+                    <CardContent className="flex items-center justify-between py-2.5 px-3 md:px-4 hover:bg-muted/30 transition-all duration-200 min-w-0">
+                      <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
+                        <div className="text-left min-w-0 flex-1">
+                          <Link
+                            href={`/contactos/${contact.contactId}`}
+                            className="text-sm font-medium hover:underline transition-colors break-words"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {contact.firstName} {contact.lastName}
+                          </Link>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 font-mono">
-                        <div className="text-[10px] font-medium tabular-nums text-gray-400">
-                          {contactListings.length}
+                      <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-1 font-mono">
+                          <div className="text-[10px] font-medium tabular-nums text-gray-400">
+                            {contactListings.length}
+                          </div>
+                          <div className="text-[10px] text-gray-400 hidden sm:block">
+                            {contactListings.length === 1
+                              ? "propiedad"
+                              : "propiedades"}
+                          </div>
                         </div>
-                        <div className="text-[10px] text-gray-400">
-                          {contactListings.length === 1
-                            ? "propiedad"
-                            : "propiedades"}
+                        <div
+                          className="h-5 w-5 flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity cursor-pointer flex-shrink-0"
+                          onClick={(e) => handleContactInfoClick(contact, e)}
+                        >
+                          <Info className="h-3 w-3 text-muted-foreground" />
                         </div>
                       </div>
                     </CardContent>
                   </CollapsibleTrigger>
 
                   <CollapsibleContent>
-                    <CardContent className="space-y-2 border-t bg-muted/20 p-4">
+                    <CardContent className="space-y-2 border-t bg-muted/20 py-3 px-3 md:px-4">
                       {contactListings.length === 0 ? (
                         <p className="text-sm text-muted-foreground">
                           No hay propiedades asociadas.
@@ -314,58 +311,61 @@ export function AgentHierarchyView({
                               open={isListingOpen}
                               onOpenChange={() => toggleListing(listingId)}
                             >
-                              <Card className="border">
+                              <Card className="border shadow-none">
                                 <CollapsibleTrigger className="w-full">
-                                  <CardContent className="flex items-center justify-between p-3 hover:bg-muted/50 transition-colors">
-                                    <div className="flex items-center gap-2">
-                                      {isListingOpen ? (
-                                        <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                                      ) : (
-                                        <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                                      )}
-                                      <div className="text-left">
+                                  <CardContent className="flex items-start sm:items-center justify-between gap-2 py-2 px-2.5 md:px-3 hover:bg-muted/50 transition-colors min-w-0">
+                                    <div className="flex items-start gap-2 min-w-0 flex-1">
+                                      <div className="flex-shrink-0 mt-0.5">
+                                        {isListingOpen ? (
+                                          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                                        ) : (
+                                          <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                                        )}
+                                      </div>
+                                      <div className="text-left min-w-0 flex-1">
                                         <Link
                                           href={`/propiedades/${listing.listingId}`}
-                                          className="text-sm font-medium hover:underline"
+                                          className="text-sm font-medium hover:underline break-words line-clamp-2"
+                                          onClick={(e) => e.stopPropagation()}
                                         >
                                           {listing.title ??
-                                            `${listing.street ?? ""} ${listing.addressDetails ?? ""}`}
+                                            `${listing.street ?? ""} ${listing.addressDetails ?? ""}`.trim()}
                                         </Link>
-                                        <p className="text-xs text-muted-foreground">
+                                        <p className="text-xs text-muted-foreground whitespace-normal break-words mt-0.5">
                                           {formatPrice(listing.price)} • {listing.listingType}
                                         </p>
                                       </div>
                                     </div>
-                                    <Badge variant="outline" className="text-xs">
+                                    <Badge variant="outline" className="text-xs flex-shrink-0">
                                       {getStatusText(listing.status)}
                                     </Badge>
                                   </CardContent>
                                 </CollapsibleTrigger>
 
                                 <CollapsibleContent>
-                                  <CardContent className="space-y-3 border-t bg-muted/10 p-3">
+                                  <CardContent className="space-y-3 border-t bg-muted/10 p-2.5 md:p-3">
                                     {/* Listing Contacts */}
                                     {contacts.length > 0 && (
                                       <div>
                                         <h4 className="mb-2 text-xs font-medium text-muted-foreground">
                                           Interesados
                                         </h4>
-                                        <div className="space-y-1">
+                                        <div className="space-y-1.5">
                                           {contacts.map((lc) => (
                                             <div
                                               key={lc.listingContactId}
                                               className="rounded-md border bg-background p-2 text-xs"
                                             >
-                                              <div className="flex items-center justify-between">
+                                              <div className="flex items-start sm:items-center justify-between gap-2 min-w-0">
                                                 <Link
                                                   href={`/contactos/${lc.contactId}`}
-                                                  className="font-medium hover:underline"
+                                                  className="font-medium hover:underline break-words min-w-0 flex-1"
                                                 >
                                                   {lc.firstName} {lc.lastName}
                                                 </Link>
                                                 <Badge
                                                   variant="outline"
-                                                  className="text-xs"
+                                                  className="text-xs flex-shrink-0"
                                                 >
                                                   {lc.contactType === "buyer"
                                                     ? "Comprador"
@@ -373,12 +373,12 @@ export function AgentHierarchyView({
                                                 </Badge>
                                               </div>
                                               {lc.status && (
-                                                <p className="text-muted-foreground">
+                                                <p className="text-muted-foreground mt-1 break-words">
                                                   Estado: {lc.status}
                                                 </p>
                                               )}
                                               {lc.offer && (
-                                                <p className="text-muted-foreground">
+                                                <p className="text-muted-foreground mt-1">
                                                   Oferta: {formatPrice(String(lc.offer))}
                                                 </p>
                                               )}
@@ -394,24 +394,24 @@ export function AgentHierarchyView({
                                         <h4 className="mb-2 text-xs font-medium text-muted-foreground">
                                           Tareas
                                         </h4>
-                                        <div className="space-y-1">
+                                        <div className="space-y-1.5">
                                           {listingTasks.map((task) => (
                                             <div
                                               key={task.taskId}
                                               className="rounded-md border bg-background p-2 text-xs"
                                             >
-                                              <div className="flex items-center justify-between">
-                                                <p className="font-medium">
+                                              <div className="flex items-start sm:items-center justify-between gap-2 min-w-0">
+                                                <p className="font-medium break-words min-w-0 flex-1">
                                                   {task.title}
                                                 </p>
                                                 {task.dueDate && (
-                                                  <span className="text-muted-foreground">
+                                                  <span className="text-muted-foreground flex-shrink-0 text-[10px] sm:text-xs">
                                                     {formatDate(task.dueDate)}
                                                   </span>
                                                 )}
                                               </div>
                                               {task.description && (
-                                                <p className="mt-1 text-muted-foreground">
+                                                <p className="mt-1 text-muted-foreground break-words">
                                                   {task.description}
                                                 </p>
                                               )}
@@ -427,27 +427,27 @@ export function AgentHierarchyView({
                                         <h4 className="mb-2 text-xs font-medium text-muted-foreground">
                                           Citas
                                         </h4>
-                                        <div className="space-y-1">
+                                        <div className="space-y-1.5">
                                           {listingAppointments.map((appt) => (
                                             <div
                                               key={appt.appointmentId}
                                               className="rounded-md border bg-background p-2 text-xs"
                                             >
-                                              <div className="flex items-center justify-between">
-                                                <p className="font-medium">
+                                              <div className="flex items-start sm:items-center justify-between gap-2 min-w-0">
+                                                <p className="font-medium break-words min-w-0 flex-1">
                                                   {appt.type ?? "Cita"}
                                                 </p>
                                                 <Badge
                                                   variant="outline"
-                                                  className="text-xs"
+                                                  className="text-xs flex-shrink-0"
                                                 >
                                                   {appt.status}
                                                 </Badge>
                                               </div>
-                                              <p className="text-muted-foreground">
+                                              <p className="text-muted-foreground mt-1 break-words">
                                                 Con: {appt.contactName}
                                               </p>
-                                              <p className="text-muted-foreground">
+                                              <p className="text-muted-foreground mt-0.5">
                                                 {formatDateTime(
                                                   appt.datetimeStart,
                                                 )}

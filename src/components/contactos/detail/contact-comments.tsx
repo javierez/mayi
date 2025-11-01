@@ -162,27 +162,29 @@ function UserCommentItem({
                 )}
             </div>
 
-            <div className="flex items-center space-x-2 pr-16">
-              <span
-                className={clsx("font-semibold", isReply ? "text-xs" : "text-sm")}
-              >
-                {comment.user.name}
-              </span>
+            <div className="flex flex-col items-start space-y-1 pr-16">
+              <div className="flex items-center space-x-2">
+                <span
+                  className={clsx("font-semibold", isReply ? "text-xs" : "text-sm")}
+                >
+                  {comment.user.name}
+                </span>
 
-              {/* Status indicator */}
-              {comment.status === "sending" && (
-                <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
-              )}
-              {comment.status === "sent" &&
-                currentUserId === comment.userId && (
-                  <CheckCircle2 className="h-3 w-3 text-green-500" />
+                {/* Status indicator */}
+                {comment.status === "sending" && (
+                  <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
                 )}
-              {comment.status === "error" && (
-                <div
-                  className="h-3 w-3 rounded-full bg-red-500"
-                  title="Error al enviar"
-                />
-              )}
+                {comment.status === "sent" &&
+                  currentUserId === comment.userId && (
+                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                  )}
+                {comment.status === "error" && (
+                  <div
+                    className="h-3 w-3 rounded-full bg-red-500"
+                    title="Error al enviar"
+                  />
+                )}
+              </div>
 
               <span
                 className={clsx("text-gray-500", isReply ? "text-xs" : "text-xs")}

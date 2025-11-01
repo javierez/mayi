@@ -29,6 +29,15 @@ export interface AgentContactOwner {
   lastName: string;
   email: string | null;
   phone: string | null;
+  // Priority counts for intelligent sorting
+  offersAcceptedCount?: number;
+  pendingOffersCount?: number;
+  rejectedOffersCount?: number;
+  upcomingVisitsCount?: number;
+  completedVisitsCount?: number;
+  missedVisitsCount?: number;
+  cancelledVisitsCount?: number;
+  inactiveContactsCount?: number;
 }
 
 export interface AgentListing {
@@ -238,6 +247,107 @@ export async function getAgentContactsOwners(
            AND lc3.contact_type = 'owner'
           )
         `,
+        // Priority counts for sorting
+        offersAcceptedCount: sql<number>`
+          (SELECT COUNT(DISTINCT lc_offer_accepted.listing_contact_id)
+           FROM listing_contacts lc_offer_accepted
+           INNER JOIN listings l_offer_accepted ON lc_offer_accepted.listing_id = l_offer_accepted.listing_id
+           WHERE l_offer_accepted.listing_id IN (
+             SELECT listing_id FROM listing_contacts
+             WHERE contact_id = ${contacts.contactId} AND contact_type = 'owner'
+           )
+           AND lc_offer_accepted.contact_type IN ('buyer', 'viewer')
+           AND lc_offer_accepted.is_active = true
+           AND lc_offer_accepted.offer_accepted = true
+          )
+        `,
+        pendingOffersCount: sql<number>`
+          (SELECT COUNT(DISTINCT lc_pending.listing_contact_id)
+           FROM listing_contacts lc_pending
+           INNER JOIN listings l_pending ON lc_pending.listing_id = l_pending.listing_id
+           WHERE l_pending.listing_id IN (
+             SELECT listing_id FROM listing_contacts
+             WHERE contact_id = ${contacts.contactId} AND contact_type = 'owner'
+           )
+           AND lc_pending.contact_type IN ('buyer', 'viewer')
+           AND lc_pending.is_active = true
+           AND lc_pending.offer IS NOT NULL
+           AND lc_pending.offer_accepted IS NULL
+          )
+        `,
+        rejectedOffersCount: sql<number>`
+          (SELECT COUNT(DISTINCT lc_rejected.listing_contact_id)
+           FROM listing_contacts lc_rejected
+           INNER JOIN listings l_rejected ON lc_rejected.listing_id = l_rejected.listing_id
+           WHERE l_rejected.listing_id IN (
+             SELECT listing_id FROM listing_contacts
+             WHERE contact_id = ${contacts.contactId} AND contact_type = 'owner'
+           )
+           AND lc_rejected.contact_type IN ('buyer', 'viewer')
+           AND lc_rejected.is_active = true
+           AND lc_rejected.offer_accepted = false
+          )
+        `,
+        upcomingVisitsCount: sql<number>`
+          (SELECT COUNT(DISTINCT appt_upcoming.appointment_id)
+           FROM appointments appt_upcoming
+           WHERE appt_upcoming.listing_id IN (
+             SELECT listing_id FROM listing_contacts
+             WHERE contact_id = ${contacts.contactId} AND contact_type = 'owner'
+           )
+           AND appt_upcoming.is_active = true
+           AND appt_upcoming.status = 'Scheduled'
+           AND appt_upcoming.datetime_start > NOW()
+          )
+        `,
+        completedVisitsCount: sql<number>`
+          (SELECT COUNT(DISTINCT appt_completed.appointment_id)
+           FROM appointments appt_completed
+           WHERE appt_completed.listing_id IN (
+             SELECT listing_id FROM listing_contacts
+             WHERE contact_id = ${contacts.contactId} AND contact_type = 'owner'
+           )
+           AND appt_completed.is_active = true
+           AND appt_completed.status = 'Completed'
+          )
+        `,
+        missedVisitsCount: sql<number>`
+          (SELECT COUNT(DISTINCT appt_missed.appointment_id)
+           FROM appointments appt_missed
+           WHERE appt_missed.listing_id IN (
+             SELECT listing_id FROM listing_contacts
+             WHERE contact_id = ${contacts.contactId} AND contact_type = 'owner'
+           )
+           AND appt_missed.is_active = true
+           AND (
+             (appt_missed.datetime_start < NOW() AND appt_missed.status = 'Scheduled')
+             OR appt_missed.status = 'NoShow'
+           )
+          )
+        `,
+        cancelledVisitsCount: sql<number>`
+          (SELECT COUNT(DISTINCT appt_cancelled.appointment_id)
+           FROM appointments appt_cancelled
+           WHERE appt_cancelled.listing_id IN (
+             SELECT listing_id FROM listing_contacts
+             WHERE contact_id = ${contacts.contactId} AND contact_type = 'owner'
+           )
+           AND appt_cancelled.is_active = true
+           AND appt_cancelled.status = 'Cancelled'
+          )
+        `,
+        inactiveContactsCount: sql<number>`
+          (SELECT COUNT(DISTINCT lc_inactive.listing_contact_id)
+           FROM listing_contacts lc_inactive
+           INNER JOIN listings l_inactive ON lc_inactive.listing_id = l_inactive.listing_id
+           WHERE l_inactive.listing_id IN (
+             SELECT listing_id FROM listing_contacts
+             WHERE contact_id = ${contacts.contactId} AND contact_type = 'owner'
+           )
+           AND lc_inactive.contact_type IN ('buyer', 'viewer')
+           AND lc_inactive.is_active = false
+          )
+        `,
       })
       .from(contacts)
       .innerJoin(
@@ -261,30 +371,172 @@ export async function getAgentContactsOwners(
         contacts.phone,
       );
 
-    // Sort by activity: deals first, then active leads, then alphabetically
-    const sortedOwners = ownersWithMetrics.sort((a, b) => {
-      // First priority: contacts with deals
-      if (a.dealsCount !== b.dealsCount) {
-        return b.dealsCount - a.dealsCount;
-      }
-      // Second priority: contacts with active leads
-      if (a.activeLeadsCount !== b.activeLeadsCount) {
-        return b.activeLeadsCount - a.activeLeadsCount;
-      }
-      // Third priority: alphabetical by last name
-      const lastNameCompare = a.lastName.localeCompare(b.lastName);
-      if (lastNameCompare !== 0) return lastNameCompare;
-      return a.firstName.localeCompare(b.firstName);
+    // Log pre-sort data for debugging
+    console.log("📊 [Agent Contacts] Pre-sort contact metrics:", {
+      totalContacts: ownersWithMetrics.length,
+      contacts: ownersWithMetrics.map((owner) => ({
+        name: `${owner.firstName} ${owner.lastName}`,
+        offersAccepted: owner.offersAcceptedCount,
+        pendingOffers: owner.pendingOffersCount,
+        upcomingVisits: owner.upcomingVisitsCount,
+        missedVisits: owner.missedVisitsCount,
+        cancelledVisits: owner.cancelledVisitsCount,
+        rejectedOffers: owner.rejectedOffersCount,
+        completedVisits: owner.completedVisitsCount,
+        deals: owner.dealsCount,
+        activeLeads: owner.activeLeadsCount,
+      })),
     });
 
-    // Return only the contact fields (remove metrics)
+    // Sort by priority-based activity (highest urgency first)
+    const sortedOwners = ownersWithMetrics.sort((a, b) => {
+      let sortReason = "";
+
+      // Priority 1: Offers Accepted (highest urgency - deals closing)
+      if (a.offersAcceptedCount !== b.offersAcceptedCount) {
+        sortReason = `Offers Accepted: ${b.offersAcceptedCount} vs ${a.offersAcceptedCount}`;
+        console.log(
+          `🔄 [Sort] ${b.firstName} ${b.lastName} > ${a.firstName} ${a.lastName} (${sortReason})`,
+        );
+        return b.offersAcceptedCount - a.offersAcceptedCount;
+      }
+
+      // Priority 2: Pending Offers (needs decision)
+      if (a.pendingOffersCount !== b.pendingOffersCount) {
+        sortReason = `Pending Offers: ${b.pendingOffersCount} vs ${a.pendingOffersCount}`;
+        console.log(
+          `🔄 [Sort] ${b.firstName} ${b.lastName} > ${a.firstName} ${a.lastName} (${sortReason})`,
+        );
+        return b.pendingOffersCount - a.pendingOffersCount;
+      }
+
+      // Priority 3: Upcoming Visits (scheduled engagement)
+      if (a.upcomingVisitsCount !== b.upcomingVisitsCount) {
+        sortReason = `Upcoming Visits: ${b.upcomingVisitsCount} vs ${a.upcomingVisitsCount}`;
+        console.log(
+          `🔄 [Sort] ${b.firstName} ${b.lastName} > ${a.firstName} ${a.lastName} (${sortReason})`,
+        );
+        return b.upcomingVisitsCount - a.upcomingVisitsCount;
+      }
+
+      // Priority 4: Missed Visits (requires follow-up)
+      if (a.missedVisitsCount !== b.missedVisitsCount) {
+        sortReason = `Missed Visits: ${b.missedVisitsCount} vs ${a.missedVisitsCount}`;
+        console.log(
+          `🔄 [Sort] ${b.firstName} ${b.lastName} > ${a.firstName} ${a.lastName} (${sortReason})`,
+        );
+        return b.missedVisitsCount - a.missedVisitsCount;
+      }
+
+      // Priority 5: Cancelled Visits (re-engagement needed)
+      if (a.cancelledVisitsCount !== b.cancelledVisitsCount) {
+        sortReason = `Cancelled Visits: ${b.cancelledVisitsCount} vs ${a.cancelledVisitsCount}`;
+        console.log(
+          `🔄 [Sort] ${b.firstName} ${b.lastName} > ${a.firstName} ${a.lastName} (${sortReason})`,
+        );
+        return b.cancelledVisitsCount - a.cancelledVisitsCount;
+      }
+
+      // Priority 6: Rejected Offers (potential re-negotiation)
+      if (a.rejectedOffersCount !== b.rejectedOffersCount) {
+        sortReason = `Rejected Offers: ${b.rejectedOffersCount} vs ${a.rejectedOffersCount}`;
+        console.log(
+          `🔄 [Sort] ${b.firstName} ${b.lastName} > ${a.firstName} ${a.lastName} (${sortReason})`,
+        );
+        return b.rejectedOffersCount - a.rejectedOffersCount;
+      }
+
+      // Priority 7: Completed Visits (awaiting next step)
+      if (a.completedVisitsCount !== b.completedVisitsCount) {
+        sortReason = `Completed Visits: ${b.completedVisitsCount} vs ${a.completedVisitsCount}`;
+        console.log(
+          `🔄 [Sort] ${b.firstName} ${b.lastName} > ${a.firstName} ${a.lastName} (${sortReason})`,
+        );
+        return b.completedVisitsCount - a.completedVisitsCount;
+      }
+
+      // Priority 8: Deals (existing tiebreaker)
+      if (a.dealsCount !== b.dealsCount) {
+        sortReason = `Deals: ${b.dealsCount} vs ${a.dealsCount}`;
+        console.log(
+          `🔄 [Sort] ${b.firstName} ${b.lastName} > ${a.firstName} ${a.lastName} (${sortReason})`,
+        );
+        return b.dealsCount - a.dealsCount;
+      }
+
+      // Priority 9: Active Leads (existing tiebreaker)
+      if (a.activeLeadsCount !== b.activeLeadsCount) {
+        sortReason = `Active Leads: ${b.activeLeadsCount} vs ${a.activeLeadsCount}`;
+        console.log(
+          `🔄 [Sort] ${b.firstName} ${b.lastName} > ${a.firstName} ${a.lastName} (${sortReason})`,
+        );
+        return b.activeLeadsCount - a.activeLeadsCount;
+      }
+
+      // Final tiebreaker: alphabetical by last name, then first name
+      const lastNameCompare = a.lastName.localeCompare(b.lastName, "es");
+      if (lastNameCompare !== 0) {
+        console.log(
+          `🔄 [Sort] Alphabetical by last name: ${a.lastName} vs ${b.lastName}`,
+        );
+        return lastNameCompare;
+      }
+      console.log(
+        `🔄 [Sort] Alphabetical by first name: ${a.firstName} vs ${b.firstName}`,
+      );
+      return a.firstName.localeCompare(b.firstName, "es");
+    });
+
+    // Log final sorted order
+    console.log("✅ [Agent Contacts] Final sorted order:", {
+      totalContacts: sortedOwners.length,
+      order: sortedOwners.map((owner, index) => ({
+        position: index + 1,
+        name: `${owner.firstName} ${owner.lastName}`,
+        priorityCounts: {
+          offersAccepted: owner.offersAcceptedCount,
+          pendingOffers: owner.pendingOffersCount,
+          upcomingVisits: owner.upcomingVisitsCount,
+          missedVisits: owner.missedVisitsCount,
+          cancelledVisits: owner.cancelledVisitsCount,
+          rejectedOffers: owner.rejectedOffersCount,
+          completedVisits: owner.completedVisitsCount,
+          deals: owner.dealsCount,
+          activeLeads: owner.activeLeadsCount,
+        },
+      })),
+    });
+
+    // Return with all fields including priority counts
     return sortedOwners.map(
-      ({ contactId, firstName, lastName, email, phone }) => ({
+      ({
         contactId,
         firstName,
         lastName,
         email,
         phone,
+        offersAcceptedCount,
+        pendingOffersCount,
+        rejectedOffersCount,
+        upcomingVisitsCount,
+        completedVisitsCount,
+        missedVisitsCount,
+        cancelledVisitsCount,
+        inactiveContactsCount,
+      }) => ({
+        contactId,
+        firstName,
+        lastName,
+        email,
+        phone,
+        offersAcceptedCount,
+        pendingOffersCount,
+        rejectedOffersCount,
+        upcomingVisitsCount,
+        completedVisitsCount,
+        missedVisitsCount,
+        cancelledVisitsCount,
+        inactiveContactsCount,
       }),
     );
   } catch (error) {

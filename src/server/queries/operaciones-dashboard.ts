@@ -17,12 +17,14 @@ import { getCurrentUserAccountId } from "~/lib/dal";
 // Dashboard-specific data types
 export interface OperacionesSummary {
   sale: {
-    prospects: Record<string, number>;
+    prospects: number;
+    listings: number;
     leads: Record<string, number>;
     deals: Record<string, number>;
   };
   rent: {
-    prospects: Record<string, number>;
+    prospects: number;
+    listings: number;
     leads: Record<string, number>;
     deals: Record<string, number>;
   };
@@ -143,29 +145,29 @@ export async function getOperacionesSummary(
     // Format the results into the expected structure
     const summary: OperacionesSummary = {
       sale: {
-        prospects: {},
+        prospects: 0,
+        listings: 0,
         leads: {},
         deals: {},
       },
       rent: {
-        prospects: {},
+        prospects: 0,
+        listings: 0,
         leads: {},
         deals: {},
       },
     };
 
-    // Process prospects data
+    // Process prospects data - just count totals
     prospectsData.forEach((row) => {
       const type = row.listingType === "Sale" ? "sale" : "rent";
-      summary[type].prospects[row.status] =
-        (summary[type].prospects[row.status] ?? 0) + row.count;
+      summary[type].prospects += row.count;
     });
 
-    // Process listings data (include in prospects/demanda count)
+    // Process listings data - separate from prospects
     listingsData.forEach((row) => {
       const type = row.listingType === "Sale" ? "sale" : "rent";
-      summary[type].prospects[row.status] =
-        (summary[type].prospects[row.status] ?? 0) + row.count;
+      summary[type].listings += row.count;
     });
 
     // Process leads data

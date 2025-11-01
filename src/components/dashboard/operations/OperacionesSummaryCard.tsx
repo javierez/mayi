@@ -25,82 +25,21 @@ export default function OperacionesSummaryCard({
   };
 
   const saleTotal =
-    calculateTotal(data.sale.prospects) +
+    data.sale.prospects +
+    data.sale.listings +
     calculateTotal(data.sale.leads) +
     calculateTotal(data.sale.deals);
 
   const rentTotal =
-    calculateTotal(data.rent.prospects) +
+    data.rent.prospects +
+    data.rent.listings +
     calculateTotal(data.rent.leads) +
     calculateTotal(data.rent.deals);
 
   const activeData = data[activeType];
 
-  // Helper function to map database status to display status for prospects
-  const mapProspectStatusToDisplay = (dbStatus: string): string => {
-    switch (dbStatus.toLowerCase()) {
-      case "new":
-        return "En búsqueda";
-      case "working":
-        return "En preparación";
-      case "qualified":
-        return "Finalizado";
-      case "archived":
-        return "Archivado";
-      // Original listing statuses (for fallback)
-      case "preparation":
-        return "En preparación";
-      case "valuation":
-        return "En valoración";
-      case "presign":
-        return "Listo para firma";
-      case "active":
-        return "En búsqueda";
-      // New prospect statuses for listings (already in Spanish)
-      case "completar datos":
-        return "Completar datos";
-      case "visita o llaves pendiente":
-        return "Visita o llaves pendiente";
-      case "valoración pendiente":
-        return "Valoración pendiente";
-      case "firma pendiente":
-        return "Firma pendiente";
-      default:
-        return dbStatus;
-    }
-  };
-
-  // Transform prospects data to use display status names
-  const transformProspectsData = (prospectsData: Record<string, number>) => {
-    const transformed: Record<string, number> = {};
-    Object.entries(prospectsData).forEach(([dbStatus, count]) => {
-      const displayStatus = mapProspectStatusToDisplay(dbStatus);
-      transformed[displayStatus] = (transformed[displayStatus] ?? 0) + count;
-    });
-    return transformed;
-  };
-
   // Definir secciones con iconos y colores de estado
   const sections = [
-    {
-      key: "prospects",
-      label: "Demanda",
-      labelPlural: "Demandas",
-      data: transformProspectsData(activeData.prospects),
-      statusColors: {
-        "En búsqueda": "bg-slate-100 text-slate-700",
-        "En preparación": "bg-amber-50 text-amber-700",
-        "En valoración": "bg-rose-50 text-rose-700",
-        "Listo para firma": "bg-slate-200 text-slate-700",
-        Finalizado: "bg-gray-100 text-gray-700",
-        Archivado: "bg-gray-50 text-gray-500",
-        // New listing prospect statuses
-        "Completar datos": "bg-rose-100 text-rose-700",
-        "Visita o llaves pendiente": "bg-amber-100 text-amber-700",
-        "Valoración pendiente": "bg-slate-100 text-slate-700",
-        "Firma pendiente": "bg-gray-100 text-gray-700",
-      },
-    },
     {
       key: "leads",
       label: "Conexión",
@@ -115,8 +54,8 @@ export default function OperacionesSummaryCard({
     },
     {
       key: "deals",
-      label: "Operación",
-      labelPlural: "Operaciones",
+      label: "Acuerdo",
+      labelPlural: "Acuerdos",
       data: activeData.deals,
       statusColors: {
         Offer: "bg-purple-100 text-purple-800",
@@ -180,6 +119,33 @@ export default function OperacionesSummaryCard({
                 Alquiler
               </span>
             </motion.button>
+          </div>
+
+          {/* Demandas y Propiedades en Oferta - Side by side */}
+          <div className="mt-4 flex w-full gap-2">
+            {/* Tarjeta de Demandas */}
+            <div className="flex flex-1 items-center justify-between rounded-lg border border-transparent bg-white px-3 py-2 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">
+                  Demandas
+                </span>
+              </div>
+              <span className="text-sm font-bold text-primary">
+                {activeData.prospects}
+              </span>
+            </div>
+
+            {/* Tarjeta de Propiedades en Oferta */}
+            <div className="flex flex-1 items-center justify-between rounded-lg border border-transparent bg-white px-3 py-2 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">
+                  Prop. en Oferta
+                </span>
+              </div>
+              <span className="text-sm font-bold text-primary">
+                {activeData.listings}
+              </span>
+            </div>
           </div>
 
           {/* Desglose de Operaciones */}
