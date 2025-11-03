@@ -109,6 +109,8 @@ export async function fetchAccountContext(): Promise<AccountContext | null> {
 
 /**
  * Formats account context into a readable string for GPT-4 prompts
+ * IMPORTANT: This version EXCLUDES phone numbers and emails to comply with portal requirements
+ * (Fotocasa and other portals prohibit contact info in property descriptions)
  */
 export async function formatAccountContextForPrompt(
   context: AccountContext,
@@ -121,20 +123,17 @@ export async function formatAccountContextForPrompt(
     lines.push(`- Agency Name: ${context.agencyName}`);
   }
 
-  // Contact information
+  // Contact information - ONLY safe fields (NO phone, NO email)
   const contactLines: string[] = [];
-  if (context.contactInfo.phone) {
-    contactLines.push(`Phone: ${context.contactInfo.phone}`);
-  }
-  if (context.contactInfo.email) {
-    contactLines.push(`Email: ${context.contactInfo.email}`);
+  if (context.contactInfo.website) {
+    contactLines.push(`Website: ${context.contactInfo.website}`);
   }
   if (context.contactInfo.address) {
     contactLines.push(`Address: ${context.contactInfo.address}`);
   }
 
   if (contactLines.length > 0) {
-    lines.push(`- Contact Information: ${contactLines.join(", ")}`);
+    lines.push(`- Company Information: ${contactLines.join(", ")}`);
   }
 
   // Company description if available
@@ -142,7 +141,7 @@ export async function formatAccountContextForPrompt(
     lines.push(`- Company Description: ${context.description}`);
   }
 
-  // Multiple offices if available
+  // Multiple offices if available - ONLY addresses, NO phones/emails
   if (context.offices && context.offices.length > 0) {
     lines.push(`- Office Locations:`);
     context.offices.forEach((office, index) => {
@@ -152,10 +151,7 @@ export async function formatAccountContextForPrompt(
         const addressStr = `${office.address.street}, ${office.address.city}, ${office.address.state}, ${office.address.country}`;
         officeInfo.push(addressStr);
       }
-      if (office.phoneNumbers?.main)
-        officeInfo.push(`Phone: ${office.phoneNumbers.main}`);
-      if (office.emailAddresses?.info)
-        officeInfo.push(`Email: ${office.emailAddresses.info}`);
+      // REMOVED: phone numbers and email addresses to comply with portal requirements
 
       if (officeInfo.length > 0) {
         lines.push(`  ${index + 1}. ${officeInfo.join(" - ")}`);
@@ -166,10 +162,7 @@ export async function formatAccountContextForPrompt(
   lines.push("");
   lines.push("INSTRUCTIONS FOR USING COMPANY CONTEXT:");
   lines.push(
-    '- Naturally incorporate the agency name when appropriate (e.g., "Contact [Agency Name] for more information")',
-  );
-  lines.push(
-    "- Include relevant contact information in call-to-action phrases",
+    '- Naturally incorporate the agency name when appropriate (e.g., "Contacta con [Agency Name] para más información")',
   );
   lines.push(
     "- Match the professional tone that represents this specific agency",
@@ -178,6 +171,17 @@ export async function formatAccountContextForPrompt(
     "- Make the description feel authentic to this company's brand identity",
   );
   lines.push("- Do not force company information if it doesn't flow naturally");
+  lines.push("");
+  lines.push("CRITICAL - PROHIBITED CONTENT:");
+  lines.push(
+    "- DO NOT include phone numbers in ANY format in the property description",
+  );
+  lines.push(
+    "- DO NOT include email addresses in the property description",
+  );
+  lines.push(
+    "- Property portals like Fotocasa strictly prohibit contact information in descriptions",
+  );
 
   return lines.join("\n");
 }

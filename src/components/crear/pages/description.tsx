@@ -97,14 +97,16 @@ export default function DescriptionPage({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <Textarea
-        id="description"
-        value={formData.description}
-        onChange={(e) => handleDescriptionChange(e.target.value)}
-        className="min-h-[200px] resize-y border-gray-200 transition-colors focus:border-gray-400 focus:ring-gray-300"
-        placeholder="Describe las características principales de la propiedad, su ubicación, y cualquier detalle relevante que pueda interesar a los potenciales compradores o inquilinos."
-      />
-      <div className="flex justify-center pt-2">
+      <div className="relative">
+        <Textarea
+          id="description"
+          value={formData.description}
+          onChange={(e) => handleDescriptionChange(e.target.value)}
+          className="min-h-[200px] resize-y border-gray-200 transition-colors focus:border-gray-400 focus:ring-gray-300"
+          placeholder="Describe las características principales de la propiedad, su ubicación, y cualquier detalle relevante que pueda interesar a los potenciales compradores o inquilinos."
+        />
+      </div>
+      <div className="flex justify-center gap-3 pt-4">
         <Button
           type="button"
           onClick={handleGenerateDescription}

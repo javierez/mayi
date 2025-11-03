@@ -370,7 +370,14 @@ ${EXAMPLES_FILE_ID ? `CRITICAL: Before writing, carefully study the uploaded exa
     ${accountContext ? "- Naturally incorporate the company information provided in the company context" : ""}
     - Only mention explicitly confirmed features. Omit any unconfirmed information
     - Create descriptions that feel authentic and match the established writing style
-    
+
+    ⚠️ PROHIBITED CONTENT (PORTAL COMPLIANCE - CRITICAL):
+    - NEVER include phone numbers in ANY format (e.g., 666 123 456, +34 666123456, 666-123-456, etc.)
+    - NEVER include email addresses (e.g., info@example.com, contacto@inmobiliaria.es, etc.)
+    - NEVER include any contact information whatsoever
+    - This is a STRICT requirement from property portals like Fotocasa to prevent direct contact outside their platform
+    - Violation of this rule will result in listing rejection by the portal
+
     NEIGHBORHOOD INTEGRATION:
     ${
       neighborhoodInfo
