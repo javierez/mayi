@@ -64,6 +64,7 @@ export interface AppointmentData {
   contactId?: bigint;
   contactName: string;
   propertyAddress?: string;
+  listingId?: bigint;
   agentName?: string;
   isOptimistic?: boolean;
 }

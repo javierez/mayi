@@ -5,6 +5,7 @@ import { useSession } from "~/lib/auth-client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { cn } from "~/lib/utils";
+import Image from "next/image";
 import {
   Form,
   FormControl,
@@ -23,7 +24,6 @@ import {
   Loader2,
   Droplet,
   Check,
-  ChevronRight,
   Key,
   ExternalLink,
 } from "lucide-react";
@@ -39,13 +39,14 @@ import {
   type PortalTab,
 } from "~/types/portal-settings";
 
-const navigationItems: (PortalTab & { color?: string })[] = [
+const navigationItems: (PortalTab & { color?: string; logo?: string })[] = [
   {
     id: "fotocasa",
     label: "Fotocasa",
     description: "Activar portal",
     icon: Globe,
     color: "text-orange-500",
+    logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-fotocasa-min.png",
   },
   {
     id: "idealista",
@@ -53,6 +54,7 @@ const navigationItems: (PortalTab & { color?: string })[] = [
     description: "Activar portal",
     icon: Globe,
     color: "text-green-500",
+    logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-idealista.png",
   },
   {
     id: "general",
@@ -160,282 +162,238 @@ export function PortalConfiguration() {
   }
 
   return (
-    <div className="relative flex h-auto flex-col overflow-hidden rounded-2xl bg-white shadow-sm lg:h-[600px] lg:flex-row">
-      {/* Sidebar Navigation */}
-      <nav className="w-full border-b border-r-0 border-gray-100 bg-gray-50/50 lg:min-h-0 lg:w-64 lg:border-b-0 lg:border-r">
-        <div className="p-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-            Configuración de Portales
-          </h3>
-        </div>
+    <div className="space-y-6">
+      {/* Section Tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        {navigationItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeSection === item.id;
 
-        <div className="flex gap-2 space-y-1 overflow-x-auto px-2 pb-2 lg:block lg:gap-0 lg:space-y-1 lg:overflow-x-visible lg:pb-0">
-          {navigationItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeSection === item.id;
-
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveSection(item.id)}
-                className={cn(
-                  "flex w-full min-w-fit items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2.5 text-sm transition-all lg:min-w-0",
-                  isActive
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-600 hover:bg-white/60 hover:text-gray-900",
-                )}
-              >
-                <Icon className={cn("h-4 w-4", item.color)} />
-                <div className="flex-1 text-left">
-                  <div className="font-medium">{item.label}</div>
-                  <div className="hidden text-xs text-gray-500 lg:block">
-                    {item.description}
-                  </div>
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveSection(item.id)}
+              className={cn(
+                "flex min-w-fit items-center gap-2 whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-medium transition-all",
+                isActive
+                  ? "bg-white text-gray-900 shadow-md"
+                  : "bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+              )}
+            >
+              {item.logo ? (
+                <div className="relative h-5 w-16">
+                  <Image
+                    src={item.logo}
+                    alt={item.label}
+                    fill
+                    className="object-contain object-left"
+                  />
                 </div>
-                {isActive && (
-                  <ChevronRight className="hidden h-4 w-4 text-gray-400 lg:block" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </nav>
-
-      {/* Save Button - Small at bottom right of main content - Desktop only */}
-      <div className="absolute bottom-4 right-4 z-10 hidden lg:block">
-        <Button
-          onClick={form.handleSubmit(onSubmit)}
-          disabled={isPending || !hasUnsavedChanges}
-          size="sm"
-          className="min-w-[100px] shadow-lg"
-        >
-          {isPending ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : hasUnsavedChanges ? (
-            "Guardar"
-          ) : (
-            <>
-              <Check className="mr-2 h-4 w-4" />
-              Guardado
-            </>
-          )}
-        </Button>
+              ) : (
+                <Icon className={cn("h-4 w-4", item.color)} />
+              )}
+              {!item.logo && item.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Main Content */}
-      <div className="relative flex-1 overflow-y-auto">
-        <Form {...form}>
-          <form className="p-4 pb-16 lg:p-8 lg:pb-8">
+      <Form {...form}>
+        <form className="space-y-6">
             {/* Fotocasa Section */}
             {activeSection === "fotocasa" && (
               <div className="space-y-6">
-                <div>
-                  <h2 className="flex items-center gap-2 text-xl font-semibold text-gray-900">
-                    <Globe className="h-5 w-5 text-orange-500" />
-                    Fotocasa
-                  </h2>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Configura la integración con el portal Fotocasa
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="fotocasa.enabled"
-                    render={({ field }) => (
-                      <FormItem className="rounded-lg border border-gray-100 p-6 transition-colors hover:border-gray-200">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1">
-                            <FormLabel className="text-base font-medium">
-                              Activar Portal
-                            </FormLabel>
-                            <FormDescription className="text-sm text-gray-500">
-                              Activar la publicación automática en Fotocasa
-                            </FormDescription>
-                          </div>
+                {/* Header Card with Logo */}
+                <div className="rounded-2xl bg-white p-6 shadow-md">
+                  <div className="flex items-center justify-between">
+                    <div className="relative h-16 w-40 flex-shrink-0">
+                      <Image
+                        src="https://vesta-configuration-files.s3.amazonaws.com/logos/logo-fotocasa-min.png"
+                        alt="Fotocasa"
+                        fill
+                        className="object-contain object-left"
+                      />
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="fotocasa.enabled"
+                      render={({ field }) => (
+                        <FormItem>
                           <FormControl>
                             <Switch
                               checked={field.value}
                               onCheckedChange={field.onChange}
                             />
                           </FormControl>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-
-                  {form.watch("fotocasa.enabled") && (
-                    <FormField
-                      control={form.control}
-                      name="fotocasa.apiKey"
-                      render={({ field }) => (
-                        <FormItem className="rounded-lg border border-gray-100 p-6 transition-colors hover:border-gray-200">
-                          <FormLabel className="flex items-center gap-2 text-base font-medium">
-                            <Key className="h-4 w-4 text-gray-500" />
-                            API Key
-                          </FormLabel>
-                          <FormDescription className="text-sm text-gray-500">
-                            Introduce tu clave API de Fotocasa para conectar tu
-                            cuenta
-                          </FormDescription>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="password"
-                              placeholder="••••••••••••••••"
-                              className="font-mono"
-                            />
-                          </FormControl>
                         </FormItem>
                       )}
                     />
-                  )}
-
-                  {form.watch("fotocasa.enabled") && (
-                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-4">
-                      <div className="text-sm text-gray-600">
-                        Conecta tu cuenta de Fotocasa para empezar a publicar
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={!form.watch("fotocasa.apiKey")}
-                        onClick={() => {
-                          // TODO: Implement activation logic
-                          toast.success(
-                            "Cuenta de Fotocasa activada correctamente",
-                          );
-                        }}
-                      >
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Activar
-                      </Button>
-                    </div>
-                  )}
+                  </div>
                 </div>
+
+                {/* API Key Card */}
+                {form.watch("fotocasa.enabled") && (
+                  <div className="space-y-4">
+                    <div className="rounded-2xl bg-white p-6 shadow-md">
+                      <FormField
+                        control={form.control}
+                        name="fotocasa.apiKey"
+                        render={({ field }) => (
+                          <FormItem className="space-y-3">
+                            <FormLabel className="flex items-center gap-2 text-sm font-medium">
+                              <Key className="h-4 w-4 text-gray-500" />
+                              API Key
+                            </FormLabel>
+                            <FormDescription className="text-sm text-gray-500">
+                              Introduce tu clave API de Fotocasa para conectar tu cuenta
+                            </FormDescription>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                value={field.value ?? ""}
+                                type="text"
+                                placeholder="Introduce tu API Key de Fotocasa"
+                                className="h-10 font-mono"
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Info Card */}
+                    <div className="rounded-2xl bg-blue-50 p-4 shadow-sm">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0">
+                          <ExternalLink className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-blue-900">
+                            ¿No tienes una API Key? Solicítala desde tu cuenta de Fotocasa
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Idealista Section */}
             {activeSection === "idealista" && (
               <div className="space-y-6">
-                <div>
-                  <h2 className="flex items-center gap-2 text-xl font-semibold text-gray-900">
-                    <Globe className="h-5 w-5 text-green-500" />
-                    Idealista
-                  </h2>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Configura la integración con el portal Idealista
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="idealista.enabled"
-                    render={({ field }) => (
-                      <FormItem className="rounded-lg border border-gray-100 p-6 transition-colors hover:border-gray-200">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-1">
-                            <FormLabel className="text-base font-medium">
-                              Activar Portal
-                            </FormLabel>
-                            <FormDescription className="text-sm text-gray-500">
-                              Activar la publicación automática en Idealista
-                            </FormDescription>
-                          </div>
+                {/* Header Card with Logo */}
+                <div className="rounded-2xl bg-white p-6 shadow-md">
+                  <div className="flex items-center justify-between">
+                    <div className="relative h-16 w-40 flex-shrink-0">
+                      <Image
+                        src="https://vesta-configuration-files.s3.amazonaws.com/logos/logo-idealista.png"
+                        alt="Idealista"
+                        fill
+                        className="object-contain object-left"
+                      />
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="idealista.enabled"
+                      render={({ field }) => (
+                        <FormItem>
                           <FormControl>
                             <Switch
                               checked={field.value}
                               onCheckedChange={field.onChange}
                             />
                           </FormControl>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-
-                  {form.watch("idealista.enabled") && (
-                    <FormField
-                      control={form.control}
-                      name="idealista.apiKey"
-                      render={({ field }) => (
-                        <FormItem className="rounded-lg border border-gray-100 p-6 transition-colors hover:border-gray-200">
-                          <FormLabel className="flex items-center gap-2 text-base font-medium">
-                            <Key className="h-4 w-4 text-gray-500" />
-                            API Key
-                          </FormLabel>
-                          <FormDescription className="text-sm text-gray-500">
-                            Introduce tu clave API de Idealista para conectar tu
-                            cuenta
-                          </FormDescription>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="password"
-                              placeholder="••••••••••••••••"
-                              className="font-mono"
-                            />
-                          </FormControl>
                         </FormItem>
                       )}
                     />
-                  )}
-
-                  {form.watch("idealista.enabled") && (
-                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-4">
-                      <div className="text-sm text-gray-600">
-                        Conecta tu cuenta de Idealista para empezar a publicar
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={!form.watch("idealista.apiKey")}
-                        onClick={() => {
-                          // TODO: Implement activation logic
-                          toast.success(
-                            "Cuenta de Idealista activada correctamente",
-                          );
-                        }}
-                      >
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Activar
-                      </Button>
-                    </div>
-                  )}
+                  </div>
                 </div>
+
+                {/* API Key Card */}
+                {form.watch("idealista.enabled") && (
+                  <div className="space-y-4">
+                    <div className="rounded-2xl bg-white p-6 shadow-md">
+                      <FormField
+                        control={form.control}
+                        name="idealista.apiKey"
+                        render={({ field }) => (
+                          <FormItem className="space-y-3">
+                            <FormLabel className="flex items-center gap-2 text-sm font-medium">
+                              <Key className="h-4 w-4 text-gray-500" />
+                              API Key
+                            </FormLabel>
+                            <FormDescription className="text-sm text-gray-500">
+                              Introduce tu clave API de Idealista para conectar tu cuenta
+                            </FormDescription>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                value={field.value ?? ""}
+                                type="text"
+                                placeholder="Introduce tu API Key de Idealista"
+                                className="h-10 font-mono"
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Info Card */}
+                    <div className="rounded-2xl bg-blue-50 p-4 shadow-sm">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0">
+                          <ExternalLink className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-blue-900">
+                            ¿No tienes una API Key? Solicítala desde tu cuenta de Idealista
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
             {/* General Section */}
             {activeSection === "general" && (
               <div className="space-y-6">
-                <div>
-                  <h2 className="flex items-center gap-2 text-xl font-semibold text-gray-900">
-                    <Settings className="h-5 w-5 text-gray-600" />
-                    Configuración General
-                  </h2>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Ajustes que aplican a todos los portales
-                  </p>
+                {/* Header Card */}
+                <div className="rounded-2xl bg-white p-6 shadow-md">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-50">
+                      <Settings className="h-6 w-6 text-gray-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900">
+                        Configuración General
+                      </h2>
+                      <p className="mt-1 text-sm text-gray-500">
+                        Ajustes que aplican a todos los portales
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-4">
+                {/* Watermark Card */}
+                <div className="rounded-2xl bg-white p-6 shadow-md">
                   <FormField
                     control={form.control}
                     name="general.watermarkEnabled"
                     render={({ field }) => (
-                      <FormItem className="rounded-lg border border-gray-100 p-6 transition-colors hover:border-gray-200">
+                      <FormItem>
                         <div className="flex items-start justify-between">
                           <div className="space-y-1">
-                            <FormLabel className="flex items-center gap-2 text-base font-medium">
+                            <FormLabel className="flex items-center gap-2 text-sm font-medium">
                               <Droplet className="h-4 w-4 text-blue-500" />
                               Marca de agua
                             </FormLabel>
                             <FormDescription className="text-sm text-gray-500">
-                              Añade tu logo como marca de agua en todas las
-                              imágenes
+                              Añade tu logo como marca de agua en todas las imágenes publicadas
                             </FormDescription>
                           </div>
                           <FormControl>
@@ -452,36 +410,37 @@ export function PortalConfiguration() {
               </div>
             )}
 
-            {/* Error Alert */}
-            {error && (
-              <Alert variant="destructive" className="mt-6">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+          {/* Error Alert */}
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-            {/* Save Button for Mobile - at bottom of form */}
-            <div className="mt-8 flex justify-end lg:hidden">
-              <Button
-                onClick={form.handleSubmit(onSubmit)}
-                disabled={isPending || !hasUnsavedChanges}
-                size="sm"
-                className="min-w-[100px]"
-              >
-                {isPending ? (
+          {/* Save Button */}
+          <div className="flex justify-end">
+            <Button
+              onClick={form.handleSubmit(onSubmit)}
+              disabled={isPending || !hasUnsavedChanges}
+              className="min-w-[120px] shadow-md"
+            >
+              {isPending ? (
+                <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : hasUnsavedChanges ? (
-                  "Guardar"
-                ) : (
-                  <>
-                    <Check className="mr-2 h-4 w-4" />
-                    Guardado
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </div>
+                  Guardando...
+                </>
+              ) : hasUnsavedChanges ? (
+                "Guardar cambios"
+              ) : (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  Guardado
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </Form>
     </div>
   );
 }

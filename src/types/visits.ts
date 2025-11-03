@@ -24,7 +24,9 @@ export interface AppointmentWithDetails {
   status?: string | null;
   contactFirstName?: string | null;
   contactLastName?: string | null;
+  contactNif?: string | null;
   propertyStreet?: string | null;
+  propertyAddressDetails?: string | null;
   agentName?: string | null;
   agentFirstName?: string | null;
   agentLastName?: string | null;

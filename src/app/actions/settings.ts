@@ -314,11 +314,11 @@ export async function getPortalConfigurationAction(
     const portalConfiguration = {
       fotocasa: {
         enabled: (fotocasaSettings?.enabled as boolean) ?? false,
-        apiKey: fotocasaSettings?.apiKey as string | undefined,
+        apiKey: (fotocasaSettings?.apiKey as string | undefined) ?? "",
       },
       idealista: {
         enabled: (idealistaSettings?.enabled as boolean) ?? false,
-        apiKey: idealistaSettings?.apiKey as string | undefined,
+        apiKey: (idealistaSettings?.apiKey as string | undefined) ?? "",
       },
       general: {
         watermarkEnabled:

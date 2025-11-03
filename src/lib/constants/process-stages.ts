@@ -139,10 +139,12 @@ function cloneProcessStage(stage: ProcessStage): ProcessStage {
 /**
  * Get process stages with dynamic "Ficha completa" status based on listing completion
  * @param listing - Property listing data for completion calculation
+ * @param deal - Active deal data for closing stages (arras, escritura, cierre)
  * @returns Process stages with dynamic completion status
  */
 export function getProcessStages(
   listing?: Record<string, unknown>,
+  deal?: Record<string, unknown> | null,
 ): ProcessStage[] {
   // If no listing data provided, return default stages
   if (!listing) {
@@ -319,20 +321,96 @@ export function getProcessStages(
           if (visitasSubstage) {
             visitasSubstage.status = "accomplished";
 
-            // Mark the next stage (Arras) as ongoing
+            // Check deal data for closing stages (arras, escritura, cierre)
+            // If no deal exists, mark arras as ongoing (waiting for deal to be created)
+            const hasArrasCompleted = deal?.arrasDate != null;
+            const hasEscrituraCompleted = deal?.actualDeedDate != null;
+            const hasDealClosed =
+              deal?.closeDate != null && deal?.status === "Closed";
+
+            console.log("📋 Closing stages status check:", {
+              hasDeal: Boolean(deal),
+              hasArrasCompleted,
+              arrasDate: deal?.arrasDate,
+              hasEscrituraCompleted,
+              actualDeedDate: deal?.actualDeedDate,
+              hasDealClosed,
+              closeDate: deal?.closeDate,
+              dealStatus: deal?.status,
+            });
+
             const cierreStage = dynamicStages.find(
               (stage) => stage.id === "cierre",
             );
             const arrasSubstage = cierreStage?.subStages.find(
               (sub) => sub.id === "arras",
             );
-            if (arrasSubstage) {
-              arrasSubstage.status = "ongoing";
-            }
-
-            console.log(
-              "✅ Step 4: Offer accepted - progressing to 'Arras' (ongoing)",
+            const escrituraSubstage = cierreStage?.subStages.find(
+              (sub) => sub.id === "contrato",
             );
+            const cierreSubstage = cierreStage?.subStages.find(
+              (sub) => sub.id === "cierre-final",
+            );
+
+            if (!hasArrasCompleted) {
+              // Step 4a: Arras not completed, mark as ongoing
+              if (arrasSubstage) {
+                arrasSubstage.status = "ongoing";
+              }
+
+              // Set all stages after Arras to future
+              if (escrituraSubstage) escrituraSubstage.status = "future";
+              if (cierreSubstage) cierreSubstage.status = "future";
+
+              console.log(
+                "✅ Step 4a: Offer accepted - progressing to 'Arras' (ongoing)",
+              );
+            } else if (!hasEscrituraCompleted) {
+              // Step 4b: Arras completed, Escritura not completed
+              if (arrasSubstage) {
+                arrasSubstage.status = "accomplished";
+              }
+              if (escrituraSubstage) {
+                escrituraSubstage.status = "ongoing";
+              }
+
+              // Set Cierre to future
+              if (cierreSubstage) cierreSubstage.status = "future";
+
+              console.log(
+                "📝 Step 5: Arras completed - progressing to 'Escritura' (ongoing)",
+              );
+            } else if (!hasDealClosed) {
+              // Step 6: Escritura completed, deal not closed
+              if (arrasSubstage) {
+                arrasSubstage.status = "accomplished";
+              }
+              if (escrituraSubstage) {
+                escrituraSubstage.status = "accomplished";
+              }
+              if (cierreSubstage) {
+                cierreSubstage.status = "ongoing";
+              }
+
+              console.log(
+                "🏁 Step 7: Escritura completed - progressing to 'Cierre' (ongoing)",
+              );
+            } else {
+              // Step 7: Deal fully closed
+              if (arrasSubstage) {
+                arrasSubstage.status = "accomplished";
+              }
+              if (escrituraSubstage) {
+                escrituraSubstage.status = "accomplished";
+              }
+              if (cierreSubstage) {
+                cierreSubstage.status = "accomplished";
+              }
+
+              console.log(
+                "🎉 Step 8: Deal fully closed - all stages completed!",
+              );
+            }
           }
         }
       }

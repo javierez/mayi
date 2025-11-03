@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
   Collapsible,
@@ -17,6 +18,8 @@ import {
   Search,
 } from "lucide-react";
 import { ContactInfoModal } from "./contact-info-modal";
+import { ContactDetailSheet } from "~/components/contactos/contact-detail-sheet";
+import type { ContactSheetData } from "~/types/activity";
 
 interface Contact {
   contactId: string;
@@ -54,19 +57,14 @@ interface ListingContact {
   status: string | null;
   offer: number | null;
   offerAccepted: boolean | null;
-}
-
-interface Task {
-  taskId: string;
-  title: string;
-  description: string;
-  dueDate: string | null;
-  completed: boolean | null;
-  listingId: string | null;
-  listingContactId: string | null;
-  dealId: string | null;
-  appointmentId: string | null;
-  entityName: string | null;
+  hasUpcomingVisit: boolean;
+  hasMissedVisit: boolean;
+  hasCompletedVisit: boolean;
+  hasCancelledVisit: boolean;
+  visitCount: number;
+  hasOffer: boolean;
+  createdAt: string;
+  upcomingAppointmentId: string | null;
 }
 
 interface Appointment {
@@ -84,12 +82,64 @@ interface AgentHierarchyViewProps {
   contacts: Contact[];
   listings: Listing[];
   listingContacts: ListingContact[];
-  tasks: Task[];
   appointments: Appointment[];
 }
 
 function getStatusText(status: string) {
   return status;
+}
+
+// Helper function to determine contact status badge (matching activity-tab-content logic)
+function getContactStatusBadge(contact: {
+  hasUpcomingVisit: boolean;
+  offerAccepted: boolean | null;
+  hasOffer: boolean;
+  hasMissedVisit: boolean;
+  hasCancelledVisit: boolean;
+  hasCompletedVisit: boolean;
+}) {
+  // Priority order matches activity-tab-content.tsx lines 522-547
+  if (contact.hasUpcomingVisit) {
+    return {
+      text: "Visita Pendiente",
+      className: "bg-blue-100 text-blue-800 text-[9px] font-normal",
+    };
+  } else if (contact.offerAccepted === true) {
+    return {
+      text: "Oferta Aceptada",
+      className: "bg-green-100 text-green-800 text-[9px] font-normal",
+    };
+  } else if (contact.offerAccepted === false) {
+    return {
+      text: "Oferta Rechazada",
+      className: "bg-rose-100 text-rose-800 text-[9px] font-normal",
+    };
+  } else if (contact.hasOffer) {
+    return {
+      text: "Oferta Pendiente",
+      className: "bg-amber-100 text-amber-800 text-[9px] font-normal",
+    };
+  } else if (contact.hasMissedVisit && !contact.hasCancelledVisit) {
+    return {
+      text: "Visita Perdida",
+      className: "bg-amber-50 text-amber-700 text-[9px] font-normal border-amber-200",
+    };
+  } else if (contact.hasCancelledVisit) {
+    return {
+      text: "Visita Cancelada",
+      className: "bg-orange-50 text-orange-700 text-[9px] font-normal border-orange-200",
+    };
+  } else if (contact.hasCompletedVisit) {
+    return {
+      text: "Visita Completada",
+      className: "bg-gray-100 text-gray-700 text-[9px] font-normal",
+    };
+  } else {
+    return {
+      text: "Sin Visitas",
+      className: "bg-gray-100 text-gray-700 text-[9px] font-normal",
+    };
+  }
 }
 
 function formatPrice(price: string) {
@@ -102,20 +152,17 @@ function formatPrice(price: string) {
   }).format(numPrice);
 }
 
-function formatDate(date: string) {
+function formatTime(date: string) {
   return new Intl.DateTimeFormat("es-ES", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(new Date(date));
 }
 
-function formatDateTime(date: string) {
+function formatShortDate(date: string) {
   return new Intl.DateTimeFormat("es-ES", {
     day: "2-digit",
     month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
   }).format(new Date(date));
 }
 
@@ -123,14 +170,18 @@ export function AgentHierarchyView({
   contacts,
   listings,
   listingContacts,
-  tasks,
   appointments,
 }: AgentHierarchyViewProps) {
+  const router = useRouter();
   const [openContacts, setOpenContacts] = useState<Set<string>>(new Set());
   const [openListings, setOpenListings] = useState<Set<string>>(new Set());
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // State for ContactDetailSheet
+  const [selectedContactSheet, setSelectedContactSheet] = useState<ContactSheetData | null>(null);
+  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
 
   const toggleContact = (contactId: string) => {
     const newOpen = new Set(openContacts);
@@ -156,6 +207,32 @@ export function AgentHierarchyView({
     e.stopPropagation();
     setSelectedContact(contact);
     setIsModalOpen(true);
+  };
+
+  // Handle contact card click to open ContactDetailSheet
+  const handleContactCardClick = (lc: ListingContact, listing: Listing) => {
+    const contactSheetData: ContactSheetData = {
+      listingContactId: BigInt(lc.listingContactId),
+      contact: {
+        contactId: BigInt(lc.contactId),
+        firstName: lc.firstName,
+        lastName: lc.lastName,
+        email: lc.email,
+        phone: lc.phone,
+        createdAt: new Date(lc.createdAt),
+      },
+      hasUpcomingVisit: lc.hasUpcomingVisit,
+      upcomingAppointmentId: lc.upcomingAppointmentId ? BigInt(lc.upcomingAppointmentId) : undefined,
+      hasMissedVisit: lc.hasMissedVisit,
+      hasCompletedVisit: lc.hasCompletedVisit,
+      hasCancelledVisit: lc.hasCancelledVisit,
+      hasOffer: lc.hasOffer,
+      offer: lc.offer,
+      offerAccepted: lc.offerAccepted,
+    };
+
+    setSelectedContactSheet(contactSheetData);
+    setSelectedListing(listing);
   };
 
   // Filter contacts based on search query
@@ -184,18 +261,51 @@ export function AgentHierarchyView({
     );
   };
 
-  // Get listing contacts for a listing
+  // Get listing contacts for a listing with priority-based sorting
   const getListingContactsForListing = (listingId: string) => {
-    return listingContacts.filter(
+    const contacts = listingContacts.filter(
       (lc) =>
         lc.listingId === listingId &&
         (lc.contactType === "buyer" || lc.contactType === "viewer"),
     );
-  };
 
-  // Get tasks for a listing
-  const getTasksForListing = (listingId: string) => {
-    return tasks.filter((task) => task.listingId === listingId);
+    // Sort by sales funnel priority (matching activity-tab-content lines 550-582)
+    return contacts.sort((a, b) => {
+      // 1. HIGHEST: Offer accepted (deal closing - highest priority)
+      const aOfferAccepted = a.offerAccepted === true;
+      const bOfferAccepted = b.offerAccepted === true;
+      if (aOfferAccepted !== bOfferAccepted) return aOfferAccepted ? -1 : 1;
+
+      // 2. HIGH: Has pending offer (potential deal in progress)
+      const aHasPendingOffer = a.hasOffer && a.offerAccepted === null;
+      const bHasPendingOffer = b.hasOffer && b.offerAccepted === null;
+      if (aHasPendingOffer !== bHasPendingOffer) return aHasPendingOffer ? -1 : 1;
+
+      // 3. IMPORTANT: Offer rejected (needs follow-up or re-engagement)
+      const aOfferRejected = a.offerAccepted === false;
+      const bOfferRejected = b.offerAccepted === false;
+      if (aOfferRejected !== bOfferRejected) return aOfferRejected ? -1 : 1;
+
+      // 4. URGENT: Has upcoming visit (scheduled, needs preparation)
+      if (a.hasUpcomingVisit !== b.hasUpcomingVisit)
+        return a.hasUpcomingVisit ? -1 : 1;
+
+      // 5. ATTENTION: Has missed visit (needs immediate follow-up)
+      if (a.hasMissedVisit !== b.hasMissedVisit)
+        return a.hasMissedVisit ? -1 : 1;
+
+      // 6. ATTENTION: Has cancelled visit (needs rescheduling)
+      if (a.hasCancelledVisit !== b.hasCancelledVisit)
+        return a.hasCancelledVisit ? -1 : 1;
+
+      // 7. ENGAGEMENT: Visit count (more visits = warmer lead)
+      if (a.visitCount !== b.visitCount) return b.visitCount - a.visitCount;
+
+      // 8. Final tiebreaker: alphabetical by last name, then first name
+      const lastNameCompare = a.lastName.localeCompare(b.lastName, "es");
+      if (lastNameCompare !== 0) return lastNameCompare;
+      return a.firstName.localeCompare(b.firstName, "es");
+    });
   };
 
   // Get appointments for a listing
@@ -299,9 +409,6 @@ export function AgentHierarchyView({
                           const contacts = getListingContactsForListing(
                             listing.listingId,
                           );
-                          const listingTasks = getTasksForListing(
-                            listing.listingId,
-                          );
                           const listingAppointments =
                             getAppointmentsForListing(listing.listingId);
 
@@ -331,12 +438,12 @@ export function AgentHierarchyView({
                                           {listing.title ??
                                             `${listing.street ?? ""} ${listing.addressDetails ?? ""}`.trim()}
                                         </Link>
-                                        <p className="text-xs text-muted-foreground whitespace-normal break-words mt-0.5">
-                                          {formatPrice(listing.price)} • {listing.listingType}
+                                        <p className="text-xs text-muted-foreground whitespace-normal break-words mt-0.5 font-mono">
+                                          {formatPrice(listing.price)}
                                         </p>
                                       </div>
                                     </div>
-                                    <Badge variant="outline" className="text-xs flex-shrink-0">
+                                    <Badge className="text-[9px] flex-shrink-0 font-normal font-mono uppercase">
                                       {getStatusText(listing.status)}
                                     </Badge>
                                   </CardContent>
@@ -351,72 +458,38 @@ export function AgentHierarchyView({
                                           Interesados
                                         </h4>
                                         <div className="space-y-1.5">
-                                          {contacts.map((lc) => (
-                                            <div
-                                              key={lc.listingContactId}
-                                              className="rounded-md border bg-background p-2 text-xs"
-                                            >
-                                              <div className="flex items-start sm:items-center justify-between gap-2 min-w-0">
-                                                <Link
-                                                  href={`/contactos/${lc.contactId}`}
-                                                  className="font-medium hover:underline break-words min-w-0 flex-1"
-                                                >
-                                                  {lc.firstName} {lc.lastName}
-                                                </Link>
-                                                <Badge
-                                                  variant="outline"
-                                                  className="text-xs flex-shrink-0"
-                                                >
-                                                  {lc.contactType === "buyer"
-                                                    ? "Comprador"
-                                                    : "Visitante"}
-                                                </Badge>
-                                              </div>
-                                              {lc.status && (
-                                                <p className="text-muted-foreground mt-1 break-words">
-                                                  Estado: {lc.status}
-                                                </p>
-                                              )}
-                                              {lc.offer && (
-                                                <p className="text-muted-foreground mt-1">
-                                                  Oferta: {formatPrice(String(lc.offer))}
-                                                </p>
-                                              )}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
+                                          {contacts.map((lc) => {
+                                            const statusBadge = getContactStatusBadge({
+                                              hasUpcomingVisit: lc.hasUpcomingVisit,
+                                              offerAccepted: lc.offerAccepted,
+                                              hasOffer: lc.hasOffer,
+                                              hasMissedVisit: lc.hasMissedVisit,
+                                              hasCancelledVisit: lc.hasCancelledVisit,
+                                              hasCompletedVisit: lc.hasCompletedVisit,
+                                            });
 
-                                    {/* Tasks */}
-                                    {listingTasks.length > 0 && (
-                                      <div>
-                                        <h4 className="mb-2 text-xs font-medium text-muted-foreground">
-                                          Tareas
-                                        </h4>
-                                        <div className="space-y-1.5">
-                                          {listingTasks.map((task) => (
-                                            <div
-                                              key={task.taskId}
-                                              className="rounded-md border bg-background p-2 text-xs"
-                                            >
-                                              <div className="flex items-start sm:items-center justify-between gap-2 min-w-0">
-                                                <p className="font-medium break-words min-w-0 flex-1">
-                                                  {task.title}
-                                                </p>
-                                                {task.dueDate && (
-                                                  <span className="text-muted-foreground flex-shrink-0 text-[10px] sm:text-xs">
-                                                    {formatDate(task.dueDate)}
-                                                  </span>
-                                                )}
+                                            return (
+                                              <div
+                                                key={lc.listingContactId}
+                                                className="flex items-center justify-between gap-2 rounded-lg border bg-white p-2 transition-all duration-200 hover:shadow-md cursor-pointer"
+                                                onClick={() => handleContactCardClick(lc, listing)}
+                                              >
+                                                {/* Contact name */}
+                                                <div className="min-w-0 flex-1">
+                                                  <div className="text-xs font-medium text-gray-900 break-words">
+                                                    {lc.firstName} {lc.lastName}
+                                                  </div>
+                                                </div>
+
+                                                {/* Status Badge */}
+                                                <div className="flex-shrink-0">
+                                                  <Badge className={statusBadge.className}>
+                                                    {statusBadge.text}
+                                                  </Badge>
+                                                </div>
                                               </div>
-                                              {task.description && (
-                                                <p className="mt-1 text-muted-foreground break-words">
-                                                  {task.description}
-                                                </p>
-                                              )}
-                                            </div>
-                                          ))}
+                                            );
+                                          })}
                                         </div>
                                       </div>
                                     )}
@@ -431,27 +504,46 @@ export function AgentHierarchyView({
                                           {listingAppointments.map((appt) => (
                                             <div
                                               key={appt.appointmentId}
-                                              className="rounded-md border bg-background p-2 text-xs"
+                                              className="relative rounded-md border bg-background p-2.5 text-xs"
                                             >
-                                              <div className="flex items-start sm:items-center justify-between gap-2 min-w-0">
-                                                <p className="font-medium break-words min-w-0 flex-1">
-                                                  {appt.type ?? "Cita"}
-                                                </p>
-                                                <Badge
-                                                  variant="outline"
-                                                  className="text-xs flex-shrink-0"
-                                                >
-                                                  {appt.status}
-                                                </Badge>
+                                              {/* Type Badge - top right */}
+                                              <div className="absolute right-2 top-2 flex items-center gap-2">
+                                                <span className="text-[9px] font-medium uppercase tracking-wide text-gray-400 font-mono">
+                                                  {appt.type ?? "cita"}
+                                                </span>
                                               </div>
-                                              <p className="text-muted-foreground mt-1 break-words">
-                                                Con: {appt.contactName}
-                                              </p>
-                                              <p className="text-muted-foreground mt-0.5">
-                                                {formatDateTime(
-                                                  appt.datetimeStart,
+
+                                              {/* Date and Time - bottom right */}
+                                              <div className="absolute bottom-2 right-2 flex items-center gap-1.5 font-mono">
+                                                <div className="text-[10px] text-gray-500">
+                                                  {formatShortDate(appt.datetimeStart)}
+                                                </div>
+                                                <div className="text-[10px] text-gray-400">•</div>
+                                                <div className="text-[10px] font-medium tabular-nums text-gray-600">
+                                                  {formatTime(appt.datetimeStart)}
+                                                </div>
+                                                <div className="text-[10px] text-gray-400">—</div>
+                                                <div className="text-[10px] tabular-nums text-gray-500">
+                                                  {formatTime(appt.datetimeEnd)}
+                                                </div>
+                                              </div>
+
+                                              {/* Main content */}
+                                              <div className="pr-16">
+                                                {/* Contact name */}
+                                                <h3 className="mb-1 text-xs font-medium text-gray-700 break-words">
+                                                  {appt.contactName}
+                                                </h3>
+
+                                                {/* Address */}
+                                                {appt.propertyAddress && (
+                                                  <div className="flex items-start gap-1 min-w-0">
+                                                    <span className="line-clamp-2 text-[10px] leading-tight text-gray-500 break-words min-w-0">
+                                                      {appt.propertyAddress}
+                                                    </span>
+                                                  </div>
                                                 )}
-                                              </p>
+                                              </div>
                                             </div>
                                           ))}
                                         </div>
@@ -459,7 +551,6 @@ export function AgentHierarchyView({
                                     )}
 
                                     {contacts.length === 0 &&
-                                      listingTasks.length === 0 &&
                                       listingAppointments.length === 0 && (
                                         <p className="text-xs text-muted-foreground">
                                           No hay actividad para esta propiedad.
@@ -486,6 +577,35 @@ export function AgentHierarchyView({
         contact={selectedContact}
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
+      />
+
+      {/* Contact Detail Sheet */}
+      <ContactDetailSheet
+        contact={selectedContactSheet}
+        isOpen={selectedContactSheet !== null}
+        onClose={() => {
+          setSelectedContactSheet(null);
+          setSelectedListing(null);
+        }}
+        onUpdate={async () => {
+          router.refresh();
+        }}
+        listingId={selectedListing ? BigInt(selectedListing.listingId) : BigInt(0)}
+        listingPrice={selectedListing?.price ?? "0"}
+        ownerContact={
+          selectedListing?.ownerFirstName
+            ? {
+                contactId: BigInt(0), // Owner contact ID not available in listing data
+                firstName: selectedListing.ownerFirstName,
+                lastName: selectedListing.ownerLastName,
+                email: selectedListing.ownerEmail,
+                phone: selectedListing.ownerPhone,
+              }
+            : null
+        }
+        permissions={{
+          canEditContacts: true, // TODO: Use proper permissions check
+        }}
       />
     </div>
   );

@@ -64,3 +64,8 @@ yarn-error.log*
 *.tar.gz
 *.rar
 nul
+
+# Migration data (contains exported database)
+/migration-data/
+*.sql
+.env.supabase

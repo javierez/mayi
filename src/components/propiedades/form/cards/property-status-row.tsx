@@ -10,6 +10,7 @@ import {
   getPropertyImageCount,
 } from "~/app/actions/property-images";
 import { getProcessStages } from "~/lib/constants/process-stages";
+import { getActiveDealForListingWithAuth } from "~/server/queries/deal";
 import { cn } from "~/lib/utils";
 import {
   Tooltip,
@@ -96,6 +97,7 @@ export function PropertyStatusRow({
   const [isScrolling, setIsScrolling] = useState(false);
   const [imageCount, setImageCount] = useState(0);
   const [isInfoTooltipOpen, setIsInfoTooltipOpen] = useState(false);
+  const [deal, setDeal] = useState<Record<string, unknown> | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -117,6 +119,25 @@ export function PropertyStatusRow({
         });
     }
   }, [propertyId]);
+
+  // Fetch deal data for progress tracking
+  useEffect(() => {
+    if (listing?.listingId) {
+      const listingId =
+        typeof listing.listingId === "bigint"
+          ? Number(listing.listingId)
+          : Number(listing.listingId);
+
+      getActiveDealForListingWithAuth(listingId)
+        .then((dealData) => {
+          setDeal(dealData as Record<string, unknown> | null);
+        })
+        .catch((error) => {
+          console.error("Error fetching deal data:", error);
+          setDeal(null);
+        });
+    }
+  }, [listing?.listingId]);
 
   const handleImageClick = async () => {
     if (!propertyId) return;
@@ -165,8 +186,8 @@ export function PropertyStatusRow({
   // Merge imageCount into listing before using it
   const listingWithImages = listing ? { ...listing, imageCount } : undefined;
 
-  // Get dynamic process stages based on listing completion
-  const processStages = getProcessStages(listingWithImages);
+  // Get dynamic process stages based on listing completion and deal data
+  const processStages = getProcessStages(listingWithImages, deal);
 
   // Calculate total substages for proportional width (excluding the last one)
   const totalSubstages = processStages.reduce(

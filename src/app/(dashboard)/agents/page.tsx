@@ -58,6 +58,14 @@ interface ListingContact {
   status: string | null;
   offer: number | null;
   offerAccepted: boolean | null;
+  hasUpcomingVisit: boolean;
+  hasMissedVisit: boolean;
+  hasCompletedVisit: boolean;
+  hasCancelledVisit: boolean;
+  visitCount: number;
+  hasOffer: boolean;
+  createdAt: string;
+  upcomingAppointmentId: string | null;
 }
 
 interface Task {
@@ -273,7 +281,6 @@ export default function AgentsPage() {
             contacts={agentData.contacts}
             listings={agentData.listings}
             listingContacts={agentData.listingContacts}
-            tasks={agentData.tasks}
             appointments={agentData.appointments}
           />
         </div>

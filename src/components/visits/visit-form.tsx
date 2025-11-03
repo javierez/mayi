@@ -25,6 +25,7 @@ export function VisitForm({ appointment }: VisitFormProps) {
   });
   const [agentSignature, setAgentSignature] = useState<string | null>(null);
   const [visitorSignature, setVisitorSignature] = useState<string | null>(null);
+  const [marketingConsent, setMarketingConsent] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,6 +133,15 @@ export function VisitForm({ appointment }: VisitFormProps) {
 
               <div>
                 <label className="text-sm font-medium text-gray-900">
+                  DNI / NIF
+                </label>
+                <p className="mt-1 rounded-md bg-gray-50 p-3 text-gray-700">
+                  {appointment.contactNif ?? "No especificado"}
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-900">
                   Agente
                 </label>
                 <p className="mt-1 rounded-md bg-gray-50 p-3 text-gray-700">
@@ -142,19 +152,21 @@ export function VisitForm({ appointment }: VisitFormProps) {
 
               <div>
                 <label className="text-sm font-medium text-gray-900">
-                  Propiedad
-                </label>
-                <p className="mt-1 rounded-md bg-gray-50 p-3 text-gray-700">
-                  {appointment.propertyStreet ?? "Propiedad no especificada"}
-                </p>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-900">
                   Fecha y Hora
                 </label>
                 <p className="mt-1 rounded-md bg-gray-50 p-3 text-gray-700">
                   {formatDateTime(appointment.datetimeStart)}
+                </p>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="text-sm font-medium text-gray-900">
+                  Propiedad
+                </label>
+                <p className="mt-1 rounded-md bg-gray-50 p-3 text-gray-700">
+                  {appointment.propertyStreet ?? "Propiedad no especificada"}
+                  {appointment.propertyAddressDetails &&
+                    ` - ${appointment.propertyAddressDetails}`}
                 </p>
               </div>
             </div>
@@ -185,6 +197,92 @@ export function VisitForm({ appointment }: VisitFormProps) {
                   language="es"
                   disabled={isLoading}
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Condiciones */}
+          <div className="space-y-4 rounded-lg border bg-white p-4 sm:p-6">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Control de Visitas
+            </h2>
+
+            <div className="space-y-4 text-sm text-gray-700">
+              <p className="italic leading-relaxed">
+                El inmueble arriba indicado ha sido visitado por el cliente en el
+                día de hoy en compañía de{" "}
+                <span className="font-medium">
+                  {appointment.agentName ??
+                    `${appointment.agentFirstName} ${appointment.agentLastName}`}
+                </span>
+                , en representación de la agencia de la propiedad inmobiliaria.
+              </p>
+            </div>
+
+            <div className="mt-6 rounded-md bg-amber-50 p-4">
+              <p className="text-sm font-semibold text-amber-900">NOTA:</p>
+              <p className="mt-2 text-sm leading-relaxed text-amber-800">
+                Con la firma de este documento ambas partes reconocen la
+                mediación de la Agencia de la Propiedad Inmobiliaria y
+                subsistirá el derecho a sus honorarios, aunque el contrato de
+                Compra-Venta o Alquiler sea perfeccionado por las mismas, sin
+                intervención de Agencia.
+              </p>
+            </div>
+          </div>
+
+          {/* Protección de Datos */}
+          <div className="space-y-4 rounded-lg border bg-white p-4 sm:p-6">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Protección de Datos
+            </h2>
+
+            <div className="space-y-4 text-xs leading-relaxed text-gray-700 sm:text-sm">
+              <p>
+                De conformidad con lo establecido en el REGLAMENTO (UE) 2016/679
+                de protección de datos de carácter personal, le informamos que
+                los datos que usted nos facilite serán incorporados al sistema de
+                tratamiento titularidad de su agencia inmobiliaria. Los datos
+                proporcionados se conservarán mientras se mantenga la relación
+                comercial durante los años necesarios para cumplir con las
+                obligaciones legales. Los datos no se cederán a terceros, salvo
+                en los casos que exista una obligación legal. Usted tiene derecho
+                a obtener confirmación sobre si estamos tratando sus datos
+                personales, por tanto tiene derecho a acceder a sus datos
+                personales, rectificar los datos inexactos o solicitar su
+                supresión cuando los datos no sean necesarios.
+              </p>
+
+              <div className="space-y-2 pt-2">
+                <p className="text-sm text-gray-800">
+                  Así mismo solicito su autorización para ofrecerle productos y
+                  servicios relacionados con los solicitados y fidelizarle como
+                  cliente:
+                </p>
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setMarketingConsent(true)}
+                    className={`rounded-md border px-4 py-2 text-sm transition-colors ${
+                      marketingConsent
+                        ? "border-primary bg-primary text-white"
+                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    Sí
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMarketingConsent(false)}
+                    className={`rounded-md border px-4 py-2 text-sm transition-colors ${
+                      !marketingConsent
+                        ? "border-gray-400 bg-gray-100 text-gray-900"
+                        : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    No
+                  </button>
+                </div>
               </div>
             </div>
           </div>

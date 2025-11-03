@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import Link from "next/link";
 import {
   Sheet,
   SheetContent,
@@ -410,6 +411,18 @@ export function AppointmentDetailSheet({
                 {formatTime(appointment.datetimeEnd)}
               </span>
             </div>
+            {appointment.listingId && (
+              <div className="flex items-start gap-2 text-sm">
+                <Home className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                <Link
+                  href={`/propiedades/${appointment.listingId}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="min-w-0 break-words underline decoration-dotted underline-offset-2 transition-all hover:decoration-solid"
+                >
+                  Ver propiedad
+                </Link>
+              </div>
+            )}
             {appointment.propertyAddress && (
               <div className="flex items-start gap-2 text-sm">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />

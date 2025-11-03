@@ -36,6 +36,8 @@ export const env = createEnv({
     LINKEDIN_CLIENT_SECRET: z.string().optional(),
     // Email Service Configuration
     RESEND_API_KEY: z.string().optional(),
+    // Fotocasa Configuration
+    FOTOCASA_ID: z.string().uuid(),
   },
 
   /**
@@ -79,6 +81,8 @@ export const env = createEnv({
     LINKEDIN_CLIENT_SECRET: process.env.LINKEDIN_CLIENT_SECRET,
     // Email Service Configuration
     RESEND_API_KEY: process.env.RESEND_API_KEY,
+    // Fotocasa Configuration
+    FOTOCASA_ID: process.env.FOTOCASA_ID,
     // Client variables
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:
       process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,

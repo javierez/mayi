@@ -70,6 +70,11 @@ export async function getDealByListingAndContactWithAuth(
   return getDealByListingAndContact(listingId, contactId, accountId);
 }
 
+export async function getActiveDealForListingWithAuth(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return getActiveDealForListing(listingId, accountId);
+}
+
 // Create a new deal
 export async function createDeal(
   data: Omit<Deal, "dealId" | "createdAt" | "updatedAt">,
@@ -267,6 +272,45 @@ export async function getDealByListingAndContact(
     return deal ?? null;
   } catch (error) {
     console.error("Error fetching deal by listing and contact:", error);
+    throw error;
+  }
+}
+
+// Get active deal for a listing (for progress tracking)
+export async function getActiveDealForListing(
+  listingId: number,
+  accountId: number,
+) {
+  try {
+    // Get the most recent non-cancelled deal for this listing
+    // Priority: 1) Ongoing deals (not cancelled/lost), 2) Most recent
+    const [deal] = await db
+      .select({
+        dealId: deals.dealId,
+        listingId: deals.listingId,
+        status: deals.status,
+        arrasDate: deals.arrasDate,
+        arrasSigningDate: deals.arrasSigningDate,
+        expectedDeedDate: deals.expectedDeedDate,
+        actualDeedDate: deals.actualDeedDate,
+        closeDate: deals.closeDate,
+        keyHandoverDate: deals.keyHandoverDate,
+      })
+      .from(deals)
+      .innerJoin(listings, eq(deals.listingId, listings.listingId))
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(
+        and(
+          eq(deals.listingId, BigInt(listingId)),
+          eq(properties.accountId, BigInt(accountId)),
+        ),
+      )
+      .orderBy(desc(deals.createdAt))
+      .limit(1);
+
+    return deal ?? null;
+  } catch (error) {
+    console.error("Error fetching active deal for listing:", error);
     throw error;
   }
 }

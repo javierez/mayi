@@ -25,6 +25,7 @@ import {
   logUpdateRequest,
   logDeleteRequest,
 } from "../utils/fotocasa-logger";
+import { env } from "~/env";
 
 // Types
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1201,6 +1202,7 @@ export async function publishToFotocasa(
         headers: {
           "Content-Type": "application/json",
           "Api-Key": FOTOCASA_API_KEY,
+          "X-Source": env.FOTOCASA_ID,
         },
         body: JSON.stringify(payload),
       },
@@ -1352,6 +1354,7 @@ export async function updateFotocasa(
         headers: {
           "Content-Type": "application/json",
           "Api-Key": FOTOCASA_API_KEY,
+          "X-Source": env.FOTOCASA_ID,
         },
         body: JSON.stringify(payload),
       },

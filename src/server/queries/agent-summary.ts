@@ -68,6 +68,14 @@ export interface AgentListingContact {
   status: string | null;
   offer: number | null;
   offerAccepted: boolean | null;
+  hasUpcomingVisit: boolean;
+  hasMissedVisit: boolean;
+  hasCompletedVisit: boolean;
+  hasCancelledVisit: boolean;
+  visitCount: number;
+  hasOffer: boolean;
+  createdAt: Date;
+  upcomingAppointmentId: bigint | null;
 }
 
 export interface AgentTask {
@@ -625,6 +633,59 @@ export async function getAgentListingContacts(
         status: listingContacts.status,
         offer: listingContacts.offer,
         offerAccepted: listingContacts.offerAccepted,
+        createdAt: contacts.createdAt,
+        // Visit-related flags for status badges
+        hasUpcomingVisit: sql<boolean>`EXISTS(
+          SELECT 1 FROM appointments
+          WHERE appointments.contact_id = ${listingContacts.contactId}
+          AND appointments.listing_id = ${listingContacts.listingId}
+          AND appointments.status = 'Scheduled'
+          AND appointments.datetime_start > NOW()
+          AND appointments.is_active = true
+        )`,
+        upcomingAppointmentId: sql<bigint | null>`(
+          SELECT appointments.appointment_id
+          FROM appointments
+          WHERE appointments.contact_id = ${listingContacts.contactId}
+          AND appointments.listing_id = ${listingContacts.listingId}
+          AND appointments.status = 'Scheduled'
+          AND appointments.datetime_start > NOW()
+          AND appointments.is_active = true
+          ORDER BY appointments.datetime_start ASC
+          LIMIT 1
+        )`,
+        hasMissedVisit: sql<boolean>`EXISTS(
+          SELECT 1 FROM appointments
+          WHERE appointments.contact_id = ${listingContacts.contactId}
+          AND appointments.listing_id = ${listingContacts.listingId}
+          AND appointments.is_active = true
+          AND (
+            (appointments.status = 'Scheduled' AND appointments.datetime_start < NOW())
+            OR appointments.status = 'NoShow'
+          )
+        )`,
+        hasCompletedVisit: sql<boolean>`EXISTS(
+          SELECT 1 FROM appointments
+          WHERE appointments.contact_id = ${listingContacts.contactId}
+          AND appointments.listing_id = ${listingContacts.listingId}
+          AND appointments.status = 'Completed'
+          AND appointments.is_active = true
+        )`,
+        hasCancelledVisit: sql<boolean>`EXISTS(
+          SELECT 1 FROM appointments
+          WHERE appointments.contact_id = ${listingContacts.contactId}
+          AND appointments.listing_id = ${listingContacts.listingId}
+          AND appointments.status = 'Cancelled'
+          AND appointments.is_active = true
+        )`,
+        visitCount: sql<number>`(
+          SELECT COUNT(*)
+          FROM appointments
+          WHERE appointments.contact_id = ${listingContacts.contactId}
+          AND appointments.listing_id = ${listingContacts.listingId}
+          AND appointments.is_active = true
+        )`,
+        hasOffer: sql<boolean>`${listingContacts.offer} IS NOT NULL`,
       })
       .from(listingContacts)
       .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))

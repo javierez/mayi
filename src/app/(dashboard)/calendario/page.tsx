@@ -1542,10 +1542,10 @@ export default function AppointmentsPage() {
                   contactId: event.contactId,
                   contactName: event.contactName,
                   propertyAddress: event.propertyAddress ?? undefined,
+                  listingId: event.listingId ?? undefined,
                   agentName: event.agentName ?? undefined,
                   isOptimistic: event.isOptimistic ?? false,
                   userId: event.userId, // Include userId for ownership check
-                  listingId: event.listingId,
                   listingContactId: event.listingContactId,
                   dealId: event.dealId,
                   prospectId: event.prospectId,
