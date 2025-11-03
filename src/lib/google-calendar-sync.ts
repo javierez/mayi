@@ -291,7 +291,7 @@ async function getOrCreateDefaultContact(
         additionalInfo: { source: "google_calendar" },
         isActive: true,
       })
-      .$returningId();
+      .returning();
 
     return { contactId: newContact!.contactId, created: true };
   } catch (error) {

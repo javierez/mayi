@@ -1,5 +1,5 @@
-import { drizzle } from "drizzle-orm/singlestore";
-import { createPool, type Pool } from "mysql2/promise";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 
 import { env } from "~/env";
 import * as schema from "./schema";
@@ -9,24 +9,20 @@ import * as schema from "./schema";
  * update.
  */
 const globalForDb = globalThis as unknown as {
-  conn: Pool | undefined;
+  client: ReturnType<typeof postgres> | undefined;
 };
 
-const conn =
-  globalForDb.conn ??
-  createPool({
-    host: env.SINGLESTORE_HOST,
-    port: parseInt(env.SINGLESTORE_PORT),
-    user: env.SINGLESTORE_USER,
-    password: env.SINGLESTORE_PASS,
-    database: env.SINGLESTORE_DB,
-    ssl: {},
-    maxIdle: 0,
+// Disable prefetch for Supabase Transaction Pooler
+const client =
+  globalForDb.client ??
+  postgres(env.POSTGRES_URL, {
+    prepare: false,
+    max: 10, // Connection pool size
   });
-globalForDb.conn = conn;
 
-conn.addListener("error", (err) => {
-  console.error("Database connection error", err);
-});
+if (env.NODE_ENV !== "production") {
+  globalForDb.client = client;
+}
 
-export const db = drizzle(conn, { schema });
+export { client };
+export const db = drizzle(client, { schema });

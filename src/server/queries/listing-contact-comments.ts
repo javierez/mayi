@@ -280,18 +280,18 @@ export async function createListingContactComment(
         ...data,
         isDeleted: false,
       })
-      .$returningId();
+      .returning();
 
     if (!result) throw new Error("Failed to create listing contact comment");
 
     const [newComment] = await db
       .select({
-        commentId: sql<number>`CAST(${listingContactComments.commentId} AS UNSIGNED)`,
-        listingContactId: sql<number>`CAST(${listingContactComments.listingContactId} AS UNSIGNED)`,
+        commentId: sql<number>`CAST(${listingContactComments.commentId} AS BIGINT)`,
+        listingContactId: sql<number>`CAST(${listingContactComments.listingContactId} AS BIGINT)`,
         userId: listingContactComments.userId,
         content: listingContactComments.content,
         category: listingContactComments.category,
-        parentId: sql<number>`CAST(${listingContactComments.parentId} AS UNSIGNED)`,
+        parentId: sql<number>`CAST(${listingContactComments.parentId} AS BIGINT)`,
         isDeleted: listingContactComments.isDeleted,
         createdAt: listingContactComments.createdAt,
         updatedAt: listingContactComments.updatedAt,

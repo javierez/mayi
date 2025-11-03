@@ -919,13 +919,17 @@ export async function createTestimonialAction(
       ),
     );
 
-    const [result] = await db.insert(testimonials).values(insertValues);
+    const [result] = await db.insert(testimonials).values(insertValues).returning();
 
     console.log("✅ CREATE: Insert result:", result);
 
+    if (!result) {
+      throw new Error("Failed to create testimonial");
+    }
+
     return {
       success: true,
-      data: { testimonial_id: result.insertId.toString() },
+      data: { testimonial_id: result.testimonialId.toString() },
     };
   } catch (error) {
     console.error("❌ CREATE: Error creating testimonial:", error);

@@ -60,7 +60,7 @@ export async function createCommentAction(
     const [result] = await db
       .insert(comments)
       .values(commentData)
-      .$returningId();
+      .returning();
 
     if (!result) {
       return {

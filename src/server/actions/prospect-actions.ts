@@ -152,7 +152,7 @@ export async function createSearchProspect(
         fundingReady: validated.fundingReady,
         notesInternal: validated.notesInternal,
       })
-      .$returningId();
+      .returning();
 
     const createdProspectId = createdProspectIds[0]?.id;
 
@@ -234,7 +234,7 @@ export async function createListingProspect(
         urgencyLevel: validated.urgencyLevel,
         notesInternal: validated.notesInternal,
       })
-      .$returningId();
+      .returning();
 
     const createdProspectId = createdProspectIds[0]?.id;
 

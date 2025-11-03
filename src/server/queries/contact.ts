@@ -546,7 +546,7 @@ export async function createContact(
         accountId: BigInt(accountId),
         isActive: true,
       })
-      .$returningId();
+      .returning();
     if (!result) throw new Error("Failed to create contact");
     const [newContact] = await db
       .select()
@@ -610,7 +610,7 @@ export async function createContactWithListings(
         accountId: BigInt(accountId),
         isActive: true,
       })
-      .$returningId();
+      .returning();
 
     if (!result) throw new Error("Failed to create contact");
 

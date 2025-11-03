@@ -29,7 +29,7 @@ export async function generateReferenceNumber(): Promise<string> {
       .where(
         and(
           eq(properties.accountId, BigInt(accountId)),
-          sql`YEAR(${properties.createdAt}) = ${currentYear}`,
+          sql`EXTRACT(YEAR FROM ${properties.createdAt}) = ${currentYear}`,
         ),
       );
 
@@ -72,7 +72,7 @@ export async function createProperty(
         accountId: BigInt(accountId),
         referenceNumber,
       })
-      .$returningId();
+      .returning();
     if (!result) throw new Error("Failed to create property");
 
     const [newProperty] = await secureDb
@@ -323,7 +323,7 @@ export async function addPropertyImage(
         ...data,
         referenceNumber: property.referenceNumber,
       })
-      .$returningId();
+      .returning();
     if (!result) throw new Error("Failed to add property image");
     const [newImage] = await db
       .select()
@@ -414,7 +414,7 @@ export async function createPropertyFromCadastral(cadastralReference: string) {
     const [result] = await secureDb
       .insert(properties)
       .values(propertyData)
-      .$returningId();
+      .returning();
 
     if (!result) throw new Error("Failed to create property");
 
@@ -505,7 +505,7 @@ export async function createPropertyFromLocation(locationData: {
     const [result] = await secureDb
       .insert(properties)
       .values(propertyData)
-      .$returningId();
+      .returning();
 
     if (!result) throw new Error("Failed to create property");
 
@@ -632,7 +632,7 @@ export async function createMinimalPropertyWithListing() {
     const [propertyResult] = await secureDb
       .insert(properties)
       .values(propertyData)
-      .$returningId();
+      .returning();
 
     if (!propertyResult) throw new Error("Failed to create property");
 

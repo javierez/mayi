@@ -21,7 +21,7 @@ export async function createPropertyImage(
     const [propertyImage] = await db
       .insert(propertyImages)
       .values(data)
-      .$returningId();
+      .returning();
 
     console.log("✅ createPropertyImage success:", {
       propertyImageId: propertyImage?.propertyImageId?.toString() ?? "null",

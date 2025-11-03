@@ -1064,7 +1064,7 @@ export async function createLeadFromMatchWithAuth(
     const [result] = await db
       .insert(listingContacts)
       .values(leadData)
-      .$returningId();
+      .returning();
 
     if (!result) {
       throw new Error("Failed to create lead");

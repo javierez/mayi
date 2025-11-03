@@ -61,7 +61,7 @@ export async function createAccount(data: {
         status: data.status ?? "active",
         isActive: data.isActive ?? true,
       })
-      .$returningId();
+      .returning();
 
     if (!result) {
       throw new Error("Failed to create account");

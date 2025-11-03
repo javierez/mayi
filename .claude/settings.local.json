@@ -46,7 +46,9 @@
       "WebFetch(domain:developers.deepgram.com)",
       "mcp__context7__resolve-library-id",
       "Bash(grep:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(export PATH=\"/usr/local/opt/postgresql@16/bin:$PATH\")",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,15 +1,15 @@
 import { type Config } from "drizzle-kit";
-import { env } from "~/env";
 
 export default {
   schema: "./src/server/db/schema.ts",
-  dialect: "singlestore",
+  dialect: "postgresql",
   dbCredentials: {
-    host: env.SINGLESTORE_HOST,
-    port: parseInt(env.SINGLESTORE_PORT),
-    user: env.SINGLESTORE_USER,
-    password: env.SINGLESTORE_PASS,
-    database: env.SINGLESTORE_DB,
-    ssl: {},
+    // Use direct connection (non-pooling) for migrations
+    // Set POSTGRES_URL_NON_POOLING in your environment
+    url: process.env.POSTGRES_URL_NON_POOLING ?? process.env.POSTGRES_URL!,
   },
+  migrations: {
+    schema: "public",
+  },
+  out: "./supabase/migrations",
 } satisfies Config;

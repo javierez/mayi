@@ -34,7 +34,7 @@ export async function createDocument(
         uploadedAt: new Date(),
         isActive: true,
       })
-      .$returningId();
+      .returning();
     if (!result) throw new Error("Failed to create document");
     return result;
   } catch (error) {

@@ -8,7 +8,7 @@ import type { Organization } from "../../lib/data";
 // Create a new organization
 export async function createOrganization(data: Omit<Organization, "orgId">) {
   try {
-    const [result] = await db.insert(organizations).values(data).$returningId();
+    const [result] = await db.insert(organizations).values(data).returning();
     if (!result) throw new Error("Failed to create organization");
     const [newOrg] = await db
       .select()

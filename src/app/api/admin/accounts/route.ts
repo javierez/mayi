@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
         address: body.address ?? null,
         plan: body.plan ?? "basic",
       })
-      .$returningId();
+      .returning();
 
     if (!newAccount) {
       return NextResponse.json(

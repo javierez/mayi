@@ -3,21 +3,20 @@ import {
   varchar,
   timestamp,
   boolean,
-  pgTable,
-  jsonb,
+  singlestoreTable,
+  json,
   text,
   decimal,
   smallint,
-  integer,
+  int,
   time,
-  bigserial,
-  serial,
-} from "drizzle-orm/pg-core";
+} from "drizzle-orm/singlestore-core";
 
 // Accounts table (CRM organization/tenant - top level entity)
-export const accounts = pgTable("accounts", {
-  accountId: bigserial("account_id", { mode: "bigint" })
-    .primaryKey(),
+export const accounts = singlestoreTable("accounts", {
+  accountId: bigint("account_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   name: varchar("name", { length: 255 }).notNull(),
   shortName: varchar("short_name", { length: 50 }), // Abbreviated company names
   legalName: varchar("legal_name", { length: 255 }), // Full legal company name
@@ -37,11 +36,11 @@ export const accounts = pgTable("accounts", {
   privacyEmail: varchar("privacy_email", { length: 255 }), // Privacy/GDPR contact email address
   dpoEmail: varchar("dpo_email", { length: 255 }), // Data Protection Officer email address
   // Settings JSON fields for flexible configuration
-  portalSettings: jsonb("portal_settings").default({}), // Fotocasa, Idealista, etc. (includes API keys)
-  paymentSettings: jsonb("payment_settings").default({}), // Stripe, PayPal, etc.
-  preferences: jsonb("preferences").default({}), // General account preferences
-  terms: jsonb("terms").default({}), // Terms and conditions configuration
-  onboardingData: jsonb("onboarding_data").default({}), // Onboarding form responses: { completed, previousCrm, referralSource, teamSize, businessFocus, monthlyListings, challenge, email, website, domains, portals, notes, completedAt }
+  portalSettings: json("portal_settings").default({}), // Fotocasa, Idealista, etc. (includes API keys)
+  paymentSettings: json("payment_settings").default({}), // Stripe, PayPal, etc.
+  preferences: json("preferences").default({}), // General account preferences
+  terms: json("terms").default({}), // Terms and conditions configuration
+  onboardingData: json("onboarding_data").default({}), // Onboarding form responses: { completed, previousCrm, referralSource, teamSize, businessFocus, monthlyListings, challenge, email, website, domains, portals, notes, completedAt }
   // Subscription/billing info
   plan: varchar("plan", { length: 50 }).default("basic"), // basic, pro, enterprise
   subscriptionType: varchar("subscription_type", { length: 100 }), // More detailed subscription type
@@ -53,14 +52,15 @@ export const accounts = pgTable("accounts", {
   status: varchar("status", { length: 20 }).default("active"), // active/inactive/suspended
   // Timestamps
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
 });
 
 // Offices table (for accounts with multiple offices)
-export const offices = pgTable("offices", {
-  officeId: bigserial("office_id", { mode: "bigint" })
-    .primaryKey(),
+export const offices = singlestoreTable("offices", {
+  officeId: bigint("office_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
   name: varchar("name", { length: 100 }).notNull(),
   address: varchar("address", { length: 255 }).notNull(),
@@ -72,12 +72,12 @@ export const offices = pgTable("offices", {
   latitude: decimal("latitude", { precision: 10, scale: 8 }),
   longitude: decimal("longitude", { precision: 11, scale: 8 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
 });
 
 // Users table (Enhanced for BetterAuth compatibility)
-export const users = pgTable("users", {
+export const users = singlestoreTable("users", {
   // BetterAuth required fields (with exact names it expects)
   id: varchar("id", { length: 36 }).primaryKey(), // BetterAuth expects string id
   name: varchar("name", { length: 200 }).notNull(), // BetterAuth expects 'name' field
@@ -86,7 +86,7 @@ export const users = pgTable("users", {
   emailVerifiedAt: timestamp("email_verified_at"),
   image: varchar("image", { length: 255 }), // BetterAuth expects 'image' not 'profileImageUrl'
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   password: varchar("password", { length: 255 }),
 
   // Your additional fields
@@ -96,48 +96,49 @@ export const users = pgTable("users", {
   phone: varchar("phone", { length: 20 }),
   timezone: varchar("timezone", { length: 50 }).default("UTC"),
   language: varchar("language", { length: 10 }).default("en"),
-  preferences: jsonb("preferences").default({}),
+  preferences: json("preferences").default({}),
   lastLogin: timestamp("last_login"),
   isVerified: boolean("is_verified").default(false),
   isActive: boolean("is_active").default(true),
 });
 
 // Roles table
-export const roles = pgTable("roles", {
-  roleId: bigserial("role_id", { mode: "bigint" }).primaryKey(),
+export const roles = singlestoreTable("roles", {
+  roleId: bigint("role_id", { mode: "bigint" }).primaryKey().autoincrement(),
   name: varchar("name", { length: 50 }).notNull(),
   description: varchar("description", { length: 255 }),
-  permissions: jsonb("permissions").default({}),
+  permissions: json("permissions").default({}),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
 });
 
 // UserRoles junction table (Many-to-Many relationship between users and roles)
-export const userRoles = pgTable("user_roles", {
-  userRoleId: bigserial("user_role_id", { mode: "bigint" })
-    .primaryKey(),
+export const userRoles = singlestoreTable("user_roles", {
+  userRoleId: bigint("user_role_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id (BetterAuth compatible)
   roleId: bigint("role_id", { mode: "bigint" }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
 });
 
 // BetterAuth tables for authentication
-export const sessions = pgTable("sessions", {
+export const sessions = singlestoreTable("sessions", {
   id: varchar("id", { length: 36 }).primaryKey(),
   expiresAt: timestamp("expires_at").notNull(),
   token: varchar("token", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   userId: varchar("user_id", { length: 36 }).notNull(), // Changed to varchar to match users.id
 });
 
 // OAuth provider accounts linked to users
-export const authAccounts = pgTable("account", {
+export const authAccounts = singlestoreTable("account", {
   id: varchar("id", { length: 36 }).primaryKey(),
   accountId: text("account_id").notNull(), // OAuth provider account ID
   providerId: text("provider_id").notNull(), // e.g., "google", "apple", "linkedin"
@@ -150,22 +151,23 @@ export const authAccounts = pgTable("account", {
   scope: text("scope"),
   password: text("password"), // For email/password auth
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
-export const verificationTokens = pgTable("verification_tokens", {
+export const verificationTokens = singlestoreTable("verification_tokens", {
   id: varchar("id", { length: 36 }).primaryKey(),
   identifier: text("identifier").notNull(),
   value: text("value").notNull(),
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 // Locations table
-export const locations = pgTable("locations", {
-  neighborhoodId: bigserial("neighborhood_id", { mode: "bigint" })
-    .primaryKey(),
+export const locations = singlestoreTable("locations", {
+  neighborhoodId: bigint("neighborhood_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   city: varchar("city", { length: 100 }).notNull(),
   province: varchar("province", { length: 100 }).notNull(),
   municipality: varchar("municipality", { length: 100 }).notNull(),
@@ -174,15 +176,16 @@ export const locations = pgTable("locations", {
   latitude: decimal("latitude", { precision: 10, scale: 8 }),
   longitude: decimal("longitude", { precision: 11, scale: 8 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
 });
 
 // Properties table
-export const properties = pgTable("properties", {
+export const properties = singlestoreTable("properties", {
   // Primary Key
-  propertyId: bigserial("property_id", { mode: "bigint" })
-    .primaryKey(),
+  propertyId: bigint("property_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
 
   // Account for multi-tenant security
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
@@ -193,12 +196,12 @@ export const properties = pgTable("properties", {
   description: text("description"),
   propertyType: varchar("property_type", { length: 20 }).default("piso"), // 'piso' | 'casa' | 'local' | 'garaje' | 'solar'
   propertySubtype: varchar("property_subtype", { length: 50 }), // For piso: 'Piso' | 'Apartment' | 'Ground floor' // For casa: 'Casa' // For local: 'Otros' | 'Offices' // For garaje: 'Individual' // For solar: 'Suelo residencial'
-  formPosition: integer("form_position").notNull().default(1),
+  formPosition: int("form_position").notNull().default(1),
 
   // Property Specifications
   bedrooms: smallint("bedrooms"),
   bathrooms: decimal("bathrooms", { precision: 3, scale: 1 }),
-  squareMeter: integer("square_meter"),
+  squareMeter: int("square_meter"),
   yearBuilt: smallint("year_built"),
   cadastralReference: varchar("cadastral_reference", { length: 255 }),
   builtSurfaceArea: decimal("built_surface_area", { precision: 10, scale: 2 }),
@@ -232,7 +235,7 @@ export const properties = pgTable("properties", {
 
   // System Fields
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
 
   // Property Features
@@ -279,13 +282,13 @@ export const properties = pgTable("properties", {
   pantry: boolean("pantry"),
 
   // Storage and Additional Spaces
-  storageRoomSize: integer("storage_room_size"),
+  storageRoomSize: int("storage_room_size"),
   storageRoomNumber: varchar("storage_room_number", { length: 20 }),
   terrace: boolean("terrace"),
-  terraceSize: integer("terrace_size"),
+  terraceSize: int("terrace_size"),
   wineCellar: boolean("wine_cellar"),
-  wineCellarSize: integer("wine_cellar_size"),
-  livingRoomSize: integer("living_room_size"),
+  wineCellarSize: int("wine_cellar_size"),
+  livingRoomSize: int("living_room_size"),
   balconyCount: smallint("balcony_count"),
   galleryCount: smallint("gallery_count"),
   buildingFloors: smallint("building_floors"),
@@ -322,26 +325,28 @@ export const properties = pgTable("properties", {
   scrapedText: varchar("scraped_text", { length: 1024 }), // S3 path for property scraped text data
 });
 
-export const propertyImages = pgTable("property_images", {
-  propertyImageId: bigserial("property_image_id", { mode: "bigint" })
-    .primaryKey(),
+export const propertyImages = singlestoreTable("property_images", {
+  propertyImageId: bigint("property_image_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   propertyId: bigint("property_id", { mode: "bigint" }).notNull(),
   referenceNumber: varchar("reference_number", { length: 32 }).notNull(),
   imageUrl: varchar("image_url", { length: 255 }).notNull(),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   imageKey: varchar("image_key", { length: 2048 }).notNull(),
   imageTag: varchar("image_tag", { length: 255 }),
   s3key: varchar("s3key", { length: 2048 }).notNull(),
-  imageOrder: integer("image_order").default(0).notNull(),
+  imageOrder: int("image_order").default(0).notNull(),
   originImageId: bigint("origin_image_id", { mode: "bigint" }),
 });
 
-export const listings = pgTable("listings", {
+export const listings = singlestoreTable("listings", {
   // Primary Key
-  listingId: bigserial("listing_id", { mode: "bigint" })
-    .primaryKey(),
+  listingId: bigint("listing_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
 
   // Account for multi-tenant security
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
@@ -396,8 +401,8 @@ export const listings = pgTable("listings", {
   visibilityMode: smallint("visibility_mode").default(1), // 1=Exact location | 2=Street level | 3=Zone/neighborhood level
 
   // Analytics
-  viewCount: integer("view_count").default(0),
-  inquiryCount: integer("inquiry_count").default(0),
+  viewCount: int("view_count").default(0),
+  inquiryCount: int("inquiry_count").default(0),
 
   // Portal Publication Fields (Spanish real estate portals)
   fotocasa: boolean("fotocasa").default(false), // Fotocasa.es publication status
@@ -408,32 +413,33 @@ export const listings = pgTable("listings", {
   milanuncios: boolean("milanuncios").default(false), // Milanuncios.com publication status
 
   // Portal-specific configuration (JSON objects containing portal settings)
-  fotocasaProps: jsonb("fotocasa_props").default({}), // { visibilityMode: 1|2|3, hidePrice: boolean }
-  idealistaProps: jsonb("idealista_props").default({}), // Portal-specific settings for Idealista
-  habitacliaProps: jsonb("habitaclia_props").default({}), // Portal-specific settings for Habitaclia
-  pisoscomProps: jsonb("pisoscom_props").default({}), // Portal-specific settings for Pisos.com
-  yaencontreProps: jsonb("yaencontre_props").default({}), // Portal-specific settings for Yaencontre
-  milanunciosProps: jsonb("milanuncios_props").default({}), // Portal-specific settings for Milanuncios
+  fotocasaProps: json("fotocasa_props").default({}), // { visibilityMode: 1|2|3, hidePrice: boolean }
+  idealistaProps: json("idealista_props").default({}), // Portal-specific settings for Idealista
+  habitacliaProps: json("habitaclia_props").default({}), // Portal-specific settings for Habitaclia
+  pisoscomProps: json("pisoscom_props").default({}), // Portal-specific settings for Pisos.com
+  yaencontreProps: json("yaencontre_props").default({}), // Portal-specific settings for Yaencontre
+  milanunciosProps: json("milanuncios_props").default({}), // Portal-specific settings for Milanuncios
 
   // System Fields
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 // Listing Activity (track important listing changes)
-export const listingActivity = pgTable("listing_activity", {
-  id: bigserial("id", { mode: "bigint" }).primaryKey(),
+export const listingActivity = singlestoreTable("listing_activity", {
+  id: bigint("id", { mode: "bigint" }).primaryKey().autoincrement(),
   listingId: bigint("listing_id", { mode: "bigint" }).notNull(), // FK → listings.listing_id
   userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id (WHO changed it)
   action: varchar("action", { length: 50 }).notNull(), // 'price_changed', 'status_changed', 'portal_published', 'portal_unpublished'
-  details: jsonb("details").notNull(), // { field: 'price', oldValue: 150000, newValue: 145000, reason: 'Market adjustment' }
+  details: json("details").notNull(), // { field: 'price', oldValue: 150000, newValue: 145000, reason: 'Market adjustment' }
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Contacts (external people: buyers, sellers, etc.)
-export const contacts = pgTable("contacts", {
-  contactId: bigserial("contact_id", { mode: "bigint" })
-    .primaryKey(),
+export const contacts = singlestoreTable("contacts", {
+  contactId: bigint("contact_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   // Account for multi-tenant security
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
   firstName: varchar("first_name", { length: 100 }).notNull(),
@@ -445,19 +451,20 @@ export const contacts = pgTable("contacts", {
   secondaryPhone: varchar("secondary_phone", { length: 20 }),
   secondaryPhoneNotes: text("secondary_phone_notes"), // Notes for secondary phone number
   rating: smallint("rating"), // Contact rating (e.g., 1-5 scale for quality/importance)
-  additionalInfo: jsonb("additional_info").default({}),
+  additionalInfo: json("additional_info").default({}),
   orgId: bigint("org_id", { mode: "bigint" }), // Nullable FK to organizations
   source: varchar("source", { length: 100 }), // Contact source (e.g., "Website", "Walk-In", "Referral")
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 // Listing Contact junction table (Many-to-Many relationship between listings and contacts)
 // Enhanced to replace leads table functionality
-export const listingContacts = pgTable("listing_contacts", {
-  listingContactId: bigserial("listing_contact_id", { mode: "bigint" })
-    .primaryKey(),
+export const listingContacts = singlestoreTable("listing_contacts", {
+  listingContactId: bigint("listing_contact_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   listingId: bigint("listing_id", { mode: "bigint" }), // FK → listings.listing_id (nullable)
   contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
   contactType: varchar("contact_type", { length: 20 }).notNull(), // "buyer", "owner", "viewer"
@@ -468,31 +475,31 @@ export const listingContacts = pgTable("listing_contacts", {
   status: varchar("status", { length: 50 }), // Lead status workflow
 
   // Offer tracking:
-  offer: integer("offer"), // Offer amount
+  offer: int("offer"), // Offer amount
   offerAccepted: boolean("offer_accepted"), // Whether the offer was accepted
 
   // Existing columns:
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
 });
 
 // Listing Contact Activity (track lead/contact changes)
-export const listingContactActivity = pgTable(
+export const listingContactActivity = singlestoreTable(
   "listing_contact_activity",
   {
-    id: bigserial("id", { mode: "bigint" }).primaryKey(),
+    id: bigint("id", { mode: "bigint" }).primaryKey().autoincrement(),
     listingContactId: bigint("listing_contact_id", { mode: "bigint" }).notNull(), // FK → listing_contacts.listing_contact_id
     userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id (WHO changed it)
     action: varchar("action", { length: 50 }).notNull(), // 'status_changed', 'offer_received', 'offer_accepted', 'offer_rejected', 'appointment_scheduled'
-    details: jsonb("details").notNull(), // Flexible for different action types: { oldStatus, newStatus, reason } or { amount, notes }
+    details: json("details").notNull(), // Flexible for different action types: { oldStatus, newStatus, reason } or { amount, notes }
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
 );
 
 // Organizations (companies, law firms, banks)
-export const organizations = pgTable("organizations", {
-  orgId: bigserial("org_id", { mode: "bigint" }).primaryKey(),
+export const organizations = singlestoreTable("organizations", {
+  orgId: bigint("org_id", { mode: "bigint" }).primaryKey().autoincrement(),
   orgName: varchar("org_name", { length: 255 }).notNull(),
   address: varchar("address", { length: 255 }),
   city: varchar("city", { length: 100 }),
@@ -502,9 +509,9 @@ export const organizations = pgTable("organizations", {
 });
 
 // Deals (potential or closed transaction)
-export const deals = pgTable("deals", {
+export const deals = singlestoreTable("deals", {
   // Primary Key
-  dealId: bigserial("deal_id", { mode: "bigint" }).primaryKey(),
+  dealId: bigint("deal_id", { mode: "bigint" }).primaryKey().autoincrement(),
 
   // Entity Relationships
   listingId: bigint("listing_id", { mode: "bigint" }).notNull(), // FK → listings.listing_id
@@ -575,7 +582,7 @@ export const deals = pgTable("deals", {
   riskLevel: varchar("risk_level", { length: 20 }), // 'low' | 'medium' | 'high' - risk of deal falling through
 
   // Required Documents Checklist (JSON)
-  requiredDocuments: jsonb("required_documents").default({}), // Checklist of required documents with completion status
+  requiredDocuments: json("required_documents").default({}), // Checklist of required documents with completion status
 
   // Cancellation Tracking
   cancellationReason: text("cancellation_reason"), // Why deal fell through
@@ -600,20 +607,21 @@ export const deals = pgTable("deals", {
 
   // System Fields
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 // Deal Participants (people involved in a deal)
-export const dealParticipants = pgTable("deal_participants", {
+export const dealParticipants = singlestoreTable("deal_participants", {
   dealId: bigint("deal_id", { mode: "bigint" }).notNull(), // FK → deals.deal_id
   contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
   role: varchar("role", { length: 50 }).notNull(), // e.g. "Buyer", "Seller", "Lawyer"
 });
 
 // Appointments table
-export const appointments = pgTable("appointments", {
-  appointmentId: bigserial("appointment_id", { mode: "bigint" })
-    .primaryKey(),
+export const appointments = singlestoreTable("appointments", {
+  appointmentId: bigint("appointment_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id (BetterAuth compatible)
   contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
   listingId: bigint("listing_id", { mode: "bigint" }), // FK → listings.listing_id (nullable)
@@ -634,13 +642,14 @@ export const appointments = pgTable("appointments", {
   lastSyncedAt: timestamp("last_synced_at"), // Track sync status
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 // User Integrations table (for OAuth tokens and sync metadata)
-export const userIntegrations = pgTable("user_integrations", {
-  integrationId: bigserial("integration_id", { mode: "bigint" })
-    .primaryKey(),
+export const userIntegrations = singlestoreTable("user_integrations", {
+  integrationId: bigint("integration_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
   provider: varchar("provider", { length: 50 }).notNull(), // "google_calendar"
   accessToken: text("access_token").notNull(),
@@ -656,12 +665,12 @@ export const userIntegrations = pgTable("user_integrations", {
   ), // "bidirectional", "vesta_to_google", "google_to_vesta", "none" - Default is vesta_to_google (recommended)
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 // Tasks
-export const tasks = pgTable("tasks", {
-  taskId: bigserial("task_id", { mode: "bigint" }).primaryKey(),
+export const tasks = singlestoreTable("tasks", {
+  taskId: bigint("task_id", { mode: "bigint" }).primaryKey().autoincrement(),
   userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id (BetterAuth compatible)
   title: varchar("title", { length: 255 }).notNull(), // Task title
   description: text("description").notNull(),
@@ -682,12 +691,12 @@ export const tasks = pgTable("tasks", {
   contactId: bigint("contact_id", { mode: "bigint" }), // FK → contacts.contact_id (nullable)
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 // Documents table
-export const documents = pgTable("documents", {
-  docId: bigserial("doc_id", { mode: "bigint" }).primaryKey(),
+export const documents = singlestoreTable("documents", {
+  docId: bigint("doc_id", { mode: "bigint" }).primaryKey().autoincrement(),
   filename: varchar("filename", { length: 255 }).notNull(),
   fileType: varchar("file_type", { length: 50 }).notNull(), // e.g. "PDF", "DOC", "Image"
   fileUrl: varchar("file_url", { length: 2048 }).notNull(), // Public S3 URL
@@ -706,18 +715,18 @@ export const documents = pgTable("documents", {
   documentKey: varchar("document_key", { length: 2048 }).notNull(), // S3 object key for operations
   s3key: varchar("s3key", { length: 2048 }).notNull(), // S3 storage key
   documentTag: varchar("document_tag", { length: 255 }), // Category/type tag (e.g., "contract", "ID", "deed")
-  documentOrder: integer("document_order").default(0).notNull(), // Display order within entity
+  documentOrder: int("document_order").default(0).notNull(), // Display order within entity
 
   // System fields
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 // Prospects table (Enhanced for dual-type prospect system)
-export const prospects = pgTable("prospects", {
-  id: bigserial("prospect_id", { mode: "bigint" }).primaryKey(),
+export const prospects = singlestoreTable("prospects", {
+  id: bigint("prospect_id", { mode: "bigint" }).primaryKey().autoincrement(),
   contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.id
   status: varchar("status", { length: 50 }).notNull(), // ENUM equivalent - index this
   listingType: varchar("listing_type", { length: 20 }), // ENUM('Sale', 'Rent') - type of listing they're looking for
@@ -731,33 +740,34 @@ export const prospects = pgTable("prospects", {
   propertyType: varchar("property_type", { length: 20 }), // ENUM('piso','casa','garaje','local','terreno')
   minPrice: decimal("min_price", { precision: 12, scale: 2 }),
   maxPrice: decimal("max_price", { precision: 12, scale: 2 }),
-  preferredCities: jsonb("preferred_cities"), // Array of city names: ["Madrid", "Barcelona"]
-  preferredAreas: jsonb("preferred_areas"), // Array of neighborhood objects: [{"neighborhoodId": 1, "name": "Salamanca"}, {"neighborhoodId": 2, "name": "Retiro"}]
+  preferredCities: json("preferred_cities"), // Array of city names: ["Madrid", "Barcelona"]
+  preferredAreas: json("preferred_areas"), // Array of neighborhood objects: [{"neighborhoodId": 1, "name": "Salamanca"}, {"neighborhoodId": 2, "name": "Retiro"}]
   minBedrooms: smallint("min_bedrooms"), // 0-10 is enough
   minBathrooms: smallint("min_bathrooms"), // Same
-  minSquareMeters: integer("min_square_meters"),
-  maxSquareMeters: integer("max_square_meters"),
+  minSquareMeters: int("min_square_meters"),
+  maxSquareMeters: int("max_square_meters"),
   moveInBy: timestamp("move_in_by"), // Desired move-in date; leave NULL if "when something comes up"
-  extras: jsonb("extras"), // { "ascensor": true, "terraza": true, "garaje": false }
+  extras: json("extras"), // { "ascensor": true, "terraza": true, "garaje": false }
   urgencyLevel: smallint("urgency_level"), // 1-5 - homemade lead-scoring
   fundingReady: boolean("funding_ready"), // Has mortgage/pre-approval?
 
   // Listing prospect fields (new - for people wanting to LIST properties)
   // NOTE: These fields are commented out because they don't exist in the database yet
-  // propertyToList: jsonb("property_to_list"), // { address, propertyType, estimatedValue, condition, readyToList }
+  // propertyToList: json("property_to_list"), // { address, propertyType, estimatedValue, condition, readyToList }
   // valuationStatus: varchar("valuation_status", { length: 50 }), // 'pending' | 'scheduled' | 'completed'
   // listingAgreementStatus: varchar("listing_agreement_status", { length: 50 }), // 'not_started' | 'in_progress' | 'signed'
 
   // Common fields
   notesInternal: text("notes_internal"), // Everything the client shouldn't see
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 // Prospect History table to track status changes
-export const prospectHistory = pgTable("prospect_history", {
-  historyId: bigserial("history_id", { mode: "bigint" })
-    .primaryKey(),
+export const prospectHistory = singlestoreTable("prospect_history", {
+  historyId: bigint("history_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   prospectId: bigint("prospect_id", { mode: "bigint" }).notNull(),
   previousStatus: varchar("previous_status", { length: 50 }),
   newStatus: varchar("new_status", { length: 50 }).notNull(),
@@ -767,9 +777,10 @@ export const prospectHistory = pgTable("prospect_history", {
 });
 
 // Testimonials table
-export const testimonials = pgTable("testimonials", {
-  testimonialId: bigserial("testimonial_id", { mode: "bigint" })
-    .primaryKey(),
+export const testimonials = singlestoreTable("testimonials", {
+  testimonialId: bigint("testimonial_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
   name: varchar("name", { length: 255 }).notNull(),
   role: varchar("role", { length: 255 }).notNull(),
@@ -777,15 +788,15 @@ export const testimonials = pgTable("testimonials", {
   avatar: varchar("avatar", { length: 1024 }),
   rating: smallint("rating").notNull().default(5),
   isVerified: boolean("is_verified").default(true),
-  sortOrder: integer("sort_order").default(1),
+  sortOrder: int("sort_order").default(1),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 // Website configuration table
-export const websiteProperties = pgTable("website_config", {
-  id: bigserial("id", { mode: "bigint" }).primaryKey(),
+export const websiteProperties = singlestoreTable("website_config", {
+  id: bigint("id", { mode: "bigint" }).primaryKey().autoincrement(),
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
   socialLinks: text("social_links").notNull(), // JSON containing social media links
   seoProps: text("seo_props").notNull(), // JSON containing SEO properties
@@ -803,13 +814,14 @@ export const websiteProperties = pgTable("website_config", {
   watermarkProps: text("watermark_props").notNull().default("{}"), // JSON containing watermark configuration
   metadata: text("metadata"), // JSON containing metadata configuration
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 // Comments table
-export const comments = pgTable("comments", {
-  commentId: bigserial("comment_id", { mode: "bigint" })
-    .primaryKey(),
+export const comments = singlestoreTable("comments", {
+  commentId: bigint("comment_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   listingId: bigint("listing_id", { mode: "bigint" }).notNull(), // FK → listings.listing_id
   propertyId: bigint("property_id", { mode: "bigint" }).notNull(), // FK → properties.property_id
   userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
@@ -818,26 +830,28 @@ export const comments = pgTable("comments", {
   parentId: bigint("parent_id", { mode: "bigint" }), // Self-reference for replies
   isDeleted: boolean("is_deleted").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 // User Comments table (Contact-based comments)
-export const userComments = pgTable("user_comments", {
-  commentId: bigserial("comment_id", { mode: "bigint" })
-    .primaryKey(),
+export const userComments = singlestoreTable("user_comments", {
+  commentId: bigint("comment_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
   userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
   content: text("content").notNull(),
   parentId: bigint("parent_id", { mode: "bigint" }), // Self-reference for replies
   isDeleted: boolean("is_deleted").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 // Listing Contact Comments table (Comments on listing-contact relationships)
-export const listingContactComments = pgTable("listing_contact_comments", {
-  commentId: bigserial("comment_id", { mode: "bigint" })
-    .primaryKey(),
+export const listingContactComments = singlestoreTable("listing_contact_comments", {
+  commentId: bigint("comment_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   listingContactId: bigint("listing_contact_id", { mode: "bigint" }).notNull(), // FK → listing_contacts.listing_contact_id
   userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
   content: text("content").notNull(),
@@ -845,30 +859,31 @@ export const listingContactComments = pgTable("listing_contact_comments", {
   parentId: bigint("parent_id", { mode: "bigint" }), // Self-reference for replies
   isDeleted: boolean("is_deleted").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 // Cartel Configurations table
-export const cartelConfigurations = pgTable("cartel_configurations", {
-  id: bigserial("id", { mode: "bigint" }).primaryKey(),
+export const cartelConfigurations = singlestoreTable("cartel_configurations", {
+  id: bigint("id", { mode: "bigint" }).primaryKey().autoincrement(),
   userId: varchar("user_id", { length: 36 }), // FK → users.id (nullable)
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
   propertyId: bigint("property_id", { mode: "bigint" }), // FK → properties.property_id (nullable)
   name: varchar("name", { length: 255 }).notNull(),
-  templateConfig: jsonb("template_config").notNull(),
-  propertyOverrides: jsonb("property_overrides").default("{}"),
-  selectedContacts: jsonb("selected_contacts").default("{}"),
-  selectedImageIndices: jsonb("selected_image_indices").default("[]"),
+  templateConfig: json("template_config").notNull(),
+  propertyOverrides: json("property_overrides").default("{}"),
+  selectedContacts: json("selected_contacts").default("{}"),
+  selectedImageIndices: json("selected_image_indices").default("[]"),
   isDefault: boolean("is_default").default(false),
   isGlobal: boolean("is_global").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 // Feedback table
-export const feedback = pgTable("feedback", {
-  feedbackId: bigserial("feedback_id", { mode: "bigint" })
-    .primaryKey(),
+export const feedback = singlestoreTable("feedback", {
+  feedbackId: bigint("feedback_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
   feedbackComment: text("feedback_comment").notNull(),
@@ -876,27 +891,29 @@ export const feedback = pgTable("feedback", {
   url: varchar("url", { length: 2048 }), // URL where feedback was submitted
   resolved: boolean("resolved").default(false).notNull(), // 1=resolved, 0=unresolved
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 // Account-specific roles table
-export const accountRoles = pgTable("account_roles", {
-  accountRoleId: bigserial("account_role_id", { mode: "bigint" })
-    .primaryKey(),
+export const accountRoles = singlestoreTable("account_roles", {
+  accountRoleId: bigint("account_role_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
   roleId: bigint("role_id", { mode: "bigint" }).notNull(), // References the role type (1=Superadmin [internal only], 2=Agent, 3=Account Admin, 4=Office Manager, 5=Inactive)
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
-  permissions: jsonb("permissions").notNull().default({}), // JSON with all permissions for this role in this account
+  permissions: json("permissions").notNull().default({}), // JSON with all permissions for this role in this account
   isSystem: boolean("is_system").default(false), // True for default roles that shouldn't be deleted
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
 });
 
 // Notifications table
-export const notifications = pgTable("notifications", {
+export const notifications = singlestoreTable("notifications", {
   // Primary Key
-  notificationId: bigserial("notification_id", { mode: "bigint" })
-    .primaryKey(),
+  notificationId: bigint("notification_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
 
   // Account for multi-tenant security
   accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
@@ -920,7 +937,7 @@ export const notifications = pgTable("notifications", {
   entityId: bigint("entity_id", { mode: "bigint" }), // ID of the related entity
 
   // Additional metadata
-  metadata: jsonb("metadata").default({}), // Flexible field for extra data (e.g., appointment time, property address)
+  metadata: json("metadata").default({}), // Flexible field for extra data (e.g., appointment time, property address)
 
   // Notification state
   isRead: boolean("is_read").default(false),
@@ -942,44 +959,45 @@ export const notifications = pgTable("notifications", {
 
   // System fields
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
 });
 
 // Deal Activity (track important deal changes and milestones)
-export const dealActivity = pgTable("deal_activity", {
-  id: bigserial("id", { mode: "bigint" }).primaryKey(),
+export const dealActivity = singlestoreTable("deal_activity", {
+  id: bigint("id", { mode: "bigint" }).primaryKey().autoincrement(),
   dealId: bigint("deal_id", { mode: "bigint" }).notNull(), // FK → deals.deal_id
   userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id (WHO changed it)
   action: varchar("action", { length: 50 }).notNull(), // 'deal_created', 'status_changed', 'price_changed', 'commission_paid', 'arras_received', 'deed_signed', 'deal_closed', 'deal_cancelled', etc.
-  details: jsonb("details").notNull(), // Action-specific data: { oldValue, newValue, reason, etc. }
+  details: json("details").notNull(), // Action-specific data: { oldValue, newValue, reason, etc. }
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Contact Activity (track contact lifecycle and GDPR compliance)
-export const contactActivity = pgTable("contact_activity", {
-  id: bigserial("id", { mode: "bigint" }).primaryKey(),
+export const contactActivity = singlestoreTable("contact_activity", {
+  id: bigint("id", { mode: "bigint" }).primaryKey().autoincrement(),
   contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
   userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id (WHO changed it, or 'system' for automated)
   action: varchar("action", { length: 50 }).notNull(), // 'contact_created', 'contact_deactivated', 'consent_given', 'consent_withdrawn', 'gdpr_data_export_requested', etc.
-  details: jsonb("details").notNull(), // Action-specific data: { reason, method, compliance info, etc. }
+  details: json("details").notNull(), // Action-specific data: { reason, method, compliance info, etc. }
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Mappings table (for data ingestion column mappings)
-export const mappings = pgTable("mappings", {
+export const mappings = singlestoreTable("mappings", {
   // Primary Key
-  sourceId: bigserial("source_id", { mode: "bigint" })
-    .primaryKey(),
+  sourceId: bigint("source_id", { mode: "bigint" })
+    .primaryKey()
+    .autoincrement(),
 
   // Source information
   sourceName: varchar("source_name", { length: 255 }).notNull(), // e.g., "Inmogesco", "Aliseda", "Custom CRM"
 
   // Mapping configuration
-  mappings: jsonb("mappings").notNull(), // JSON object containing column mappings
+  mappings: json("mappings").notNull(), // JSON object containing column mappings
 
   // System fields
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   isActive: boolean("is_active").default(true),
 });

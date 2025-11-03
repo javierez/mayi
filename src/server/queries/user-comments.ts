@@ -269,17 +269,17 @@ export async function createUserComment(
         ...data,
         isDeleted: false,
       })
-      .$returningId();
+      .returning();
 
     if (!result) throw new Error("Failed to create user comment");
 
     const [newComment] = await db
       .select({
-        commentId: sql<number>`CAST(${userComments.commentId} AS UNSIGNED)`,
-        contactId: sql<number>`CAST(${userComments.contactId} AS UNSIGNED)`,
+        commentId: sql<number>`CAST(${userComments.commentId} AS BIGINT)`,
+        contactId: sql<number>`CAST(${userComments.contactId} AS BIGINT)`,
         userId: userComments.userId,
         content: userComments.content,
-        parentId: sql<number>`CAST(${userComments.parentId} AS UNSIGNED)`,
+        parentId: sql<number>`CAST(${userComments.parentId} AS BIGINT)`,
         isDeleted: userComments.isDeleted,
         createdAt: userComments.createdAt,
         updatedAt: userComments.updatedAt,
@@ -386,7 +386,7 @@ export async function getContactTasks(contactId: bigint, accountId: number) {
     const contactTasks = await db
       .select({
         // Task fields - convert BigInt to number for JSON serialization
-        taskId: sql<number>`CAST(${tasks.taskId} AS UNSIGNED)`,
+        taskId: sql<number>`CAST(${tasks.taskId} AS BIGINT)`,
         userId: tasks.userId,
         title: tasks.title,
         description: tasks.description,
@@ -397,12 +397,12 @@ export async function getContactTasks(contactId: bigint, accountId: number) {
         completedBy: tasks.completedBy,
         editedBy: tasks.editedBy,
         category: tasks.category,
-        listingId: sql<number>`CAST(${tasks.listingId} AS UNSIGNED)`,
-        listingContactId: sql<number>`CAST(${tasks.listingContactId} AS UNSIGNED)`,
-        dealId: sql<number>`CAST(${tasks.dealId} AS UNSIGNED)`,
-        appointmentId: sql<number>`CAST(${tasks.appointmentId} AS UNSIGNED)`,
-        prospectId: sql<number>`CAST(${tasks.prospectId} AS UNSIGNED)`,
-        contactId: sql<number>`CAST(${tasks.contactId} AS UNSIGNED)`,
+        listingId: sql<number>`CAST(${tasks.listingId} AS BIGINT)`,
+        listingContactId: sql<number>`CAST(${tasks.listingContactId} AS BIGINT)`,
+        dealId: sql<number>`CAST(${tasks.dealId} AS BIGINT)`,
+        appointmentId: sql<number>`CAST(${tasks.appointmentId} AS BIGINT)`,
+        prospectId: sql<number>`CAST(${tasks.prospectId} AS BIGINT)`,
+        contactId: sql<number>`CAST(${tasks.contactId} AS BIGINT)`,
         isActive: tasks.isActive,
         createdAt: tasks.createdAt,
         updatedAt: tasks.updatedAt,
@@ -451,8 +451,8 @@ export async function getContactListingsForTasks(
 
     const contactListings = await db
       .select({
-        listingContactId: sql<number>`CAST(${listingContacts.listingContactId} AS UNSIGNED)`,
-        listingId: sql<number>`CAST(${listings.listingId} AS UNSIGNED)`,
+        listingContactId: sql<number>`CAST(${listingContacts.listingContactId} AS BIGINT)`,
+        listingId: sql<number>`CAST(${listings.listingId} AS BIGINT)`,
         contactType: listingContacts.contactType,
         // Property info
         street: properties.street,
@@ -501,7 +501,7 @@ export async function getContactDeals(contactId: bigint, accountId: number) {
 
     const contactDeals = await db
       .select({
-        dealId: sql<number>`CAST(${deals.dealId} AS UNSIGNED)`,
+        dealId: sql<number>`CAST(${deals.dealId} AS BIGINT)`,
         status: deals.status,
         closeDate: deals.closeDate,
         createdAt: deals.createdAt,

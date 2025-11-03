@@ -130,7 +130,7 @@ importers:
         version: 4.1.0
       drizzle-orm:
         specifier: ^0.42.0
-        version: 0.42.0(@libsql/client@0.14.0)(gel@2.0.2)(kysely@0.28.3)(mysql2@3.14.0)
+        version: 0.42.0(@libsql/client@0.14.0)(gel@2.0.2)(kysely@0.28.3)(mysql2@3.14.0)(postgres@3.4.7)
       extract-colors:
         specifier: ^4.2.0
         version: 4.2.0
@@ -167,6 +167,9 @@ importers:
       openai:
         specifier: ^5.5.1
         version: 5.5.1(ws@8.18.3)(zod@3.24.2)
+      postgres:
+        specifier: ^3.4.7
+        version: 3.4.7
       puppeteer:
         specifier: ^24.16.0
         version: 24.16.0(typescript@5.8.3)
@@ -4368,6 +4371,10 @@ packages:
     resolution: {integrity: sha512-dle9A3yYxlBSrt8Fu+IpjGT8SY8hN0mlaA6GY8t0P5PjIOZemULz/E2Bnm/2dcUOena75OTNkHI76uZBNUUq3A==}
     engines: {node: ^10 || ^12 || >=14}
 
+  postgres@3.4.7:
+    resolution: {integrity: sha512-Jtc2612XINuBjIl/QTWsV5UvE8UHuNblcO3vVADSrKsrc6RqGX6lOW1cEo3CM2v0XG4Nat8nI+YM7/f26VxXLw==}
+    engines: {node: '>=12'}
+
   prelude-ls@1.2.1:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
@@ -8489,12 +8496,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.42.0(@libsql/client@0.14.0)(gel@2.0.2)(kysely@0.28.3)(mysql2@3.14.0):
+  drizzle-orm@0.42.0(@libsql/client@0.14.0)(gel@2.0.2)(kysely@0.28.3)(mysql2@3.14.0)(postgres@3.4.7):
     optionalDependencies:
       '@libsql/client': 0.14.0
       gel: 2.0.2
       kysely: 0.28.3
       mysql2: 3.14.0
+      postgres: 3.4.7
 
   dunder-proto@1.0.1:
     dependencies:
@@ -9895,6 +9903,8 @@ snapshots:
       nanoid: 3.3.11
       picocolors: 1.1.1
       source-map-js: 1.2.1
+
+  postgres@3.4.7: {}
 
   prelude-ls@1.2.1: {}
 

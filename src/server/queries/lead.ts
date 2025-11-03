@@ -129,7 +129,7 @@ export async function createLead(
     const [result] = await db
       .insert(listingContacts)
       .values(leadData)
-      .$returningId();
+      .returning();
     if (!result) throw new Error("Failed to create lead");
     const [newLead] = await db
       .select()
@@ -268,7 +268,7 @@ export async function ensureLeadExists(
     const [result] = await db
       .insert(listingContacts)
       .values(leadData)
-      .$returningId();
+      .returning();
 
     if (!result) throw new Error("Failed to create lead");
 

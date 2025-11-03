@@ -98,7 +98,7 @@ export async function createDeal(
       throw new Error("Listing not found or access denied");
     }
 
-    const [result] = await db.insert(deals).values(data).$returningId();
+    const [result] = await db.insert(deals).values(data).returning();
     if (!result) throw new Error("Failed to create deal");
     const [newDeal] = await db
       .select()

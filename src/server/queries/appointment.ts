@@ -48,7 +48,7 @@ export async function createAppointment(
         ...data,
         isActive: true,
       })
-      .$returningId();
+      .returning();
     if (!result) throw new Error("Failed to create appointment");
     const [newAppointment] = await db
       .select()

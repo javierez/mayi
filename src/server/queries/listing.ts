@@ -176,7 +176,7 @@ export async function duplicateListingContacts(
     const results = await db
       .insert(listingContacts)
       .values(newContactsData)
-      .$returningId();
+      .returning();
 
     console.log(
       `Duplicated ${results.length} listing contacts from listing ${sourceListingId} to ${targetListingId}`,
@@ -234,7 +234,7 @@ export async function createListing(
         viewCount: 0,
         inquiryCount: 0,
       })
-      .$returningId();
+      .returning();
     if (!result) throw new Error("Failed to create listing");
     const [newListing] = await db
       .select()
@@ -1297,7 +1297,7 @@ export async function createDefaultListing(propertyId: number) {
     const [result] = await db
       .insert(listings)
       .values(listingData)
-      .$returningId();
+      .returning();
     if (!result) throw new Error("Failed to create default listing");
 
     const [newListing] = await db
