@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, DoorOpen } from "lucide-react";
 import { motion } from "framer-motion";
 import { useFormContext } from "../form-context";
 import { formFormatters } from "~/lib/utils";
@@ -29,8 +29,9 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
     bathrooms: state.formData.bathrooms ?? 1,
     totalSurface: state.formData.totalSurface ?? 0,
     usefulSurface: state.formData.usefulSurface ?? 0,
-    buildYear: state.formData.buildYear ?? 1980,
-    renovationYear: state.formData.renovationYear ?? 0,
+    buildYear: state.formData.buildYear ?? (state.formData.buildYearUnknown ? null : 1980),
+    buildYearUnknown: state.formData.buildYearUnknown ?? false,
+    renovationYear: state.formData.renovationYear ?? (state.formData.renovationYearUnknown ? null : 0),
     renovationYearUnknown: state.formData.renovationYearUnknown ?? false,
     totalFloors: state.formData.totalFloors ?? 0,
     conservationStatus: state.formData.conservationStatus ?? 3,
@@ -68,12 +69,21 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
 
     // Set build year default for non-solar properties if not set
     if (propertyType !== "solar") {
+      // Only set default build year if buildYearUnknown is not checked
       if (
-        state.formData.buildYear === undefined ||
-        state.formData.buildYear === null ||
-        state.formData.buildYear === 0
+        !state.formData.buildYearUnknown &&
+        (state.formData.buildYear === undefined ||
+          state.formData.buildYear === null ||
+          state.formData.buildYear === 0)
       ) {
         defaults.buildYear = 1980;
+      }
+      // Set buildYearUnknown default if not set
+      if (
+        state.formData.buildYearUnknown === undefined ||
+        state.formData.buildYearUnknown === null
+      ) {
+        defaults.buildYearUnknown = false;
       }
     }
 
@@ -87,6 +97,7 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
     state.formData.bathrooms,
     state.formData.conservationStatus,
     state.formData.buildYear,
+    state.formData.buildYearUnknown,
     updateFormData,
   ]);
 
@@ -124,13 +135,14 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
         return;
       }
     } else if (propertyType === "garaje") {
-      // For garage, surface and year built are required
-      if (!formData.totalSurface || formData.totalSurface === 0) {
-        alert("Por favor, introduce las medidas.");
-        return;
-      }
-      if (!formData.buildYear || formData.buildYear === 0) {
-        alert("Por favor, introduce el año de construcción.");
+      // For garage, year built is optional if "don't know" is checked
+      if (
+        !formData.buildYearUnknown &&
+        (formData.buildYear === null ||
+          formData.buildYear === undefined ||
+          formData.buildYear === 0)
+      ) {
+        alert("Por favor, introduce el año de construcción o marca 'No lo sé'.");
         return;
       }
     } else {
@@ -154,8 +166,14 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
 
       // Superficie construida is now optional - users can enter any value or leave it empty
 
-      if (!formData.buildYear || formData.buildYear === 0) {
-        alert("Por favor, introduce el año de construcción.");
+      // Year built is optional if "don't know" is checked
+      if (
+        !formData.buildYearUnknown &&
+        (formData.buildYear === null ||
+          formData.buildYear === undefined ||
+          formData.buildYear === 0)
+      ) {
+        alert("Por favor, introduce el año de construcción o marca 'No lo sé'.");
         return;
       }
     }
@@ -178,6 +196,7 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
               value={formData.bedrooms}
               onChange={(val) => updateField("bedrooms", val)}
               label={propertyType === "local" ? "Espacios" : "Habitaciones"}
+              customIcon={propertyType === "local" ? DoorOpen : undefined}
             />
           </div>
 
@@ -192,7 +211,7 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
         </div>
       )}
 
-      {/* Superficie útil - Show for all property types */}
+      {/* Superficie construida - Show for all property types */}
       <div className="space-y-2">
         <FloatingLabelInput
           id="totalSurface"
@@ -205,14 +224,14 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
           placeholder={
             propertyType === "garaje"
               ? "Medidas en metros cuadrados"
-              : "Superficie útil (m²)"
+              : "Superficie construida (m²)"
           }
           type="text"
           className="h-10 placeholder:text-gray-400"
         />
       </div>
 
-      {/* Superficie construida - Only show for piso, casa, local */}
+      {/* Superficie útil - Only show for piso, casa, local */}
       {propertyType !== "solar" && propertyType !== "garaje" && (
         <div className="space-y-2">
           <FloatingLabelInput
@@ -225,7 +244,7 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
                 : ""
             }
             onChange={handleUsefulSurfaceChange}
-            placeholder="Superficie construida (m²)"
+            placeholder="Superficie útil (m²)"
             type="text"
             className="h-10 placeholder:text-gray-400"
           />
@@ -235,14 +254,39 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
       {/* Year Built - Show for all property types except solar */}
       {propertyType !== "solar" && (
         <div className="space-y-2">
-          <YearSlider
-            label="Año de Construcción"
-            value={formData.buildYear}
-            onChange={(val) => updateField("buildYear", val)}
-            min={1900}
-            max={new Date().getFullYear()}
-            placeholder="Año de construcción"
-          />
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium text-gray-900">
+              Año de Construcción
+            </h3>
+            <label className="flex cursor-pointer items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={formData.buildYearUnknown}
+                onChange={(e) => {
+                  const isChecked = e.target.checked;
+                  // Clear build year when "don't know" is checked
+                  if (isChecked) {
+                    updateFormData({ buildYearUnknown: true, buildYear: null });
+                  } else {
+                    // Set default when unchecked
+                    updateFormData({ buildYearUnknown: false, buildYear: 1980 });
+                  }
+                }}
+                className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+              />
+              <span className="text-xs text-gray-600">No lo sé</span>
+            </label>
+          </div>
+          {!formData.buildYearUnknown && (
+            <YearSlider
+              label=""
+              value={formData.buildYear ?? 1980}
+              onChange={(val) => updateField("buildYear", val)}
+              min={1900}
+              max={new Date().getFullYear()}
+              placeholder="Año de construcción"
+            />
+          )}
         </div>
       )}
 
@@ -403,13 +447,18 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
                     checked={formData.renovationYearUnknown}
                     onChange={(e) => {
                       const isChecked = e.target.checked;
-                      updateField("renovationYearUnknown", isChecked);
                       // Clear renovation year when "don't know" is checked
                       if (isChecked) {
-                        updateField("renovationYear", 0);
+                        updateFormData({
+                          renovationYearUnknown: true,
+                          renovationYear: null,
+                        });
                       } else {
                         // Set default when unchecked
-                        updateField("renovationYear", 2015);
+                        updateFormData({
+                          renovationYearUnknown: false,
+                          renovationYear: 2015,
+                        });
                       }
                     }}
                     className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
@@ -420,7 +469,7 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
               {!formData.renovationYearUnknown && (
                 <YearSlider
                   label=""
-                  value={formData.renovationYear || 2015}
+                  value={formData.renovationYear ?? 2015}
                   onChange={(val) => updateField("renovationYear", val)}
                   min={1900}
                   max={new Date().getFullYear()}

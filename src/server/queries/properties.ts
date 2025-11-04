@@ -159,6 +159,11 @@ export async function updateProperty(
       throw new Error("Property not found or access denied");
     }
 
+    // Log sauna field updates
+    if ("sauna" in data) {
+      console.log("Updating sauna field for property:", propertyId, "New value:", data.sauna);
+    }
+
     await secureDb
       .update(properties)
       .set(data)

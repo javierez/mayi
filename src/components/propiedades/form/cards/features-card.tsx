@@ -42,6 +42,7 @@ interface FeaturesCardProps {
   oven: boolean;
   microwave: boolean;
   washingMachine: boolean;
+  secadora: boolean;
   fridge: boolean;
   tv: boolean;
   stoneware: boolean;
@@ -73,6 +74,7 @@ interface FeaturesCardProps {
   setOven: (value: boolean) => void;
   setMicrowave: (value: boolean) => void;
   setWashingMachine: (value: boolean) => void;
+  setSecadora: (value: boolean) => void;
   setFridge: (value: boolean) => void;
   setTv: (value: boolean) => void;
   setStoneware: (value: boolean) => void;
@@ -104,6 +106,7 @@ export function FeaturesCard({
   oven,
   microwave,
   washingMachine,
+  secadora,
   fridge,
   tv,
   stoneware,
@@ -135,11 +138,14 @@ export function FeaturesCard({
   setOven,
   setMicrowave,
   setWashingMachine,
+  setSecadora,
   setFridge,
   setTv,
   setStoneware,
   getCardStyles,
 }: FeaturesCardProps) {
+  // Heating/Hot Water options (maps to Fotocasa FeatureId 320/321)
+  // 1=Gas natural, 2=Eléctrico, 3=Gasóleo, 4=Butano, 5=Propano, 6=Solar
   const heatingOptions = [
     { value: "Gas natural", label: "Gas natural" },
     { value: "Eléctrico", label: "Eléctrico" },
@@ -700,6 +706,21 @@ export function FeaturesCard({
                         />
                         <Label htmlFor="washingMachine" className="text-xs">
                           Lavadora
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <Checkbox
+                          id="secadora"
+                          checked={secadora}
+                          onCheckedChange={(checked) => {
+                            setSecadora(checked as boolean);
+                            onUpdateModule(true);
+                          }}
+                          className="no-checkmark h-3 w-3"
+                          disabled={!canEdit}
+                        />
+                        <Label htmlFor="secadora" className="text-xs">
+                          Secadora
                         </Label>
                       </div>
                       <div className="flex items-center space-x-1">

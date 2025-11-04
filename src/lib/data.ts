@@ -1066,6 +1066,7 @@ export type Listing = {
   oven?: boolean;
   microwave?: boolean;
   washingMachine?: boolean;
+  secadora?: boolean;
   fridge?: boolean;
   tv?: boolean;
   stoneware?: boolean;

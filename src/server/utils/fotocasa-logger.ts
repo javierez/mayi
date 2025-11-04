@@ -6,7 +6,9 @@ interface FotocasaLogEntry {
   listingId: number | string;
   operation: "BUILD_PAYLOAD" | "POST" | "PUT" | "DELETE";
   request?: unknown;
+  requestHeaders?: Record<string, string>;
   response?: unknown;
+  responseHeaders?: Record<string, string>;
   success: boolean;
   error?: string;
   metadata?: Record<string, unknown>;
@@ -27,7 +29,13 @@ export async function logFotocasaRequest(
     console.log("Listing ID:", entry.listingId);
     console.log("Operation:", entry.operation);
     console.log("Success:", entry.success);
+    if (entry.requestHeaders) {
+      console.log("Request Headers:", JSON.stringify(entry.requestHeaders, null, 2));
+    }
     console.log("Request Data:", JSON.stringify(entry.request, null, 2));
+    if (entry.responseHeaders) {
+      console.log("Response Headers:", JSON.stringify(entry.responseHeaders, null, 2));
+    }
     console.log("Response Data:", JSON.stringify(entry.response, null, 2));
     if (entry.error) {
       console.log("Error:", entry.error);
@@ -37,6 +45,22 @@ export async function logFotocasaRequest(
     }
     console.log("========================");
 
+    // Build request data with headers
+    const requestData = entry.requestHeaders
+      ? {
+          headers: entry.requestHeaders,
+          body: entry.request,
+        }
+      : entry.request;
+
+    // Build response data with headers
+    const responseData = entry.responseHeaders
+      ? {
+          headers: entry.responseHeaders,
+          body: entry.response,
+        }
+      : entry.response;
+
     // Insert log entry into database with full data (no sanitization)
     await db.insert(fotocasaLogs).values({
       timestamp,
@@ -44,8 +68,8 @@ export async function logFotocasaRequest(
         ? BigInt(entry.listingId)
         : BigInt(entry.listingId),
       operation: entry.operation,
-      requestData: entry.request,
-      responseData: entry.response,
+      requestData,
+      responseData,
       success: entry.success,
       error: entry.error ?? null,
       metadata: entry.metadata ?? null,
@@ -85,12 +109,16 @@ export async function logPublishRequest(
   response: unknown,
   success: boolean,
   error?: string,
+  requestHeaders?: Record<string, string>,
+  responseHeaders?: Record<string, string>,
 ): Promise<void> {
   await logFotocasaRequest({
     listingId,
     operation: "POST",
     request: payload,
+    requestHeaders,
     response,
+    responseHeaders,
     success,
     error,
   });
@@ -105,12 +133,16 @@ export async function logUpdateRequest(
   response: unknown,
   success: boolean,
   error?: string,
+  requestHeaders?: Record<string, string>,
+  responseHeaders?: Record<string, string>,
 ): Promise<void> {
   await logFotocasaRequest({
     listingId,
     operation: "PUT",
     request: payload,
+    requestHeaders,
     response,
+    responseHeaders,
     success,
     error,
   });
@@ -125,12 +157,16 @@ export async function logDeleteRequest(
   response: unknown,
   success: boolean,
   error?: string,
+  requestHeaders?: Record<string, string>,
+  responseHeaders?: Record<string, string>,
 ): Promise<void> {
   await logFotocasaRequest({
     listingId,
     operation: "DELETE",
     request: { listingId, base64ExternalId },
+    requestHeaders,
     response,
+    responseHeaders,
     success,
     error,
   });

@@ -221,6 +221,7 @@ export async function createListing(
         oven: data.oven,
         microwave: data.microwave,
         washingMachine: data.washingMachine,
+        secadora: data.secadora,
         fridge: data.fridge,
         tv: data.tv,
         stoneware: data.stoneware,
@@ -671,6 +672,7 @@ export async function listListings(
             bedrooms: properties.bedrooms,
             bathrooms: properties.bathrooms,
             squareMeter: properties.squareMeter,
+            builtSurfaceArea: properties.builtSurfaceArea,
             city: locations.city,
             imageUrl: sql<string>`img1.image_url`,
             ownerId: sql<bigint | null>`owner_contact.contact_id`,
@@ -693,6 +695,7 @@ export async function listListings(
               bedrooms: properties.bedrooms,
               bathrooms: properties.bathrooms,
               squareMeter: properties.squareMeter,
+              builtSurfaceArea: properties.builtSurfaceArea,
               city: locations.city,
               latitude: properties.latitude,
               longitude: properties.longitude,
@@ -712,6 +715,7 @@ export async function listListings(
               bedrooms: properties.bedrooms,
               bathrooms: properties.bathrooms,
               squareMeter: properties.squareMeter,
+              builtSurfaceArea: properties.builtSurfaceArea,
               street: properties.street,
               city: locations.city,
               province: locations.province,
@@ -1047,6 +1051,7 @@ export async function getListingDetails(listingId: number, accountId: number) {
         oven: listings.oven,
         microwave: listings.microwave,
         washingMachine: listings.washingMachine,
+        secadora: listings.secadora,
         fridge: listings.fridge,
         tv: listings.tv,
         stoneware: listings.stoneware,
@@ -1150,6 +1155,7 @@ export async function getListingDetails(listingId: number, accountId: number) {
         street: properties.street,
         addressDetails: properties.addressDetails,
         neighborhoodId: properties.neighborhoodId,
+        conservationStatus: properties.conservationStatus, // Added for Fotocasa FeatureId 249
         energyCertification: properties.energyCertification,
         energyCertificateStatus: properties.energyCertificateStatus,
         energyConsumptionScale: properties.energyConsumptionScale,
@@ -1157,6 +1163,7 @@ export async function getListingDetails(listingId: number, accountId: number) {
         emissionsScale: properties.emissionsScale,
         emissionsValue: properties.emissionsValue,
         hasHeating: properties.hasHeating,
+        heatingType: properties.heatingType, // For Fotocasa FeatureId 320
         garageType: properties.garageType,
         garageSpaces: properties.garageSpaces,
         garageInBuilding: properties.garageInBuilding,
@@ -1210,6 +1217,10 @@ export async function getListingDetails(listingId: number, accountId: number) {
         laundryRoom: properties.laundryRoom,
         coveredClothesline: properties.coveredClothesline,
         fireplace: properties.fireplace,
+        sauna: properties.sauna, // For Fotocasa FeatureId 277
+        loadingArea: properties.loadingArea, // For Fotocasa FeatureId 204
+        patio: properties.patio, // For Fotocasa FeatureId 263
+        allowedUse: properties.allowedUse, // For Fotocasa FeatureId 21 (solar only)
         gym: properties.gym,
         sportsArea: properties.sportsArea,
         childrenArea: properties.childrenArea,
@@ -1218,6 +1229,7 @@ export async function getListingDetails(listingId: number, accountId: number) {
         communityPool: properties.communityPool,
         privatePool: properties.privatePool,
         tennisCourt: properties.tennisCourt,
+        communityArea: properties.communityArea, // For Fotocasa FeatureId 301
 
         // Agent information - optimized to only needed fields
         agent: {
@@ -1891,13 +1903,6 @@ export async function getListingCartelSaveData(listingId: number) {
 export async function getListingContactsByIdWithAuth(listingId: number) {
   const accountId = await getCurrentUserAccountId();
 
-  console.log("🔍 [getListingContactsByIdWithAuth] Starting query with:", {
-    listingId,
-    accountId,
-    bigIntListingId: BigInt(listingId),
-    bigIntAccountId: BigInt(accountId),
-  });
-
   try {
     const contactsData = await db
       .select({
@@ -1915,11 +1920,6 @@ export async function getListingContactsByIdWithAuth(listingId: number) {
           eq(contacts.accountId, BigInt(accountId)),
         ),
       );
-
-    console.log("📋 [getListingContactsByIdWithAuth] Query result:", {
-      count: contactsData.length,
-      contacts: contactsData,
-    });
 
     return contactsData;
   } catch (error) {

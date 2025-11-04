@@ -9,6 +9,7 @@ const publicPaths = [
   "/auth/account-setup",
   "/api/auth",
   "/api/puppet/template",
+  "/ingest", // PostHog analytics proxy
   "/templates",
   "/sandbox",
   "/producto/caracteristicas",
@@ -33,7 +34,7 @@ const publicPaths = [
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // Allow public paths and static assets
+  // Allow public paths and static assets (including PostHog /ingest)
   if (
     publicPaths.some((path) =>
       path === "/" ? pathname === "/" : pathname.startsWith(path),

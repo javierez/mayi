@@ -38,6 +38,7 @@ interface AdditionalCharacteristicsCardProps {
   doubleGlazing: boolean;
   alarm: boolean;
   securityDoor: boolean;
+  loadingArea: boolean;
   kitchenType: string;
   openKitchen: boolean;
   frenchKitchen: boolean;
@@ -58,6 +59,7 @@ interface AdditionalCharacteristicsCardProps {
   setDoubleGlazing: (value: boolean) => void;
   setAlarm: (value: boolean) => void;
   setSecurityDoor: (value: boolean) => void;
+  setLoadingArea: (value: boolean) => void;
   setKitchenType: (value: string) => void;
   setOpenKitchen: (value: boolean) => void;
   setFrenchKitchen: (value: boolean) => void;
@@ -77,6 +79,7 @@ export function AdditionalCharacteristicsCard({
   doubleGlazing,
   alarm,
   securityDoor,
+  loadingArea,
   kitchenType,
   openKitchen,
   frenchKitchen,
@@ -97,6 +100,7 @@ export function AdditionalCharacteristicsCard({
   setDoubleGlazing,
   setAlarm,
   setSecurityDoor,
+  setLoadingArea,
   setKitchenType,
   setOpenKitchen,
   setFrenchKitchen,
@@ -310,6 +314,29 @@ export function AdditionalCharacteristicsCard({
                         />
                         <Label htmlFor="doubleGlazing" className="text-sm">
                           Doble acristalamiento
+                        </Label>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Commercial Property Features */}
+                  {propertyType === "local" && (
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-medium text-muted-foreground">
+                        Características comerciales
+                      </h4>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="loadingArea"
+                          checked={loadingArea}
+                          onCheckedChange={(checked) => {
+                            setLoadingArea(checked as boolean);
+                            onUpdateModule(true);
+                          }}
+                          disabled={!canEdit}
+                        />
+                        <Label htmlFor="loadingArea" className="text-sm">
+                          Zona de carga
                         </Label>
                       </div>
                     </div>

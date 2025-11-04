@@ -181,23 +181,25 @@ export function PropertyDetailsCard({
             />
           </div>
         )}
-        {propertyType !== "garaje" && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="squareMeter" className="text-sm">
-                Superficie (m²)
-              </Label>
-              <Input
-                id="squareMeter"
-                type="text"
-                value={squareMeterDisplay}
-                className="h-8 text-gray-500"
-                onChange={handleSquareMeterChange}
-                onBlur={handleSquareMeterBlur}
-                placeholder="-"
-                disabled={!canEdit}
-              />
-            </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="squareMeter" className="text-sm">
+              {propertyType === "garaje"
+                ? "Medidas (m²)"
+                : "Superficie (m²)"}
+            </Label>
+            <Input
+              id="squareMeter"
+              type="text"
+              value={squareMeterDisplay}
+              className="h-8 text-gray-500"
+              onChange={handleSquareMeterChange}
+              onBlur={handleSquareMeterBlur}
+              placeholder="-"
+              disabled={!canEdit}
+            />
+          </div>
+          {propertyType !== "garaje" && (
             <div className="space-y-1.5">
               <Label htmlFor="builtSurfaceArea" className="text-sm">
                 {propertyType === "solar"
@@ -215,8 +217,8 @@ export function PropertyDetailsCard({
                 disabled={!canEdit}
               />
             </div>
-          </div>
-        )}
+          )}
+        </div>
         {propertyType !== "solar" && (
           <div className="space-y-1.5">
             <Label htmlFor="yearBuilt" className="text-sm">

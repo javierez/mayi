@@ -24,6 +24,8 @@ interface PremiumFeaturesCardProps {
   laundryRoom: boolean;
   coveredClothesline: boolean;
   fireplace: boolean;
+  sauna: boolean;
+  patio: boolean;
   gym: boolean;
   sportsArea: boolean;
   childrenArea: boolean;
@@ -32,6 +34,7 @@ interface PremiumFeaturesCardProps {
   communityPool: boolean;
   privatePool: boolean;
   tennisCourt: boolean;
+  communityArea: boolean;
   collapsedSections: Record<string, boolean>;
   saveState: SaveState;
   canEdit?: boolean;
@@ -51,6 +54,8 @@ interface PremiumFeaturesCardProps {
   setLaundryRoom: (value: boolean) => void;
   setCoveredClothesline: (value: boolean) => void;
   setFireplace: (value: boolean) => void;
+  setSauna: (value: boolean) => void;
+  setPatio: (value: boolean) => void;
   setGym: (value: boolean) => void;
   setSportsArea: (value: boolean) => void;
   setChildrenArea: (value: boolean) => void;
@@ -59,6 +64,7 @@ interface PremiumFeaturesCardProps {
   setCommunityPool: (value: boolean) => void;
   setPrivatePool: (value: boolean) => void;
   setTennisCourt: (value: boolean) => void;
+  setCommunityArea: (value: boolean) => void;
   getCardStyles: (moduleName: "premiumFeatures") => string;
 }
 
@@ -77,6 +83,8 @@ export function PremiumFeaturesCard({
   laundryRoom,
   coveredClothesline,
   fireplace,
+  sauna,
+  patio,
   gym,
   sportsArea,
   childrenArea,
@@ -85,6 +93,7 @@ export function PremiumFeaturesCard({
   communityPool,
   privatePool,
   tennisCourt,
+  communityArea,
   collapsedSections,
   saveState,
   canEdit = true,
@@ -104,6 +113,8 @@ export function PremiumFeaturesCard({
   setLaundryRoom,
   setCoveredClothesline,
   setFireplace,
+  setSauna,
+  setPatio,
   setGym,
   setSportsArea,
   setChildrenArea,
@@ -112,6 +123,7 @@ export function PremiumFeaturesCard({
   setCommunityPool,
   setPrivatePool,
   setTennisCourt,
+  setCommunityArea,
   getCardStyles,
 }: PremiumFeaturesCardProps) {
   return (
@@ -290,6 +302,21 @@ export function PremiumFeaturesCard({
                 </div>
                 <div className="flex items-center space-x-2">
                   <Checkbox
+                    id="sauna"
+                    checked={sauna}
+                    onCheckedChange={(checked) => {
+                      console.log("Sauna checkbox changed:", checked);
+                      setSauna(checked as boolean);
+                      onUpdateModule(true);
+                    }}
+                    disabled={!canEdit}
+                  />
+                  <Label htmlFor="sauna" className="text-sm">
+                    Sauna
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
                     id="suiteBathroom"
                     checked={suiteBathroom}
                     onCheckedChange={(checked) => {
@@ -358,6 +385,20 @@ export function PremiumFeaturesCard({
                   />
                   <Label htmlFor="garden" className="text-sm">
                     Jardín
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="patio"
+                    checked={patio}
+                    onCheckedChange={(checked) => {
+                      setPatio(checked as boolean);
+                      onUpdateModule(true);
+                    }}
+                    disabled={!canEdit}
+                  />
+                  <Label htmlFor="patio" className="text-sm">
+                    Patio
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -463,6 +504,20 @@ export function PremiumFeaturesCard({
                   />
                   <Label htmlFor="childrenArea" className="text-sm">
                     Zona infantil
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="communityArea"
+                    checked={communityArea}
+                    onCheckedChange={(checked) => {
+                      setCommunityArea(checked as boolean);
+                      onUpdateModule(true);
+                    }}
+                    disabled={!canEdit}
+                  />
+                  <Label htmlFor="communityArea" className="text-sm">
+                    Zona comunitaria
                   </Label>
                 </div>
               </div>

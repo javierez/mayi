@@ -130,6 +130,10 @@ export interface PropertyListing {
   laundryRoom?: boolean;
   coveredClothesline?: boolean;
   fireplace?: boolean;
+  sauna?: boolean;
+  loadingArea?: boolean;
+  patio?: boolean;
+  allowedUse?: number; // Allowed use for solar/land properties (1-9 enum)
   gym?: boolean;
   sportsArea?: boolean;
   childrenArea?: boolean;
@@ -140,12 +144,14 @@ export interface PropertyListing {
   communityPool?: boolean;
   privatePool?: boolean;
   tennisCourt?: boolean;
+  communityArea?: boolean;
 
   // Appliances
   internet?: boolean;
   oven?: boolean;
   microwave?: boolean;
   washingMachine?: boolean;
+  secadora?: boolean;
   fridge?: boolean;
   tv?: boolean;
   stoneware?: boolean;
@@ -283,6 +289,10 @@ export function convertDbListingToPropertyListing(
     laundryRoom: getBoolean(dbListing.laundryRoom),
     coveredClothesline: getBoolean(dbListing.coveredClothesline),
     fireplace: getBoolean(dbListing.fireplace),
+    sauna: getBoolean(dbListing.sauna),
+    loadingArea: getBoolean(dbListing.loadingArea),
+    patio: getBoolean(dbListing.patio),
+    allowedUse: getNumber(dbListing.allowedUse),
     gym: getBoolean(dbListing.gym),
     sportsArea: getBoolean(dbListing.sportsArea),
     childrenArea: getBoolean(dbListing.childrenArea),
@@ -291,10 +301,12 @@ export function convertDbListingToPropertyListing(
     communityPool: getBoolean(dbListing.communityPool),
     privatePool: getBoolean(dbListing.privatePool),
     tennisCourt: getBoolean(dbListing.tennisCourt),
+    communityArea: getBoolean(dbListing.communityArea),
     internet: getBoolean(dbListing.internet),
     oven: getBoolean(dbListing.oven),
     microwave: getBoolean(dbListing.microwave),
     washingMachine: getBoolean(dbListing.washingMachine),
+    secadora: getBoolean(dbListing.secadora),
     fridge: getBoolean(dbListing.fridge),
     tv: getBoolean(dbListing.tv),
     stoneware: getBoolean(dbListing.stoneware),

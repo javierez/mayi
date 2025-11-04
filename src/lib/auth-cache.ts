@@ -164,7 +164,6 @@ export async function getCachedUserRoles(
     const cached = rolesCache.get<UserRolesAndPermissions>(cacheKey);
     if (cached) {
       AuthMetrics.recordRolesCacheHit();
-      console.log(`🎯 Cache HIT - Roles: [${cached.roles.join(", ")}]`);
       return cached;
     }
 

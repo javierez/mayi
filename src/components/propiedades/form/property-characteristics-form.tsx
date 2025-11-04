@@ -433,6 +433,7 @@ export function PropertyCharacteristicsForm({
             oven,
             microwave,
             washingMachine,
+            secadora,
             fridge,
             tv,
             stoneware,
@@ -478,6 +479,8 @@ export function PropertyCharacteristicsForm({
             doubleGlazing,
             alarm,
             securityDoor,
+            loadingArea,
+            allowedUse,
             kitchenType,
             openKitchen,
             frenchKitchen,
@@ -501,13 +504,17 @@ export function PropertyCharacteristicsForm({
             laundryRoom,
             coveredClothesline,
             fireplace,
+            sauna,
+            patio,
             gym,
             sportsArea,
             childrenArea,
             suiteBathroom,
+            nearbyPublicTransport,
             communityPool,
             privatePool,
             tennisCourt,
+            communityArea,
           };
           break;
 
@@ -792,6 +799,10 @@ export function PropertyCharacteristicsForm({
     listing.coveredClothesline ?? false,
   );
   const [fireplace, setFireplace] = useState(listing.fireplace ?? false);
+  const [sauna, setSauna] = useState(listing.sauna ?? false);
+  const [loadingArea, setLoadingArea] = useState(listing.loadingArea ?? false);
+  const [patio, setPatio] = useState(listing.patio ?? false);
+  const [allowedUse, setAllowedUse] = useState(listing.allowedUse ?? 0);
   const [city, setCity] = useState(listing.city ?? "");
   const [province, setProvince] = useState(listing.province ?? "");
   const [municipality, setMunicipality] = useState(listing.municipality ?? "");
@@ -897,6 +908,9 @@ export function PropertyCharacteristicsForm({
   );
   const [privatePool, setPrivatePool] = useState(listing.privatePool ?? false);
   const [tennisCourt, setTennisCourt] = useState(listing.tennisCourt ?? false);
+  const [communityArea, setCommunityArea] = useState(
+    listing.communityArea ?? false,
+  );
 
   // Appliance states from listings
   const [internet, setInternet] = useState(listing.internet ?? false);
@@ -905,6 +919,7 @@ export function PropertyCharacteristicsForm({
   const [washingMachine, setWashingMachine] = useState(
     listing.washingMachine ?? false,
   );
+  const [secadora, setSecadora] = useState(listing.secadora ?? false);
   const [fridge, setFridge] = useState(listing.fridge ?? false);
   const [tv, setTv] = useState(listing.tv ?? false);
   const [stoneware, setStoneware] = useState(listing.stoneware ?? false);
@@ -1411,6 +1426,7 @@ export function PropertyCharacteristicsForm({
             collapsedSections={collapsedSections}
             saveState={moduleStates.basicInfo?.saveState ?? "idle"}
             currentTitle={currentTitle}
+            allowedUse={allowedUse}
             canEdit={canEdit}
             onToggleSection={toggleSection}
             onSave={() => saveModule("basicInfo")}
@@ -1421,6 +1437,7 @@ export function PropertyCharacteristicsForm({
             onHandleSecondaryListingType={handleSecondaryListingType}
             onPropertyTypeChange={handlePropertyTypeChange}
             onTitleChange={handleTitleChange}
+            setAllowedUse={setAllowedUse}
             setIsBankOwned={setIsBankOwned}
             setNewConstruction={setNewConstruction}
             getCardStyles={getCardStyles}
@@ -1471,6 +1488,7 @@ export function PropertyCharacteristicsForm({
             oven={oven}
             microwave={microwave}
             washingMachine={washingMachine}
+            secadora={secadora}
             fridge={fridge}
             tv={tv}
             stoneware={stoneware}
@@ -1504,6 +1522,7 @@ export function PropertyCharacteristicsForm({
             setOven={setOven}
             setMicrowave={setMicrowave}
             setWashingMachine={setWashingMachine}
+            setSecadora={setSecadora}
             setFridge={setFridge}
             setTv={setTv}
             setStoneware={setStoneware}
@@ -1521,6 +1540,7 @@ export function PropertyCharacteristicsForm({
             doubleGlazing={doubleGlazing}
             alarm={alarm}
             securityDoor={securityDoor}
+            loadingArea={loadingArea}
             kitchenType={kitchenType}
             openKitchen={openKitchen}
             frenchKitchen={frenchKitchen}
@@ -1545,6 +1565,7 @@ export function PropertyCharacteristicsForm({
             setDoubleGlazing={setDoubleGlazing}
             setAlarm={setAlarm}
             setSecurityDoor={setSecurityDoor}
+            setLoadingArea={setLoadingArea}
             setKitchenType={setKitchenType}
             setOpenKitchen={setOpenKitchen}
             setFrenchKitchen={setFrenchKitchen}
@@ -1668,6 +1689,8 @@ export function PropertyCharacteristicsForm({
             laundryRoom={laundryRoom}
             coveredClothesline={coveredClothesline}
             fireplace={fireplace}
+            sauna={sauna}
+            patio={patio}
             gym={gym}
             sportsArea={sportsArea}
             childrenArea={childrenArea}
@@ -1676,6 +1699,7 @@ export function PropertyCharacteristicsForm({
             communityPool={communityPool}
             privatePool={privatePool}
             tennisCourt={tennisCourt}
+            communityArea={communityArea}
             collapsedSections={collapsedSections}
             saveState={moduleStates.premiumFeatures?.saveState ?? "idle"}
             canEdit={canEdit}
@@ -1697,6 +1721,8 @@ export function PropertyCharacteristicsForm({
             setLaundryRoom={setLaundryRoom}
             setCoveredClothesline={setCoveredClothesline}
             setFireplace={setFireplace}
+            setSauna={setSauna}
+            setPatio={setPatio}
             setGym={setGym}
             setSportsArea={setSportsArea}
             setChildrenArea={setChildrenArea}
@@ -1705,6 +1731,7 @@ export function PropertyCharacteristicsForm({
             setCommunityPool={setCommunityPool}
             setPrivatePool={setPrivatePool}
             setTennisCourt={setTennisCourt}
+            setCommunityArea={setCommunityArea}
             getCardStyles={getCardStyles}
           />
 

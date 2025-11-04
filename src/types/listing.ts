@@ -19,6 +19,7 @@ export type ListingOverview = {
   bedrooms: number | null;
   bathrooms: string | null;
   squareMeter: number | null;
+  builtSurfaceArea: number | null;
   city: string | null;
   imageUrl: string | null;
   referenceNumber: string | null;

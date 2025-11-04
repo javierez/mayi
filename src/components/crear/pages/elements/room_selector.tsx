@@ -1,5 +1,5 @@
 "use client";
-import { Bed, Bath, Plus, Minus } from "lucide-react";
+import { Bed, Bath, Plus, Minus, type LucideIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 
 interface RoomSelectorProps {
@@ -8,6 +8,7 @@ interface RoomSelectorProps {
   onChange: (value: number) => void;
   label: string;
   max?: number;
+  customIcon?: LucideIcon;
 }
 
 export function RoomSelector({
@@ -16,8 +17,9 @@ export function RoomSelector({
   onChange,
   label,
   max = 20,
+  customIcon,
 }: RoomSelectorProps) {
-  const Icon = type === "bedrooms" ? Bed : Bath;
+  const Icon = customIcon ?? (type === "bedrooms" ? Bed : Bath);
 
   const handleIncrement = () => {
     if (value < max) onChange(value + 1);

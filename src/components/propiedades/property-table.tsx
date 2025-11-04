@@ -754,10 +754,10 @@ export const PropertyTable = React.memo(function PropertyTable({
                               </span>
                             </div>
                           )}
-                        {listing.squareMeter !== null && (
+                        {(listing.squareMeter ?? listing.builtSurfaceArea) !== null && (
                           <div className="flex items-center text-sm text-muted-foreground">
                             <Square className="mr-1 h-4 w-4 flex-shrink-0" />
-                            <span>{listing.squareMeter}m²</span>
+                            <span>{Math.round(Number(listing.squareMeter ?? listing.builtSurfaceArea))}m²</span>
                           </div>
                         )}
                       </div>

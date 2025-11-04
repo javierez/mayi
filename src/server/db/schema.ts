@@ -250,6 +250,7 @@ export const properties = pgTable("properties", {
   communityPool: boolean("community_pool").default(false),
   privatePool: boolean("private_pool").default(false),
   tennisCourt: boolean("tennis_court").default(false),
+  communityArea: boolean("community_area").default(false),
 
   // Property Characteristics
   disabledAccessible: boolean("disabled_accessible"),
@@ -316,6 +317,10 @@ export const properties = pgTable("properties", {
   laundryRoom: boolean("laundry_room"),
   coveredClothesline: boolean("covered_clothesline"),
   fireplace: boolean("fireplace"),
+  sauna: boolean("sauna"),
+  loadingArea: boolean("loading_area"),
+  patio: boolean("patio"),
+  allowedUse: smallint("allowed_use"), // Allowed use for solar/land properties (1-9 enum)
 
   // Data Processing Fields
   scrapedText: varchar("scraped_text", { length: 1024 }), // S3 path for property scraped text data
@@ -383,6 +388,7 @@ export const listings = pgTable("listings", {
   oven: boolean("oven").default(false),
   microwave: boolean("microwave").default(false),
   washingMachine: boolean("washing_machine").default(false),
+  secadora: boolean("secadora").default(false),
   fridge: boolean("fridge").default(false),
   tv: boolean("tv").default(false),
   stoneware: boolean("stoneware").default(false),

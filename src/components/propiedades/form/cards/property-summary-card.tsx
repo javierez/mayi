@@ -68,7 +68,7 @@ export function PropertySummaryCard({
   const isLocal = propertyType === "local";
   const rawAreaValue = isGarageOrSolar
     ? listing.builtSurfaceArea
-    : listing.squareMeter;
+    : listing.squareMeter ?? listing.builtSurfaceArea;
   const areaValue =
     propertyType === "solar" && rawAreaValue != null
       ? Math.round(rawAreaValue)

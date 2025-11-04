@@ -98,16 +98,8 @@ export const fieldRules: FieldRule[] = [
     validator: (v) => v !== null && v !== undefined && Number(v) > 0,
   },
 
-  // Superficie construida - Required ONLY for garaje
-  {
-    id: "builtSurfaceArea",
-    label: "Superficie construida",
-    fieldPath: "builtSurfaceArea",
-    importance: "mandatory",
-    category: "Detalles de la Propiedad",
-    applicablePropertyTypes: ["garaje"],
-    validator: (v) => v !== null && v !== undefined && Number(v) > 0,
-  },
+  // Superficie construida - Optional for garaje (moved to NTH section below)
+  // No longer mandatory for any property type
 
   // Dormitorios - Required ONLY for piso and casa (residential)
   {

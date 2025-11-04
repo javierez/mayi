@@ -310,13 +310,15 @@ export const auth = betterAuth({
 
   // Advanced security configuration
   advanced: {
-    // Force secure cookies in all environments
-    useSecureCookies: true,
+    // Use secure cookies only in production (HTTPS)
+    // In development (HTTP), browsers won't send/store cookies with Secure flag
+    useSecureCookies: process.env.NODE_ENV === "production",
     // Default cookie attributes for all auth cookies
     defaultCookieAttributes: {
       httpOnly: true, // Prevent JavaScript access to cookies (XSS protection)
-      secure: true, // Only send cookies over HTTPS
+      secure: process.env.NODE_ENV === "production", // Only send cookies over HTTPS in production
       sameSite: "lax", // Prevent CSRF attacks while allowing normal navigation
+      ...(process.env.COOKIE_DOMAIN && { domain: process.env.COOKIE_DOMAIN }), // Optional domain for subdomain support
     },
   },
 

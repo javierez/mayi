@@ -19,8 +19,8 @@ export function CookieConsentBanner() {
   const [showSettings, setShowSettings] = useState(false);
   const [consent, setConsent] = useState<CookieConsent>({
     necessary: true, // Always true, can't be disabled
-    analytics: false,
-    marketing: false,
+    analytics: true, // Default to true
+    marketing: true, // Default to true
     timestamp: 0,
   });
 
@@ -39,13 +39,16 @@ export function CookieConsentBanner() {
         setTimeout(() => setShowBanner(true), 1000);
       }
     } else if (localStorageConsent) {
-      // Migrate from localStorage to cookie
+      // One-time migration from localStorage to cookie
       try {
         const parsed = JSON.parse(localStorageConsent) as CookieConsent;
         setConsent(parsed);
         applyConsent(parsed);
-        // Save to cookie for server-side access
+        // Migrate to cookie
         setCookie("vesta-cookie-consent", localStorageConsent, 365);
+        // Remove localStorage after successful migration
+        localStorage.removeItem("vesta-cookie-consent");
+        console.log("✅ Migrated cookie consent from localStorage to cookie");
       } catch (error) {
         console.error("Error migrating consent:", error);
         setTimeout(() => setShowBanner(true), 1000);
@@ -83,14 +86,11 @@ export function CookieConsentBanner() {
     };
     const consentString = JSON.stringify(consentWithTimestamp);
 
-    // Store in cookie (accessible server-side)
+    // Store in cookie (accessible server-side and client-side)
     setCookie("vesta-cookie-consent", consentString, 365, {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
     });
-
-    // Also store in localStorage for backward compatibility and client-side quick access
-    localStorage.setItem("vesta-cookie-consent", consentString);
 
     setConsent(consentWithTimestamp);
     applyConsent(consentWithTimestamp);

@@ -54,8 +54,9 @@ export interface CompleteFormData {
   plotSurface?: number;
   floor?: string;
   totalFloors?: string;
-  buildYear?: number;
-  renovationYear?: number;
+  buildYear?: number | null;
+  buildYearUnknown?: boolean;
+  renovationYear?: number | null;
   renovationYearUnknown?: boolean;
   isRenovated?: boolean;
   conservationStatus?: number;

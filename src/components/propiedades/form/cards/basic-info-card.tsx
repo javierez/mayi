@@ -27,6 +27,7 @@ interface BasicInfoCardProps {
   collapsedSections: Record<string, boolean>;
   saveState: SaveState;
   currentTitle?: string;
+  allowedUse: number;
   canEdit?: boolean;
   onToggleSection: (section: string) => void;
   onSave: () => Promise<void>;
@@ -37,6 +38,7 @@ interface BasicInfoCardProps {
   ) => void;
   onPropertyTypeChange: (newType: string) => Promise<void>;
   onTitleChange?: (newTitle: string) => void;
+  setAllowedUse: (value: number) => void;
   setIsBankOwned: (value: boolean) => void;
   setNewConstruction: (value: boolean) => void;
   getCardStyles: (moduleName: string) => string;
@@ -52,6 +54,7 @@ export function BasicInfoCard({
   collapsedSections,
   saveState,
   currentTitle,
+  allowedUse,
   canEdit = true,
   onToggleSection,
   onSave,
@@ -60,6 +63,7 @@ export function BasicInfoCard({
   onHandleSecondaryListingType,
   onPropertyTypeChange,
   onTitleChange,
+  setAllowedUse,
   setIsBankOwned,
   setNewConstruction,
   getCardStyles,
@@ -376,6 +380,34 @@ export function BasicInfoCard({
             </SelectContent>
           </Select>
         </div>
+
+        {propertyType === "solar" && (
+          <div className="space-y-1.5">
+            <Label htmlFor="allowedUse" className="text-sm">
+              Uso permitido
+            </Label>
+            <Select
+              value={allowedUse?.toString() ?? ""}
+              onValueChange={(value) => {
+                setAllowedUse(Number(value));
+                onUpdateModule(true);
+              }}
+              disabled={!canEdit}
+            >
+              <SelectTrigger className="h-8 text-gray-500">
+                <SelectValue placeholder="Seleccionar uso" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Agrícola</SelectItem>
+                <SelectItem value="2">Comercial</SelectItem>
+                <SelectItem value="3">Servicios</SelectItem>
+                <SelectItem value="4">Industrial</SelectItem>
+                <SelectItem value="8">Residencial plurifamiliar</SelectItem>
+                <SelectItem value="9">Residencial unifamiliar</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="space-y-1.5">
           <Label htmlFor="price" className="text-sm">

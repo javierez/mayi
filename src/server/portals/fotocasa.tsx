@@ -65,6 +65,7 @@ interface ListingDetails {
   communityPool?: boolean;
   hasGarage?: boolean;
   jacuzzi?: boolean;
+  fireplace?: boolean;
   tennisCourt?: boolean;
   laundryRoom?: boolean;
   builtInWardrobes?: boolean;
@@ -82,6 +83,7 @@ interface ListingDetails {
   appliancesIncluded?: boolean;
   yearBuilt?: number;
   washingMachine?: boolean;
+  secadora?: boolean;
   [key: string]: unknown;
 }
 
@@ -471,11 +473,18 @@ export async function buildFotocasaPayload(
     // Build PropertyFeatures
     const propertyFeatures: PropertyFeature[] = [];
 
-    // Square meters (FeatureId: 1)
-    if (listing.squareMeter) {
+    // Surface (FeatureId: 1) - use appropriate field based on property type with fallback
+    // For "local" properties, prefer builtSurfaceArea, otherwise use squareMeter
+    // For other properties, prefer squareMeter, otherwise use builtSurfaceArea
+    const surfaceValue =
+      listing.propertyType === "local"
+        ? (listing.builtSurfaceArea ?? listing.squareMeter)
+        : (listing.squareMeter ?? listing.builtSurfaceArea);
+
+    if (surfaceValue) {
       propertyFeatures.push({
         FeatureId: 1,
-        DecimalValue: listing.squareMeter,
+        DecimalValue: Number(surfaceValue),
       });
     }
 
@@ -571,6 +580,14 @@ export async function buildFotocasaPayload(
       });
     }
 
+    // Community Area (FeatureId: 301)
+    if (listing.communityArea !== null) {
+      propertyFeatures.push({
+        FeatureId: 301,
+        BoolValue: listing.communityArea ?? false,
+      });
+    }
+
     // Suite Bathroom (FeatureId: 260)
     if (listing.suiteBathroom !== null) {
       propertyFeatures.push({
@@ -608,6 +625,13 @@ export async function buildFotocasaPayload(
         BoolValue: listing.washingMachine ?? false,
       });
     }
+    // Dryer/Secadora (FeatureId: 315)
+    if (listing.secadora !== null) {
+      propertyFeatures.push({
+        FeatureId: 315,
+        BoolValue: listing.secadora ?? false,
+      });
+    }
     if (listing.microwave !== null) {
       propertyFeatures.push({
         FeatureId: 287,
@@ -623,9 +647,10 @@ export async function buildFotocasaPayload(
     if (listing.tv !== null) {
       propertyFeatures.push({ FeatureId: 291, BoolValue: listing.tv ?? false });
     }
+    // Dishwasher/Lavavajillas (FeatureId: 316)
     if (listing.stoneware !== null) {
       propertyFeatures.push({
-        FeatureId: 295,
+        FeatureId: 316,
         BoolValue: listing.stoneware ?? false,
       });
     }
@@ -704,6 +729,14 @@ export async function buildFotocasaPayload(
       propertyFeatures.push({
         FeatureId: 274,
         BoolValue: listing.jacuzzi ?? false,
+      });
+    }
+
+    // Fireplace/Chimenea (FeatureId: 311)
+    if (listing.fireplace !== null) {
+      propertyFeatures.push({
+        FeatureId: 311,
+        BoolValue: listing.fireplace ?? false,
       });
     }
 
@@ -803,13 +836,26 @@ export async function buildFotocasaPayload(
     }
 
     // Sauna (FeatureId: 277)
-    if (
-      "sauna" in listing &&
-      typeof (listing as Record<string, unknown>).sauna === "boolean"
-    ) {
+    if (listing.sauna !== null) {
       propertyFeatures.push({
         FeatureId: 277,
-        BoolValue: (listing as Record<string, unknown>).sauna as boolean,
+        BoolValue: listing.sauna ?? false,
+      });
+    }
+
+    // Loading Area/Zona de carga (FeatureId: 204)
+    if (listing.loadingArea !== null) {
+      propertyFeatures.push({
+        FeatureId: 204,
+        BoolValue: listing.loadingArea ?? false,
+      });
+    }
+
+    // Patio/Yard (FeatureId: 263)
+    if (listing.patio !== null) {
+      propertyFeatures.push({
+        FeatureId: 263,
+        BoolValue: listing.patio ?? false,
       });
     }
 
@@ -827,17 +873,24 @@ export async function buildFotocasaPayload(
       });
     }
 
-    // Land area (FeatureId: 69) - using builtSurfaceArea
-    if (
-      "builtSurfaceArea" in listing &&
-      (listing as Record<string, unknown>).builtSurfaceArea
-    ) {
+    // Land area (FeatureId: 69) - only for solar/land properties
+    if (listing.propertyType === "solar" && listing.builtSurfaceArea) {
       propertyFeatures.push({
         FeatureId: 69,
-        DecimalValue: Number(
-          (listing as Record<string, unknown>).builtSurfaceArea,
-        ),
+        DecimalValue: Number(listing.builtSurfaceArea),
       });
+    }
+
+    // Allowed Use (FeatureId: 21) - only for solar/land properties
+    if (listing.propertyType === "solar" && listing.allowedUse != null) {
+      const allowedUseValue = Number(listing.allowedUse);
+      // Only add if it's a valid allowed use value (1, 2, 3, 4, 8, 9)
+      if ([1, 2, 3, 4, 8, 9].includes(allowedUseValue)) {
+        propertyFeatures.push({
+          FeatureId: 21,
+          DecimalValue: allowedUseValue,
+        });
+      }
     }
 
     // Air conditioner (FeatureId: 254) - convert airConditioningType to boolean
@@ -1194,6 +1247,13 @@ export async function publishToFotocasa(
     // Log the payload for debugging
     console.log("Fotocasa POST Payload:", JSON.stringify(payload, null, 2));
 
+    // Prepare request headers
+    const requestHeaders = {
+      "Content-Type": "application/json",
+      "Api-Key": FOTOCASA_API_KEY,
+      "X-Source": env.FOTOCASA_ID,
+    };
+
     // Log headers for debugging
     console.log("=== FOTOCASA API HEADERS ===");
     console.log("Api-Key:", FOTOCASA_API_KEY);
@@ -1205,16 +1265,18 @@ export async function publishToFotocasa(
       "https://imports.gw.fotocasa.pro/api/property",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Api-Key": FOTOCASA_API_KEY,
-          "X-Source": env.FOTOCASA_ID,
-        },
+        headers: requestHeaders,
         body: JSON.stringify(payload),
       },
     );
 
     const responseData = (await response.json()) as unknown;
+
+    // Extract response headers
+    const responseHeaders: Record<string, string> = {};
+    response.headers.forEach((value, key) => {
+      responseHeaders[key] = value;
+    });
 
     // Log the response for debugging
     console.log("Fotocasa POST API Response:", responseData);
@@ -1226,7 +1288,15 @@ export async function publishToFotocasa(
 
     if (isSuccess) {
       // Log successful request
-      await logPublishRequest(listingId, payload, responseData, true);
+      await logPublishRequest(
+        listingId,
+        payload,
+        responseData,
+        true,
+        undefined,
+        requestHeaders,
+        responseHeaders,
+      );
 
       // Update database to set fotocasa = true ONLY on successful API response
       try {
@@ -1281,6 +1351,8 @@ export async function publishToFotocasa(
         responseData,
         false,
         errorMessage,
+        requestHeaders,
+        responseHeaders,
       );
 
       return {
@@ -1351,6 +1423,13 @@ export async function updateFotocasa(
     );
     console.log(`Updating listing ${listingId} on Fotocasa`);
 
+    // Prepare request headers
+    const requestHeaders = {
+      "Content-Type": "application/json",
+      "Api-Key": FOTOCASA_API_KEY,
+      "X-Source": env.FOTOCASA_ID,
+    };
+
     // Log headers for debugging
     console.log("=== FOTOCASA API HEADERS (PUT) ===");
     console.log("Api-Key:", FOTOCASA_API_KEY);
@@ -1363,16 +1442,18 @@ export async function updateFotocasa(
       "https://imports.gw.fotocasa.pro/api/property",
       {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Api-Key": FOTOCASA_API_KEY,
-          "X-Source": env.FOTOCASA_ID,
-        },
+        headers: requestHeaders,
         body: JSON.stringify(payload),
       },
     );
 
     const responseData = (await response.json()) as unknown;
+
+    // Extract response headers
+    const responseHeaders: Record<string, string> = {};
+    response.headers.forEach((value, key) => {
+      responseHeaders[key] = value;
+    });
 
     // Log the response for debugging
     console.log("Fotocasa PUT Update API Response:", responseData);
@@ -1384,7 +1465,15 @@ export async function updateFotocasa(
 
     if (isSuccess) {
       // Log successful update
-      await logUpdateRequest(listingId, payload, responseData, true);
+      await logUpdateRequest(
+        listingId,
+        payload,
+        responseData,
+        true,
+        undefined,
+        requestHeaders,
+        responseHeaders,
+      );
 
       // Ensure database is set to fotocasa = true after successful update
       // (It should already be true, but this ensures consistency)
@@ -1440,6 +1529,8 @@ export async function updateFotocasa(
         responseData,
         false,
         errorMessage,
+        requestHeaders,
+        responseHeaders,
       );
 
       return {
@@ -1497,6 +1588,12 @@ export async function deleteFromFotocasa(
       `Deleting listing ${listingId} from Fotocasa (base64: ${base64ExternalId})`,
     );
 
+    // Prepare request headers
+    const requestHeaders = {
+      "Api-Key": FOTOCASA_API_KEY,
+      "X-Source": env.FOTOCASA_ID,
+    };
+
     // Log headers for debugging
     console.log("=== FOTOCASA API HEADERS (DELETE) ===");
     console.log("Api-Key:", FOTOCASA_API_KEY);
@@ -1508,12 +1605,15 @@ export async function deleteFromFotocasa(
       `https://imports.gw.fotocasa.pro/api/v2/property/${base64ExternalId}`,
       {
         method: "DELETE",
-        headers: {
-          "Api-Key": FOTOCASA_API_KEY,
-          "X-Source": env.FOTOCASA_ID,
-        },
+        headers: requestHeaders,
       },
     );
+
+    // Extract response headers
+    const responseHeaders: Record<string, string> = {};
+    response.headers.forEach((value, key) => {
+      responseHeaders[key] = value;
+    });
 
     // Log the response for debugging
     console.log("Fotocasa DELETE API Response status:", response.status);
@@ -1528,6 +1628,9 @@ export async function deleteFromFotocasa(
         base64ExternalId,
         { status: response.status },
         true,
+        undefined,
+        requestHeaders,
+        responseHeaders,
       );
 
       // Update database to set fotocasa = false ONLY on successful API response
@@ -1573,6 +1676,8 @@ export async function deleteFromFotocasa(
         responseData,
         false,
         errorMessage,
+        requestHeaders,
+        responseHeaders,
       );
 
       return {
