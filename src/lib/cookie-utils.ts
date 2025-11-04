@@ -7,7 +7,7 @@
 
 /**
  * Set a cookie with proper attributes
- * 
+ *
  * @param name - Cookie name
  * @param value - Cookie value
  * @param days - Expiration in days (default: 365)
@@ -16,11 +16,12 @@
 export function setCookie(
   name: string,
   value: string,
-  days: number = 365,
+  days = 365,
   options: {
     secure?: boolean;
     sameSite?: "strict" | "lax" | "none";
     path?: string;
+    domain?: string;
   } = {},
 ) {
   if (typeof document === "undefined") return;
@@ -39,6 +40,10 @@ export function setCookie(
     cookieString += "; Secure";
   }
 
+  if (options.domain) {
+    cookieString += `; Domain=${options.domain}`;
+  }
+
   document.cookie = cookieString;
 }
 
@@ -54,12 +59,12 @@ export function getCookie(name: string): string | null {
   const nameEQ = `${name}=`;
   const cookies = document.cookie.split(";");
 
-  for (let i = 0; i < cookies.length; i++) {
-    let cookie = cookies[i];
-    while (cookie.charAt(0) === " ") {
+  for (const cookieItem of cookies) {
+    let cookie = cookieItem;
+    while (cookie.startsWith(" ")) {
       cookie = cookie.substring(1, cookie.length);
     }
-    if (cookie.indexOf(nameEQ) === 0) {
+    if (cookie.startsWith(nameEQ)) {
       return decodeURIComponent(cookie.substring(nameEQ.length, cookie.length));
     }
   }
@@ -69,15 +74,22 @@ export function getCookie(name: string): string | null {
 
 /**
  * Delete a cookie
- * 
+ *
  * @param name - Cookie name
  * @param path - Cookie path (default: "/")
+ * @param domain - Cookie domain (optional, must match the domain used when setting the cookie)
  */
-export function deleteCookie(name: string, path: string = "/") {
+export function deleteCookie(name: string, path = "/", domain?: string) {
   if (typeof document === "undefined") return;
 
   // Set expiration date to past
-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${path};`;
+  let cookieString = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${path};`;
+
+  if (domain) {
+    cookieString += ` Domain=${domain};`;
+  }
+
+  document.cookie = cookieString;
 }
 
 /**
@@ -91,7 +103,7 @@ export function areCookiesEnabled(): boolean {
   try {
     // Try to set a test cookie
     document.cookie = "testCookie=1; path=/";
-    const enabled = document.cookie.indexOf("testCookie=") !== -1;
+    const enabled = document.cookie.includes("testCookie=");
     // Delete test cookie
     deleteCookie("testCookie");
     return enabled;

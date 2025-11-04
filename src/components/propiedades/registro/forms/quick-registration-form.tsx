@@ -59,7 +59,7 @@ interface ListingDetailsData {
   buildYear?: number | null;
   renovationYear?: number;
   isRenovated?: boolean;
-  conservationStatus?: number;
+  conservationStatus?: number | null;
 
   // Location fields
   address?: string | null;
