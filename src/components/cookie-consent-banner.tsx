@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Cookie, X, Settings, Check } from "lucide-react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
+import { getCookie, setCookie } from "~/lib/cookie-utils";
 
 type CookieConsent = {
   necessary: boolean;
@@ -24,16 +25,34 @@ export function CookieConsentBanner() {
   });
 
   useEffect(() => {
-    // Check if user has already given consent
-    const savedConsent = localStorage.getItem("vesta-cookie-consent");
-    if (!savedConsent) {
+    // Check if user has already given consent (try cookie first, fallback to localStorage for migration)
+    const cookieConsent = getCookie("vesta-cookie-consent");
+    const localStorageConsent = localStorage.getItem("vesta-cookie-consent");
+
+    if (cookieConsent) {
+      try {
+        const parsed = JSON.parse(cookieConsent) as CookieConsent;
+        setConsent(parsed);
+        applyConsent(parsed);
+      } catch (error) {
+        console.error("Error parsing cookie consent:", error);
+        setTimeout(() => setShowBanner(true), 1000);
+      }
+    } else if (localStorageConsent) {
+      // Migrate from localStorage to cookie
+      try {
+        const parsed = JSON.parse(localStorageConsent) as CookieConsent;
+        setConsent(parsed);
+        applyConsent(parsed);
+        // Save to cookie for server-side access
+        setCookie("vesta-cookie-consent", localStorageConsent, 365);
+      } catch (error) {
+        console.error("Error migrating consent:", error);
+        setTimeout(() => setShowBanner(true), 1000);
+      }
+    } else {
       // Show banner after a short delay for better UX
       setTimeout(() => setShowBanner(true), 1000);
-    } else {
-      const parsed = JSON.parse(savedConsent) as CookieConsent;
-      setConsent(parsed);
-      // Apply consent settings
-      applyConsent(parsed);
     }
   }, []);
 
@@ -62,10 +81,17 @@ export function CookieConsentBanner() {
       ...consentData,
       timestamp: Date.now(),
     };
-    localStorage.setItem(
-      "vesta-cookie-consent",
-      JSON.stringify(consentWithTimestamp),
-    );
+    const consentString = JSON.stringify(consentWithTimestamp);
+
+    // Store in cookie (accessible server-side)
+    setCookie("vesta-cookie-consent", consentString, 365, {
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+
+    // Also store in localStorage for backward compatibility and client-side quick access
+    localStorage.setItem("vesta-cookie-consent", consentString);
+
     setConsent(consentWithTimestamp);
     applyConsent(consentWithTimestamp);
     setShowBanner(false);

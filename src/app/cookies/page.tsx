@@ -155,7 +155,7 @@ const sections = [
           Puede cambiar sus preferencias de cookies en cualquier momento haciendo clic en el siguiente enlace:
         </p>
         <button
-          onclick="localStorage.removeItem('vesta-cookie-consent'); window.location.reload();"
+          onclick="localStorage.removeItem('vesta-cookie-consent'); document.cookie = 'vesta-cookie-consent=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'; window.location.reload();"
           class="px-6 py-3 bg-gradient-to-r from-amber-400 to-rose-400 text-white font-medium rounded-lg hover:from-amber-500 hover:to-rose-500 transition-all hover:scale-105 shadow-lg"
         >
           <Settings class="inline h-5 w-5 mr-2" />
@@ -392,7 +392,10 @@ export default function CookiesPage() {
             <button
               onClick={() => {
                 if (typeof window !== "undefined") {
+                  // Remove both cookie and localStorage for complete reset
                   localStorage.removeItem("vesta-cookie-consent");
+                  // Delete cookie by setting expiration to past
+                  document.cookie = "vesta-cookie-consent=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
                   window.location.reload();
                 }
               }}
