@@ -18,7 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
-import { Info } from "lucide-react";
+import { Calendar } from "lucide-react";
 
 const scrollbarStyles = `
   .property-status-scrollbar::-webkit-scrollbar {
@@ -373,13 +373,13 @@ export function PropertyStatusRow({
                                           ? "text-gray-600 hover:text-gray-900"
                                           : "text-gray-300",
                                       )}
-                                      aria-label="Información"
+                                      aria-label="Fecha de creación"
                                     >
-                                      <Info className="h-3.5 w-3.5" />
+                                      <Calendar className="h-3.5 w-3.5" />
                                     </button>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p>{infoContent}</p>
+                                    <p className="text-[10px]">{infoContent}</p>
                                   </TooltipContent>
                                 </Tooltip>
                               )}

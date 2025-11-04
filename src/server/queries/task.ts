@@ -562,6 +562,7 @@ export async function updateTask(
         taskId: tasks.taskId,
         title: tasks.title,
         completed: tasks.completed,
+        userId: tasks.userId,
       })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
@@ -591,6 +592,14 @@ export async function updateTask(
 
     if (!existingTask) {
       throw new Error("Task not found or access denied");
+    }
+
+    // Check user permissions for this specific task
+    const { canEditTask } = await import("~/app/actions/permissions/check-permissions");
+    const hasPermission = await canEditTask(existingTask.userId);
+
+    if (!hasPermission) {
+      throw new Error("Permission denied: Cannot edit this task");
     }
 
     // Prepare update data with editedBy
@@ -915,7 +924,10 @@ export async function deleteTask(taskId: number, accountId: number) {
   try {
     // First verify the task belongs to this account using JOINs instead of subqueries
     const [existingTask] = await db
-      .select({ taskId: tasks.taskId })
+      .select({
+        taskId: tasks.taskId,
+        userId: tasks.userId,
+      })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
       .leftJoin(
@@ -943,6 +955,14 @@ export async function deleteTask(taskId: number, accountId: number) {
 
     if (!existingTask) {
       throw new Error("Task not found or access denied");
+    }
+
+    // Check user permissions for this specific task
+    const { canDeleteTask } = await import("~/app/actions/permissions/check-permissions");
+    const hasPermission = await canDeleteTask(existingTask.userId);
+
+    if (!hasPermission) {
+      throw new Error("Permission denied: Cannot delete this task");
     }
 
     await db.delete(tasks).where(eq(tasks.taskId, BigInt(taskId)));

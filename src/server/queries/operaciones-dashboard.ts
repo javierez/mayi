@@ -303,7 +303,7 @@ export async function getOperacionesSummary(
     // Process prospects data - just count totals
     prospectsData.forEach((row) => {
       const type = row.listingType === "Sale" ? "sale" : "rent";
-      summary[type].prospects += row.count;
+      summary[type].prospects += Number(row.count);
     });
 
     // Calculate without matches
@@ -315,7 +315,7 @@ export async function getOperacionesSummary(
     // Process listings data - separate from prospects
     listingsData.forEach((row) => {
       const type = row.listingType === "Sale" ? "sale" : "rent";
-      summary[type].listings += row.count;
+      summary[type].listings += Number(row.count);
     });
 
     // Process leads data - calculate badge types and group
@@ -344,7 +344,7 @@ export async function getOperacionesSummary(
     dealsData.forEach((row) => {
       const type = row.listingType === "Sale" ? "sale" : "rent";
       if (row.status) {
-        summary[type].deals[row.status] = row.count;
+        summary[type].deals[row.status] = Number(row.count);
       }
     });
 
@@ -474,7 +474,7 @@ export async function getUrgentTasks(
   }
 }
 
-// Get today's and tomorrow's appointments
+// Get today's and next 7 days appointments
 export async function getTodayAppointments(
   accountId: bigint,
   filters?: {
@@ -483,18 +483,18 @@ export async function getTodayAppointments(
   },
 ): Promise<TodayAppointment[]> {
   try {
-    // Calculate date ranges for today and tomorrow
+    // Calculate date ranges for today and next 7 days
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 2); // End of tomorrow
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7); // End of 7 days from today
 
     const whereConditions = [
       // Account filtering
       eq(contacts.accountId, accountId),
-      // Date range filtering (today and tomorrow)
+      // Date range filtering (today and next 7 days)
       gte(appointments.datetimeStart, today),
-      lte(appointments.datetimeStart, tomorrow),
+      lte(appointments.datetimeStart, nextWeek),
       // Only active appointments
       eq(appointments.isActive, true),
       // Exclude cancelled appointments

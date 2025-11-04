@@ -43,16 +43,6 @@ export function RegistrationOptions({
       action: () => console.log("Navigate to quick form"),
     },
     {
-      id: "complete",
-      title: "Formulario Completo",
-      icon: FileText,
-      description: "Registra todos los detalles y características del inmueble",
-      features: ["Información completa", "Características detalladas"],
-      gradient: "from-amber-400 to-rose-400",
-      bgActive: "from-amber-50 to-rose-50",
-      action: () => console.log("Navigate to long form"),
-    },
-    {
       id: "recording",
       title: "Grabación de Voz",
       icon: Mic,
@@ -91,7 +81,7 @@ export function RegistrationOptions({
   return (
     <div
       className={cn(
-        "xs:grid-cols-2 grid grid-cols-1 gap-3 md:grid-cols-4",
+        "xs:grid-cols-2 grid grid-cols-1 gap-3 md:grid-cols-3",
         className,
       )}
     >

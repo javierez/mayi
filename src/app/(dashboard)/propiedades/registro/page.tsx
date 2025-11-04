@@ -12,7 +12,6 @@ import { VoiceRecordingEnhanced } from "~/components/propiedades/registro/voice-
 import type { EnhancedExtractedPropertyData } from "~/types/textract-enhanced";
 import { FileUpload } from "~/components/propiedades/registro/file-upload";
 import { QuickForm } from "~/components/propiedades/registro/quick-form";
-import { CompleteForm } from "~/components/propiedades/registro/complete-form";
 
 export default function CapturaPage() {
   const router = useRouter();
@@ -68,16 +67,6 @@ export default function CapturaPage() {
         // The actual action is handled by the button in QuickForm component
         console.log("Quick form option selected");
       },
-    },
-    {
-      id: "complete",
-      title: "Formulario Completo",
-      icon: () => <></>,
-      description: "Registra todos los detalles y características del inmueble",
-      features: ["Información completa", "Características detalladas"],
-      gradient: "from-amber-400 to-rose-400",
-      bgActive: "from-amber-50 to-rose-50",
-      action: () => console.log("Navigate to long form"),
     },
     {
       id: "recording",
@@ -189,7 +178,6 @@ export default function CapturaPage() {
                         />
                       )}
                       {activeOption === "quick" && <QuickForm />}
-                      {activeOption === "complete" && <CompleteForm />}
                     </div>
                   </div>
                 </div>

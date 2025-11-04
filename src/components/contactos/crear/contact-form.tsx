@@ -601,13 +601,13 @@ export default function ContactForm() {
           <div className="space-y-4 sm:space-y-6">
             {/* Contact Type Selection */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium text-gray-900 sm:text-base">
+              <Label className="text-sm font-medium text-gray-900">
                 Relación con las propiedades
               </Label>
-              <div className="relative h-11 w-full max-w-md flex-1 rounded-xl bg-gradient-to-r from-amber-100 to-rose-100 p-1 shadow-inner sm:h-12">
+              <div className="relative inline-flex h-10 w-full max-w-md rounded-lg border border-gray-200 bg-gray-50 p-1">
                 {formData.contactType && (
                   <motion.div
-                    className="absolute left-1 top-1 h-9 rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 shadow-lg sm:h-10"
+                    className="absolute left-1 top-1 h-8 rounded-md bg-primary shadow-sm"
                     animate={{
                       width: "calc(50% - 4px)",
                       x: formData.contactType === "owner" ? "0%" : "100%",
@@ -615,15 +615,15 @@ export default function ContactForm() {
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   />
                 )}
-                <div className="relative flex h-full">
+                <div className="relative flex h-full w-full">
                   <button
                     type="button"
                     onClick={() => updateFormData("contactType", "owner")}
                     className={cn(
-                      "relative z-10 flex-1 rounded-lg text-xs font-medium transition-colors duration-200 sm:text-sm",
+                      "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
                       formData.contactType === "owner"
-                        ? "text-white"
-                        : "text-gray-700",
+                        ? "text-primary-foreground"
+                        : "text-gray-500",
                     )}
                   >
                     Propietario
@@ -632,10 +632,10 @@ export default function ContactForm() {
                     type="button"
                     onClick={() => updateFormData("contactType", "buyer")}
                     className={cn(
-                      "relative z-10 flex-1 rounded-lg text-xs font-medium transition-colors duration-200 sm:text-sm",
+                      "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
                       formData.contactType === "buyer"
-                        ? "text-white"
-                        : "text-gray-700",
+                        ? "text-primary-foreground"
+                        : "text-gray-500",
                     )}
                   >
                     Demandante
@@ -769,7 +769,12 @@ export default function ContactForm() {
                       return (
                         <div
                           key={listing.listingId.toString()}
-                          className="cursor-pointer rounded border p-4"
+                          className={cn(
+                            "cursor-pointer rounded-lg p-4 shadow-sm transition-all duration-200",
+                            isSelected
+                              ? "bg-primary text-primary-foreground shadow-md"
+                              : "bg-white hover:shadow-md",
+                          )}
                           onClick={() =>
                             handleListingSelection(
                               listing.listingId,
@@ -778,10 +783,15 @@ export default function ContactForm() {
                           }
                         >
                           {/* TODO: Replace with proper CompactPropertyCard component */}
-                          <div className="text-sm">
+                          <div className="text-sm font-medium">
                             {listing.referenceNumber}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div
+                            className={cn(
+                              "text-xs",
+                              isSelected ? "text-primary-foreground/80" : "text-gray-500",
+                            )}
+                          >
                             {listing.title}
                           </div>
                         </div>
@@ -861,26 +871,26 @@ export default function ContactForm() {
             </AnimatePresence>
           </div>
 
-          <div className="mt-6 flex flex-col justify-between gap-3 border-t border-gray-100 pt-4 sm:mt-8 sm:flex-row sm:gap-0 sm:pt-6">
+          <div className="mt-6 flex justify-between border-t pt-4">
             <Button
               variant="outline"
               onClick={prevStep}
               disabled={currentStep === 0 || isCreating || isCreatingTask}
-              className="flex h-11 items-center justify-center space-x-2 border-gray-200 px-4 transition-all duration-200 hover:border-amber-300 hover:bg-amber-50 sm:h-12 sm:px-6"
+              className="flex items-center space-x-2"
             >
               <ChevronLeft className="h-4 w-4" />
-              <span className="text-sm sm:text-base">Anterior</span>
+              <span>Anterior</span>
             </Button>
 
             <Button
               onClick={nextStep}
               disabled={isCreating || isCreatingTask}
-              className="flex h-11 items-center justify-center space-x-2 bg-gradient-to-r from-amber-400 to-rose-400 px-4 font-medium text-white shadow-lg transition-all duration-200 hover:scale-105 hover:from-amber-500 hover:to-rose-500 sm:h-12 sm:px-6"
+              className="flex items-center space-x-2"
             >
               {isCreating || isCreatingTask ? (
                 <>
                   <Loader className="h-4 w-4 animate-spin" />
-                  <span className="text-sm sm:text-base">
+                  <span>
                     {isCreating && !isCreatingTask && "Creando contacto..."}
                     {isCreating && isCreatingTask && "Creando contacto..."}
                     {!isCreating &&
@@ -890,7 +900,7 @@ export default function ContactForm() {
                 </>
               ) : (
                 <>
-                  <span className="text-sm sm:text-base">
+                  <span>
                     {currentStep === visibleSteps.length - 1
                       ? "Crear Contacto"
                       : "Siguiente"}

@@ -462,7 +462,7 @@ export function getRelevantFields(
     // Content
     description: listing.description,
     shortDescription: listing.shortDescription,
-    agent: listing.agent,
+    // Note: agent is intentionally excluded from AI prompts
   };
 
   // Add property-type specific fields

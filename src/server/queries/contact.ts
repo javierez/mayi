@@ -717,7 +717,7 @@ export async function getContactsByOrgId(orgId: number, accountId: number) {
   }
 }
 
-// Optimized search contacts by name only
+// Optimized search contacts by name, email, phone, and NIF
 export async function searchContacts(
   query: string,
   accountId: number,
@@ -734,9 +734,12 @@ export async function searchContacts(
         and(
           eq(contacts.accountId, BigInt(accountId)),
           eq(contacts.isActive, true),
-          like(
-            sql`CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})`,
-            `%${query}%`,
+          or(
+            like(contacts.firstName, `%${query}%`),
+            like(contacts.lastName, `%${query}%`),
+            like(contacts.email, `%${query}%`),
+            like(contacts.phone, `%${query}%`),
+            like(contacts.nif, `%${query}%`),
           ),
         ),
       )
@@ -1308,6 +1311,8 @@ export async function getContactByIdWithType(
         contactId: contacts.contactId,
         firstName: contacts.firstName,
         lastName: contacts.lastName,
+        nif: contacts.nif,
+        source: contacts.source,
         email: contacts.email,
         phone: contacts.phone,
         phoneNotes: contacts.phoneNotes,

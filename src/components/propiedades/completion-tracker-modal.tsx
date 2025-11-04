@@ -12,6 +12,7 @@ import {
 import { cn } from "~/lib/utils";
 import { useState, useEffect } from "react";
 import { Card } from "~/components/ui/card";
+import { Skeleton } from "~/components/ui/skeleton";
 import { getPropertyImageCount } from "~/app/actions/property-images";
 
 interface PropertyListing {
@@ -31,6 +32,7 @@ export function CompletionTrackerModal({
   onClose,
 }: CompletionTrackerModalProps) {
   const [imageCount, setImageCount] = useState(0);
+  const [isLoadingImages, setIsLoadingImages] = useState(true);
 
   const [expandedSections, setExpandedSections] = useState({
     mandatory: true,
@@ -40,6 +42,7 @@ export function CompletionTrackerModal({
   // Fetch property images when modal opens
   useEffect(() => {
     if (isOpen && listing?.propertyId) {
+      setIsLoadingImages(true);
       // Convert propertyId to bigint if necessary
       const propertyId =
         typeof listing.propertyId === "bigint"
@@ -49,10 +52,12 @@ export function CompletionTrackerModal({
       getPropertyImageCount(propertyId)
         .then((count) => {
           setImageCount(count);
+          setIsLoadingImages(false);
         })
         .catch((error) => {
           console.error("Error fetching images:", error);
           setImageCount(0);
+          setIsLoadingImages(false);
         });
     }
   }, [isOpen, listing?.propertyId]);
@@ -65,6 +70,14 @@ export function CompletionTrackerModal({
 
   const completion = calculateCompletion(listingWithImages);
 
+  // Use ONLY mandatory fields for the percentage ring
+  const mandatoryTotal = completion.mandatory.total;
+  const mandatoryCompleted = completion.mandatory.completedCount;
+  const completionPercentage =
+    mandatoryTotal > 0
+      ? Math.round((mandatoryCompleted / mandatoryTotal) * 100)
+      : 0;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="custom-scrollbar max-h-[80vh] max-w-2xl overflow-y-auto">
@@ -74,90 +87,123 @@ export function CompletionTrackerModal({
           </DialogTitle>
         </DialogHeader>
 
-        {/* Overall Progress */}
-        <div className="mb-4 space-y-3">
-          <div className="flex items-center justify-center">
-            {/* Circular progress ring */}
-            <div className="relative">
-              <svg width="120" height="120" className="-rotate-90 transform">
-                <circle
-                  cx="60"
-                  cy="60"
-                  r="50"
-                  fill="none"
-                  stroke="#e5e7eb"
-                  strokeWidth="8"
-                />
-                <circle
-                  cx="60"
-                  cy="60"
-                  r="50"
-                  fill="none"
-                  stroke={
-                    completion.canPublishToPortals
-                      ? "#10b981"
-                      : completion.overallPercentage >= 50
-                        ? "#f59e0b"
-                        : "#ef4444"
-                  }
-                  strokeWidth="8"
-                  strokeDasharray={2 * Math.PI * 50}
-                  strokeDashoffset={
-                    2 * Math.PI * 50 -
-                    (completion.overallPercentage / 100) * 2 * Math.PI * 50
-                  }
-                  strokeLinecap="round"
-                  className="transition-all duration-300"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-2xl font-bold text-foreground">
-                  {completion.overallPercentage}%
-                </span>
-              </div>
+        {isLoadingImages ? (
+          // Loading skeleton
+          <div className="space-y-4">
+            {/* Progress ring skeleton */}
+            <div className="flex items-center justify-center">
+              <Skeleton className="h-[120px] w-[120px] rounded-full" />
+            </div>
+
+            {/* Status banner skeleton */}
+            <Skeleton className="mx-auto h-12 w-64 rounded-lg" />
+
+            {/* Section skeletons */}
+            <div className="space-y-3">
+              <Card className="p-4">
+                <div className="space-y-3">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-40" />
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="space-y-3">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-40" />
+                </div>
+              </Card>
             </div>
           </div>
+        ) : (
+          <>
+            {/* Overall Progress */}
+            <div className="mb-4 space-y-3">
+              <div className="flex items-center justify-center">
+                {/* Circular progress ring */}
+                <div className="relative">
+                  <svg width="120" height="120" className="-rotate-90 transform">
+                    <circle
+                      cx="60"
+                      cy="60"
+                      r="50"
+                      fill="none"
+                      stroke="#e5e7eb"
+                      strokeWidth="8"
+                    />
+                    <circle
+                      cx="60"
+                      cy="60"
+                      r="50"
+                      fill="none"
+                      stroke={
+                        completion.canPublishToPortals
+                          ? "#10b981"
+                          : completionPercentage >= 50
+                            ? "#f59e0b"
+                            : "#ef4444"
+                      }
+                      strokeWidth="8"
+                      strokeDasharray={2 * Math.PI * 50}
+                      strokeDashoffset={
+                        2 * Math.PI * 50 -
+                        (completionPercentage / 100) * 2 * Math.PI * 50
+                      }
+                      strokeLinecap="round"
+                      className="transition-all duration-300"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-2xl font-bold text-foreground">
+                      {completionPercentage}%
+                    </span>
+                  </div>
+                </div>
+              </div>
 
-          {/* Publish readiness indicator */}
-          {completion.canPublishToPortals ? (
-            <div className="flex items-center justify-center gap-3 rounded-lg bg-gradient-to-r from-emerald-500 to-green-600 px-4 py-3 text-white shadow-md">
-              <CheckCircle2 className="h-6 w-6 flex-shrink-0" />
-              <span className="text-base font-semibold">
-                Listo para publicar
-              </span>
+              {/* Publish readiness indicator */}
+              {completion.canPublishToPortals ? (
+                <div className="flex items-center justify-center gap-3 rounded-lg bg-gradient-to-r from-emerald-500 to-green-600 px-4 py-3 text-white shadow-md">
+                  <CheckCircle2 className="h-6 w-6 flex-shrink-0" />
+                  <span className="text-base font-semibold">
+                    Listo para publicar
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                  <span>
+                    {completion.mandatory.pending.length} campos obligatorios
+                    pendientes
+                  </span>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
-              <span>
-                {completion.mandatory.pending.length} campos obligatorios
-                pendientes
-              </span>
-            </div>
-          )}
-        </div>
 
-        {/* MANDATORY Section */}
-        <FieldSection
-          title="CAMPOS OBLIGATORIOS"
-          subtitle="Esenciales para publicar en portales"
-          data={completion.mandatory}
-          color="mandatory"
-          expanded={expandedSections.mandatory}
-          onToggle={() =>
-            setExpandedSections((s) => ({ ...s, mandatory: !s.mandatory }))
-          }
-        />
+            {/* MANDATORY Section */}
+            <FieldSection
+              title="CAMPOS OBLIGATORIOS"
+              subtitle="Esenciales para publicar en portales"
+              data={completion.mandatory}
+              color="mandatory"
+              expanded={expandedSections.mandatory}
+              onToggle={() =>
+                setExpandedSections((s) => ({ ...s, mandatory: !s.mandatory }))
+              }
+            />
 
-        {/* NTH Section */}
-        <FieldSection
-          title="CAMPOS OPCIONALES"
-          subtitle="Mejoran la calidad del anuncio"
-          data={completion.nth}
-          color="optional"
-          expanded={expandedSections.nth}
-          onToggle={() => setExpandedSections((s) => ({ ...s, nth: !s.nth }))}
-        />
+            {/* NTH Section */}
+            <FieldSection
+              title="CAMPOS OPCIONALES"
+              subtitle="Mejoran la calidad del anuncio"
+              data={completion.nth}
+              color="optional"
+              expanded={expandedSections.nth}
+              onToggle={() => setExpandedSections((s) => ({ ...s, nth: !s.nth }))}
+            />
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

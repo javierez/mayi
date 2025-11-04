@@ -27,6 +27,7 @@ import {
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useSession } from "~/lib/auth-client";
 import type {
   UrgentTask,
   TodayAppointment,
@@ -36,6 +37,10 @@ import {
   updateTaskWithAuth,
   deleteTaskWithAuth,
 } from "~/server/queries/task";
+import {
+  canEditAllTasks,
+  canDeleteAllTasks,
+} from "~/app/actions/permissions/check-permissions";
 import { TaskFilter, type TaskFilters } from "./TaskFilter";
 import { AppointmentFilter } from "./AppointmentFilter";
 
@@ -67,6 +72,7 @@ export default function WorkQueueCard({
 }: WorkQueueCardProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { data: session } = useSession();
   const [taskStates, setTaskStates] = useState<
     Record<string, "saving" | "saved" | "error">
   >({});
@@ -78,10 +84,62 @@ export default function WorkQueueCard({
   } | null>(null);
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
 
+  // Permission states
+  const [hasEditAllPermission, setHasEditAllPermission] = useState(false);
+  const [hasDeleteAllPermission, setHasDeleteAllPermission] = useState(false);
+  const [permissionsLoaded, setPermissionsLoaded] = useState(false);
+
+  // Fetch permissions on mount
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      try {
+        const [editAllPerm, deleteAllPerm] = await Promise.all([
+          canEditAllTasks(),
+          canDeleteAllTasks(),
+        ]);
+        setHasEditAllPermission(editAllPerm);
+        setHasDeleteAllPermission(deleteAllPerm);
+      } catch (error) {
+        console.error("Error fetching task permissions:", error);
+        setHasEditAllPermission(false);
+        setHasDeleteAllPermission(false);
+      } finally {
+        setPermissionsLoaded(true);
+      }
+    };
+
+    void fetchPermissions();
+  }, []);
+
   // Update optimistic tasks when detailedTasks changes
   useEffect(() => {
     setOptimisticTasks(detailedTasks);
   }, [detailedTasks]);
+
+  // Permission helper functions
+  const canUserEditTask = (task: DetailedTask): boolean => {
+    if (!session?.user?.id || !permissionsLoaded) return false;
+
+    // Tasks without owner require editAll permission
+    if (!task.userId) {
+      return hasEditAllPermission;
+    }
+
+    // User can edit if they are assigned to the task OR have editAll permission
+    return task.userId === session.user.id || hasEditAllPermission;
+  };
+
+  const canUserDeleteTask = (task: DetailedTask): boolean => {
+    if (!session?.user?.id || !permissionsLoaded) return false;
+
+    // Tasks without owner require deleteAll permission
+    if (!task.userId) {
+      return hasDeleteAllPermission;
+    }
+
+    // User can delete if they are assigned to the task OR have deleteAll permission
+    return task.userId === session.user.id || hasDeleteAllPermission;
+  };
 
   // Read filters from URL params - updates automatically when searchParams change
   const taskFilters: TaskFilters = {
@@ -337,6 +395,17 @@ export default function WorkQueueCard({
     taskId: number,
     currentCompleted: boolean,
   ) => {
+    // Find the task to check permissions
+    const task = optimisticTasks.find((t) => t.taskId === taskId);
+    if (!task) return;
+
+    // Check permission
+    if (!canUserEditTask(task)) {
+      console.warn("User does not have permission to edit this task");
+      // Optionally show toast notification here
+      return;
+    }
+
     const taskIdStr = taskId.toString();
     const newCompleted = !currentCompleted;
 
@@ -400,6 +469,14 @@ export default function WorkQueueCard({
     // Store the task for potential reversion
     const taskToDeleteData = optimisticTasks.find((t) => t.taskId === taskId);
     if (!taskToDeleteData) return;
+
+    // Check permission
+    if (!canUserDeleteTask(taskToDeleteData)) {
+      console.warn("User does not have permission to delete this task");
+      setTaskToDelete(null); // Close dialog
+      // Optionally show toast notification here
+      return;
+    }
 
     // Close the confirmation dialog
     setTaskToDelete(null);
@@ -505,11 +582,13 @@ export default function WorkQueueCard({
               <div className="custom-scrollbar max-h-80 space-y-1.5 overflow-y-auto px-1 py-1.5">
                 {(showAllTasks ? tasksToDisplay : tasksToDisplay.slice(0, 10)).map((task) => {
                   const taskIdStr = task.taskId.toString();
+                  const canEdit = canUserEditTask(task);
+                  const canDelete = canUserDeleteTask(task);
 
                   return (
                     <div key={taskIdStr} className="relative rounded-lg">
-                      {/* Red delete background - only shown when actively swiping this task */}
-                      {draggingTask === taskIdStr && (
+                      {/* Red delete background - only shown when BOTH dragging AND has permission */}
+                      {draggingTask === taskIdStr && canDelete && (
                         <div className="absolute inset-0 flex items-center justify-end rounded-lg bg-gradient-to-r from-red-500 to-red-600 px-4">
                           <Trash2 className="h-5 w-5 text-white" />
                         </div>
@@ -517,37 +596,41 @@ export default function WorkQueueCard({
 
                       {/* Swipeable task card */}
                       <motion.div
-                        drag="x"
+                        drag={canDelete ? "x" : false}
                         dragConstraints={{ left: 0, right: 0 }}
-                        dragElastic={0.2}
+                        dragElastic={canDelete ? 0.2 : 0}
                         onDragStart={() => {
-                          // Only enable swipe-to-delete on mobile
-                          if (window.innerWidth < 640) {
+                          // Only enable swipe-to-delete on mobile AND if user has permission
+                          if (window.innerWidth < 640 && canDelete) {
                             setDraggingTask(taskIdStr);
                           }
                         }}
                         onDragEnd={(_e, info) => {
                           setDraggingTask(null);
 
-                          // Only enable swipe-to-delete on mobile (screen width < 640px which is sm breakpoint)
-                          if (window.innerWidth >= 640) return;
+                          // Only enable swipe-to-delete on mobile AND if user has permission
+                          if (window.innerWidth >= 640 || !canDelete) return;
 
                           // If swiped more than 100px to the right, show delete confirmation
                           if (info.offset.x > 100) {
                             confirmDeleteTask(task.taskId, task.title);
                           }
                         }}
-                        className={`relative z-10 cursor-pointer rounded-lg p-2 shadow-md transition-shadow duration-200 hover:shadow-lg sm:p-3 ${
+                        className={`relative z-10 rounded-lg p-2 shadow-md transition-shadow duration-200 sm:p-3 ${
                           (task.completed ?? false)
                             ? "bg-gray-50 opacity-75"
                             : "bg-white"
-                        } ${taskStates[taskIdStr] === "saving" ? "opacity-70" : ""}`}
-                        onClick={() =>
-                          handleToggleCompleted(
-                            task.taskId,
-                            task.completed ?? false,
-                          )
-                        }
+                        } ${taskStates[taskIdStr] === "saving" ? "opacity-70" : ""} ${
+                          canEdit ? "cursor-pointer hover:shadow-lg" : "cursor-not-allowed opacity-60"
+                        }`}
+                        onClick={() => {
+                          if (canEdit) {
+                            void handleToggleCompleted(
+                              task.taskId,
+                              task.completed ?? false,
+                            );
+                          }
+                        }}
                       >
                         {/* Days remaining badge and Avatar - top right, side by side */}
                         <div className="absolute right-2 top-2 mt-1.5 flex items-center gap-1">
@@ -787,7 +870,7 @@ export default function WorkQueueCard({
                 <Calendar className="mb-2 h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
                 <p className="text-sm font-medium text-gray-900">Sin eventos</p>
                 <p className="text-xs text-gray-500">
-                  No hay eventos programados para hoy o mañana
+                  No hay eventos programados para los próximos 7 días
                 </p>
               </div>
             ) : (

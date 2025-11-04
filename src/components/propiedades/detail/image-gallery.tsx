@@ -484,9 +484,17 @@ export function ImageGallery({
     <div className="space-y-4">
       {/* Help text for drag and drop */}
       {images.length > 1 && (
-        <p className="text-center text-sm text-gray-500">
-          Arrastra y suelta las imágenes para reordenarlas
-        </p>
+        <div className="flex items-center justify-center gap-2">
+          <p className="text-center text-sm text-gray-500">
+            Arrastra y suelta las imágenes para reordenarlas
+          </p>
+          {hasUnsavedChanges && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-600" />
+              Cambios sin guardar
+            </span>
+          )}
+        </div>
       )}
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">

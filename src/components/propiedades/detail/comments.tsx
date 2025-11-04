@@ -484,8 +484,8 @@ export function Comments({
   );
   const [editingComment, setEditingComment] = useState<bigint | null>(null);
   const [editContent, setEditContent] = useState("");
-  const [keysCollapsed, setKeysCollapsed] = useState(false);
-  const [cartelCollapsed, setCartelCollapsed] = useState(false);
+  const [keysCollapsed, setKeysCollapsed] = useState(true);
+  const [cartelCollapsed, setCartelCollapsed] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<
     null | "keys" | "cartel"
   >(null);
@@ -894,7 +894,7 @@ export function Comments({
 
       {/* Regular Comments */}
       <div className="space-y-1">
-        {regularComments.length === 0 ? (
+        {regularComments.length === 0 && !keysComment && !cartelComment ? (
           <Card>
             <CardContent className="py-8 text-center">
               <p className="text-gray-500">

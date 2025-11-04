@@ -14,6 +14,7 @@ import {
   getCurrentUserAccountId,
 } from "~/app/actions/account-settings";
 import { AccountSetupRedirect } from "~/components/auth/account-setup-redirect";
+import { InactiveUserBanner } from "~/components/auth/inactive-user-banner";
 import OnboardingModal from "~/components/onboarding/onboarding-modal";
 import { Toaster } from "sonner";
 import {
@@ -100,10 +101,16 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
   const [accountLogo, setAccountLogo] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
   const { hasRoleId, userRoles, roles, loading: roleLoading } = useUserRole();
+
+  // Set mounted state after hydration
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Debug logging
   useEffect(() => {
@@ -479,10 +486,10 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
               </div>
               <div className="ml-3 min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-gray-900">
-                  {session?.user?.name ?? "Usuario"}
+                  {isMounted ? (session?.user?.name ?? "Usuario") : "Usuario"}
                 </p>
                 <p className="truncate text-xs text-gray-500">
-                  {session?.user?.email}
+                  {isMounted ? session?.user?.email : ""}
                 </p>
               </div>
               <Button
@@ -724,10 +731,10 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
               </div>
               <div className="ml-3 min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-gray-900">
-                  {session?.user?.name ?? "Usuario"}
+                  {isMounted ? (session?.user?.name ?? "Usuario") : "Usuario"}
                 </p>
                 <p className="truncate text-xs text-gray-500">
-                  {session?.user?.email}
+                  {isMounted ? session?.user?.email : ""}
                 </p>
               </div>
               <Button
@@ -757,6 +764,8 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
         </div>
         <main className="py-6">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            {/* Show banner if user has role_id = 5 (Inactive) */}
+            {hasRoleId(5) && <InactiveUserBanner />}
             {children}
           </div>
         </main>

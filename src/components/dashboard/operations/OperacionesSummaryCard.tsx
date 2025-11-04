@@ -24,17 +24,9 @@ export default function OperacionesSummaryCard({
     return Object.values(operations).reduce((acc, count) => acc + count, 0);
   };
 
-  const saleTotal =
-    data.sale.prospects +
-    data.sale.listings +
-    calculateTotal(data.sale.leads) +
-    calculateTotal(data.sale.deals);
+  const saleTotal = data.sale.listings;
 
-  const rentTotal =
-    data.rent.prospects +
-    data.rent.listings +
-    calculateTotal(data.rent.leads) +
-    calculateTotal(data.rent.deals);
+  const rentTotal = data.rent.listings;
 
   const activeData = data[activeType];
 
@@ -129,7 +121,7 @@ export default function OperacionesSummaryCard({
               type="button"
             >
               <span className="mb-0.5 text-lg font-bold text-primary">
-                {saleTotal}
+                {saleTotal.toLocaleString("es-ES")}
               </span>
               <span className="text-xs uppercase tracking-widest text-muted-foreground">
                 Venta
@@ -153,7 +145,7 @@ export default function OperacionesSummaryCard({
               type="button"
             >
               <span className="mb-0.5 text-lg font-bold text-primary">
-                {rentTotal}
+                {rentTotal.toLocaleString("es-ES")}
               </span>
               <span className="text-xs uppercase tracking-widest text-muted-foreground">
                 Alquiler
@@ -186,7 +178,7 @@ export default function OperacionesSummaryCard({
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-primary">
-                    {activeData.prospects}
+                    {activeData.prospects.toLocaleString("es-ES")}
                   </span>
                   <motion.div
                     animate={{
@@ -215,7 +207,7 @@ export default function OperacionesSummaryCard({
                     >
                       <span className="text-xs text-gray-700">Con Conexiones</span>
                       <span className="font-mono text-xs text-primary">
-                        {activeData.prospectsWithMatches}
+                        {activeData.prospectsWithMatches.toLocaleString("es-ES")}
                       </span>
                     </Link>
                     <Link
@@ -224,7 +216,7 @@ export default function OperacionesSummaryCard({
                     >
                       <span className="text-xs text-gray-700">Sin Conexiones</span>
                       <span className="font-mono text-xs text-primary">
-                        {activeData.prospectsWithoutMatches}
+                        {activeData.prospectsWithoutMatches.toLocaleString("es-ES")}
                       </span>
                     </Link>
                   </motion.div>
@@ -243,7 +235,7 @@ export default function OperacionesSummaryCard({
                 </span>
               </div>
               <span className="text-sm font-bold text-primary">
-                {activeData.listings}
+                {activeData.listings.toLocaleString("es-ES")}
               </span>
             </Link>
           </div>
@@ -278,7 +270,7 @@ export default function OperacionesSummaryCard({
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-bold text-primary">
-                        {sectionTotal}
+                        {sectionTotal.toLocaleString("es-ES")}
                       </span>
                       <motion.div
                         animate={{ rotate: isExpanded ? 180 : 0 }}
@@ -315,7 +307,7 @@ export default function OperacionesSummaryCard({
                                   {pluralizeStatus(status, count)}
                                 </span>
                                 <span className="font-mono text-xs text-primary">
-                                  {count}
+                                  {count.toLocaleString("es-ES")}
                                 </span>
                               </motion.div>
                             );

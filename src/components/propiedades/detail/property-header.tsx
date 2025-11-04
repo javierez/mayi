@@ -95,7 +95,14 @@ export function PropertyHeader({
 
   // Calculate completion percentage from listing data
   const completion = listing ? calculateCompletion(listing) : null;
-  const completionPercentage = completion?.overallPercentage ?? 0;
+
+  // Use ONLY mandatory fields for the percentage ring
+  const mandatoryTotal = completion?.mandatory.total ?? 0;
+  const mandatoryCompleted = completion?.mandatory.completedCount ?? 0;
+  const completionPercentage =
+    mandatoryTotal > 0
+      ? Math.round((mandatoryCompleted / mandatoryTotal) * 100)
+      : 0;
 
   // Determine color based on mandatory fields completion (green when all mandatory are complete)
   const completionColor = completion?.canPublishToPortals

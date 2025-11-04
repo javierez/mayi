@@ -871,7 +871,7 @@ export default function FirstPage({
             <div className="flex items-center px-3 pb-2">
               <input
                 className="flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                placeholder="Buscar propietario..."
+                placeholder="Buscar por nombre, email, teléfono o DNI..."
                 value={contactSearch}
                 onChange={(e) => handleContactSearchChange(e.target.value)}
               />

@@ -159,7 +159,7 @@ export function DescriptionCard({
                 <Textarea
                   id="shortDescription"
                   defaultValue={shortDescription}
-                  className="min-h-[80px] resize-y border-gray-200 pr-40 transition-colors focus:border-gray-400 focus:ring-gray-300"
+                  className="min-h-[80px] resize-y border-gray-200 pr-10 transition-colors focus:border-gray-400 focus:ring-gray-300"
                   placeholder="Breve resumen de la propiedad para carteles y vistas previas (máximo 200 caracteres)"
                   maxLength={200}
                   onChange={(e) => {
@@ -168,7 +168,7 @@ export function DescriptionCard({
                   }}
                   disabled={!canEdit}
                 />
-                <div className="absolute right-2 top-2 flex items-center gap-1">
+                <div className="absolute right-2 top-2">
                   <PushToTalkWhisperButton
                     onTranscript={(text) => {
                       const newValue = shortDescription ? `${shortDescription} ${text}`.trim() : text;
@@ -179,6 +179,8 @@ export function DescriptionCard({
                     language="es"
                     disabled={!canEdit}
                   />
+                </div>
+                <div className="absolute bottom-2 right-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                   <button
                     type="button"
                     onClick={onGenerateShortDescription}
@@ -211,7 +213,7 @@ export function DescriptionCard({
                 <Textarea
                   id="description"
                   defaultValue={description}
-                  className="min-h-[200px] resize-y border-gray-200 pr-40 transition-colors focus:border-gray-400 focus:ring-gray-300"
+                  className="min-h-[200px] resize-y border-gray-200 pr-10 transition-colors focus:border-gray-400 focus:ring-gray-300"
                   placeholder="Describe las características principales de la propiedad, su ubicación, y cualquier detalle relevante que pueda interesar a los potenciales compradores o inquilinos."
                   onChange={(e) => {
                     setDescription(e.target.value);
@@ -219,7 +221,7 @@ export function DescriptionCard({
                   }}
                   disabled={!canEdit}
                 />
-                <div className="absolute right-2 top-2 flex items-center gap-1">
+                <div className="absolute right-2 top-2">
                   <PushToTalkWhisperButton
                     onTranscript={(text) => {
                       const newValue = description ? `${description} ${text}`.trim() : text;
@@ -229,6 +231,8 @@ export function DescriptionCard({
                     language="es"
                     disabled={!canEdit}
                   />
+                </div>
+                <div className="absolute bottom-2 right-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                   <button
                     type="button"
                     onClick={onGenerateDescription}
