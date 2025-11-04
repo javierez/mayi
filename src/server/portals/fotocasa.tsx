@@ -1194,6 +1194,12 @@ export async function publishToFotocasa(
     // Log the payload for debugging
     console.log("Fotocasa POST Payload:", JSON.stringify(payload, null, 2));
 
+    // Log headers for debugging
+    console.log("=== FOTOCASA API HEADERS ===");
+    console.log("Api-Key:", FOTOCASA_API_KEY);
+    console.log("X-Source (Account ID from env):", env.FOTOCASA_ID);
+    console.log("===========================");
+
     // Make the API call to Fotocasa
     const response = await fetch(
       "https://imports.gw.fotocasa.pro/api/property",
@@ -1345,6 +1351,12 @@ export async function updateFotocasa(
     );
     console.log(`Updating listing ${listingId} on Fotocasa`);
 
+    // Log headers for debugging
+    console.log("=== FOTOCASA API HEADERS (PUT) ===");
+    console.log("Api-Key:", FOTOCASA_API_KEY);
+    console.log("X-Source (Account ID from env):", env.FOTOCASA_ID);
+    console.log("==================================");
+
     // Make the PUT API call to Fotocasa
     // According to Fotocasa API docs: PUT api/property (no URI parameters)
     const response = await fetch(
@@ -1485,6 +1497,12 @@ export async function deleteFromFotocasa(
       `Deleting listing ${listingId} from Fotocasa (base64: ${base64ExternalId})`,
     );
 
+    // Log headers for debugging
+    console.log("=== FOTOCASA API HEADERS (DELETE) ===");
+    console.log("Api-Key:", FOTOCASA_API_KEY);
+    console.log("X-Source (Account ID from env):", env.FOTOCASA_ID);
+    console.log("=====================================");
+
     // Make the DELETE API call to Fotocasa
     const response = await fetch(
       `https://imports.gw.fotocasa.pro/api/v2/property/${base64ExternalId}`,
@@ -1492,6 +1510,7 @@ export async function deleteFromFotocasa(
         method: "DELETE",
         headers: {
           "Api-Key": FOTOCASA_API_KEY,
+          "X-Source": env.FOTOCASA_ID,
         },
       },
     );

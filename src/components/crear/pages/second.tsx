@@ -260,13 +260,13 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
                 className="absolute left-1 top-1 h-8 w-[calc(20%-2px)] rounded-md bg-white shadow-sm"
                 animate={{
                   x:
-                    formData.conservationStatus === 1
+                    formData.conservationStatus === 6
                       ? 0
-                      : formData.conservationStatus === 2
+                      : formData.conservationStatus === 3
                         ? "100%"
-                        : formData.conservationStatus === 3
+                        : formData.conservationStatus === 2
                           ? "200%"
-                          : formData.conservationStatus === 4
+                          : formData.conservationStatus === 1
                             ? "300%"
                             : "400%",
                 }}
@@ -274,26 +274,15 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
               />
               <div className="relative flex h-full">
                 <button
-                  onClick={() => updateField("conservationStatus", 1)}
+                  onClick={() => updateField("conservationStatus", 6)}
                   className={cn(
                     "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
-                    formData.conservationStatus === 1
+                    formData.conservationStatus === 6
                       ? "text-gray-900"
                       : "text-gray-600",
                   )}
                 >
-                  {CONSERVATION_STATUS_LABELS[1]}
-                </button>
-                <button
-                  onClick={() => updateField("conservationStatus", 2)}
-                  className={cn(
-                    "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
-                    formData.conservationStatus === 2
-                      ? "text-gray-900"
-                      : "text-gray-600",
-                  )}
-                >
-                  {CONSERVATION_STATUS_LABELS[2]}
+                  {CONSERVATION_STATUS_LABELS[6]}
                 </button>
                 <button
                   onClick={() => updateField("conservationStatus", 3)}
@@ -307,6 +296,28 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
                   {CONSERVATION_STATUS_LABELS[3]}
                 </button>
                 <button
+                  onClick={() => updateField("conservationStatus", 2)}
+                  className={cn(
+                    "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
+                    formData.conservationStatus === 2
+                      ? "text-gray-900"
+                      : "text-gray-600",
+                  )}
+                >
+                  {CONSERVATION_STATUS_LABELS[2]}
+                </button>
+                <button
+                  onClick={() => updateField("conservationStatus", 1)}
+                  className={cn(
+                    "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
+                    formData.conservationStatus === 1
+                      ? "text-gray-900"
+                      : "text-gray-600",
+                  )}
+                >
+                  {CONSERVATION_STATUS_LABELS[1]}
+                </button>
+                <button
                   onClick={() => updateField("conservationStatus", 4)}
                   className={cn(
                     "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
@@ -317,42 +328,20 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
                 >
                   {CONSERVATION_STATUS_LABELS[4]}
                 </button>
-                <button
-                  onClick={() => updateField("conservationStatus", 6)}
-                  className={cn(
-                    "relative z-10 flex-1 rounded-md text-xs font-medium transition-colors duration-200",
-                    formData.conservationStatus === 6
-                      ? "text-gray-900"
-                      : "text-gray-600",
-                  )}
-                >
-                  {CONSERVATION_STATUS_LABELS[6]}
-                </button>
               </div>
             </div>
             {/* Mobile: Grid layout without animation */}
             <div className="grid grid-cols-2 gap-2 sm:hidden">
               <button
-                onClick={() => updateField("conservationStatus", 1)}
+                onClick={() => updateField("conservationStatus", 6)}
                 className={cn(
                   "h-10 rounded-lg text-xs font-medium transition-all duration-200",
-                  formData.conservationStatus === 1
+                  formData.conservationStatus === 6
                     ? "bg-white text-gray-900 shadow-md"
                     : "bg-gray-100 text-gray-600",
                 )}
               >
-                {CONSERVATION_STATUS_LABELS[1]}
-              </button>
-              <button
-                onClick={() => updateField("conservationStatus", 2)}
-                className={cn(
-                  "h-10 rounded-lg text-xs font-medium transition-all duration-200",
-                  formData.conservationStatus === 2
-                    ? "bg-white text-gray-900 shadow-md"
-                    : "bg-gray-100 text-gray-600",
-                )}
-              >
-                {CONSERVATION_STATUS_LABELS[2]}
+                {CONSERVATION_STATUS_LABELS[6]}
               </button>
               <button
                 onClick={() => updateField("conservationStatus", 3)}
@@ -366,9 +355,31 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
                 {CONSERVATION_STATUS_LABELS[3]}
               </button>
               <button
-                onClick={() => updateField("conservationStatus", 4)}
+                onClick={() => updateField("conservationStatus", 2)}
                 className={cn(
                   "h-10 rounded-lg text-xs font-medium transition-all duration-200",
+                  formData.conservationStatus === 2
+                    ? "bg-white text-gray-900 shadow-md"
+                    : "bg-gray-100 text-gray-600",
+                )}
+              >
+                {CONSERVATION_STATUS_LABELS[2]}
+              </button>
+              <button
+                onClick={() => updateField("conservationStatus", 1)}
+                className={cn(
+                  "h-10 rounded-lg text-xs font-medium transition-all duration-200",
+                  formData.conservationStatus === 1
+                    ? "bg-white text-gray-900 shadow-md"
+                    : "bg-gray-100 text-gray-600",
+                )}
+              >
+                {CONSERVATION_STATUS_LABELS[1]}
+              </button>
+              <button
+                onClick={() => updateField("conservationStatus", 4)}
+                className={cn(
+                  "col-span-2 h-10 rounded-lg text-xs font-medium transition-all duration-200",
                   formData.conservationStatus === 4
                     ? "bg-white text-gray-900 shadow-md"
                     : "bg-gray-100 text-gray-600",
@@ -376,23 +387,11 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
               >
                 {CONSERVATION_STATUS_LABELS[4]}
               </button>
-              <button
-                onClick={() => updateField("conservationStatus", 6)}
-                className={cn(
-                  "col-span-2 h-10 rounded-lg text-xs font-medium transition-all duration-200",
-                  formData.conservationStatus === 6
-                    ? "bg-white text-gray-900 shadow-md"
-                    : "bg-gray-100 text-gray-600",
-                )}
-              >
-                {CONSERVATION_STATUS_LABELS[6]}
-              </button>
             </div>
           </div>
 
-          {/* Renovation Year - Show only when conservation status is "A reformar" (4) or "Reformado" (6) */}
-          {(formData.conservationStatus === 4 ||
-            formData.conservationStatus === 6) && (
+          {/* Renovation Year - Show only when conservation status is "Reformado" (6) */}
+          {formData.conservationStatus === 6 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-medium text-gray-900">

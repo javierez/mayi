@@ -512,17 +512,18 @@ export async function getAccountFotocasaApiKey(
     const portalSettings =
       (account.portalSettings as Record<string, unknown>) ?? {};
     const fotocasa = (portalSettings.fotocasa as Record<string, unknown>) ?? {};
-    const apiKey = fotocasa.api_key as string | undefined;
+    const apiKey = fotocasa.apiKey as string | undefined;
 
     if (!apiKey) {
       console.warn(`No Fotocasa API key found for account: ${accountId}`);
+      console.warn(`Portal settings:`, JSON.stringify(portalSettings, null, 2));
       return null;
     }
 
-    console.log("Retrieved Fotocasa API key for account:", {
-      accountId: accountId.toString(),
-      hasApiKey: true,
-    });
+    console.log("=== FOTOCASA API KEY RETRIEVED ===");
+    console.log("Account ID:", accountId.toString());
+    console.log("API Key:", apiKey);
+    console.log("================================");
 
     return apiKey;
   } catch (error) {

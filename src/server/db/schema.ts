@@ -982,3 +982,32 @@ export const mappings = pgTable("mappings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   isActive: boolean("is_active").default(true),
 });
+
+// Fotocasa Logs table (for tracking Fotocasa API interactions)
+export const fotocasaLogs = pgTable("fotocasa_logs", {
+  // Primary Key
+  id: bigserial("id", { mode: "bigint" }).primaryKey(),
+
+  // Timestamp
+  timestamp: timestamp("timestamp").notNull(),
+
+  // Listing reference
+  listingId: bigint("listing_id", { mode: "bigint" }), // FK → listings.listing_id (nullable for build_payload operations)
+
+  // Operation type
+  operation: varchar("operation", { length: 20 }).notNull(), // 'BUILD_PAYLOAD' | 'POST' | 'PUT' | 'DELETE'
+
+  // Request and response data
+  requestData: jsonb("request_data"), // Request payload (sanitized)
+  responseData: jsonb("response_data"), // Response payload (sanitized)
+
+  // Operation result
+  success: boolean("success").notNull(),
+  error: text("error"), // Error message if operation failed
+
+  // Additional metadata
+  metadata: jsonb("metadata"), // Additional context (e.g., watermarked images count)
+
+  // System field
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

@@ -1,5 +1,5 @@
-import fs from "fs";
-import path from "path";
+import { db } from "~/server/db";
+import { fotocasaLogs } from "~/server/db/schema";
 
 interface FotocasaLogEntry {
   timestamp: string;
@@ -13,79 +13,46 @@ interface FotocasaLogEntry {
 }
 
 /**
- * Sanitizes sensitive data from objects before logging
- */
-function sanitizeData(data: unknown): unknown {
-  if (data === null || data === undefined) {
-    return data;
-  }
-
-  if (typeof data === "string") {
-    // Don't log full API keys, just show first/last few chars
-    if (data.length > 20) {
-      return `${data.substring(0, 4)}...${data.substring(data.length - 4)}`;
-    }
-    return data;
-  }
-
-  if (Array.isArray(data)) {
-    return data.map(sanitizeData);
-  }
-
-  if (typeof data === "object") {
-    const sanitized: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(data)) {
-      // Sanitize API keys and sensitive fields
-      if (
-        key.toLowerCase().includes("apikey") ||
-        key.toLowerCase().includes("api-key") ||
-        key.toLowerCase().includes("token") ||
-        key.toLowerCase().includes("password")
-      ) {
-        sanitized[key] = "[REDACTED]";
-      } else {
-        sanitized[key] = sanitizeData(value);
-      }
-    }
-    return sanitized;
-  }
-
-  return data;
-}
-
-/**
- * Writes a log entry to the Fotocasa logs directory
+ * Writes a log entry to the database
  */
 export async function logFotocasaRequest(
   entry: Omit<FotocasaLogEntry, "timestamp">,
 ): Promise<void> {
   try {
-    const timestamp = new Date().toISOString();
-    const logEntry: FotocasaLogEntry = {
-      timestamp,
-      ...entry,
-      // Sanitize sensitive data
-      request: sanitizeData(entry.request),
-      response: sanitizeData(entry.response),
-    };
+    const timestamp = new Date();
 
-    // Create logs directory if it doesn't exist
-    const logsDir = path.join(process.cwd(), "logs", "fotocasa");
-    if (!fs.existsSync(logsDir)) {
-      fs.mkdirSync(logsDir, { recursive: true });
+    // Log full data to server console
+    console.log("=== FOTOCASA API LOG ===");
+    console.log("Timestamp:", timestamp.toISOString());
+    console.log("Listing ID:", entry.listingId);
+    console.log("Operation:", entry.operation);
+    console.log("Success:", entry.success);
+    console.log("Request Data:", JSON.stringify(entry.request, null, 2));
+    console.log("Response Data:", JSON.stringify(entry.response, null, 2));
+    if (entry.error) {
+      console.log("Error:", entry.error);
     }
+    if (entry.metadata) {
+      console.log("Metadata:", JSON.stringify(entry.metadata, null, 2));
+    }
+    console.log("========================");
 
-    // Create filename with date and operation
-    const date = new Date().toISOString().split("T")[0];
-    const filename = `${date}_${entry.operation.toLowerCase()}.log`;
-    const filepath = path.join(logsDir, filename);
-
-    // Append log entry as JSON line
-    const logLine = JSON.stringify(logEntry, null, 2) + "\n\n";
-    fs.appendFileSync(filepath, logLine, "utf-8");
+    // Insert log entry into database with full data (no sanitization)
+    await db.insert(fotocasaLogs).values({
+      timestamp,
+      listingId: typeof entry.listingId === "string"
+        ? BigInt(entry.listingId)
+        : BigInt(entry.listingId),
+      operation: entry.operation,
+      requestData: entry.request,
+      responseData: entry.response,
+      success: entry.success,
+      error: entry.error ?? null,
+      metadata: entry.metadata ?? null,
+    });
   } catch (error) {
     // Don't throw errors from logging - just log to console
-    console.error("Failed to write Fotocasa log:", error);
+    console.error("Failed to write Fotocasa log to database:", error);
   }
 }
 

@@ -190,7 +190,7 @@ export function DescriptionCard({
                     {isGeneratingShort ? (
                       <>
                         <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                        Generar
+                        Generando...
                       </>
                     ) : (
                       "Generar"
@@ -242,7 +242,7 @@ export function DescriptionCard({
                     {isGenerating ? (
                       <>
                         <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                        Generar
+                        Generando...
                       </>
                     ) : (
                       "Generar"

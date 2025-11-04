@@ -17,6 +17,21 @@ import type { Permission } from "~/lib/permissions";
 import { sendEmail, generatePasswordResetEmail } from "~/lib/email";
 
 /**
+ * Add BigInt serialization support for JSON.stringify
+ * This fixes "Do not know how to serialize a BigInt" errors
+ * when auth returns user objects with BigInt fields (like accountId)
+ */
+declare global {
+  interface BigInt {
+    toJSON(): string;
+  }
+}
+
+BigInt.prototype.toJSON = function () {
+  return this.toString();
+};
+
+/**
  * Permissions object structure from database
  * Nested object with categories and boolean/numeric flags
  */
@@ -284,6 +299,25 @@ export const auth = betterAuth({
   // Session configuration
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
+    // Enable cookie cache for better performance
+    // Stores encrypted session data in cookie to reduce database queries
+    cookieCache: {
+      enabled: true,
+      maxAge: 5 * 60, // 5 minutes - balance between performance and data freshness
+      strategy: "jwe", // Use encrypted tokens for maximum security
+    },
+  },
+
+  // Advanced security configuration
+  advanced: {
+    // Force secure cookies in all environments
+    useSecureCookies: true,
+    // Default cookie attributes for all auth cookies
+    defaultCookieAttributes: {
+      httpOnly: true, // Prevent JavaScript access to cookies (XSS protection)
+      secure: true, // Only send cookies over HTTPS
+      sameSite: "lax", // Prevent CSRF attacks while allowing normal navigation
+    },
   },
 
   // Built-in rate limiting
