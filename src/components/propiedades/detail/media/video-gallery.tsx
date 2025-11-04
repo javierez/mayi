@@ -300,9 +300,9 @@ export function VideoGallery({
       setIsUploading(false);
       setUploadProgress({});
       // Reset the file input
-      const fileInput = document.querySelector('input[type="file"][accept="video/*"]') as HTMLInputElement;
+      const fileInput = document.querySelector('input[type="file"][accept="video/*"]');
       if (fileInput) {
-        fileInput.value = "";
+        (fileInput as HTMLInputElement).value = "";
       }
     }
   };

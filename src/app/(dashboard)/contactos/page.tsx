@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "~/components/ui/button";
 import { Plus, FileText } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 import { ContactFilter } from "~/components/contactos/table-components/contact-filter";
 import { ContactSpreadsheetTable } from "~/components/contactos/table/contact-table";
@@ -84,6 +84,7 @@ type DbContact = {
 
 export default function ContactsPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Simplified single-state approach since URL changes trigger re-fetch anyway
   const [contacts, setContacts] = useState<ExtendedContact[]>([]);
@@ -99,6 +100,8 @@ export default function ContactsPage() {
     const sources = searchParams.get("sources");
     const ratings = searchParams.get("ratings");
     const statuses = searchParams.get("statuses");
+    const sortBy = searchParams.get("sortBy");
+    const sortOrder = searchParams.get("sortOrder");
 
     return {
       roles: roles ? roles.split(",") : ["owner"],
@@ -107,6 +110,8 @@ export default function ContactsPage() {
       sources: sources ? sources.split(",") : [],
       ratings: ratings ? ratings.split(",").map(Number) : [],
       statuses: statuses ? statuses.split(",").map((s) => s === "true") : [],
+      sortBy: sortBy ?? "updatedAt",
+      sortOrder: (sortOrder ?? "desc") as "asc" | "desc",
     };
   }, [searchParams]);
 
@@ -158,6 +163,8 @@ export default function ContactsPage() {
             sources: filters.sources,
             ratings: filters.ratings,
             statuses: filters.statuses,
+            sortBy: filters.sortBy,
+            sortOrder: filters.sortOrder,
           })
         : await listContactsBuyerDataWithAuth(page, pageSize, {
             searchQuery: filters.searchQuery,
@@ -166,6 +173,8 @@ export default function ContactsPage() {
             sources: filters.sources,
             ratings: filters.ratings,
             statuses: filters.statuses,
+            sortBy: filters.sortBy,
+            sortOrder: filters.sortOrder,
           });
 
       // Process contacts from the result (already sorted by database)
@@ -187,6 +196,19 @@ export default function ContactsPage() {
     setCurrentPage(newPage);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
+
+  // Sort change handler
+  const handleSortChange = useCallback(
+    (sortBy: string, sortOrder: "asc" | "desc") => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("sortBy", sortBy);
+      params.set("sortOrder", sortOrder);
+      // Reset to page 1 when sort changes - use router.push to trigger re-render
+      router.push(`?${params.toString()}`);
+      setCurrentPage(1);
+    },
+    [searchParams, router],
+  );
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -353,6 +375,9 @@ export default function ContactsPage() {
             totalPages={totalPages}
             onPageChange={handlePageChange}
             onExport={handleExport}
+            currentSortBy={getFiltersFromUrl().sortBy}
+            currentSortOrder={getFiltersFromUrl().sortOrder}
+            onSortChange={handleSortChange}
           />
         </div>
       )}

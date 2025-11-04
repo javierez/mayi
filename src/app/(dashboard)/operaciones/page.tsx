@@ -34,7 +34,7 @@ export default function OperacionesPage() {
   const [mostUrgentTasks, setMostUrgentTasks] = useState<
     Awaited<ReturnType<typeof getMostUrgentTasksWithAuth>>
   >([]);
-  const [tasksDaysFilter, setTasksDaysFilter] = useState(7);
+  const tasksDaysFilter = 7;
   const [tasksLoading, setTasksLoading] = useState(false);
   const [users, setUsers] = useState<
     Array<{ id: string; name: string }>

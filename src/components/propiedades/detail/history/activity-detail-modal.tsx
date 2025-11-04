@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Separator } from "~/components/ui/separator";
 import type { ListingActivityRecord } from "~/server/queries/listing-history";
@@ -59,7 +58,6 @@ export function ActivityDetailModal({
   if (!activity) return null;
 
   const actionLabel = getActivityActionLabel(activity.action);
-  const colorVariant = getActivityActionColor(activity.action);
   const absoluteTime = formatAbsoluteTime(activity.createdAt);
 
   return (

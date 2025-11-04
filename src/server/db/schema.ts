@@ -11,7 +11,6 @@ import {
   integer,
   time,
   bigserial,
-  serial,
 } from "drizzle-orm/pg-core";
 
 // Accounts table (CRM organization/tenant - top level entity)

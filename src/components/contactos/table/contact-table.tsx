@@ -17,7 +17,14 @@ import { Propiedades } from "../table-components/list-elements/propiedades";
 import { Recordatorios } from "../table-components/list-elements/recordatorios";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
-import { ChevronLeft, ChevronRight, ChevronDown, Download } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  Download,
+  ChevronUp,
+  ChevronsUpDown,
+} from "lucide-react";
 import { CONTACT_SOURCES, CONTACT_SOURCE_LABELS } from "~/types/contact-source";
 import { updateContactWithAuth } from "~/server/queries/contact";
 
@@ -90,6 +97,9 @@ interface ContactSpreadsheetTableProps {
   totalPages?: number;
   onPageChange?: (page: number) => void;
   onExport?: () => Promise<void>;
+  currentSortBy?: string;
+  currentSortOrder?: "asc" | "desc";
+  onSortChange?: (sortBy: string, sortOrder: "asc" | "desc") => void;
 }
 
 export function ContactSpreadsheetTable({
@@ -99,6 +109,9 @@ export function ContactSpreadsheetTable({
   totalPages = 1,
   onPageChange,
   onExport,
+  currentSortBy = "updatedAt",
+  currentSortOrder = "desc",
+  onSortChange,
 }: ContactSpreadsheetTableProps) {
   const router = useRouter();
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
@@ -112,6 +125,26 @@ export function ContactSpreadsheetTable({
   const [optimisticSources, setOptimisticSources] = useState<
     Record<string, string>
   >({});
+
+  // Handle sort toggle
+  const handleSortToggle = useCallback(() => {
+    if (!onSortChange) return;
+
+    // Toggle through: none → asc → desc → none
+    if (currentSortBy === "nombre") {
+      // Currently sorting by nombre
+      if (currentSortOrder === "asc") {
+        // Switch to descending
+        onSortChange("nombre", "desc");
+      } else {
+        // Switch back to default (updatedAt desc)
+        onSortChange("updatedAt", "desc");
+      }
+    } else {
+      // Not currently sorting by nombre, start with ascending
+      onSortChange("nombre", "asc");
+    }
+  }, [currentSortBy, currentSortOrder, onSortChange]);
 
   const handleResizeStart = useCallback(
     (column: string, e: React.MouseEvent) => {
@@ -451,7 +484,22 @@ export function ContactSpreadsheetTable({
           <TableHeader>
             <TableRow>
               <TableHead className="relative" style={getColumnStyle("nombre")}>
-                <div className="truncate">Nombre</div>
+                <button
+                  className="flex items-center gap-1 hover:text-foreground"
+                  onClick={handleSortToggle}
+                  type="button"
+                >
+                  <span className="truncate">Nombre</span>
+                  {currentSortBy === "nombre" ? (
+                    currentSortOrder === "asc" ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )
+                  ) : (
+                    <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                  )}
+                </button>
                 <ResizeHandle column="nombre" />
               </TableHead>
               <TableHead

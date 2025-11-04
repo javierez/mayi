@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "~/lib/utils";
-import { FileText, Mic, Zap, FileSignature, Check } from "lucide-react";
+import { Mic, Zap, FileSignature, Check } from "lucide-react";
 
 export interface RegistrationOption {
   id: string;

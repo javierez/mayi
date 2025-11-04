@@ -34,7 +34,6 @@ export function GlobalHistoryTimeline({
 
     activities.forEach((activity) => {
       const dateKey = format(activity.createdAt, "yyyy-MM-dd");
-      const dateLabel = format(activity.createdAt, "EEEE, d 'de' MMMM 'de' yyyy", { locale: es });
 
       if (!groups.has(dateKey)) {
         groups.set(dateKey, []);

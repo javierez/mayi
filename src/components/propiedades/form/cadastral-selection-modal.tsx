@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
@@ -10,7 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { Loader, MapPin, Calendar, Square } from "lucide-react";
+import { Input } from "~/components/ui/input";
+import { Loader, MapPin, Calendar, Square, Search } from "lucide-react";
 
 interface CadastralSearchResult {
   cadastralReference: string;
@@ -39,6 +40,8 @@ export function CadastralSelectionModal({
   isLoading,
   onSelect,
 }: CadastralSelectionModalProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+
   // Extract common information from the first result (all units share the same building info)
   const commonInfo =
     searchResults.length > 0
@@ -49,6 +52,16 @@ export function CadastralSelectionModal({
           yearBuilt: searchResults[0]?.yearBuilt ?? 0,
         }
       : null;
+
+  // Filter results based on search query
+  const filteredResults = useMemo(() => {
+    if (!searchQuery.trim()) return searchResults;
+
+    const query = searchQuery.toLowerCase();
+    return searchResults.filter((result) =>
+      result.addressDetails.toLowerCase().includes(query)
+    );
+  }, [searchResults, searchQuery]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -63,6 +76,20 @@ export function CadastralSelectionModal({
             dirección. Selecciona la unidad específica de tu propiedad.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Search input */}
+        {searchResults.length > 0 && !isLoading && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Buscar por nombre de unidad..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        )}
 
         {/* Common information header */}
         {commonInfo && searchResults.length > 0 && (
@@ -109,9 +136,19 @@ export function CadastralSelectionModal({
                 Verifica que los datos sean correctos.
               </p>
             </div>
+          ) : filteredResults.length === 0 ? (
+            <div className="px-4 py-8 text-center sm:py-12">
+              <Search className="mx-auto mb-3 h-10 w-10 text-muted-foreground sm:mb-4 sm:h-12 sm:w-12" />
+              <h3 className="mb-2 text-base font-medium sm:text-lg">
+                No se encontraron resultados
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                No hay unidades que coincidan con &ldquo;{searchQuery}&rdquo;.
+              </p>
+            </div>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-              {searchResults.map((result, index) => (
+              {filteredResults.map((result, index) => (
                 <Card
                   key={index}
                   className="cursor-pointer transition-all hover:border-primary hover:shadow-md"
