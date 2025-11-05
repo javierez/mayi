@@ -8,9 +8,10 @@ import { SignaturePad } from "./signature-pad";
 import { VisitBreadcrumb } from "./visit-breadcrumb";
 import { toast } from "sonner";
 import { createVisitAction } from "~/server/actions/visits";
-import { Save, Loader } from "lucide-react";
+import { Save, Loader, Eye } from "lucide-react";
 import type { AppointmentWithDetails, VisitFormData } from "~/types/visits";
 import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
+import Link from "next/link";
 
 interface VisitFormProps {
   appointment: AppointmentWithDetails;
@@ -106,12 +107,30 @@ export function VisitForm({ appointment }: VisitFormProps) {
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-            Registro de Visita
-          </h1>
-          <p className="mt-1 text-sm text-gray-600 sm:text-base">
-            {appointment.propertyStreet ?? "Propiedad"}
-          </p>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+                Registro de Visita
+              </h1>
+              <p className="mt-1 text-sm text-gray-600 sm:text-base">
+                {appointment.propertyStreet ?? "Propiedad"}
+              </p>
+            </div>
+            <Link
+              href={`/templates/visita/${appointment.appointmentId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button
+                type="button"
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Eye className="h-4 w-4" />
+                Vista Previa
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6 pb-8">

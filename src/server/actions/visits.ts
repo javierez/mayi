@@ -223,6 +223,77 @@ export async function getAppointmentForVisitAction(appointmentId: bigint) {
 }
 
 /**
+ * Get visit document data for preview/print
+ */
+export async function getVisitDocumentDataAction(appointmentId: bigint) {
+  try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      throw new Error("Authentication required");
+    }
+
+    const appointment = await getAppointmentWithDetails(appointmentId);
+    if (!appointment) {
+      throw new Error("Appointment not found or you don't have access to it");
+    }
+
+    // Get signatures if they exist
+    const signatures = await getVisitSignatures(appointmentId);
+    const agentSignature = signatures.find((sig) => sig.signatureType === "agent");
+    const visitorSignature = signatures.find(
+      (sig) => sig.signatureType === "visitor",
+    );
+
+    // Format date and location
+    const date = new Intl.DateTimeFormat("es-ES", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }).format(appointment.datetimeStart);
+
+    // Try to get location from property or use default
+    const location =
+      appointment.propertyStreet?.split(",")[0]?.trim() ?? "Oficina";
+
+    return {
+      success: true,
+      data: {
+        appointment: {
+          appointmentId: appointment.appointmentId,
+          contactFirstName: appointment.contactFirstName ?? "",
+          contactLastName: appointment.contactLastName ?? "",
+          contactNif: appointment.contactNif,
+          propertyStreet: appointment.propertyStreet,
+          propertyAddressDetails: appointment.propertyAddressDetails,
+          agentName: appointment.agentName,
+          agentFirstName: appointment.agentFirstName,
+          agentLastName: appointment.agentLastName,
+          datetimeStart: appointment.datetimeStart,
+          datetimeEnd: appointment.datetimeEnd,
+          notes: appointment.notes,
+        },
+        signatures: {
+          agentSignatureUrl: agentSignature?.fileUrl ?? null,
+          visitorSignatureUrl: visitorSignature?.fileUrl ?? null,
+        },
+        location,
+        date,
+        marketingConsent: false, // This would need to be stored separately if needed
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching visit document data:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch visit document data",
+    };
+  }
+}
+
+/**
  * Get all completed visit appointments for current user
  */
 export async function getUserCompletedVisitsAction(): Promise<{

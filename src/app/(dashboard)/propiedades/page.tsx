@@ -153,6 +153,10 @@ export default function PropertiesPage() {
             ...listing,
             // Ensure listingType is cast to ListingType union
             listingType: listing.listingType as ListingOverview["listingType"],
+            // Convert builtSurfaceArea from string to number
+            builtSurfaceArea: listing.builtSurfaceArea
+              ? Number(listing.builtSurfaceArea)
+              : null,
           })),
         );
         setTotalPages(result.totalPages);
@@ -247,14 +251,21 @@ export default function PropertiesPage() {
       }
 
       // Fetch ALL listings with current filters (no pagination)
+      // Always use 'table' view for export to get all necessary fields
       const result = await listListingsWithAuth(
         1,
         100000, // Large limit to get all
         filters,
-        view,
+        "table",
       );
 
-      const allListings = result.listings as unknown as ListingOverview[];
+      const allListings = result.listings.map((listing) => ({
+        ...listing,
+        listingType: listing.listingType as ListingOverview["listingType"],
+        builtSurfaceArea: listing.builtSurfaceArea
+          ? Number(listing.builtSurfaceArea)
+          : null,
+      })) as ListingOverview[];
 
       // Create CSV headers
       const headers = [
