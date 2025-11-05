@@ -1,15 +1,23 @@
 /**
  * Puppeteer utility for environment-aware browser launching
- * 
+ *
  * Automatically detects if running in Vercel (serverless) or local environment
  * and uses the appropriate Puppeteer setup:
  * - Vercel: puppeteer-core + @sparticuz/chromium-min (serverless-compatible)
  * - Local: puppeteer (full Chromium binary)
  */
 
+import type { PuppeteerNode as PuppeteerType } from "puppeteer";
+import type { PuppeteerNode as PuppeteerCoreType } from "puppeteer-core";
+
 interface PuppeteerConfig {
-  puppeteer: typeof import("puppeteer-core");
-  launchOptions: Parameters<typeof import("puppeteer-core").default.launch>[0];
+  puppeteer: PuppeteerType | PuppeteerCoreType;
+  launchOptions: {
+    args?: string[];
+    defaultViewport?: { width: number; height: number } | null;
+    executablePath?: string;
+    headless?: boolean | "shell";
+  };
 }
 
 export async function getPuppeteerConfig(): Promise<PuppeteerConfig> {
@@ -19,7 +27,8 @@ export async function getPuppeteerConfig(): Promise<PuppeteerConfig> {
 
   if (isServerless) {
     // Use puppeteer-core with serverless Chromium for Vercel
-    const chromium = await import("@sparticuz/chromium-min");
+    const chromiumModule = await import("@sparticuz/chromium-min");
+    const chromium = chromiumModule.default;
     const puppeteerCore = await import("puppeteer-core");
 
     return {

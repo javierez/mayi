@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import type { TemplateConfiguration } from "~/types/template-data";
 import { getPuppeteerConfig } from "~/lib/puppeteer-utils";
+import type { Page } from "puppeteer-core";
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
     // Launch browser with optimized settings for PDF generation
     const browser = await puppeteer.launch(launchOptions);
 
-    const page = await browser.newPage();
+    const page = (await browser.newPage()) as Page;
 
     // Set viewport to match print dimensions
     const orientation = templateConfig.orientation ?? "vertical";

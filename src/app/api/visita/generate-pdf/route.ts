@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getCurrentUserAccountId } from "~/lib/dal";
 import { getVisitDocumentDataAction } from "~/server/actions/visits";
 import { getPuppeteerConfig } from "~/lib/puppeteer-utils";
+import type { Page } from "puppeteer-core";
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
     // Launch browser with optimized settings for PDF generation
     const browser = await puppeteer.launch(launchOptions);
 
-    const page = await browser.newPage();
+    const page = (await browser.newPage()) as Page;
 
     // Set viewport to match A4 print dimensions
     await page.setViewport({
