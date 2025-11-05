@@ -53,6 +53,10 @@ const config = {
     serverActions: {
       bodySizeLimit: "10mb", // Increase from 1MB to 10MB for large property data
     },
+    serverComponentsExternalPackages: [
+      "@sparticuz/chromium-min",
+      "puppeteer-core",
+    ],
   },
   async rewrites() {
     return [

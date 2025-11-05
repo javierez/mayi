@@ -15,6 +15,7 @@ import { eq, and } from "drizzle-orm";
 export async function getAgentNameAction(accountId: bigint): Promise<{
   success: boolean;
   agentName?: string;
+  accountName?: string; // Agency/company name
   collegiateNumber?: string;
   accountType?: string;
   taxId?: string;
@@ -38,11 +39,15 @@ export async function getAgentNameAction(accountId: bigint): Promise<{
       return { success: false, error: "Account not found" };
     }
 
+    // Store account name for "on behalf of" display
+    const accountName = account.name;
+
     // If account type is company, use account.name
     if (account.accountType === "company") {
       return {
         success: true,
         agentName: account.name,
+        accountName: accountName,
         collegiateNumber: account.collegiateNumber ?? undefined,
         accountType: account.accountType,
         taxId: account.taxId ?? undefined,
@@ -66,6 +71,7 @@ export async function getAgentNameAction(accountId: bigint): Promise<{
         return {
           success: true,
           agentName: userWithRole.userName,
+          accountName: accountName,
           collegiateNumber: account.collegiateNumber ?? undefined,
           accountType: account.accountType,
           taxId: account.taxId ?? undefined,
@@ -84,6 +90,7 @@ export async function getAgentNameAction(accountId: bigint): Promise<{
           return {
             success: true,
             agentName: anyUser.userName,
+            accountName: accountName,
             collegiateNumber: account.collegiateNumber ?? undefined,
             accountType: account.accountType,
             taxId: account.taxId ?? undefined,
@@ -97,6 +104,7 @@ export async function getAgentNameAction(accountId: bigint): Promise<{
     return {
       success: true,
       agentName: account.name,
+      accountName: accountName,
       collegiateNumber: account.collegiateNumber ?? undefined,
       accountType: account.accountType ?? undefined,
       taxId: account.taxId ?? undefined,

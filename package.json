@@ -78,6 +78,8 @@
     "posthog-js": "^1.285.1",
     "posthog-node": "^5.11.0",
     "puppeteer": "^24.16.0",
+    "puppeteer-core": "^24.16.0",
+    "@sparticuz/chromium-min": "^131.0.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-dropdown-menu": "^0.0.2",

@@ -1,101 +1,48 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getCurrentUserAccountId } from "~/lib/dal";
+import { getVisitDocumentDataAction } from "~/server/actions/visits";
 import { getPuppeteerConfig } from "~/lib/puppeteer-utils";
-
-interface NotaEncargoData {
-  documentNumber: string;
-  agency: {
-    agentName: string;
-    collegiateNumber: string;
-    agentNIF: string;
-    website: string;
-    email: string;
-    logo?: string;
-    offices: Array<{
-      address: string;
-      city: string;
-      postalCode: string;
-      phone: string;
-    }>;
-  };
-  client: {
-    fullName: string;
-    nif: string;
-    address: string;
-    city: string;
-    postalCode: string;
-    phone: string;
-  };
-  property: {
-    description: string;
-    allowSignage: string;
-    energyCertificate: string;
-    keyDelivery: string;
-    allowVisits: string;
-  };
-  operation: {
-    type: string;
-    price: string;
-  };
-  commission: {
-    percentage: number;
-    minimum: string;
-  };
-  duration: {
-    months: number;
-  };
-  signatures: {
-    location: string;
-    date: string;
-  };
-  jurisdiction: {
-    city: string;
-  };
-  observations: string;
-  hasOtherAgency?: boolean;
-  gdprConsent?: boolean;
-}
 
 export async function POST(request: NextRequest) {
   try {
-    const { data } = (await request.json()) as {
-      data: NotaEncargoData;
+    const { appointmentId } = (await request.json()) as {
+      appointmentId: string;
     };
 
     // Validate input data
-    if (!data) {
+    if (!appointmentId) {
       return NextResponse.json(
-        { error: "Missing nota encargo data" },
+        { error: "Missing appointment ID" },
         { status: 400 },
       );
     }
 
-    console.log("🚀 Starting Nota de Encargo PDF generation with Puppeteer...");
+    console.log("🚀 Starting Visit PDF generation with Puppeteer...");
 
-    // Get current user's account ID and regular logo
-    const accountId = await getCurrentUserAccountId();
-    const { getAccountById } = await import("~/server/queries/accounts");
-    const account = await getAccountById(accountId);
-    const logo = account?.logo;
+    // Fetch visit data here where we have authentication
+    const appointmentIdBigInt = BigInt(parseInt(appointmentId));
+    const visitDataResult = await getVisitDocumentDataAction(appointmentIdBigInt);
 
-    console.log("📊 PDF Generation - Logo info:", {
-      accountId: accountId.toString(),
-      logo,
-      hasLogo: !!logo,
-    });
+    if (!visitDataResult.success || !visitDataResult.data) {
+      throw new Error(
+        visitDataResult.error ?? "Failed to fetch visit document data",
+      );
+    }
 
-    // Add logo to the data
-    const dataWithLogo = {
-      ...data,
-      agency: {
-        ...data.agency,
-        logo: logo,
+    const visitData = visitDataResult.data;
+
+    // Convert Date objects to ISO strings for JSON serialization
+    const serializedData = {
+      ...visitData,
+      appointment: {
+        ...visitData.appointment,
+        datetimeStart: visitData.appointment.datetimeStart.toISOString(),
+        datetimeEnd: visitData.appointment.datetimeEnd.toISOString(),
       },
     };
 
-    console.log("📊 PDF Generation - Data with logo:", {
-      agencyLogo: dataWithLogo.agency.logo,
-      agencyName: dataWithLogo.agency.agentName,
+    console.log("📊 PDF Generation - Visit data fetched:", {
+      appointmentId,
     });
 
     // Get Puppeteer instance based on environment (Vercel vs local)
@@ -120,13 +67,13 @@ export async function POST(request: NextRequest) {
 
     // Build the template URL with query parameters
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-    const templateUrl = new URL("/templates/nota-encargo", baseUrl);
+    const templateUrl = new URL("/templates/visita", baseUrl);
 
-    // Pass configuration as URL parameters
-    templateUrl.searchParams.set("data", JSON.stringify(dataWithLogo));
+    // Pass data as URL parameters (like nota-encargo does)
+    templateUrl.searchParams.set("data", JSON.stringify(serializedData));
 
     console.log(
-      "📄 Navigating to nota encargo template URL:",
+      "📄 Navigating to visit template URL:",
       templateUrl.toString(),
     );
 
@@ -142,19 +89,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Wait for nota encargo template to be fully rendered
-    console.log("🎯 Waiting for nota encargo document container...");
+    // Wait for visit template to be fully rendered
+    console.log("🎯 Waiting for visit document container...");
 
     try {
-      await page.waitForSelector(".nota-encargo-document", { timeout: 10000 });
-      console.log("✅ Nota encargo document container found");
+      await page.waitForSelector(".visit-document", { timeout: 10000 });
+      console.log("✅ Visit document container found");
     } catch {
       console.error(
-        "Nota encargo document container not found. Page content:",
+        "Visit document container not found. Page content:",
         await page.content(),
       );
       throw new Error(
-        "Nota encargo document container not found after 10 seconds",
+        "Visit document container not found after 10 seconds",
       );
     }
 
@@ -177,27 +124,28 @@ export async function POST(request: NextRequest) {
       await page.waitForFunction(
         () => {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-          return (window as any).notaEncargoReady === true;
+          return (window as any).visitDocumentReady === true;
         },
         {
           timeout: 15000,
         },
       );
+      console.log("✅ Visit document ready signal received");
     } catch {
-      console.warn("Nota encargo ready signal timeout, proceeding anyway...");
+      console.warn("Visit document ready signal timeout, proceeding anyway...");
     }
 
     console.log("🎨 Template loaded, generating PDF...");
 
-    // Generate PDF with optimized settings and minimal top margin
+    // Generate PDF with optimized settings
     const pdfBuffer = await page.pdf({
       format: "A4",
-      landscape: false, // Always portrait for legal documents
+      landscape: false, // Always portrait for visit documents
       printBackground: true,
       margin: {
-        top: "5mm",
+        top: "5mm",     // Top margin for all pages
         right: "0mm",
-        bottom: "10mm",
+        bottom: "15mm", // Bottom margin for all pages
         left: "0mm",
       },
       preferCSSPageSize: true,
@@ -205,7 +153,7 @@ export async function POST(request: NextRequest) {
 
     await browser.close();
 
-    console.log("✅ Nota de Encargo PDF generated successfully");
+    console.log("✅ Visit PDF generated successfully");
 
     // Return PDF as response
     // Convert to Uint8Array which NextResponse accepts
@@ -214,11 +162,11 @@ export async function POST(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="nota-encargo-${dataWithLogo.documentNumber}-${Date.now()}.pdf"`,
+        "Content-Disposition": `attachment; filename="visita-${appointmentId}-${Date.now()}.pdf"`,
       },
     });
   } catch (error) {
-    console.error("❌ Nota de Encargo PDF generation failed:", error);
+    console.error("❌ Visit PDF generation failed:", error);
     return NextResponse.json(
       {
         error: "Failed to generate PDF",
@@ -228,3 +176,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

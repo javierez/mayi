@@ -24,7 +24,32 @@ export function CookieConsentBanner() {
     timestamp: 0,
   });
 
+  // Check if we're in PDF generation mode (Puppeteer)
+  const isPdfMode = () => {
+    if (typeof window === "undefined") return false;
+    
+    // Check if we're on a template route with data query param (PDF generation)
+    const pathname = window.location.pathname;
+    const searchParams = new URLSearchParams(window.location.search);
+    
+    // Template routes used for PDF generation
+    const isTemplateRoute = 
+      pathname.startsWith("/templates/visita") ||
+      pathname.startsWith("/templates/nota-encargo") ||
+      pathname.startsWith("/templates");
+    
+    // Has data query param (PDF generation mode)
+    const hasDataParam = searchParams.has("data") || searchParams.has("config");
+    
+    return isTemplateRoute && hasDataParam;
+  };
+
   useEffect(() => {
+    // Don't show banner in PDF generation mode (Puppeteer)
+    if (isPdfMode()) {
+      return;
+    }
+
     // Check if user has already given consent (try cookie first, fallback to localStorage for migration)
     const cookieConsent = getCookie("vesta-cookie-consent");
     const localStorageConsent = localStorage.getItem("vesta-cookie-consent");
@@ -119,6 +144,11 @@ export function CookieConsentBanner() {
   const savePreferences = () => {
     saveConsent(consent);
   };
+
+  // Don't render at all in PDF generation mode (Puppeteer)
+  if (typeof window !== "undefined" && isPdfMode()) {
+    return null;
+  }
 
   return (
     <AnimatePresence>

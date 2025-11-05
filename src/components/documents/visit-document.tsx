@@ -48,6 +48,7 @@ export function VisitDocument({ data }: Props) {
   );
   const [collegiateNumber, setCollegiateNumber] = useState<string>("");
   const [accountType, setAccountType] = useState<string | null>(null);
+  const [accountName, setAccountName] = useState<string>(""); // Agency/company name
   const [taxId, setTaxId] = useState<string>("");
   const [offices, setOffices] = useState<
     Array<{ address: string; city: string; postalCode: string; phone: string }>
@@ -76,11 +77,23 @@ export function VisitDocument({ data }: Props) {
               BigInt(userAccountId),
             );
 
-            if (agentNameResult.success && agentNameResult.agentName) {
-              setAgentName(agentNameResult.agentName);
+            if (agentNameResult.success) {
+              // Only update agentName if account type is "person"
+              // For company accounts, keep the agent name from appointment data
+              if (
+                agentNameResult.accountType === "person" &&
+                agentNameResult.agentName
+              ) {
+                setAgentName(agentNameResult.agentName);
+              }
 
               if (agentNameResult.accountType) {
                 setAccountType(agentNameResult.accountType);
+              }
+
+              // Always get the account name for "on behalf of" display
+              if (agentNameResult.accountName) {
+                setAccountName(agentNameResult.accountName);
               }
 
               if (agentNameResult.collegiateNumber) {
@@ -124,8 +137,46 @@ export function VisitDocument({ data }: Props) {
   };
 
   return (
-    <div className="bg-white font-sans text-black print:m-0 print:h-[297mm] print:w-[210mm] print:p-0 print:text-[11pt] print:leading-[1.4]">
-      <div className="visit-document mx-auto min-h-[1123px] max-w-[794px] px-10 py-8 font-sans text-[11pt] leading-[1.4] print:mx-0 print:min-h-0 print:max-w-none print:px-[10mm] print:pb-[10mm] print:pt-[2mm]">
+    <>
+      <style jsx>{`
+        /* Print-specific styles for page break handling */
+        @media print {
+          .visit-document {
+            /* Allow natural text flow, prevent only bad orphans/widows */
+            orphans: 2;
+            widows: 2;
+          }
+
+          /* Prevent only section headers from being orphaned at bottom of page */
+          .section-header {
+            page-break-after: avoid;
+            break-after: avoid;
+            margin-top: 1em;
+          }
+
+          /* Add spacing at top of pages for continuation content */
+          .visit-document > * {
+            margin-top: 0;
+          }
+
+          /* Ensure proper spacing after page breaks */
+          * {
+            box-decoration-break: clone;
+            -webkit-box-decoration-break: clone;
+          }
+        }
+
+        /* Add visual margin at page breaks for multi-page documents */
+        @page {
+          margin-top: 5mm;
+          margin-bottom: 15mm;
+          margin-left: 0mm;
+          margin-right: 0mm;
+        }
+      `}</style>
+    
+      <div className="bg-white font-sans text-black print:m-0 print:h-[297mm] print:w-[210mm] print:p-0 print:text-[11pt] print:leading-[1.4]">
+        <div className="visit-document mx-auto min-h-[1123px] max-w-[794px] px-10 py-8 font-sans text-[11pt] leading-[1.4] print:mx-0 print:min-h-0 print:max-w-none print:px-[10mm] print:pb-[10mm] print:pt-[2mm]">
         {/* Header Section */}
         <div className="mb-6 text-center print:mb-2">
           {/* Logo Section */}
@@ -219,8 +270,8 @@ export function VisitDocument({ data }: Props) {
         <div className="my-4 border-t-2 border-black print:my-3"></div>
 
         {/* Visit Details Section */}
-        <div className="my-6">
-          <div className="mb-4 border-b border-gray-300 pb-2 text-[13pt] font-bold">
+        <div className="property-details page-section my-6">
+          <div className="section-header mb-4 border-b border-gray-300 pb-2 text-[13pt] font-bold">
             DATOS DE LA VISITA:
           </div>
 
@@ -285,8 +336,8 @@ export function VisitDocument({ data }: Props) {
 
         {/* Notes Section */}
         {data.appointment.notes && (
-          <div className="my-6">
-            <div className="mb-3 border-b border-gray-300 pb-2 text-[13pt] font-bold">
+          <div className="notes-section my-6">
+            <div className="section-header mb-3 border-b border-gray-300 pb-2 text-[13pt] font-bold">
               OBSERVACIONES:
             </div>
             <div className="min-h-[80px] border-b border-black pb-2 text-justify leading-relaxed">
@@ -295,8 +346,10 @@ export function VisitDocument({ data }: Props) {
           </div>
         )}
 
-        {/* GDPR Consent Section */}
-        <div className="my-6">
+        {/* GDPR Consent and Signatures - Keep together */}
+        <div className="gdpr-and-signatures-group">
+          {/* GDPR Consent Section */}
+          <div className="gdpr-section page-section my-6">
           <div className="mb-3 border-b border-gray-300 pb-2 text-[13pt] font-bold">
             PROTECCIÓN DE DATOS:
           </div>
@@ -343,7 +396,7 @@ export function VisitDocument({ data }: Props) {
         </div>
 
         {/* Signature Section */}
-        <div className="mt-16 border-t border-gray-300 pt-6">
+        <div className="signatures-section mt-16 border-t border-gray-300 pt-6">
           <div className="mb-12 text-center font-medium">
             Y para que conste y surta efecto, se firma en{" "}
             <strong>{data.location}</strong>, a <strong>{data.date}</strong>
@@ -353,21 +406,22 @@ export function VisitDocument({ data }: Props) {
             {/* Agent Signature */}
             <div className="w-56 text-center">
               <div className="mb-4 text-[12pt] font-bold">
-                {accountType === "company" ? agentName : `D/ª ${agentName}`}
+                {agentName}
                 <br />
                 <span className="text-sm font-normal">(Agente)</span>
               </div>
               {data.signatures.agentSignatureUrl ? (
-                <div className="mb-2 flex items-center justify-center">
+                <div className="mb-2 flex h-24 items-center justify-center overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={data.signatures.agentSignatureUrl}
                     alt="Firma del Agente"
-                    className="max-h-20 w-auto object-contain"
+                    className="max-h-24 max-w-full object-contain"
+                    style={{ width: "auto", height: "auto" }}
                   />
                 </div>
               ) : (
-                <div className="mb-2 h-20 border-b-2 border-black"></div>
+                <div className="mb-2 h-24 border-b-2 border-black"></div>
               )}
               <div className="text-sm text-gray-600">Firma</div>
             </div>
@@ -381,23 +435,26 @@ export function VisitDocument({ data }: Props) {
                 <span className="text-sm font-normal">(Visitante)</span>
               </div>
               {data.signatures.visitorSignatureUrl ? (
-                <div className="mb-2 flex items-center justify-center">
+                <div className="mb-2 flex h-24 items-center justify-center overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={data.signatures.visitorSignatureUrl}
                     alt="Firma del Visitante"
-                    className="max-h-20 w-auto object-contain"
+                    className="max-h-24 max-w-full object-contain"
+                    style={{ width: "auto", height: "auto" }}
                   />
                 </div>
               ) : (
-                <div className="mb-2 h-20 border-b-2 border-black"></div>
+                <div className="mb-2 h-24 border-b-2 border-black"></div>
               )}
               <div className="text-sm text-gray-600">Firma</div>
             </div>
           </div>
         </div>
+        </div> {/* End gdpr-and-signatures-group */}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

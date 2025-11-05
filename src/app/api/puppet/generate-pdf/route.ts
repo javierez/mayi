@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
-import puppeteer from "puppeteer";
 import type { TemplateConfiguration } from "~/types/template-data";
+import { getPuppeteerConfig } from "~/lib/puppeteer-utils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,20 +19,16 @@ export async function POST(request: NextRequest) {
 
     console.log("🚀 Starting PDF generation with Puppeteer...");
 
+    // Get Puppeteer instance based on environment (Vercel vs local)
+    const { puppeteer, launchOptions } = await getPuppeteerConfig();
+    
+    console.log(
+      "🌐 Using Puppeteer:",
+      process.env.VERCEL === "1" ? "Vercel (serverless)" : "Local",
+    );
+
     // Launch browser with optimized settings for PDF generation
-    // Use headless: true for better compatibility
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-accelerated-2d-canvas",
-        "--disable-gpu",
-        "--window-size=1920,1080",
-        "--disable-blink-features=AutomationControlled",
-      ],
-    });
+    const browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
 
@@ -156,7 +152,9 @@ export async function POST(request: NextRequest) {
     console.log("✅ PDF generated successfully");
 
     // Return PDF as response
-    return new NextResponse(pdfBuffer, {
+    // Convert to Uint8Array which NextResponse accepts
+    const pdfUint8Array = new Uint8Array(pdfBuffer);
+    return new NextResponse(pdfUint8Array, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",

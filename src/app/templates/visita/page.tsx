@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams, useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { VisitDocument } from "~/components/documents/visit-document";
-import { getVisitDocumentDataAction } from "~/server/actions/visits";
 
 interface VisitDocumentData {
   appointment: {
@@ -31,77 +30,44 @@ interface VisitDocumentData {
 
 export default function VisitTemplatePage() {
   const searchParams = useSearchParams();
-  const params = useParams();
-  const appointment_id = params?.appointment_id as string | undefined;
   const [data, setData] = useState<VisitDocumentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
-    const loadData = async () => {
-      // Mode 1: Data from query params (for PDF generation, no auth needed)
-      const dataParam = searchParams.get("data");
-      if (dataParam) {
-        try {
-          const parsedData = JSON.parse(dataParam) as VisitDocumentData & {
-            appointment: { datetimeStart: string; datetimeEnd: string };
-          };
-          // Convert ISO date strings back to Date objects
-          const dataWithDates: VisitDocumentData = {
-            ...parsedData,
-            appointment: {
-              ...parsedData.appointment,
-              datetimeStart: new Date(parsedData.appointment.datetimeStart),
-              datetimeEnd: new Date(parsedData.appointment.datetimeEnd),
-            },
-          };
-          setData(dataWithDates);
-          setLoading(false);
-          return;
-        } catch (err) {
-          console.error("Failed to parse visit data:", err);
-          setError("Error al parsear los datos de la visita");
-          setLoading(false);
-          return;
-        }
-      }
-
-      // Mode 2: Fetch by appointment_id (for preview, requires auth)
-      if (appointment_id) {
-        const appointmentId = parseInt(appointment_id);
-        if (isNaN(appointmentId)) {
-          setError("ID de cita no válido");
-          setLoading(false);
-          return;
-        }
-
-        try {
-          const result = await getVisitDocumentDataAction(BigInt(appointmentId));
-          if (result.success && result.data) {
-            setData(result.data);
-          } else {
-            setError(result.error ?? "No se pudo cargar la información de la visita");
-          }
-        } catch (err) {
-          setError(
-            err instanceof Error ? err.message : "Error al cargar los datos",
-          );
-        } finally {
-          setLoading(false);
-        }
-        return;
-      }
-
-      // No data source found
+    // Get data from URL parameters (for PDF generation, no auth needed)
+    const dataParam = searchParams.get("data");
+    
+    if (!dataParam) {
       setError("No se proporcionaron datos");
       setLoading(false);
-    };
+      return;
+    }
 
-    void loadData();
-  }, [searchParams, appointment_id]);
+    try {
+      const parsedData = JSON.parse(dataParam) as VisitDocumentData & {
+        appointment: { datetimeStart: string; datetimeEnd: string };
+      };
+      // Convert ISO date strings back to Date objects
+      const dataWithDates: VisitDocumentData = {
+        ...parsedData,
+        appointment: {
+          ...parsedData.appointment,
+          datetimeStart: new Date(parsedData.appointment.datetimeStart),
+          datetimeEnd: new Date(parsedData.appointment.datetimeEnd),
+        },
+      };
+      setData(dataWithDates);
+    } catch (err) {
+      console.error("Failed to parse visit data:", err);
+      setError("Error al parsear los datos de la visita");
+    } finally {
+      setLoading(false);
+    }
+  }, [searchParams]);
 
-  // Signal that template is ready (for Puppeteer if needed)
+  // Signal that template is ready (for Puppeteer)
   useEffect(() => {
     if (data) {
       (window as unknown as Record<string, unknown>).visitDocumentReady = true;

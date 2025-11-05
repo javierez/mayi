@@ -8,10 +8,10 @@ import { SignaturePad } from "./signature-pad";
 import { VisitBreadcrumb } from "./visit-breadcrumb";
 import { toast } from "sonner";
 import { createVisitAction } from "~/server/actions/visits";
-import { Save, Loader, Eye } from "lucide-react";
+import { Save, Loader, Eye, Download } from "lucide-react";
 import type { AppointmentWithDetails, VisitFormData } from "~/types/visits";
 import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
-import Link from "next/link";
+import { navigateToPage } from "~/lib/navigation";
 
 interface VisitFormProps {
   appointment: AppointmentWithDetails;
@@ -20,6 +20,7 @@ interface VisitFormProps {
 export function VisitForm({ appointment }: VisitFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [formData, setFormData] = useState<VisitFormData>({
     appointmentId: appointment.appointmentId,
     notes: appointment.notes ?? "",
@@ -72,6 +73,42 @@ export function VisitForm({ appointment }: VisitFormProps) {
       if (result.success) {
         console.log("✅ Visit created successfully");
         toast.success("Visita registrada correctamente");
+        
+        // Automatically generate PDF after successful visit creation
+        try {
+          console.log("📄 Auto-generating PDF after visit creation...");
+          const response = await fetch("/api/visita/generate-pdf", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              appointmentId: appointment.appointmentId.toString(),
+            }),
+          });
+
+          if (response.ok) {
+            const pdfBlob = await response.blob();
+            const pdfUrl = URL.createObjectURL(pdfBlob);
+            const link = document.createElement("a");
+            link.href = pdfUrl;
+            link.download = `visita-${appointment.appointmentId}-${Date.now()}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(pdfUrl);
+            toast.success("PDF generado y descargado automáticamente");
+            console.log("✅ PDF auto-generated and downloaded");
+          } else {
+            console.warn("⚠️ PDF generation failed, but visit was saved");
+            toast.info("Visita guardada, pero no se pudo generar el PDF");
+          }
+        } catch (pdfError) {
+          console.error("❌ PDF generation error:", pdfError);
+          // Don't fail the whole operation if PDF generation fails
+          toast.info("Visita guardada, pero no se pudo generar el PDF");
+        }
+        
         router.push("/calendario");
       } else {
         console.log("❌ Visit creation failed:", result.error);
@@ -87,6 +124,51 @@ export function VisitForm({ appointment }: VisitFormProps) {
 
   const handleBack = () => {
     router.push("/calendario");
+  };
+
+  const handleGeneratePdf = async () => {
+    setIsGeneratingPdf(true);
+    try {
+      console.log("📄 Starting PDF generation...");
+
+      const response = await fetch("/api/visita/generate-pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          appointmentId: appointment.appointmentId.toString(),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json()) as { error?: string };
+        throw new Error(errorData.error ?? "Error al generar el PDF");
+      }
+
+      // Get the PDF blob
+      const pdfBlob = await response.blob();
+
+      // Create download link
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const link = document.createElement("a");
+      link.href = pdfUrl;
+      link.download = `visita-${appointment.appointmentId}-${Date.now()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(pdfUrl);
+
+      toast.success("PDF generado exitosamente!");
+      console.log("✅ PDF generated and downloaded");
+    } catch (error) {
+      console.error("❌ PDF generation error:", error);
+      toast.error(
+        `Error al generar el PDF: ${error instanceof Error ? error.message : "Error desconocido"}`,
+      );
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   const formatDateTime = (date: Date) => {
@@ -107,29 +189,13 @@ export function VisitForm({ appointment }: VisitFormProps) {
 
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
-                Registro de Visita
-              </h1>
-              <p className="mt-1 text-sm text-gray-600 sm:text-base">
-                {appointment.propertyStreet ?? "Propiedad"}
-              </p>
-            </div>
-            <Link
-              href={`/templates/visita/${appointment.appointmentId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button
-                type="button"
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Eye className="h-4 w-4" />
-                Vista Previa
-              </Button>
-            </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+              Registro de Visita
+            </h1>
+            <p className="mt-1 text-sm text-gray-600 sm:text-base">
+              {appointment.propertyStreet ?? "Propiedad"}
+            </p>
           </div>
         </div>
 
@@ -330,34 +396,79 @@ export function VisitForm({ appointment }: VisitFormProps) {
             </p>
           </div>
 
-          {/* Submit */}
-          <div className="sticky bottom-4 flex flex-col justify-end gap-3 rounded-lg border bg-white p-4 shadow-lg sm:flex-row sm:gap-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleBack}
-              disabled={isLoading}
-              className="w-full sm:w-auto"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={isLoading || !agentSignature || !visitorSignature}
-              className="w-full sm:w-auto sm:min-w-[150px]"
-            >
-              {isLoading ? (
-                <>
-                  <Loader className="mr-2 h-4 w-4 animate-spin" />
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Registrar Visita
-                </>
-              )}
-            </Button>
+          {/* Submit and Actions */}
+          <div className="sticky bottom-4 flex flex-col gap-3 rounded-lg border bg-white p-4 shadow-lg sm:flex-row sm:flex-wrap sm:gap-4">
+            {/* Preview and PDF buttons - shown first on mobile, last on desktop */}
+            <div className="flex flex-col gap-3 sm:order-2 sm:ml-auto sm:flex-row sm:gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex w-full items-center justify-center gap-2 sm:w-auto"
+                onClick={() => {
+                  // For document previews, always open in new window/tab
+                  // even in PWA mode since it's a printable document
+                  window.open(
+                    `/templates/visita/${appointment.appointmentId}`,
+                    "_blank",
+                    "noopener,noreferrer",
+                  );
+                }}
+                disabled={isGeneratingPdf || isLoading}
+              >
+                <Eye className="h-4 w-4" />
+                <span className="sm:hidden">Vista Previa</span>
+                <span className="hidden sm:inline">Vista Previa</span>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="flex w-full items-center justify-center gap-2 sm:w-auto"
+                onClick={handleGeneratePdf}
+                disabled={isGeneratingPdf || isLoading}
+              >
+                {isGeneratingPdf ? (
+                  <>
+                    <Loader className="h-4 w-4 animate-spin" />
+                    <span>Generando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4" />
+                    <span>PDF</span>
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Cancel and Submit buttons */}
+            <div className="flex flex-col gap-3 sm:order-1 sm:flex-row sm:gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleBack}
+                disabled={isLoading}
+                className="w-full sm:w-auto"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={isLoading || !agentSignature || !visitorSignature}
+                className="w-full sm:w-auto sm:min-w-[150px]"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Registrar Visita
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </form>
       </div>
