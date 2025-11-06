@@ -141,7 +141,7 @@ export function DocumentsSection({
                 folderType={folderType}
                 onDocumentsUploaded={handleDocumentsUploaded}
               />
-            </div>
+            </div> 
 
             {/* Right: Generate Document */}
             <div>
