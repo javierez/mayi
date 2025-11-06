@@ -56,14 +56,29 @@ export async function POST(request: NextRequest) {
 
     // Get Puppeteer instance based on environment (Vercel vs local)
     const { puppeteer, launchOptions } = await getPuppeteerConfig();
-    
+
     console.log(
       "🌐 Using Puppeteer:",
       process.env.VERCEL === "1" ? "Vercel (serverless)" : "Local",
     );
 
+    console.log("🔧 Launch options:", JSON.stringify(launchOptions, null, 2));
+
     // Launch browser with optimized settings for PDF generation
-    const browser = await puppeteer.launch(launchOptions);
+    let browser;
+    try {
+      console.log("🚀 Attempting to launch browser...");
+      browser = await puppeteer.launch(launchOptions);
+      console.log("✅ Browser launched successfully");
+    } catch (launchError) {
+      console.error("❌ Browser launch failed:", launchError);
+      console.error("🔍 Launch error details:", {
+        message: launchError instanceof Error ? launchError.message : String(launchError),
+        stack: launchError instanceof Error ? launchError.stack : undefined,
+        executablePath: launchOptions.executablePath,
+      });
+      throw launchError;
+    }
 
     const page = (await browser.newPage()) as Page;
 
@@ -301,6 +316,18 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("❌ Visit PDF generation failed:", error);
+
+    // Log detailed error context for debugging
+    console.error("🔍 Error Context:", {
+      errorType: error?.constructor?.name,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack : undefined,
+      nodeVersion: process.version,
+      platform: process.platform,
+      vercelEnv: process.env.VERCEL,
+      memoryUsage: process.memoryUsage(),
+    });
+
     return NextResponse.json(
       {
         error: "Failed to generate PDF",

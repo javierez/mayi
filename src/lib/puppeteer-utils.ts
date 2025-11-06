@@ -25,16 +25,43 @@ export async function getPuppeteerConfig(): Promise<PuppeteerConfig> {
   const isServerless =
     process.env.VERCEL === "1" || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
+  console.log("🔍 Puppeteer Environment Detection:", {
+    isServerless,
+    nodeVersion: process.version,
+    platform: process.platform,
+    arch: process.arch,
+    vercelEnv: process.env.VERCEL,
+    awsLambda: process.env.AWS_LAMBDA_FUNCTION_NAME,
+  });
+
   if (isServerless) {
     // Use puppeteer-core with serverless Chromium for Vercel
     const chromiumModule = await import("@sparticuz/chromium");
     const chromium = chromiumModule.default;
     const puppeteerCore = await import("puppeteer-core");
 
+    console.log("📦 @sparticuz/chromium loaded");
+
     // The @sparticuz/chromium package includes the binary and handles extraction
     const executablePath = await chromium.executablePath();
 
     console.log("✅ Chromium executable path resolved:", executablePath);
+
+    // Check if the binary actually exists
+    try {
+      const fs = await import("fs");
+      const stats = fs.statSync(executablePath);
+      console.log("📊 Chromium binary info:", {
+        exists: true,
+        size: stats.size,
+        mode: stats.mode.toString(8),
+        isFile: stats.isFile(),
+      });
+    } catch (error) {
+      console.error("❌ Chromium binary check failed:", error);
+    }
+
+    console.log("🚀 Launch args:", chromium.args);
 
     return {
       puppeteer: puppeteerCore.default,
