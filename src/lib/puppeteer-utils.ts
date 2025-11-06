@@ -70,10 +70,10 @@ export async function getPuppeteerConfig(): Promise<PuppeteerConfig> {
     return {
       puppeteer: puppeteerCore.default,
       launchOptions: {
-        args: chromium.args,
+        args: puppeteerCore.default.defaultArgs({ args: chromium.args, headless: "shell" }),
         defaultViewport: chromium.defaultViewport,
         executablePath,
-        headless: chromium.headless,
+        headless: "shell",
       },
     };
   } else {
