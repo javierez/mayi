@@ -42,6 +42,10 @@ export async function getPuppeteerConfig(): Promise<PuppeteerConfig> {
 
     console.log("📦 @sparticuz/chromium loaded");
 
+    // Disable graphics mode to reduce system library dependencies (libnss3.so, etc.)
+    // This is critical for serverless environments
+    chromium.setGraphicsMode = false;
+
     // The @sparticuz/chromium package includes the binary and handles extraction
     const executablePath = await chromium.executablePath();
 
