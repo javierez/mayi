@@ -39,18 +39,12 @@ const config = {
         pathname: "/**",
       },
     ],
-    // Optimize images
-    unoptimized: false,
-    // Configure image sizes for responsive images
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    // Use modern formats
-    formats: ["image/webp"],
-    // Set minimum cache TTL
-    minimumCacheTTL: 60,
+    // Disable Vercel Image Optimization to avoid 402 quota errors
+    // Images are served directly from S3
+    unoptimized: true,
   },
   serverExternalPackages: [
-    "@sparticuz/chromium-min",
+    "@sparticuz/chromium",
     "puppeteer-core",
   ],
   experimental: {
