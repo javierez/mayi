@@ -67,7 +67,7 @@ export function HeroSection() {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
               >
-                El CRM más completo y potente para agentes y agencias
+                El CRM más completo y potente para agencias
                 inmobiliarias en España. Automatiza, optimiza y crece tu negocio
                 con todas las herramientas disponibles.
               </motion.p>
