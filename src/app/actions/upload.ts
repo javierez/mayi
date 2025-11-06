@@ -419,6 +419,8 @@ export async function uploadDocument(
   appointmentId?: bigint,
   propertyId?: bigint,
   folderType?: "initial-docs" | "visitas" | "others" | "carteles",
+  documentHash?: string,
+  documentTimestamp?: Date,
 ): Promise<Document> {
   try {
     console.log(`📤 Starting document upload:`, {
@@ -469,6 +471,8 @@ export async function uploadDocument(
       documentTag,
       documentOrder,
       isActive: true,
+      documentHash: documentHash ?? undefined,
+      documentTimestamp: documentTimestamp ?? undefined,
     });
 
     if (!result) {
@@ -513,6 +517,8 @@ export async function uploadDocument(
       isActive: document.isActive ?? true,
       createdAt: document.createdAt,
       updatedAt: document.updatedAt,
+      documentHash: document.documentHash ?? undefined,
+      documentTimestamp: document.documentTimestamp ?? undefined,
     };
 
     return typedDocument;

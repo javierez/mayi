@@ -17,6 +17,7 @@ export function serializeDocument(document: Document | null | undefined) {
     dealId: document.dealId?.toString(),
     appointmentId: document.appointmentId?.toString(),
     prospectId: document.prospectId?.toString(),
+    documentTimestamp: document.documentTimestamp?.toISOString(),
   };
 }
 

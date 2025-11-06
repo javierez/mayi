@@ -25,6 +25,8 @@ export interface AppointmentWithDetails {
   contactFirstName?: string | null;
   contactLastName?: string | null;
   contactNif?: string | null;
+  contactPhone?: string | null;
+  contactEmail?: string | null;
   propertyStreet?: string | null;
   propertyAddressDetails?: string | null;
   agentName?: string | null;
@@ -38,4 +40,43 @@ export interface VisitSignatureDocument {
   fileUrl: string;
   signatureType: "agent" | "visitor";
   appointmentId: bigint;
+}
+
+export interface VisitDocumentData {
+  appointment: {
+    appointmentId: bigint;
+    contactFirstName: string;
+    contactLastName: string;
+    contactNif?: string | null;
+    propertyStreet?: string | null;
+    propertyAddressDetails?: string | null;
+    agentName?: string | null;
+    agentFirstName?: string | null;
+    agentLastName?: string | null;
+    datetimeStart: Date;
+    datetimeEnd: Date;
+    notes?: string | null;
+  };
+  signatures: {
+    agentSignatureUrl?: string | null;
+    visitorSignatureUrl?: string | null;
+  };
+  branding?: {
+    logoUrl?: string | null;
+    agentName?: string | null;
+    collegiateNumber?: string | null;
+    accountType?: string | null;
+    accountName?: string | null;
+    taxId?: string | null;
+    offices?: Array<{
+      address: string;
+      city: string;
+      postalCode: string;
+      phone: string;
+    }>;
+    website?: string | null;
+  };
+  location: string;
+  date: string;
+  marketingConsent?: boolean;
 }

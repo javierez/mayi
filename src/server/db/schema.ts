@@ -713,6 +713,10 @@ export const documents = pgTable("documents", {
   documentTag: varchar("document_tag", { length: 255 }), // Category/type tag (e.g., "contract", "ID", "deed")
   documentOrder: integer("document_order").default(0).notNull(), // Display order within entity
 
+  // Document integrity fields
+  documentHash: varchar("document_hash", { length: 64 }), // SHA-256 hash (64 hex characters)
+  documentTimestamp: timestamp("document_timestamp"), // ISO timestamp when document was created/signed
+
   // System fields
   uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
   isActive: boolean("is_active").default(true),

@@ -55,7 +55,8 @@ async function uploadBrandAssetToS3(
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Upload to S3
+    // Upload to S3 (public access controlled via bucket policy, not ACL)
+    // Note: Bucket has "Bucket Owner Enforced" setting which disables ACLs
     await s3Client.send(
       new PutObjectCommand({
         Bucket: bucketName,
@@ -316,7 +317,7 @@ export async function getBrandAsset(
       id: nanoid(),
       accountId: accountId,
       logoOriginalUrl: account.logo,
-      logoTransparentUrl: websiteConfig?.logo ?? "",
+      logoTransparentUrl: websiteConfig?.logo && websiteConfig.logo !== "" ? websiteConfig.logo : null,
       colorPalette: preferences?.colorPalette ?? [],
       fileName: "logo", // We don't store original filename, so use generic
       fileSize: 0, // Not stored in current schema

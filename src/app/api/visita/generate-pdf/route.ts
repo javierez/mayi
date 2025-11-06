@@ -1,13 +1,18 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getCurrentUserAccountId } from "~/lib/dal";
+import { getCurrentUserAccountId, getSecureSession } from "~/lib/dal";
 import { getVisitDocumentDataAction } from "~/server/actions/visits";
 import { getPuppeteerConfig } from "~/lib/puppeteer-utils";
 import type { Page } from "puppeteer-core";
+import { calculateDocumentHash, embedDocumentMetadata } from "~/lib/pdf-integrity";
+import { uploadDocument } from "~/app/actions/upload";
+import { getAppointmentWithDetails } from "~/server/queries/visits";
+import { getListingDocumentsData } from "~/server/queries/listing";
 
 export async function POST(request: NextRequest) {
   try {
-    const { appointmentId } = (await request.json()) as {
+    const { appointmentId, saveToS3 = false } = (await request.json()) as {
       appointmentId: string;
+      saveToS3?: boolean;
     };
 
     // Validate input data
@@ -44,6 +49,9 @@ export async function POST(request: NextRequest) {
 
     console.log("📊 PDF Generation - Visit data fetched:", {
       appointmentId,
+      hasBranding: !!visitData.branding,
+      logoUrl: visitData.branding?.logoUrl ?? "no logo",
+      agentName: visitData.branding?.agentName ?? "no agent name",
     });
 
     // Get Puppeteer instance based on environment (Vercel vs local)
@@ -106,18 +114,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Wait for images to load
+    // Wait for images to load and check their status
     try {
+      const imageStatus = await page.evaluate(() => {
+        const images = Array.from(document.querySelectorAll("img"));
+        return images.map((img) => ({
+          src: img.src,
+          complete: img.complete,
+          naturalWidth: img.naturalWidth,
+          naturalHeight: img.naturalHeight,
+          // If naturalWidth is 0, the image failed to load
+          loaded: img.complete && img.naturalWidth > 0,
+        }));
+      });
+
+      console.log("🖼️ Image loading status:", JSON.stringify(imageStatus, null, 2));
+
+      // Wait for all images to actually load (not just complete)
       await page.waitForFunction(
         () => {
           const images = Array.from(document.querySelectorAll("img"));
-          return images.every((img) => img.complete);
+          return images.every((img) => img.complete && img.naturalWidth > 0);
         },
         { timeout: 10000 },
       );
       console.log("✅ All images loaded successfully");
-    } catch {
-      console.warn("⚠️ Image loading timeout, proceeding anyway...");
+    } catch (error) {
+      console.warn("⚠️ Image loading timeout, checking status...");
+      const imageStatus = await page.evaluate(() => {
+        const images = Array.from(document.querySelectorAll("img"));
+        return images.map((img) => ({
+          src: img.src,
+          complete: img.complete,
+          naturalWidth: img.naturalWidth,
+          loaded: img.complete && img.naturalWidth > 0,
+        }));
+      });
+      console.warn("Final image status:", JSON.stringify(imageStatus, null, 2));
     }
 
     // Wait for the template ready signal
@@ -135,6 +168,16 @@ export async function POST(request: NextRequest) {
     } catch {
       console.warn("Visit document ready signal timeout, proceeding anyway...");
     }
+
+    // Debug: Check what's actually in the page
+    const pageDebugInfo = await page.evaluate(() => {
+      const brandLogo = document.querySelector('img[alt="Logo de la agencia"]');
+      return {
+        hasBrandLogo: !!brandLogo,
+        brandLogoSrc: brandLogo?.getAttribute('src') ?? 'not found',
+      };
+    });
+    console.log("🔍 Page content debug:", pageDebugInfo);
 
     console.log("🎨 Template loaded, generating PDF...");
 
@@ -156,14 +199,104 @@ export async function POST(request: NextRequest) {
 
     console.log("✅ Visit PDF generated successfully");
 
-    // Return PDF as response
+    // Calculate document hash and timestamp
+    console.log("🔐 Calculating document hash...");
+    const documentHash = calculateDocumentHash(Buffer.from(pdfBuffer));
+    const documentTimestamp = new Date();
+
+    console.log("📝 Document integrity:", {
+      hash: documentHash,
+      timestamp: documentTimestamp.toISOString(),
+    });
+
+    // Embed hash and timestamp in PDF metadata
+    console.log("📄 Embedding metadata in PDF...");
+    const pdfWithMetadata = await embedDocumentMetadata(
+      Buffer.from(pdfBuffer),
+      documentHash,
+      documentTimestamp.toISOString(),
+    );
+
+    // Define filename here so it's available for both paths
+    const filename = `visita-${appointmentId}-${Date.now()}.pdf`;
+
+    // Only save to S3 if requested
+    if (saveToS3) {
+      console.log("💾 Saving PDF to S3 and database...");
+
+      // Get appointment details to find listingId and reference number
+      const appointment = await getAppointmentWithDetails(appointmentIdBigInt);
+      if (!appointment || !appointment.listingId) {
+        throw new Error("Appointment or listing not found");
+      }
+
+      // Get listing reference number for S3 upload path
+      const listingData = await getListingDocumentsData(
+        Number(appointment.listingId),
+      );
+      const referenceNumber =
+        listingData.referenceNumber ?? `VISIT_${appointmentId}`;
+
+      // Get current user session for upload
+      const session = await getSecureSession();
+      if (!session?.user?.id) {
+        throw new Error("User session not found");
+      }
+
+      // Convert PDF buffer to File object for upload
+      const pdfFile = new File([new Uint8Array(pdfWithMetadata)], filename, {
+        type: "application/pdf",
+      });
+
+      try {
+        const savedDocument = await uploadDocument(
+          pdfFile,
+          session.user.id,
+          referenceNumber,
+          1, // documentOrder
+          "visita-pdf", // documentTag
+          appointment.contactId ? BigInt(appointment.contactId) : undefined,
+          BigInt(appointment.listingId),
+          undefined, // listingContactId
+          undefined, // dealId
+          appointmentIdBigInt, // appointmentId
+          listingData.propertyId
+            ? BigInt(listingData.propertyId)
+            : undefined,
+          "visitas", // folderType
+          documentHash, // documentHash
+          documentTimestamp, // documentTimestamp
+        );
+
+        console.log("✅ PDF saved successfully:", {
+          docId: savedDocument.docId.toString(),
+          hash: savedDocument.documentHash,
+          timestamp: savedDocument.documentTimestamp?.toISOString(),
+        });
+
+        // Return JSON with document URL for sharing
+        return NextResponse.json({
+          success: true,
+          documentUrl: savedDocument.fileUrl,
+          filename: savedDocument.filename,
+          documentId: savedDocument.docId.toString(),
+        });
+      } catch (uploadError) {
+        console.error("⚠️ Error saving PDF to database:", uploadError);
+        throw new Error("Failed to save PDF to S3");
+      }
+    } else {
+      console.log("ℹ️ Skipping S3 save as requested (download only)");
+    }
+
+    // Return PDF as download (from modified buffer with metadata)
     // Convert to Uint8Array which NextResponse accepts
-    const pdfUint8Array = new Uint8Array(pdfBuffer);
+    const pdfUint8Array = new Uint8Array(pdfWithMetadata);
     return new NextResponse(pdfUint8Array, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="visita-${appointmentId}-${Date.now()}.pdf"`,
+        "Content-Disposition": `attachment; filename="${filename}"`,
       },
     });
   } catch (error) {

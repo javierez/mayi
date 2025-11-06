@@ -23,6 +23,7 @@ import {
   Trash2,
   Loader2,
   Home,
+  Phone,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -990,6 +991,18 @@ export default function WorkQueueCard({
                                   <h3 className="mb-2 sm:mb-2.5 text-sm font-semibold text-gray-900 break-words">
                                     {appointment.contactName}
                                   </h3>
+
+                                  {/* Phone number */}
+                                  {appointment.contactPhone && (
+                                    <a
+                                      href={`tel:${appointment.contactPhone}`}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="mb-2 flex items-center gap-1 text-xs text-gray-600 transition-colors hover:text-blue-600"
+                                    >
+                                      <Phone className="h-3 w-3 flex-shrink-0" />
+                                      <span>{appointment.contactPhone}</span>
+                                    </a>
+                                  )}
 
                                   {/* Address */}
                                   {appointment.propertyAddress && (

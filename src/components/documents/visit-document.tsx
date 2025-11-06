@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
 import { getBrandAsset } from "~/app/actions/brand-upload";
 import { getCurrentUserAccountIdAction } from "~/app/actions/settings";
 import {
@@ -9,57 +8,54 @@ import {
   getOfficeInfoAction,
 } from "~/app/actions/agent-info";
 import { useSession } from "~/lib/auth-client";
-
-interface VisitDocumentData {
-  appointment: {
-    appointmentId: bigint;
-    contactFirstName: string;
-    contactLastName: string;
-    contactNif?: string | null;
-    propertyStreet?: string | null;
-    propertyAddressDetails?: string | null;
-    agentName?: string | null;
-    agentFirstName?: string | null;
-    agentLastName?: string | null;
-    datetimeStart: Date;
-    datetimeEnd: Date;
-    notes?: string | null;
-  };
-  signatures: {
-    agentSignatureUrl?: string | null;
-    visitorSignatureUrl?: string | null;
-  };
-  location: string;
-  date: string;
-  marketingConsent?: boolean;
-}
+import type { VisitDocumentData } from "~/types/visits";
 
 interface Props {
   data: VisitDocumentData;
 }
 
 export function VisitDocument({ data }: Props) {
-  const [brandLogo, setBrandLogo] = useState<string | null>(null);
+  // Initialize state from props if branding data is available (PDF mode)
+  const [brandLogo, setBrandLogo] = useState<string | null>(
+    data.branding?.logoUrl ?? null,
+  );
   const [agentName, setAgentName] = useState<string>(
-    data.appointment.agentName ??
+    data.branding?.agentName ??
+      data.appointment.agentName ??
       (data.appointment.agentFirstName || data.appointment.agentLastName
         ? `${data.appointment.agentFirstName ?? ""} ${data.appointment.agentLastName ?? ""}`.trim()
         : "Agente"),
   );
-  const [collegiateNumber, setCollegiateNumber] = useState<string>("");
-  const [accountType, setAccountType] = useState<string | null>(null);
-  const [accountName, setAccountName] = useState<string>(""); // Agency/company name
-  const [taxId, setTaxId] = useState<string>("");
+  const [collegiateNumber, setCollegiateNumber] = useState<string>(
+    data.branding?.collegiateNumber ?? "",
+  );
+  const [accountType, setAccountType] = useState<string | null>(
+    data.branding?.accountType ?? null,
+  );
+  const [accountName, setAccountName] = useState<string>(
+    data.branding?.accountName ?? "",
+  ); // Agency/company name
+  const [taxId, setTaxId] = useState<string>(data.branding?.taxId ?? "");
   const [offices, setOffices] = useState<
     Array<{ address: string; city: string; postalCode: string; phone: string }>
-  >([]);
-  const [website, setWebsite] = useState<string>("");
+  >(data.branding?.offices ?? []);
+  const [website, setWebsite] = useState<string>(
+    data.branding?.website ?? "",
+  );
   const { data: session } = useSession();
 
   useEffect(() => {
+    // Skip client-side fetch if branding is provided in props (PDF mode)
+    if (data.branding?.logoUrl) {
+      console.log("Using branding from props (PDF mode)");
+      return;
+    }
+
+    // Client-side fetch for preview mode (when branding not in props)
     const fetchBrandData = async () => {
       try {
         if (session?.user?.id) {
+          console.log("Fetching branding client-side (preview mode)");
           const userAccountId = await getCurrentUserAccountIdAction();
 
           if (userAccountId) {
@@ -124,7 +120,7 @@ export function VisitDocument({ data }: Props) {
     };
 
     void fetchBrandData();
-  }, [session?.user?.id]);
+  }, [session?.user?.id, data.branding]);
 
   const formatDateTime = (date: Date) => {
     return new Intl.DateTimeFormat("es-ES", {
@@ -180,28 +176,19 @@ export function VisitDocument({ data }: Props) {
         {/* Header Section */}
         <div className="mb-6 text-center print:mb-2">
           {/* Logo Section */}
-          <div className="mb-6 flex items-center justify-center gap-6 p-2 print:mb-2 print:p-0">
-            {brandLogo && (
+          {brandLogo && (
+            <div className="mb-6 flex items-center justify-center p-2 print:mb-2 print:p-0">
               <div className="flex-shrink-0">
-                <Image
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src={brandLogo}
                   alt="Logo de la agencia"
-                  width={80}
-                  height={80}
-                  className="h-20 w-auto drop-shadow-sm"
+                  className="h-20 w-auto"
+                  style={{ width: "auto", height: "80px" }}
                 />
               </div>
-            )}
-            <div className="flex-shrink-0">
-              <Image
-                src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/logo_api.png"
-                alt="API Logo"
-                width={48}
-                height={48}
-                className="h-12 w-auto drop-shadow-sm"
-              />
             </div>
-          </div>
+          )}
 
           {/* Agency Title */}
           <div className="mb-4 border-b border-gray-200 pb-3 print:mb-3 print:pb-2">

@@ -3,30 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { VisitDocument } from "~/components/documents/visit-document";
-
-interface VisitDocumentData {
-  appointment: {
-    appointmentId: bigint;
-    contactFirstName: string;
-    contactLastName: string;
-    contactNif?: string | null;
-    propertyStreet?: string | null;
-    propertyAddressDetails?: string | null;
-    agentName?: string | null;
-    agentFirstName?: string | null;
-    agentLastName?: string | null;
-    datetimeStart: Date;
-    datetimeEnd: Date;
-    notes?: string | null;
-  };
-  signatures: {
-    agentSignatureUrl?: string | null;
-    visitorSignatureUrl?: string | null;
-  };
-  location: string;
-  date: string;
-  marketingConsent?: boolean;
-}
+import type { VisitDocumentData } from "~/types/visits";
 
 export default function VisitTemplatePage() {
   const searchParams = useSearchParams();

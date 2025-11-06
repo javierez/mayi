@@ -1205,6 +1205,9 @@ export type Document = {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  // Document integrity fields
+  documentHash?: string;
+  documentTimestamp?: Date;
 };
 
 // Mock data for users (real estate agents and admin)

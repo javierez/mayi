@@ -3,7 +3,7 @@
  *
  * Automatically detects if running in Vercel (serverless) or local environment
  * and uses the appropriate Puppeteer setup:
- * - Vercel: puppeteer-core + @sparticuz/chromium-min (serverless-compatible)
+ * - Vercel: puppeteer-core + @sparticuz/chromium (serverless-compatible)
  * - Local: puppeteer (full Chromium binary)
  */
 
@@ -27,16 +27,21 @@ export async function getPuppeteerConfig(): Promise<PuppeteerConfig> {
 
   if (isServerless) {
     // Use puppeteer-core with serverless Chromium for Vercel
-    const chromiumModule = await import("@sparticuz/chromium-min");
+    const chromiumModule = await import("@sparticuz/chromium");
     const chromium = chromiumModule.default;
     const puppeteerCore = await import("puppeteer-core");
+
+    // The @sparticuz/chromium package includes the binary and handles extraction
+    const executablePath = await chromium.executablePath();
+
+    console.log("✅ Chromium executable path resolved:", executablePath);
 
     return {
       puppeteer: puppeteerCore.default,
       launchOptions: {
         args: chromium.args,
         defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
+        executablePath,
         headless: chromium.headless,
       },
     };

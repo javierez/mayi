@@ -880,9 +880,9 @@ export default function AppointmentForm({
                 </div>
               ) : (
                 <div className="space-y-1.5">
-                  {filteredContacts.map((contact) => (
+                  {filteredContacts.map((contact, index) => (
                     <div
-                      key={contact.contactId.toString()}
+                      key={`${contact.contactId.toString()}-${index}`}
                       className="cursor-pointer rounded-lg border border-gray-100/50 bg-gray-50/30 p-2 transition-all hover:border-gray-200 hover:bg-gray-100/60 hover:shadow-sm"
                       onClick={() => handleContactSelect(contact)}
                     >
@@ -956,8 +956,8 @@ export default function AppointmentForm({
                   </SelectTrigger>
                   <SelectContent>
                     <ScrollArea className="h-[200px]">
-                      {generateTimeOptions().map((time) => (
-                        <SelectItem key={time} value={time}>
+                      {generateTimeOptions().map((time, index) => (
+                        <SelectItem key={`${time}-${index}`} value={time}>
                           {time}
                         </SelectItem>
                       ))}
@@ -1116,9 +1116,9 @@ export default function AppointmentForm({
                       </div>
                     ) : (
                       <div className="space-y-1.5">
-                        {filteredListings.map((listing) => (
+                        {filteredListings.map((listing, index) => (
                           <div
-                            key={listing.listingId.toString()}
+                            key={`${listing.listingId.toString()}-${index}`}
                             className="cursor-pointer rounded-lg border border-gray-100/50 bg-gray-50/30 p-2 transition-all hover:border-gray-200 hover:bg-gray-100/60 hover:shadow-sm"
                             onClick={() => handleListingSelect(listing)}
                           >
@@ -1161,13 +1161,24 @@ export default function AppointmentForm({
               </label>
               <input
                 id="tripTimeMinutes"
-                onChange={(e) =>
-                  handleInputChange("tripTimeMinutes")(
-                    parseInt(e.target.value) ?? 0,
-                  )
+                value={
+                  formData.tripTimeMinutes === 0 ||
+                  formData.tripTimeMinutes === undefined
+                    ? ""
+                    : formData.tripTimeMinutes
                 }
-                placeholder="0"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // If empty, set to 0
+                  if (value === "") {
+                    handleInputChange("tripTimeMinutes")(0);
+                  } else {
+                    handleInputChange("tripTimeMinutes")(parseInt(value) || 0);
+                  }
+                }}
+                placeholder="-"
                 type="number"
+                min="0"
                 className="h-9 w-full rounded-md border border-gray-200 bg-background px-3 py-2 text-sm shadow-md ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
@@ -1294,7 +1305,7 @@ export default function AppointmentForm({
   };
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-2xl flex-col">
+    <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-1">
       {/* Progress Steps */}
       <div className="mb-8">
         <div className="flex items-center justify-center space-x-8">

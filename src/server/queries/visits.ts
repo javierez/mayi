@@ -37,6 +37,8 @@ export async function getAppointmentWithDetails(
       contactFirstName: contacts.firstName,
       contactLastName: contacts.lastName,
       contactNif: contacts.nif,
+      contactPhone: contacts.phone,
+      contactEmail: contacts.email,
       propertyStreet: properties.street,
       propertyAddressDetails: properties.addressDetails,
       agentName: users.name,

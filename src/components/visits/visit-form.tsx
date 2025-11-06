@@ -6,12 +6,12 @@ import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { SignaturePad } from "./signature-pad";
 import { VisitBreadcrumb } from "./visit-breadcrumb";
+import { ShareVisitPdfModal } from "./share-visit-pdf-modal";
 import { toast } from "sonner";
 import { createVisitAction } from "~/server/actions/visits";
-import { Save, Loader, Eye, Download } from "lucide-react";
+import { Save, Loader, Eye, Download, Share2 } from "lucide-react";
 import type { AppointmentWithDetails, VisitFormData } from "~/types/visits";
 import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
-import { navigateToPage } from "~/lib/navigation";
 
 interface VisitFormProps {
   appointment: AppointmentWithDetails;
@@ -21,6 +21,7 @@ export function VisitForm({ appointment }: VisitFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   const [formData, setFormData] = useState<VisitFormData>({
     appointmentId: appointment.appointmentId,
     notes: appointment.notes ?? "",
@@ -28,6 +29,11 @@ export function VisitForm({ appointment }: VisitFormProps) {
   const [agentSignature, setAgentSignature] = useState<string | null>(null);
   const [visitorSignature, setVisitorSignature] = useState<string | null>(null);
   const [marketingConsent, setMarketingConsent] = useState<boolean>(false);
+
+  // Share modal state
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareDocumentUrl, setShareDocumentUrl] = useState<string | null>(null);
+  const [shareMessageType, setShareMessageType] = useState<"draft" | "signed">("draft");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,10 +79,10 @@ export function VisitForm({ appointment }: VisitFormProps) {
       if (result.success) {
         console.log("✅ Visit created successfully");
         toast.success("Visita registrada correctamente");
-        
+
         // Automatically generate PDF after successful visit creation
         try {
-          console.log("📄 Auto-generating PDF after visit creation...");
+          console.log("📄 Auto-generating PDF after visit creation (with S3 save)...");
           const response = await fetch("/api/visita/generate-pdf", {
             method: "POST",
             headers: {
@@ -84,32 +90,47 @@ export function VisitForm({ appointment }: VisitFormProps) {
             },
             body: JSON.stringify({
               appointmentId: appointment.appointmentId.toString(),
+              saveToS3: true, // Save to S3 when registering the visit
             }),
           });
 
           if (response.ok) {
-            const pdfBlob = await response.blob();
-            const pdfUrl = URL.createObjectURL(pdfBlob);
-            const link = document.createElement("a");
-            link.href = pdfUrl;
-            link.download = `visita-${appointment.appointmentId}-${Date.now()}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(pdfUrl);
-            toast.success("PDF generado y descargado automáticamente");
-            console.log("✅ PDF auto-generated and downloaded");
+            // Get the document URL from response
+            const data = (await response.json()) as {
+              success: boolean;
+              documentUrl: string;
+              filename: string;
+              documentId: string;
+            };
+
+            if (data.success && data.documentUrl) {
+              // Open share modal with signed document message
+              setShareDocumentUrl(data.documentUrl);
+              setShareMessageType("signed");
+              setShareModalOpen(true);
+
+              toast.success("Documento generado. Puedes compartirlo con el cliente.");
+              console.log("✅ PDF auto-generated and ready to share");
+
+              // Navigate to calendar after a delay (or when modal closes)
+              // Wait for modal to be opened, then navigate after user closes it
+              // We'll navigate when user manually closes the modal
+            } else {
+              console.warn("⚠️ PDF generated but no URL returned");
+              toast.info("Visita guardada exitosamente");
+              router.push("/calendario");
+            }
           } else {
             console.warn("⚠️ PDF generation failed, but visit was saved");
             toast.info("Visita guardada, pero no se pudo generar el PDF");
+            router.push("/calendario");
           }
         } catch (pdfError) {
           console.error("❌ PDF generation error:", pdfError);
           // Don't fail the whole operation if PDF generation fails
           toast.info("Visita guardada, pero no se pudo generar el PDF");
+          router.push("/calendario");
         }
-        
-        router.push("/calendario");
       } else {
         console.log("❌ Visit creation failed:", result.error);
         toast.error(result.error ?? "Error al registrar la visita");
@@ -129,7 +150,7 @@ export function VisitForm({ appointment }: VisitFormProps) {
   const handleGeneratePdf = async () => {
     setIsGeneratingPdf(true);
     try {
-      console.log("📄 Starting PDF generation...");
+      console.log("📄 Starting PDF generation (download only, no S3 save)...");
 
       const response = await fetch("/api/visita/generate-pdf", {
         method: "POST",
@@ -138,6 +159,7 @@ export function VisitForm({ appointment }: VisitFormProps) {
         },
         body: JSON.stringify({
           appointmentId: appointment.appointmentId.toString(),
+          saveToS3: false, // Don't save to S3, just download
         }),
       });
 
@@ -168,6 +190,56 @@ export function VisitForm({ appointment }: VisitFormProps) {
       );
     } finally {
       setIsGeneratingPdf(false);
+    }
+  };
+
+  const handleShare = async () => {
+    setIsSharing(true);
+    try {
+      console.log("📄 Starting PDF generation for sharing (with S3 save)...");
+
+      const response = await fetch("/api/visita/generate-pdf", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          appointmentId: appointment.appointmentId.toString(),
+          saveToS3: true, // Save to S3 for sharing
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json()) as { error?: string };
+        throw new Error(errorData.error ?? "Error al generar el PDF");
+      }
+
+      // Get the document URL from response
+      const data = (await response.json()) as {
+        success: boolean;
+        documentUrl: string;
+        filename: string;
+        documentId: string;
+      };
+
+      if (!data.success || !data.documentUrl) {
+        throw new Error("No se pudo obtener la URL del documento");
+      }
+
+      // Open share modal with draft message
+      setShareDocumentUrl(data.documentUrl);
+      setShareMessageType("draft");
+      setShareModalOpen(true);
+
+      toast.success("PDF generado. Selecciona cómo compartirlo.");
+      console.log("✅ PDF generated and ready to share");
+    } catch (error) {
+      console.error("❌ PDF generation error:", error);
+      toast.error(
+        `Error al generar el PDF: ${error instanceof Error ? error.message : "Error desconocido"}`,
+      );
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -398,7 +470,7 @@ export function VisitForm({ appointment }: VisitFormProps) {
 
           {/* Submit and Actions */}
           <div className="sticky bottom-4 flex flex-col gap-3 rounded-lg border bg-white p-4 shadow-lg sm:flex-row sm:flex-wrap sm:gap-4">
-            {/* Preview and PDF buttons - shown first on mobile, last on desktop */}
+            {/* Preview, PDF, and Share buttons - shown first on mobile, last on desktop */}
             <div className="flex flex-col gap-3 sm:order-2 sm:ml-auto sm:flex-row sm:gap-2">
               <Button
                 type="button"
@@ -413,7 +485,7 @@ export function VisitForm({ appointment }: VisitFormProps) {
                     "noopener,noreferrer",
                   );
                 }}
-                disabled={isGeneratingPdf || isLoading}
+                disabled={isGeneratingPdf || isLoading || isSharing}
               >
                 <Eye className="h-4 w-4" />
                 <span className="sm:hidden">Vista Previa</span>
@@ -424,7 +496,7 @@ export function VisitForm({ appointment }: VisitFormProps) {
                 variant="outline"
                 className="flex w-full items-center justify-center gap-2 sm:w-auto"
                 onClick={handleGeneratePdf}
-                disabled={isGeneratingPdf || isLoading}
+                disabled={isGeneratingPdf || isLoading || isSharing}
               >
                 {isGeneratingPdf ? (
                   <>
@@ -435,6 +507,25 @@ export function VisitForm({ appointment }: VisitFormProps) {
                   <>
                     <Download className="h-4 w-4" />
                     <span>PDF</span>
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="flex w-full items-center justify-center gap-2 sm:w-auto"
+                onClick={handleShare}
+                disabled={isSharing || isLoading || isGeneratingPdf}
+              >
+                {isSharing ? (
+                  <>
+                    <Loader className="h-4 w-4 animate-spin" />
+                    <span>Compartiendo...</span>
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="h-4 w-4" />
+                    <span>Compartir</span>
                   </>
                 )}
               </Button>
@@ -471,6 +562,41 @@ export function VisitForm({ appointment }: VisitFormProps) {
             </div>
           </div>
         </form>
+
+        {/* Share Modal */}
+        {shareDocumentUrl && (
+          <ShareVisitPdfModal
+            open={shareModalOpen}
+            onOpenChange={(open) => {
+              setShareModalOpen(open);
+              // If closing modal after a successful registration (signed message),
+              // navigate to calendar
+              if (!open && shareMessageType === "signed") {
+                router.push("/calendario");
+              }
+            }}
+            documentUrl={shareDocumentUrl}
+            messageType={shareMessageType}
+            visitData={{
+              contactName: `${appointment.contactFirstName ?? ""} ${appointment.contactLastName ?? ""}`.trim(),
+              contactPhone: appointment.contactPhone,
+              contactEmail: appointment.contactEmail,
+              propertyAddress: appointment.propertyStreet ?? "Propiedad no especificada",
+              visitDate: new Intl.DateTimeFormat("es-ES", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+              }).format(appointment.datetimeStart),
+              visitTime: new Intl.DateTimeFormat("es-ES", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }).format(appointment.datetimeStart),
+              agentName:
+                appointment.agentName ??
+                `${appointment.agentFirstName ?? ""} ${appointment.agentLastName ?? ""}`.trim(),
+            }}
+          />
+        )}
       </div>
     </div>
   );

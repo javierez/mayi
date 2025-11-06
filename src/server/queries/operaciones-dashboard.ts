@@ -51,6 +51,7 @@ export interface TodayAppointment {
   contactId?: bigint;
   listingId?: bigint;
   contactName: string;
+  contactPhone?: string;
   propertyAddress?: string;
   startTime: Date;
   endTime: Date;
@@ -541,6 +542,7 @@ export async function getTodayAppointments(
         assignedTo: appointments.userId, // Include userId (assignedTo)
         // Contact information
         contactName: sql<string>`CONCAT(contacts.first_name, ' ', contacts.last_name)`,
+        contactPhone: contacts.phone,
         // Property information (if linked to listing)
         propertyAddress: sql<string>`
           CASE WHEN ${appointments.listingId} IS NOT NULL 
@@ -560,6 +562,7 @@ export async function getTodayAppointments(
       contactId: appt.contactId ?? undefined,
       listingId: appt.listingId ?? undefined,
       contactName: appt.contactName,
+      contactPhone: appt.contactPhone ?? undefined,
       propertyAddress: appt.propertyAddress || undefined,
       startTime: appt.startTime,
       endTime: appt.endTime,

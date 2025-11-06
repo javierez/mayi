@@ -17,6 +17,12 @@ import type {
   VisitSignatureDocument,
 } from "~/types/visits";
 import { updateLeadStatusFromVisitOutcome } from "~/server/queries/lead-status-sync";
+import { getBrandAsset } from "~/app/actions/brand-upload";
+import { getCurrentUserAccountIdAction } from "~/app/actions/settings";
+import {
+  getAgentNameAction,
+  getOfficeInfoAction,
+} from "~/app/actions/agent-info";
 
 /**
  * Create a new visit by saving signatures and updating appointment status
@@ -255,6 +261,71 @@ export async function getVisitDocumentDataAction(appointmentId: bigint) {
     const location =
       appointment.propertyStreet?.split(",")[0]?.trim() ?? "Oficina";
 
+    // Fetch branding data server-side (for PDF generation)
+    let brandLogoUrl: string | null = null;
+    let brandingAgentName: string | null = null;
+    let collegiateNumber: string | null = null;
+    let accountType: string | null = null;
+    let accountName: string | null = null;
+    let taxId: string | null = null;
+    let offices: Array<{
+      address: string;
+      city: string;
+      postalCode: string;
+      phone: string;
+    }> = [];
+    let website: string | null = null;
+
+    try {
+      const userAccountId = await getCurrentUserAccountIdAction();
+      console.log("🔍 [BRANDING DEBUG] Getting branding for account:", userAccountId);
+
+      if (userAccountId) {
+        const accountIdStr = userAccountId.toString();
+
+        // Fetch brand asset
+        const brandAsset = await getBrandAsset(accountIdStr);
+        console.log("🔍 [BRANDING DEBUG] Brand asset fetched:", {
+          hasAsset: !!brandAsset,
+          logoTransparentUrl: brandAsset?.logoTransparentUrl ?? "null",
+          logoOriginalUrl: brandAsset?.logoOriginalUrl ?? "null",
+        });
+
+        brandLogoUrl =
+          brandAsset?.logoTransparentUrl ?? brandAsset?.logoOriginalUrl ?? null;
+
+        console.log("🔍 [BRANDING DEBUG] Selected logo URL:", brandLogoUrl);
+
+        // Fetch agent info
+        const agentNameResult = await getAgentNameAction(BigInt(userAccountId));
+        if (agentNameResult.success) {
+          brandingAgentName = agentNameResult.agentName ?? null;
+          accountType = agentNameResult.accountType ?? null;
+          accountName = agentNameResult.accountName ?? null;
+          collegiateNumber = agentNameResult.collegiateNumber ?? null;
+          taxId = agentNameResult.taxId ?? null;
+          website = agentNameResult.website ?? null;
+        }
+
+        // Fetch office info
+        const officeInfoResult = await getOfficeInfoAction(
+          BigInt(userAccountId),
+        );
+        if (officeInfoResult.success && officeInfoResult.offices) {
+          offices = officeInfoResult.offices;
+        }
+      }
+    } catch (error) {
+      console.error("❌ [BRANDING DEBUG] Failed to fetch branding data:", error);
+      // Continue without branding - document will still render
+    }
+
+    console.log("🔍 [BRANDING DEBUG] Final branding object:", {
+      logoUrl: brandLogoUrl,
+      agentName: brandingAgentName,
+      accountType,
+    });
+
     return {
       success: true,
       data: {
@@ -275,6 +346,16 @@ export async function getVisitDocumentDataAction(appointmentId: bigint) {
         signatures: {
           agentSignatureUrl: agentSignature?.fileUrl ?? null,
           visitorSignatureUrl: visitorSignature?.fileUrl ?? null,
+        },
+        branding: {
+          logoUrl: brandLogoUrl,
+          agentName: brandingAgentName,
+          collegiateNumber,
+          accountType,
+          accountName,
+          taxId,
+          offices,
+          website,
         },
         location,
         date,
