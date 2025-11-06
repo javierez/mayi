@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getCurrentUserAccountId, getSecureSession } from "~/lib/dal";
+import { getSecureSession } from "~/lib/dal";
 import { getVisitDocumentDataAction } from "~/server/actions/visits";
 import { getPuppeteerConfig } from "~/lib/puppeteer-utils";
 import type { Page } from "puppeteer-core";
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
         { timeout: 10000 },
       );
       console.log("✅ All images loaded successfully");
-    } catch (error) {
+    } catch {
       console.warn("⚠️ Image loading timeout, checking status...");
       const imageStatus = await page.evaluate(() => {
         const images = Array.from(document.querySelectorAll("img"));
@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
 
       // Get appointment details to find listingId and reference number
       const appointment = await getAppointmentWithDetails(appointmentIdBigInt);
-      if (!appointment || !appointment.listingId) {
+      if (!appointment?.listingId) {
         throw new Error("Appointment or listing not found");
       }
 

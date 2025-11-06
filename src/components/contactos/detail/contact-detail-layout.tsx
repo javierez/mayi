@@ -84,6 +84,7 @@ export function ContactDetailLayout({ contact }: ContactDetailLayoutProps) {
       <ContactBreadcrumb
         firstName={contact.firstName}
         lastName={contact.lastName}
+        contactId={contact.contactId.toString()}
       />
 
       {/* Contact Header */}

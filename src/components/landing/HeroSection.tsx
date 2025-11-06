@@ -5,20 +5,9 @@ import { Button } from "~/components/ui/button";
 import { Play, Volume2, VolumeX } from "lucide-react";
 import { motion } from "framer-motion";
 import { StaggerContainer } from "~/components/landing/animations";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "~/components/ui/dialog";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
 import Link from "next/link";
 
 export function HeroSection() {
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -90,58 +79,15 @@ export function HeroSection() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.6 }}
             >
-              <Dialog open={isLoginOpen} onOpenChange={setIsLoginOpen}>
-                <DialogTrigger asChild>
-                  <Button
-                    size="lg"
-                    className="group border-0 bg-gradient-to-r from-amber-400 to-rose-400 px-8 py-6 text-lg font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500"
-                  >
-                    Comenzar Gratis
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Iniciar Sesión</DialogTitle>
-                    <DialogDescription>
-                      Ingresa a tu cuenta de Vesta. El sistema de autenticación
-                      completo estará disponible próximamente.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="email">Correo Electrónico</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="tu@email.com"
-                        disabled
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="password">Contraseña</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="••••••••"
-                        disabled
-                      />
-                    </div>
-                    <p className="text-sm text-gray-500">
-                      Sistema de autenticación próximamente disponible.
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Button disabled>Iniciar Sesión</Button>
-                    <Button
-                      variant="outline"
-                      asChild
-                      onClick={() => setIsLoginOpen(false)}
-                    >
-                      <Link href="/dashboard">Explorar Demo</Link>
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <Button
+                size="lg"
+                className="group border-0 bg-gradient-to-r from-amber-400 to-rose-400 px-8 py-6 text-lg font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500"
+                asChild
+              >
+                <Link href="https://cal.com/vesta-crm/30min" target="_blank" rel="noopener noreferrer">
+                  Pruébalo Gratis
+                </Link>
+              </Button>
 
               <Button
                 size="lg"
@@ -182,7 +128,7 @@ export function HeroSection() {
                     delay: 0.3,
                   }}
                 />
-                Aumenta eficiencia y productividad
+                Potenciado por IA
               </motion.div>
               <motion.div
                 className="flex items-center gap-2"

@@ -155,38 +155,7 @@ export function DocumentsSection({
             </div>
           </div>
         </div>
-      ) : (
-        /* Other folder types: Show button in top right */
-        <div className="mb-6 flex justify-end">
-          <Button
-            onClick={handleFileUpload}
-            disabled={isUploading}
-            className="flex items-center gap-2"
-          >
-            {isUploading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Subiendo...
-              </>
-            ) : (
-              <>
-                <Upload className="h-4 w-4" />
-                Subir Documentos
-              </>
-            )}
-          </Button>
-
-          {/* Hidden file input */}
-          <input
-            type="file"
-            multiple
-            className="hidden"
-            id="documents-file-input"
-            onChange={handleFileChange}
-            disabled={isUploading}
-          />
-        </div>
-      )}
+      ) : null}
 
       {/* Documents list with drag & drop for non-initial folders */}
       {folderType === "documentacion-inicial" ? (
@@ -196,30 +165,63 @@ export function DocumentsSection({
           key={refreshKey} // Force re-render when documents are uploaded
         />
       ) : (
-        <div
-          className={cn(
-            "rounded-lg transition-all duration-200",
-            isDragOver &&
-              "border-2 border-dashed border-blue-300 bg-blue-50 p-4",
-          )}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
-          {isDragOver && (
-            <div className="py-8 text-center text-blue-600">
-              <Upload className="mx-auto mb-2 h-8 w-8" />
-              <p className="text-sm font-medium">
-                Suelta los archivos aquí para subirlos
-              </p>
-            </div>
-          )}
-          <DocumentsPage
-            listing={listing}
-            folderType={folderType}
-            key={refreshKey} // Force re-render when documents are uploaded
-          />
-        </div>
+        <>
+          <div
+            className={cn(
+              "rounded-lg transition-all duration-200",
+              isDragOver &&
+                "border-2 border-dashed border-blue-300 bg-blue-50 p-4",
+            )}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            {isDragOver && (
+              <div className="py-8 text-center text-blue-600">
+                <Upload className="mx-auto mb-2 h-8 w-8" />
+                <p className="text-sm font-medium">
+                  Suelta los archivos aquí para subirlos
+                </p>
+              </div>
+            )}
+            <DocumentsPage
+              listing={listing}
+              folderType={folderType}
+              key={refreshKey} // Force re-render when documents are uploaded
+            />
+          </div>
+
+          {/* Button right below documents - always visible */}
+          <div className="sticky bottom-0 z-10 flex justify-end py-4">
+            <Button
+              onClick={handleFileUpload}
+              disabled={isUploading}
+              className="flex items-center gap-2"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Subiendo...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4" />
+                  Subir Documentos
+                </>
+              )}
+            </Button>
+
+            {/* Hidden file input */}
+            <input
+              type="file"
+              multiple
+              className="hidden"
+              id="documents-file-input"
+              onChange={handleFileChange}
+              disabled={isUploading}
+            />
+          </div>
+        </>
       )}
     </>
   );

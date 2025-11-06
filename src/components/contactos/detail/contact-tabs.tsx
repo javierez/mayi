@@ -8,6 +8,7 @@ import { ContactInformationTab } from "./tabs/contact-information-tab";
 import { ContactTareasTab } from "./tabs/contact-tareas-tab";
 import { ContactSolicitudesTab } from "./tabs/contact-solicitudes-tab";
 import { ContactActividadTab } from "./tabs/contact-actividad-tab";
+import { ContactDocumentsManager } from "./contact-documents-manager";
 
 interface ContactTabsProps {
   contact: {
@@ -78,6 +79,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
   // Determine which tabs to show based on derived flags
   const showSolicitudes = isBuyer || isInteresado || isOwner;
   const showActividad = isBuyer; // Show activity tab for buyers (they have visits)
+  const showArchivos = true; // Show archivos tab for all contacts (personal documents available for all)
 
   // Active tab state with URL parameter support
   const [activeTab, setActiveTab] = useState(tabParam ?? "informacion");
@@ -90,6 +92,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
       ? [{ value: "solicitudes", label: "Solicitudes" }]
       : []),
     ...(showActividad ? [{ value: "actividad", label: "Actividad" }] : []),
+    ...(showArchivos ? [{ value: "archivos", label: "Archivos" }] : []),
   ];
 
   // Function to handle tab changes with URL persistence
@@ -124,7 +127,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-      <TabsList className="grid h-auto w-full grid-cols-2 gap-2 rounded-lg bg-gray-100 p-1 md:h-10 md:grid-cols-4 md:gap-0">
+      <TabsList className="grid h-auto w-full grid-cols-2 gap-2 rounded-lg bg-gray-100 p-1 md:h-10 md:grid-cols-5 md:gap-0">
         {tabs.map((tab) => (
           <TabsTrigger
             key={tab.value}
@@ -155,6 +158,16 @@ export function ContactTabs({ contact }: ContactTabsProps) {
       {showActividad && (
         <TabsContent value="actividad" className="mt-6">
           <ContactActividadTab contactId={contact.contactId} />
+        </TabsContent>
+      )}
+
+      {/* Archivos Tab - Show for all contacts (personal documents for all, owner folders for owners) */}
+      {showArchivos && (
+        <TabsContent value="archivos" className="mt-6">
+          <ContactDocumentsManager
+            contactId={contact.contactId}
+            isOwner={isOwner}
+          />
         </TabsContent>
       )}
     </Tabs>

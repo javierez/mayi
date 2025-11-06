@@ -13,7 +13,6 @@ import { Separator } from "~/components/ui/separator";
 import type { ListingActivityRecord } from "~/server/queries/listing-history";
 import {
   getActivityActionLabel,
-  getActivityActionColor,
   formatAbsoluteTime,
 } from "~/lib/formatters/activity-formatter";
 import { PriceHistoryChart } from "./price-history-chart";

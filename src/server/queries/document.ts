@@ -1,7 +1,8 @@
 import { db } from "../db";
-import { documents } from "../db/schema";
+import { documents, listings, listingContacts, properties, locations, contacts } from "../db/schema";
 import { eq, and, like, desc, asc } from "drizzle-orm";
 import type { Document } from "../../lib/data";
+import { getCurrentUserAccountId } from "../../lib/dal";
 
 // Helper function to serialize document with BigInt values
 export function serializeDocument(document: Document | null | undefined) {
@@ -100,18 +101,27 @@ export async function getUserDocuments(userId: string, isActive = true) {
 }
 
 // Get documents by contact ID
-export async function getContactDocuments(contactId: number, isActive = true) {
+export async function getContactDocuments(
+  contactId: number,
+  isActive = true,
+  orderBy: "uploadedAt" | "documentOrder" = "documentOrder",
+) {
   try {
     const conditions = [eq(documents.contactId, BigInt(contactId))];
     if (isActive !== undefined) {
       conditions.push(eq(documents.isActive, isActive));
     }
 
+    const orderByClause =
+      orderBy === "uploadedAt"
+        ? desc(documents.uploadedAt)
+        : asc(documents.documentOrder);
+
     return await db
       .select()
       .from(documents)
       .where(and(...conditions))
-      .orderBy(asc(documents.documentOrder));
+      .orderBy(orderByClause);
   } catch (error) {
     console.error("Error fetching contact documents:", error);
     throw error;
@@ -445,6 +455,125 @@ export async function getDocumentsByFolderType(
       .orderBy(desc(documents.uploadedAt));
   } catch (error) {
     console.error("Error fetching documents by folder type:", error);
+    throw error;
+  }
+}
+
+// Get contact documents data for route pages (server-side)
+// Returns contact info needed for document pages
+export async function getContactDocumentsData(contactId: number) {
+  try {
+    const accountId = await getCurrentUserAccountId();
+
+    const [contact] = await db
+      .select({
+        contactId: contacts.contactId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+      })
+      .from(contacts)
+      .where(
+        and(
+          eq(contacts.contactId, BigInt(contactId)),
+          eq(contacts.accountId, BigInt(accountId)),
+          eq(contacts.isActive, true),
+        ),
+      );
+
+    if (!contact) {
+      return null;
+    }
+
+    return {
+      contactId: contact.contactId,
+      firstName: contact.firstName,
+      lastName: contact.lastName,
+    };
+  } catch (error) {
+    console.error("Error fetching contact documents data:", error);
+    throw error;
+  }
+}
+
+// Get documents from listings where contact is owner, grouped by listingId
+// Returns documents with listing information (title, street, propertyType)
+export async function getContactOwnerDocumentsGroupedByListing(
+  contactId: number,
+  documentTag: string,
+  isActive = true,
+) {
+  try {
+    const accountId = await getCurrentUserAccountId();
+
+    // Conditions for where clause (join conditions are in the join itself)
+    const conditions = [
+      eq(listings.isActive, true),
+      eq(listings.accountId, BigInt(accountId)),
+      eq(documents.documentTag, documentTag),
+    ];
+
+    if (isActive !== undefined) {
+      conditions.push(eq(documents.isActive, isActive));
+    }
+
+    // Join documents -> listings -> listingContacts -> properties -> locations
+    const documentsWithListings = await db
+      .select({
+        // Document fields
+        docId: documents.docId,
+        filename: documents.filename,
+        fileType: documents.fileType,
+        fileUrl: documents.fileUrl,
+        userId: documents.userId,
+        contactId: documents.contactId,
+        listingId: documents.listingId,
+        listingContactId: documents.listingContactId,
+        dealId: documents.dealId,
+        appointmentId: documents.appointmentId,
+        propertyId: documents.propertyId,
+        prospectId: documents.prospectId,
+        documentKey: documents.documentKey,
+        s3key: documents.s3key,
+        documentTag: documents.documentTag,
+        documentOrder: documents.documentOrder,
+        documentHash: documents.documentHash,
+        documentTimestamp: documents.documentTimestamp,
+        uploadedAt: documents.uploadedAt,
+        isActive: documents.isActive,
+        createdAt: documents.createdAt,
+        updatedAt: documents.updatedAt,
+        // Listing info for grouping
+        listingTitle: properties.title,
+        listingStreet: properties.street,
+        listingPropertyType: properties.propertyType,
+        listingCity: locations.city,
+        listingReferenceNumber: properties.referenceNumber,
+      })
+      .from(documents)
+      .innerJoin(listings, eq(documents.listingId, listings.listingId))
+      .innerJoin(
+        listingContacts,
+        and(
+          eq(listings.listingId, listingContacts.listingId),
+          eq(listingContacts.contactId, BigInt(contactId)),
+          eq(listingContacts.contactType, "owner"),
+          eq(listingContacts.isActive, true),
+        ),
+      )
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
+      .where(and(...conditions))
+      .orderBy(desc(documents.uploadedAt));
+
+    return documentsWithListings;
+  } catch (error) {
+    console.error(
+      "Error fetching contact owner documents grouped by listing:",
+      error,
+    );
     throw error;
   }
 }

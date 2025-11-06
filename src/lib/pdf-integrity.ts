@@ -39,27 +39,9 @@ export async function embedDocumentMetadata(
     const metadataString = `Hash: ${hash}|Timestamp: ${timestamp}`;
     pdfDoc.setAuthor(metadataString);
 
-    // Also try to set as custom properties (if supported)
-    try {
-      const customProperties = {
-        DocumentHash: hash,
-        DocumentTimestamp: timestamp,
-        IntegrityCheck: "SHA-256",
-      };
-
-      // Access the internal PDF document to set custom properties
-      const pdfDocInternal = pdfDoc as unknown as {
-        catalog: {
-          set: (key: string, value: unknown) => void;
-        };
-      };
-
-      // Note: pdf-lib doesn't directly support custom metadata, but we can access low-level
-      // For now, we'll use the author field as a reliable method
-      // The hash and timestamp are also stored in the database for verification
-    } catch (error) {
-      console.warn("Could not set custom PDF properties, using author field:", error);
-    }
+    // Note: pdf-lib doesn't directly support custom metadata at this time
+    // For now, we use the author field as a reliable method to embed metadata
+    // The hash and timestamp are also stored in the database for verification
 
     // Save the modified PDF
     const modifiedPdfBytes = await pdfDoc.save();

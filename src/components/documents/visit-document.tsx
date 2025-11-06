@@ -32,9 +32,6 @@ export function VisitDocument({ data }: Props) {
   const [accountType, setAccountType] = useState<string | null>(
     data.branding?.accountType ?? null,
   );
-  const [accountName, setAccountName] = useState<string>(
-    data.branding?.accountName ?? "",
-  ); // Agency/company name
   const [taxId, setTaxId] = useState<string>(data.branding?.taxId ?? "");
   const [offices, setOffices] = useState<
     Array<{ address: string; city: string; postalCode: string; phone: string }>
@@ -85,11 +82,6 @@ export function VisitDocument({ data }: Props) {
 
               if (agentNameResult.accountType) {
                 setAccountType(agentNameResult.accountType);
-              }
-
-              // Always get the account name for "on behalf of" display
-              if (agentNameResult.accountName) {
-                setAccountName(agentNameResult.accountName);
               }
 
               if (agentNameResult.collegiateNumber) {
