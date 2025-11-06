@@ -22,58 +22,49 @@ interface PuppeteerConfig {
 
 export async function getPuppeteerConfig(): Promise<PuppeteerConfig> {
   // Check if we're in Vercel (serverless environment)
-  const isServerless =
-    process.env.VERCEL === "1" || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+  // Using VERCEL_ENV as per official Vercel guide: https://vercel.com/guides/deploying-puppeteer-with-nextjs-on-vercel
+  const isVercel = !!process.env.VERCEL_ENV;
+  const isServerless = isVercel || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
   console.log("🔍 Puppeteer Environment Detection:", {
     isServerless,
+    isVercel,
     nodeVersion: process.version,
     platform: process.platform,
     arch: process.arch,
-    vercelEnv: process.env.VERCEL,
+    vercelEnv: process.env.VERCEL_ENV,
     awsLambda: process.env.AWS_LAMBDA_FUNCTION_NAME,
   });
 
   if (isServerless) {
     // Use puppeteer-core with serverless Chromium for Vercel
+    // Following official Vercel guide: https://vercel.com/guides/deploying-puppeteer-with-nextjs-on-vercel
     const chromiumModule = await import("@sparticuz/chromium");
     const chromium = chromiumModule.default;
     const puppeteerCore = await import("puppeteer-core");
 
     console.log("📦 @sparticuz/chromium loaded");
 
-    // Disable graphics mode to reduce system library dependencies (libnss3.so, etc.)
-    // This is critical for serverless environments
-    chromium.setGraphicsMode = false;
-
-    // The @sparticuz/chromium package includes the binary and handles extraction
+    // Get the executable path - @sparticuz/chromium handles extraction automatically
     const executablePath = await chromium.executablePath();
 
     console.log("✅ Chromium executable path resolved:", executablePath);
 
-    // Check if the binary actually exists
-    try {
-      const fs = await import("fs");
-      const stats = fs.statSync(executablePath);
-      console.log("📊 Chromium binary info:", {
-        exists: true,
-        size: stats.size,
-        mode: stats.mode.toString(8),
-        isFile: stats.isFile(),
-      });
-    } catch (error) {
-      console.error("❌ Chromium binary check failed:", error);
-    }
+    // Use chromium.args directly as per Vercel guide, but add --single-process
+    // which is critical for serverless to avoid system library dependencies
+    const launchArgs = [
+      ...chromium.args,
+      "--single-process", // Critical for serverless - prevents loading system libraries like libnss3.so
+    ];
 
-    console.log("🚀 Launch args:", chromium.args);
+    console.log("🚀 Launch args:", launchArgs);
 
     return {
       puppeteer: puppeteerCore.default,
       launchOptions: {
-        args: puppeteerCore.default.defaultArgs({ args: chromium.args, headless: "shell" }),
-        defaultViewport: chromium.defaultViewport,
+        args: launchArgs,
         executablePath,
-        headless: "shell",
+        headless: chromium.headless ?? true,
       },
     };
   } else {
