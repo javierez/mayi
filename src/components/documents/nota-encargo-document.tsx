@@ -98,8 +98,10 @@ export function NotaEncargoDocument({ data }: Props) {
             const accountIdStr = userAccountId.toString();
             const brandAsset = await getBrandAsset(accountIdStr);
 
-            if (brandAsset?.logoTransparentUrl) {
+            if (brandAsset?.logoTransparentUrl && brandAsset.logoTransparentUrl.trim() !== "") {
               setBrandLogo(brandAsset.logoTransparentUrl);
+            } else if (brandAsset?.logoOriginalUrl && brandAsset.logoOriginalUrl.trim() !== "") {
+              setBrandLogo(brandAsset.logoOriginalUrl);
             }
 
             const agentNameResult = await getAgentNameAction(

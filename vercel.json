@@ -7,11 +7,15 @@
       "maxDuration": 60
     },
     "app/api/visita/generate-pdf/route.ts": {
-      "maxDuration": 60,
+      "maxDuration": 90,
       "memory": 2048
     },
     "app/api/nota-encargo/generate-pdf/route.ts": {
-      "maxDuration": 60,
+      "maxDuration": 90,
+      "memory": 2048
+    },
+    "app/api/puppet/generate-pdf/route.ts": {
+      "maxDuration": 90,
       "memory": 2048
     }
   }

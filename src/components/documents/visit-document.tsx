@@ -60,9 +60,9 @@ export function VisitDocument({ data }: Props) {
             const brandAsset = await getBrandAsset(accountIdStr);
 
             // Use transparent logo if available, otherwise fall back to original logo
-            if (brandAsset?.logoTransparentUrl) {
+            if (brandAsset?.logoTransparentUrl && brandAsset.logoTransparentUrl.trim() !== "") {
               setBrandLogo(brandAsset.logoTransparentUrl);
-            } else if (brandAsset?.logoOriginalUrl) {
+            } else if (brandAsset?.logoOriginalUrl && brandAsset.logoOriginalUrl.trim() !== "") {
               setBrandLogo(brandAsset.logoOriginalUrl);
             }
 

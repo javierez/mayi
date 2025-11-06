@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     // Navigate to the template page
     const response = await page.goto(templateUrl.toString(), {
       waitUntil: "networkidle0",
-      timeout: 30000,
+      timeout: 60000, // Increased timeout for initial page load
     });
 
     if (!response?.ok()) {
@@ -146,14 +146,18 @@ export async function POST(request: NextRequest) {
       console.log("🖼️ Image loading status:", JSON.stringify(imageStatus, null, 2));
 
       // Wait for all images to actually load (not just complete)
+      // Increased timeout for slow S3 images
       await page.waitForFunction(
         () => {
           const images = Array.from(document.querySelectorAll("img"));
           return images.every((img) => img.complete && img.naturalWidth > 0);
         },
-        { timeout: 10000 },
+        { timeout: 30000 }, // Increased from 10s to 30s for S3 images
       );
       console.log("✅ All images loaded successfully");
+      
+      // Additional delay to ensure images are fully rendered
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     } catch {
       console.warn("⚠️ Image loading timeout, checking status...");
       const imageStatus = await page.evaluate(() => {

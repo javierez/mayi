@@ -291,8 +291,11 @@ export async function getVisitDocumentDataAction(appointmentId: bigint) {
           logoOriginalUrl: brandAsset?.logoOriginalUrl ?? "null",
         });
 
+        // Prefer transparent logo, but fall back to original if transparent is empty
         brandLogoUrl =
-          brandAsset?.logoTransparentUrl ?? brandAsset?.logoOriginalUrl ?? null;
+          (brandAsset?.logoTransparentUrl && brandAsset.logoTransparentUrl.trim() !== "")
+            ? brandAsset.logoTransparentUrl
+            : (brandAsset?.logoOriginalUrl ?? null);
 
         console.log("🔍 [BRANDING DEBUG] Selected logo URL:", brandLogoUrl);
 
@@ -326,6 +329,17 @@ export async function getVisitDocumentDataAction(appointmentId: bigint) {
       accountType,
     });
 
+    console.log("🔍 [SIGNATURE DEBUG] Signature URLs:", {
+      agentSignatureUrl: 
+        (agentSignature?.fileUrl && agentSignature.fileUrl.trim() !== "")
+          ? agentSignature.fileUrl
+          : null,
+      visitorSignatureUrl: 
+        (visitorSignature?.fileUrl && visitorSignature.fileUrl.trim() !== "")
+          ? visitorSignature.fileUrl
+          : null,
+    });
+
     return {
       success: true,
       data: {
@@ -344,8 +358,14 @@ export async function getVisitDocumentDataAction(appointmentId: bigint) {
           notes: appointment.notes,
         },
         signatures: {
-          agentSignatureUrl: agentSignature?.fileUrl ?? null,
-          visitorSignatureUrl: visitorSignature?.fileUrl ?? null,
+          agentSignatureUrl: 
+            (agentSignature?.fileUrl && agentSignature.fileUrl.trim() !== "")
+              ? agentSignature.fileUrl
+              : null,
+          visitorSignatureUrl: 
+            (visitorSignature?.fileUrl && visitorSignature.fileUrl.trim() !== "")
+              ? visitorSignature.fileUrl
+              : null,
         },
         branding: {
           logoUrl: brandLogoUrl,
