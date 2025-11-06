@@ -30,13 +30,13 @@ export default async function PlanosPage({ params }: DocumentPageProps) {
   const serializedDocuments = documents.map((doc) => ({
     ...doc,
     docId: doc.docId.toString(),
-    propertyId: doc.propertyId?.toString(),
-    contactId: doc.contactId?.toString(),
-    listingId: doc.listingId?.toString(),
-    listingContactId: doc.listingContactId?.toString(),
-    dealId: doc.dealId?.toString(),
-    appointmentId: doc.appointmentId?.toString(),
-    prospectId: doc.prospectId?.toString(),
+    propertyId: doc.propertyId?.toString() ?? null,
+    contactId: doc.contactId?.toString() ?? null,
+    listingId: doc.listingId?.toString() ?? null,
+    listingContactId: doc.listingContactId?.toString() ?? null,
+    dealId: doc.dealId?.toString() ?? null,
+    appointmentId: doc.appointmentId?.toString() ?? null,
+    prospectId: doc.prospectId?.toString() ?? null,
   }));
 
   return (
