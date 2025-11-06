@@ -48,7 +48,9 @@
       "Bash(grep:*)",
       "mcp__ide__getDiagnostics",
       "Bash(export PATH=\"/usr/local/opt/postgresql@16/bin:$PATH\")",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "WebFetch(domain:stackoverflow.com)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []
