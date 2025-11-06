@@ -45,16 +45,27 @@ export async function getPuppeteerConfig(): Promise<PuppeteerConfig> {
 
     console.log("📦 @sparticuz/chromium loaded");
 
+    // CRITICAL: Set graphics mode to false BEFORE getting executablePath
+    // This prevents Chromium from trying to load system libraries like libnss3.so
+    // Must be set as property, not method call
+    chromium.setGraphicsMode = false;
+    
     // Get the executable path - @sparticuz/chromium handles extraction automatically
     const executablePath = await chromium.executablePath();
 
     console.log("✅ Chromium executable path resolved:", executablePath);
+    console.log("📊 Graphics mode disabled:", chromium.setGraphicsMode === false);
 
-    // Use chromium.args directly as per Vercel guide, but add --single-process
-    // which is critical for serverless to avoid system library dependencies
+    // Use chromium.args with additional flags to prevent system library loading
+    // The --single-process flag is absolutely critical for Node.js 22.x on Vercel
     const launchArgs = [
       ...chromium.args,
-      "--single-process", // Critical for serverless - prevents loading system libraries like libnss3.so
+      "--single-process", // CRITICAL: Run in single process mode
+      "--no-zygote", // Don't use zygote process
+      "--disable-gpu", // Disable GPU hardware acceleration
+      "--disable-dev-shm-usage", // Overcome limited resource problems
+      "--disable-setuid-sandbox", // Disable setuid sandbox
+      "--no-sandbox", // Disable sandbox (required for serverless)
     ];
 
     console.log("🚀 Launch args:", launchArgs);
@@ -64,7 +75,7 @@ export async function getPuppeteerConfig(): Promise<PuppeteerConfig> {
       launchOptions: {
         args: launchArgs,
         executablePath,
-        headless: chromium.headless ?? true,
+        headless: true,
       },
     };
   } else {
