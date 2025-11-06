@@ -93,6 +93,58 @@ export async function uploadBrandAsset(
   originalFileName: string,
 ): Promise<BrandAsset> {
   try {
+    // 0. Delete old logos from S3 before uploading new ones
+    const [existingAccount] = await db
+      .select()
+      .from(accounts)
+      .where(eq(accounts.accountId, BigInt(accountId)));
+
+    const [existingWebsiteConfig] = await db
+      .select()
+      .from(websiteProperties)
+      .where(eq(websiteProperties.accountId, BigInt(accountId)));
+
+    const bucketName = await getDynamicBucketName();
+    const deletePromises: Promise<unknown>[] = [];
+
+    // Delete old original logo if exists
+    if (existingAccount?.logo) {
+      const oldOriginalKey = extractS3KeyFromUrl(existingAccount.logo);
+      if (oldOriginalKey) {
+        console.log("Deleting old original logo from S3:", oldOriginalKey);
+        deletePromises.push(
+          s3Client.send(
+            new DeleteObjectCommand({
+              Bucket: bucketName,
+              Key: oldOriginalKey,
+            }),
+          ),
+        );
+      }
+    }
+
+    // Delete old transparent logo if exists
+    if (existingWebsiteConfig?.logo) {
+      const oldTransparentKey = extractS3KeyFromUrl(existingWebsiteConfig.logo);
+      if (oldTransparentKey) {
+        console.log("Deleting old transparent logo from S3:", oldTransparentKey);
+        deletePromises.push(
+          s3Client.send(
+            new DeleteObjectCommand({
+              Bucket: bucketName,
+              Key: oldTransparentKey,
+            }),
+          ),
+        );
+      }
+    }
+
+    // Execute all deletions in parallel before uploading new files
+    if (deletePromises.length > 0) {
+      await Promise.all(deletePromises);
+      console.log("Old logos deleted successfully from S3");
+    }
+
     // 1. Upload original logo to S3
     const originalUpload = await uploadBrandAssetToS3(
       originalFile,
@@ -317,7 +369,7 @@ export async function getBrandAsset(
       id: nanoid(),
       accountId: accountId,
       logoOriginalUrl: account.logo,
-      logoTransparentUrl: websiteConfig?.logo && websiteConfig.logo !== "" ? websiteConfig.logo : null,
+      logoTransparentUrl: websiteConfig?.logo && websiteConfig.logo !== "" ? websiteConfig.logo : "",
       colorPalette: preferences?.colorPalette ?? [],
       fileName: "logo", // We don't store original filename, so use generic
       fileSize: 0, // Not stored in current schema

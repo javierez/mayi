@@ -25,15 +25,53 @@ export async function uploadHeroImage(
       throw new Error("No account ID provided");
     }
 
+    // Get dynamic bucket name
+    const bucketName = await getDynamicBucketName();
+
+    // Delete old hero image from S3 before uploading new one
+    const [oldImageConfig] = await db
+      .select()
+      .from(websiteProperties)
+      .where(eq(websiteProperties.accountId, BigInt(accountId)));
+
+    if (oldImageConfig) {
+      interface HeroProps {
+        backgroundImage?: string;
+        backgroundVideo?: string;
+        backgroundType?: "image" | "video";
+        [key: string]: unknown;
+      }
+
+      let existingHeroProps: HeroProps = {};
+      try {
+        existingHeroProps = JSON.parse(oldImageConfig.heroProps ?? "{}") as HeroProps;
+      } catch (e) {
+        console.error("Error parsing hero props:", e);
+      }
+
+      // Delete old background image if exists
+      if (existingHeroProps.backgroundImage) {
+        const urlParts = existingHeroProps.backgroundImage.split(".com/");
+        const oldS3Key = urlParts.length > 1 ? urlParts[1] : null;
+
+        if (oldS3Key) {
+          console.log("Deleting old hero background image from S3:", oldS3Key);
+          await s3Client.send(
+            new DeleteObjectCommand({
+              Bucket: bucketName,
+              Key: oldS3Key,
+            }),
+          );
+        }
+      }
+    }
+
     // Generate file extension
     const fileExtension = originalFileName.split(".").pop() ?? "jpg";
     const timestamp = Date.now();
 
     // Create the S3 key for hero image
     const imageKey = `hero/background_${timestamp}_${nanoid(6)}.${fileExtension}`;
-
-    // Get dynamic bucket name
-    const bucketName = await getDynamicBucketName();
 
     // Convert Blob to Buffer
     const arrayBuffer = await file.arrayBuffer();
@@ -113,15 +151,53 @@ export async function uploadHeroVideo(
       throw new Error("No account ID provided");
     }
 
+    // Get dynamic bucket name
+    const bucketName = await getDynamicBucketName();
+
+    // Delete old hero video from S3 before uploading new one
+    const [oldVideoConfig] = await db
+      .select()
+      .from(websiteProperties)
+      .where(eq(websiteProperties.accountId, BigInt(accountId)));
+
+    if (oldVideoConfig) {
+      interface HeroProps {
+        backgroundImage?: string;
+        backgroundVideo?: string;
+        backgroundType?: "image" | "video";
+        [key: string]: unknown;
+      }
+
+      let existingHeroProps: HeroProps = {};
+      try {
+        existingHeroProps = JSON.parse(oldVideoConfig.heroProps ?? "{}") as HeroProps;
+      } catch (e) {
+        console.error("Error parsing hero props:", e);
+      }
+
+      // Delete old background video if exists
+      if (existingHeroProps.backgroundVideo) {
+        const urlParts = existingHeroProps.backgroundVideo.split(".com/");
+        const oldS3Key = urlParts.length > 1 ? urlParts[1] : null;
+
+        if (oldS3Key) {
+          console.log("Deleting old hero background video from S3:", oldS3Key);
+          await s3Client.send(
+            new DeleteObjectCommand({
+              Bucket: bucketName,
+              Key: oldS3Key,
+            }),
+          );
+        }
+      }
+    }
+
     // Generate file extension
     const fileExtension = originalFileName.split(".").pop() ?? "mp4";
     const timestamp = Date.now();
 
     // Create the S3 key for hero video
     const videoKey = `hero/background_${timestamp}_${nanoid(6)}.${fileExtension}`;
-
-    // Get dynamic bucket name
-    const bucketName = await getDynamicBucketName();
 
     // Convert Blob to Buffer
     const arrayBuffer = await file.arrayBuffer();
