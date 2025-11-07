@@ -205,7 +205,7 @@ export default function ChangelogPage() {
                       }}
                     >
                       <WeekColumn
-                        entries={entries}
+                        entries={entries ?? []}
                         month={month}
                         year={year}
                         week={week}
