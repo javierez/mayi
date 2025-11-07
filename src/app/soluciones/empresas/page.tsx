@@ -15,6 +15,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import Navbar from "~/components/navbar";
+import { Footer } from "~/components/landing/Footer";
 
 export const metadata: Metadata = {
   title: "Solución Empresarial - Vesta",
@@ -317,6 +318,8 @@ export default function EmpresasPage() {
           </p>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 }

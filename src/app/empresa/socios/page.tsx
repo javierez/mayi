@@ -23,6 +23,7 @@ import {
   Star,
 } from "lucide-react";
 import Navbar from "~/components/navbar";
+import { Footer } from "~/components/landing/Footer";
 
 export const metadata: Metadata = {
   title: "Programa de Socios - Vesta",
@@ -461,6 +462,8 @@ export default function SociosPage() {
           </p>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 }

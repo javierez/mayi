@@ -3,6 +3,7 @@ import { Button } from "~/components/ui/button";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import Navbar from "~/components/navbar";
+import { Footer } from "~/components/landing/Footer";
 
 export const metadata: Metadata = {
   title: "Solución para Equipos de Ventas - Vesta",
@@ -42,6 +43,8 @@ export default function EquiposVentasPage() {
           </div>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 }

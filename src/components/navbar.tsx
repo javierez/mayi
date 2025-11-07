@@ -105,79 +105,18 @@ export default function Navbar({
               className="h-10 w-auto"
               priority
             />
-            <span className="text-xl font-bold">{shortName}</span>
           </Link>
         </div>
 
         {/* Center section - Navigation */}
         <nav className="hidden gap-6 lg:flex" aria-label="Main navigation">
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className="flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary"
-              aria-label="Opciones de producto"
-            >
-              Producto <ChevronDown className="h-4 w-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="center">
-              <DropdownMenuItem>
-                <Link href="/producto/caracteristicas" className="w-full">
-                  Características
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="/producto/integraciones" className="w-full">
-                  Integraciones
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="/producto/seguridad" className="w-full">
-                  Seguridad
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="/producto/api" className="w-full">
-                  API y Desarrolladores
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className="flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary"
-              aria-label="Opciones de soluciones"
-            >
-              Soluciones <ChevronDown className="h-4 w-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="center">
-              <DropdownMenuItem>
-                <Link href="/soluciones/equipos-ventas" className="w-full">
-                  Equipos de Ventas
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="/soluciones/equipos-marketing" className="w-full">
-                  Equipos de Marketing
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="/soluciones/servicio-cliente" className="w-full">
-                  Servicio al Cliente
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="/soluciones/pequenas-empresas" className="w-full">
-                  Pequeñas Empresas
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="/soluciones/empresas" className="w-full">
-                  Empresas
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
+          <Link
+            href="/"
+            className="text-sm font-medium transition-colors hover:text-primary"
+            aria-label="Inicio"
+          >
+            Inicio
+          </Link>
           <Link
             href="/precios"
             className="text-sm font-medium transition-colors hover:text-primary"
@@ -185,63 +124,13 @@ export default function Navbar({
           >
             Precios
           </Link>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className="flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary"
-              aria-label="Opciones de recursos"
-            >
-              Recursos <ChevronDown className="h-4 w-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="center">
-              <DropdownMenuItem>
-                <Link href="/recursos/documentacion" className="w-full">
-                  Documentación
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="/recursos/blog" className="w-full">
-                  Blog
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="/recursos/soporte" className="w-full">
-                  Soporte
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              className="flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary"
-              aria-label="Opciones de empresa"
-            >
-              Empresa <ChevronDown className="h-4 w-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="center">
-              <DropdownMenuItem>
-                <Link href="/empresa/nosotros" className="w-full">
-                  Acerca de Nosotros
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="/empresa/carreras" className="w-full">
-                  Carreras
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="/empresa/socios" className="w-full">
-                  Socios
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Link href="/empresa/contacto" className="w-full">
-                  Contacto
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Link
+            href="/empresa/nosotros"
+            className="text-sm font-medium transition-colors hover:text-primary"
+            aria-label="Nosotros"
+          >
+            Nosotros
+          </Link>
         </nav>
 
         {/* Right section - Auth Buttons, Social Links and Mobile Menu */}
@@ -326,98 +215,16 @@ export default function Navbar({
                 </div>
               </div>
 
-              {/* Product Section */}
+              {/* Navigation Links */}
               <div className="space-y-3">
-                <h3 className="px-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  Producto
-                </h3>
-                <div className="space-y-1">
-                  <Link
-                    href="/producto/caracteristicas"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleMenuClose}
-                  >
-                    <Package className="h-4 w-4" />
-                    Características
-                  </Link>
-                  <Link
-                    href="/producto/integraciones"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleMenuClose}
-                  >
-                    <Code className="h-4 w-4" />
-                    Integraciones
-                  </Link>
-                  <Link
-                    href="/producto/seguridad"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleMenuClose}
-                  >
-                    <Shield className="h-4 w-4" />
-                    Seguridad
-                  </Link>
-                  <Link
-                    href="/producto/api"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleMenuClose}
-                  >
-                    <Code className="h-4 w-4" />
-                    API y Desarrolladores
-                  </Link>
-                </div>
-              </div>
-
-              {/* Solutions Section */}
-              <div className="space-y-3">
-                <h3 className="px-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  Soluciones
-                </h3>
-                <div className="space-y-1">
-                  <Link
-                    href="/soluciones/equipos-ventas"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleMenuClose}
-                  >
-                    <Users className="h-4 w-4" />
-                    Equipos de Ventas
-                  </Link>
-                  <Link
-                    href="/soluciones/equipos-marketing"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleMenuClose}
-                  >
-                    <Users className="h-4 w-4" />
-                    Equipos de Marketing
-                  </Link>
-                  <Link
-                    href="/soluciones/servicio-cliente"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleMenuClose}
-                  >
-                    <HeadphonesIcon className="h-4 w-4" />
-                    Servicio al Cliente
-                  </Link>
-                  <Link
-                    href="/soluciones/pequenas-empresas"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleMenuClose}
-                  >
-                    <Briefcase className="h-4 w-4" />
-                    Pequeñas Empresas
-                  </Link>
-                  <Link
-                    href="/soluciones/empresas"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleMenuClose}
-                  >
-                    <Building className="h-4 w-4" />
-                    Empresas
-                  </Link>
-                </div>
-              </div>
-
-              {/* Precios Link */}
-              <div className="space-y-3">
+                <Link
+                  href="/"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                  onClick={handleMenuClose}
+                >
+                  <Building className="h-4 w-4" />
+                  Inicio
+                </Link>
                 <Link
                   href="/precios"
                   className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
@@ -426,80 +233,14 @@ export default function Navbar({
                   <DollarSign className="h-4 w-4" />
                   Precios
                 </Link>
-              </div>
-
-              {/* Resources Section */}
-              <div className="space-y-3">
-                <h3 className="px-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  Recursos
-                </h3>
-                <div className="space-y-1">
-                  <Link
-                    href="/recursos/documentacion"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleMenuClose}
-                  >
-                    <FileText className="h-4 w-4" />
-                    Documentación
-                  </Link>
-                  <Link
-                    href="/recursos/blog"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleMenuClose}
-                  >
-                    <BookOpen className="h-4 w-4" />
-                    Blog
-                  </Link>
-                  <Link
-                    href="/recursos/soporte"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleMenuClose}
-                  >
-                    <HeadphonesIcon className="h-4 w-4" />
-                    Soporte
-                  </Link>
-                </div>
-              </div>
-
-              {/* Company Section */}
-              <div className="space-y-3">
-                <h3 className="px-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                  Empresa
-                </h3>
-                <div className="space-y-1">
-                  <Link
-                    href="/empresa/nosotros"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleMenuClose}
-                  >
-                    <Info className="h-4 w-4" />
-                    Acerca de Nosotros
-                  </Link>
-                  <Link
-                    href="/empresa/carreras"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleMenuClose}
-                  >
-                    <Briefcase className="h-4 w-4" />
-                    Carreras
-                  </Link>
-                  <Link
-                    href="/empresa/socios"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleMenuClose}
-                  >
-                    <Users className="h-4 w-4" />
-                    Socios
-                  </Link>
-                  <Link
-                    href="/empresa/contacto"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                    onClick={handleMenuClose}
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    Contacto
-                  </Link>
-                </div>
+                <Link
+                  href="/empresa/nosotros"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                  onClick={handleMenuClose}
+                >
+                  <Info className="h-4 w-4" />
+                  Nosotros
+                </Link>
               </div>
             </div>
           </div>

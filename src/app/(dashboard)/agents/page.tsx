@@ -265,7 +265,7 @@ export default function AgentsPage() {
       {!loading && agentData && (
         <div className="space-y-6">
           {/* Summary Cards */}
-          <AgentSummaryCards stats={agentData.stats} />
+          <AgentSummaryCards agentId={selectedAgentId} stats={agentData.stats} />
 
           {/* Urgent Actions */}
           <WorkQueueCard

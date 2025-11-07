@@ -22,6 +22,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import Navbar from "~/components/navbar";
+import { Footer } from "~/components/landing/Footer";
 
 export const metadata: Metadata = {
   title: "Blog - Vesta",
@@ -336,6 +337,8 @@ export default function BlogPage() {
           </div>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 }

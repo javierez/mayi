@@ -21,6 +21,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import Navbar from "~/components/navbar";
+import { Footer } from "~/components/landing/Footer";
 
 export const metadata: Metadata = {
   title: "Seguridad - Vesta Real Estate Platform",
@@ -284,6 +285,8 @@ export default function SeguridadPage() {
           </div>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 }

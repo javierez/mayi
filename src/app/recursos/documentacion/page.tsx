@@ -22,6 +22,7 @@ import {
   Star,
 } from "lucide-react";
 import Navbar from "~/components/navbar";
+import { Footer } from "~/components/landing/Footer";
 
 export const metadata: Metadata = {
   title: "Documentación - Vesta",
@@ -345,6 +346,8 @@ export default function DocumentacionPage() {
           </div>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 }

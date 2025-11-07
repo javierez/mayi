@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import {
   Star,
   Quote,
   ChevronLeft,
   ChevronRight,
   MapPin,
-  TrendingUp,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,88 +17,20 @@ import { AnimatedCounter } from "~/components/landing/animations";
 const testimonials = [
   {
     id: 1,
-    name: "Carmen Martínez",
-    role: "Agente Inmobiliario Senior",
-    company: "Inmobiliaria Costa Brava",
-    location: "Girona, España",
+    name: "Santos Martínez",
+    role: "Agente Inmobiliario",
+    company: "Inmobiliaria Acrópolis",
+    location: "León, España",
     avatar: "CM",
     rating: 5,
     testimonial:
-      "Vesta ha revolucionado completamente mi forma de trabajar. En 6 meses he duplicado mis ventas gracias a la automatización del CRM y las publicaciones multi-portal. La IA para descripciones me ahorra horas cada semana.",
+      "Vesta ha revolucionado completamente nuestra forma de trabajar. Todas las funcionalidades de productividad y automatizaciones hacen que no pierda tiempo en tareas adminisstrativas y pueda dedicar más tiempo a la venta.",
     metrics: {
-      sales: "+120%",
+      sales: "+20%",
       time: "15h/sem",
-      leads: "+85%",
+      leads: "+5%",
     },
     featured: true,
-  },
-  {
-    id: 2,
-    name: "Miguel Rodríguez",
-    role: "Director Comercial",
-    company: "PropiaMadrid",
-    location: "Madrid, España",
-    avatar: "MR",
-    rating: 5,
-    testimonial:
-      "La integración con todos los portales principales ha sido un game-changer. Publicamos 200+ propiedades simultáneamente y el seguimiento de leads es impecable. ROI increíble.",
-    metrics: {
-      sales: "+95%",
-      time: "20h/sem",
-      leads: "+150%",
-    },
-    featured: false,
-  },
-  {
-    id: 3,
-    name: "Ana García-López",
-    role: "Fundadora & CEO",
-    company: "Valencia Properties",
-    location: "Valencia, España",
-    avatar: "AG",
-    rating: 5,
-    testimonial:
-      "Como directora de una agencia con 25 agentes, Vesta nos ha permitido escalar sin perder calidad. El calendario compartido y la gestión de documentos son excepcionales.",
-    metrics: {
-      sales: "+75%",
-      time: "30h/sem",
-      leads: "+110%",
-    },
-    featured: false,
-  },
-  {
-    id: 4,
-    name: "Carlos Mendoza",
-    role: "Agente Inmobiliario",
-    company: "Costas & Asociados",
-    location: "Málaga, España",
-    avatar: "CM2",
-    rating: 5,
-    testimonial:
-      "La herramienta de IA para generar descripciones es espectacular. Mis listados tienen más visitas y mejores conversiones. El soporte técnico es de primera.",
-    metrics: {
-      sales: "+140%",
-      time: "12h/sem",
-      leads: "+90%",
-    },
-    featured: false,
-  },
-  {
-    id: 5,
-    name: "Isabel Ruiz",
-    role: "Agente Freelance",
-    company: "Independiente",
-    location: "Sevilla, España",
-    avatar: "IR",
-    rating: 5,
-    testimonial:
-      "Trabajo sola y Vesta me da las herramientas de una gran agencia. La automatización me permite competir con equipos grandes manteniendo un servicio personalizado.",
-    metrics: {
-      sales: "+160%",
-      time: "18h/sem",
-      leads: "+200%",
-    },
-    featured: false,
   },
 ];
 
@@ -142,8 +75,7 @@ export function TestimonialsSection() {
             Lo que dicen nuestros clientes
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-600">
-            Un grupo selecto de profesionales inmobiliarios ya confía en Vesta
-            para hacer crecer su negocio
+            Los profesionales inmobiliarios más innovadores ya están usando Vesta. La plataforma más potente, desde el primer día
           </p>
 
           {/* Trust Indicators */}
@@ -172,7 +104,7 @@ export function TestimonialsSection() {
               }}
             >
               <AnimatedCounter
-                to={500}
+                to={10}
                 suffix="+"
                 className="text-2xl font-bold text-gray-900"
               />
@@ -258,100 +190,89 @@ export function TestimonialsSection() {
               >
                 <div className="grid lg:grid-cols-3">
                   {/* Testimonial Content - Left 2/3 */}
-                  <div className="p-8 lg:col-span-2 lg:p-12">
+                  <div className="p-4 sm:p-6 lg:col-span-2 lg:pb-12 lg:pl-8 lg:pr-12 lg:pt-6">
                     {/* Quote Icon */}
-                    <div className="mb-6">
-                      <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-amber-400 to-rose-400">
-                        <Quote className="h-6 w-6 text-white" />
+                    <div className="mb-4 sm:mb-6">
+                      <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-amber-400 to-rose-400 sm:h-12 sm:w-12">
+                        <Quote className="h-5 w-5 text-white sm:h-6 sm:w-6" />
                       </div>
                     </div>
 
                     {/* Testimonial Text */}
-                    <blockquote className="mb-8 text-xl leading-relaxed text-gray-900">
+                    <blockquote className="mb-6 text-base leading-relaxed text-gray-900 sm:text-lg md:mb-8 md:text-xl">
                       &ldquo;{current.testimonial}&rdquo;
                     </blockquote>
 
                     {/* Author Info */}
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-amber-100 to-rose-100">
-                        <span className="text-lg font-bold text-gray-700">
-                          {current.avatar}
-                        </span>
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-full sm:h-20 sm:w-20 md:h-[85px] md:w-[85px]">
+                        <Image
+                          src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/marketing/sen%CC%83or.png"
+                          alt={current.name}
+                          width={122}
+                          height={122}
+                          className="translate-y-1 scale-125 object-cover"
+                        />
                       </div>
-                      <div>
-                        <div className="font-semibold text-gray-900">
+                      <div className="min-w-0">
+                        <div className="truncate font-semibold text-gray-900">
                           {current.name}
                         </div>
-                        <div className="text-gray-600">{current.role}</div>
-                        <div className="text-sm text-gray-500">
+                        <div className="truncate text-sm text-gray-600 sm:text-base">
+                          {current.role}
+                        </div>
+                        <div className="truncate text-xs text-gray-500 sm:text-sm">
                           {current.company}
                         </div>
-                        <div className="mt-1 flex items-center gap-1 text-sm text-gray-500">
-                          <MapPin className="h-3 w-3" />
-                          {current.location}
+                        <div className="mt-1 flex items-center gap-1 text-xs text-gray-500 sm:text-sm">
+                          <MapPin className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{current.location}</span>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Rating */}
-                    <div className="mt-4 flex items-center gap-2">
-                      <div className="flex">
-                        {Array.from({ length: current.rating }, (_, i) => (
-                          <Star
-                            key={i}
-                            className="h-4 w-4 fill-amber-400 text-amber-400"
-                          />
-                        ))}
-                      </div>
-                      <span className="text-sm text-gray-600">
-                        ({current.rating}/5)
-                      </span>
                     </div>
                   </div>
 
                   {/* Metrics Sidebar - Right 1/3 */}
-                  <div className="bg-gradient-to-br from-amber-50 to-rose-50 p-6 lg:p-8">
-                    <h4 className="mb-4 font-semibold text-gray-900">
-                      Resultados obtenidos
-                    </h4>
-
-                    {/* Metric Selector */}
-                    <div className="mb-4 space-y-2">
-                      {(
-                        Object.keys(metricLabels) as Array<
-                          keyof typeof metricLabels
-                        >
-                      ).map((metric) => (
-                        <button
-                          key={metric}
-                          onClick={() => setSelectedMetric(metric)}
-                          className={cn(
-                            "w-full rounded-lg p-2.5 text-left transition-all",
-                            selectedMetric === metric
-                              ? "bg-white shadow-md ring-2 ring-amber-200"
-                              : "hover:bg-white/50",
-                          )}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-700">
-                              {metricLabels[metric]}
-                            </span>
-                            <span className="text-lg font-bold text-gray-900">
-                              {current.metrics[metric]}
-                            </span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Achievement Badge */}
-                    <div className="rounded-lg bg-white p-4 text-center">
-                      <TrendingUp className="mx-auto mb-2 h-8 w-8 text-amber-500" />
-                      <div className="text-sm font-medium text-gray-900">
-                        Cliente destacado
+                  <div className="flex flex-col bg-gradient-to-br from-amber-50 to-rose-50 p-4 sm:p-6 lg:p-8">
+                    <div>
+                      {/* Metric Selector */}
+                      <div className="mb-4 mt-0 space-y-2 sm:mt-4 lg:mt-16">
+                        {(
+                          Object.keys(metricLabels) as Array<
+                            keyof typeof metricLabels
+                          >
+                        ).map((metric) => (
+                          <button
+                            key={metric}
+                            onClick={() => setSelectedMetric(metric)}
+                            className={cn(
+                              "w-full rounded-lg p-2 text-left transition-all sm:p-2.5",
+                              selectedMetric === metric
+                                ? "bg-white shadow-md ring-2 ring-amber-200"
+                                : "hover:bg-white/50",
+                            )}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="min-w-0 truncate text-xs font-medium text-gray-700 sm:text-sm">
+                                {metricLabels[metric]}
+                              </span>
+                              <span className="flex-shrink-0 text-base font-bold text-gray-900 sm:text-lg">
+                                {current.metrics[metric]}
+                              </span>
+                            </div>
+                          </button>
+                        ))}
                       </div>
-                      <div className="text-xs text-gray-600">
-                        Top 10% rendimiento
+
+                      {/* Company Logo */}
+                      <div className="mt-6 flex justify-center sm:mt-8 lg:mt-12">
+                        <Image
+                          src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/customers/acro.png"
+                          alt="Inmobiliaria Acrópolis"
+                          width={200}
+                          height={100}
+                          className="h-auto w-full max-w-[140px] object-contain sm:max-w-[160px] md:max-w-[200px]"
+                        />
                       </div>
                     </div>
                   </div>
@@ -360,74 +281,86 @@ export function TestimonialsSection() {
             </AnimatePresence>
           </div>
 
-          {/* Navigation Arrows - Hidden on mobile */}
-          <motion.button
-            onClick={prevTestimonial}
-            className="group absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-lg transition-all hover:shadow-xl sm:left-4 sm:h-12 sm:w-12"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 1 }}
-          >
-            <ChevronLeft className="h-4 w-4 text-gray-600 group-hover:text-gray-900 sm:h-5 sm:w-5" />
-          </motion.button>
-          <motion.button
-            onClick={nextTestimonial}
-            className="group absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-lg transition-all hover:shadow-xl sm:right-4 sm:h-12 sm:w-12"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 1 }}
-          >
-            <ChevronRight className="h-4 w-4 text-gray-600 group-hover:text-gray-900 sm:h-5 sm:w-5" />
-          </motion.button>
+          {/* Navigation Arrows - Hidden when only one testimonial */}
+          {testimonials.length > 1 && (
+            <>
+              <motion.button
+                onClick={prevTestimonial}
+                className="group absolute left-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-lg transition-all hover:shadow-xl sm:left-2 sm:h-12 sm:w-12 md:left-4"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1 }}
+              >
+                <ChevronLeft className="h-5 w-5 text-gray-600 group-hover:text-gray-900" />
+              </motion.button>
+              <motion.button
+                onClick={nextTestimonial}
+                className="group absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-lg transition-all hover:shadow-xl sm:right-2 sm:h-12 sm:w-12 md:right-4"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 1 }}
+              >
+                <ChevronRight className="h-5 w-5 text-gray-600 group-hover:text-gray-900" />
+              </motion.button>
+            </>
+          )}
         </motion.div>
 
-        {/* Testimonial Indicators */}
-        <motion.div
-          className="mt-8 flex justify-center gap-2"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.8 }}
-        >
-          {testimonials.map((_, index) => (
-            <motion.button
-              key={index}
-              onClick={() => setCurrentTestimonial(index)}
-              className={cn(
-                "h-3 w-3 rounded-full transition-all",
-                index === currentTestimonial
-                  ? "scale-125 bg-gradient-to-r from-amber-400 to-rose-400"
-                  : "bg-gray-300 hover:bg-gray-400",
-              )}
-              whileHover={{ scale: 1.2 }}
-              whileTap={{ scale: 0.9 }}
-              animate={{
-                scale: index === currentTestimonial ? 1.25 : 1,
-              }}
-              transition={{ duration: 0.2 }}
-            />
-          ))}
-        </motion.div>
+        {/* Testimonial Indicators - Hidden when only one testimonial */}
+        {testimonials.length > 1 && (
+          <motion.div
+            className="mt-8 flex justify-center gap-2"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.8 }}
+          >
+            {testimonials.map((_, index) => (
+              <motion.button
+                key={index}
+                onClick={() => setCurrentTestimonial(index)}
+                className={cn(
+                  "h-3 w-3 rounded-full transition-all",
+                  index === currentTestimonial
+                    ? "scale-125 bg-gradient-to-r from-amber-400 to-rose-400"
+                    : "bg-gray-300 hover:bg-gray-400",
+                )}
+                whileHover={{ scale: 1.2 }}
+                whileTap={{ scale: 0.9 }}
+                animate={{
+                  scale: index === currentTestimonial ? 1.25 : 1,
+                }}
+                transition={{ duration: 0.2 }}
+              />
+            ))}
+          </motion.div>
+        )}
 
         {/* Call to Action */}
         <motion.div
-          className="mt-12 text-center"
+          className="mt-8 text-center sm:mt-10 md:mt-12"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 1 }}
         >
-          <motion.button
-            className="rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-3 font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <Link
+            href="https://cal.com/vesta-crm/30min"
+            target="_blank"
+            rel="noopener noreferrer"
           >
-            Ver demo
-          </motion.button>
+            <motion.button
+              className="min-h-[44px] rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-5 py-2.5 text-sm font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500 sm:px-6 sm:py-3 sm:text-base"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Probar Gratis
+            </motion.button>
+          </Link>
         </motion.div>
       </div>
     </section>

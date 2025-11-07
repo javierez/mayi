@@ -21,6 +21,7 @@ import {
   Check,
 } from "lucide-react";
 import Navbar from "~/components/navbar";
+import { Footer } from "~/components/landing/Footer";
 
 export const metadata: Metadata = {
   title: "API y Desarrolladores - Vesta Real Estate Platform",
@@ -385,6 +386,8 @@ console.log('Propiedad creada:', property.id);`;
           </div>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 }

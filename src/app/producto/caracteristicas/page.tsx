@@ -26,6 +26,7 @@ import {
 } from "~/components/ui/card";
 import Link from "next/link";
 import Navbar from "~/components/navbar";
+import { Footer } from "~/components/landing/Footer";
 
 export const metadata: Metadata = {
   title: "Características - Vesta Real Estate Platform",
@@ -398,6 +399,8 @@ export default function CaracteristicasPage() {
           </p>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 }

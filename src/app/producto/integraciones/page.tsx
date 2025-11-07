@@ -18,6 +18,7 @@ import {
   Shield,
 } from "lucide-react";
 import Navbar from "~/components/navbar";
+import { Footer } from "~/components/landing/Footer";
 
 export const metadata: Metadata = {
   title: "Integraciones - Vesta Real Estate Platform",
@@ -240,6 +241,8 @@ export default function IntegracionesPage() {
           </div>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 }

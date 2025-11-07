@@ -29,6 +29,7 @@ import {
   Send,
 } from "lucide-react";
 import Navbar from "~/components/navbar";
+import { Footer } from "~/components/landing/Footer";
 
 export const metadata: Metadata = {
   title: "Contacto - Vesta",
@@ -433,6 +434,8 @@ export default function ContactoPage() {
           </p>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 }

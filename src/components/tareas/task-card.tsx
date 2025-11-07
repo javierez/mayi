@@ -124,12 +124,6 @@ export function TaskCard({ task }: TaskCardProps) {
                 </Badge>
               )}
 
-              {task.category && (
-                <Badge variant="outline" className="text-xs">
-                  {task.category}
-                </Badge>
-              )}
-
               {task.dueDate && (
                 <div
                   className={cn(

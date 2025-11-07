@@ -10,7 +10,6 @@ import {
 import Link from "next/link";
 import {
   ArrowRight,
-  Info,
   Users,
   Target,
   Award,
@@ -20,6 +19,7 @@ import {
   Shield,
 } from "lucide-react";
 import Navbar from "~/components/navbar";
+import { Footer } from "~/components/landing/Footer";
 
 export const metadata: Metadata = {
   title: "Acerca de Nosotros - Vesta",
@@ -29,10 +29,7 @@ export const metadata: Metadata = {
 
 export default function NosotrosPage() {
   const stats = [
-    { value: "2019", label: "Año de Fundación" },
-    { value: "1000+", label: "Inmobiliarias Activas" },
-    { value: "50k+", label: "Propiedades Gestionadas" },
-    { value: "99.9%", label: "Uptime Garantizado" },
+    { value: "2025", label: "Año de Fundación" },
   ];
 
   const values = [
@@ -131,18 +128,15 @@ export default function NosotrosPage() {
       <section className="relative px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-amber-400 to-rose-400">
-              <Info className="h-8 w-8 text-white" />
-            </div>
-            <h1 className="mt-6 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
+            <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
               Acerca de{" "}
               <span className="bg-gradient-to-r from-amber-400 to-rose-400 bg-clip-text text-transparent">
                 Vesta
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-xl text-gray-600">
-              Somos un equipo apasionado por transformar la forma en que los
-              profesionales inmobiliarios gestionan sus negocios.
+              Somos un equipo apasionado por transformar la forma en que las
+              agencias inmobiliarias gestionan sus negocios.
             </p>
           </div>
         </div>
@@ -151,7 +145,7 @@ export default function NosotrosPage() {
       {/* Stats */}
       <section className="border-t border-gray-200 bg-gray-50 px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="flex justify-center">
             {stats.map((stat) => (
               <div key={stat.label} className="text-center">
                 <div className="text-4xl font-bold text-gray-900">
@@ -176,16 +170,19 @@ export default function NosotrosPage() {
                 </h2>
               </div>
               <p className="text-lg leading-relaxed text-gray-600">
-                Democratizar el acceso a herramientas tecnológicas avanzadas
-                para que cualquier profesional inmobiliario, sin importar el
-                tamaño de su empresa, pueda competir en igualdad de condiciones
-                y hacer crecer su negocio.
+                Todo empezó con una idea simple: eliminar por completo todas 
+                las tareas administrativas que consumen tiempo en el sector inmobiliario. Pensamos que todo ese
+                trabajo podría optimizarse, y teníamos razón.
               </p>
               <p className="mt-4 text-lg leading-relaxed text-gray-600">
-                Creemos que la tecnología debe ser un facilitador, no una
-                barrera. Por eso desarrollamos soluciones intuitivas que se
-                adaptan a las necesidades reales del mercado inmobiliario
-                español.
+                Nuestra misión es reducir drásticamente las tareas administrativas usando
+                las nuevas tecnologías de IA. No importa si eres una pequeña agencia o un
+                gran grupo inmobiliario. Solo queremos una cosa:{" "}
+                <span className="font-semibold text-gray-900">ayudarte a vender más</span>.
+              </p>
+              <p className="mt-4 text-lg leading-relaxed text-gray-600">
+                Esto es lo que nos diferencia de otros CRMs inmobiliarios. Estamos construyendo herramientas reales que eliminan el trabajo tedioso
+                para que puedas enfocarte en lo que importa: cerrar operaciones.
               </p>
             </div>
             <div>
@@ -196,14 +193,19 @@ export default function NosotrosPage() {
                 </h2>
               </div>
               <p className="text-lg leading-relaxed text-gray-600">
-                Ser la plataforma de referencia para la gestión inmobiliaria en
-                España y Europa, reconocida por nuestra innovación, simplicidad
-                y el impacto positivo en el éxito de nuestros clientes.
+                Queremos ser la empresa inmobiliaria más tecnológicamente avanzada del sector.
+                Estar a la vanguardia, ser punteros en innovación y calidad. Porque para nosotros,
+                la calidad del producto es lo más importante.
               </p>
               <p className="mt-4 text-lg leading-relaxed text-gray-600">
-                Visualizamos un futuro donde cada transacción inmobiliaria sea
-                más eficiente, transparente y satisfactoria para todas las
-                partes involucradas, gracias a la tecnología que desarrollamos.
+                Nuestra plataforma te permite crecer tanto vertical como horizontalmente: desde
+                gestionar ventas hasta expandirte a alquileres y otros servicios inmobiliarios.
+                Todo en un solo lugar, con la mejor tecnología del mercado.
+              </p>
+              <p className="mt-4 text-lg leading-relaxed text-gray-600">
+                La satisfacción del cliente es innegociable. Por eso tenemos una política de cero
+                errores y soporte 24/7. Queremos que estés feliz con nuestro producto en todo momento.
+                Ese es nuestro compromiso.
               </p>
             </div>
           </div>
@@ -211,46 +213,40 @@ export default function NosotrosPage() {
       </section>
 
       {/* Values */}
-      <section className="border-t border-gray-200 bg-gray-50 px-4 py-16 sm:px-6 lg:px-8">
+      <section className="border-t border-gray-200 bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-12 text-center">
+          <div className="mb-8 text-center">
             <h2 className="text-3xl font-bold text-gray-900">
               Nuestros Valores
             </h2>
-            <p className="mt-4 text-lg text-gray-600">
+            <p className="mt-2 text-gray-600">
               Los principios que guían cada decisión que tomamos
             </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {values.map((value) => {
               const Icon = value.icon;
               return (
-                <Card
+                <div
                   key={value.title}
-                  className="transition-all hover:shadow-lg"
+                  className="rounded-lg bg-white p-4 text-center shadow-md transition-shadow hover:shadow-lg"
                 >
-                  <CardHeader>
-                    <div className="flex items-start gap-4">
-                      <div className="rounded-lg bg-amber-100 p-2">
-                        <Icon className="h-6 w-6 text-amber-600" />
-                      </div>
-                      <div className="flex-1">
-                        <CardTitle className="text-xl">{value.title}</CardTitle>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600">{value.description}</p>
-                  </CardContent>
-                </Card>
+                  <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100">
+                    <Icon className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <h3 className="mb-2 text-base font-semibold text-gray-900">
+                    {value.title}
+                  </h3>
+                  <p className="text-sm text-gray-600">{value.description}</p>
+                </div>
               );
             })}
           </div>
         </div>
       </section>
 
-      {/* Team */}
+      {/* Team
       <section className="px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 text-center">
@@ -283,8 +279,9 @@ export default function NosotrosPage() {
           </div>
         </div>
       </section>
+      */}
 
-      {/* Timeline */}
+      {/* Timeline
       <section className="border-t border-gray-200 bg-gray-50 px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 text-center">
@@ -330,8 +327,9 @@ export default function NosotrosPage() {
           </div>
         </div>
       </section>
+      */}
 
-      {/* Awards */}
+      {/* Awards
       <section className="px-4 py-16 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 text-center">
@@ -367,6 +365,7 @@ export default function NosotrosPage() {
           </div>
         </div>
       </section>
+      */}
 
       {/* CTA */}
       <section className="border-t border-gray-200 px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
@@ -395,6 +394,8 @@ export default function NosotrosPage() {
           </div>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 }

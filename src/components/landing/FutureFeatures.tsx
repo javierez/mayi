@@ -74,22 +74,22 @@ const futureFeatures = [
 
 export function FutureFeatures() {
   return (
-    <section className="bg-white px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+    <section className="bg-white px-4 py-12 sm:px-6 sm:py-16 lg:py-24 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <div className="text-center">
-          <Badge variant="outline" className="mb-4">
+          <Badge variant="outline" className="mb-3 sm:mb-4">
             Próximamente
           </Badge>
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl lg:text-4xl">
             El futuro del sector inmobiliario
           </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-600">
+          <p className="mx-auto mt-3 max-w-2xl px-4 text-base text-gray-600 sm:mt-4 sm:px-0 sm:text-lg">
             Estamos trabajando en funciones revolucionarias que transformarán tu
-            manera de hacer negocios
+            manera de hacer negocios. Comprometidos con nuestra política 0bug para garantizar la máxima calidad.
           </p>
         </div>
 
-        <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 grid grid-cols-1 gap-6 sm:mt-12 sm:grid-cols-2 sm:gap-8 lg:mt-16 lg:grid-cols-3">
           {futureFeatures.map((feature) => {
             const Icon = feature.icon;
             return (
@@ -97,19 +97,19 @@ export function FutureFeatures() {
                 key={feature.title}
                 className="group relative overflow-hidden border-2 border-dashed transition-all hover:border-solid hover:shadow-lg"
               >
-                <CardHeader>
-                  <div className="flex items-center justify-between">
+                <CardHeader className="space-y-3 sm:space-y-4">
+                  <div className="flex items-start justify-between gap-2 sm:items-center">
                     <div
-                      className={`mb-4 inline-flex rounded-lg ${feature.bgColor} p-3`}
+                      className={`inline-flex rounded-lg ${feature.bgColor} p-2.5 sm:p-3`}
                     >
-                      <Icon className={`h-6 w-6 ${feature.color}`} />
+                      <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${feature.color}`} />
                     </div>
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="shrink-0 text-xs">
                       {feature.timeline}
                     </Badge>
                   </div>
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
-                  <CardDescription className="text-base">
+                  <CardTitle className="text-lg sm:text-xl">{feature.title}</CardTitle>
+                  <CardDescription className="text-sm sm:text-base">
                     {feature.description}
                   </CardDescription>
                 </CardHeader>
@@ -121,19 +121,19 @@ export function FutureFeatures() {
           })}
         </div>
 
-        <div className="mt-16 rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 p-8 text-center">
-          <h3 className="text-2xl font-bold text-gray-900">
+        <div className="mt-8 rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 p-6 text-center sm:mt-12 sm:p-8 lg:mt-16">
+          <h3 className="text-xl font-bold text-gray-900 sm:text-2xl">
             ¿Tienes una idea para una nueva función?
           </h3>
-          <p className="mt-4 text-lg text-gray-600">
+          <p className="mt-3 px-2 text-base text-gray-600 sm:mt-4 sm:px-0 sm:text-lg">
             Construimos Vesta con feedback de profesionales del sector
             inmobiliario. Tu opinión da forma al futuro de la plataforma.
           </p>
-          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:justify-center sm:gap-6">
-            <Badge variant="outline" className="px-4 py-2 text-center">
+          <div className="mt-4 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:justify-center sm:gap-4 lg:gap-6">
+            <Badge variant="outline" className="w-full break-words px-3 py-2 text-center text-xs sm:w-auto sm:px-4 sm:text-sm">
               📧 Solicitudes de funciones: ideas@vesta.com
             </Badge>
-            <Badge variant="outline" className="px-4 py-2 text-center">
+            <Badge variant="outline" className="w-full break-words px-3 py-2 text-center text-xs sm:w-auto sm:px-4 sm:text-sm">
               💬 Programa Beta: Acceso anticipado disponible
             </Badge>
           </div>

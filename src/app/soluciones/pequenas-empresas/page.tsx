@@ -15,6 +15,7 @@ import {
   Check,
 } from "lucide-react";
 import Navbar from "~/components/navbar";
+import { Footer } from "~/components/landing/Footer";
 
 export const metadata: Metadata = {
   title: "Solución para Pequeñas Empresas - Vesta",
@@ -271,6 +272,8 @@ export default function PequenasEmpresasPage() {
           </p>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 }

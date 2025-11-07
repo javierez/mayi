@@ -50,7 +50,8 @@
       "Bash(export PATH=\"/usr/local/opt/postgresql@16/bin:$PATH\")",
       "Bash(echo:*)",
       "WebFetch(domain:stackoverflow.com)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(xargs basename:*)"
     ],
     "deny": [],
     "ask": []
