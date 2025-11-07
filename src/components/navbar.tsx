@@ -131,6 +131,13 @@ export default function Navbar({
           >
             Nosotros
           </Link>
+          <Link
+            href="/changelog"
+            className="text-sm font-medium transition-colors hover:text-primary"
+            aria-label="Novedades"
+          >
+            Novedades
+          </Link>
         </nav>
 
         {/* Right section - Auth Buttons, Social Links and Mobile Menu */}
@@ -240,6 +247,14 @@ export default function Navbar({
                 >
                   <Info className="h-4 w-4" />
                   Nosotros
+                </Link>
+                <Link
+                  href="/changelog"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                  onClick={handleMenuClose}
+                >
+                  <FileText className="h-4 w-4" />
+                  Novedades
                 </Link>
               </div>
             </div>

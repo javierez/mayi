@@ -124,7 +124,7 @@ const features = [
   },
   {
     id: "docs",
-    title: "Procesamiento de Documentos",
+    title: "Procesamiento de Docs",
     icon: FileText,
     description:
       "Digitaliza y extrae información de documentos automáticamente con OCR avanzado. Organiza contratos, escrituras y más en segundos.",
@@ -269,7 +269,7 @@ export function FeaturesGrid() {
 
         {/* Feature Tabs */}
         <motion.div
-          className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"
+          className="mb-8 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 1 }}
@@ -306,7 +306,7 @@ export function FeaturesGrid() {
                 key={feature.id}
                 onClick={() => toggleFeature(feature.id)}
                 className={cn(
-                  "relative flex flex-col items-center justify-center rounded-xl p-4 transition-all duration-200",
+                  "relative flex items-center justify-start gap-2 rounded-lg p-2.5 transition-all duration-200",
                   "hover:scale-[1.02]",
                   isActive
                     ? "bg-gradient-to-br from-amber-50 to-rose-50 shadow-lg"
@@ -315,7 +315,7 @@ export function FeaturesGrid() {
               >
                 <div
                   className={cn(
-                    "mb-2 rounded-lg p-2 transition-colors",
+                    "shrink-0 rounded-lg p-1.5 transition-colors",
                     isActive
                       ? "bg-gradient-to-r from-amber-400 to-rose-400"
                       : "bg-gray-100",
@@ -323,14 +323,14 @@ export function FeaturesGrid() {
                 >
                   <Icon
                     className={cn(
-                      "h-5 w-5 transition-colors",
+                      "h-4 w-4 transition-colors",
                       isActive ? "text-white" : "text-gray-600",
                     )}
                   />
                 </div>
                 <span
                   className={cn(
-                    "text-center text-xs font-medium transition-colors",
+                    "text-left text-xs font-medium leading-tight transition-colors",
                     isActive ? "text-gray-900" : "text-gray-600",
                   )}
                 >
