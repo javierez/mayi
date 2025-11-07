@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { cn } from "~/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -9,6 +11,7 @@ import {
   Globe,
   Calendar,
   Sparkles,
+  Brain,
   FileText,
   Check,
   Home,
@@ -31,7 +34,23 @@ import {
   Zap,
   Languages,
   PenTool,
+  User,
+  CalendarIcon,
+  Handshake,
+  ThumbsUp,
+  ThumbsDown,
+  Clock,
+  X,
+  CalendarPlus,
+  UserX,
+  Mail,
+  ClipboardList,
+  ChevronLeft,
+  ChevronRight,
+  Car,
 } from "lucide-react";
+import { Card, CardContent, CardFooter } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
 
 const features = [
   {
@@ -39,7 +58,7 @@ const features = [
     title: "Gestión de Propiedades",
     icon: Building2,
     description:
-      "Administra tu portafolio inmobiliario con herramientas intuitivas y potentes. Crea listados detallados, gestiona documentos y realiza seguimiento de cada propiedad.",
+      "Administra tu portafolio inmobiliario con las herramientas más potentes del mercado. Crea propiedades, gestiona documentos y realiza seguimiento de cada propiedad.",
     preview: {
       stats: [
         { label: "Propiedades activas", value: "124", trend: "+12%" },
@@ -47,30 +66,33 @@ const features = [
         { label: "Documentos gestionados", value: "1,240", trend: "+24%" },
       ],
       features: [
-        "Listados detallados con galerías ilimitadas",
-        "Gestión de documentos integrada",
-        "Seguimiento de estado en tiempo real",
-        "Generación automática de fichas",
+        "Imágenes ilimitadas, vídeos, tour virtuales",
+        "Herramienta de edición de carteles",
+        "Tareas, notas y seguimiento de actividad",
+        "Publicación multi-portal",
+        "Integración con Catastro y Google Maps",
+        "Inteligencia Artificial integrada"
       ],
     },
   },
   {
     id: "crm",
-    title: "CRM de Contactos",
+    title: "Gestión de Contactos",
     icon: Users,
     description:
-      "Convierte más leads con nuestro sistema de gestión de contactos. Rastrea interacciones, automatiza seguimientos y cierra más tratos.",
+      "Gestiona demandantes y propietarios desde un solo lugar. Organiza visitas, ofertas, tareas y mantén un historial completo de cada contacto.",
     preview: {
       stats: [
-        { label: "Contactos totales", value: "2,847", trend: "+18%" },
-        { label: "Leads activos", value: "156", trend: "+22%" },
-        { label: "Tasa de conversión", value: "24%", trend: "+5%" },
+        { label: "Demandantes", value: "245", trend: "+18%" },
+        { label: "Propietarios", value: "95", trend: "+12%" },
+        { label: "Tareas pendientes", value: "28", trend: "+12%" },
       ],
       features: [
-        "Seguimiento automático de leads",
+        "Gestión de demandantes y propietarios",
+        "Cruces automáticos entre demandas e intereses",
+        "Seguimiento de visitas y ofertas",
+        "Tareas y recordatorios automatizados",
         "Historial completo de interacciones",
-        "Segmentación inteligente",
-        "Automatización de campañas",
       ],
     },
   },
@@ -117,9 +139,9 @@ const features = [
   {
     id: "ai",
     title: "Descripciones con IA",
-    icon: Sparkles,
+    icon: Brain,
     description:
-      "Genera descripciones atractivas y optimizadas para SEO con inteligencia artificial. Destaca las mejores características de cada propiedad.",
+      "Genera descripciones personalizadas a tu gusto y optimizadas para SEO con inteligencia artificial. Destaca las mejores características de cada propiedad a tan solo un clic.",
     preview: {
       stats: [
         { label: "Descripciones generadas", value: "1,420", trend: "+45%" },
@@ -130,7 +152,7 @@ const features = [
         "Generación en segundos",
         "Optimización SEO automática",
         "Múltiples idiomas disponibles",
-        "Personalización por portal",
+        "Personalización por cliente",
       ],
     },
   },
@@ -160,23 +182,115 @@ export function FeaturesGrid() {
   const [activeFeature, setActiveFeature] = useState<string | null>(
     "properties",
   );
+  const [cardSetIndex, setCardSetIndex] = useState(0);
+  const [portalStates, setPortalStates] = useState<Record<string, boolean>>({
+    idealista: true,
+    fotocasa: true,
+    habitaclia: true,
+    milanuncios: true,
+    pisoscom: true,
+    yaencontre: true,
+    enalquiler: true,
+    kyero: true,
+  });
+  const [generatedTitleText, setGeneratedTitleText] = useState("");
+  const [isTypingGenerated, setIsTypingGenerated] = useState(false);
+  const [descriptionText, setDescriptionText] = useState("");
+  const [isTypingDescription, setIsTypingDescription] = useState(false);
+  
+  const generatedTitle = "Descripción Generada";
+  const fullDescription = "Espectacular villa mediterránea ubicada en la exclusiva zona de Marbella. Esta propiedad de 280m² ofrece 4 amplios dormitorios y 3 baños completos, perfecta para familias que buscan confort y elegancia.\n\nDestacan sus acabados de alta calidad, cocina totalmente equipada con electrodomésticos de última generación, y un luminoso salón con acceso directo a la terraza con vistas panorámicas al mar.";
 
   const toggleFeature = (featureId: string) => {
     setActiveFeature(activeFeature === featureId ? null : featureId);
   };
 
+  // Auto-rotate property cards every 5 seconds
+  useEffect(() => {
+    if (activeFeature === "properties") {
+      // Reset to first set when switching to properties
+      setCardSetIndex(0);
+      
+      const interval = setInterval(() => {
+        setCardSetIndex((prev) => (prev === 0 ? 1 : 0));
+      }, 5000);
+
+      return () => clearInterval(interval);
+    }
+  }, [activeFeature]);
+
+  const descriptionIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const descriptionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Typewriter effect for "Descripción Generada" title and description
+  useEffect(() => {
+    if (activeFeature === "ai") {
+      setGeneratedTitleText("");
+      setDescriptionText("");
+      setIsTypingGenerated(true);
+      setIsTypingDescription(false);
+      
+      let titleIndex = 0;
+      let descriptionIndex = 0;
+      
+      // Type title first
+      const titleInterval = setInterval(() => {
+        if (titleIndex < generatedTitle.length) {
+          setGeneratedTitleText(generatedTitle.slice(0, titleIndex + 1));
+          titleIndex++;
+        } else {
+          setIsTypingGenerated(false);
+          clearInterval(titleInterval);
+          
+          // Start typing description after title is complete (small delay)
+          descriptionTimeoutRef.current = setTimeout(() => {
+            setIsTypingDescription(true);
+            descriptionIntervalRef.current = setInterval(() => {
+              if (descriptionIndex < fullDescription.length) {
+                setDescriptionText(fullDescription.slice(0, descriptionIndex + 1));
+                descriptionIndex++;
+              } else {
+                setIsTypingDescription(false);
+                if (descriptionIntervalRef.current) {
+                  clearInterval(descriptionIntervalRef.current);
+                  descriptionIntervalRef.current = null;
+                }
+              }
+            }, 30); // Type description faster (30ms per character)
+          }, 300); // Small delay between title and description
+        }
+      }, 100); // Type title at 100ms per character
+
+      return () => {
+        clearInterval(titleInterval);
+        if (descriptionTimeoutRef.current) {
+          clearTimeout(descriptionTimeoutRef.current);
+          descriptionTimeoutRef.current = null;
+        }
+        if (descriptionIntervalRef.current) {
+          clearInterval(descriptionIntervalRef.current);
+          descriptionIntervalRef.current = null;
+        }
+      };
+    } else {
+      setGeneratedTitleText("");
+      setDescriptionText("");
+      setIsTypingGenerated(false);
+      setIsTypingDescription(false);
+    }
+  }, [activeFeature, generatedTitle, fullDescription]);
+
   return (
-    <section className="bg-white px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
+    <section className="bg-white px-4 pt-8 pb-16 sm:px-6 sm:pt-12 sm:pb-24 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <motion.div
           className="mb-12 text-center"
           initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-            Todo lo que necesitas para triunfar
+            Todo lo que tu agencia necesita
           </h2>
           <p className="mt-4 text-lg text-gray-600">
             Herramientas profesionales diseñadas específicamente para el sector
@@ -189,7 +303,7 @@ export function FeaturesGrid() {
           className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
+          viewport={{ once: true, amount: 1 }}
           variants={{
             hidden: { opacity: 0 },
             visible: {
@@ -276,7 +390,7 @@ export function FeaturesGrid() {
                       <h3 className="mb-3 text-2xl font-bold text-gray-900">
                         Gestión de Propiedades
                       </h3>
-                      <p className="leading-relaxed text-gray-600">
+                      <p className="text-sm leading-relaxed text-gray-600">
                         Administra tu portafolio inmobiliario con herramientas
                         intuitivas y potentes. Crea listados detallados,
                         gestiona documentos y realiza seguimiento de cada
@@ -285,7 +399,7 @@ export function FeaturesGrid() {
                     </div>
 
                     <div className="space-y-3">
-                      <h4 className="font-semibold text-gray-900">
+                      <h4 className="text-sm font-semibold text-gray-900">
                         Características principales
                       </h4>
                       <ul className="space-y-2">
@@ -293,42 +407,63 @@ export function FeaturesGrid() {
                           <div className="mt-1 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
                             <Check className="h-3 w-3 text-white" />
                           </div>
-                          <span className="text-gray-700">
-                            Listados detallados con galerías ilimitadas
+                          <span className="text-sm text-gray-700">
+                            Imágenes ilimitadas, vídeos, tour virtuales
                           </span>
                         </li>
                         <li className="flex items-start gap-3">
                           <div className="mt-1 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
                             <Check className="h-3 w-3 text-white" />
                           </div>
-                          <span className="text-gray-700">
-                            Gestión de documentos integrada
+                          <span className="text-sm text-gray-700">
+                            Herramienta de edición de carteles
                           </span>
                         </li>
                         <li className="flex items-start gap-3">
                           <div className="mt-1 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
                             <Check className="h-3 w-3 text-white" />
                           </div>
-                          <span className="text-gray-700">
-                            Seguimiento de estado en tiempo real
+                          <span className="text-sm text-gray-700">
+                            Tareas, notas y seguimiento de actividad
                           </span>
                         </li>
                         <li className="flex items-start gap-3">
                           <div className="mt-1 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
                             <Check className="h-3 w-3 text-white" />
                           </div>
-                          <span className="text-gray-700">
-                            Generación automática de fichas
+                          <span className="text-sm text-gray-700">
+                            Publicación multi-portal
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <div className="mt-1 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
+                            <Check className="h-3 w-3 text-white" />
+                          </div>
+                          <span className="text-sm text-gray-700">
+                            Integración con Catastro y Google Maps
+                          </span>
+                        </li>
+                        <li className="flex items-start gap-3">
+                          <div className="mt-1 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
+                            <Check className="h-3 w-3 text-white" />
+                          </div>
+                          <span className="text-sm text-gray-700">
+                            Inteligencia Artificial integrada
                           </span>
                         </li>
                       </ul>
                     </div>
 
                     <div className="flex flex-col gap-3 pt-4">
-                      <button className="w-full rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-3 font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500">
-                        Ver demo
-                      </button>
-                      <button className="w-full rounded-lg bg-white px-6 py-3 font-medium text-gray-700 shadow-sm transition-all hover:shadow-md">
+                      <Link
+                        href="https://cal.com/vesta-crm/30min"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-3 text-sm font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500 text-center block"
+                      >
+                        Probar Gratis
+                      </Link>
+                      <button className="w-full rounded-lg bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:shadow-md">
                         Más información
                       </button>
                     </div>
@@ -338,155 +473,339 @@ export function FeaturesGrid() {
                   <div className="space-y-4 lg:col-span-2">
                     {/* Stats Bar */}
                     <div className="mb-6 grid grid-cols-3 gap-4">
-                      <div className="rounded-lg bg-white p-3 text-center">
-                        <div className="text-2xl font-bold text-gray-900">
+                      <div className="rounded-lg bg-white p-3 text-center shadow-md">
+                        <div className="text-base font-mono font-bold tracking-wider uppercase text-gray-900">
                           124
                         </div>
-                        <div className="text-xs text-gray-600">
+                        <div className="text-[10px] uppercase text-gray-600">
                           Propiedades activas
                         </div>
                       </div>
-                      <div className="rounded-lg bg-white p-3 text-center">
-                        <div className="text-2xl font-bold text-gray-900">
+                      <div className="rounded-lg bg-white p-3 text-center shadow-md">
+                        <div className="text-base font-mono font-bold tracking-wider uppercase text-gray-900">
                           48
                         </div>
-                        <div className="text-xs text-gray-600">
+                        <div className="text-[10px] uppercase text-gray-600">
                           Visitas esta semana
                         </div>
                       </div>
-                      <div className="rounded-lg bg-white p-3 text-center">
-                        <div className="text-2xl font-bold text-gray-900">
+                      <div className="rounded-lg bg-white p-3 text-center shadow-md">
+                        <div className="text-base font-mono font-bold tracking-wider uppercase text-gray-900">
                           €2.4M
                         </div>
-                        <div className="text-xs text-gray-600">
+                        <div className="text-[10px] uppercase text-gray-600">
                           Valor total portfolio
                         </div>
                       </div>
                     </div>
 
                     {/* Property Cards */}
-                    <div className="space-y-4">
+                    <div className="relative grid grid-cols-2 gap-3 pr-4 pb-4">
+                      <AnimatePresence mode="wait">
+                        {cardSetIndex === 0 ? (
+                          <motion.div
+                            key="set1"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.5 }}
+                            className="grid grid-cols-2 gap-3 col-span-2"
+                          >
                       {/* Property Card 1 */}
-                      <div className="overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-lg">
-                        <div className="grid grid-cols-3 gap-4 p-4">
-                          <div className="col-span-1">
-                            <div className="flex aspect-[4/3] items-center justify-center rounded-lg bg-gradient-to-br from-amber-100 to-rose-100">
-                              <Home className="h-8 w-8 text-amber-600" />
+                            <Card className="group overflow-hidden transition-all hover:shadow-lg">
+                        <div className="relative aspect-[4/3] overflow-hidden">
+                          <Image
+                            src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/marketing/Gemini_Generated_Image_d4c2o2d4c2o2d4c2.png"
+                            alt="Villa Mediterránea"
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 50vw, 25vw"
+                          />
+                          {/* Top Left - Property Type */}
+                          <Badge
+                            variant="outline"
+                            className="absolute left-2 top-2 z-10 bg-white/80 text-[10px] px-1 py-0"
+                          >
+                            Casa
+                          </Badge>
+                          {/* Top Right - Status */}
+                          <Badge className="absolute right-2 top-2 z-10 text-[10px] px-1 py-0">
+                            Venta
+                          </Badge>
+                          {/* Bottom Center - Reference Number */}
+                          <div className="absolute bottom-0.5 left-1/2 z-10 -translate-x-1/2">
+                            <span className="text-[8px] font-semibold tracking-widest text-gray-700/90">
+                              REF-001
+                            </span>
                             </div>
                           </div>
-                          <div className="col-span-2 space-y-2">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <h5 className="font-semibold text-gray-900">
-                                  Villa Mediterránea Premium
-                                </h5>
-                                <div className="mt-1 flex items-center gap-1 text-sm text-gray-600">
-                                  <MapPin className="h-3 w-3" />
-                                  <span>Marbella, Málaga</span>
+
+                        <CardContent className="p-2">
+                          <div className="mb-0.5 flex items-start justify-between gap-1">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="line-clamp-1 text-xs font-semibold">
+                                Villa Mediterránea
+                              </h3>
                                 </div>
+                            <p className="text-xs font-bold whitespace-nowrap">875k€</p>
                               </div>
-                              <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
-                                Disponible
-                              </span>
+
+                          <div className="mb-1 flex items-center text-muted-foreground">
+                            <MapPin className="mr-0.5 h-2.5 w-2.5" />
+                            <p className="line-clamp-1 text-[10px]">
+                              Marbella, Málaga
+                            </p>
                             </div>
-                            <div className="flex items-center gap-4 text-sm text-gray-600">
-                              <span className="flex items-center gap-1">
-                                <Bed className="h-3 w-3" />4
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Bath className="h-3 w-3" />3
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Square className="h-3 w-3" />
-                                280m²
-                              </span>
+
+                          <div className="flex justify-between gap-1 text-[10px]">
+                            <div className="flex items-center">
+                              <Bed className="mr-0.5 h-2.5 w-2.5" />
+                              <span>4</span>
                             </div>
-                            <div className="flex items-center justify-between border-t pt-2">
-                              <div className="flex items-center gap-1">
-                                <Euro className="h-4 w-4 text-amber-600" />
-                                <span className="text-lg font-bold text-gray-900">
-                                  875,000
-                                </span>
+                            <div className="flex items-center">
+                              <Bath className="mr-0.5 h-2.5 w-2.5" />
+                              <span>3</span>
                               </div>
-                              <div className="flex items-center gap-2 text-sm text-gray-500">
-                                <span className="flex items-center gap-1">
-                                  <Eye className="h-3 w-3" />
-                                  342
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Heart className="h-3 w-3" />
-                                  28
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Share2 className="h-3 w-3" />
-                                  12
-                                </span>
-                              </div>
+                            <div className="flex items-center">
+                              <Square className="mr-0.5 h-2.5 w-2.5" />
+                              <span>280m²</span>
                             </div>
                           </div>
-                        </div>
-                      </div>
+                        </CardContent>
+                        <CardFooter className="relative border-t border-border/40 p-2 pt-1">
+                          <div className="agent-info flex cursor-pointer items-center gap-1 transition-all">
+                            <User className="h-2.5 w-2.5 text-muted-foreground/80 transition-all group-hover:scale-110 group-hover:text-primary" />
+                            <p className="text-[10px] font-light text-muted-foreground/80 transition-all group-hover:font-bold group-hover:text-primary group-hover:underline line-clamp-1">
+                              C. Rodríguez
+                            </p>
+                          </div>
+                        </CardFooter>
+                      </Card>
 
                       {/* Property Card 2 */}
-                      <div className="overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-lg">
-                        <div className="grid grid-cols-3 gap-4 p-4">
-                          <div className="col-span-1">
-                            <div className="flex aspect-[4/3] items-center justify-center rounded-lg bg-gradient-to-br from-amber-100 to-rose-100">
-                              <Building2 className="h-8 w-8 text-rose-600" />
+                      <Card className="group overflow-hidden transition-all hover:shadow-lg">
+                        <div className="relative aspect-[4/3] overflow-hidden">
+                          <Image
+                            src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/marketing/Gemini_Generated_Image_65zxcv65zxcv65zx.png"
+                            alt="Ático Duplex"
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 50vw, 25vw"
+                          />
+                          {/* Top Left - Property Type */}
+                          <Badge
+                            variant="outline"
+                            className="absolute left-2 top-2 z-10 bg-white/80 text-[10px] px-1 py-0"
+                          >
+                            Piso
+                          </Badge>
+                          {/* Top Right - Status */}
+                          <Badge className="absolute right-2 top-2 z-10 bg-amber-500 text-[10px] px-1 py-0">
+                            Reservado
+                          </Badge>
+                          {/* Bottom Center - Reference Number */}
+                          <div className="absolute bottom-0.5 left-1/2 z-10 -translate-x-1/2">
+                            <span className="text-[8px] font-semibold tracking-widest text-gray-700/90">
+                              REF-002
+                                </span>
+                              </div>
                             </div>
+
+                        <CardContent className="p-2">
+                          <div className="mb-0.5 flex items-start justify-between gap-1">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="line-clamp-1 text-xs font-semibold">
+                                Ático Duplex
+                              </h3>
                           </div>
-                          <div className="col-span-2 space-y-2">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <h5 className="font-semibold text-gray-900">
-                                  Ático Duplex Centro
-                                </h5>
-                                <div className="mt-1 flex items-center gap-1 text-sm text-gray-600">
-                                  <MapPin className="h-3 w-3" />
-                                  <span>Valencia, Valencia</span>
+                            <p className="text-xs font-bold whitespace-nowrap">425k€</p>
+                        </div>
+
+                          <div className="mb-1 flex items-center text-muted-foreground">
+                            <MapPin className="mr-0.5 h-2.5 w-2.5" />
+                            <p className="line-clamp-1 text-[10px]">
+                              Valencia, Valencia
+                            </p>
+                      </div>
+
+                          <div className="flex justify-between gap-1 text-[10px]">
+                            <div className="flex items-center">
+                              <Bed className="mr-0.5 h-2.5 w-2.5" />
+                              <span>3</span>
+                            </div>
+                            <div className="flex items-center">
+                              <Bath className="mr-0.5 h-2.5 w-2.5" />
+                              <span>2</span>
+                          </div>
+                            <div className="flex items-center">
+                              <Square className="mr-0.5 h-2.5 w-2.5" />
+                              <span>150m²</span>
                                 </div>
                               </div>
-                              <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">
-                                Reservado
+                        </CardContent>
+                        <CardFooter className="relative border-t border-border/40 p-2 pt-1">
+                          <div className="agent-info flex cursor-pointer items-center gap-1 transition-all">
+                            <User className="h-2.5 w-2.5 text-muted-foreground/80 transition-all group-hover:scale-110 group-hover:text-primary" />
+                            <p className="text-[10px] font-light text-muted-foreground/80 transition-all group-hover:font-bold group-hover:text-primary group-hover:underline line-clamp-1">
+                              M. González
+                            </p>
+                            </div>
+                        </CardFooter>
+                      </Card>
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="set2"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.5 }}
+                            className="grid grid-cols-2 gap-3 col-span-2"
+                          >
+                            {/* Property Card 3 */}
+                            <Card className="group overflow-hidden transition-all hover:shadow-lg">
+                        <div className="relative aspect-[4/3] overflow-hidden">
+                          <Image
+                            src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/marketing/Gemini_Generated_Image_4qeqxx4qeqxx4qeq.png"
+                            alt="Chalet Moderno"
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 50vw, 25vw"
+                          />
+                          {/* Top Left - Property Type */}
+                          <Badge
+                            variant="outline"
+                            className="absolute left-2 top-2 z-10 bg-white/80 text-[10px] px-1 py-0"
+                          >
+                            Casa
+                          </Badge>
+                          {/* Top Right - Status */}
+                          <Badge className="absolute right-2 top-2 z-10 text-[10px] px-1 py-0">
+                            Venta
+                          </Badge>
+                          {/* Bottom Center - Reference Number */}
+                          <div className="absolute bottom-0.5 left-1/2 z-10 -translate-x-1/2">
+                            <span className="text-[8px] font-semibold tracking-widest text-gray-700/90">
+                              REF-003
                               </span>
                             </div>
-                            <div className="flex items-center gap-4 text-sm text-gray-600">
-                              <span className="flex items-center gap-1">
-                                <Bed className="h-3 w-3" />3
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Bath className="h-3 w-3" />2
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Square className="h-3 w-3" />
-                                150m²
-                              </span>
+                              </div>
+
+                        <CardContent className="p-2">
+                          <div className="mb-0.5 flex items-start justify-between gap-1">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="line-clamp-1 text-xs font-semibold">
+                                Chalet Moderno
+                              </h3>
                             </div>
-                            <div className="flex items-center justify-between border-t pt-2">
-                              <div className="flex items-center gap-1">
-                                <Euro className="h-4 w-4 text-amber-600" />
-                                <span className="text-lg font-bold text-gray-900">
-                                  425,000
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 text-sm text-gray-500">
-                                <span className="flex items-center gap-1">
-                                  <Eye className="h-3 w-3" />
-                                  567
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Heart className="h-3 w-3" />
-                                  45
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Share2 className="h-3 w-3" />
-                                  23
-                                </span>
-                              </div>
+                            <p className="text-xs font-bold whitespace-nowrap">650k€</p>
+                          </div>
+
+                          <div className="mb-1 flex items-center text-muted-foreground">
+                            <MapPin className="mr-0.5 h-2.5 w-2.5" />
+                            <p className="line-clamp-1 text-[10px]">
+                              Madrid, Madrid
+                            </p>
+                          </div>
+
+                          <div className="flex justify-between gap-1 text-[10px]">
+                            <div className="flex items-center">
+                              <Bed className="mr-0.5 h-2.5 w-2.5" />
+                              <span>5</span>
+                            </div>
+                            <div className="flex items-center">
+                              <Bath className="mr-0.5 h-2.5 w-2.5" />
+                              <span>4</span>
+                            </div>
+                            <div className="flex items-center">
+                              <Square className="mr-0.5 h-2.5 w-2.5" />
+                              <span>320m²</span>
                             </div>
                           </div>
+                        </CardContent>
+                        <CardFooter className="relative border-t border-border/40 p-2 pt-1">
+                          <div className="agent-info flex cursor-pointer items-center gap-1 transition-all">
+                            <User className="h-2.5 w-2.5 text-muted-foreground/80 transition-all group-hover:scale-110 group-hover:text-primary" />
+                            <p className="text-[10px] font-light text-muted-foreground/80 transition-all group-hover:font-bold group-hover:text-primary group-hover:underline line-clamp-1">
+                              Ana Martínez
+                            </p>
+                          </div>
+                        </CardFooter>
+                      </Card>
+
+                      {/* Property Card 4 */}
+                      <Card className="group overflow-hidden transition-all hover:shadow-lg">
+                        <div className="relative aspect-[4/3] overflow-hidden">
+                          <Image
+                            src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/marketing/Gemini_Generated_Image_fvcyy0fvcyy0fvcy.png"
+                            alt="Estudio Centro"
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 50vw, 25vw"
+                          />
+                          {/* Top Left - Property Type */}
+                          <Badge
+                            variant="outline"
+                            className="absolute left-2 top-2 z-10 bg-white/80 text-[10px] px-1 py-0"
+                          >
+                            Piso
+                          </Badge>
+                          {/* Top Right - Status */}
+                          <Badge className="absolute right-2 top-2 z-10 text-[10px] px-1 py-0">
+                            Venta
+                          </Badge>
+                          {/* Bottom Center - Reference Number */}
+                          <div className="absolute bottom-0.5 left-1/2 z-10 -translate-x-1/2">
+                            <span className="text-[8px] font-semibold tracking-widest text-gray-700/90">
+                              REF-004
+                                </span>
+                              </div>
+                            </div>
+
+                        <CardContent className="p-2">
+                          <div className="mb-0.5 flex items-start justify-between gap-1">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="line-clamp-1 text-xs font-semibold">
+                                Estudio Centro
+                              </h3>
+                          </div>
+                            <p className="text-xs font-bold whitespace-nowrap">180k€</p>
                         </div>
+
+                          <div className="mb-1 flex items-center text-muted-foreground">
+                            <MapPin className="mr-0.5 h-2.5 w-2.5" />
+                            <p className="line-clamp-1 text-[10px]">
+                              Barcelona, Barcelona
+                            </p>
                       </div>
+
+                          <div className="flex justify-between gap-1 text-[10px]">
+                            <div className="flex items-center">
+                              <Bed className="mr-0.5 h-2.5 w-2.5" />
+                              <span>1</span>
+                    </div>
+                            <div className="flex items-center">
+                              <Bath className="mr-0.5 h-2.5 w-2.5" />
+                              <span>1</span>
+                  </div>
+                            <div className="flex items-center">
+                              <Square className="mr-0.5 h-2.5 w-2.5" />
+                              <span>45m²</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                        <CardFooter className="relative border-t border-border/40 p-2 pt-1">
+                          <div className="agent-info flex cursor-pointer items-center gap-1 transition-all">
+                            <User className="h-2.5 w-2.5 text-muted-foreground/80 transition-all group-hover:scale-110 group-hover:text-primary" />
+                            <p className="text-[10px] font-light text-muted-foreground/80 transition-all group-hover:font-bold group-hover:text-primary group-hover:underline line-clamp-1">
+                              J. López
+                            </p>
+                          </div>
+                        </CardFooter>
+                      </Card>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </div>
                 </div>
@@ -511,58 +830,71 @@ export function FeaturesGrid() {
                       <h3 className="mb-3 text-2xl font-bold text-gray-900">
                         CRM de Contactos
                       </h3>
-                      <p className="leading-relaxed text-gray-600">
-                        Convierte más leads con nuestro sistema de gestión de
-                        contactos. Rastrea interacciones, automatiza
-                        seguimientos y cierra más tratos.
+                      <p className="text-sm leading-relaxed text-gray-600">
+                        Gestiona demandantes y propietarios desde un solo lugar. 
+                        Organiza visitas, ofertas, tareas y mantén un historial completo 
+                        de cada contacto.
                       </p>
                     </div>
 
                     <div className="space-y-3">
-                      <h4 className="font-semibold text-gray-900">
+                      <h4 className="text-sm font-semibold text-gray-900">
                         Características principales
                       </h4>
                       <ul className="space-y-2">
-                        <li className="flex items-start gap-3">
-                          <div className="mt-1 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
+                        <li className="flex items-center gap-3">
+                          <div className="rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
                             <Check className="h-3 w-3 text-white" />
                           </div>
-                          <span className="text-gray-700">
-                            Seguimiento automático de leads
+                          <span className="text-sm text-gray-700">
+                            Gestión de demandantes y propietarios
                           </span>
                         </li>
-                        <li className="flex items-start gap-3">
-                          <div className="mt-1 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
+                        <li className="flex items-center gap-3">
+                          <div className="rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
                             <Check className="h-3 w-3 text-white" />
                           </div>
-                          <span className="text-gray-700">
+                          <span className="text-sm text-gray-700">
+                            Cruces automáticos entre demandas e intereses
+                          </span>
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <div className="rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
+                            <Check className="h-3 w-3 text-white" />
+                          </div>
+                          <span className="text-sm text-gray-700">
+                            Seguimiento de visitas y ofertas
+                          </span>
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <div className="rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
+                            <Check className="h-3 w-3 text-white" />
+                          </div>
+                          <span className="text-sm text-gray-700">
+                            Tareas y recordatorios automatizados
+                          </span>
+                        </li>
+                        <li className="flex items-center gap-3">
+                          <div className="rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
+                            <Check className="h-3 w-3 text-white" />
+                          </div>
+                          <span className="text-sm text-gray-700">
                             Historial completo de interacciones
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <div className="mt-1 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
-                            <Check className="h-3 w-3 text-white" />
-                          </div>
-                          <span className="text-gray-700">
-                            Segmentación inteligente
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <div className="mt-1 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
-                            <Check className="h-3 w-3 text-white" />
-                          </div>
-                          <span className="text-gray-700">
-                            Automatización de campañas
                           </span>
                         </li>
                       </ul>
                     </div>
 
                     <div className="flex flex-col gap-3 pt-4">
-                      <button className="w-full rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-3 font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500">
-                        Ver demo
-                      </button>
-                      <button className="w-full rounded-lg bg-white px-6 py-3 font-medium text-gray-700 shadow-sm transition-all hover:shadow-md">
+                      <Link
+                        href="https://cal.com/vesta-crm/30min"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-3 text-sm font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500 text-center block"
+                      >
+                        Probar Gratis
+                      </Link>
+                      <button className="w-full rounded-lg bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:shadow-md">
                         Más información
                       </button>
                     </div>
@@ -572,28 +904,28 @@ export function FeaturesGrid() {
                   <div className="space-y-4 lg:col-span-2">
                     {/* Stats Bar */}
                     <div className="mb-6 grid grid-cols-3 gap-4">
-                      <div className="rounded-lg bg-white p-3 text-center">
-                        <div className="text-2xl font-bold text-gray-900">
-                          2,847
+                      <div className="rounded-lg bg-white p-3 text-center shadow-md">
+                        <div className="text-sm font-mono font-bold tracking-wider uppercase text-gray-900">
+                          245
                         </div>
-                        <div className="text-xs text-gray-600">
-                          Contactos totales
-                        </div>
-                      </div>
-                      <div className="rounded-lg bg-white p-3 text-center">
-                        <div className="text-2xl font-bold text-gray-900">
-                          156
-                        </div>
-                        <div className="text-xs text-gray-600">
-                          Leads activos
+                        <div className="text-[10px] uppercase text-gray-600">
+                          Demandantes
                         </div>
                       </div>
-                      <div className="rounded-lg bg-white p-3 text-center">
-                        <div className="text-2xl font-bold text-gray-900">
-                          24%
+                      <div className="rounded-lg bg-white p-3 text-center shadow-md">
+                        <div className="text-sm font-mono font-bold tracking-wider uppercase text-gray-900">
+                          95
                         </div>
-                        <div className="text-xs text-gray-600">
-                          Tasa conversión
+                        <div className="text-[10px] uppercase text-gray-600">
+                          Propietarios
+                        </div>
+                      </div>
+                      <div className="rounded-lg bg-white p-3 text-center shadow-md">
+                        <div className="text-sm font-mono font-bold tracking-wider uppercase text-gray-900">
+                          28
+                        </div>
+                        <div className="text-[10px] uppercase text-gray-600">
+                          Tareas pendientes
                         </div>
                       </div>
                     </div>
@@ -601,7 +933,7 @@ export function FeaturesGrid() {
                     {/* Contact Cards */}
                     <div className="space-y-4">
                       {/* Contact Card 1 */}
-                      <div className="overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-lg">
+                      <div className="overflow-hidden rounded-xl bg-white shadow-md transition-shadow hover:shadow-lg">
                         <div className="p-4">
                           <div className="mb-3 flex items-start justify-between">
                             <div className="flex items-center gap-3">
@@ -612,36 +944,36 @@ export function FeaturesGrid() {
                                 <h5 className="font-semibold text-gray-900">
                                   Carlos Rodríguez
                                 </h5>
-                                <p className="text-sm text-gray-600">
-                                  carlos@example.com
-                                </p>
                               </div>
                             </div>
-                            <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
-                              Lead Caliente
-                            </span>
+                            <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">
+                              <span className="flex items-center gap-1">
+                                <CalendarIcon className="h-4 w-4" />
+                                Visita Pendiente
+                              </span>
+                            </Badge>
                           </div>
-                          <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
                             <div className="flex items-center gap-1">
                               <Phone className="h-3 w-3 text-gray-400" />
                               <span>+34 612 345 678</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3 text-gray-400" />
-                              <span>Madrid</span>
+                              <Mail className="h-3 w-3 text-gray-400" />
+                              <span>carlosrodriguez@gmail.com</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Euro className="h-3 w-3 text-gray-400" />
-                              <span>500k-750k</span>
+                              <MapPin className="h-3 w-3 text-gray-400" />
+                              <span>Madrid</span>
                             </div>
                           </div>
                           <div className="mt-3 flex items-center justify-between border-t pt-3">
                             <div className="flex items-center gap-4 text-sm text-gray-500">
                               <span className="flex items-center gap-1">
-                                <MessageSquare className="h-3 w-3" />8 mensajes
+                                <ClipboardList className="h-3 w-3" />3 tareas pendientes
                               </span>
                               <span className="flex items-center gap-1">
-                                <Eye className="h-3 w-3" />5 propiedades vistas
+                                <Home className="h-3 w-3" />2 propiedades
                               </span>
                             </div>
                             <span className="text-xs text-gray-500">
@@ -652,7 +984,7 @@ export function FeaturesGrid() {
                       </div>
 
                       {/* Contact Card 2 */}
-                      <div className="overflow-hidden rounded-xl bg-white shadow-sm transition-shadow hover:shadow-lg">
+                      <div className="overflow-hidden rounded-xl bg-white shadow-md transition-shadow hover:shadow-lg">
                         <div className="p-4">
                           <div className="mb-3 flex items-start justify-between">
                             <div className="flex items-center gap-3">
@@ -663,36 +995,36 @@ export function FeaturesGrid() {
                                 <h5 className="font-semibold text-gray-900">
                                   María González
                                 </h5>
-                                <p className="text-sm text-gray-600">
-                                  maria.g@company.com
-                                </p>
                               </div>
                             </div>
-                            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">
-                              Prospecto
-                            </span>
+                            <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200">
+                              <span className="flex items-center gap-1">
+                                <Handshake className="h-4 w-4" />
+                                Oferta Pendiente
+                              </span>
+                            </Badge>
                           </div>
-                          <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
                             <div className="flex items-center gap-1">
                               <Phone className="h-3 w-3 text-gray-400" />
                               <span>+34 655 432 109</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3 text-gray-400" />
-                              <span>Barcelona</span>
+                              <Mail className="h-3 w-3 text-gray-400" />
+                              <span>mariagonzalez@gmail.com</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Euro className="h-3 w-3 text-gray-400" />
-                              <span>300k-400k</span>
+                              <MapPin className="h-3 w-3 text-gray-400" />
+                              <span>Barcelona</span>
                             </div>
                           </div>
                           <div className="mt-3 flex items-center justify-between border-t pt-3">
                             <div className="flex items-center gap-4 text-sm text-gray-500">
                               <span className="flex items-center gap-1">
-                                <MessageSquare className="h-3 w-3" />3 mensajes
+                                <ClipboardList className="h-3 w-3" />5 tareas pendientes
                               </span>
                               <span className="flex items-center gap-1">
-                                <Eye className="h-3 w-3" />2 propiedades vistas
+                                <Home className="h-3 w-3" />1 propiedad
                               </span>
                             </div>
                             <span className="text-xs text-gray-500">
@@ -725,15 +1057,15 @@ export function FeaturesGrid() {
                       <h3 className="mb-3 text-2xl font-bold text-gray-900">
                         Publicación Multi-Portal
                       </h3>
-                      <p className="leading-relaxed text-gray-600">
-                        Publica en Fotocasa, Habitaclia, Idealista y Milanuncios
+                      <p className="text-sm leading-relaxed text-gray-600">
+                        Publica en los principales portales inmobiliarios de España
                         con un solo clic. Ahorra tiempo y maximiza la exposición
                         de tus propiedades.
                       </p>
                     </div>
 
                     <div className="space-y-3">
-                      <h4 className="font-semibold text-gray-900">
+                      <h4 className="text-sm font-semibold text-gray-900">
                         Características principales
                       </h4>
                       <ul className="space-y-2">
@@ -743,127 +1075,314 @@ export function FeaturesGrid() {
                           "Gestión centralizada de respuestas",
                           "Análisis de rendimiento por portal",
                         ].map((item, index) => (
-                          <li key={index} className="flex items-start gap-3">
-                            <div className="mt-1 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
+                          <li key={index} className="flex items-center gap-3">
+                            <div className="flex-shrink-0 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
                               <Check className="h-3 w-3 text-white" />
                             </div>
-                            <span className="text-gray-700">{item}</span>
+                            <span className="text-sm text-gray-700">{item}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
 
                     <div className="flex flex-col gap-3 pt-4">
-                      <button className="w-full rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-3 font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500">
-                        Ver demo
-                      </button>
-                      <button className="w-full rounded-lg bg-white px-6 py-3 font-medium text-gray-700 shadow-sm transition-all hover:shadow-md">
+                      <Link
+                        href="https://cal.com/vesta-crm/30min"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-3 text-sm font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500 text-center block"
+                      >
+                        Probar Gratis
+                      </Link>
+                      <button className="w-full rounded-lg bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:shadow-md">
                         Más información
                       </button>
                     </div>
                   </div>
 
-                  {/* Portal Status Preview - Middle and Right Columns */}
+                  {/* Portal Cards Grid - Right Columns - Similar to portal-selection.tsx */}
                   <div className="space-y-4 lg:col-span-2">
-                    {/* Portal Cards Grid */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-4 gap-4">
                       {[
                         {
+                          id: "idealista",
                           name: "Idealista",
-                          status: "Activo",
-                          listings: 42,
-                          views: "12.3k",
-                          color: "green",
+                          logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-idealista.png",
+                          description: "El portal inmobiliario más visitado de España",
                         },
                         {
+                          id: "fotocasa",
                           name: "Fotocasa",
-                          status: "Activo",
-                          listings: 38,
-                          views: "8.7k",
-                          color: "green",
+                          logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-fotocasa-min.png",
+                          description: "Encuentra tu casa ideal con millones de anuncios",
                         },
                         {
+                          id: "habitaclia",
                           name: "Habitaclia",
-                          status: "Activo",
-                          listings: 35,
-                          views: "6.2k",
-                          color: "green",
+                          logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-habitaclia.png",
+                          description: "Portal especializado en alquiler y venta",
                         },
                         {
+                          id: "milanuncios",
                           name: "Milanuncios",
-                          status: "Sincronizando",
-                          listings: 35,
-                          views: "5.1k",
-                          color: "amber",
+                          logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-milanuncios.png",
+                          description: "Portal de anuncios clasificados líder en España",
                         },
-                      ].map((portal, index) => (
-                        <div
-                          key={index}
-                          className="rounded-lg bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
-                        >
-                          <div className="mb-3 flex items-center justify-between">
-                            <h5 className="font-semibold text-gray-900">
-                              {portal.name}
-                            </h5>
-                            <span
-                              className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium bg-${portal.color}-100 text-${portal.color}-800`}
+                        {
+                          id: "pisoscom",
+                          name: "Pisos.com",
+                          logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-pisos.png",
+                          description: "Tu portal inmobiliario de confianza",
+                        },
+                        {
+                          id: "yaencontre",
+                          name: "Yaencontre",
+                          logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-yaencontre.png",
+                          description: "Encuentra tu hogar ideal",
+                        },
+                        {
+                          id: "enalquiler",
+                          name: "EnAlquiler",
+                          logo: "https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/logo-ena.svg",
+                          description: "Especialistas en alquiler de viviendas",
+                        },
+                        {
+                          id: "kyero",
+                          name: "Kyero",
+                          logo: "https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/kyerologo.webp",
+                          description: "Portal inmobiliario internacional",
+                        },
+                      ].map((platform, index) => {
+                        const isActive = portalStates[platform.id] ?? false;
+                        return (
+                          <motion.div
+                            key={platform.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 * index, duration: 0.3 }}
+                          >
+                            <Card
+                              className={cn(
+                                "group relative transition-all duration-300",
+                                isActive
+                                  ? "bg-white shadow-lg"
+                                  : "bg-transparent shadow-sm hover:border-gray-300",
+                              )}
                             >
-                              {portal.status}
-                            </span>
-                          </div>
-                          <div className="space-y-2 text-sm">
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">Propiedades</span>
-                              <span className="font-semibold">
-                                {portal.listings}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">
-                                Visitas totales
-                              </span>
-                              <span className="font-semibold">
-                                {portal.views}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                              <CardContent className="flex flex-col p-3 relative">
+                                <div className="flex h-16 flex-col items-center justify-start">
+                                  {/* Platform Logo */}
+                                  <div className="flex items-center justify-center flex-1 min-h-0 -mt-2">
+                                    <div className="relative">
+                                      {platform.logo ? (
+                                        <Image
+                                          src={platform.logo}
+                                          alt={platform.name}
+                                          width={64}
+                                          height={64}
+                                          className="object-contain max-h-12"
+                                          onError={(e) => {
+                                            // Fallback for missing logos
+                                            const target = e.target as HTMLImageElement;
+                                            target.style.display = "none";
+                                            target.parentElement!.innerHTML = `<div class="text-sm font-medium text-gray-500 w-16 h-16 flex items-center justify-center">${platform.name}</div>`;
+                                          }}
+                                        />
+                                      ) : (
+                                        <div className="flex h-12 w-16 items-center justify-center text-sm font-medium text-gray-500">
+                                          {platform.name}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {/* Minimal Toggle Switch - Fixed Position */}
+                                <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center">
+                                  <button
+                                    type="button"
+                                    role="switch"
+                                    aria-checked={isActive}
+                                    onClick={() => {
+                                      setPortalStates((prev) => ({
+                                        ...prev,
+                                        [platform.id]: !prev[platform.id],
+                                      }));
+                                    }}
+                                    className={cn(
+                                      "relative inline-flex h-4 w-8 shrink-0 cursor-pointer items-center rounded-full border border-gray-200 transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-400 focus-visible:ring-offset-1",
+                                      isActive
+                                        ? "bg-gray-300 border-gray-300"
+                                        : "bg-gray-50 border-gray-200",
+                                    )}
+                                  >
+                                    <span
+                                      className={cn(
+                                        "pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 ease-in-out",
+                                        isActive ? "translate-x-4" : "translate-x-0.5",
+                                      )}
+                                    />
+                                  </button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </motion.div>
+                        );
+                      })}
                     </div>
 
-                    {/* Recent Activity */}
-                    <div className="rounded-lg bg-white p-4 shadow-sm">
-                      <h5 className="mb-3 font-semibold text-gray-900">
-                        Actividad Reciente
+                    {/* Portal Dashboard */}
+                    <div className="rounded-lg bg-white p-5 shadow-md border border-gray-100">
+                      <h5 className="mb-4 text-sm font-medium text-gray-700">
+                        Leads por Portal
                       </h5>
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-3 text-sm">
-                          <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                          <span className="text-gray-600">
-                            Villa Mediterránea publicada en 4 portales
-                          </span>
-                          <span className="ml-auto text-gray-400">
-                            hace 5 min
-                          </span>
+                      
+                      {/* Stacked Bar Chart */}
+                      <div className="mb-4">
+                        <div className="relative h-14 w-full overflow-visible">
+                          {[
+                            {
+                              id: "idealista",
+                              logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-idealista.png",
+                              leads: 8,
+                              color: "#A3D200",
+                            },
+                            {
+                              id: "fotocasa",
+                              logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-fotocasa-min.png",
+                              leads: 5,
+                              color: "#0064D2",
+                            },
+                            {
+                              id: "habitaclia",
+                              logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-habitaclia.png",
+                              leads: 3,
+                              color: "#FF6600",
+                            },
+                            {
+                              id: "pisoscom",
+                              logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-pisos.png",
+                              leads: 2,
+                              color: "#003366",
+                            },
+                          ]
+                            .filter((item) => item.leads > 0)
+                            .reduce(
+                              (acc, item, index, array) => {
+                                const totalLeads = array.reduce(
+                                  (sum, i) => sum + i.leads,
+                                  0,
+                                );
+                                const previousWidth = acc.previousWidth;
+                                const width = (item.leads / totalLeads) * 100;
+                                const gap = index > 0 ? 0.3 : 0; // Small gap between segments
+                                acc.segments.push({
+                                  ...item,
+                                  width: width - gap,
+                                  left: previousWidth + gap,
+                                });
+                                acc.previousWidth += width;
+                                return acc;
+                              },
+                              { segments: [] as Array<{ id: string; logo: string; leads: number; color: string; width: number; left: number }>, previousWidth: 0 },
+                            )
+                            .segments.map((segment, index, segmentsArray) => {
+                              // Convert hex to rgba for transparency
+                              const hexToRgba = (hex: string, alpha: number) => {
+                                const r = parseInt(hex.slice(1, 3), 16);
+                                const g = parseInt(hex.slice(3, 5), 16);
+                                const b = parseInt(hex.slice(5, 7), 16);
+                                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                              };
+                              
+                              // Determine border radius based on position
+                              const isFirst = index === 0;
+                              const isLast = index === segmentsArray.length - 1;
+                              const borderRadius = isFirst 
+                                ? "rounded-l-full" 
+                                : isLast 
+                                ? "rounded-r-full" 
+                                : "";
+                              
+                              return (
+                              <motion.div
+                                key={segment.id}
+                                initial={{ width: 0, opacity: 0 }}
+                                animate={{ width: `${segment.width}%`, opacity: 1 }}
+                                transition={{ duration: 0.8, delay: index * 0.1, ease: "easeOut" }}
+                                className={cn(
+                                  "absolute h-full flex items-center justify-center transition-all duration-500 shadow-md",
+                                  borderRadius
+                                )}
+                                style={{
+                                  left: `${segment.left}%`,
+                                  background: `linear-gradient(135deg, ${segment.color} 0%, ${hexToRgba(segment.color, 0.7)} 50%, ${segment.color} 100%)`,
+                                }}
+                              >
+                                {segment.width > 15 && (
+                                  <span className="text-sm font-semibold text-white drop-shadow-md font-mono">
+                                    {segment.leads}
+                                  </span>
+                                )}
+                              </motion.div>
+                              );
+                            })}
                         </div>
-                        <div className="flex items-center gap-3 text-sm">
-                          <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-                          <span className="text-gray-600">
-                            15 nuevas consultas de Idealista
-                          </span>
-                          <span className="ml-auto text-gray-400">
-                            hace 1 hora
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3 text-sm">
-                          <div className="h-2 w-2 rounded-full bg-amber-500"></div>
-                          <span className="text-gray-600">
-                            Precio actualizado en todos los portales
-                          </span>
-                          <span className="ml-auto text-gray-400">
-                            hace 2 horas
-                          </span>
-                        </div>
+                      </div>
+
+                      {/* Legends */}
+                      <div className="flex items-center justify-center gap-6 -mt-1">
+                        {[
+                          {
+                            id: "idealista",
+                            logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-idealista.png",
+                            leads: 8,
+                            color: "#A3D200",
+                          },
+                          {
+                            id: "fotocasa",
+                            logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-fotocasa-min.png",
+                            leads: 5,
+                            color: "#0064D2",
+                          },
+                          {
+                            id: "habitaclia",
+                            logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-habitaclia.png",
+                            leads: 3,
+                            color: "#FF6600",
+                          },
+                          {
+                            id: "pisoscom",
+                            logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-pisos.png",
+                            leads: 2,
+                            color: "#003366",
+                          },
+                        ]
+                          .filter((item) => item.leads > 0)
+                          .map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex items-center justify-center gap-3"
+                            >
+                              <div
+                                className="h-3 w-3 rounded-sm flex-shrink-0 self-center"
+                                style={{ backgroundColor: item.color }}
+                              />
+                              <div className="relative h-20 w-20 flex-shrink-0 flex items-center justify-center">
+                                <Image
+                                  src={item.logo}
+                                  alt=""
+                                  width={80}
+                                  height={80}
+                                  className="object-contain"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = "none";
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          ))}
                       </div>
                     </div>
                   </div>
@@ -889,15 +1408,15 @@ export function FeaturesGrid() {
                       <h3 className="mb-3 text-2xl font-bold text-gray-900">
                         Calendario Integrado
                       </h3>
-                      <p className="leading-relaxed text-gray-600">
-                        Nunca pierdas una cita. Programa visitas, recordatorios
+                      <p className="text-sm leading-relaxed text-gray-600">
+                        Nunca falles a una cita. Programa visitas, recordatorios
                         y tareas. Sincroniza con tu calendario favorito y mantén
                         todo organizado.
                       </p>
                     </div>
 
                     <div className="space-y-3">
-                      <h4 className="font-semibold text-gray-900">
+                      <h4 className="text-sm font-semibold text-gray-900">
                         Características principales
                       </h4>
                       <ul className="space-y-2">
@@ -907,21 +1426,26 @@ export function FeaturesGrid() {
                           "Sincronización con Google/Outlook",
                           "Vista de equipo compartida",
                         ].map((item, index) => (
-                          <li key={index} className="flex items-start gap-3">
-                            <div className="mt-1 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
+                          <li key={index} className="flex items-center gap-3">
+                            <div className="flex-shrink-0 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
                               <Check className="h-3 w-3 text-white" />
                             </div>
-                            <span className="text-gray-700">{item}</span>
+                            <span className="text-sm text-gray-700">{item}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
 
                     <div className="flex flex-col gap-3 pt-4">
-                      <button className="w-full rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-3 font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500">
-                        Ver demo
-                      </button>
-                      <button className="w-full rounded-lg bg-white px-6 py-3 font-medium text-gray-700 shadow-sm transition-all hover:shadow-md">
+                      <Link
+                        href="https://cal.com/vesta-crm/30min"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-3 text-sm font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500 text-center block"
+                      >
+                        Probar Gratis
+                      </Link>
+                      <button className="w-full rounded-lg bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:shadow-md">
                         Más información
                       </button>
                     </div>
@@ -929,94 +1453,282 @@ export function FeaturesGrid() {
 
                   {/* Calendar Preview - Middle and Right Columns */}
                   <div className="space-y-4 lg:col-span-2">
-                    {/* Today's Schedule */}
+                    {/* Weekly Calendar View */}
                     <div className="rounded-lg bg-white p-4 shadow-sm">
+                      {/* Week Navigation Header */}
                       <div className="mb-4 flex items-center justify-between">
-                        <h5 className="font-semibold text-gray-900">
-                          Agenda de Hoy
-                        </h5>
-                        <span className="text-sm text-gray-600">
-                          Miércoles, 17 Sept
-                        </span>
-                      </div>
-                      <div className="space-y-3">
-                        <div className="flex gap-3 rounded-lg border-l-4 border-green-400 bg-green-50 p-3">
-                          <div className="text-sm">
-                            <div className="font-semibold text-gray-900">
-                              10:00
-                            </div>
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-medium text-gray-900">
-                              Visita Villa Mediterránea
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              Carlos Rodríguez • Marbella
-                            </div>
-                          </div>
-                          <CalendarCheck className="h-4 w-4 text-green-600" />
-                        </div>
-                        <div className="flex gap-3 rounded-lg border-l-4 border-amber-400 bg-amber-50 p-3">
-                          <div className="text-sm">
-                            <div className="font-semibold text-gray-900">
-                              12:00
-                            </div>
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-medium text-gray-900">
-                              Firma de contrato
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              Oficina central • Valencia
-                            </div>
-                          </div>
-                          <FileCheck className="h-4 w-4 text-amber-600" />
-                        </div>
-                        <div className="flex gap-3 rounded-lg border-l-4 border-blue-400 bg-blue-50 p-3">
-                          <div className="text-sm">
-                            <div className="font-semibold text-gray-900">
-                              16:00
-                            </div>
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-medium text-gray-900">
-                              Reunión equipo ventas
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              Videollamada • Zoom
-                            </div>
-                          </div>
-                          <Users className="h-4 w-4 text-blue-600" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Week Overview */}
-                    <div className="grid grid-cols-7 gap-2">
-                      {["L", "M", "X", "J", "V", "S", "D"].map((day, index) => (
-                        <div
-                          key={index}
-                          className={`rounded-lg bg-white p-3 text-center ${index === 2 ? "ring-2 ring-amber-400" : ""}`}
-                        >
-                          <div className="mb-1 text-xs text-gray-600">
-                            {day}
-                          </div>
-                          <div className="text-lg font-semibold">
-                            {15 + index}
-                          </div>
-                          <div
-                            className={`mt-1 text-xs ${index === 2 ? "font-semibold text-amber-600" : "text-gray-500"}`}
+                        <div className="flex items-center gap-2">
+                          <button
+                            className="rounded-md border border-gray-300 p-1.5 hover:bg-gray-50 transition-colors"
+                            aria-label="Semana anterior"
                           >
-                            {index === 2
-                              ? "3 citas"
-                              : index === 4
-                                ? "2 citas"
-                                : index === 0
-                                  ? "1 cita"
-                                  : ""}
+                            <ChevronLeft className="h-4 w-4 text-gray-600" />
+                          </button>
+                          <button
+                            className="rounded-md border border-gray-300 p-1.5 hover:bg-gray-50 transition-colors"
+                            aria-label="Semana siguiente"
+                          >
+                            <ChevronRight className="h-4 w-4 text-gray-600" />
+                          </button>
+                          <h5 className="ml-2 font-semibold text-gray-900">
+                            Septiembre 2024
+                          </h5>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <Image
+                              src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/Google_Calendar_icon_(2020).svg.png"
+                              alt="Google Calendar"
+                              width={20}
+                              height={20}
+                              className="h-5 w-5 object-contain opacity-70"
+                            />
+                            <Image
+                              src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/outlook-calendar.png"
+                              alt="Outlook Calendar"
+                              width={20}
+                              height={20}
+                              className="h-5 w-5 object-contain opacity-70"
+                            />
+                          </div>
+                          <button className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                            Hoy
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Calendar Grid */}
+                      <div className="overflow-x-auto">
+                        <div className="min-w-[640px]">
+                          {/* Day Headers */}
+                          <div className="grid grid-cols-8 border-b">
+                            {/* Time column header */}
+                            <div className="flex h-12 min-w-[60px] items-center justify-center border-r text-xs text-gray-500">
+                              GMT+02
+                            </div>
+
+                            {/* Day columns headers */}
+                            {["L", "M", "X", "J", "V", "S", "D"].map(
+                              (day, dayIdx) => {
+                                const isToday = dayIdx === 2; // Wednesday as "today"
+                                const dayNumber = 15 + dayIdx;
+                                return (
+                                  <div
+                                    key={dayIdx}
+                                    className={cn(
+                                      "relative flex h-12 min-w-[80px] flex-col items-center justify-center border-r",
+                                      isToday && "bg-slate-50/50",
+                                    )}
+                                  >
+                                    <div className="text-xs text-gray-600">
+                                      {day}
+                                    </div>
+                                    <div
+                                      className={cn(
+                                        "flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium",
+                                        isToday
+                                          ? "bg-slate-600 text-white"
+                                          : "text-gray-700",
+                                      )}
+                                    >
+                                      {dayNumber}
+                                    </div>
+                                  </div>
+                                );
+                              },
+                            )}
+                          </div>
+
+                          {/* Calendar Body with Time Slots */}
+                          <div 
+                            className="relative max-h-[400px] overflow-y-auto border [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                          >
+                            <div className="grid grid-cols-8">
+                              {/* Hours column */}
+                              <div className="flex flex-col border-r bg-gray-50/50">
+                                {Array.from({ length: 12 }, (_, i) => i + 8).map(
+                                  (hour) => (
+                                    <div
+                                      key={hour}
+                                      className="flex h-[60px] items-start justify-end border-b pr-2 pt-1 text-xs text-gray-500"
+                                    >
+                                      {hour.toString().padStart(2, "0")}:00
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+
+                              {/* Days columns */}
+                              {Array.from({ length: 7 }, (_, dayIdx) => {
+                                const isToday = dayIdx === 2;
+                                return (
+                                  <div
+                                    key={dayIdx}
+                                    className={cn(
+                                      "relative flex min-w-[80px] flex-col border-r",
+                                      isToday && "bg-blue-50/30",
+                                    )}
+                                  >
+                                    {/* Hour slots */}
+                                    {Array.from(
+                                      { length: 12 },
+                                      (_, i) => i + 8,
+                                    ).map((hour) => (
+                                      <div
+                                        key={hour}
+                                        className="relative h-[60px] border-b"
+                                      >
+                                        {/* Half-hour divider */}
+                                        <div className="absolute left-0 right-0 top-1/2 border-t border-dashed border-gray-200"></div>
+                                      </div>
+                                    ))}
+
+                                    {/* Sample Appointments */}
+                                    {dayIdx === 0 && (
+                                      <>
+                                        {/* 10:00 AM appointment with transport time */}
+                                        <div
+                                          className="absolute left-1 right-1 rounded-t-md bg-slate-50 border-l-4 border-slate-400 p-1.5 text-xs z-10"
+                                          style={{
+                                            top: "120px", // 10:00 AM (2 hours * 60px)
+                                            height: "60px", // 1 hour
+                                          }}
+                                        >
+                                          <div className="font-medium text-slate-700">
+                                            10:00
+                                          </div>
+                                          <div className="text-slate-600 truncate text-xs">
+                                            Visita Villa
+                                          </div>
+                                          <div className="mt-0.5 flex items-center gap-1 text-slate-500">
+                                            <Car className="h-2.5 w-2.5" />
+                                            <span className="text-xs">15min</span>
+                                          </div>
+                                        </div>
+                                        {/* Transport time block */}
+                                        <div
+                                          className="absolute left-1 right-1 rounded-b-md backdrop-blur-sm z-10"
+                                          style={{
+                                            top: "180px", // Below appointment
+                                            height: "15px", // 15 minutes
+                                            background: "linear-gradient(to top, rgba(71, 85, 105, 0.12), rgba(71, 85, 105, 0.25))",
+                                          }}
+                                        >
+                                          <div className="absolute bottom-0.5 right-1.5">
+                                            <Car className="h-2 w-2 text-slate-400 opacity-50" />
+                                          </div>
+                                        </div>
+                                      </>
+                                    )}
+                                    {dayIdx === 2 && (
+                                      <>
+                                        {/* 10:00 AM appointment */}
+                                        <div
+                                          className="absolute left-1 right-1 rounded-md bg-slate-50 border-l-4 border-slate-400 p-1.5 text-xs z-10"
+                                          style={{
+                                            top: "120px", // 10:00 AM
+                                            height: "60px",
+                                          }}
+                                        >
+                                          <div className="font-medium text-slate-700">
+                                            10:00
+                                          </div>
+                                          <div className="text-slate-600 truncate text-xs">
+                                            Visita Villa
+                                          </div>
+                                        </div>
+                                        {/* 12:00 PM appointment with transport time */}
+                                        <div
+                                          className="absolute left-1 right-1 rounded-t-md bg-neutral-50 border-l-4 border-neutral-400 p-1.5 text-xs z-10"
+                                          style={{
+                                            top: "240px", // 12:00 PM
+                                            height: "60px",
+                                          }}
+                                        >
+                                          <div className="font-medium text-neutral-700">
+                                            12:00
+                                          </div>
+                                          <div className="text-neutral-600 truncate text-xs">
+                                            Firma contrato
+                                          </div>
+                                          <div className="mt-0.5 flex items-center gap-1 text-neutral-500">
+                                            <Car className="h-2.5 w-2.5" />
+                                            <span className="text-xs">25min</span>
+                                          </div>
+                                        </div>
+                                        {/* Transport time block for 12:00 PM */}
+                                        <div
+                                          className="absolute left-1 right-1 rounded-b-md backdrop-blur-sm z-10"
+                                          style={{
+                                            top: "300px", // Below appointment
+                                            height: "25px", // 25 minutes
+                                            background: "linear-gradient(to top, rgba(82, 82, 82, 0.12), rgba(82, 82, 82, 0.25))",
+                                          }}
+                                        >
+                                          <div className="absolute bottom-0.5 right-1.5">
+                                            <Car className="h-2 w-2 text-neutral-400 opacity-50" />
+                                          </div>
+                                        </div>
+                                        {/* 16:00 PM appointment */}
+                                        <div
+                                          className="absolute left-1 right-1 rounded-md bg-stone-50 border-l-4 border-stone-400 p-1.5 text-xs z-10"
+                                          style={{
+                                            top: "480px", // 4:00 PM
+                                            height: "90px", // 1.5 hours
+                                          }}
+                                        >
+                                          <div className="font-medium text-stone-700">
+                                            16:00
+                                          </div>
+                                          <div className="text-stone-600 truncate text-xs">
+                                            Reunión equipo
+                                          </div>
+                                        </div>
+                                      </>
+                                    )}
+                                    {dayIdx === 4 && (
+                                      <>
+                                        {/* 11:00 AM appointment with transport time */}
+                                        <div
+                                          className="absolute left-1 right-1 rounded-t-md bg-gray-50 border-l-4 border-gray-400 p-1.5 text-xs z-10"
+                                          style={{
+                                            top: "180px", // 11:00 AM
+                                            height: "90px", // 1.5 hours
+                                          }}
+                                        >
+                                          <div className="font-medium text-gray-700">
+                                            11:00
+                                          </div>
+                                          <div className="text-gray-600 truncate text-xs">
+                                            Presentación
+                                          </div>
+                                          <div className="mt-1 flex items-center gap-1 text-gray-500">
+                                            <Car className="h-2.5 w-2.5" />
+                                            <span className="text-xs">20min</span>
+                                          </div>
+                                        </div>
+                                        {/* Transport time block for 11:00 AM */}
+                                        <div
+                                          className="absolute left-1 right-1 rounded-b-md backdrop-blur-sm z-10"
+                                          style={{
+                                            top: "270px", // Below appointment
+                                            height: "20px", // 20 minutes
+                                            background: "linear-gradient(to top, rgba(107, 114, 128, 0.12), rgba(107, 114, 128, 0.25))",
+                                          }}
+                                        >
+                                          <div className="absolute bottom-0.5 right-1.5">
+                                            <Car className="h-2 w-2 text-gray-400 opacity-50" />
+                                          </div>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
                         </div>
-                      ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1041,15 +1753,15 @@ export function FeaturesGrid() {
                       <h3 className="mb-3 text-2xl font-bold text-gray-900">
                         Descripciones con IA
                       </h3>
-                      <p className="leading-relaxed text-gray-600">
+                      <p className="text-sm leading-relaxed text-gray-600">
                         Genera descripciones atractivas y optimizadas para SEO
                         con inteligencia artificial. Destaca las mejores
                         características de cada propiedad.
                       </p>
                     </div>
 
-                    <div className="space-y-3">
-                      <h4 className="font-semibold text-gray-900">
+                    <div>
+                      <h4 className="mb-3 text-sm font-semibold text-gray-900">
                         Características principales
                       </h4>
                       <ul className="space-y-2">
@@ -1057,23 +1769,28 @@ export function FeaturesGrid() {
                           "Generación en segundos",
                           "Optimización SEO automática",
                           "Múltiples idiomas disponibles",
-                          "Personalización por portal",
+                          "Personalización por cliente",
                         ].map((item, index) => (
-                          <li key={index} className="flex items-start gap-3">
-                            <div className="mt-1 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
+                          <li key={index} className="flex items-center gap-3">
+                            <div className="flex-shrink-0 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
                               <Check className="h-3 w-3 text-white" />
                             </div>
-                            <span className="text-gray-700">{item}</span>
+                            <span className="text-sm text-gray-700">{item}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
 
                     <div className="flex flex-col gap-3 pt-4">
-                      <button className="w-full rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-3 font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500">
-                        Ver demo
-                      </button>
-                      <button className="w-full rounded-lg bg-white px-6 py-3 font-medium text-gray-700 shadow-sm transition-all hover:shadow-md">
+                      <Link
+                        href="https://cal.com/vesta-crm/30min"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-3 text-sm font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500 text-center block"
+                      >
+                        Probar Gratis
+                      </Link>
+                      <button className="w-full rounded-lg bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:shadow-md">
                         Más información
                       </button>
                     </div>
@@ -1088,7 +1805,7 @@ export function FeaturesGrid() {
                           Generador de Descripciones IA
                         </h5>
                         <div className="flex items-center gap-2">
-                          <Sparkles className="h-4 w-4 text-amber-500" />
+                          <Brain className="h-4 w-4 text-amber-500" />
                           <span className="text-sm font-medium text-amber-600">
                             Powered by GPT-4
                           </span>
@@ -1112,27 +1829,54 @@ export function FeaturesGrid() {
 
                     {/* Generated Description Example */}
                     <div className="rounded-lg bg-white p-4 shadow-sm">
-                      <div className="mb-3 flex items-center justify-between">
+                      <div className="mb-3">
                         <h5 className="font-semibold text-gray-900">
-                          Descripción Generada
+                          {activeFeature === "ai" ? (
+                            <>
+                              {generatedTitleText}
+                              {isTypingGenerated && <span className="ml-1 animate-pulse">|</span>}
+                            </>
+                          ) : (
+                            "Descripción Generada"
+                          )}
                         </h5>
-                        <span className="text-xs font-medium text-green-600">
-                          ✓ Optimizada SEO
-                        </span>
                       </div>
                       <div className="prose prose-sm text-gray-700">
-                        <p className="leading-relaxed">
-                          Espectacular villa mediterránea ubicada en la
-                          exclusiva zona de Marbella. Esta propiedad de 280m²
-                          ofrece 4 amplios dormitorios y 3 baños completos,
-                          perfecta para familias que buscan confort y elegancia.
-                        </p>
-                        <p className="mt-2 leading-relaxed">
-                          Destacan sus acabados de alta calidad, cocina
-                          totalmente equipada con electrodomésticos de última
-                          generación, y un luminoso salón con acceso directo a
-                          la terraza con vistas panorámicas al mar.
-                        </p>
+                        {activeFeature === "ai" ? (
+                          <>
+                            {descriptionText.split("\n\n").map((paragraph, index, arr) => {
+                              if (!paragraph) return null;
+                              const isLastParagraph = index === arr.length - 1;
+                              const isLastNonEmpty = arr.filter(p => p).length - 1 === index;
+                              return (
+                                <p key={index} className={index > 0 ? "mt-2 leading-relaxed" : "leading-relaxed"}>
+                                  {paragraph}
+                                  {isTypingDescription && isLastNonEmpty && (
+                                    <span className="ml-1 animate-pulse">|</span>
+                                  )}
+                                </p>
+                              );
+                            })}
+                            {!descriptionText && isTypingDescription && (
+                              <span className="animate-pulse">|</span>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <p className="leading-relaxed">
+                              Espectacular villa mediterránea ubicada en la
+                              exclusiva zona de Marbella. Esta propiedad de 280m²
+                              ofrece 4 amplios dormitorios y 3 baños completos,
+                              perfecta para familias que buscan confort y elegancia.
+                            </p>
+                            <p className="mt-2 leading-relaxed">
+                              Destacan sus acabados de alta calidad, cocina
+                              totalmente equipada con electrodomésticos de última
+                              generación, y un luminoso salón con acceso directo a
+                              la terraza con vistas panorámicas al mar.
+                            </p>
+                          </>
+                        )}
                       </div>
                       <div className="mt-4 flex items-center gap-3">
                         <span className="text-xs text-gray-500">
@@ -1167,7 +1911,7 @@ export function FeaturesGrid() {
                       <h3 className="mb-3 text-2xl font-bold text-gray-900">
                         Procesamiento de Documentos
                       </h3>
-                      <p className="leading-relaxed text-gray-600">
+                      <p className="text-sm leading-relaxed text-gray-600">
                         Digitaliza y extrae información de documentos
                         automáticamente con OCR avanzado. Organiza contratos,
                         escrituras y más en segundos.
@@ -1175,7 +1919,7 @@ export function FeaturesGrid() {
                     </div>
 
                     <div className="space-y-3">
-                      <h4 className="font-semibold text-gray-900">
+                      <h4 className="text-sm font-semibold text-gray-900">
                         Características principales
                       </h4>
                       <ul className="space-y-2">
@@ -1189,17 +1933,22 @@ export function FeaturesGrid() {
                             <div className="mt-1 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1">
                               <Check className="h-3 w-3 text-white" />
                             </div>
-                            <span className="text-gray-700">{item}</span>
+                            <span className="text-sm text-gray-700">{item}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
 
                     <div className="flex flex-col gap-3 pt-4">
-                      <button className="w-full rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-3 font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500">
-                        Ver demo
-                      </button>
-                      <button className="w-full rounded-lg bg-white px-6 py-3 font-medium text-gray-700 shadow-sm transition-all hover:shadow-md">
+                      <Link
+                        href="https://cal.com/vesta-crm/30min"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-3 text-sm font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500 text-center block"
+                      >
+                        Probar Gratis
+                      </Link>
+                      <button className="w-full rounded-lg bg-white px-6 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:shadow-md">
                         Más información
                       </button>
                     </div>
