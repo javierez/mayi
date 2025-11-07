@@ -50,9 +50,9 @@ export default function ChangelogPage() {
   // Get all unique week keys and sort them chronologically
   const weekKeys = useMemo(() => {
     return Object.keys(groupedEntries).sort((a, b) => {
-      const [yearA, monthA, weekA] = a.split("-").map(Number);
-      const [yearB, monthB, weekB] = b.split("-").map(Number);
-      
+      const [yearA = 0, monthA = 0, weekA = 0] = a.split("-").map(Number);
+      const [yearB = 0, monthB = 0, weekB = 0] = b.split("-").map(Number);
+
       if (yearA !== yearB) return yearA - yearB;
       if (monthA !== monthB) return monthA - monthB;
       return weekA - weekB;
@@ -72,7 +72,7 @@ export default function ChangelogPage() {
   const scrollToMonth = useCallback((month: number, year: number) => {
     // Find the first week key for this month
     const firstWeekKey = weekKeys.find((key) => {
-      const [keyYear, keyMonth] = key.split("-").map(Number);
+      const [keyYear = 0, keyMonth = 0] = key.split("-").map(Number);
       return keyMonth === month && keyYear === year;
     });
 
@@ -195,7 +195,7 @@ export default function ChangelogPage() {
             <div className="flex gap-4 min-w-max">
               {weekKeys.length > 0 ? (
                 weekKeys.map((key) => {
-                  const [year, month, week] = key.split("-").map(Number);
+                  const [year = 0, month = 0, week = 0] = key.split("-").map(Number);
                   const entries = groupedEntries[key];
                   return (
                     <div
@@ -232,7 +232,7 @@ export default function ChangelogPage() {
             <div className="flex min-w-max gap-8">
               {timelineMonths.map((monthInfo, index) => {
                 const hasEntries = weekKeys.some((key) => {
-                  const [year, month] = key.split("-").map(Number);
+                  const [year = 0, month = 0] = key.split("-").map(Number);
                   return (
                     month === monthInfo.month && year === monthInfo.year
                   );
