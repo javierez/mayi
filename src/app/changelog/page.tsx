@@ -255,7 +255,7 @@ export default function ChangelogPage() {
                     <div className="flex gap-1 justify-center">
                       {[1, 2, 3, 4].map((week) => {
                         const weekKey = `${monthInfo.year}-${monthInfo.month}-${week}`;
-                        const hasWeekEntries = groupedEntries[weekKey]?.length > 0;
+                        const hasWeekEntries = (groupedEntries[weekKey]?.length ?? 0) > 0;
                         const isPast = index < timelineMonths.length - 1 || 
                           (index === timelineMonths.length - 1 && week <= Math.ceil(new Date().getDate() / 7));
 
