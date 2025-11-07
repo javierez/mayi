@@ -365,12 +365,18 @@ export function groupEntriesByWeek(
     if (!grouped[key]) {
       grouped[key] = [];
     }
-    grouped[key].push(entry);
+    const entries = grouped[key];
+    if (entries) {
+      entries.push(entry);
+    }
   });
 
   // Sort entries within each week by date
   Object.keys(grouped).forEach((key) => {
-    grouped[key].sort((a, b) => a.date.getTime() - b.date.getTime());
+    const entries = grouped[key];
+    if (entries) {
+      entries.sort((a, b) => a.date.getTime() - b.date.getTime());
+    }
   });
 
   return grouped;
