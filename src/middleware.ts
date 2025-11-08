@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { auth } from "~/lib/auth";
+import { getCookieCache } from "better-auth/cookies";
 
 // Public paths that should not require authentication
 const publicPaths = [
@@ -30,6 +30,7 @@ const publicPaths = [
   "/empresa/carreras",
   "/empresa/socios",
   "/empresa/contacto",
+  "/changelog",
 ];
 
 export async function middleware(request: NextRequest) {
@@ -48,10 +49,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // Everything else is protected - requires authentication
-  // Validate session using Better Auth
-  const session = await auth.api.getSession({
-    headers: request.headers,
-  });
+  // Get cached session data from cookie (edge-compatible, no DB call)
+  const session = await getCookieCache(request);
 
   // If no valid session, redirect to homepage
   if (!session?.user) {
@@ -62,7 +61,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(homeUrl);
   }
 
-  // Extract user data and set headers for edge-compatible session helpers
+  // Extract user data and set headers for server components to use
+  // This allows server components to skip auth.api.getSession() calls
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-user-id", session.user.id);
   requestHeaders.set("x-user-email", session.user.email);

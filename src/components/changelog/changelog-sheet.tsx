@@ -7,8 +7,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "~/components/ui/sheet";
-import { Badge } from "~/components/ui/badge";
-import { cn } from "~/lib/utils";
+import { Button } from "~/components/ui/button";
 
 interface ChangelogSheetProps {
   entry: ChangelogEntry | null;
@@ -19,19 +18,23 @@ interface ChangelogSheetProps {
 const categoryConfig = {
   Feature: {
     label: "Nueva Funcionalidad",
-    color: "bg-green-100 text-green-700",
+    gradient: "from-emerald-50 to-teal-50",
+    textColor: "text-emerald-900",
   },
   Improvement: {
     label: "Mejora",
-    color: "bg-blue-100 text-blue-700",
+    gradient: "from-blue-50 to-indigo-50",
+    textColor: "text-blue-900",
   },
   Fix: {
     label: "Corrección",
-    color: "bg-red-100 text-red-700",
+    gradient: "from-rose-50 to-pink-50",
+    textColor: "text-rose-900",
   },
   Integration: {
     label: "Integración",
-    color: "bg-purple-100 text-purple-700",
+    gradient: "from-violet-50 to-purple-50",
+    textColor: "text-violet-900",
   },
 };
 
@@ -42,7 +45,6 @@ export function ChangelogSheet({
 }: ChangelogSheetProps) {
   if (!entry) return null;
 
-  const Icon = entry.icon;
   const categoryInfo = categoryConfig[entry.category];
 
   const formatDate = (date: Date) => {
@@ -55,37 +57,46 @@ export function ChangelogSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-full max-w-full sm:max-w-md">
-        <SheetHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
-              <Icon className="h-5 w-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <SheetTitle className="text-lg font-bold text-gray-900">
-                {entry.title}
-              </SheetTitle>
-            </div>
-          </div>
-        </SheetHeader>
-
-        <div className="mt-6 space-y-4">
-          {/* Category and Date */}
-          <div className="flex flex-wrap items-center gap-3">
-            <Badge className={cn("text-xs", categoryInfo.color)}>
-              {categoryInfo.label}
-            </Badge>
-            <span className="text-sm text-gray-500">{formatDate(entry.date)}</span>
+      <SheetContent className="w-full max-w-full sm:max-w-xl border-l-0 bg-white p-0">
+        <div className="flex h-full flex-col">
+          {/* Header with gradient background */}
+          <div className={`bg-gradient-to-br ${categoryInfo.gradient} px-8 py-12`}>
+            <SheetHeader className="space-y-4">
+              <div className="space-y-2">
+                <div className={`text-sm font-medium tracking-wide uppercase ${categoryInfo.textColor} opacity-70`}>
+                  {categoryInfo.label}
+                </div>
+                <SheetTitle className="text-3xl font-bold text-gray-900 leading-tight">
+                  {entry.title}
+                </SheetTitle>
+              </div>
+              <div className="text-sm text-gray-600 font-medium">
+                {formatDate(entry.date)}
+              </div>
+            </SheetHeader>
           </div>
 
-          {/* Detailed Description */}
-          <div>
-            <h3 className="mb-2 text-sm font-semibold text-gray-900">
-              Descripción
-            </h3>
-            <p className="text-sm leading-relaxed text-gray-600 whitespace-pre-wrap">
-              {entry.detailedDescription}
-            </p>
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto px-8 py-8">
+            <div className="prose prose-gray max-w-none">
+              <p className="text-base leading-relaxed text-gray-700 whitespace-pre-wrap">
+                {entry.detailedDescription}
+              </p>
+            </div>
+          </div>
+
+          {/* Footer Button */}
+          <div className="px-8 py-6 border-t border-gray-100">
+            <Button
+              variant="ghost"
+              className="w-full text-gray-600 hover:text-gray-900"
+              onClick={() => {
+                // Mock button - no action for now
+                console.log("Report error clicked");
+              }}
+            >
+              ¿Cómo reportar un error?
+            </Button>
           </div>
         </div>
       </SheetContent>

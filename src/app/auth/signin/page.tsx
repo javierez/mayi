@@ -84,18 +84,6 @@ const SignInPage: FC = () => {
               priority
             />
           </div>
-          <h2 className="mt-6 text-2xl font-bold text-gray-900">
-            Inicia sesión en tu cuenta
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            ¿No tienes una cuenta?{" "}
-            <Link
-              href="/auth/signup"
-              className="font-medium text-blue-600 hover:text-blue-500"
-            >
-              Regístrate
-            </Link>
-          </p>
         </div>
       </div>
 
@@ -210,12 +198,19 @@ const SignInPage: FC = () => {
               Continuar con Google
             </Button>
 
-            <div className="text-center">
+            <div className="flex items-center justify-center gap-4 text-center">
               <Link
                 href="/auth/forgot-password"
                 className="text-sm font-medium text-gray-600 transition-all hover:bg-gradient-to-r hover:from-amber-400 hover:to-rose-400 hover:bg-clip-text hover:text-transparent"
               >
                 ¿Olvidaste tu contraseña?
+              </Link>
+              <span className="text-gray-400">·</span>
+              <Link
+                href="/auth/signup"
+                className="text-sm font-medium text-gray-600 transition-all hover:bg-gradient-to-r hover:from-amber-400 hover:to-rose-400 hover:bg-clip-text hover:text-transparent"
+              >
+                Regístrate
               </Link>
             </div>
           </CardContent>

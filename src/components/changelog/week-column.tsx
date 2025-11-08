@@ -2,6 +2,7 @@
 
 import { type ChangelogEntry, formatMonthName, getWeekLabel } from "~/lib/changelog-data";
 import { ChangelogCard } from "./changelog-card";
+import { LaunchCard } from "./launch-card";
 import { Badge } from "~/components/ui/badge";
 
 interface WeekColumnProps {
@@ -22,6 +23,11 @@ export function WeekColumn({
   const monthName = formatMonthName(month, year);
   const weekLabel = getWeekLabel(week);
 
+  // Check if this week has the special launch entry
+  const hasSpecialLaunch = entries.some(entry => entry.isSpecialLaunch);
+  const specialLaunchEntry = entries.find(entry => entry.isSpecialLaunch);
+  const regularEntries = entries.filter(entry => !entry.isSpecialLaunch);
+
   return (
     <div className="flex-shrink-0 w-80 mr-8 pl-6 border-l border-gray-300 first:border-l-0 first:pl-0">
       {/* Week Header */}
@@ -36,23 +42,34 @@ export function WeekColumn({
         </div>
       </div>
 
-      {/* Entries Container - Space for 4 cards */}
-      <div className="min-h-[350px] space-y-2.5 pt-2 pb-4 bg-gray-50/30 rounded-lg p-2 border border-gray-100">
-        {entries.map((entry) => (
-          <ChangelogCard
-            key={entry.id}
-            entry={entry}
-            onClick={() => onEntryClick(entry)}
+      {/* Entries Container */}
+      {hasSpecialLaunch && specialLaunchEntry ? (
+        // Special launch card takes full height
+        <div className="h-[450px] max-h-[450px] overflow-y-auto pt-2 pb-4 bg-gray-50/30 rounded-lg p-2 border border-gray-100">
+          <LaunchCard
+            entry={specialLaunchEntry}
+            onClick={() => onEntryClick(specialLaunchEntry)}
           />
-        ))}
-        {/* Empty space indicators - show placeholders for missing cards up to 4 total */}
-        {Array.from({ length: Math.max(0, 4 - entries.length) }).map((_, index) => (
-          <div
-            key={`empty-${index}`}
-            className="h-20 border-2 border-dashed border-gray-200 rounded-lg bg-transparent"
-          />
-        ))}
-      </div>
+        </div>
+      ) : (
+        // Regular cards layout - Space for 4 cards with scroll if needed
+        <div className="h-[450px] max-h-[450px] overflow-y-auto space-y-2.5 pt-2 pb-4 bg-gray-50/30 rounded-lg p-2 border border-gray-100">
+          {regularEntries.map((entry) => (
+            <ChangelogCard
+              key={entry.id}
+              entry={entry}
+              onClick={() => onEntryClick(entry)}
+            />
+          ))}
+          {/* Empty space indicators - show placeholders for missing cards up to 4 total */}
+          {Array.from({ length: Math.max(0, 4 - regularEntries.length) }).map((_, index) => (
+            <div
+              key={`empty-${index}`}
+              className="h-20 border-2 border-dashed border-gray-200 rounded-lg bg-transparent"
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

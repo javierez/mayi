@@ -24,6 +24,7 @@ export default function SignUpPage() {
     firstName: "",
     lastName: "",
     email: "",
+    phone: "",
     password: "",
     confirmPassword: "",
     inviteCode: "",
@@ -55,6 +56,10 @@ export default function SignUpPage() {
     }
     if (!formData.email.trim()) {
       setError("El email es obligatorio");
+      return false;
+    }
+    if (formData.phone && !formData.phone.trim()) {
+      setError("El teléfono no puede estar vacío");
       return false;
     }
     if (!formData.password) {
@@ -118,6 +123,7 @@ export default function SignUpPage() {
           name: `${formData.firstName} ${formData.lastName}`,
           firstName: formData.firstName,
           lastName: formData.lastName,
+          phone: formData.phone.trim() || undefined,
           accountId: Number(formData.inviteCode),
         }),
       });
@@ -213,18 +219,6 @@ export default function SignUpPage() {
               priority
             />
           </div>
-          <h2 className="mt-6 text-2xl font-bold text-gray-900">
-            Crea tu cuenta
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            ¿Ya tienes una cuenta?{" "}
-            <Link
-              href="/auth/signin"
-              className="font-medium text-blue-600 hover:text-blue-500"
-            >
-              Inicia sesión
-            </Link>
-          </p>
         </div>
       </div>
 
@@ -307,6 +301,22 @@ export default function SignUpPage() {
                   disabled={isLoading}
                   placeholder="tu@email.com"
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="phone">Teléfono</Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  disabled={isLoading}
+                  placeholder="+34 600 000 000"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Opcional
+                </p>
               </div>
 
               <div>
@@ -412,6 +422,15 @@ export default function SignUpPage() {
               </svg>
               Continuar con Google
             </Button>
+
+            <div className="flex items-center justify-center gap-4 text-center">
+              <Link
+                href="/auth/signin"
+                className="text-sm font-medium text-gray-600 transition-all hover:bg-gradient-to-r hover:from-amber-400 hover:to-rose-400 hover:bg-clip-text hover:text-transparent"
+              >
+                Inicia sesión
+              </Link>
+            </div>
 
             <div className="text-center text-xs text-gray-500">
               Al crear una cuenta, aceptas nuestros{" "}
