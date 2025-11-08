@@ -14,6 +14,13 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { signIn } from "~/lib/auth-client";
 import { AlertCircle, Eye, EyeOff, CheckCircle } from "lucide-react";
 import { assignUserRole } from "~/app/actions/user-roles";
@@ -24,6 +31,7 @@ export default function SignUpPage() {
     firstName: "",
     lastName: "",
     email: "",
+    phonePrefix: "+34",
     phone: "",
     password: "",
     confirmPassword: "",
@@ -305,15 +313,41 @@ export default function SignUpPage() {
 
               <div>
                 <Label htmlFor="phone">Teléfono</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  disabled={isLoading}
-                  placeholder="+34 600 000 000"
-                />
+                <div className="flex gap-2">
+                  <Select
+                    value={formData.phonePrefix}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({ ...prev, phonePrefix: value }))
+                    }
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger className="w-[110px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="+34">+34 (ES)</SelectItem>
+                      <SelectItem value="+1">+1 (US)</SelectItem>
+                      <SelectItem value="+44">+44 (UK)</SelectItem>
+                      <SelectItem value="+33">+33 (FR)</SelectItem>
+                      <SelectItem value="+49">+49 (DE)</SelectItem>
+                      <SelectItem value="+351">+351 (PT)</SelectItem>
+                      <SelectItem value="+39">+39 (IT)</SelectItem>
+                      <SelectItem value="+52">+52 (MX)</SelectItem>
+                      <SelectItem value="+54">+54 (AR)</SelectItem>
+                      <SelectItem value="+56">+56 (CL)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    disabled={isLoading}
+                    placeholder="600 000 000"
+                    className="flex-1"
+                  />
+                </div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Opcional
                 </p>

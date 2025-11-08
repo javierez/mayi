@@ -11,6 +11,7 @@ import {
   DollarSign,
   FileText,
   UserPlus,
+  GraduationCap,
 } from "lucide-react";
 import { useState, useCallback, memo } from "react";
 import { cn } from "~/lib/utils";
@@ -120,6 +121,13 @@ export default function Navbar({
             aria-label="Novedades"
           >
             Novedades
+          </Link>
+          <Link
+            href="/academia"
+            className="text-sm font-medium transition-colors hover:text-primary"
+            aria-label="Academia"
+          >
+            Academia
           </Link>
         </nav>
 
@@ -238,6 +246,14 @@ export default function Navbar({
                 >
                   <FileText className="h-4 w-4" />
                   Novedades
+                </Link>
+                <Link
+                  href="/academia"
+                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                  onClick={handleMenuClose}
+                >
+                  <GraduationCap className="h-4 w-4" />
+                  Academia
                 </Link>
               </div>
             </div>

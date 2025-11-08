@@ -6,8 +6,6 @@ import {
   Brain,
   Home,
   Zap,
-  FileText,
-  MapPin,
   type LucideIcon,
 } from "lucide-react";
 

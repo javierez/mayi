@@ -31,6 +31,7 @@ const publicPaths = [
   "/empresa/socios",
   "/empresa/contacto",
   "/changelog",
+  "/academia",
 ];
 
 export async function middleware(request: NextRequest) {
