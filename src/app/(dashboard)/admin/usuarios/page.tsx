@@ -4,6 +4,8 @@ import { userHasRole } from "~/server/queries/user-roles";
 import { UsersManagement } from "~/components/admin/management/users";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminUsuariosPage() {
   // Use optimized DAL function for session retrieval
   const session = await getSecureSession();

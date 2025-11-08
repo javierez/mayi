@@ -210,62 +210,6 @@ export default function ChangelogPage() {
         </div>
       </section>
 
-      {/* Timeline Footer */}
-      <section className="border-t border-gray-200 bg-white px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="overflow-x-auto">
-            <div className="flex min-w-max gap-8">
-              {timelineMonths.map((monthInfo, index) => {
-                const hasEntries = weekKeys.some((key) => {
-                  const [year = 0, month = 0] = key.split("-").map(Number);
-                  return (
-                    month === monthInfo.month && year === monthInfo.year
-                  );
-                });
-
-                return (
-                  <button
-                    key={`${monthInfo.year}-${monthInfo.month}`}
-                    onClick={() => scrollToMonth(monthInfo.month, monthInfo.year)}
-                    className="flex-shrink-0 text-center transition-colors hover:bg-gray-50 rounded-lg p-2 -m-2"
-                    disabled={!hasEntries}
-                  >
-                    <div className={`mb-2 text-xs font-medium ${
-                      hasEntries 
-                        ? "text-gray-900 cursor-pointer hover:text-amber-600" 
-                        : "text-gray-400 cursor-not-allowed"
-                    } transition-colors`}>
-                      {monthInfo.label} {monthInfo.year}
-                    </div>
-                    <div className="flex gap-1 justify-center">
-                      {[1, 2, 3, 4].map((week) => {
-                        const weekKey = `${monthInfo.year}-${monthInfo.month}-${week}`;
-                        const hasWeekEntries = (groupedEntries[weekKey]?.length ?? 0) > 0;
-                        const isPast = index < timelineMonths.length - 1 || 
-                          (index === timelineMonths.length - 1 && week <= Math.ceil(new Date().getDate() / 7));
-
-                        return (
-                          <div
-                            key={week}
-                            className={`h-2 w-2 rounded ${
-                              hasWeekEntries
-                                ? "bg-green-500"
-                                : isPast
-                                  ? "bg-gray-300"
-                                  : "bg-gray-200"
-                            }`}
-                          />
-                        );
-                      })}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Sheet for detailed view */}
       <ChangelogSheet
         entry={selectedEntry}

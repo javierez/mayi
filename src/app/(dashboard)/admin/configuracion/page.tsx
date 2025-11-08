@@ -4,6 +4,8 @@ import { userHasRole } from "~/server/queries/user-roles";
 import { SystemSettings } from "~/components/admin/management/system-settings";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminConfiguracionPage() {
   // Use optimized DAL function for session retrieval
   const session = await getSecureSession();

@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getSecureSession } from "~/lib/dal";
 import { userHasRole } from "~/server/queries/user-roles";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminLayout({
   children,
 }: {

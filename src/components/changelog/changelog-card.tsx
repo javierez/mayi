@@ -2,6 +2,7 @@
 
 import { type ChangelogEntry } from "~/lib/changelog-data";
 import { cn } from "~/lib/utils";
+import { Database } from "lucide-react";
 
 interface ChangelogCardProps {
   entry: ChangelogEntry;
@@ -9,6 +10,8 @@ interface ChangelogCardProps {
 }
 
 export function ChangelogCard({ entry, onClick }: ChangelogCardProps) {
+  const isDatabaseMigration = entry.id === "8";
+
   return (
     <div
       onClick={onClick}
@@ -24,6 +27,10 @@ export function ChangelogCard({ entry, onClick }: ChangelogCardProps) {
       <p className="text-xs leading-relaxed text-gray-600 line-clamp-2">
         {entry.shortDescription}
       </p>
+
+      {isDatabaseMigration && (
+        <Database className="absolute bottom-2 right-2 h-3.5 w-3.5 text-gray-400 opacity-60" />
+      )}
     </div>
   );
 }
