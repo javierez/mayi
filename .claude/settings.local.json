@@ -51,7 +51,8 @@
       "Bash(echo:*)",
       "WebFetch(domain:stackoverflow.com)",
       "WebFetch(domain:github.com)",
-      "Bash(xargs basename:*)"
+      "Bash(xargs basename:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []

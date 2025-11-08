@@ -103,36 +103,21 @@ const ForgotPasswordPage: FC = () => {
                   <li>Si no lo encuentras, revisa tu carpeta de spam</li>
                 </ol>
 
-                <div className="mt-4 rounded border border-amber-200 bg-amber-50 p-3">
-                  <p className="text-xs text-amber-800">
-                    <strong>⏰ Importante:</strong> El enlace expira en 1 hora
-                    por seguridad.
+                <div className="mt-4">
+                  <p className="text-xs text-gray-500">
+                    El enlace expira en 1 hora por seguridad.
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    setSuccess(false);
-                    setEmail("");
-                  }}
+              <div className="text-center">
+                <Link
+                  href="/auth/signin"
+                  className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900"
                 >
-                  Enviar a otro email
-                </Button>
-
-                <div className="text-center">
-                  <Link
-                    href="/auth/signin"
-                    className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900"
-                  >
-                    <ArrowLeft className="mr-1 h-4 w-4" />
-                    Volver al inicio de sesión
-                  </Link>
-                </div>
+                  <ArrowLeft className="mr-1 h-4 w-4" />
+                  Volver al inicio de sesión
+                </Link>
               </div>
             </CardContent>
           </Card>

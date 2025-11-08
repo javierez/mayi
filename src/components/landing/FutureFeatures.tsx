@@ -89,7 +89,47 @@ export function FutureFeatures() {
           </p>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-6 sm:mt-12 sm:grid-cols-2 sm:gap-8 lg:mt-16 lg:grid-cols-3">
+        {/* Mobile: Compact List View */}
+        <div className="mt-6 space-y-3 sm:hidden">
+          {futureFeatures.map((feature) => {
+            const Icon = feature.icon;
+            return (
+              <Card
+                key={feature.title}
+                className="group overflow-hidden border-2 border-dashed transition-all hover:border-solid hover:shadow-md"
+              >
+                <CardContent className="p-4">
+                  <div className="flex gap-3">
+                    {/* Icon */}
+                    <div
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${feature.bgColor}`}
+                    >
+                      <Icon className={`h-5 w-5 ${feature.color}`} />
+                    </div>
+
+                    {/* Content */}
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-start justify-between gap-2">
+                        <h3 className="text-base font-semibold leading-tight text-gray-900">
+                          {feature.title}
+                        </h3>
+                        <Badge variant="secondary" className="shrink-0 text-xs">
+                          {feature.timeline}
+                        </Badge>
+                      </div>
+                      <p className="text-sm leading-relaxed text-gray-600">
+                        {feature.description}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Tablet/Desktop: Card Grid */}
+        <div className="mt-12 hidden grid-cols-2 gap-8 sm:grid lg:mt-16 lg:grid-cols-3">
           {futureFeatures.map((feature) => {
             const Icon = feature.icon;
             return (
@@ -97,19 +137,19 @@ export function FutureFeatures() {
                 key={feature.title}
                 className="group relative overflow-hidden border-2 border-dashed transition-all hover:border-solid hover:shadow-lg"
               >
-                <CardHeader className="space-y-3 sm:space-y-4">
-                  <div className="flex items-start justify-between gap-2 sm:items-center">
+                <CardHeader className="space-y-4">
+                  <div className="flex items-center justify-between gap-2">
                     <div
-                      className={`inline-flex rounded-lg ${feature.bgColor} p-2.5 sm:p-3`}
+                      className={`inline-flex rounded-lg ${feature.bgColor} p-3`}
                     >
-                      <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${feature.color}`} />
+                      <Icon className={`h-6 w-6 ${feature.color}`} />
                     </div>
                     <Badge variant="secondary" className="shrink-0 text-xs">
                       {feature.timeline}
                     </Badge>
                   </div>
-                  <CardTitle className="text-lg sm:text-xl">{feature.title}</CardTitle>
-                  <CardDescription className="text-sm sm:text-base">
+                  <CardTitle className="text-xl">{feature.title}</CardTitle>
+                  <CardDescription className="text-base">
                     {feature.description}
                   </CardDescription>
                 </CardHeader>

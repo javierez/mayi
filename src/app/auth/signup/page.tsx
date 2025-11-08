@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -202,7 +203,16 @@ export default function SignUpPage() {
     <div className="flex min-h-screen flex-col justify-center bg-gray-50 py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Vesta CRM</h1>
+          <div className="flex justify-center">
+            <Image
+              src="/vestazoomin.jpeg"
+              alt="Vesta Logo"
+              width={200}
+              height={80}
+              className="h-20 w-auto object-contain"
+              priority
+            />
+          </div>
           <h2 className="mt-6 text-2xl font-bold text-gray-900">
             Crea tu cuenta
           </h2>

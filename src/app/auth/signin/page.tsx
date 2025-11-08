@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -73,12 +74,16 @@ const SignInPage: FC = () => {
     <div className="flex min-h-screen flex-col justify-center bg-white py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Vesta{" "}
-            <span className="bg-gradient-to-r from-amber-400 to-rose-400 bg-clip-text text-transparent">
-              CRM
-            </span>
-          </h1>
+          <div className="flex justify-center">
+            <Image
+              src="/vestazoomin.jpeg"
+              alt="Vesta Logo"
+              width={200}
+              height={80}
+              className="h-20 w-auto object-contain"
+              priority
+            />
+          </div>
           <h2 className="mt-6 text-2xl font-bold text-gray-900">
             Inicia sesión en tu cuenta
           </h2>

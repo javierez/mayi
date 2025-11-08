@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { auth } from "~/lib/auth";
 
 // Public paths that should not require authentication
 const publicPaths = [
@@ -47,31 +48,35 @@ export async function middleware(request: NextRequest) {
   }
 
   // Everything else is protected - requires authentication
-  // Use cookie-based check to avoid Edge Runtime database issues
+  // Validate session using Better Auth
+  const session = await auth.api.getSession({
+    headers: request.headers,
+  });
 
-  // Check for session token - try both secure and non-secure cookie names
-  // In production (HTTPS), Better Auth uses __Secure- prefix
-  const sessionToken =
-    request.cookies.get("__Secure-better-auth.session_token") ??
-    request.cookies.get("better-auth.session_token");
-
-  if (!sessionToken?.value) {
+  // If no valid session, redirect to homepage
+  if (!session?.user) {
     console.log(
-      `🔄 Redirecting to homepage from: ${pathname} - No session token found`,
+      `🔄 Unauthorized access attempt: ${pathname} - No valid session found`,
     );
-    // No session token, redirect to homepage
     const homeUrl = new URL("/", request.url);
     return NextResponse.redirect(homeUrl);
   }
 
-  // For authenticated users, let the DAL handle full session validation
-  // We just pass through with basic session indication
+  // Extract user data and set headers for edge-compatible session helpers
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-has-session-token", "true");
+  requestHeaders.set("x-user-id", session.user.id);
+  requestHeaders.set("x-user-email", session.user.email);
 
-  // If database is unavailable and session validation fails in DAL,
-  // the DAL will return null and trigger UnauthorizedError
-  // We could add additional checks here, but for now let DAL handle it
+  // Set optional fields if available
+  if (session.user.name) {
+    requestHeaders.set("x-user-name", session.user.name);
+  }
+
+  if (session.user.accountId) {
+    requestHeaders.set("x-user-account-id", String(session.user.accountId));
+  }
+
+  // Pass request through with enriched headers
   return NextResponse.next({
     request: {
       headers: requestHeaders,
