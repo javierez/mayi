@@ -1,18 +1,10 @@
 import { type Metadata } from "next";
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
 import Link from "next/link";
 import {
   ArrowRight,
   Users,
   Target,
-  Award,
   Globe,
   Heart,
   Zap,
@@ -59,71 +51,9 @@ export default function NosotrosPage() {
     },
   ];
 
-  const team = [
-    {
-      name: "María González",
-      role: "CEO & Fundadora",
-      description:
-        "15 años de experiencia en el sector inmobiliario y tecnología",
-    },
-    {
-      name: "Carlos Ruiz",
-      role: "CTO",
-      description: "Expert en arquitectura de software y sistemas escalables",
-    },
-    {
-      name: "Ana Martín",
-      role: "Head of Product",
-      description: "Especialista en UX/UI y desarrollo de productos digitales",
-    },
-    {
-      name: "David López",
-      role: "Head of Sales",
-      description: "Líder en ventas B2B y desarrollo de nuevos mercados",
-    },
-  ];
-
-  const timeline = [
-    {
-      year: "2019",
-      title: "Fundación de Vesta",
-      description:
-        "Iniciamos con la visión de revolucionar la gestión inmobiliaria",
-    },
-    {
-      year: "2020",
-      title: "Primeras Integraciones",
-      description:
-        "Conectamos con Fotocasa e Idealista, llegando a 100 clientes",
-    },
-    {
-      year: "2021",
-      title: "Expansión Nacional",
-      description: "Presencia en toda España con más de 500 inmobiliarias",
-    },
-    {
-      year: "2022",
-      title: "IA y Automatización",
-      description:
-        "Integramos inteligencia artificial para descripciones automáticas",
-    },
-    {
-      year: "2023",
-      title: "Líder del Mercado",
-      description:
-        "Más de 1000 clientes activos y reconocimiento como líder del sector",
-    },
-    {
-      year: "2024",
-      title: "Innovación Continua",
-      description:
-        "Nuevas funcionalidades y expansión a mercados internacionales",
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      <Navbar shortName="Vesta" />
+      <Navbar />
       {/* Hero Section */}
       <section className="relative px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">

@@ -33,17 +33,6 @@ export interface ChangelogEntry {
   year: number;
 }
 
-// Helper function to get week number (1-4) for a given date
-function getWeekOfMonth(date: Date): number {
-  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-  const firstDayWeek = firstDay.getDay(); // 0 = Sunday, 1 = Monday, etc.
-  const dayOfMonth = date.getDate();
-  
-  // Calculate which week of the month (1-4)
-  const weekNumber = Math.ceil((dayOfMonth + firstDayWeek) / 7);
-  return Math.min(weekNumber, 4); // Cap at 4 weeks
-}
-
 // Helper function to format month name in Spanish
 export function formatMonthName(month: number, year: number): string {
   const months = [
@@ -66,7 +55,7 @@ export function formatMonthName(month: number, year: number): string {
 // Helper function to get week label
 export function getWeekLabel(week: number): string {
   const weekLabels = ["I", "II", "III", "IV"];
-  return weekLabels[week - 1] || "I";
+  return weekLabels[week - 1] ?? "I";
 }
 
 // Sample changelog data - 5 months ago from now (approximately August 2024 to December 2024)
@@ -362,9 +351,7 @@ export function groupEntriesByWeek(
 
   entries.forEach((entry) => {
     const key = `${entry.year}-${entry.month}-${entry.week}`;
-    if (!grouped[key]) {
-      grouped[key] = [];
-    }
+    grouped[key] ??= [];
     const entries = grouped[key];
     if (entries) {
       entries.push(entry);

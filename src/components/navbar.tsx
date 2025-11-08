@@ -7,29 +7,14 @@ import {
   Building,
   Menu,
   X,
-  ChevronDown,
-  Package,
-  Users,
-  BookOpen,
   Info,
-  Shield,
-  Code,
   DollarSign,
   FileText,
-  MessageSquare,
-  HeadphonesIcon,
-  Briefcase,
   UserPlus,
 } from "lucide-react";
 import { useState, useCallback, memo } from "react";
 import { cn } from "~/lib/utils";
 import { SocialLinks } from "~/components/ui/social-links";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
 
 // Types
 type SocialPlatform =
@@ -46,7 +31,6 @@ interface SocialLink {
 
 interface NavbarProps {
   socialLinks?: SocialLink[];
-  shortName?: string;
 }
 
 // Memoized Social Links Section
@@ -66,7 +50,6 @@ MobileSocialLinks.displayName = "MobileSocialLinks";
 // Main Component
 export default function Navbar({
   socialLinks,
-  shortName,
 }: NavbarProps): React.ReactElement {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 

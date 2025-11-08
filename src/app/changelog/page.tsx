@@ -96,21 +96,6 @@ export default function ChangelogPage() {
 
   // Generate timeline months (Jul 2025 - Nov 2025)
   const timelineMonths = useMemo(() => {
-    const monthLabels = [
-      "Ene",
-      "Feb",
-      "Mar",
-      "Abr",
-      "May",
-      "Jun",
-      "Jul",
-      "Ago",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dic",
-    ];
-    
     // Specific months: Jul, Ago, Sep, Oct, Nov 2025
     const months: Array<{ month: number; year: number; label: string }> = [
       { month: 6, year: 2025, label: "Jul" },   // July (0-indexed: 6)
