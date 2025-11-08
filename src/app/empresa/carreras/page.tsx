@@ -131,7 +131,7 @@ export default function CarrerasPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      <Navbar shortName="Vesta" />
+      <Navbar />
       {/* Hero Section */}
       <section className="relative px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
         <div className="mx-auto max-w-7xl">

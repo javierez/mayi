@@ -309,7 +309,7 @@ export default function PreciosPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      <Navbar shortName="Vesta" />
+      <Navbar />
 
       {/* Hero Section */}
       <section className="relative px-4 py-12 sm:px-6 sm:py-16 lg:px-8">

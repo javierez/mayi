@@ -31,7 +31,7 @@ export function AIFeatureCard({
           <div className="space-y-4 sm:space-y-6">
             <div>
               <h3 className="mb-2 sm:mb-3 text-xl sm:text-2xl font-bold text-gray-900">
-                Descripciones con IA
+                IA Integrada
               </h3>
               <p className="text-sm sm:text-base leading-relaxed text-gray-600">
                 Genera descripciones atractivas y optimizadas para SEO

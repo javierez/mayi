@@ -104,7 +104,7 @@ const features = [
   },
   {
     id: "ai",
-    title: "Descripciones con IA",
+    title: "IA Integrada",
     icon: Brain,
     description:
       "Genera descripciones personalizadas a tu gusto y optimizadas para SEO con inteligencia artificial. Destaca las mejores características de cada propiedad a tan solo un clic.",
