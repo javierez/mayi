@@ -16,7 +16,12 @@ import {
 } from "~/components/ui/card";
 import { signIn } from "~/lib/auth-client";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
+import { TwoFactorVerify } from "~/components/auth/two-factor-verify";
 import type { FC } from "react";
+import {
+  isAccountTwoFactorEnabled,
+  hasUserCompletedTwoFactorSetup,
+} from "~/server/actions/account-2fa";
 
 const SignInPage: FC = () => {
   const [email, setEmail] = useState("");
@@ -24,6 +29,8 @@ const SignInPage: FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") ?? "/operaciones";
@@ -34,10 +41,21 @@ const SignInPage: FC = () => {
     setError("");
 
     try {
+      console.log("🔐 [Login] Starting sign in for:", email);
+
+      // First, attempt to sign in with email/password
+      // Don't pass callbackURL to prevent automatic redirect
       const result = await signIn.email({
         email,
         password,
-        callbackURL: callbackUrl,
+        // callbackURL: callbackUrl, // Removed to prevent auto-redirect
+      });
+
+      console.log("🔐 [Login] Sign in result:", {
+        hasError: !!result.error,
+        hasData: !!result.data,
+        hasUser: !!result.data?.user,
+        userId: result.data?.user?.id,
       });
 
       if (result.error) {
@@ -45,13 +63,58 @@ const SignInPage: FC = () => {
         return;
       }
 
-      // Force a full page reload to ensure cookies are properly set
+      // Check if user has 2FA enabled
+      if (result.data?.user?.id) {
+        const userId = result.data.user.id;
+
+        console.log("🔐 [Login] Checking 2FA status for user:", userId);
+
+        // Check if user has completed 2FA setup
+        const has2FA = await hasUserCompletedTwoFactorSetup(userId);
+
+        console.log("🔐 [Login] User 2FA status:", { userId, has2FA });
+
+        if (has2FA) {
+          console.log("🔐 [Login] User has 2FA, sending SMS code...");
+
+          // User has 2FA enabled, show verification screen
+          setPendingUserId(userId);
+
+          // Send SMS code
+          const { sendTwoFactorCode } = await import("~/server/actions/account-2fa");
+          const smsResult = await sendTwoFactorCode(userId);
+
+          console.log("🔐 [Login] SMS send result:", smsResult);
+
+          if (!smsResult.success) {
+            setError(smsResult.error ?? "Error al enviar código 2FA");
+            setIsLoading(false);
+            return;
+          }
+
+          console.log("🔐 [Login] SMS sent successfully, showing verification screen");
+
+          setRequires2FA(true);
+          setIsLoading(false);
+          return; // Don't redirect yet, show 2FA screen
+        } else {
+          console.log("🔐 [Login] User does not have 2FA, redirecting...");
+        }
+      } else {
+        console.log("🔐 [Login] No user ID in result, redirecting...");
+      }
+
+      // No 2FA or 2FA not enabled, proceed to redirect
+      console.log("🔐 [Login] Redirecting to:", callbackUrl);
       window.location.href = callbackUrl;
     } catch (err) {
       setError("Error inesperado al iniciar sesión");
-      console.error("Sign in error:", err);
+      console.error("❌ [Login] Sign in error:", err);
     } finally {
-      setIsLoading(false);
+      // Only set loading to false if we're not showing 2FA screen
+      if (!requires2FA) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -69,6 +132,40 @@ const SignInPage: FC = () => {
       setIsLoading(false);
     }
   };
+
+  // Show 2FA verification screen if required
+  if (requires2FA && pendingUserId) {
+    return (
+      <div className="flex min-h-screen flex-col justify-center bg-white py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="text-center mb-8">
+            <div className="flex justify-center">
+              <Image
+                src="/vestazoomin.jpeg"
+                alt="Vesta Logo"
+                width={200}
+                height={80}
+                className="h-20 w-auto object-contain"
+                priority
+              />
+            </div>
+          </div>
+          <TwoFactorVerify
+            userId={pendingUserId}
+            onSuccess={() => {
+              window.location.href = callbackUrl;
+            }}
+            onCancel={() => {
+              setRequires2FA(false);
+              setPendingUserId(null);
+              setIsLoading(false);
+              setPassword("");
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col justify-center bg-white py-12 sm:px-6 lg:px-8">

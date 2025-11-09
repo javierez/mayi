@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getCookieCache } from "better-auth/cookies";
 
 // Public paths that should not require authentication
 const publicPaths = [
@@ -50,39 +49,26 @@ export async function middleware(request: NextRequest) {
   }
 
   // Everything else is protected - requires authentication
-  // Get cached session data from cookie (edge-compatible, no DB call)
-  const session = await getCookieCache(request);
+  // Check for session token cookie (lasts 7 days)
+  // Note: We only check if token exists, DAL handles actual validation
 
-  // If no valid session, redirect to homepage
-  if (!session?.user) {
+  // In production (HTTPS), Better Auth uses __Secure- prefix
+  const sessionToken =
+    request.cookies.get("__Secure-better-auth.session_token")?.value ??
+    request.cookies.get("better-auth.session_token")?.value;
+
+  if (!sessionToken) {
     console.log(
-      `🔄 Unauthorized access attempt: ${pathname} - No valid session found`,
+      `🔄 Unauthorized access attempt: ${pathname} - No session token found`,
     );
     const homeUrl = new URL("/", request.url);
     return NextResponse.redirect(homeUrl);
   }
 
-  // Extract user data and set headers for server components to use
-  // This allows server components to skip auth.api.getSession() calls
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-user-id", session.user.id);
-  requestHeaders.set("x-user-email", session.user.email);
-
-  // Set optional fields if available
-  if (session.user.name) {
-    requestHeaders.set("x-user-name", session.user.name);
-  }
-
-  if (session.user.accountId) {
-    requestHeaders.set("x-user-account-id", String(session.user.accountId));
-  }
-
-  // Pass request through with enriched headers
-  return NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
+  // Session token exists - let DAL handle full validation when needed
+  // We don't use getCookieCache() here because it relies on session_data cookie
+  // which expires after 5 minutes, causing premature logouts
+  return NextResponse.next();
 }
 
 export const config = {

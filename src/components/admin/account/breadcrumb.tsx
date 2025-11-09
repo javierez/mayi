@@ -13,6 +13,7 @@ const routeNames: Record<string, string> = {
   "/account-admin/branding": "Marca y Logo",
   "/account-admin/carteleria": "Cartelería",
   "/account-admin/website": "Sitio Web",
+  "/account-admin/seguridad": "Seguridad",
   "/account-admin/other": "Otras Opciones",
 };
 

@@ -1,12 +1,15 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
+import { twoFactor } from "better-auth/plugins";
 import { db } from "~/server/db";
 import {
   users,
   sessions,
   authAccounts,
   verificationTokens,
+  twoFactor as twoFactorTable,
+  accountTwoFactorSettings,
   roles,
   userRoles,
   accountRoles,
@@ -170,12 +173,13 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
   database: drizzleAdapter(db, {
-    provider: "mysql", // SingleStore is MySQL compatible
+    provider: "pg", // PostgreSQL
     schema: {
       user: users,
       session: sessions,
       account: authAccounts,
       verification: verificationTokens,
+      twoFactor: twoFactorTable,
     },
   }),
 
@@ -293,8 +297,14 @@ export const auth = betterAuth({
     },
   },
 
-  // Next.js integration
-  plugins: [nextCookies()],
+  // Plugins configuration
+  plugins: [
+    nextCookies(),
+    twoFactor({
+      // Issuer name shown in authenticator apps
+      issuer: "Vesta CRM",
+    }),
+  ],
 
   // Session configuration
   session: {

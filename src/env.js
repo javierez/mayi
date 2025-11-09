@@ -38,6 +38,11 @@ export const env = createEnv({
     RESEND_API_KEY: z.string().optional(),
     // Fotocasa Configuration
     FOTOCASA_ID: z.string().uuid(),
+    // Twilio Configuration (for SMS 2FA)
+    TWILIO_ACCOUNT_SID: z.string(),
+    TWILIO_AUTH_TOKEN: z.string(),
+    TWILIO_PHONE_NUMBER: z.string(), // E.164 format: +1234567890
+    TWILIO_SENDER_ID: z.string().optional(),
   },
 
   /**
@@ -83,6 +88,11 @@ export const env = createEnv({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     // Fotocasa Configuration
     FOTOCASA_ID: process.env.FOTOCASA_ID,
+    // Twilio Configuration
+    TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
+    TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
+    TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER,
+    TWILIO_SENDER_ID: process.env.TWILIO_SENDER_ID,
     // Client variables
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:
       process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,

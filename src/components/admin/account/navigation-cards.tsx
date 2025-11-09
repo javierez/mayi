@@ -18,6 +18,7 @@ import {
   Globe,
   Monitor,
   Building,
+  Shield,
 } from "lucide-react";
 
 interface AccountAdminCard {
@@ -48,6 +49,13 @@ const accountAdminSections: AccountAdminCard[] = [
     description: "Gestiona permisos de usuarios y configuración de privacidad",
     icon: Settings,
     href: "/account-admin/roles",
+    available: true,
+  },
+  {
+    title: "Seguridad",
+    description: "Configuración de seguridad y autenticación de dos factores",
+    icon: Shield,
+    href: "/account-admin/seguridad",
     available: true,
   },
   {

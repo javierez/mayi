@@ -161,6 +161,30 @@ export const verificationTokens = pgTable("verification_tokens", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Account-Level Two-Factor Authentication Settings
+export const accountTwoFactorSettings = pgTable("account_two_factor_settings", {
+  id: bigserial("id", { mode: "bigint" }).primaryKey(),
+  accountId: bigint("account_id", { mode: "bigint" }).notNull().unique(), // FK → accounts.account_id (one per account)
+  isRequired: boolean("is_required").default(false).notNull(), // Whether 2FA is mandatory for all employees (users cannot opt out)
+  enabledBy: varchar("enabled_by", { length: 36 }), // FK → users.id (admin who set the policy)
+  enabledAt: timestamp("enabled_at"), // When 2FA was made mandatory
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// User-Level Two-Factor Authentication (SMS-based verification)
+export const twoFactor = pgTable("two_factor", {
+  id: varchar("id", { length: 36 }).primaryKey(),
+  userId: varchar("user_id", { length: 36 }).notNull().unique(), // FK → users.id (one per user)
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
+  isEnabled: boolean("is_enabled").default(true).notNull(), // Whether user has 2FA enabled
+  lastCode: varchar("last_code", { length: 255 }), // Hashed last SMS code sent
+  lastCodeSentAt: timestamp("last_code_sent_at"), // When the last code was sent
+  lastCodeExpiresAt: timestamp("last_code_expires_at"), // When the last code expires
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Locations table
 export const locations = pgTable("locations", {
   neighborhoodId: bigserial("neighborhood_id", { mode: "bigint" })
