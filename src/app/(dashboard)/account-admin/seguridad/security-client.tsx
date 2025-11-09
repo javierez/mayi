@@ -10,8 +10,7 @@ import {
 } from "~/components/ui/card";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
-import { Shield, Users, ChevronRight, AlertTriangle } from "lucide-react";
-import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Users, ChevronRight, AlertTriangle } from "lucide-react";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import {
   getAccountTwoFactorSettings,
@@ -31,7 +30,7 @@ export default function SecurityClient() {
   const [pendingPolicyValue, setPendingPolicyValue] = useState(false);
 
   useEffect(() => {
-    loadSettings();
+    void loadSettings();
   }, []);
 
   async function loadSettings() {

@@ -19,7 +19,6 @@ import { AlertCircle, Eye, EyeOff } from "lucide-react";
 import { TwoFactorVerify } from "~/components/auth/two-factor-verify";
 import type { FC } from "react";
 import {
-  isAccountTwoFactorEnabled,
   hasUserCompletedTwoFactorSetup,
 } from "~/server/actions/account-2fa";
 

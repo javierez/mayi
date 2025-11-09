@@ -76,10 +76,11 @@ export function LaunchCard({ entry, onClick }: LaunchCardProps) {
         <div className="relative w-full h-40 rounded-lg overflow-hidden bg-gray-100">
           {!hasPlayed ? (
             <>
-              <img
+              <Image
                 src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/marketing/first_week_poster.jpg"
                 alt="Video preview"
-                className="w-full h-full object-cover scale-150 brightness-110"
+                fill
+                className="object-cover scale-150 brightness-110"
               />
               <button
                 onClick={handlePlayPause}

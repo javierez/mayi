@@ -19,13 +19,14 @@ import { authClient } from "~/lib/auth-client";
 import { useRouter } from "next/navigation";
 
 interface TwoFactorVerifyProps {
-  email: string;
-  password: string;
+  email?: string;
+  password?: string;
   userId: string;
   onCancel: () => void;
+  onSuccess?: () => void;
 }
 
-export function TwoFactorVerify({ email, password, userId, onCancel }: TwoFactorVerifyProps) {
+export function TwoFactorVerify({ email, password, userId, onCancel, onSuccess }: TwoFactorVerifyProps) {
   const router = useRouter();
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,15 +45,24 @@ export function TwoFactorVerify({ email, password, userId, onCancel }: TwoFactor
       const verifyResult = await verifyTwoFactorCode(userId, code);
 
       if (verifyResult.success) {
-        // Code is valid, now complete the sign-in
-        const signInResult = await authClient.signIn.email({
-          email,
-          password,
-        });
+        // If onSuccess callback is provided, use it (sign-in flow)
+        if (onSuccess) {
+          onSuccess();
+        } else if (email && password) {
+          // Otherwise, complete the sign-in with email/password (legacy flow)
+          const signInResult = await authClient.signIn.email({
+            email,
+            password,
+          });
 
-        if (signInResult.error) {
-          setError(signInResult.error.message ?? "Error al iniciar sesión");
+          if (signInResult.error) {
+            setError(signInResult.error.message ?? "Error al iniciar sesión");
+          } else {
+            router.push("/");
+            router.refresh();
+          }
         } else {
+          // No callback and no credentials - just redirect
           router.push("/");
           router.refresh();
         }

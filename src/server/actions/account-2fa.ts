@@ -2,7 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import { db } from "~/server/db";
-import { accountTwoFactorSettings, twoFactor, accounts, users } from "~/server/db/schema";
+import { accountTwoFactorSettings, twoFactor, users } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "~/lib/auth";
 import { headers } from "next/headers";

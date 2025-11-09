@@ -9,7 +9,6 @@ import {
   authAccounts,
   verificationTokens,
   twoFactor as twoFactorTable,
-  accountTwoFactorSettings,
   roles,
   userRoles,
   accountRoles,

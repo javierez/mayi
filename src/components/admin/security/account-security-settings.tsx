@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
@@ -17,14 +16,14 @@ interface AccountSecuritySettingsProps {
   userId: string;
 }
 
-export function AccountSecuritySettings({ userId }: AccountSecuritySettingsProps) {
+export function AccountSecuritySettings({ userId: _userId }: AccountSecuritySettingsProps) {
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState<{
     isRequired: boolean;
   } | null>(null);
 
   useEffect(() => {
-    loadSettings();
+    void loadSettings();
   }, []);
 
   async function loadSettings() {

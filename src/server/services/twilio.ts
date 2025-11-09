@@ -32,7 +32,7 @@ function normalizePhoneNumber(phoneNumber: string): string {
   if (!phoneNumber) return "";
 
   // Remove any whitespace
-  let normalized = phoneNumber.trim().replace(/\s+/g, "");
+  const normalized = phoneNumber.trim().replace(/\s+/g, "");
 
   // If already has country code, return as is
   if (normalized.startsWith("+")) {
@@ -73,7 +73,7 @@ export async function sendSMSCode(
     console.log("📱 [Twilio] Phone number type:", typeof normalizedPhone);
 
     // Validate phone number format
-    if (!normalizedPhone || !normalizedPhone.startsWith("+")) {
+    if (!normalizedPhone?.startsWith("+")) {
       console.error("❌ [Twilio] Invalid phone number format:", normalizedPhone);
       return {
         success: false,

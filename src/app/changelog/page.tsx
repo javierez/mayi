@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef } from "react";
 import Navbar from "~/components/navbar";
 import { Footer } from "~/components/landing/Footer";
 import {
@@ -68,45 +68,6 @@ export default function ChangelogPage() {
     setIsSheetOpen(false);
     setSelectedEntry(null);
   };
-
-  const scrollToMonth = useCallback((month: number, year: number) => {
-    // Find the first week key for this month
-    const firstWeekKey = weekKeys.find((key) => {
-      const [keyYear = 0, keyMonth = 0] = key.split("-").map(Number);
-      return keyMonth === month && keyYear === year;
-    });
-
-    if (firstWeekKey && weekColumnRefs.current[firstWeekKey] && scrollContainerRef.current) {
-      const columnElement = weekColumnRefs.current[firstWeekKey];
-      const containerElement = scrollContainerRef.current;
-      
-      if (columnElement) {
-        const containerRect = containerElement.getBoundingClientRect();
-        const columnRect = columnElement.getBoundingClientRect();
-        const scrollLeft = containerElement.scrollLeft;
-        const targetScroll = scrollLeft + columnRect.left - containerRect.left - 24; // 24px offset
-        
-        containerElement.scrollTo({
-          left: targetScroll,
-          behavior: "smooth",
-        });
-      }
-    }
-  }, [weekKeys]);
-
-  // Generate timeline months (Jul 2025 - Nov 2025)
-  const timelineMonths = useMemo(() => {
-    // Specific months: Jul, Ago, Sep, Oct, Nov 2025
-    const months: Array<{ month: number; year: number; label: string }> = [
-      { month: 6, year: 2025, label: "Jul" },   // July (0-indexed: 6)
-      { month: 7, year: 2025, label: "Ago" },   // August (0-indexed: 7)
-      { month: 8, year: 2025, label: "Sep" },   // September (0-indexed: 8)
-      { month: 9, year: 2025, label: "Oct" },   // October (0-indexed: 9)
-      { month: 10, year: 2025, label: "Nov" },  // November (0-indexed: 10)
-    ];
-    
-    return months;
-  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
