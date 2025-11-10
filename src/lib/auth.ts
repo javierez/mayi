@@ -193,14 +193,14 @@ export const auth = betterAuth({
   },
 
   // Add hooks for logging
-  async onRequest(request) {
+  async onRequest(request: Request) {
     const pathname = new URL(request.url).pathname;
     if (pathname.includes("/sign-in/email")) {
       console.log("🔐 [Auth] Sign-in request received");
     }
   },
 
-  async onResponse(response, request) {
+  async onResponse(response: Response, request: Request) {
     const pathname = new URL(request.url).pathname;
     if (pathname.includes("/sign-in/email")) {
       console.log("🔐 [Auth] Sign-in response:", {

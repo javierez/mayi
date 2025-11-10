@@ -3,10 +3,11 @@
 import bcrypt from "bcryptjs";
 import { db } from "~/server/db";
 import { users, passwordResetTokens, authAccounts } from "~/server/db/schema";
-import { eq, and, gt, isNull, or } from "drizzle-orm";
+import { eq, and, gt, isNull } from "drizzle-orm";
 import { generateSMSCode, sendSMSCode } from "~/server/services/twilio";
 import { headers } from "next/headers";
 import { hashPassword } from "better-auth/crypto";
+import { randomUUID } from "crypto";
 
 /**
  * SMS-Based Password Reset Server Actions
@@ -237,6 +238,7 @@ export async function verifyResetCodeAndChangePassword(
     if (!existingAccount) {
       console.log("⚠️ [Password Reset] No credential account found, creating one...");
       await db.insert(authAccounts).values({
+        id: randomUUID(),
         userId: user.id,
         accountId: user.email, // Use email as accountId for credential provider
         providerId: "credential",

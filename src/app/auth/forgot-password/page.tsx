@@ -39,8 +39,6 @@ const ForgotPasswordPage: FC = () => {
 
     // Use only the phone number WITHOUT prefix for lookup (users are stored without prefix)
     const phoneOnly = phone.trim();
-    // But combine for SMS sending
-    const fullPhoneNumber = phonePrefix + phoneOnly;
 
     try {
       const result = await requestPasswordResetSMS(phoneOnly);
