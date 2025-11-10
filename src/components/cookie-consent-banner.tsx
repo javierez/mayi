@@ -153,14 +153,24 @@ export function CookieConsentBanner() {
   return (
     <AnimatePresence>
       {showBanner && (
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="fixed bottom-0 left-0 right-0 z-50 p-4 sm:p-6"
-        >
-          <div className="mx-auto max-w-7xl">
+        <>
+          {/* Backdrop overlay to block interactions */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
+          />
+
+          {/* Cookie banner */}
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed bottom-0 left-0 right-0 z-50 p-4 sm:p-6"
+          >
+            <div className="mx-auto max-w-7xl">
             <div className="relative overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-gray-200">
               {/* Decorative gradient */}
               <div className="absolute inset-0 bg-gradient-to-r from-amber-50 to-rose-50 opacity-50" />
@@ -360,7 +370,8 @@ export function CookieConsentBanner() {
               </div>
             </div>
           </div>
-        </motion.div>
+          </motion.div>
+        </>
       )}
     </AnimatePresence>
   );
