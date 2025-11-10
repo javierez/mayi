@@ -61,6 +61,59 @@ export function ChangelogSheet({
     }).format(date);
   };
 
+  // Format the detailed description with proper styling
+  const formatDescription = (text: string) => {
+    const lines = text.split("\n");
+    return lines.map((line, index) => {
+      // Skip empty lines
+      if (line.trim() === "") {
+        return <div key={index} className="h-2" />;
+      }
+
+      // Separator lines
+      if (line.includes("━━━")) {
+        return (
+          <div key={index} className="border-t border-gray-150 my-4" />
+        );
+      }
+
+      // Section headers (all caps lines without bullet points)
+      if (
+        line === line.toUpperCase() &&
+        line.trim().length > 0 &&
+        !line.trim().startsWith("•")
+      ) {
+        return (
+          <h3
+            key={index}
+            className="text-sm font-semibold text-gray-800 mt-4 mb-1.5"
+          >
+            {line.trim()}
+          </h3>
+        );
+      }
+
+      // Bullet points
+      if (line.trim().startsWith("•")) {
+        return (
+          <div key={index} className="flex items-start gap-2 ml-2 mb-1.5">
+            <span className="text-gray-500 text-sm mt-0.5">•</span>
+            <span className="text-gray-700 text-sm leading-relaxed flex-1">
+              {line.trim().substring(1).trim()}
+            </span>
+          </div>
+        );
+      }
+
+      // Regular paragraphs
+      return (
+        <p key={index} className="text-gray-700 text-sm leading-relaxed mb-2">
+          {line.trim()}
+        </p>
+      );
+    });
+  };
+
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="w-full max-w-full sm:max-w-xl border-l-0 bg-white p-0">
@@ -84,10 +137,8 @@ export function ChangelogSheet({
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto px-8 py-8">
-            <div className="prose prose-gray max-w-none">
-              <p className="text-base leading-relaxed text-gray-700 whitespace-pre-wrap">
-                {entry.detailedDescription}
-              </p>
+            <div className="max-w-none">
+              {formatDescription(entry.detailedDescription)}
             </div>
           </div>
 

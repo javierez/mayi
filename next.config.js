@@ -7,11 +7,13 @@ import "./src/env.js";
 /** @type {import("next").NextConfig} */
 const config = {
   typescript: {
-    // Skip type checking during build - types are checked in CI/local development
+    // Type checking is handled by GitHub Actions CI
+    // This speeds up Vercel builds and prevents timeouts
     ignoreBuildErrors: true,
   },
   eslint: {
-    // Skip ESLint during build - linting is checked in CI/local development
+    // Linting is handled by GitHub Actions CI
+    // This speeds up Vercel builds
     ignoreDuringBuilds: true,
   },
   images: {
