@@ -7,6 +7,7 @@ import {
   Home,
   Zap,
   Smartphone,
+  ClipboardCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -175,6 +176,20 @@ export const changelogEntries: ChangelogEntry[] = [
     team: "Platform Features Team",
     icon: Smartphone,
     date: new Date(2025, 10, 9), // November 2025, Week II
+    week: 2,
+    month: 10,
+    year: 2025,
+  },
+  {
+    id: "10",
+    title: "Sistema de Registro de Visitas",
+    shortDescription: "Documenta y comparte visitas con tus clientes de forma profesional",
+    detailedDescription:
+      "Ahora puedes crear documentos profesionales de cada visita que realizas. El proceso es simple:\n\n**1. Antes de la visita**\nGenera una hoja de visita previa y compártela con el cliente para que sepa qué esperar.\n\n**2. Durante la visita**\nToma notas con tu voz o escribiendo, y registra si el cliente hace una oferta.\n\n**3. Al finalizar**\nAmbos firmáis en el móvil o tablet, y el documento se genera automáticamente con:\n• Fecha y hora exacta de la visita\n• Tus notas y la oferta (si la hubo)\n• Firmas de ambas partes\n• Tu marca corporativa\n\n**4. Compartir**\nEnvía el documento firmado al cliente por email, SMS o WhatsApp al instante.\n\nEl documento incluye un sello de autenticidad que garantiza que no puede ser modificado después de firmado. Perfecto para mantener un registro profesional y transparente con tus clientes.",
+    category: "Feature",
+    team: "Product Team",
+    icon: ClipboardCheck,
+    date: new Date(2025, 10, 10), // November 2025, Week II
     week: 2,
     month: 10,
     year: 2025,

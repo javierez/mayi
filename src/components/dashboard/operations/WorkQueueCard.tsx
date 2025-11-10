@@ -84,6 +84,7 @@ export default function WorkQueueCard({
     title: string;
   } | null>(null);
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
+  const [expandedPhones, setExpandedPhones] = useState<Set<string>>(new Set());
 
   // Permission states
   const [hasEditAllPermission, setHasEditAllPermission] = useState(false);
@@ -541,6 +542,18 @@ export default function WorkQueueCard({
     });
   };
 
+  const togglePhoneExpanded = (appointmentId: string) => {
+    setExpandedPhones((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(appointmentId)) {
+        newSet.delete(appointmentId);
+      } else {
+        newSet.add(appointmentId);
+      }
+      return newSet;
+    });
+  };
+
   return (
     <Card className={`${standalone ? "shadow-lg" : ""} ${className}`}>
       <CardContent className={standalone ? "p-4 sm:p-6 md:p-8" : "pt-2 px-4 sm:px-6"}>
@@ -914,15 +927,17 @@ export default function WorkQueueCard({
                             // Selection logic: listingId must always match, and contactId must match if it exists in both
                             const appointmentListingId = searchParams.get("appointmentListingId");
                             const appointmentContactId = searchParams.get("appointmentContactId");
-                            
+
                             const listingMatches = appointmentListingId &&
                               appointment.listingId &&
                               Number(appointment.listingId) === Number(appointmentListingId);
-                            
+
                             const contactMatches = !appointmentContactId ? true : // No contact in filter = always matches
                               (appointment.contactId && Number(appointment.contactId) === Number(appointmentContactId));
-                            
+
                             const isSelected = listingMatches && contactMatches;
+                            const appointmentIdStr = appointment.appointmentId.toString();
+                            const isPhoneExpanded = expandedPhones.has(appointmentIdStr);
 
                             return (
                               <motion.div
@@ -987,22 +1002,38 @@ export default function WorkQueueCard({
 
                                 {/* Main content */}
                                 <div className="pr-12 sm:pr-16">
-                                  {/* Contact name */}
-                                  <h3 className="mb-2 sm:mb-2.5 text-sm font-semibold text-gray-900 break-words">
-                                    {appointment.contactName}
-                                  </h3>
-
-                                  {/* Phone number */}
-                                  {appointment.contactPhone && (
-                                    <a
-                                      href={`tel:${appointment.contactPhone}`}
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="mb-2 flex items-center gap-1 text-xs text-gray-600 transition-colors hover:text-blue-600"
-                                    >
-                                      <Phone className="h-3 w-3 flex-shrink-0" />
-                                      <span>{appointment.contactPhone}</span>
-                                    </a>
-                                  )}
+                                  {/* Contact name with phone number inline */}
+                                  <div className="mb-2 sm:mb-2.5 flex flex-wrap items-center gap-2">
+                                    <h3 className="text-sm font-semibold text-gray-900 break-words">
+                                      {appointment.contactName}
+                                    </h3>
+                                    {appointment.contactPhone && (
+                                      <div className="group/phone flex items-center gap-1 text-xs text-gray-700">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (isPhoneExpanded) {
+                                              // If already expanded, trigger the call
+                                              window.location.href = `tel:${appointment.contactPhone}`;
+                                            } else {
+                                              // First click: expand the number
+                                              togglePhoneExpanded(appointmentIdStr);
+                                            }
+                                          }}
+                                          className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-transparent shadow-md transition-shadow hover:shadow-lg"
+                                        >
+                                          <Phone className="h-2.5 w-2.5 fill-current" />
+                                        </button>
+                                        <span
+                                          className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
+                                            isPhoneExpanded ? "max-w-[150px]" : "max-w-0 sm:group-hover/phone:max-w-[150px]"
+                                          }`}
+                                        >
+                                          {appointment.contactPhone}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
 
                                   {/* Address */}
                                   {appointment.propertyAddress && (

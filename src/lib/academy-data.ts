@@ -3,6 +3,7 @@ import {
   BookOpen,
   Bug,
   Settings,
+  ClipboardCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -393,6 +394,290 @@ Si tu problema no está listado:
     icon: AlertCircle,
     tags: ["errores", "soluciones", "troubleshooting", "problemas"],
     lastUpdated: new Date(2025, 10, 8),
+    readTimeMinutes: 8,
+  },
+  {
+    id: "visit-workflow-guide",
+    title: "Guía completa del sistema de registro de visitas",
+    shortDescription:
+      "Aprende a crear y compartir documentos profesionales de cada visita con tus clientes",
+    content: `# Guía completa del sistema de registro de visitas
+
+El sistema de registro de visitas te permite crear documentos profesionales de cada visita que realizas, con firmas de ambas partes y la posibilidad de compartirlos al instante con tus clientes.
+
+## ¿Qué es el sistema de registro de visitas?
+
+Es una herramienta que te ayuda a documentar cada visita de forma profesional. Puedes mostrar al cliente una hoja de visita antes de la visita, y después de realizarla, ambos firmáis digitalmente y el cliente recibe un documento oficial con todos los detalles. El documento incluye un sello de autenticidad que garantiza que nadie puede modificarlo después de firmado.
+
+## Beneficios principales
+
+✅ **Profesionalidad**: Impresiona a tus clientes con documentos oficiales con tu marca
+✅ **Transparencia**: El cliente recibe una copia firmada de todo lo acordado
+✅ **Ahorra tiempo**: Dicta tus notas con la voz en lugar de escribir
+✅ **Comparte al instante**: Envía el documento por email, SMS o WhatsApp
+✅ **Registro oficial**: Fecha y hora exactas con sello que impide modificaciones
+✅ **Protección legal**: Documento firmado por ambas partes con consentimiento RGPD
+
+## ¿Cuándo puedo usar esto?
+
+Para poder registrar una visita, primero necesitas haber programado una cita de tipo "Visita" en el calendario con el cliente. Una vez tengas la cita programada, el botón "Registrar Visita" aparecerá automáticamente.
+
+## El proceso completo: Antes, Durante y Después
+
+### ANTES de la visita: Mostrar la hoja previa al cliente
+
+Puedes generar una hoja de visita previa para que el cliente sepa qué va a pasar:
+
+1. Ve a la propiedad y busca el contacto con "Visita Pendiente"
+2. Haz clic en "Registrar Visita"
+3. Haz clic en el botón "Vista Previa" o "PDF"
+4. Comparte esta hoja con el cliente antes de la visita
+
+**¿Para qué sirve?** El cliente ve qué información se va a registrar y se siente más cómodo firmando después.
+
+### DURANTE la visita: Cómo acceder
+
+1. Abre la ficha de la propiedad
+2. Ve a la sección de contactos
+3. Busca el contacto que tiene el badge "Visita Pendiente"
+4. Haz clic en el contacto y luego en el botón "Registrar Visita"
+
+### Paso 1: Información automática
+
+El formulario ya trae rellenados los datos del cliente y la visita:
+- Nombre, DNI y teléfono del cliente
+- Fecha y hora de la visita
+- Dirección de la propiedad
+- Nombre del agente (tú)
+
+**No necesitas escribir nada de esto**, está todo listo.
+
+### Paso 2: Añade tus notas
+
+Aquí es donde documentas lo importante de la visita:
+
+**Forma rápida (recomendada): Usa tu voz**
+1. Mantén presionado el botón del micrófono 🎤
+2. Habla con normalidad
+3. El texto aparece automáticamente
+4. Suelta cuando termines
+
+**Forma tradicional: Escribe**
+- Haz clic en el cuadro de notas
+- Escribe lo que quieras registrar
+
+**¿Qué anotar?**
+- Lo que le gustó o no le gustó al cliente
+- Preguntas que hizo
+- Si comparó con otras propiedades
+- Su nivel de interés
+- Si hay que hacer algún seguimiento
+
+### Paso 3: ¿Hizo el cliente una oferta?
+
+Si el cliente te hizo una oferta durante la visita:
+- Escribe el importe en euros
+- El sistema lo registrará y aparecerá en el documento
+
+Si no hizo oferta, déjalo en blanco. Puedes añadirla después si la hace.
+
+### Paso 4: Firmar el documento
+
+**Importante:** Sin las dos firmas no puedes guardar el documento.
+
+**Tu firma:**
+1. Dibuja tu firma en el primer recuadro (con el dedo o ratón)
+2. Si no te gusta, usa "Limpiar" y vuelve a firmar
+
+**Firma del cliente:**
+1. Pasa el móvil o tablet al cliente
+2. Que firme en el segundo recuadro
+3. Si necesita repetir, botón "Limpiar"
+
+**Consejo:** Las tabletas o móviles funcionan mejor que el ratón del ordenador.
+
+### Paso 5: Consentimiento RGPD
+
+Pregunta al cliente si quiere recibir información de nuevas propiedades:
+- **Sí** - Podrás enviarle novedades
+- **No** - Solo comunicaciones de esta operación
+
+Esto queda registrado en el documento por protección legal.
+
+### Paso 6: Guardar y compartir
+
+Cuando todo esté listo, haz clic en **"Registrar Visita"**.
+
+El sistema genera automáticamente un PDF con:
+- ✅ Todos los datos de la visita
+- ✅ Tus notas
+- ✅ La oferta (si la hubo)
+- ✅ Las firmas de ambos
+- ✅ Tu logo y marca
+- ✅ Fecha y hora exactas
+- ✅ Un sello que impide modificaciones
+
+Inmediatamente se abre una ventana para que elijas cómo enviar el documento al cliente:
+
+**Email** - Se abre tu correo con un mensaje listo para enviar
+
+**SMS** - Se abre mensajes con el texto preparado
+
+**WhatsApp** - Se abre WhatsApp con el mensaje
+
+**Copiar** - Copia el texto para enviarlo por donde quieras
+
+### DESPUÉS de la visita: Ver documentos guardados
+
+Puedes ver todas las visitas que has registrado en varios sitios:
+
+**Desde el calendario:**
+- Las visitas completadas aparecen en el calendario
+- Haz clic en la cita para ver los detalles y el documento
+
+**Desde la propiedad:**
+- En la ficha de la propiedad verás cuántas visitas has hecho
+- En la sección de contactos, verás el estado de cada uno
+
+**Desde el contacto:**
+- Al abrir un contacto, verás si tiene "Visita Completada" o "Oferta Pendiente"
+
+## ¿Qué contiene el documento generado?
+
+El PDF que se crea automáticamente incluye:
+
+**📋 Cabecera con tu marca**
+- Tu logo
+- Servicios que ofreces
+- Web, CIF y datos de contacto
+- Ubicaciones de tus oficinas
+
+**📍 Información de la visita**
+- Datos del cliente (nombre, DNI, teléfono)
+- Oferta realizada (si la hay)
+- Agente que hizo la visita
+- Fecha y hora exactas
+- Dirección de la propiedad
+
+**📝 Tus notas**
+- Todo lo que anotaste durante la visita
+- Formateado de manera profesional
+
+**✍️ Las firmas**
+- Tu firma
+- Firma del cliente
+- Con la fecha y hora exactas de cuándo se firmó
+- Una vez firmado, nadie puede modificar el documento
+
+**🔒 Protección legal**
+- Consentimiento RGPD del cliente
+- Sello de autenticidad que garantiza que el documento no ha sido alterado
+- Fecha y hora certificadas
+
+## ¿Por qué el documento no se puede modificar?
+
+El sistema incluye un **sello de autenticidad** (técnicamente se llama "hash") que funciona como una huella digital única del documento. Si alguien intentara cambiar aunque sea una coma del documento, el sello cambiaría y quedaría claro que fue modificado.
+
+**¿Para qué sirve esto?**
+- Protección legal para ti y para el cliente
+- Prueba de lo que se acordó en la visita
+- Imposible que alguien diga "esto no lo firmé yo"
+- Fecha y hora certificadas que no se pueden falsificar
+
+## Consejos para sacarle el máximo partido
+
+### Antes de la visita
+✅ **Muestra la hoja previa al cliente** - Le da confianza y profesionalidad
+✅ **Explícale que vais a firmar después** - No le pillará por sorpresa
+
+### Durante y después de la visita
+✅ **Registra todo nada más terminar** - No confíes en tu memoria
+✅ **Usa tu voz para las notas** - Es mucho más rápido que escribir
+✅ **Sé específico** - "Le gustó mucho la terraza" es mejor que "Le gustó"
+✅ **Anota tanto lo bueno como lo malo** - Te ayudará después
+
+### Al firmar
+✅ **Usa tablet o móvil** - Funciona mucho mejor que el ratón
+✅ **Explica al cliente dónde firmar** - Muéstrale el recuadro
+✅ **Déjale tiempo** - No le apresures, es un documento oficial
+✅ **Comparte el documento al momento** - El cliente lo valora muchísimo
+
+## Problemas comunes y soluciones
+
+### "No veo el botón Registrar Visita"
+
+**¿Por qué pasa?**
+No tienes una cita programada con ese contacto, o ya la completaste.
+
+**Solución:**
+- Ve al calendario y programa primero una cita de tipo "Visita"
+- Después aparecerá el botón automáticamente
+
+### "La firma no funciona"
+
+**¿Por qué pasa?**
+El navegador o el dispositivo puede tener problemas.
+
+**Solución:**
+- Si usas ratón: haz clic Y arrastra (como si dibujaras)
+- Mejor usa una tablet o móvil, funciona mucho mejor
+- Prueba con Chrome si tienes otro navegador
+
+### "El micrófono no se activa"
+
+**¿Por qué pasa?**
+El navegador necesita permiso para usar el micrófono.
+
+**Solución:**
+- Cuando te lo pida, pulsa "Permitir"
+- Si no te lo pide, revisa los permisos en configuración del navegador
+- Chrome funciona mejor que otros navegadores para esta función
+
+### "No puedo compartir el documento"
+
+**¿Por qué pasa?**
+Tu navegador está bloqueando las ventanas emergentes.
+
+**Solución:**
+- Permite ventanas emergentes de Vesta en tu navegador
+- O usa el botón "Copiar" y pega el texto donde quieras enviarlo
+
+## Preguntas frecuentes
+
+**¿Puedo modificar el documento después de firmarlo?**
+No. Una vez firmado, el documento no se puede cambiar. Esto es precisamente lo que le da valor legal - garantiza que nadie puede modificar lo acordado.
+
+**¿El cliente recibe una copia?**
+Sí, después de registrar la visita se abre una ventana para que le envíes el documento firmado por email, SMS o WhatsApp.
+
+**¿Las firmas digitales tienen validez legal?**
+Sí, las firmas electrónicas tienen validez legal en España y la UE. Además, el sello de autenticidad del documento refuerza su validez.
+
+**¿Qué pasa si el cliente no quiere firmar?**
+Explícale que el documento es para su beneficio - es una prueba de lo acordado que protege a ambas partes. Sin su firma, no podrás completar el registro.
+
+**¿Puedo añadir la oferta después de registrar la visita?**
+Sí, puedes registrar la oferta en el campo de ofertas del contacto aunque ya hayas completado la visita.
+
+**¿Cuánto tiempo se guardan los documentos?**
+Se guardan indefinidamente. Es recomendable mantenerlos siempre por temas legales.
+
+**¿Puedo mostrar la hoja al cliente ANTES de la visita?**
+Sí, y es muy recomendable. Usa los botones "Vista Previa" o "PDF" para generar una versión preliminar y compartirla con el cliente.
+
+## Recursos adicionales
+
+- [Primeros pasos con Vesta](/academia?article=getting-started)
+- [Cómo programar citas en el calendario](/academia?article=calendar-guide)
+- [¿Cómo reportar un error?](/academia?article=how-to-report-errors)
+
+---
+
+**¿Necesitas ayuda?** Contacta con nuestro equipo de soporte en soporte@vesta.es o mediante el chat en vivo.`,
+    category: "Guía",
+    icon: ClipboardCheck,
+    tags: ["visitas", "registro", "documentación", "firmas", "PDF", "clientes"],
+    lastUpdated: new Date(2025, 10, 10),
     readTimeMinutes: 8,
   },
 ];

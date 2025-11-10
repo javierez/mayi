@@ -8,6 +8,7 @@ import {
   SheetTitle,
 } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
+import Link from "next/link";
 
 interface ChangelogSheetProps {
   entry: ChangelogEntry | null;
@@ -92,16 +93,25 @@ export function ChangelogSheet({
 
           {/* Footer Button */}
           <div className="px-8 py-6 border-t border-gray-100">
-            <Button
-              variant="ghost"
-              className="w-full text-gray-600 hover:text-gray-900"
-              onClick={() => {
-                // Mock button - no action for now
-                console.log("Report error clicked");
-              }}
-            >
-              ¿Cómo reportar un error?
-            </Button>
+            {entry.id === "10" ? (
+              <Link href="/academia?article=visit-workflow-guide" className="block">
+                <Button
+                  variant="ghost"
+                  className="w-full text-gray-600 hover:text-gray-900"
+                >
+                  Guía completa del sistema de registro de visitas
+                </Button>
+              </Link>
+            ) : (
+              <Link href="/academia?article=how-to-report-errors" className="block">
+                <Button
+                  variant="ghost"
+                  className="w-full text-gray-600 hover:text-gray-900"
+                >
+                  ¿Cómo reportar un error?
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </SheetContent>
