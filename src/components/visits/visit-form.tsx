@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
+import { Input } from "~/components/ui/input";
 import { SignaturePad } from "./signature-pad";
 import { VisitBreadcrumb } from "./visit-breadcrumb";
 import { ShareVisitPdfModal } from "./share-visit-pdf-modal";
@@ -25,6 +26,7 @@ export function VisitForm({ appointment }: VisitFormProps) {
   const [formData, setFormData] = useState<VisitFormData>({
     appointmentId: appointment.appointmentId,
     notes: appointment.notes ?? "",
+    offer: appointment.offer ?? undefined,
   });
   const [agentSignature, setAgentSignature] = useState<string | null>(null);
   const [visitorSignature, setVisitorSignature] = useState<string | null>(null);
@@ -171,11 +173,34 @@ export function VisitForm({ appointment }: VisitFormProps) {
       // Get the PDF blob
       const pdfBlob = await response.blob();
 
+      // Generate descriptive filename
+      const sanitizeFilename = (text: string) =>
+        text
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-zA-Z0-9\s-]/g, "")
+          .replace(/\s+/g, "-")
+          .replace(/-+/g, "-")
+          .trim();
+
+      const ref = appointment.propertyReferenceNumber
+        ? sanitizeFilename(appointment.propertyReferenceNumber)
+        : "SIN-REF";
+      const firstName = sanitizeFilename(
+        appointment.contactFirstName ?? "Cliente",
+      );
+      const lastName = sanitizeFilename(appointment.contactLastName ?? "");
+
+      // Format date as YYYY-MM-DD
+      const dateStr = appointment.datetimeStart.toISOString().split("T")[0];
+
+      const filename = `visita-${dateStr}-${ref}-${firstName}-${lastName}.pdf`;
+
       // Create download link
       const pdfUrl = URL.createObjectURL(pdfBlob);
       const link = document.createElement("a");
       link.href = pdfUrl;
-      link.download = `visita-${appointment.appointmentId}-${Date.now()}.pdf`;
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -243,16 +268,6 @@ export function VisitForm({ appointment }: VisitFormProps) {
     }
   };
 
-  const formatDateTime = (date: Date) => {
-    return new Intl.DateTimeFormat("es-ES", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
@@ -271,56 +286,81 @@ export function VisitForm({ appointment }: VisitFormProps) {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6 pb-8">
+        <form onSubmit={handleSubmit} className="space-y-4 pb-8">
           {/* Visit Details */}
-          <div className="space-y-6 rounded-lg border bg-white p-4 sm:p-6">
-            <h2 className="text-lg font-semibold text-gray-900">
+          <div className="space-y-4 rounded-lg border bg-white p-4 sm:p-5">
+            <h2 className="text-base font-semibold text-gray-900">
               Detalles de la Visita
             </h2>
 
-            <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
+            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-900">
+                <label className="text-xs font-medium text-gray-900">
                   Contacto
                 </label>
-                <p className="mt-1 rounded-md bg-gray-50 p-3 text-gray-700">
+                <p className="mt-0.5 rounded-md bg-gray-50 p-2 text-sm text-gray-700">
                   {appointment.contactFirstName} {appointment.contactLastName}
                 </p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-900">
+                <label className="text-xs font-medium text-gray-900">
                   DNI / NIF
                 </label>
-                <p className="mt-1 rounded-md bg-gray-50 p-3 text-gray-700">
+                <p className="mt-0.5 rounded-md bg-gray-50 p-2 text-sm text-gray-700">
                   {appointment.contactNif ?? "No especificado"}
                 </p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-900">
+                <label className="text-xs font-medium text-gray-900">
+                  Teléfono
+                </label>
+                <p className="mt-0.5 rounded-md bg-gray-50 p-2 text-sm text-gray-700">
+                  {appointment.contactPhone ?? "No especificado"}
+                </p>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-900">
                   Agente
                 </label>
-                <p className="mt-1 rounded-md bg-gray-50 p-3 text-gray-700">
+                <p className="mt-0.5 rounded-md bg-gray-50 p-2 text-sm text-gray-700">
                   {appointment.agentName ??
                     `${appointment.agentFirstName} ${appointment.agentLastName}`}
                 </p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-900">
-                  Fecha y Hora
+                <label className="text-xs font-medium text-gray-900">
+                  Fecha
                 </label>
-                <p className="mt-1 rounded-md bg-gray-50 p-3 text-gray-700">
-                  {formatDateTime(appointment.datetimeStart)}
+                <p className="mt-0.5 rounded-md bg-gray-50 p-2 text-sm text-gray-700">
+                  {new Intl.DateTimeFormat("es-ES", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  }).format(appointment.datetimeStart)}
+                </p>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-900">
+                  Hora
+                </label>
+                <p className="mt-0.5 rounded-md bg-gray-50 p-2 text-sm text-gray-700">
+                  {new Intl.DateTimeFormat("es-ES", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }).format(appointment.datetimeStart)}
                 </p>
               </div>
 
               <div className="sm:col-span-2">
-                <label className="text-sm font-medium text-gray-900">
+                <label className="text-xs font-medium text-gray-900">
                   Propiedad
                 </label>
-                <p className="mt-1 rounded-md bg-gray-50 p-3 text-gray-700">
+                <p className="mt-0.5 rounded-md bg-gray-50 p-2 text-sm text-gray-700">
                   {appointment.propertyStreet ?? "Propiedad no especificada"}
                   {appointment.propertyAddressDetails &&
                     ` - ${appointment.propertyAddressDetails}`}
@@ -329,18 +369,18 @@ export function VisitForm({ appointment }: VisitFormProps) {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-900">
+              <label className="text-xs font-medium text-gray-900">
                 Notas de la Visita
               </label>
-              <div className="relative mt-1">
+              <div className="relative mt-0.5">
                 <Textarea
                   value={formData.notes ?? ""}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, notes: e.target.value }))
                   }
                   placeholder="Observaciones, comentarios del cliente, detalles relevantes..."
-                  className="pr-10"
-                  rows={4}
+                  className="pr-10 text-sm"
+                  rows={3}
                 />
                 <PushToTalkWhisperButton
                   onTranscript={(text) => {
@@ -356,15 +396,36 @@ export function VisitForm({ appointment }: VisitFormProps) {
                 />
               </div>
             </div>
+
+            <div>
+              <label className="text-xs font-medium text-gray-900">
+                Oferta (€)
+              </label>
+              <Input
+                type="number"
+                value={formData.offer ?? ""}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFormData((prev) => ({
+                    ...prev,
+                    offer: value ? parseInt(value, 10) : undefined,
+                  }));
+                }}
+                placeholder="Cantidad ofertada en euros"
+                className="mt-0.5 text-sm"
+                min="0"
+                step="1"
+              />
+            </div>
           </div>
 
           {/* Condiciones */}
-          <div className="space-y-4 rounded-lg border bg-white p-4 sm:p-6">
-            <h2 className="text-lg font-semibold text-gray-900">
+          <div className="space-y-3 rounded-lg border bg-white p-4 sm:p-5">
+            <h2 className="text-base font-semibold text-gray-900">
               Control de Visitas
             </h2>
 
-            <div className="space-y-4 text-sm text-gray-700">
+            <div className="space-y-3 text-sm text-gray-700">
               <p className="italic leading-relaxed">
                 El inmueble arriba indicado ha sido visitado por el cliente en el
                 día de hoy en compañía de{" "}
@@ -376,9 +437,9 @@ export function VisitForm({ appointment }: VisitFormProps) {
               </p>
             </div>
 
-            <div className="mt-6 rounded-md bg-amber-50 p-4">
-              <p className="text-sm font-semibold text-amber-900">NOTA:</p>
-              <p className="mt-2 text-sm leading-relaxed text-amber-800">
+            <div className="mt-4 rounded-md bg-amber-50 p-3">
+              <p className="text-xs font-semibold text-amber-900">NOTA:</p>
+              <p className="mt-1 text-xs leading-relaxed text-amber-800">
                 Con la firma de este documento ambas partes reconocen la
                 mediación de la Agencia de la Propiedad Inmobiliaria y
                 subsistirá el derecho a sus honorarios, aunque el contrato de
@@ -389,12 +450,12 @@ export function VisitForm({ appointment }: VisitFormProps) {
           </div>
 
           {/* Protección de Datos */}
-          <div className="space-y-4 rounded-lg border bg-white p-4 sm:p-6">
-            <h2 className="text-lg font-semibold text-gray-900">
+          <div className="space-y-3 rounded-lg border bg-white p-4 sm:p-5">
+            <h2 className="text-base font-semibold text-gray-900">
               Protección de Datos
             </h2>
 
-            <div className="space-y-4 text-xs leading-relaxed text-gray-700 sm:text-sm">
+            <div className="space-y-3 text-xs leading-relaxed text-gray-700">
               <p>
                 De conformidad con lo establecido en el REGLAMENTO (UE) 2016/679
                 de protección de datos de carácter personal, le informamos que
@@ -410,17 +471,17 @@ export function VisitForm({ appointment }: VisitFormProps) {
                 supresión cuando los datos no sean necesarios.
               </p>
 
-              <div className="space-y-2 pt-2">
-                <p className="text-sm text-gray-800">
+              <div className="space-y-1.5 pt-1">
+                <p className="text-xs text-gray-800">
                   Así mismo solicito su autorización para ofrecerle productos y
                   servicios relacionados con los solicitados y fidelizarle como
                   cliente:
                 </p>
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => setMarketingConsent(true)}
-                    className={`rounded-md border px-4 py-2 text-sm transition-colors ${
+                    className={`rounded-md border px-3 py-1.5 text-xs transition-colors ${
                       marketingConsent
                         ? "border-primary bg-primary text-white"
                         : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
@@ -431,7 +492,7 @@ export function VisitForm({ appointment }: VisitFormProps) {
                   <button
                     type="button"
                     onClick={() => setMarketingConsent(false)}
-                    className={`rounded-md border px-4 py-2 text-sm transition-colors ${
+                    className={`rounded-md border px-3 py-1.5 text-xs transition-colors ${
                       !marketingConsent
                         ? "border-gray-400 bg-gray-100 text-gray-900"
                         : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
@@ -445,10 +506,10 @@ export function VisitForm({ appointment }: VisitFormProps) {
           </div>
 
           {/* Signatures */}
-          <div className="space-y-6 rounded-lg border bg-white p-4 sm:space-y-8 sm:p-6">
-            <h2 className="text-lg font-semibold text-gray-900">Firmas</h2>
+          <div className="space-y-4 rounded-lg border bg-white p-4 sm:p-5">
+            <h2 className="text-base font-semibold text-gray-900">Firmas</h2>
 
-            <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
+            <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
               <SignaturePad
                 label="Firma del Agente"
                 onSignatureChange={setAgentSignature}
@@ -462,14 +523,14 @@ export function VisitForm({ appointment }: VisitFormProps) {
               />
             </div>
 
-            <p className="text-center text-xs text-gray-600 sm:text-sm">
+            <p className="text-center text-xs text-gray-600">
               Ambas partes deben firmar en las áreas designadas para confirmar
               la visita.
             </p>
           </div>
 
           {/* Submit and Actions */}
-          <div className="sticky bottom-4 flex flex-col gap-3 rounded-lg border bg-white p-4 shadow-lg sm:flex-row sm:flex-wrap sm:gap-4">
+          <div className="sticky bottom-4 flex flex-col gap-2 rounded-lg border bg-white p-3 shadow-lg sm:flex-row sm:flex-wrap sm:gap-3">
             {/* Preview, PDF, and Share buttons - shown first on mobile, last on desktop */}
             <div className="flex flex-col gap-3 sm:order-2 sm:ml-auto sm:flex-row sm:gap-2">
               <Button

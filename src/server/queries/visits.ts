@@ -7,6 +7,7 @@ import {
   properties,
   users,
   documents,
+  listingContacts,
 } from "~/server/db/schema";
 import { updateAppointment } from "~/server/queries/appointment";
 import type {
@@ -41,18 +42,25 @@ export async function getAppointmentWithDetails(
       contactEmail: contacts.email,
       propertyStreet: properties.street,
       propertyAddressDetails: properties.addressDetails,
+      propertyReferenceNumber: properties.referenceNumber,
       agentName: users.name,
       agentFirstName: users.firstName,
       agentLastName: users.lastName,
       // Debug fields to see what we're getting
       listingPropertyId: listings.propertyId,
       propertyId: properties.propertyId,
+      // Offer from listing_contacts
+      offer: listingContacts.offer,
     })
     .from(appointments)
     .leftJoin(contacts, eq(appointments.contactId, contacts.contactId))
     .leftJoin(listings, eq(appointments.listingId, listings.listingId))
     .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
     .leftJoin(users, eq(appointments.userId, users.id))
+    .leftJoin(
+      listingContacts,
+      eq(appointments.listingContactId, listingContacts.listingContactId),
+    )
     .where(
       and(
         eq(appointments.appointmentId, appointmentId),
@@ -70,6 +78,7 @@ export async function getAppointmentWithDetails(
     propertyStreet: appointment?.propertyStreet,
     contactFirstName: appointment?.contactFirstName,
     contactLastName: appointment?.contactLastName,
+    offer: appointment?.offer,
     fullAppointment: appointment,
   });
 

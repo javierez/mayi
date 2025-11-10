@@ -42,6 +42,11 @@ const SignInPage: FC = () => {
     try {
       console.log("🔐 [Login] Starting sign in for:", email);
 
+      // DEBUG: Check password before attempting signin (using Better Auth crypto)
+      const { verifyBetterAuthPassword } = await import("~/server/actions/verify-better-auth-password");
+      const debugResult = await verifyBetterAuthPassword(email, password);
+      console.log("🔍 [Login] Better Auth debug check result:", debugResult);
+
       // First, attempt to sign in with email/password
       // Don't pass callbackURL to prevent automatic redirect
       const result = await signIn.email({

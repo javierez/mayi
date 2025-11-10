@@ -309,8 +309,8 @@ export default function AppointmentForm({
               contactId: result.id,
               firstName: firstName ?? "",
               lastName: lastNameParts.join(" ") || "",
-              email: null,
-              phone: null,
+              email: result.email,
+              phone: result.phone,
             };
           });
         }

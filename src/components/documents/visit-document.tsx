@@ -156,60 +156,80 @@ export function VisitDocument({ data }: Props) {
 
         /* Add visual margin at page breaks for multi-page documents */
         @page {
-          margin-top: 5mm;
-          margin-bottom: 15mm;
-          margin-left: 0mm;
-          margin-right: 0mm;
+          margin: 0;
         }
       `}</style>
-    
+
       <div className="bg-white font-sans text-black print:m-0 print:h-[297mm] print:w-[210mm] print:p-0 print:text-[11pt] print:leading-[1.4]">
-        <div className="visit-document mx-auto min-h-[1123px] max-w-[794px] px-10 py-8 font-sans text-[11pt] leading-[1.4] print:mx-0 print:min-h-0 print:max-w-none print:px-[10mm] print:pb-[10mm] print:pt-[2mm]">
+        <div className="visit-document mx-auto min-h-[1123px] max-w-[794px] px-10 py-8 font-sans text-[11pt] leading-[1.4] print:mx-0 print:min-h-0 print:max-w-none print:px-10 print:py-6">
         {/* Header Section */}
-        <div className="mb-6 text-center print:mb-2">
-          {/* Logo Section */}
-          {brandLogo && (
-            <div className="mb-6 flex items-center justify-center p-2 print:mb-2 print:p-0">
-              <div className="flex-shrink-0">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={brandLogo}
-                  alt="Logo de la agencia"
-                  className="h-20 w-auto"
-                  style={{ width: "auto", height: "80px" }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Agency Title */}
-          <div className="mb-4 border-b border-gray-200 pb-3 print:mb-3 print:pb-2">
-            <div className="mb-3 text-[16pt] font-bold tracking-wide text-gray-800">
-              AGENCIA DE LA PROPIEDAD INMOBILIARIA
-            </div>
-            <div className="mb-2 text-[13pt] font-semibold text-gray-700">
-              {agentName}
-            </div>
-            {collegiateNumber && accountType !== "company" && (
-              <div className="mb-1 text-[11pt] text-gray-600">
-                Nº Colegiado: {collegiateNumber}
+        <div className="mb-6 print:mb-2">
+          {/* Logo and Services Section */}
+          <div className="mb-4 flex items-center justify-between gap-8 pb-3 print:mb-3 print:pb-2">
+            {/* Logo */}
+            {brandLogo && (
+              <div className="flex flex-shrink-0 items-center justify-center p-2 print:p-0">
+                <div className="flex-shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={brandLogo}
+                    alt="Logo de la agencia"
+                    className="h-20 w-auto"
+                    style={{ width: "auto", height: "80px" }}
+                  />
+                </div>
               </div>
             )}
-            {taxId && (
-              <div className="text-[11pt] text-gray-600">
-                {accountType === "company" ? "C.I.F" : "N.I.F"}: {taxId}
-              </div>
-            )}
-          </div>
 
-          {/* Services Section */}
-          <div className="mb-4 print:mb-3">
-            <div className="space-y-1 text-[10pt] leading-relaxed text-gray-600">
-              <div>Compra • Venta • Alquiler • Permutas</div>
-              <div>
-                Pisos • Chalets • Garajes • Locales • Terrenos y solares
+            {/* Services */}
+            <div className="flex-1 space-y-0.5 text-center text-[8pt] leading-tight text-gray-600">
+              <div className="flex flex-wrap justify-center gap-x-1.5">
+                <span>Compra</span>
+                <span className="text-gray-400">•</span>
+                <span>Venta</span>
+                <span className="text-gray-400">•</span>
+                <span>Alquiler</span>
+                <span className="text-gray-400">•</span>
+                <span>Permutas</span>
+              </div>
+              <div className="flex flex-wrap justify-center gap-x-1.5">
+                <span>Pisos</span>
+                <span className="text-gray-400">•</span>
+                <span>Chalets</span>
+                <span className="text-gray-400">•</span>
+                <span>Garajes</span>
+                <span className="text-gray-400">•</span>
+                <span>Locales</span>
+                <span className="text-gray-400">•</span>
+                <span>Terrenos y solares</span>
               </div>
               <div>Valoraciones y tasaciones</div>
+              {(website ?? taxId ?? (collegiateNumber && accountType !== "company")) && (
+                <div className="mt-1 flex flex-col items-center pt-1">
+                  <div className="w-2/3 border-t border-gray-300"></div>
+                  <div className="mt-1 flex flex-wrap justify-center gap-x-1.5 text-[7pt]">
+                    {website && (
+                      <span className="font-medium text-blue-600">{website}</span>
+                    )}
+                    {website && taxId && (
+                      <span className="text-gray-400">•</span>
+                    )}
+                    {taxId && (
+                      <span className="text-gray-600">
+                        {accountType === "company" ? "C.I.F" : "N.I.F"}: {taxId}
+                      </span>
+                    )}
+                    {(website ?? taxId) && collegiateNumber && accountType !== "company" && (
+                      <span className="text-gray-400">•</span>
+                    )}
+                    {collegiateNumber && accountType !== "company" && (
+                      <span className="text-gray-600">
+                        Nº Colegiado: {collegiateNumber}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -229,80 +249,88 @@ export function VisitDocument({ data }: Props) {
               </div>
             </div>
           )}
-
-          {/* Website */}
-          {website && (
-            <div className="text-[11pt] font-medium text-blue-700">{website}</div>
-          )}
         </div>
 
-        <div className="my-4 border-t-2 border-black print:my-3"></div>
+        {/* Spacer before title */}
+        <div className="h-8 print:h-6"></div>
 
         {/* Document Title */}
-        <div className="my-6 border-y-2 border-gray-300 py-2 text-center print:my-4 print:py-1">
-          <div className="mb-2 text-[16pt] font-bold">CONTROL DE VISITAS</div>
-          <div className="text-[12pt] font-medium">
-            Registro de Visita a Propiedad
-          </div>
+        <div className="mb-4 text-center print:mb-3">
+          <div className="text-[16pt] font-bold">CONTROL DE VISITAS</div>
         </div>
-
-        <div className="my-4 border-t-2 border-black print:my-3"></div>
 
         {/* Visit Details Section */}
-        <div className="property-details page-section my-6">
-          <div className="section-header mb-4 border-b border-gray-300 pb-2 text-[13pt] font-bold">
-            DATOS DE LA VISITA:
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex">
-              <span className="min-w-[140px] font-bold">Visitante:</span>
-              <span className="ml-2 flex-1 border-b border-black pb-0.5">
-                {data.appointment.contactFirstName}{" "}
-                {data.appointment.contactLastName}
-              </span>
-            </div>
-
-            {data.appointment.contactNif && (
-              <div className="flex">
-                <span className="min-w-[140px] font-bold">D.N.I. / N.I.F.:</span>
-                <span className="ml-2 flex-1 border-b border-black pb-0.5">
-                  {data.appointment.contactNif}
-                </span>
+        <div className="property-details page-section my-4">
+          <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+              {/* Visitante */}
+              <div>
+                <div className="text-[9pt] font-medium text-gray-600">Visitante</div>
+                <div className="mt-0.5 text-[11pt] font-medium">
+                  {data.appointment.contactFirstName}{" "}
+                  {data.appointment.contactLastName}
+                </div>
               </div>
-            )}
 
-            <div className="flex">
-              <span className="min-w-[140px] font-bold">Agente:</span>
-              <span className="ml-2 flex-1 border-b border-black pb-0.5">
-                {data.appointment.agentName ??
-                  `${data.appointment.agentFirstName ?? ""} ${data.appointment.agentLastName ?? ""}`.trim()}
-              </span>
-            </div>
+              {/* NIF */}
+              <div>
+                <div className="text-[9pt] font-medium text-gray-600">NIF</div>
+                <div className="mt-0.5 text-[11pt] font-medium">
+                  {data.appointment.contactNif ?? "—"}
+                </div>
+              </div>
 
-            <div className="flex">
-              <span className="min-w-[140px] font-bold">Propiedad:</span>
-              <span className="ml-2 flex-1 border-b border-black pb-0.5">
-                {data.appointment.propertyStreet ?? "No especificada"}
-                {data.appointment.propertyAddressDetails &&
-                  ` - ${data.appointment.propertyAddressDetails}`}
-              </span>
-            </div>
+              {/* Teléfono */}
+              <div>
+                <div className="text-[9pt] font-medium text-gray-600">Teléfono</div>
+                <div className="mt-0.5 text-[11pt] font-medium">
+                  {data.appointment.contactPhone ?? "—"}
+                </div>
+              </div>
 
-            <div className="flex">
-              <span className="min-w-[140px] font-bold">Fecha y Hora:</span>
-              <span className="ml-2 flex-1 border-b border-black pb-0.5">
-                {formatDateTime(data.appointment.datetimeStart)}
-              </span>
+              {/* Oferta */}
+              <div>
+                <div className="text-[9pt] font-medium text-gray-600">Oferta</div>
+                <div className="mt-0.5 text-[11pt] font-medium">
+                  {data.appointment.offer
+                    ? `${new Intl.NumberFormat("es-ES").format(data.appointment.offer)} €`
+                    : "—"}
+                </div>
+              </div>
+
+              {/* Agente */}
+              <div>
+                <div className="text-[9pt] font-medium text-gray-600">Agente</div>
+                <div className="mt-0.5 text-[11pt] font-medium">
+                  {data.appointment.agentName ??
+                    `${data.appointment.agentFirstName ?? ""} ${data.appointment.agentLastName ?? ""}`.trim()}
+                </div>
+              </div>
+
+              {/* Fecha y Hora */}
+              <div>
+                <div className="text-[9pt] font-medium text-gray-600">Fecha y Hora</div>
+                <div className="mt-0.5 text-[11pt] font-medium">
+                  {formatDateTime(data.appointment.datetimeStart)}
+                </div>
+              </div>
+
+              {/* Propiedad - Full width */}
+              <div className="col-span-2 border-t border-gray-300 pt-2 mt-1">
+                <div className="text-[9pt] font-medium text-gray-600">Propiedad</div>
+                <div className="mt-0.5 text-[11pt] font-medium">
+                  {data.appointment.propertyStreet ?? "No especificada"}
+                  {data.appointment.propertyAddressDetails &&
+                    ` - ${data.appointment.propertyAddressDetails}`}
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="my-8 border-t border-dashed border-black"></div>
-
         {/* Visit Description */}
-        <div className="my-6 text-justify">
-          <p className="mb-4 leading-relaxed">
+        <div className="mb-4 mt-8 text-justify print:mb-4 print:mt-6">
+          <p className="leading-relaxed">
             El inmueble arriba indicado ha sido visitado por el cliente en el
             día de hoy en compañía de{" "}
             <strong>
@@ -315,24 +343,114 @@ export function VisitDocument({ data }: Props) {
 
         {/* Notes Section */}
         {data.appointment.notes && (
-          <div className="notes-section my-6">
-            <div className="section-header mb-3 border-b border-gray-300 pb-2 text-[13pt] font-bold">
+          <div className="notes-section my-4">
+            <div className="section-header mb-2 border-b border-gray-300 pb-1 text-[11pt] font-bold">
               OBSERVACIONES:
             </div>
-            <div className="min-h-[80px] border-b border-black pb-2 text-justify leading-relaxed">
+            <div className="min-h-[60px] border-b border-black pb-2 text-justify leading-relaxed">
               {data.appointment.notes}
             </div>
           </div>
         )}
 
-        {/* GDPR Consent and Signatures - Keep together */}
-        <div className="gdpr-and-signatures-group">
-          {/* GDPR Consent Section */}
-          <div className="gdpr-section page-section my-6">
-          <div className="mb-3 border-b border-gray-300 pb-2 text-[13pt] font-bold">
-            PROTECCIÓN DE DATOS:
+        {/* Signature Section */}
+        <div className="signatures-section mt-4 mb-2 print:mt-3 print:mb-2">
+          <div className="mb-6 text-justify leading-relaxed print:mb-5">
+            Y para que conste y surta efecto, se firma en{" "}
+            <strong>{data.location}</strong>, a <strong>{data.date}</strong>
           </div>
-          <div className="space-y-3 text-justify text-xs leading-relaxed text-gray-700 sm:text-sm">
+
+          <div className="mt-4 grid grid-cols-2 gap-8 print:mt-3 print:gap-6">
+            {/* Agent Signature */}
+            <div className="flex flex-col">
+              <div className="relative rounded-lg border border-gray-200 bg-gray-50 p-4 print:p-3">
+                {/* Timestamp - top right */}
+                <div className="absolute right-2 top-2 text-[6pt] text-gray-400 print:right-1 print:top-1">
+                  {new Intl.DateTimeFormat("es-ES", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }).format(new Date())}
+                </div>
+                {data.signatures.agentSignatureUrl ? (
+                  <div className="mb-4 flex h-28 items-center justify-center print:mb-4 print:h-24">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={data.signatures.agentSignatureUrl}
+                      alt="Firma del Agente"
+                      className="max-h-28 max-w-full object-contain print:max-h-24"
+                      style={{ width: "auto", height: "auto" }}
+                    />
+                  </div>
+                ) : (
+                  <div className="mb-4 h-28 border-b border-gray-400 print:mb-4 print:h-24"></div>
+                )}
+                <div className="-mt-[6px] print:mt-[-4px]">
+                  <div className="text-[10pt] font-semibold text-gray-900">
+                    {agentName}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Visitor Signature */}
+            <div className="flex flex-col">
+              <div className="relative rounded-lg border border-gray-200 bg-gray-50 p-4 print:p-3">
+                {/* Timestamp - top right */}
+                <div className="absolute right-2 top-2 text-[6pt] text-gray-400 print:right-1 print:top-1">
+                  {new Intl.DateTimeFormat("es-ES", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }).format(new Date())}
+                </div>
+                {data.signatures.visitorSignatureUrl ? (
+                  <div className="mb-4 flex h-28 items-center justify-center print:mb-4 print:h-24">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={data.signatures.visitorSignatureUrl}
+                      alt="Firma del Visitante"
+                      className="max-h-28 max-w-full object-contain print:max-h-24"
+                      style={{ width: "auto", height: "auto" }}
+                    />
+                  </div>
+                ) : (
+                  <div className="mb-4 h-28 border-b border-gray-400 print:mb-4 print:h-24"></div>
+                )}
+                <div className="-mt-[6px] print:mt-[-4px]">
+                  <div className="text-[10pt] font-semibold text-gray-900">
+                    {data.appointment.contactFirstName}{" "}
+                    {data.appointment.contactLastName}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Spacer - ensures proper spacing between signatures and disclaimer */}
+        <div className="h-6 print:h-6"></div>
+
+        {/* Disclaimer */}
+        <div className="mt-0 mb-3 print:mt-0 print:mb-2">
+          <p className="text-[8pt] leading-snug text-gray-600">
+            Con la firma de este documento ambas partes reconocen la mediación
+            de la Agencia de la Propiedad Inmobiliaria y subsistirá el derecho
+            a sus honorarios, aunque el contrato de Compra-Venta o Alquiler sea
+            perfeccionado por las mismas, sin intervención de Agencia.
+          </p>
+        </div>
+
+        {/* GDPR Consent Section - Moved to end */}
+        <div className="gdpr-section page-section mt-3 mb-3 print:mt-2 print:mb-2">
+          <div className="mb-2 text-[9pt] font-medium italic text-gray-600">
+            Protección de Datos
+          </div>
+          <div className="space-y-2 text-justify text-[8pt] leading-snug text-gray-700">
             <p>
               De conformidad con lo establecido en el REGLAMENTO (UE) 2016/679
               de protección de datos de carácter personal, le informamos que
@@ -348,89 +466,16 @@ export function VisitDocument({ data }: Props) {
               supresión cuando los datos no sean necesarios.
             </p>
 
-            <div className="space-y-2 pt-2">
-              <p className="text-sm text-gray-800">
-                Así mismo solicito su autorización para ofrecerle productos y
-                servicios relacionados con los solicitados y fidelizarle como
-                cliente:
-              </p>
-              <div className="flex items-center gap-4">
-                <span className="font-bold">
-                  {data.marketingConsent ? "[SÍ]" : "[NO]"}
-                </span>
-              </div>
-            </div>
+            <p className="pt-1 text-[8pt] text-gray-800">
+              Así mismo solicito su autorización para ofrecerle productos y
+              servicios relacionados con los solicitados y fidelizarle como
+              cliente:{" "}
+              <span className="font-bold">
+                {data.marketingConsent ? "[SÍ]" : "[NO]"}
+              </span>
+            </p>
           </div>
         </div>
-
-        {/* Important Note */}
-        <div className="my-6 rounded-md bg-amber-50 p-4 print:bg-amber-50">
-          <p className="text-sm font-semibold text-amber-900">NOTA:</p>
-          <p className="mt-2 text-sm leading-relaxed text-amber-800">
-            Con la firma de este documento ambas partes reconocen la mediación
-            de la Agencia de la Propiedad Inmobiliaria y subsistirá el derecho
-            a sus honorarios, aunque el contrato de Compra-Venta o Alquiler sea
-            perfeccionado por las mismas, sin intervención de Agencia.
-          </p>
-        </div>
-
-        {/* Signature Section */}
-        <div className="signatures-section mt-16 border-t border-gray-300 pt-6">
-          <div className="mb-12 text-center font-medium">
-            Y para que conste y surta efecto, se firma en{" "}
-            <strong>{data.location}</strong>, a <strong>{data.date}</strong>
-          </div>
-
-          <div className="mt-16 flex justify-between px-8">
-            {/* Agent Signature */}
-            <div className="w-56 text-center">
-              <div className="mb-4 text-[12pt] font-bold">
-                {agentName}
-                <br />
-                <span className="text-sm font-normal">(Agente)</span>
-              </div>
-              {data.signatures.agentSignatureUrl ? (
-                <div className="mb-2 flex h-24 items-center justify-center overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={data.signatures.agentSignatureUrl}
-                    alt="Firma del Agente"
-                    className="max-h-24 max-w-full object-contain"
-                    style={{ width: "auto", height: "auto" }}
-                  />
-                </div>
-              ) : (
-                <div className="mb-2 h-24 border-b-2 border-black"></div>
-              )}
-              <div className="text-sm text-gray-600">Firma</div>
-            </div>
-
-            {/* Visitor Signature */}
-            <div className="w-56 text-center">
-              <div className="mb-4 text-[12pt] font-bold">
-                {data.appointment.contactFirstName}{" "}
-                {data.appointment.contactLastName}
-                <br />
-                <span className="text-sm font-normal">(Visitante)</span>
-              </div>
-              {data.signatures.visitorSignatureUrl ? (
-                <div className="mb-2 flex h-24 items-center justify-center overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={data.signatures.visitorSignatureUrl}
-                    alt="Firma del Visitante"
-                    className="max-h-24 max-w-full object-contain"
-                    style={{ width: "auto", height: "auto" }}
-                  />
-                </div>
-              ) : (
-                <div className="mb-2 h-24 border-b-2 border-black"></div>
-              )}
-              <div className="text-sm text-gray-600">Firma</div>
-            </div>
-          </div>
-        </div>
-        </div> {/* End gdpr-and-signatures-group */}
         </div>
       </div>
     </>

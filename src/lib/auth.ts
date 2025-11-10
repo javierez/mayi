@@ -16,7 +16,6 @@ import {
 import { eq, and } from "drizzle-orm";
 import { ROLE_PERMISSIONS } from "~/lib/permissions";
 import type { Permission } from "~/lib/permissions";
-import { sendEmail, generatePasswordResetEmail } from "~/lib/email";
 
 /**
  * Add BigInt serialization support for JSON.stringify
@@ -187,26 +186,28 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: false, // Start with false for development
     autoSignIn: true,
-    sendResetPassword: async ({ user, url, token: _token }, _request) => {
-      try {
-        const { html, text } = generatePasswordResetEmail(url, user.email);
-
-        await sendEmail({
-          to: user.email,
-          subject: "Restablecer tu contraseña - Vesta CRM",
-          html,
-          text,
-        });
-
-        console.log(`🔐 Password reset email sent to ${user.email}`);
-      } catch (error) {
-        console.error("❌ Failed to send password reset email:", error);
-        throw error;
-      }
+    // Password reset is now handled via SMS (see src/server/actions/password-reset.ts)
+    async sendVerificationEmail() {
+      // Disable email verification for now
     },
-    onPasswordReset: async ({ user }, _request) => {
-      console.log(`✅ Password successfully reset for user: ${user.email}`);
-    },
+  },
+
+  // Add hooks for logging
+  async onRequest(request) {
+    const pathname = new URL(request.url).pathname;
+    if (pathname.includes("/sign-in/email")) {
+      console.log("🔐 [Auth] Sign-in request received");
+    }
+  },
+
+  async onResponse(response, request) {
+    const pathname = new URL(request.url).pathname;
+    if (pathname.includes("/sign-in/email")) {
+      console.log("🔐 [Auth] Sign-in response:", {
+        status: response.status,
+        ok: response.ok,
+      });
+    }
   },
 
   // Social Providers Configuration (only enable if credentials are provided)

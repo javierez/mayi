@@ -112,6 +112,12 @@ export interface PropertyListing {
   carpentryType?: string;
   windowType?: string;
 
+  // Utilities and Installations
+  electricityType?: string;
+  electricityStatus?: string;
+  plumbingType?: string;
+  plumbingStatus?: string;
+
   // Views
   views?: boolean;
   mountainViews?: boolean;
@@ -276,6 +282,10 @@ export function convertDbListingToPropertyListing(
     shutterType: (dbListing.shutterType as string) ?? undefined,
     carpentryType: (dbListing.carpentryType as string) ?? undefined,
     windowType: (dbListing.windowType as string) ?? undefined,
+    electricityType: (dbListing.electricityType as string) ?? undefined,
+    electricityStatus: (dbListing.electricityStatus as string) ?? undefined,
+    plumbingType: (dbListing.plumbingType as string) ?? undefined,
+    plumbingStatus: (dbListing.plumbingStatus as string) ?? undefined,
     views: getBoolean(dbListing.views),
     mountainViews: getBoolean(dbListing.mountainViews),
     seaViews: getBoolean(dbListing.seaViews),

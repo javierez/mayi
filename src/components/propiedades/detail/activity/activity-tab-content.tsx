@@ -943,7 +943,6 @@ export function ActivityTabContent({
               {urgentVisits.length > 0 && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 px-1">
-                    <div className="h-2 w-2 rounded-full bg-rose-500" />
                     <h3 className="text-sm font-semibold uppercase tracking-wide text-rose-700">
                       Requieren Atención ({urgentVisits.length})
                     </h3>

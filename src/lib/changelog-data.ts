@@ -6,6 +6,7 @@ import {
   Brain,
   Home,
   Zap,
+  Smartphone,
   type LucideIcon,
 } from "lucide-react";
 
@@ -14,7 +15,7 @@ export interface ChangelogEntry {
   title: string;
   shortDescription: string;
   detailedDescription: string;
-  category: "Feature" | "Improvement" | "Fix" | "Integration";
+  category: "Feature" | "Improvement" | "Fix" | "Integration" | "Security";
   team?: string;
   icon: LucideIcon;
   date: Date;
@@ -160,6 +161,20 @@ export const changelogEntries: ChangelogEntry[] = [
     team: "Engineering Team",
     icon: Zap,
     date: new Date(2025, 10, 8), // November 2025, Week II
+    week: 2,
+    month: 10,
+    year: 2025,
+  },
+  {
+    id: "9",
+    title: "Doble Factor de Autenticación",
+    shortDescription: "Seguridad adicional con verificación por SMS para proteger tu cuenta",
+    detailedDescription:
+      "Hemos habilitado la autenticación de dos factores (2FA) mediante verificación por SMS usando Twilio. Añade una capa extra de seguridad a tu cuenta recibiendo códigos de verificación en tu teléfono móvil cada vez que inicies sesión. Protege tu cuenta y tus datos con este sistema de autenticación reforzada.",
+    category: "Security",
+    team: "Platform Features Team",
+    icon: Smartphone,
+    date: new Date(2025, 10, 9), // November 2025, Week II
     week: 2,
     month: 10,
     year: 2025,

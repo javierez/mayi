@@ -2,7 +2,7 @@
 
 import { type ChangelogEntry } from "~/lib/changelog-data";
 import { cn } from "~/lib/utils";
-import { Database } from "lucide-react";
+import { Database, ShieldCheck } from "lucide-react";
 
 interface ChangelogCardProps {
   entry: ChangelogEntry;
@@ -11,6 +11,7 @@ interface ChangelogCardProps {
 
 export function ChangelogCard({ entry, onClick }: ChangelogCardProps) {
   const isDatabaseMigration = entry.id === "8";
+  const isSecurity = entry.category === "Security";
 
   return (
     <div
@@ -30,6 +31,9 @@ export function ChangelogCard({ entry, onClick }: ChangelogCardProps) {
 
       {isDatabaseMigration && (
         <Database className="absolute bottom-2 right-2 h-3.5 w-3.5 text-gray-400 opacity-60" />
+      )}
+      {isSecurity && (
+        <ShieldCheck className="absolute bottom-2 right-2 h-3.5 w-3.5 text-gray-400 opacity-60" />
       )}
     </div>
   );

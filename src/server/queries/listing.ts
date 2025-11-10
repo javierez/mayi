@@ -1221,6 +1221,10 @@ export async function getListingDetails(listingId: number, accountId: number) {
         loadingArea: properties.loadingArea, // For Fotocasa FeatureId 204
         patio: properties.patio, // For Fotocasa FeatureId 263
         allowedUse: properties.allowedUse, // For Fotocasa FeatureId 21 (solar only)
+        electricityType: properties.electricityType,
+        electricityStatus: properties.electricityStatus,
+        plumbingType: properties.plumbingType,
+        plumbingStatus: properties.plumbingStatus,
         gym: properties.gym,
         sportsArea: properties.sportsArea,
         childrenArea: properties.childrenArea,

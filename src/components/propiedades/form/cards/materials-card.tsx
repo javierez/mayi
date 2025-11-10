@@ -32,6 +32,10 @@ interface MaterialsCardProps {
   shutterType: string;
   carpentryType: string;
   windowType: string;
+  electricityType: string;
+  electricityStatus: string;
+  plumbingType: string;
+  plumbingStatus: string;
   propertyType: string;
   showMaterials: boolean;
   saveState: SaveState;
@@ -42,6 +46,10 @@ interface MaterialsCardProps {
   setShutterType: (value: string) => void;
   setCarpentryType: (value: string) => void;
   setWindowType: (value: string) => void;
+  setElectricityType: (value: string) => void;
+  setElectricityStatus: (value: string) => void;
+  setPlumbingType: (value: string) => void;
+  setPlumbingStatus: (value: string) => void;
   setShowMaterials: (value: boolean) => void;
   getCardStyles: (moduleName: ModuleName) => string;
 }
@@ -51,6 +59,10 @@ export function MaterialsCard({
   shutterType,
   carpentryType,
   windowType,
+  electricityType,
+  electricityStatus,
+  plumbingType,
+  plumbingStatus,
   propertyType,
   showMaterials,
   saveState,
@@ -61,6 +73,10 @@ export function MaterialsCard({
   setShutterType,
   setCarpentryType,
   setWindowType,
+  setElectricityType,
+  setElectricityStatus,
+  setPlumbingType,
+  setPlumbingStatus,
   setShowMaterials,
   getCardStyles,
 }: MaterialsCardProps) {
@@ -128,98 +144,139 @@ export function MaterialsCard({
             </div>
           )}
           {propertyType !== "garaje" && propertyType !== "solar" && (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-3">
+            <>
+              <div className="space-y-4">
                 {/* Windows and Doors */}
                 <div className="space-y-2">
                   <h4 className="text-xs font-medium text-muted-foreground">
                     Ventanas y puertas
                   </h4>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="windowType" className="text-sm">
-                      Tipo de ventana
-                    </Label>
-                    <Select
-                      value={windowType || undefined}
-                      onValueChange={(value) => {
-                        setWindowType(value);
-                        onUpdateModule(true);
-                      }}
-                      disabled={!canEdit}
-                    >
-                      <SelectTrigger className="h-8 text-gray-500">
-                        <SelectValue placeholder="Seleccionar tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="aluminio">Aluminio</SelectItem>
-                        <SelectItem value="pvc">PVC</SelectItem>
-                        <SelectItem value="madera">Madera</SelectItem>
-                        <SelectItem value="climalit">Climalit</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="windowType" className="text-sm">
+                        Tipo de ventana
+                      </Label>
+                      <Select
+                        value={windowType || undefined}
+                        onValueChange={(value) => {
+                          setWindowType(value);
+                          onUpdateModule(true);
+                        }}
+                        disabled={!canEdit}
+                      >
+                        <SelectTrigger className="h-8 text-gray-500">
+                          <SelectValue placeholder="Seleccionar tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="aluminio">Aluminio</SelectItem>
+                          <SelectItem value="pvc">PVC</SelectItem>
+                          <SelectItem value="madera">Madera</SelectItem>
+                          <SelectItem value="climalit">Climalit</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="carpentryType" className="text-sm">
+                        Tipo de carpintería
+                      </Label>
+                      <Select
+                        value={carpentryType || undefined}
+                        onValueChange={(value) => {
+                          setCarpentryType(value);
+                          onUpdateModule(true);
+                        }}
+                        disabled={!canEdit}
+                      >
+                        <SelectTrigger className="h-8 text-gray-500">
+                          <SelectValue placeholder="Seleccionar tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="aluminio">Aluminio</SelectItem>
+                          <SelectItem value="pvc">PVC</SelectItem>
+                          <SelectItem value="madera">Madera</SelectItem>
+                          <SelectItem value="hierro">Hierro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="carpentryType" className="text-sm">
-                      Tipo de carpintería
-                    </Label>
-                    <Select
-                      value={carpentryType || undefined}
-                      onValueChange={(value) => {
-                        setCarpentryType(value);
-                        onUpdateModule(true);
-                      }}
-                      disabled={!canEdit}
-                    >
-                      <SelectTrigger className="h-8 text-gray-500">
-                        <SelectValue placeholder="Seleccionar tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="aluminio">Aluminio</SelectItem>
-                        <SelectItem value="pvc">PVC</SelectItem>
-                        <SelectItem value="madera">Madera</SelectItem>
-                        <SelectItem value="hierro">Hierro</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="shutterType" className="text-sm">
-                      Tipo de persiana
-                    </Label>
-                    <Select
-                      value={shutterType || undefined}
-                      onValueChange={(value) => {
-                        setShutterType(value);
-                        onUpdateModule(true);
-                      }}
-                      disabled={!canEdit}
-                    >
-                      <SelectTrigger className="h-8 text-gray-500">
-                        <SelectValue placeholder="Seleccionar tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="manual">Manual</SelectItem>
-                        <SelectItem value="electrico">Eléctrica</SelectItem>
-                        <SelectItem value="automatica">Automática</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="shutterType" className="text-sm">
+                        Tipo de persianas
+                      </Label>
+                      <Select
+                        value={shutterType || undefined}
+                        onValueChange={(value) => {
+                          setShutterType(value);
+                          onUpdateModule(true);
+                        }}
+                        disabled={!canEdit}
+                      >
+                        <SelectTrigger className="h-8 text-gray-500">
+                          <SelectValue placeholder="Seleccionar tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="manual">Manual</SelectItem>
+                          <SelectItem value="electrico">Eléctrica</SelectItem>
+                          <SelectItem value="automatica">Automática</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-3">
                 {/* Flooring */}
                 <div className="space-y-2">
                   <h4 className="text-xs font-medium text-muted-foreground">
                     Suelos
                   </h4>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="mainFloorType" className="text-sm">
+                        Tipo de suelo
+                      </Label>
+                      <Select
+                        value={mainFloorType || undefined}
+                        onValueChange={(value) => {
+                          setMainFloorType(value);
+                          onUpdateModule(true);
+                        }}
+                        disabled={!canEdit}
+                      >
+                        <SelectTrigger className="h-8 text-gray-500">
+                          <SelectValue placeholder="Seleccionar tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="parquet">Parquet</SelectItem>
+                          <SelectItem value="marmol">Mármol</SelectItem>
+                          <SelectItem value="gres">Gres</SelectItem>
+                          <SelectItem value="moqueta">Moqueta</SelectItem>
+                          <SelectItem value="hidraulico">Hidráulico</SelectItem>
+                          <SelectItem value="microcemento">
+                            Microcemento
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Installations Section */}
+              <div className="mt-6 grid grid-cols-1 gap-4 border-t pt-4 md:grid-cols-2">
+                {/* Electricity */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-muted-foreground">
+                    Instalación eléctrica
+                  </h4>
                   <div className="space-y-1.5">
-                    <Label htmlFor="mainFloorType" className="text-sm">
-                      Tipo de suelo
+                    <Label htmlFor="electricityType" className="text-sm">
+                      Tipo de electricidad
                     </Label>
                     <Select
-                      value={mainFloorType || undefined}
+                      value={electricityType || undefined}
                       onValueChange={(value) => {
-                        setMainFloorType(value);
+                        setElectricityType(value);
                         onUpdateModule(true);
                       }}
                       disabled={!canEdit}
@@ -228,20 +285,123 @@ export function MaterialsCard({
                         <SelectValue placeholder="Seleccionar tipo" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="parquet">Parquet</SelectItem>
-                        <SelectItem value="marmol">Mármol</SelectItem>
-                        <SelectItem value="gres">Gres</SelectItem>
-                        <SelectItem value="moqueta">Moqueta</SelectItem>
-                        <SelectItem value="hidraulico">Hidráulico</SelectItem>
-                        <SelectItem value="microcemento">
-                          Microcemento
+                        <SelectItem value="monofasica">Monofásica</SelectItem>
+                        <SelectItem value="trifasica">Trifásica</SelectItem>
+                        <SelectItem value="mixta">Mixta</SelectItem>
+                        <SelectItem value="no_disponible">
+                          No disponible
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="electricityStatus" className="text-sm">
+                      Estado de la instalación
+                    </Label>
+                    <Select
+                      value={electricityStatus || undefined}
+                      onValueChange={(value) => {
+                        setElectricityStatus(value);
+                        onUpdateModule(true);
+                      }}
+                      disabled={!canEdit}
+                    >
+                      <SelectTrigger className="h-8 text-gray-500">
+                        <SelectValue placeholder="Seleccionar estado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nuevo">Nuevo</SelectItem>
+                        <SelectItem value="buen_estado">
+                          Buen estado
+                        </SelectItem>
+                        <SelectItem value="funcional">Funcional</SelectItem>
+                        <SelectItem value="necesita_actualizacion">
+                          Necesita actualización
+                        </SelectItem>
+                        <SelectItem value="necesita_reparacion">
+                          Necesita reparación
+                        </SelectItem>
+                        <SelectItem value="no_disponible">
+                          No disponible
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Plumbing */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-muted-foreground">
+                    Fontanería
+                  </h4>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="plumbingType" className="text-sm">
+                      Tipo de fontanería
+                    </Label>
+                    <Select
+                      value={plumbingType || undefined}
+                      onValueChange={(value) => {
+                        setPlumbingType(value);
+                        onUpdateModule(true);
+                      }}
+                      disabled={!canEdit}
+                    >
+                      <SelectTrigger className="h-8 text-gray-500">
+                        <SelectValue placeholder="Seleccionar tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cobre">Cobre</SelectItem>
+                        <SelectItem value="pvc">PVC</SelectItem>
+                        <SelectItem value="multicapa">Multicapa</SelectItem>
+                        <SelectItem value="galvanizado">
+                          Galvanizado
+                        </SelectItem>
+                        <SelectItem value="mixto">Mixto</SelectItem>
+                        <SelectItem value="no_disponible">
+                          No disponible
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="plumbingStatus" className="text-sm">
+                      Estado de la fontanería
+                    </Label>
+                    <Select
+                      value={plumbingStatus || undefined}
+                      onValueChange={(value) => {
+                        setPlumbingStatus(value);
+                        onUpdateModule(true);
+                      }}
+                      disabled={!canEdit}
+                    >
+                      <SelectTrigger className="h-8 text-gray-500">
+                        <SelectValue placeholder="Seleccionar estado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="nuevo">Nuevo</SelectItem>
+                        <SelectItem value="buen_estado">
+                          Buen estado
+                        </SelectItem>
+                        <SelectItem value="funcional">Funcional</SelectItem>
+                        <SelectItem value="necesita_actualizacion">
+                          Necesita actualización
+                        </SelectItem>
+                        <SelectItem value="tiene_fugas">
+                          Tiene fugas
+                        </SelectItem>
+                        <SelectItem value="necesita_reparacion">
+                          Necesita reparación
+                        </SelectItem>
+                        <SelectItem value="no_disponible">
+                          No disponible
                         </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
               </div>
-            </div>
+            </>
           )}
         </div>
       </div>

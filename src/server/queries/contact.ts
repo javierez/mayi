@@ -728,6 +728,8 @@ export async function searchContacts(
       .select({
         id: contacts.contactId,
         name: sql<string>`CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})`,
+        email: contacts.email,
+        phone: contacts.phone,
       })
       .from(contacts)
       .where(

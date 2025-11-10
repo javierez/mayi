@@ -538,6 +538,10 @@ export function PropertyCharacteristicsForm({
             shutterType: shutterType || null,
             carpentryType: carpentryType || null,
             windowType: windowType || null,
+            electricityType: electricityType || null,
+            electricityStatus: electricityStatus || null,
+            plumbingType: plumbingType || null,
+            plumbingStatus: plumbingStatus || null,
             doubleGlazing,
             securityDoor,
           };
@@ -778,6 +782,16 @@ export function PropertyCharacteristicsForm({
     listing.carpentryType ?? "",
   );
   const [windowType, setWindowType] = useState(listing.windowType ?? "");
+  const [electricityType, setElectricityType] = useState(
+    listing.electricityType ?? "",
+  );
+  const [electricityStatus, setElectricityStatus] = useState(
+    listing.electricityStatus ?? "",
+  );
+  const [plumbingType, setPlumbingType] = useState(listing.plumbingType ?? "");
+  const [plumbingStatus, setPlumbingStatus] = useState(
+    listing.plumbingStatus ?? "",
+  );
   const [views, setViews] = useState(listing.views ?? false);
   const [mountainViews, setMountainViews] = useState(
     listing.mountainViews ?? false,
@@ -1741,6 +1755,10 @@ export function PropertyCharacteristicsForm({
             shutterType={shutterType}
             carpentryType={carpentryType}
             windowType={windowType}
+            electricityType={electricityType}
+            electricityStatus={electricityStatus}
+            plumbingType={plumbingType}
+            plumbingStatus={plumbingStatus}
             propertyType={propertyType}
             showMaterials={showMaterials}
             saveState={moduleStates.materials?.saveState ?? "idle"}
@@ -1753,6 +1771,10 @@ export function PropertyCharacteristicsForm({
             setShutterType={setShutterType}
             setCarpentryType={setCarpentryType}
             setWindowType={setWindowType}
+            setElectricityType={setElectricityType}
+            setElectricityStatus={setElectricityStatus}
+            setPlumbingType={setPlumbingType}
+            setPlumbingStatus={setPlumbingStatus}
             setShowMaterials={setShowMaterials}
             getCardStyles={getCardStyles}
           />

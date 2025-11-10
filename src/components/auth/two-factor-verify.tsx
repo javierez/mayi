@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -28,12 +28,56 @@ interface TwoFactorVerifyProps {
 
 export function TwoFactorVerify({ email, password, userId, onCancel, onSuccess }: TwoFactorVerifyProps) {
   const router = useRouter();
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const handleCodeChange = (index: number, value: string) => {
+    if (value.length > 1) {
+      value = value.slice(-1);
+    }
+
+    if (value && !/^\d$/.test(value)) {
+      return;
+    }
+
+    const newCode = [...code];
+    newCode[index] = value;
+    setCode(newCode);
+
+    if (value && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !code[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text").slice(0, 6);
+    const digits = pastedData.replace(/\D/g, "").split("");
+
+    const newCode = [...code];
+    digits.forEach((digit, i) => {
+      if (i < 6) {
+        newCode[i] = digit;
+      }
+    });
+    setCode(newCode);
+
+    const lastFilledIndex = Math.min(digits.length - 1, 5);
+    inputRefs.current[lastFilledIndex]?.focus();
+  };
 
   async function handleVerify() {
-    if (!code || code.length !== 6) {
+    const codeString = code.join("");
+
+    if (codeString.length !== 6) {
       setError("Por favor, introduce un código de 6 dígitos");
       return;
     }
@@ -42,7 +86,7 @@ export function TwoFactorVerify({ email, password, userId, onCancel, onSuccess }
     setError("");
     try {
       // Verify the 2FA code
-      const verifyResult = await verifyTwoFactorCode(userId, code);
+      const verifyResult = await verifyTwoFactorCode(userId, codeString);
 
       if (verifyResult.success) {
         // If onSuccess callback is provided, use it (sign-in flow)
@@ -107,27 +151,27 @@ export function TwoFactorVerify({ email, password, userId, onCancel, onSuccess }
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="2fa-code">Código de verificación</Label>
-          <Input
-            id="2fa-code"
-            type="text"
-            inputMode="numeric"
-            maxLength={6}
-            placeholder="123456"
-            value={code}
-            onChange={(e) => {
-              const value = e.target.value.replace(/\D/g, "");
-              setCode(value);
-              setError("");
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && code.length === 6) {
-                void handleVerify();
-              }
-            }}
-            className="font-mono text-center text-lg tracking-widest"
-            autoFocus
-          />
+          <Label>Código de verificación</Label>
+          <div className="flex justify-center gap-2">
+            {code.map((digit, index) => (
+              <Input
+                key={index}
+                ref={(el) => {
+                  inputRefs.current[index] = el;
+                }}
+                type="text"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handleCodeChange(index, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(index, e)}
+                onPaste={handlePaste}
+                disabled={loading}
+                className="h-14 w-12 text-center text-xl font-semibold"
+                autoFocus={index === 0}
+              />
+            ))}
+          </div>
         </div>
 
         {error && (
@@ -152,7 +196,7 @@ export function TwoFactorVerify({ email, password, userId, onCancel, onSuccess }
         <Button variant="outline" onClick={onCancel} disabled={loading}>
           Cancelar
         </Button>
-        <Button onClick={handleVerify} disabled={loading || code.length !== 6}>
+        <Button onClick={handleVerify} disabled={loading || code.some((d) => !d)}>
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Verificar
         </Button>

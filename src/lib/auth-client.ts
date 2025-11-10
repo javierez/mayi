@@ -9,13 +9,13 @@ export const authClient = createAuthClient({
 });
 
 // Export methods for use throughout app
+// Note: Password reset is now handled via SMS server actions
+// (see src/server/actions/password-reset.ts)
 export const {
   signIn,
   signOut,
   signUp,
   useSession,
   getSession,
-  requestPasswordReset,
-  resetPassword,
   twoFactor,
 } = authClient;

@@ -36,6 +36,11 @@ const categoryConfig = {
     gradient: "from-violet-50 to-purple-50",
     textColor: "text-violet-900",
   },
+  Security: {
+    label: "Seguridad",
+    gradient: "from-slate-50 to-gray-50",
+    textColor: "text-slate-900",
+  },
 };
 
 export function ChangelogSheet({

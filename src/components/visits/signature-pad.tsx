@@ -71,7 +71,7 @@ export function SignaturePad({
               "signature-canvas w-full h-32 sm:h-40 lg:h-48 touch-none",
             style: { minHeight: "128px" },
           }}
-          backgroundColor="rgba(255,255,255,1)"
+          backgroundColor="rgba(255,255,255,0)"
           penColor="black"
           onEnd={handleEnd}
         />

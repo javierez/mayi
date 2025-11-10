@@ -6,6 +6,7 @@
 export interface VisitFormData {
   appointmentId: bigint;
   notes?: string;
+  offer?: number; // Offer amount in euros
   agentSignature?: string; // base64 data URL
   visitorSignature?: string; // base64 data URL
   visitOutcome?: "offer_made" | "info_needed"; // Visit outcome for lead status progression
@@ -21,6 +22,7 @@ export interface AppointmentWithDetails {
   datetimeEnd: Date;
   type?: string | null;
   notes?: string | null;
+  offer?: number | null;
   status?: string | null;
   contactFirstName?: string | null;
   contactLastName?: string | null;
@@ -29,6 +31,7 @@ export interface AppointmentWithDetails {
   contactEmail?: string | null;
   propertyStreet?: string | null;
   propertyAddressDetails?: string | null;
+  propertyReferenceNumber?: string | null;
   agentName?: string | null;
   agentFirstName?: string | null;
   agentLastName?: string | null;
@@ -48,14 +51,17 @@ export interface VisitDocumentData {
     contactFirstName: string;
     contactLastName: string;
     contactNif?: string | null;
+    contactPhone?: string | null;
     propertyStreet?: string | null;
     propertyAddressDetails?: string | null;
+    propertyReferenceNumber?: string | null;
     agentName?: string | null;
     agentFirstName?: string | null;
     agentLastName?: string | null;
     datetimeStart: Date;
     datetimeEnd: Date;
     notes?: string | null;
+    offer?: number | null;
   };
   signatures: {
     agentSignatureUrl?: string | null;

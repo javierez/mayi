@@ -8,6 +8,40 @@ import { uploadDocument } from "~/app/actions/upload";
 import { getAppointmentWithDetails } from "~/server/queries/visits";
 import { getListingDocumentsData } from "~/server/queries/listing";
 
+/**
+ * Sanitize a string for use in filenames
+ * Removes special characters and replaces spaces with hyphens
+ */
+function sanitizeFilename(text: string): string {
+  return text
+    .normalize("NFD") // Normalize accents
+    .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
+    .replace(/[^a-zA-Z0-9\s-]/g, "") // Remove special chars
+    .replace(/\s+/g, "-") // Replace spaces with hyphens
+    .replace(/-+/g, "-") // Replace multiple hyphens with single
+    .trim();
+}
+
+/**
+ * Generate a descriptive filename for visit PDFs
+ * Format: visita-2024-01-15-REF123-Juan-Garcia.pdf
+ */
+function generateVisitFilename(
+  referenceNumber: string | null | undefined,
+  contactFirstName: string,
+  contactLastName: string,
+  visitDate: Date,
+): string {
+  const ref = referenceNumber ? sanitizeFilename(referenceNumber) : "SIN-REF";
+  const firstName = sanitizeFilename(contactFirstName);
+  const lastName = sanitizeFilename(contactLastName);
+
+  // Format date as YYYY-MM-DD
+  const dateStr = visitDate.toISOString().split("T")[0];
+
+  return `visita-${dateStr}-${ref}-${firstName}-${lastName}.pdf`;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { appointmentId, saveToS3 = false } = (await request.json()) as {
@@ -82,6 +116,9 @@ export async function POST(request: NextRequest) {
 
     const page = (await browser.newPage()) as Page;
 
+    // Disable cache to ensure fresh content
+    await page.setCacheEnabled(false);
+
     // Set viewport to match A4 print dimensions
     await page.setViewport({
       width: 794, // A4 width in pixels at 96 DPI
@@ -95,6 +132,9 @@ export async function POST(request: NextRequest) {
 
     // Pass data as URL parameters (like nota-encargo does)
     templateUrl.searchParams.set("data", JSON.stringify(serializedData));
+
+    // Add cache-busting parameter to force fresh load
+    templateUrl.searchParams.set("_t", Date.now().toString());
 
     console.log(
       "📄 Navigating to visit template URL:",
@@ -206,10 +246,10 @@ export async function POST(request: NextRequest) {
       landscape: false, // Always portrait for visit documents
       printBackground: true,
       margin: {
-        top: "5mm",     // Top margin for all pages
-        right: "0mm",
-        bottom: "15mm", // Bottom margin for all pages
-        left: "0mm",
+        top: "7mm",
+        right: "5mm",
+        bottom: "10mm",
+        left: "7mm",
       },
       preferCSSPageSize: true,
     });
@@ -236,8 +276,13 @@ export async function POST(request: NextRequest) {
       documentTimestamp.toISOString(),
     );
 
-    // Define filename here so it's available for both paths
-    const filename = `visita-${appointmentId}-${Date.now()}.pdf`;
+    // Generate descriptive filename
+    const filename = generateVisitFilename(
+      visitData.appointment.propertyReferenceNumber,
+      visitData.appointment.contactFirstName,
+      visitData.appointment.contactLastName,
+      visitData.appointment.datetimeStart,
+    );
 
     // Only save to S3 if requested
     if (saveToS3) {

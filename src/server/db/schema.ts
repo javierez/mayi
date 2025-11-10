@@ -161,6 +161,19 @@ export const verificationTokens = pgTable("verification_tokens", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Password Reset Tokens (SMS-based verification)
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: bigserial("id", { mode: "bigint" }).primaryKey(),
+  userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
+  resetCode: varchar("reset_code", { length: 255 }).notNull(), // Hashed 6-digit code
+  phoneNumber: varchar("phone_number", { length: 20 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"), // NULL until used, prevents reuse
+  ipAddress: text("ip_address"), // Security audit trail
+  userAgent: text("user_agent"), // Security audit trail
+});
+
 // Account-Level Two-Factor Authentication Settings
 export const accountTwoFactorSettings = pgTable("account_two_factor_settings", {
   id: bigserial("id", { mode: "bigint" }).primaryKey(),
@@ -345,6 +358,12 @@ export const properties = pgTable("properties", {
   loadingArea: boolean("loading_area"),
   patio: boolean("patio"),
   allowedUse: smallint("allowed_use"), // Allowed use for solar/land properties (1-9 enum)
+
+  // Utilities and Installations
+  electricityType: varchar("electricity_type", { length: 50 }), // 'monofasica' | 'trifasica' | 'mixta' | 'no_disponible'
+  electricityStatus: varchar("electricity_status", { length: 50 }), // 'nuevo' | 'buen_estado' | 'funcional' | 'necesita_actualizacion' | 'necesita_reparacion' | 'no_disponible'
+  plumbingType: varchar("plumbing_type", { length: 50 }), // 'cobre' | 'pvc' | 'multicapa' | 'galvanizado' | 'mixto' | 'no_disponible'
+  plumbingStatus: varchar("plumbing_status", { length: 50 }), // 'nuevo' | 'buen_estado' | 'funcional' | 'necesita_actualizacion' | 'tiene_fugas' | 'necesita_reparacion' | 'no_disponible'
 
   // Data Processing Fields
   scrapedText: varchar("scraped_text", { length: 1024 }), // S3 path for property scraped text data

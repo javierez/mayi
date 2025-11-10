@@ -1,6 +1,8 @@
 "use server";
 
+import { eq } from "drizzle-orm";
 import { getCurrentUser, getSecureDb } from "~/lib/dal";
+import { listingContacts } from "~/server/db/schema";
 import {
   getAppointmentWithDetails,
   hasVisitSignatures,
@@ -146,6 +148,32 @@ export async function createVisitAction(formData: VisitFormData) {
       );
       if (!success) {
         throw new Error("Failed to mark appointment as completed");
+      }
+
+      // Update offer in listing_contacts if provided and listingContactId exists
+      if (formData.offer !== undefined && appointment.listingContactId) {
+        try {
+          const db = await getSecureDb();
+          await db.db
+            .update(listingContacts)
+            .set({
+              offer: formData.offer,
+              updatedAt: new Date(),
+            })
+            .where(
+              eq(
+                listingContacts.listingContactId,
+                BigInt(appointment.listingContactId),
+              ),
+            );
+          console.log("✅ Updated offer in listing_contacts:", {
+            listingContactId: appointment.listingContactId.toString(),
+            offer: formData.offer,
+          });
+        } catch (offerError) {
+          console.error("Failed to update offer in listing_contacts:", offerError);
+          // Don't fail the visit recording if offer update fails
+        }
       }
 
       // NEW: Update lead status based on visit outcome
@@ -348,14 +376,17 @@ export async function getVisitDocumentDataAction(appointmentId: bigint) {
           contactFirstName: appointment.contactFirstName ?? "",
           contactLastName: appointment.contactLastName ?? "",
           contactNif: appointment.contactNif,
+          contactPhone: appointment.contactPhone,
           propertyStreet: appointment.propertyStreet,
           propertyAddressDetails: appointment.propertyAddressDetails,
+          propertyReferenceNumber: appointment.propertyReferenceNumber,
           agentName: appointment.agentName,
           agentFirstName: appointment.agentFirstName,
           agentLastName: appointment.agentLastName,
           datetimeStart: appointment.datetimeStart,
           datetimeEnd: appointment.datetimeEnd,
           notes: appointment.notes,
+          offer: appointment.offer,
         },
         signatures: {
           agentSignatureUrl: 

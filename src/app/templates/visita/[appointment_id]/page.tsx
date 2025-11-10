@@ -155,7 +155,6 @@ export default function VisitTemplatePage() {
             width: 210mm !important;
             min-height: 297mm !important;
             margin: 0 !important;
-            padding: 20mm !important;
             box-sizing: border-box !important;
             transform: none !important;
             max-width: none !important;
