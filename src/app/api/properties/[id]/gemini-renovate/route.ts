@@ -116,22 +116,24 @@ export async function POST(
       console.log("✅ Using provided room type:", finalRoomType);
     } else {
       // Auto-detect room type using Gemini
-      console.log("🔍 Auto-detecting room type...");
+      console.log("🔍 AUTO-DETECTING ROOM TYPE - Starting analysis...");
 
       // Call the room detection through the Gemini client
       const detectionResult = await geminiClient.detectRoomType(imageBase64);
 
       if (detectionResult.success && detectionResult.roomType) {
         finalRoomType = detectionResult.roomType;
-        console.log("✅ Room detection successful:", {
-          detectedType: finalRoomType,
-          confidence: detectionResult.confidence,
-        });
+        console.log("✅ ========================================");
+        console.log("✅ ROOM AUTO-DETECTION SUCCESSFUL!");
+        console.log("✅ Detected Room Type:", finalRoomType.toUpperCase());
+        console.log("✅ Confidence Score:", detectionResult.confidence);
+        console.log("✅ ========================================");
       } else {
-        console.warn(
-          "⚠️ Room detection failed, using fallback:",
-          detectionResult.error,
-        );
+        console.warn("⚠️ ========================================");
+        console.warn("⚠️ ROOM DETECTION FAILED");
+        console.warn("⚠️ Error:", detectionResult.error);
+        console.warn("⚠️ Using fallback: living_room");
+        console.warn("⚠️ ========================================");
         finalRoomType = "living_room"; // Default fallback
       }
     }
@@ -161,6 +163,8 @@ export async function POST(
     }
 
     // 7. Return successful renovation result
+    console.log("✅ Renovation complete - Final room type used:", finalRoomType);
+
     return Response.json({
       success: true,
       status: "COMPLETED",
@@ -168,7 +172,8 @@ export async function POST(
       referenceNumber: data.referenceNumber,
       currentImageOrder: data.currentImageOrder,
       propertyId: propertyId.toString(),
-      renovationType: data.renovationType ?? "generic",
+      renovationType: finalRoomType, // Return the actual detected/used room type
+      detectedRoomType: finalRoomType, // Explicitly include detected type
     });
   } catch (error) {
     console.error("Gemini renovation API error:", error);

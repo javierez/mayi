@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { ImageStudioGallery } from "./image-studio-gallery";
 import { ImageStudioTools } from "./image-studio-tools";
@@ -9,6 +9,8 @@ import { useImageRenovation } from "~/hooks/use-image-renovation";
 import type { PropertyImage } from "~/lib/data";
 import { toast } from "sonner";
 import { ProcessingOverlay } from "./processing-overlay";
+import { EnhancementSummary } from "./enhancement-summary";
+import { EnhancementNotificationButton } from "./enhancement-notification-button";
 
 interface ImageStudioClientWrapperProps {
   images: PropertyImage[];
@@ -26,6 +28,12 @@ export function ImageStudioClientWrapper({
   const [allImages, setAllImages] = useState<PropertyImage[]>(images);
   const [isComparisonVisible, setIsComparisonVisible] = useState(false);
   const [isRenovationComparison, setIsRenovationComparison] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+
+  // Auto-open modal on page load
+  useEffect(() => {
+    setIsNotificationOpen(true);
+  }, []);
 
   // Get the currently selected image
   const selectedImage = allImages[selectedIndex];
@@ -265,6 +273,23 @@ export function ImageStudioClientWrapper({
 
   return (
     <>
+      {/* Enhancement Summary Card */}
+      <EnhancementSummary
+        images={allImages}
+        isOpen={isNotificationOpen}
+        onClose={() => setIsNotificationOpen(false)}
+      />
+
+      {/* Floating Enhancement Notification Button */}
+      {shouldShowMiniGallery && (
+        <div className="fixed bottom-8 right-8 z-50">
+          <EnhancementNotificationButton
+            images={allImages}
+            onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+          />
+        </div>
+      )}
+
       <div className="space-y-16">
         {/* Image Selection (thumbnails only) - Hidden when AI is processing or during comparison */}
         {shouldShowMiniGallery && (

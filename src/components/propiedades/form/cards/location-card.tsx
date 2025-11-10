@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
@@ -71,6 +73,9 @@ export function LocationCard({
   const [neighborhoodValue, setNeighborhoodValue] = useState(
     listing.neighborhood ?? "",
   );
+  const [postalCodeValue, setPostalCodeValue] = useState(
+    listing.postalCode ?? "",
+  );
 
   // Coordinate state for cadastral search (obtained from Google Maps or Nominatim autocomplete, or loaded from database)
   const [latitude, setLatitude] = useState<number | null>(
@@ -124,8 +129,6 @@ export function LocationCard({
     const reference = cadastralReferenceValue.trim();
 
     // Check if we have all key info (street, city, postal code)
-    const postalCodeValue =
-      (document.getElementById("postalCode") as HTMLInputElement)?.value || "";
     const hasKeyInfo =
       streetValue.trim() && city.trim() && postalCodeValue.trim();
 
@@ -161,9 +164,7 @@ export function LocationCard({
       // Get current form data
       const currentData = {
         street: streetValue,
-        postalCode:
-          (document.getElementById("postalCode") as HTMLInputElement)?.value ||
-          "",
+        postalCode: postalCodeValue,
         city: city,
         province: province,
       };
@@ -253,14 +254,7 @@ export function LocationCard({
       // Update form fields with cadastral data
       setStreetValue(cadastralData.street);
       setNeighborhoodValue(cadastralData.neighborhood);
-
-      // Update other fields
-      const postalCodeInput = document.getElementById(
-        "postalCode",
-      ) as HTMLInputElement;
-      if (postalCodeInput) {
-        postalCodeInput.value = cadastralData.postalCode;
-      }
+      setPostalCodeValue(cadastralData.postalCode);
 
       // Update city, province, municipality
       if (cadastralData.city) setCity(cadastralData.city);
@@ -418,10 +412,7 @@ export function LocationCard({
         setStreetValue(suggestedValue);
         break;
       case "postalCode":
-        const postalInput = document.getElementById(
-          "postalCode",
-        ) as HTMLInputElement;
-        if (postalInput) postalInput.value = suggestedValue;
+        setPostalCodeValue(suggestedValue);
         break;
       case "city":
         setCity(suggestedValue);
@@ -461,11 +452,10 @@ export function LocationCard({
     console.log("💾 [LocationCard] Save button clicked!");
     console.log("📋 [LocationCard] Current form values before save:", {
       street: streetValue,
-      addressDetails: (
-        document.getElementById("addressDetails") as HTMLInputElement
-      )?.value,
-      postalCode: (document.getElementById("postalCode") as HTMLInputElement)
-        ?.value,
+      addressDetails: typeof window !== "undefined"
+        ? (document.getElementById("addressDetails") as HTMLInputElement)?.value
+        : "",
+      postalCode: postalCodeValue,
       neighborhood: neighborhoodValue,
       city: city,
       province: province,
@@ -498,12 +488,9 @@ export function LocationCard({
     // Update street value state
     setStreetValue(streetWithNumber);
 
-    // Update form fields
-    const postalCodeInput = document.getElementById(
-      "postalCode",
-    ) as HTMLInputElement;
-    if (postalCodeInput && data.addressComponents.postalCode) {
-      postalCodeInput.value = data.addressComponents.postalCode;
+    // Update postal code if available
+    if (data.addressComponents.postalCode) {
+      setPostalCodeValue(data.addressComponents.postalCode);
     }
 
     // Update neighborhood value from Google Maps if available, otherwise fetch from Nominatim
@@ -647,11 +634,8 @@ export function LocationCard({
         addressDetailsInput.value = parsedDetails;
       }
 
-      const postalCodeInput = document.getElementById(
-        "postalCode",
-      ) as HTMLInputElement;
-      if (postalCodeInput && result.address?.postcode) {
-        postalCodeInput.value = result.address.postcode;
+      if (result.address?.postcode) {
+        setPostalCodeValue(result.address.postcode);
       }
 
       // Update neighborhood value
@@ -807,13 +791,16 @@ export function LocationCard({
             <div className="relative">
               <Input
                 id="postalCode"
-                defaultValue={listing.postalCode}
+                value={postalCodeValue}
+                onChange={(e) => {
+                  setPostalCodeValue(e.target.value);
+                  onUpdateModule(true);
+                }}
                 className={cn(
                   "h-8 text-gray-500",
                   getFieldDiscrepancy("postalCode") &&
                     "border-amber-500 pr-8 focus:border-amber-500",
                 )}
-                onChange={() => onUpdateModule(true)}
                 disabled={!canEdit}
               />
               {getFieldDiscrepancy("postalCode") && (
@@ -1077,45 +1064,38 @@ export function LocationCard({
                   />
                 </button>
                 {/* Open external page button (only shown when we have all key info) */}
-                {(() => {
-                  const postalCodeValue =
-                    (document.getElementById("postalCode") as HTMLInputElement)
-                      ?.value ?? "";
-                  const hasKeyInfo =
-                    streetValue.trim() && city.trim() && postalCodeValue.trim();
-                  return hasKeyInfo ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const cadastralRef = cadastralReferenceValue.trim();
-                        if (cadastralRef) {
-                          const catastroUrl = `https://www1.sedecatastro.gob.es/CYCBienInmueble/OVCConCiud.aspx?UrbRus=U&RefC=${encodeURIComponent(cadastralRef)}&esBice=&RCBice1=&RCBice2=&DenoBice=&from=OVCBusqueda&pest=rc&RCCompleta=${encodeURIComponent(cadastralRef)}&final=&del=24&mun=900`;
-                          window.open(catastroUrl, "_blank", "noopener,noreferrer");
-                          console.log("🌐 Opening Catastro page:", catastroUrl);
-                        }
-                      }}
-                      disabled={!canEdit}
-                      className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-30"
-                      title="Abrir en Catastro"
+                {streetValue.trim() && city.trim() && postalCodeValue.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cadastralRef = cadastralReferenceValue.trim();
+                      if (cadastralRef) {
+                        const catastroUrl = `https://www1.sedecatastro.gob.es/CYCBienInmueble/OVCConCiud.aspx?UrbRus=U&RefC=${encodeURIComponent(cadastralRef)}&esBice=&RCBice1=&RCBice2=&DenoBice=&from=OVCBusqueda&pest=rc&RCCompleta=${encodeURIComponent(cadastralRef)}&final=&del=24&mun=900`;
+                        window.open(catastroUrl, "_blank", "noopener,noreferrer");
+                        console.log("🌐 Opening Catastro page:", catastroUrl);
+                      }
+                    }}
+                    disabled={!canEdit}
+                    className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-30"
+                    title="Abrir en Catastro"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                        <polyline points="15 3 21 3 21 9" />
-                        <line x1="10" y1="14" x2="21" y2="3" />
-                      </svg>
-                    </button>
-                  ) : null;
-                })()}
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                  </button>
+                )}
               </>
             ) : null}
           </div>

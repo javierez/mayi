@@ -597,7 +597,7 @@ export default function PreciosPage() {
                 billingCycle === "monthly"
                   ? service.monthlyPrice
                   : service.annualPrice;
-              const { savings } = calculateSavings(
+              calculateSavings(
                 service.monthlyPrice,
                 service.annualPrice,
               );

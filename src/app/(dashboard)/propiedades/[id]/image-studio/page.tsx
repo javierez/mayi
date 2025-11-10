@@ -5,7 +5,7 @@ import {
 } from "~/server/queries/listing";
 import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-breadcrump";
 import { PropertyHeader } from "~/components/propiedades/detail/property-header";
-import { ImageStudioClientWrapper } from "~/components/propiedades/detail/image-studio-client-wrapper";
+import { ImageStudioClientWrapper } from "~/components/propiedades/image-studio/image-studio-client-wrapper";
 import { getSecureSession } from "~/lib/dal";
 import { getPropertyImages } from "~/server/queries/property_images";
 import type { PropertyImage } from "~/lib/data";

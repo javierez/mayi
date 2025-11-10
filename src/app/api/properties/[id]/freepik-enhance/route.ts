@@ -1,11 +1,6 @@
 import type { NextRequest } from "next/server";
 import { getSecureSession } from "~/lib/dal";
 import { freepikClient } from "~/lib/freepik-client";
-import {
-  imageUrlToBase64,
-  validateImageSize,
-  getImageSizeInMB,
-} from "~/lib/image-utils";
 import { getListingHeaderData } from "~/server/queries/listing";
 
 /**
@@ -58,26 +53,18 @@ export async function POST(
       return Response.json({ error: "Property not found" }, { status: 404 });
     }
 
-    // 4. Download and validate image
-    const imageBase64 = await imageUrlToBase64(data.imageUrl);
-
-    // Validate size (max 10MB)
-    if (!validateImageSize(imageBase64, 10)) {
-      const sizeMB = getImageSizeInMB(imageBase64);
-      console.error(
-        "Image too large for enhancement:",
-        `${sizeMB.toFixed(2)}MB`,
-      );
+    // 4. Validate image URL format
+    if (!data.imageUrl.startsWith("http")) {
+      console.error("Invalid image URL format");
       return Response.json(
-        {
-          error: `Image too large (${sizeMB.toFixed(2)}MB). Maximum size is 10MB`,
-        },
+        { error: "Image URL must be a valid HTTP/HTTPS URL" },
         { status: 400 },
       );
     }
 
-    // 5. Call Freepik API to start enhancement
-    const result = await freepikClient.enhance(imageBase64);
+    // 5. Call Freepik API v1 to start enhancement
+    // Note: freepikClient.enhance() downloads the URL and converts to base64 internally
+    const result = await freepikClient.enhance(data.imageUrl);
 
     // 6. Return task information for polling
     return Response.json({
@@ -150,7 +137,7 @@ export async function GET(
     const status = await freepikClient.checkStatus(taskId);
 
     // 4. If still processing, return status
-    if (status.status === "IN_PROGRESS" || status.status === "CREATED") {
+    if (status.status === "IN_PROGRESS") {
       return Response.json({
         status: "IN_PROGRESS",
         progress: status.progress ?? 0,

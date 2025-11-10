@@ -429,7 +429,8 @@ export function ContactDetailSheet({
     hasCompletedVisit: contact.hasCompletedVisit,
   });
 
-  // Highest priority: Check if contact is inactive
+  // Badge priority based on LATEST visit status (not counts)
+  // Priority: inactive > upcoming > offer accepted > offer rejected > offer pending > completed > cancelled > missed > none
   if (contact.isActive === false) {
     console.log("✅ [Badge Status] Matched: INACTIVE");
     badgeType = "inactive";
@@ -473,6 +474,17 @@ export function ContactDetailSheet({
       icon: <Handshake className="h-4 w-4" />,
       title: "Oferta Pendiente",
     };
+  } else if (contact.hasCompletedVisit) {
+    console.log("✅ [Badge Status] Matched: COMPLETED VISIT", {
+      hasOffer: contact.hasOffer,
+      offerAccepted: contact.offerAccepted,
+    });
+    badgeType = "completed";
+    badgeConfig = {
+      color: "bg-gray-100 text-gray-700 hover:bg-gray-200",
+      icon: <Check className="h-4 w-4" />,
+      title: "Visita Completada",
+    };
   } else if (contact.hasCancelledVisit) {
     console.log("✅ [Badge Status] Matched: CANCELLED VISIT");
     badgeType = "cancelled";
@@ -488,17 +500,6 @@ export function ContactDetailSheet({
       color: "bg-red-100 text-red-800 hover:bg-red-200",
       icon: <Clock className="h-4 w-4" />,
       title: "Visita Perdida",
-    };
-  } else if (contact.hasCompletedVisit) {
-    console.log("✅ [Badge Status] Matched: COMPLETED VISIT", {
-      hasOffer: contact.hasOffer,
-      offerAccepted: contact.offerAccepted,
-    });
-    badgeType = "completed";
-    badgeConfig = {
-      color: "bg-gray-100 text-gray-700 hover:bg-gray-200",
-      icon: <Check className="h-4 w-4" />,
-      title: "Visita Completada",
     };
   } else {
     console.log("✅ [Badge Status] Matched: NONE (no visits)");

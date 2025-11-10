@@ -454,18 +454,6 @@ export function ImageStudioTools({
         ))}
       </div>
 
-      <div className="mt-12 text-center">
-        <div className="space-y-4">
-          {/* Other tools coming soon */}
-          <div className="inline-flex items-center justify-center rounded-full border border-amber-200/50 bg-gradient-to-r from-amber-100 to-rose-100 px-4 py-2">
-            <div className="mr-2 h-2 w-2 animate-pulse rounded-full bg-gradient-to-r from-amber-400 to-rose-400" />
-            <p className="text-xs font-medium text-gray-700">
-              Más herramientas próximamente
-            </p>
-          </div>
-        </div>
-      </div>
-
       <ToolConfirmationModal
         isOpen={confirmModal.isOpen}
         tool={confirmModal.tool}

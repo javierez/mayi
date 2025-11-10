@@ -15,6 +15,8 @@ import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import type { PropertyImage } from "~/lib/data";
 import type { EnhancementStatus } from "~/types/freepik";
+import { ImageInfoIcon } from "./image-info-icon";
+import { ImageRecommendationBadge } from "./image-recommendation-badge";
 
 interface ImageStudioGalleryProps {
   images: PropertyImage[];
@@ -259,14 +261,14 @@ export function ImageStudioGallery({
         {/* Thumbnail Navigation */}
         {images.length > 1 && (
           <div className="relative py-4">
-            <div className="scrollbar-hide flex space-x-4 overflow-x-auto pb-4 pl-4 pt-2">
+            <div className="custom-scrollbar-thin flex space-x-4 overflow-x-auto pb-4 pl-4 pt-2">
               {images.map((image, index) => {
                 const imageId = image.propertyImageId.toString();
                 return (
                   <button
                     key={imageId}
                     className={cn(
-                      "relative h-24 w-32 flex-shrink-0 overflow-hidden rounded-xl border-2 transition-all duration-200",
+                      "group relative h-32 w-48 flex-shrink-0 overflow-hidden rounded-xl border-2 transition-all duration-200",
                       index === selectedIndex
                         ? "scale-105 border-amber-400 shadow-lg"
                         : "hover:scale-102 border-gray-200 hover:border-gray-300",
@@ -278,13 +280,13 @@ export function ImageStudioGallery({
                       <Image
                         src={imageSources[imageId]}
                         alt={`${title} - Miniatura ${index + 1}`}
-                        width={128}
-                        height={96}
+                        width={192}
+                        height={128}
                         className={cn(
                           "h-full w-full object-cover transition-all duration-200",
                           !image.isActive && "opacity-70",
                         )}
-                        sizes="128px"
+                        sizes="192px"
                         quality={75}
                         loading="lazy"
                         onError={() => handleImageError(imageId)}
@@ -312,6 +314,20 @@ export function ImageStudioGallery({
                     )}
                     {index === selectedIndex && (
                       <div className="absolute inset-0 bg-gradient-to-r from-amber-400/20 to-rose-400/20" />
+                    )}
+                    {/* Recommendation badge (top-left) - always visible */}
+                    {imageSources[imageId] && imageLoaded[imageId] && (
+                      <div className="absolute left-2 top-2">
+                        <ImageRecommendationBadge
+                          imageUrl={imageSources[imageId]}
+                        />
+                      </div>
+                    )}
+                    {/* Info icon (top-right) */}
+                    {imageSources[imageId] && imageLoaded[imageId] && (
+                      <div className="absolute right-2 top-2 md:opacity-0 md:group-hover:opacity-100">
+                        <ImageInfoIcon imageUrl={imageSources[imageId]} />
+                      </div>
                     )}
                   </button>
                 );
@@ -576,14 +592,14 @@ export function ImageStudioGallery({
       {/* Thumbnail Navigation */}
       {images.length > 1 && (
         <div className="relative py-4">
-          <div className="scrollbar-hide flex space-x-4 overflow-x-auto pb-4 pl-4 pt-2">
+          <div className="custom-scrollbar-thin flex space-x-4 overflow-x-auto pb-4 pl-4 pt-2">
             {images.map((image, index) => {
               const imageId = image.propertyImageId.toString();
               return (
                 <button
                   key={imageId}
                   className={cn(
-                    "relative h-24 w-32 flex-shrink-0 overflow-hidden rounded-xl border-2 transition-all duration-200",
+                    "group relative h-32 w-48 flex-shrink-0 overflow-hidden rounded-xl border-2 transition-all duration-200",
                     index === selectedIndex
                       ? "scale-105 border-amber-400 shadow-lg"
                       : "hover:scale-102 border-gray-200 hover:border-gray-300",
@@ -595,13 +611,13 @@ export function ImageStudioGallery({
                     <Image
                       src={imageSources[imageId]}
                       alt={`${title} - Miniatura ${index + 1}`}
-                      width={128}
-                      height={96}
+                      width={192}
+                      height={128}
                       className={cn(
                         "h-full w-full object-cover transition-all duration-200",
                         !image.isActive && "opacity-70",
                       )}
-                      sizes="128px"
+                      sizes="192px"
                       quality={75}
                       loading="lazy"
                       onError={() => handleImageError(imageId)}
@@ -629,6 +645,20 @@ export function ImageStudioGallery({
                   )}
                   {index === selectedIndex && (
                     <div className="absolute inset-0 bg-gradient-to-r from-amber-400/20 to-rose-400/20" />
+                  )}
+                  {/* Recommendation badge (top-left) - always visible */}
+                  {imageSources[imageId] && imageLoaded[imageId] && (
+                    <div className="absolute left-2 top-2">
+                      <ImageRecommendationBadge
+                        imageUrl={imageSources[imageId]}
+                      />
+                    </div>
+                  )}
+                  {/* Info icon (top-right) */}
+                  {imageSources[imageId] && imageLoaded[imageId] && (
+                    <div className="absolute right-2 top-2 md:opacity-0 md:group-hover:opacity-100">
+                      <ImageInfoIcon imageUrl={imageSources[imageId]} />
+                    </div>
                   )}
                 </button>
               );

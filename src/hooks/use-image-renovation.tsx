@@ -125,12 +125,18 @@ export function useImageRenovation({
           referenceNumber: string;
           currentImageOrder: number;
           renovationType?: RenovationType;
+          detectedRoomType?: RenovationType;
           error?: string;
         };
 
         if (!isMounted) return;
 
         if (renovationData.success && renovationData.renovatedImageBase64) {
+          // Log the detected room type
+          if (renovationData.detectedRoomType) {
+            console.log("🏠 Room auto-detected:", renovationData.detectedRoomType);
+          }
+
           // Convert base64 to data URL for display
           const dataUrl = createDataUrl(renovationData.renovatedImageBase64);
           setRenovatedImageUrl(dataUrl);
@@ -149,7 +155,13 @@ export function useImageRenovation({
             onComparisonReady();
           }
 
-          toast.success("¡Renovación completada! Usa el slider para comparar.");
+          // Show toast with detected room type if available
+          const roomTypeLabel = renovationData.detectedRoomType
+            ? ` (${renovationData.detectedRoomType.replace("_", " ")})`
+            : "";
+          toast.success(
+            `¡Renovación completada${roomTypeLabel}! Usa el slider para comparar.`,
+          );
         } else {
           throw new Error(
             renovationData.error ?? "No renovated image generated",

@@ -212,6 +212,58 @@ export async function getListingContactsSummary(listingId: bigint) {
       visitCounts.map((v) => [v.contactId.toString(), v]),
     );
 
+    // Get the latest past visit status for each contact (excluding upcoming visits)
+    let latestPastVisits: Array<{
+      contactId: bigint;
+      status: string | null;
+      datetimeStart: Date;
+    }> = [];
+
+    if (contactIds.length > 0) {
+      const latestPastVisitResults = await db
+        .select({
+          contactId: appointments.contactId,
+          status: appointments.status,
+          datetimeStart: appointments.datetimeStart,
+        })
+        .from(appointments)
+        .where(
+          and(
+            inArray(appointments.contactId, contactIds),
+            eq(appointments.listingId, listingId),
+            sql`${appointments.datetimeStart} <= NOW()`,
+            eq(appointments.isActive, true),
+          ),
+        )
+        .orderBy(desc(appointments.datetimeStart));
+
+      // Group by contactId and take the first (most recent) past visit
+      const latestByContact = new Map<string, { status: string | null; datetimeStart: Date }>();
+      for (const visit of latestPastVisitResults) {
+        if (visit.contactId) {
+          const contactIdStr = visit.contactId.toString();
+          if (!latestByContact.has(contactIdStr)) {
+            latestByContact.set(contactIdStr, {
+              status: visit.status,
+              datetimeStart: visit.datetimeStart,
+            });
+          }
+        }
+      }
+
+      latestPastVisits = Array.from(latestByContact.entries()).map(
+        ([contactIdStr, visitData]) => ({
+          contactId: BigInt(contactIdStr),
+          status: visitData.status,
+          datetimeStart: visitData.datetimeStart,
+        }),
+      );
+    }
+
+    const latestPastVisitMap = new Map(
+      latestPastVisits.map((v) => [v.contactId.toString(), v.status]),
+    );
+
     // Get the earliest upcoming appointment for each contact
     let upcomingAppointments: Array<{
       contactId: bigint;
@@ -272,13 +324,34 @@ export async function getListingContactsSummary(listingId: bigint) {
     const contactsWithVisitStatus = allContacts.map((contact) => {
       const visitStats = visitMap.get(contact.contactId.toString());
       const hasUpcomingVisit = (visitStats?.upcomingVisits ?? 0) > 0;
-      const hasMissedVisit = (visitStats?.missedVisits ?? 0) > 0;
-      const hasCompletedVisit = (visitStats?.completedVisits ?? 0) > 0;
-      const hasCancelledVisit = (visitStats?.cancelledVisits ?? 0) > 0;
       const hasOffer = contact.offer !== null && contact.offer !== undefined;
       const upcomingAppointmentId = upcomingAppointmentMap.get(
         contact.contactId.toString(),
       );
+
+      // Get the latest past visit status (if any)
+      const latestPastVisitStatus = latestPastVisitMap.get(
+        contact.contactId.toString(),
+      );
+
+      // Determine visit status flags based on the LATEST past visit (not counts)
+      let hasMissedVisit = false;
+      let hasCompletedVisit = false;
+      let hasCancelledVisit = false;
+
+      if (latestPastVisitStatus) {
+        if (latestPastVisitStatus === "Completed") {
+          hasCompletedVisit = true;
+        } else if (latestPastVisitStatus === "Cancelled") {
+          hasCancelledVisit = true;
+        } else if (
+          latestPastVisitStatus === "NoShow" ||
+          latestPastVisitStatus === "Scheduled"
+        ) {
+          // Past scheduled visits that weren't completed or cancelled are missed
+          hasMissedVisit = true;
+        }
+      }
 
       if (hasUpcomingVisit) {
         console.log(
@@ -286,18 +359,18 @@ export async function getListingContactsSummary(listingId: bigint) {
         );
       }
 
-      // Priority for sorting: 1=upcoming, 2=offer made, 3=cancelled, 4=missed, 5=completed, 6=crear visita
+      // Priority for sorting: 1=upcoming, 2=offer made, 3=completed, 4=cancelled, 5=missed, 6=crear visita
       let sortPriority = 6;
       if (hasUpcomingVisit) {
         sortPriority = 1; // Upcoming visit (highest priority)
       } else if (hasOffer) {
         sortPriority = 2; // Offer made (regardless of visit status)
-      } else if (hasCancelledVisit) {
-        sortPriority = 3; // Cancelled visit
-      } else if (hasMissedVisit) {
-        sortPriority = 4; // Missed visit
       } else if (hasCompletedVisit) {
-        sortPriority = 5; // Completed visit
+        sortPriority = 3; // Completed visit (most recent positive outcome)
+      } else if (hasCancelledVisit) {
+        sortPriority = 4; // Cancelled visit
+      } else if (hasMissedVisit) {
+        sortPriority = 5; // Missed visit
       }
 
       return {
@@ -597,25 +670,92 @@ export async function getContactRelatedContactsForBuyerListings(
       visitCounts.map((v) => [v.contactId.toString(), v]),
     );
 
+    // Get the latest past visit status for each contact (excluding upcoming visits)
+    let latestPastVisits: Array<{
+      contactId: bigint;
+      status: string | null;
+    }> = [];
+
+    if (contactIds.length > 0) {
+      const latestPastVisitResults = await db
+        .select({
+          contactId: appointments.contactId,
+          status: appointments.status,
+          datetimeStart: appointments.datetimeStart,
+        })
+        .from(appointments)
+        .where(
+          and(
+            inArray(appointments.contactId, contactIds),
+            inArray(appointments.listingId, listingIds),
+            sql`${appointments.datetimeStart} <= NOW()`,
+            eq(appointments.isActive, true),
+          ),
+        )
+        .orderBy(desc(appointments.datetimeStart));
+
+      // Group by contactId and take the first (most recent) past visit
+      const latestByContact = new Map<string, string | null>();
+      for (const visit of latestPastVisitResults) {
+        if (visit.contactId) {
+          const contactIdStr = visit.contactId.toString();
+          if (!latestByContact.has(contactIdStr)) {
+            latestByContact.set(contactIdStr, visit.status);
+          }
+        }
+      }
+
+      latestPastVisits = Array.from(latestByContact.entries()).map(
+        ([contactIdStr, status]) => ({
+          contactId: BigInt(contactIdStr),
+          status,
+        }),
+      );
+    }
+
+    const latestPastVisitMap = new Map(
+      latestPastVisits.map((v) => [v.contactId.toString(), v.status]),
+    );
+
     const contactsWithVisitStatus = allContacts.map((contact) => {
       const visitStats = visitMap.get(contact.contactId.toString());
       const hasUpcomingVisit = (visitStats?.upcomingVisits ?? 0) > 0;
-      const hasMissedVisit = (visitStats?.missedVisits ?? 0) > 0;
-      const hasCompletedVisit = (visitStats?.completedVisits ?? 0) > 0;
-      const hasCancelledVisit = (visitStats?.cancelledVisits ?? 0) > 0;
       const hasOffer = contact.offer !== null && contact.offer !== undefined;
 
-      // Priority for sorting
+      // Get the latest past visit status (if any)
+      const latestPastVisitStatus = latestPastVisitMap.get(
+        contact.contactId.toString(),
+      );
+
+      // Determine visit status flags based on the LATEST past visit (not counts)
+      let hasMissedVisit = false;
+      let hasCompletedVisit = false;
+      let hasCancelledVisit = false;
+
+      if (latestPastVisitStatus) {
+        if (latestPastVisitStatus === "Completed") {
+          hasCompletedVisit = true;
+        } else if (latestPastVisitStatus === "Cancelled") {
+          hasCancelledVisit = true;
+        } else if (
+          latestPastVisitStatus === "NoShow" ||
+          latestPastVisitStatus === "Scheduled"
+        ) {
+          hasMissedVisit = true;
+        }
+      }
+
+      // Priority for sorting: 1=upcoming, 2=offer made, 3=completed, 4=cancelled, 5=missed, 6=crear visita
       let sortPriority = 6;
       if (hasUpcomingVisit) {
         sortPriority = 1;
       } else if (hasOffer) {
         sortPriority = 2;
-      } else if (hasCancelledVisit) {
-        sortPriority = 3;
-      } else if (hasMissedVisit) {
-        sortPriority = 4;
       } else if (hasCompletedVisit) {
+        sortPriority = 3;
+      } else if (hasCancelledVisit) {
+        sortPriority = 4;
+      } else if (hasMissedVisit) {
         sortPriority = 5;
       }
 
@@ -1259,26 +1399,93 @@ export async function getContactRelatedContactsAsOwner(contactId: bigint) {
       visitCounts.map((v) => [v.contactId.toString(), v]),
     );
 
+    // Get the latest past visit status for each contact (excluding upcoming visits)
+    let latestPastVisits: Array<{
+      contactId: bigint;
+      status: string | null;
+    }> = [];
+
+    if (contactIds.length > 0) {
+      const latestPastVisitResults = await db
+        .select({
+          contactId: appointments.contactId,
+          status: appointments.status,
+          datetimeStart: appointments.datetimeStart,
+        })
+        .from(appointments)
+        .where(
+          and(
+            inArray(appointments.contactId, contactIds),
+            inArray(appointments.listingId, ownedListingIds),
+            sql`${appointments.datetimeStart} <= NOW()`,
+            eq(appointments.isActive, true),
+          ),
+        )
+        .orderBy(desc(appointments.datetimeStart));
+
+      // Group by contactId and take the first (most recent) past visit
+      const latestByContact = new Map<string, string | null>();
+      for (const visit of latestPastVisitResults) {
+        if (visit.contactId) {
+          const contactIdStr = visit.contactId.toString();
+          if (!latestByContact.has(contactIdStr)) {
+            latestByContact.set(contactIdStr, visit.status);
+          }
+        }
+      }
+
+      latestPastVisits = Array.from(latestByContact.entries()).map(
+        ([contactIdStr, status]) => ({
+          contactId: BigInt(contactIdStr),
+          status,
+        }),
+      );
+    }
+
+    const latestPastVisitMap = new Map(
+      latestPastVisits.map((v) => [v.contactId.toString(), v.status]),
+    );
+
     const contactsWithVisitStatus = allContacts.map((contact) => {
       const visitStats = visitMap.get(contact.contactId.toString());
       const hasUpcomingVisit = (visitStats?.upcomingVisits ?? 0) > 0;
-      const hasMissedVisit = (visitStats?.missedVisits ?? 0) > 0;
-      const hasCompletedVisit = (visitStats?.completedVisits ?? 0) > 0;
-      const hasCancelledVisit = (visitStats?.cancelledVisits ?? 0) > 0;
       const hasOffer = contact.offer !== null && contact.offer !== undefined;
 
-      // Priority for sorting: 1=upcoming, 2=offer made, 3=cancelled, 4=missed, 5=completed, 6=crear visita
+      // Get the latest past visit status (if any)
+      const latestPastVisitStatus = latestPastVisitMap.get(
+        contact.contactId.toString(),
+      );
+
+      // Determine visit status flags based on the LATEST past visit (not counts)
+      let hasMissedVisit = false;
+      let hasCompletedVisit = false;
+      let hasCancelledVisit = false;
+
+      if (latestPastVisitStatus) {
+        if (latestPastVisitStatus === "Completed") {
+          hasCompletedVisit = true;
+        } else if (latestPastVisitStatus === "Cancelled") {
+          hasCancelledVisit = true;
+        } else if (
+          latestPastVisitStatus === "NoShow" ||
+          latestPastVisitStatus === "Scheduled"
+        ) {
+          hasMissedVisit = true;
+        }
+      }
+
+      // Priority for sorting: 1=upcoming, 2=offer made, 3=completed, 4=cancelled, 5=missed, 6=crear visita
       let sortPriority = 6;
       if (hasUpcomingVisit) {
         sortPriority = 1; // Upcoming visit (highest priority)
       } else if (hasOffer) {
         sortPriority = 2; // Offer made (regardless of visit status)
-      } else if (hasCancelledVisit) {
-        sortPriority = 3; // Cancelled visit
-      } else if (hasMissedVisit) {
-        sortPriority = 4; // Missed visit
       } else if (hasCompletedVisit) {
-        sortPriority = 5; // Completed visit
+        sortPriority = 3; // Completed visit
+      } else if (hasCancelledVisit) {
+        sortPriority = 4; // Cancelled visit
+      } else if (hasMissedVisit) {
+        sortPriority = 5; // Missed visit
       }
 
       return {

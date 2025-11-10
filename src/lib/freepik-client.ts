@@ -23,7 +23,7 @@ function validateEnvironment() {
 
 class FreepikClient {
   private apiKey: string;
-  private baseUrl = "https://api.freepik.com/v1/ai/image-upscaler-precision";
+  private baseUrl = "https://api.freepik.com/v1/ai/image-upscaler-precision"; // v1 (not v2)
 
   constructor() {
     validateEnvironment();
@@ -31,34 +31,25 @@ class FreepikClient {
   }
 
   /**
-   * Enhance an image using Freepik's Image Upscaler Precision API
-   * Always uses Light preset settings for cost optimization
+   * Enhance an image using Freepik's Image Upscaler Precision API v1
+   * Converts image URL to base64 and uses minimal settings for cost optimization
    */
-  async enhance(imageBase64: string): Promise<FreepikEnhanceResponse> {
+  async enhance(imageUrl: string): Promise<FreepikEnhanceResponse> {
+    // Download and convert image to base64 (v1 requires base64)
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to download image: ${imageResponse.status}`);
+    }
+
+    const imageBuffer = await imageResponse.arrayBuffer();
+    const base64Image = Buffer.from(imageBuffer).toString("base64");
+
     const requestBody = {
-      image: imageBase64,
+      image: base64Image, // v1 requires base64, not URL
       sharpen: LIGHT_ENHANCEMENT_SETTINGS.sharpen,
       smart_grain: LIGHT_ENHANCEMENT_SETTINGS.smartGrain,
       ultra_detail: LIGHT_ENHANCEMENT_SETTINGS.ultraDetail,
     };
-
-    console.log("Freepik API request details:", {
-      url: this.baseUrl,
-      headers: {
-        "x-freepik-api-key": this.apiKey
-          ? `${this.apiKey.substring(0, 8)}...`
-          : "MISSING",
-        "Content-Type": "application/json",
-      },
-      bodySize: JSON.stringify(requestBody).length,
-      imageDataLength: imageBase64.length,
-      imageDataPrefix: imageBase64.substring(0, 50) + "...",
-      settings: {
-        sharpen: LIGHT_ENHANCEMENT_SETTINGS.sharpen,
-        smart_grain: LIGHT_ENHANCEMENT_SETTINGS.smartGrain,
-        ultra_detail: LIGHT_ENHANCEMENT_SETTINGS.ultraDetail,
-      },
-    });
 
     const response = (await this.fetchWithRetry("", {
       method: "POST",
@@ -70,7 +61,7 @@ class FreepikClient {
     })) as {
       data: {
         task_id: string;
-        status: "CREATED" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
+        status: "IN_PROGRESS" | "COMPLETED" | "FAILED";
         generated?: string[];
         error?: string;
       };
@@ -95,7 +86,7 @@ class FreepikClient {
       },
     })) as {
       data: {
-        status: "CREATED" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
+        status: "IN_PROGRESS" | "COMPLETED" | "FAILED";
         progress?: number;
         generated?: string[]; // Freepik returns images directly here
         error?: string;
@@ -103,7 +94,7 @@ class FreepikClient {
       };
     };
 
-    // Fix: Freepik returns generated images directly in data.generated, not data.result.generated
+    // Freepik returns generated images directly in data.generated, not data.result.generated
     const result =
       response.data.generated && response.data.generated.length > 0
         ? {
@@ -147,11 +138,16 @@ class FreepikClient {
               error?: string;
               message?: string;
               details?: string;
+              invalid_params?: Array<{
+                name: string;
+                reason: string;
+              }>;
             };
             console.error("Freepik API error details:", {
               status: response.status,
               statusText: response.statusText,
               errorData,
+              fullError: JSON.stringify(errorData, null, 2),
             });
 
             if (errorData.error) {
@@ -201,7 +197,7 @@ export const freepikClient = {
   },
 
   // Proxy methods to the actual client
-  enhance: (imageBase64: string) => freepikClient.instance.enhance(imageBase64),
+  enhance: (imageUrl: string) => freepikClient.instance.enhance(imageUrl),
   checkStatus: (taskId: string) => freepikClient.instance.checkStatus(taskId),
 };
 

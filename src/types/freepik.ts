@@ -9,14 +9,14 @@ export interface FreepikEnhanceRequest {
 
 export interface FreepikEnhanceResponse {
   taskId: string;
-  status: "CREATED" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
+  status: "IN_PROGRESS" | "COMPLETED" | "FAILED";
   generated?: string[]; // Enhanced image URLs
   error?: string;
 }
 
 export interface FreepikTaskStatus {
   id: string;
-  status: "CREATED" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
+  status: "IN_PROGRESS" | "COMPLETED" | "FAILED";
   progress?: number;
   result?: {
     generated: string[];
@@ -24,11 +24,13 @@ export interface FreepikTaskStatus {
   error?: string;
 }
 
-// Light preset optimized for cost
+// Light preset optimized for cost (Precision v1 API parameters)
+// Using MINIMUM values for testing and cost optimization
+// Note: Cost is determined by image resolution, NOT these parameters
 export const LIGHT_ENHANCEMENT_SETTINGS = {
-  sharpen: 30, // Lower value for cost optimization
-  smartGrain: 5, // Lower value for cost optimization
-  ultraDetail: 20, // Lower value for cost optimization
+  sharpen: 0, // Minimum sharpening (range: 0-100, default: 50)
+  smartGrain: 0, // Minimum grain enhancement (range: 0-100, default: 7)
+  ultraDetail: 0, // Minimum detail enhancement (range: 0-100, default: 30)
 } as const;
 
 // Comparison slider state
