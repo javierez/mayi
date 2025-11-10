@@ -52,7 +52,8 @@
       "WebFetch(domain:stackoverflow.com)",
       "WebFetch(domain:github.com)",
       "Bash(xargs basename:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(SKIP_ENV_VALIDATION=true NODE_OPTIONS=--max_old_space_size=4096 tsc:*)"
     ],
     "deny": [],
     "ask": []

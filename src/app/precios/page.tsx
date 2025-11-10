@@ -43,19 +43,102 @@ interface ServiceModule {
   inDevelopment?: boolean;
 }
 
+interface Plan {
+  id: string;
+  name: string;
+  description: string;
+  moduleIds: string[];
+  featured?: boolean;
+}
+
 export default function PreciosPage() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">(
     "monthly",
   );
-  const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>(
+  const [rotatedCards, setRotatedCards] = useState<Record<string, boolean>>(
     {},
   );
 
-  const toggleCard = (cardId: string) => {
-    setFlippedCards((prev) => ({
+  // Default to Profesional plan modules
+  const defaultIncludedModules = {
+    "crm-core": true,
+    "website": true,
+    "cartel-editor": true,
+    "second-brain": true,
+    "image-studio": true,
+    "seo-sem": true,
+    "club-membership": true,
+  };
+
+  const [includedModules, setIncludedModules] = useState<Record<string, boolean>>(
+    defaultIncludedModules,
+  );
+  const [selectedPlan, setSelectedPlan] = useState<string | null>("profesional");
+
+  const toggleCardRotation = (cardId: string) => {
+    setRotatedCards((prev) => ({
       ...prev,
       [cardId]: !prev[cardId],
     }));
+  };
+
+  const toggleModuleInclusion = (moduleId: string) => {
+    setIncludedModules((prev) => ({
+      ...prev,
+      [moduleId]: !prev[moduleId],
+    }));
+  };
+
+  const plans: Plan[] = [
+    {
+      id: "basico",
+      name: "Básico",
+      description: "Todo lo esencial para empezar",
+      moduleIds: ["crm-core", "website", "cartel-editor", "second-brain"],
+    },
+    {
+      id: "profesional",
+      name: "Profesional",
+      description: "Para inmobiliarias en crecimiento",
+      moduleIds: [
+        "crm-core",
+        "website",
+        "cartel-editor",
+        "second-brain",
+        "image-studio",
+        "seo-sem",
+        "club-membership",
+      ],
+      featured: true,
+    },
+    {
+      id: "personalizado",
+      name: "Personalizado",
+      description: "Elige los módulos que necesites",
+      moduleIds: [],
+    },
+  ];
+
+  const handlePlanSelection = (planId: string) => {
+    const plan = plans.find((p) => p.id === planId);
+    if (!plan) return;
+
+    if (planId === "personalizado") {
+      // Clear plan selection and scroll to modules section
+      setSelectedPlan(null);
+      setIncludedModules({});
+      const modulesSection = document.getElementById("modules-section");
+      modulesSection?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+
+    // Set included modules for the plan (but don't rotate them)
+    const newIncludedModules: Record<string, boolean> = {};
+    plan.moduleIds.forEach((moduleId) => {
+      newIncludedModules[moduleId] = true;
+    });
+    setIncludedModules(newIncludedModules);
+    setSelectedPlan(planId);
   };
 
   const services: ServiceModule[] = [
@@ -297,9 +380,9 @@ export default function PreciosPage() {
     return { savings, percentage };
   };
 
-  // Calculate total price of selected modules
+  // Calculate total price of included modules
   const selectedModules = services.filter(
-    (service) => flippedCards[service.id],
+    (service) => includedModules[service.id],
   );
   const totalPrice = selectedModules.reduce((sum, service) => {
     const price =
@@ -312,7 +395,7 @@ export default function PreciosPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+      <section className="relative px-4 pb-4 pt-12 mb-3 sm:px-6 sm:pb-6 sm:pt-16 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="text-center">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl md:text-5xl lg:text-6xl">
@@ -372,9 +455,141 @@ export default function PreciosPage() {
         </div>
       </section>
 
-      {/* Services Grid */}
-      <section className="px-4 py-8 sm:px-6 lg:px-8">
+      {/* Plans Section */}
+      <section className="px-4 pb-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {plans.map((plan) => {
+              const planModules = services.filter((service) =>
+                plan.moduleIds.includes(service.id),
+              );
+              const planPrice = planModules.reduce((sum, service) => {
+                const price =
+                  billingCycle === "monthly"
+                    ? service.monthlyPrice
+                    : service.annualPrice;
+                return sum + price;
+              }, 0);
+
+              return (
+                <Card
+                  key={plan.id}
+                  className={cn(
+                    "relative flex flex-col overflow-hidden border border-gray-200 transition-all duration-200 hover:shadow-lg",
+                    selectedPlan === plan.id && "ring-2 ring-amber-400",
+                  )}
+                >
+                  {plan.featured && (
+                    <div className="absolute right-4 top-4 z-10">
+                      <div className="rounded-full bg-gradient-to-r from-amber-400 to-rose-400 px-2 py-0.5 text-[10px] font-medium text-white">
+                        Recomendado
+                      </div>
+                    </div>
+                  )}
+
+                  <CardHeader className="pb-4 pt-6">
+                    <CardTitle className="text-center text-2xl font-bold text-gray-900">
+                      {plan.name}
+                    </CardTitle>
+                    <CardDescription className="mt-2 text-center text-sm text-gray-600">
+                      {plan.description}
+                    </CardDescription>
+                  </CardHeader>
+
+                  <CardContent className="flex flex-1 flex-col px-6">
+                    {plan.id !== "personalizado" ? (
+                      <>
+                        {/* Price */}
+                        <div className="mb-6 border-y border-gray-100 py-6 text-center">
+                          <div className="flex items-baseline justify-center gap-1">
+                            <span className="text-4xl font-bold text-gray-900">
+                              €
+                              {billingCycle === "annual"
+                                ? (planPrice / 12).toFixed(2).replace(".", ",")
+                                : planPrice.toFixed(2).replace(".", ",")}
+                            </span>
+                            <span className="text-sm text-gray-500">/mes</span>
+                          </div>
+                          {billingCycle === "annual" && (
+                            <p className="mt-2 text-xs text-gray-600">
+                              €{planPrice.toFixed(2).replace(".", ",")} facturado
+                              anualmente
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Modules Included */}
+                        <div className="mb-6 flex-1">
+                          <p className="mb-3 text-sm font-semibold text-gray-900">
+                            Módulos incluidos:
+                          </p>
+                          <div className="space-y-2">
+                            {planModules.map((module) => {
+                              const Icon = module.icon;
+                              return (
+                                <div
+                                  key={module.id}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Icon className="h-4 w-4 flex-shrink-0 text-amber-500" />
+                                  <span className="text-xs text-gray-700">
+                                    {module.name}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="mb-6 flex flex-1 flex-col items-center justify-center py-8 text-center">
+                        <Palette className="mb-4 h-12 w-12 text-gray-400" />
+                        <p className="mb-2 text-sm font-medium text-gray-700">
+                          Crea tu plan ideal
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Selecciona solo los módulos que necesitas
+                        </p>
+                      </div>
+                    )}
+
+                    {/* CTA Button */}
+                    <Button
+                      className={cn(
+                        "w-full font-medium transition-colors duration-200",
+                        selectedPlan === plan.id
+                          ? "bg-gradient-to-r from-amber-400 to-rose-400 text-white hover:from-amber-500 hover:to-rose-500"
+                          : "border border-gray-300 bg-white text-gray-700 hover:border-amber-400 hover:bg-amber-50 hover:text-amber-700"
+                      )}
+                      variant={selectedPlan === plan.id ? "default" : "outline"}
+                      onClick={() => handlePlanSelection(plan.id)}
+                    >
+                      {plan.id === "personalizado"
+                        ? "Personalizar"
+                        : selectedPlan === plan.id
+                          ? "Plan seleccionado"
+                          : "Seleccionar plan"}
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Modules Section */}
+      <section id="modules-section" className="px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-8 text-center">
+            <h2 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+              Todos los Módulos
+            </h2>
+            <p className="mt-3 text-base text-gray-600 sm:text-lg">
+              Explora y añade módulos individuales a tu plan personalizado
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
             {services.map((service) => {
               const Icon = service.icon;
@@ -386,6 +601,9 @@ export default function PreciosPage() {
                 service.monthlyPrice,
                 service.annualPrice,
               );
+
+              const isIncluded = includedModules[service.id] ?? false;
+              const isRotated = rotatedCards[service.id] ?? false;
 
               return (
                 <div
@@ -399,7 +617,7 @@ export default function PreciosPage() {
                         service.comingSoon ?? service.inDevelopment
                           ? "cursor-not-allowed"
                           : "cursor-pointer",
-                        flippedCards[service.id] && "[transform:rotateY(180deg)]",
+                        isRotated && "[transform:rotateY(180deg)]",
                       )}
                       style={{ transformStyle: "preserve-3d" }}
                     >
@@ -417,6 +635,14 @@ export default function PreciosPage() {
                         <div className="absolute right-3 top-3 z-10 sm:right-4 sm:top-4">
                           <div className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 sm:px-3 sm:py-1">
                             Próximamente
+                          </div>
+                        </div>
+                      )}
+
+                      {isIncluded && !service.comingSoon && (
+                        <div className="absolute right-3 top-3 z-10 sm:right-4 sm:top-4">
+                          <div className="flex items-center justify-center rounded-full bg-gradient-to-r from-amber-400 to-rose-400 p-1.5">
+                            <Check className="h-3.5 w-3.5 text-white" />
                           </div>
                         </div>
                       )}
@@ -502,10 +728,13 @@ export default function PreciosPage() {
                           <div className="border-t border-gray-100 pt-3 text-center sm:pt-4">
                             <div className="flex items-baseline justify-center gap-1">
                               <span className="text-2xl font-bold text-gray-900 sm:text-3xl">
-                                €{price.toFixed(2).replace(".", ",")}
+                                €
+                                {billingCycle === "annual"
+                                  ? (price / 12).toFixed(2).replace(".", ",")
+                                  : price.toFixed(2).replace(".", ",")}
                               </span>
                               <span className="text-xs text-gray-500 sm:text-sm">
-                                /{billingCycle === "monthly" ? "mes" : "año"}
+                                /mes
                               </span>
                               {service.id === "seo-sem" && (
                                 <span className="text-lg font-bold text-gray-900">
@@ -518,9 +747,10 @@ export default function PreciosPage() {
                                 * 104,90€ setup inicial
                               </p>
                             )}
-                            {billingCycle === "annual" && savings > 0 && (
-                              <p className="mt-1 text-xs text-green-600">
-                                Ahorras €{savings}
+                            {billingCycle === "annual" && (
+                              <p className="mt-1 text-xs text-gray-600">
+                                €{price.toFixed(2).replace(".", ",")} facturado
+                                anualmente
                               </p>
                             )}
                           </div>
@@ -533,7 +763,9 @@ export default function PreciosPage() {
                               onClick={(e) => {
                                 if (!service.comingSoon && !service.inDevelopment) {
                                   e.preventDefault();
-                                  toggleCard(service.id);
+                                  // Toggle both rotation and inclusion
+                                  toggleCardRotation(service.id);
+                                  toggleModuleInclusion(service.id);
                                 }
                               }}
                             >
@@ -541,6 +773,8 @@ export default function PreciosPage() {
                                 <span>Próximamente</span>
                               ) : service.inDevelopment ? (
                                 <span>En desarrollo</span>
+                              ) : isIncluded ? (
+                                <span>Quitar Módulo</span>
                               ) : (
                                 <span>Añadir Módulo</span>
                               )}
@@ -555,7 +789,7 @@ export default function PreciosPage() {
 
                     {/* Back of card */}
                     <Card
-                      className="absolute inset-0 flex h-full flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-amber-50 to-rose-50 transition-all duration-200"
+                      className="absolute inset-0 flex h-full flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-amber-100 to-rose-100 transition-all duration-200"
                       style={{
                         backfaceVisibility: "hidden",
                         transform: "rotateY(180deg)",
@@ -574,7 +808,9 @@ export default function PreciosPage() {
                           variant="outline"
                           onClick={(e) => {
                             e.preventDefault();
-                            toggleCard(service.id);
+                            // Toggle both rotation and inclusion
+                            toggleCardRotation(service.id);
+                            toggleModuleInclusion(service.id);
                           }}
                         >
                           Volver
@@ -675,16 +911,27 @@ export default function PreciosPage() {
                   {selectedModules.length === 1 ? "módulo" : "módulos"}{" "}
                   seleccionado{selectedModules.length > 1 && "s"}
                 </p>
-                <div className="flex flex-wrap items-baseline gap-1 sm:gap-2">
-                  <span className="text-xl font-bold text-gray-900 sm:text-2xl">
-                    €{totalPrice.toFixed(2).replace(".", ",")}
-                  </span>
-                  <span className="text-xs text-gray-600 sm:text-sm">
-                    /{billingCycle === "monthly" ? "mes" : "año"}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    • 1 mes gratis
-                  </span>
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex flex-wrap items-baseline gap-1 sm:gap-2">
+                    <span className="text-xl font-bold text-gray-900 sm:text-2xl">
+                      €
+                      {billingCycle === "annual"
+                        ? (totalPrice / 12).toFixed(2).replace(".", ",")
+                        : totalPrice.toFixed(2).replace(".", ",")}
+                    </span>
+                    <span className="text-xs text-gray-600 sm:text-sm">
+                      /mes
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      • 1 mes gratis
+                    </span>
+                  </div>
+                  {billingCycle === "annual" && (
+                    <p className="text-xs text-gray-500">
+                      €{totalPrice.toFixed(2).replace(".", ",")} facturado
+                      anualmente
+                    </p>
+                  )}
                 </div>
               </div>
               <Button
