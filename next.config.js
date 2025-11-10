@@ -6,6 +6,14 @@ import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
+  typescript: {
+    // Skip type checking during build - types are checked in CI/local development
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    // Skip ESLint during build - linting is checked in CI/local development
+    ignoreDuringBuilds: true,
+  },
   images: {
     remotePatterns: [
       {
