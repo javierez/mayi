@@ -1172,8 +1172,7 @@ export async function buildFotocasaPayload(
     // Build the complete payload
     const fotocasaPayload: FotocasaProperty = {
       ExternalId: (listing.listingId ?? 0).toString(),
-      AgencyReference:
-        listing.referenceNumber ?? (listing.listingId ?? 0).toString(),
+      AgencyReference: (listing.listingId ?? 0).toString(),
       TypeId: PROPERTY_TYPE_MAPPING[listing.propertyType ?? "piso"] ?? 1,
       SubTypeId:
         PROPERTY_SUBTYPE_MAPPING[listing.propertySubtype ?? "Piso"] ?? 9, // Default to Flat (9) if no subtype

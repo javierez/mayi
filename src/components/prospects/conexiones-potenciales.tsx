@@ -6,11 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Skeleton } from "~/components/ui/skeleton";
-import { RefreshCw, Search, AlertCircle, Users } from "lucide-react";
+import { RefreshCw, Search, AlertCircle, Users, Info } from "lucide-react";
 import { ExternalAccountCard } from "./external-account-card";
 import { ContactMatchGroup } from "./contact-match-group";
 import { ProspectMatchGroup } from "./prospect-match-group";
 import { ShareListingModal } from "./share-listing-modal";
+import { CrucesInfoModal } from "./cruces-info-modal";
 import {
   getMatchesForProspectsWithAuth,
   saveMatchWithAuth,
@@ -63,6 +64,7 @@ export function ConexionesPotenciales({
     null,
   );
   const [accountWebsite, setAccountWebsite] = useState<string | null>(null);
+  const [infoModalOpen, setInfoModalOpen] = useState(false);
 
   // Statistics state
   const [stats, setStats] = useState({
@@ -393,10 +395,19 @@ export function ConexionesPotenciales({
   return (
     <Card className={`w-full ${className}`}>
       <CardHeader className="flex flex-col gap-4 pb-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-        <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <CardTitle className="text-lg font-semibold text-gray-900 sm:text-xl">
-            Buscador de Conexiones
+            Buscador de Cruces
           </CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setInfoModalOpen(true)}
+            className="h-8 w-8 p-0"
+            title="¿Qué son los cruces?"
+          >
+            <Info className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+          </Button>
         </div>
 
         <div className="flex items-center space-x-2">
@@ -591,6 +602,12 @@ export function ConexionesPotenciales({
             accountWebsite={accountWebsite}
           />
         )}
+
+        {/* Cruces Info Modal */}
+        <CrucesInfoModal
+          open={infoModalOpen}
+          onOpenChange={setInfoModalOpen}
+        />
       </CardContent>
     </Card>
   );

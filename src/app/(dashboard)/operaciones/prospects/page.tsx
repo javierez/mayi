@@ -1,9 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Button } from "~/components/ui/button";
-import { Users, Briefcase } from "lucide-react";
-import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ProspectFilter } from "~/components/prospects/prospect-filter";
 import { ProspectKanban } from "~/components/prospects/prospect-kanban";
@@ -223,24 +220,6 @@ export default function ProspectsPage() {
         <div className="space-y-1">
           <h1 className="text-xl font-bold sm:text-2xl">Ofertas y Demandas</h1>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="default" disabled size="sm" className="sm:size-default">
-            <Users className="mr-1 h-4 w-4 sm:mr-2" />
-            <span className="text-xs sm:text-sm">Demandas</span>
-          </Button>
-          <Button asChild size="sm" className="sm:size-default">
-            <Link href="/leads">
-              <Users className="mr-1 h-4 w-4 sm:mr-2" />
-              <span className="text-xs sm:text-sm">Conexiones</span>
-            </Link>
-          </Button>
-          <Button asChild size="sm" className="sm:size-default">
-            <Link href="/deals">
-              <Briefcase className="mr-1 h-4 w-4 sm:mr-2" />
-              <span className="text-xs sm:text-sm">Operaciones</span>
-            </Link>
-          </Button>
-        </div>
       </div>
 
       {isLoading ? (
@@ -299,33 +278,36 @@ export default function ProspectsPage() {
         <div className="space-y-4 sm:space-y-6">
           <ConexionesPotenciales />
 
-          <ProspectFilter view={view} onViewChange={handleViewChange} />
+          {/* Hidden for now - Table below conexiones-potenciales */}
+          <div className="hidden">
+            <ProspectFilter view={view} onViewChange={handleViewChange} />
 
-          <ProspectTable
-            prospects={filteredProspects.length > 0 ? filteredProspects : prospects}
-            listings={listings}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            onPrefetchPage={handlePrefetchPage}
-            onProspectUpdate={() => {
-              // Refresh data when prospects are updated
-              const fetchData = async () => {
-                try {
-                  const [prospectsResult, listingsResult] = await Promise.all([
-                    getAllProspectsWithAuth(),
-                    getAllListingsWithAuth(),
-                  ]);
-                  setProspects(prospectsResult);
-                  setListings(listingsResult);
-                  setFilteredProspects(prospectsResult);
-                } catch (error) {
-                  console.error("Error refreshing prospects:", error);
-                }
-              };
-              void fetchData();
-            }}
-          />
+            <ProspectTable
+              prospects={filteredProspects.length > 0 ? filteredProspects : prospects}
+              listings={listings}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              onPrefetchPage={handlePrefetchPage}
+              onProspectUpdate={() => {
+                // Refresh data when prospects are updated
+                const fetchData = async () => {
+                  try {
+                    const [prospectsResult, listingsResult] = await Promise.all([
+                      getAllProspectsWithAuth(),
+                      getAllListingsWithAuth(),
+                    ]);
+                    setProspects(prospectsResult);
+                    setListings(listingsResult);
+                    setFilteredProspects(prospectsResult);
+                  } catch (error) {
+                    console.error("Error refreshing prospects:", error);
+                  }
+                };
+                void fetchData();
+              }}
+            />
+          </div>
         </div>
       )}
     </div>

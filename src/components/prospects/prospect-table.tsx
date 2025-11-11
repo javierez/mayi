@@ -199,7 +199,15 @@ export function ProspectTable({
       prospects: ProspectWithContact[],
       listings: ListingWithDetails[],
     ): OperationItem[] => {
-      const prospectOperations: OperationItem[] = prospects.map((prospect) => {
+      // Deduplicate prospects and listings by ID to prevent duplicate keys
+      const uniqueProspects = Array.from(
+        new Map(prospects.map((prospect) => [prospect.prospects.id.toString(), prospect])).values()
+      );
+      const uniqueListings = Array.from(
+        new Map(listings.map((listing) => [listing.listings.id.toString(), listing])).values()
+      );
+
+      const prospectOperations: OperationItem[] = uniqueProspects.map((prospect) => {
         const operationId = `prospect-${prospect.prospects.id}`;
         const optimisticStatus = optimisticStatuses[operationId];
 
@@ -227,7 +235,7 @@ export function ProspectTable({
         };
       });
 
-      const listingOperations: OperationItem[] = listings.map((listing) => {
+      const listingOperations: OperationItem[] = uniqueListings.map((listing) => {
         const operationId = `listing-${listing.listings.id}`;
         const optimisticStatus = optimisticStatuses[operationId];
 

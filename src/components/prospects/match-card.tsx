@@ -1,30 +1,22 @@
 "use client";
 
 import React, { useState } from "react";
-// import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardFooter } from "~/components/ui/card";
-// import { Button } from "~/components/ui/button";
-// import { Skeleton } from "~/components/ui/skeleton";
 import {
   Bed,
   Bath,
   Square as SquareIcon,
-  // MapPin,
   User,
   X,
-  // Mail,
-  CheckCircle,
-  AlertCircle,
   Euro,
   Link as LinkIcon,
   Share2,
 } from "lucide-react";
 import type { ProspectMatch, MatchAction } from "~/types/connection-matches";
 import { navigateToPage } from "~/lib/navigation";
-// import { PropertyImagePlaceholder } from "~/components/propiedades/PropertyImagePlaceholder";
 
 interface MatchCardProps {
   match: ProspectMatch;
@@ -38,25 +30,14 @@ export const MatchCard = React.memo(function MatchCard({
   showActions = true,
 }: MatchCardProps) {
   const router = useRouter();
-  // const [imageLoaded, setImageLoaded] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState<MatchAction | null>(
     null,
   );
 
-  const { listing, matchType, isCrossAccount, canContact, hasExistingLead } =
-    match;
+  const { listing, isCrossAccount, canContact, hasExistingLead } = match;
 
   // Extract contact ID for use in footer link
   const contactId = match.prospect.contacts.contactId;
-
-  // Debug logs
-  console.log("🔍 MatchCard - Full listing object:", listing);
-  console.log("🏠 MatchCard - Properties object:", listing.properties);
-  console.log("📝 MatchCard - Property title:", listing.properties.title);
-  console.log("🏷️ MatchCard - Property type:", listing.properties.propertyType);
-
-  // const defaultPlaceholder = "";
-  // const imageSrc = defaultPlaceholder; // TODO: Add imageUrl when available in ListingWithDetails type
 
   const getListingTypeLabel = (type: string) => {
     switch (type) {
@@ -71,40 +52,6 @@ export const MatchCard = React.memo(function MatchCard({
     }
   };
 
-  const getMatchTypeBadge = () => {
-    // Show lead status if lead exists
-    if (hasExistingLead) {
-      return (
-        <Badge
-          className="h-5 w-5 border-0 bg-transparent p-1"
-          title="Lead Creado"
-        >
-          <CheckCircle className="h-3 w-3 text-blue-700" />
-        </Badge>
-      );
-    }
-
-    // Otherwise show match type
-    if (matchType === "strict") {
-      return (
-        <Badge
-          className="h-5 w-5 border-0 bg-transparent p-1"
-          title="Coincidencia Exacta"
-        >
-          <CheckCircle className="h-3 w-3 text-green-700" />
-        </Badge>
-      );
-    } else {
-      return (
-        <Badge
-          className="h-5 w-5 border-0 bg-transparent p-1"
-          title="Coincidencia Aproximada"
-        >
-          <AlertCircle className="h-3 w-3 text-orange-700" />
-        </Badge>
-      );
-    }
-  };
 
   const handleAction = async (action: MatchAction) => {
     if (!onAction) return;
@@ -156,11 +103,6 @@ export const MatchCard = React.memo(function MatchCard({
       {hasExistingLead && (
         <div className="absolute bottom-0 left-0 top-0 z-20 w-8 bg-green-600" />
       )}
-
-      {/* Match Type Badge - Top Right Corner */}
-      <div className="absolute right-1 top-1 z-10">
-        {!hasExistingLead && getMatchTypeBadge()}
-      </div>
 
       {/* Centered Content */}
       <div className="p-2 text-center">
@@ -252,7 +194,7 @@ export const MatchCard = React.memo(function MatchCard({
                 <>
                   {/* Create Lead Button */}
                   <button
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-100 bg-white/95 shadow-lg transition-all duration-200 hover:scale-110 hover:bg-white hover:shadow-xl"
+                    className="group/btn flex h-8 w-8 items-center justify-center gap-1 overflow-hidden rounded-full border border-gray-100 bg-white/95 shadow-lg transition-all duration-300 hover:w-auto hover:rounded-lg hover:bg-white hover:px-3 hover:shadow-xl"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -261,12 +203,15 @@ export const MatchCard = React.memo(function MatchCard({
                     disabled={isActionLoading !== null}
                     title="Crear Lead"
                   >
-                    <LinkIcon className="h-3.5 w-3.5 text-gray-600" />
+                    <LinkIcon className="h-3.5 w-3.5 shrink-0 text-gray-600" />
+                    <span className="max-w-0 overflow-hidden whitespace-nowrap text-xs font-medium text-gray-700 opacity-0 transition-all duration-300 group-hover/btn:max-w-[100px] group-hover/btn:opacity-100">
+                      Crear Lead
+                    </span>
                   </button>
 
                   {/* Share Button */}
                   <button
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-100 bg-white/95 shadow-lg transition-all duration-200 hover:scale-110 hover:bg-white hover:shadow-xl"
+                    className="group/share flex h-8 w-8 items-center justify-center gap-1 overflow-hidden rounded-full border border-gray-100 bg-white/95 shadow-lg transition-all duration-300 hover:w-auto hover:rounded-lg hover:bg-white hover:px-3 hover:shadow-xl"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -275,13 +220,16 @@ export const MatchCard = React.memo(function MatchCard({
                     disabled={isActionLoading !== null}
                     title="Compartir propiedad"
                   >
-                    <Share2 className="h-3.5 w-3.5 text-gray-600" />
+                    <Share2 className="h-3.5 w-3.5 shrink-0 text-gray-600" />
+                    <span className="max-w-0 overflow-hidden whitespace-nowrap text-xs font-medium text-gray-700 opacity-0 transition-all duration-300 group-hover/share:max-w-[100px] group-hover/share:opacity-100">
+                      Compartir
+                    </span>
                   </button>
                 </>
               ) : (
                 /* Dismiss/Remove Lead Button (shown when lead exists) */
                 <button
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-red-200 bg-red-100 shadow-lg transition-all duration-200 hover:scale-110 hover:bg-red-200 hover:shadow-xl"
+                  className="group/dismiss flex h-8 w-8 items-center justify-center gap-1 overflow-hidden rounded-full border border-red-200 bg-red-100 shadow-lg transition-all duration-300 hover:w-auto hover:rounded-lg hover:bg-red-200 hover:px-3 hover:shadow-xl"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -290,7 +238,10 @@ export const MatchCard = React.memo(function MatchCard({
                   disabled={isActionLoading !== null}
                   title="Eliminar Lead"
                 >
-                  <X className="h-3.5 w-3.5 text-red-600" />
+                  <X className="h-3.5 w-3.5 shrink-0 text-red-600" />
+                  <span className="max-w-0 overflow-hidden whitespace-nowrap text-xs font-medium text-red-700 opacity-0 transition-all duration-300 group-hover/dismiss:max-w-[100px] group-hover/dismiss:opacity-100">
+                    Eliminar Lead
+                  </span>
                 </button>
               )}
             </div>
