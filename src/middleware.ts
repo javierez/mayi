@@ -6,6 +6,7 @@ const publicPaths = [
   "/auth/signin",
   "/auth/signup",
   "/auth/forgot-password",
+  "/auth/verify-reset-code",
   "/auth/account-setup",
   "/api/auth",
   "/api/puppet/template",
@@ -31,6 +32,10 @@ const publicPaths = [
   "/empresa/contacto",
   "/changelog",
   "/academia",
+  "/aviso-legal",
+  "/privacidad",
+  "/cookies",
+  "/condiciones-servicio",
 ];
 
 export async function middleware(request: NextRequest) {
