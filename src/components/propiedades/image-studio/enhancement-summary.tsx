@@ -102,11 +102,11 @@ export function EnhancementSummary({
             </p>
           </div>
         ) : (
-          <div className="py-8">
+          <div className="py-6">
             {/* Main Content */}
-            <div className="text-center space-y-8">
+            <div className="space-y-6">
               {/* Total Images - Primary */}
-              <div className="space-y-2">
+              <div className="text-center space-y-2">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">
                   Total Images
                 </p>
@@ -115,16 +115,17 @@ export function EnhancementSummary({
                 </p>
               </div>
 
-              {/* Can be improved - Secondary Card */}
-              <div className="flex justify-center">
-                <div className="inline-block rounded-lg bg-white px-4 py-3 shadow-md">
-                  <div className="space-y-0.5">
-                    <p className="text-[10px] text-muted-foreground">
-                      can be improved with AI
+              {/* Stats List */}
+              <div className="space-y-2">
+                {/* Recommended to improve */}
+                <div className="flex items-center justify-between rounded-md bg-white px-4 py-3 shadow-lg">
+                  <div>
+                    <p className="text-xs text-gray-600">
+                      Recomendamos mejorar la calidad
                     </p>
-                    <p className="text-2xl font-semibold tracking-tight text-gray-900">
-                      {recommendationCounts.total}
-                    </p>
+                  </div>
+                  <div className="text-lg font-semibold text-gray-900">
+                    {recommendationCounts.total}
                   </div>
                 </div>
               </div>

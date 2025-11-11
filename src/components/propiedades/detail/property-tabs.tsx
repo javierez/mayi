@@ -685,10 +685,14 @@ export function PropertyTabs({
                 onClick={() =>
                   router.push(`/propiedades/${listing.listingId}/image-studio`)
                 }
-                className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-2.5 font-medium text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-amber-500 hover:to-rose-500 hover:shadow-xl active:scale-95"
+                className="group relative flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-white/30 bg-gradient-to-br from-amber-400 via-orange-500 to-rose-500 font-mono text-xs font-bold uppercase leading-tight tracking-wider text-white transition-all duration-300 hover:scale-110 hover:border-white/50 hover:from-amber-500 hover:via-orange-600 hover:to-rose-600 active:scale-95"
+                style={{
+                  boxShadow: "0 8px 25px rgba(251, 146, 60, 0.5), inset 0 -4px 8px rgba(0, 0, 0, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.3)",
+                }}
               >
-                Vesta Image Studio
-                <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+                <span className="relative z-10 px-3 text-center drop-shadow-lg">Vesta Image Studio</span>
+                <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+                <div className="absolute inset-0 rounded-full bg-gradient-to-b from-white/20 to-transparent" />
               </button>
             </div>
           )}

@@ -8,6 +8,15 @@ import {
 } from "~/lib/image-utils";
 import { getListingHeaderData } from "~/server/queries/listing";
 import type { RenovationType } from "~/types/gemini";
+import {
+  calculateGeminiTokens,
+  GEMINI_TOKEN_COSTS,
+} from "~/lib/image-token-pricing";
+import {
+  checkSufficientTokens,
+  deductGeminiRenovationTokens,
+  deductGeminiDetectionTokens,
+} from "~/server/services/token-service";
 
 /**
  * POST: Start image renovation with Gemini API
@@ -88,14 +97,56 @@ export async function POST(
       );
     }
 
+    // 6. Get account ID from session (not from propertyData)
+    const accountId = BigInt(session.user.accountId);
+
+    // 7. Calculate total token cost (detection + renovation)
+    // Note: Bedroom check happens after detection, so we'll recalculate if needed
+    const detectionCost = calculateGeminiTokens("room_detection");
+    const renovationCost = calculateGeminiTokens("renovation");
+    // Initial calculation (will be updated if bedroom is detected)
+    let totalTokensNeeded = data.renovationType
+      ? renovationCost.tokens
+      : detectionCost.tokens + renovationCost.tokens;
+
+    console.log("Gemini token costs:", {
+      needsDetection: !data.renovationType,
+      detectionTokens: data.renovationType ? 0 : detectionCost.tokens,
+      renovationTokens: data.renovationType === "bedroom" ? renovationCost.tokens * 2 : renovationCost.tokens,
+      isBedroom: data.renovationType === "bedroom",
+      totalTokens: totalTokensNeeded,
+    });
+
+    // 8. Check if account has sufficient tokens
+    const tokenCheck = await checkSufficientTokens(accountId, totalTokensNeeded);
+
+    if (!tokenCheck.sufficient) {
+      console.error("Insufficient tokens for Gemini renovation:", {
+        required: totalTokensNeeded,
+        available: tokenCheck.currentBalance,
+        deficit: tokenCheck.deficit,
+      });
+
+      return Response.json(
+        {
+          error: "Insufficient tokens",
+          required: totalTokensNeeded,
+          available: tokenCheck.currentBalance,
+          deficit: tokenCheck.deficit,
+        },
+        { status: 402 }, // 402 Payment Required
+      );
+    }
+
     console.log("Starting Gemini renovation with ASSEMBLY PROMPTS:", {
       propertyId: propertyId.toString(),
       imageSize: getImageSizeInMB(imageBase64).toFixed(2) + "MB",
       renovationType: data.renovationType ?? "auto-detect",
       usingAssemblyPrompts: true,
+      tokensToDeduct: totalTokensNeeded,
     });
 
-    // 6. Determine room type - use auto-detection if needed
+    // 9. Determine room type - use auto-detection if needed
     let finalRoomType: RenovationType;
 
     // Check if provided room type is valid
@@ -118,11 +169,57 @@ export async function POST(
       // Auto-detect room type using Gemini
       console.log("🔍 AUTO-DETECTING ROOM TYPE - Starting analysis...");
 
+      // Deduct tokens for detection BEFORE calling API
+      try {
+        await deductGeminiDetectionTokens(
+          accountId,
+          GEMINI_TOKEN_COSTS.ROOM_DETECTION,
+          undefined, // propertyImageId
+          propertyId,
+          session.user.id,
+        );
+        console.log(
+          `Deducted ${GEMINI_TOKEN_COSTS.ROOM_DETECTION} tokens for room detection`,
+        );
+      } catch (tokenError) {
+        console.error("Failed to deduct detection tokens:", tokenError);
+        return Response.json(
+          { error: "Failed to process token deduction for detection" },
+          { status: 500 },
+        );
+      }
+
       // Call the room detection through the Gemini client
       const detectionResult = await geminiClient.detectRoomType(imageBase64);
 
       if (detectionResult.success && detectionResult.roomType) {
         finalRoomType = detectionResult.roomType;
+        
+        // Recalculate tokens if bedroom detected (two-pass required)
+        if (finalRoomType === "bedroom") {
+          const bedroomRenovationTokens = renovationCost.tokens * 2;
+          totalTokensNeeded = detectionCost.tokens + bedroomRenovationTokens;
+          console.log("🛏️ Bedroom detected - recalculating tokens for two-pass:", {
+            detectionTokens: detectionCost.tokens,
+            renovationTokens: bedroomRenovationTokens,
+            totalTokens: totalTokensNeeded,
+          });
+          
+          // Re-check token balance for bedroom
+          const bedroomTokenCheck = await checkSufficientTokens(accountId, totalTokensNeeded);
+          if (!bedroomTokenCheck.sufficient) {
+            return Response.json(
+              {
+                error: "Insufficient tokens",
+                required: totalTokensNeeded,
+                available: bedroomTokenCheck.currentBalance,
+                deficit: bedroomTokenCheck.deficit,
+              },
+              { status: 402 },
+            );
+          }
+        }
+        
         console.log("✅ ========================================");
         console.log("✅ ROOM AUTO-DETECTION SUCCESSFUL!");
         console.log("✅ Detected Room Type:", finalRoomType.toUpperCase());
@@ -138,7 +235,35 @@ export async function POST(
       }
     }
 
-    // 7. Call Gemini API for renovation using assembly prompts (synchronous)
+    // 10. Deduct tokens for renovation BEFORE calling API
+    // For bedrooms, deduct double (two-pass: removal + renovation)
+    const tokensToDeduct = finalRoomType === "bedroom"
+      ? GEMINI_TOKEN_COSTS.RENOVATION * 2
+      : GEMINI_TOKEN_COSTS.RENOVATION;
+    
+    try {
+      await deductGeminiRenovationTokens(
+        accountId,
+        tokensToDeduct,
+        finalRoomType,
+        "default", // style
+        undefined, // selectedElements (all)
+        undefined, // propertyImageId
+        propertyId,
+        session.user.id,
+      );
+      console.log(
+        `Deducted ${tokensToDeduct} tokens for renovation${finalRoomType === "bedroom" ? " (two-pass bedroom)" : ""}`,
+      );
+    } catch (tokenError) {
+      console.error("Failed to deduct renovation tokens:", tokenError);
+      return Response.json(
+        { error: "Failed to process token deduction for renovation" },
+        { status: 500 },
+      );
+    }
+
+    // 11. Call Gemini API for renovation using assembly prompts (synchronous)
     const result = await geminiClient.renovateImageWithAssembly(
       imageBase64,
       finalRoomType,

@@ -8,10 +8,17 @@ export interface GeminiRenovationRequest {
   renovationType?: RenovationType;
 }
 
+export interface TokenUsage {
+  promptTokenCount: number;
+  candidatesTokenCount: number;
+  totalTokenCount: number;
+}
+
 export interface GeminiRenovationResponse {
   success: boolean;
   renovatedImageBase64?: string;
   error?: string;
+  tokenUsage?: TokenUsage;
 }
 
 export interface GeminiTaskStatus {
@@ -73,131 +80,66 @@ Key indicators:
 Respond with only the room type (e.g., "kitchen" or "living_room"). If unclear, choose the most likely room type based on dominant features.
 `;
 
-// Style instruction sets for different aesthetics
+// Prompt for removing all objects from bedroom (first pass for bedrooms)
+export const BEDROOM_OBJECT_REMOVAL_PROMPT = `Bedroom Object Removal — Structural Preservation
+
+MANDATORY STRUCTURAL PRESERVATION: Keep wall positions EXACTLY as shown — do not move, resize, or reposition walls. Keep floor boundaries and floor plan layout IDENTICAL — floor area shape and dimensions must match the original. CRITICAL: Corner pixels (wall-wall and floor-wall intersections) must remain in the SAME exact pixel positions. Keep door and window openings at EXACT positions — same size, same location, same shape. Keep ceiling height UNCHANGED. Keep camera perspective IDENTICAL — same viewing angle, same position, same spatial relationships.
+
+REMOVE ALL OBJECTS: Remove all furniture (beds, nightstands, dressers, wardrobes, chairs, tables), all decor (art, photos, plants, rugs, curtains, lamps), all personal items, and all movable objects. Leave only the empty room structure: walls, floor, ceiling, doors, and fixed architectural elements. CRITICAL: Only preserve windows that already exist in the original image — do NOT create windows if the original has none.
+
+Keep the room completely empty but preserve all structural geometry exactly as shown. Only remove objects, do not modify the room structure, dimensions, or perspective. Do NOT add windows if the original image has no windows.
+
+Camera: wide-angle shot with soft professional lighting. Style: photorealistic, 4K. Exclude: all furniture, all decor, all objects, people, text overlays, clutter, windows (if original has none).`;
+
+// Prompt for blurring all faces in the image
+export const BLUR_FACES_PROMPT = `Investigate the entire picture carefully and blur every face you find for privacy protection.
+
+Search the whole image including:
+- People in the room
+- Faces in photographs or pictures on walls
+- Faces in artwork, posters, or decorative items
+- Any other faces visible anywhere in the image
+
+Apply a smooth, natural blur to the ENTIRE FACE (not just eyes) - blur the complete face area including eyes, nose, mouth, cheeks, chin, and all facial features. Make the entire face unrecognizable while keeping everything else in the image exactly as shown.`;
+
+// Prompt for removing all clutter and non-furniture items
+export const REMOVE_CLUTTER_PROMPT = `Remove ALL items from this image EXCEPT furniture and structural elements.
+
+KEEP ONLY:
+- Furniture (sofas, chairs, tables, beds, cabinets, desks, etc.)
+- Structural elements (walls, floors, ceilings, doors, windows, built-in fixtures)
+- Permanent fixtures (lighting, rugs, carpets, curtains, blinds)
+
+REMOVE EVERYTHING ELSE:
+- ALL items on top of tables, desks, surfaces, and furniture (decorative objects, papers, books, electronics, dishes, etc.)
+- Personal items (clothing, bags, shoes, accessories)
+- Decorative objects and knick-knacks
+- Boxes, containers, storage items
+- Papers, documents, books (unless part of furniture like bookshelves)
+- Electronics and cables (unless built-in)
+- Food items, dishes, kitchenware (unless permanent fixtures)
+- Toys, games, trash, temporary items
+- Any other movable or temporary items
+
+CRITICAL: 
+- Remove ALL items on top of tables, desks, and any surfaces
+- Keep furniture surfaces clean and empty
+- Keep room structure, walls, floors, and geometry exactly as shown
+- Seamlessly fill removed areas with background (floor/wall/surface)
+- Do NOT leave empty spaces or holes
+- Do NOT add new items or modify furniture
+- Do NOT change camera angle or room dimensions
+- Only remove clutter and fill spaces naturally`;
+
+// Style instruction sets for different aesthetics - condensed narrative format
 export const RENOVATION_STYLES = {
-  default: `
-    STYLE AESTHETIC - SCANDINAVIAN NORDIC:
+  default: `Scandinavian Nordic aesthetic: pure white walls (Benjamin Moore Simply White), soft off-whites, light pine or birch accent walls, white-painted trim. Light oak or ash hardwood floors in natural matte finish, white/light gray ceramic tiles, natural jute or wool rugs. Furniture in light gray linen or white cotton, light wood tables (oak, birch), Windsor or wishbone chairs, natural textiles. Simple pendant lights in white/wood/brass, ceramic table lamps with linen shades, tripod floor lamps. Transform all wall colors completely - no wall remains the same as original.`,
 
-    WALLS:
-    - Paint: pure white (Benjamin Moore Simply White), soft off-whites
-    - Wood accent walls: light pine, birch, or whitewashed oak planks
-    - Materials: smooth painted surfaces, natural wood paneling
-    - Trim: white-painted wood in simple profiles
+  mediterranean: `Mediterranean coastal aesthetic: warm white and cream walls, soft terracotta or sage green accents, lime plaster or stucco textures, natural limestone or travertine stone accents, arched openings with decorative moldings. Terracotta or earth-tone ceramic tiles, distressed oak or chestnut hardwood, tumbled marble or slate stone floors, Persian or kilim rugs in warm earth tones. Furniture in warm linen/cotton fabrics, dark wood tables (walnut, mahogany) with carved details, wrought iron bases, rich upholstery. Wrought iron chandeliers with candle-style bulbs, ceramic pendant lights, lantern-style fixtures, warm ambient lighting. Transform all wall colors completely - no wall remains the same as original.`,
 
-    FLOORS:
-    - Hardwood: light oak, ash, or pine in natural matte finish
-    - Tile: white or light gray ceramic/porcelain in simple patterns
-    - Carpet: minimal use, natural wool in cream or light gray
-    - Rugs: natural jute, wool in geometric patterns, or solid light colors
+  industrial: `Modern industrial aesthetic: exposed red or painted charcoal brick walls, charcoal gray or deep black paint, concrete or metal panel accents, reclaimed wood accent walls, minimal metal trim with exposed structural elements. Polished or stained concrete floors in gray tones, reclaimed or distressed dark wood, steel plate accents, minimal leather or canvas rugs with geometric patterns. Leather upholstery in brown/black/charcoal, reclaimed wood tables with steel pipe or beam bases, metal chairs, vintage industrial pieces. Edison bulb pendant lights with metal shades, track lighting systems, exposed conduit wiring, tripod floor lamps with metal shades, adjustable task lighting. Transform all wall colors completely - no wall remains the same as original.`,
 
-    FURNITURE:
-    - Sofas: comfortable designs in light gray linen or white cotton
-    - Tables: light wood (oak, birch) with simple, functional designs
-    - Seating: Windsor chairs, wishbone chairs, or upholstered pieces in natural fabrics
-    - Storage: light wood shelving, white painted cabinets with wood tops
-    - Materials: light woods, white painted surfaces, natural textiles
-
-    LIGHTING:
-    - Pendant lights: simple shapes in white, wood, or brass
-    - Table lamps: ceramic bases in white/cream with linen shades
-    - Floor lamps: tripod wood legs with white shades
-    - Candles and lanterns for hygge atmosphere
-
-    CRITICAL: Transform ALL wall colors and finishes completely - no wall should remain the same color or finish as the original image. Paint every wall surface with the specified Scandinavian aesthetic.
-  `,
-
-  mediterranean: `
-    STYLE AESTHETIC - MEDITERRANEAN COASTAL:
-
-    WALLS:
-    - Paint: warm whites, cream, soft terracotta, sage green
-    - Textured finishes: lime plaster, stucco, or faux painting techniques
-    - Stone accent walls: natural limestone, travertine, or stacked stone
-    - Trim: arched openings, decorative moldings in warm wood tones
-
-    FLOORS:
-    - Tile: terracotta, ceramic in earth tones, natural stone (travertine, limestone)
-    - Hardwood: distressed oak, chestnut, or reclaimed wood with character
-    - Natural stone: tumbled marble, slate, or flagstone
-    - Rugs: Persian, kilim, or natural fiber in warm earth tones
-
-    FURNITURE:
-    - Sofas: comfortable designs in warm fabrics (linen, cotton) in earth tones
-    - Tables: dark wood (walnut, mahogany) with carved details or wrought iron bases
-    - Seating: upholstered in rich fabrics, wrought iron chairs with cushions
-    - Storage: dark wood armoires, wrought iron and wood combinations
-    - Materials: dark woods, wrought iron, natural fabrics, ceramic accents
-
-    LIGHTING:
-    - Chandeliers: wrought iron with candle-style bulbs or ceramic details
-    - Pendant lights: ceramic, terracotta, or metal in warm finishes
-    - Table lamps: ceramic bases in earth tones with fabric shades
-    - Lantern-style fixtures, warm ambient lighting
-
-    CRITICAL: Transform ALL wall colors and finishes completely - no wall should remain the same color or finish as the original image. Paint every wall surface with the specified Mediterranean aesthetic.
-  `,
-
-  industrial: `
-    STYLE AESTHETIC - MODERN INDUSTRIAL:
-
-    WALLS:
-    - Exposed brick: red brick, painted brick in charcoal or white
-    - Paint: charcoal gray, deep black, or warm whites as contrast
-    - Materials: concrete, metal panels, or reclaimed wood accent walls
-    - Trim: minimal or metal channels, exposed structural elements
-
-    FLOORS:
-    - Concrete: polished, stained, or painted in gray tones
-    - Hardwood: reclaimed or distressed wood in dark stains
-    - Metal: steel plate or grating (accent areas)
-    - Rugs: minimal use, leather or canvas materials, geometric patterns
-
-    FURNITURE:
-    - Sofas: leather upholstery in brown, black, or charcoal
-    - Tables: reclaimed wood tops with steel pipe or beam bases
-    - Seating: metal chairs, leather bar stools, vintage industrial pieces
-    - Storage: metal lockers, pipe shelving, reclaimed wood and steel combinations
-    - Materials: steel, iron, reclaimed wood, leather, canvas
-
-    LIGHTING:
-    - Pendant lights: Edison bulbs, metal shades, track lighting systems
-    - Exposed fixtures: conduit wiring, industrial-style switches
-    - Floor lamps: tripod designs with metal shades, photographer's lamps
-    - Task lighting with adjustable metal arms and exposed bulbs
-
-    CRITICAL: Transform ALL wall colors and finishes completely - no wall should remain the same color or finish as the original image. Paint every wall surface with the specified Industrial aesthetic.
-  `,
-
-  transitional: `
-    STYLE AESTHETIC - TRANSITIONAL CONTEMPORARY:
-
-    WALLS:
-    - Paint: soft neutrals (greige, warm gray, cream, soft beige)
-    - Accent walls: navy blue, sage green, or rich charcoal
-    - Materials: smooth painted surfaces with classic crown molding
-    - Trim: traditional profiles in white or matching wall colors
-
-    FLOORS:
-    - Hardwood: medium-toned oak, maple, or hickory in satin finish
-    - Tile: neutral stone-look or wood-look porcelain in larger formats
-    - Carpet: traditional patterns in updated colors, plush textures
-    - Rugs: traditional patterns with contemporary color palettes
-
-    FURNITURE:
-    - Sofas: comfortable traditional silhouettes in updated fabrics
-    - Tables: wood with classic shapes but cleaner lines, mixed materials
-    - Seating: upholstered pieces mixing traditional forms with modern fabrics
-    - Storage: built-ins with traditional details, painted or stained wood
-    - Materials: quality woods, mixed metals, linen and cotton fabrics
-
-    LIGHTING:
-    - Chandeliers: updated traditional designs in mixed metals
-    - Pendant lights: classic shapes with contemporary finishes
-    - Table lamps: ceramic or metal bases with drum or empire shades
-    - Layered lighting with dimmer controls for ambiance
-
-    CRITICAL: Transform ALL wall colors and finishes completely - no wall should remain the same color or finish as the original image. Paint every wall surface with the specified Transitional aesthetic.
-  `,
+  transitional: `Transitional contemporary aesthetic: soft neutral walls (greige, warm gray, cream, soft beige), navy blue or sage green accent walls, smooth painted surfaces with classic crown molding, traditional trim profiles in white or matching colors. Medium-toned oak, maple, or hickory hardwood in satin finish, neutral stone-look or wood-look porcelain tiles, traditional carpet patterns in updated colors, contemporary traditional rugs. Traditional silhouettes in updated fabrics, wood tables with classic shapes and cleaner lines, mixed materials, quality woods with mixed metals, linen and cotton fabrics. Updated traditional chandeliers in mixed metals, classic pendant shapes with contemporary finishes, ceramic or metal table lamps with drum or empire shades, layered lighting with dimmer controls. Transform all wall colors completely - no wall remains the same as original.`,
 } as const;
 
 export type RenovationStyle = keyof typeof RENOVATION_STYLES;
@@ -205,10 +147,11 @@ export type RenovationStyle = keyof typeof RENOVATION_STYLES;
 // NOTE: getRenovationPromptWithStyle removed - we use getAssemblyRenovationPrompt instead (see line 519)
 
 // Settings for Gemini API calls
+// Lower temperature improves structural preservation accuracy
 export const GEMINI_RENOVATION_SETTINGS = {
   model: "gemini-2.5-flash-image-preview",
   maxOutputTokens: 8192,
-  temperature: 0.7,
+  temperature: 0.95, // Very low temperature for strict structural preservation
 } as const;
 
 // Comparison slider state for renovation results
@@ -229,6 +172,21 @@ export interface RenovatedImageData {
   originalImageId: bigint;
   renovatedPropertyImage?: PropertyImage;
   renovationType?: RenovationType;
+}
+
+// Renovation review request
+export interface RenovationReviewRequest {
+  originalImageBase64: string;
+  renovatedImageBase64: string;
+  reviewText: string;
+}
+
+// Renovation review response
+export interface RenovationReviewResponse {
+  success: boolean;
+  reviewedImageBase64?: string;
+  error?: string;
+  tokenUsage?: TokenUsage;
 }
 
 // Room Assembly Prompt Structure
@@ -303,7 +261,7 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<
         "A large sunlit Scandinavian kitchen with white walls and light wood floors.",
       camera_setup: "Marketing-quality, wide-angle shot with natural lighting.",
       assembled_elements: [
-        "white Shaker-style kitchen cabinets",
+        "white Shaker-style kitchen cabinets with finger pulls only (no knobs or handles) - minimal white or brushed brass finger pulls",
         "white quartz or light wood countertops",
         "white subway tile backsplash",
         "light wood kitchen island",
@@ -502,7 +460,7 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<
       camera_setup:
         "Marketing-quality, wide-angle shot with warm natural lighting.",
       assembled_elements: [
-        "dark wood or warm-painted kitchen cabinets",
+        "dark wood or warm-painted kitchen cabinets with finger pulls only (no knobs or handles) - bronze or copper finger pulls",
         "granite or butcher block countertops in warm tones",
         "ceramic tile backsplash in earth tones or decorative patterns",
         "dark wood kitchen island",
@@ -706,7 +664,7 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<
       camera_setup:
         "Marketing-quality, wide-angle shot with dramatic lighting.",
       assembled_elements: [
-        "dark stained wood or metal-front kitchen cabinets",
+        "dark stained wood or metal-front kitchen cabinets with finger pulls only (no knobs or handles) - black metal or steel finger pulls",
         "concrete, butcher block, or steel countertops",
         "subway tile, metal panel, or exposed brick backsplash",
         "reclaimed wood and steel kitchen island",
@@ -910,7 +868,7 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<
       camera_setup:
         "Marketing-quality, wide-angle shot with balanced natural lighting.",
       assembled_elements: [
-        "Shaker or raised panel kitchen cabinets in painted or stained finishes",
+        "Shaker or raised panel kitchen cabinets in painted or stained finishes with finger pulls only (no knobs or handles) - brass, bronze, or mixed metal finger pulls",
         "quartz or granite countertops in neutral tones with subtle veining",
         "subway tile, natural stone, or ceramic backsplash in classic patterns",
         "wood kitchen island with traditional details",
@@ -1055,7 +1013,18 @@ export const ROOM_ASSEMBLY_PROMPTS: Record<
   },
 } as const;
 
-// Function to generate assembly renovation prompt
+// Helper function to get style name for prompts
+function getStyleName(style: RenovationStyle): string {
+  const styleNames: Record<RenovationStyle, string> = {
+    default: "Scandinavian",
+    mediterranean: "Mediterranean coastal",
+    industrial: "modern industrial",
+    transitional: "transitional contemporary",
+  };
+  return styleNames[style];
+}
+
+// Function to generate assembly renovation prompt - final optimized narrative format
 export function getAssemblyRenovationPrompt(
   roomType: RenovationType,
   selectedElements?: string[], // Optional: only modify specific elements
@@ -1064,6 +1033,7 @@ export function getAssemblyRenovationPrompt(
   // 2-level lookup: style first, then room type
   const assemblyPrompt = ROOM_ASSEMBLY_PROMPTS[style][roomType];
   const styleInstructions = RENOVATION_STYLES[style];
+  const styleName = getStyleName(style);
 
   // If specific elements are selected, focus on those
   const elementsToInclude =
@@ -1071,47 +1041,38 @@ export function getAssemblyRenovationPrompt(
       ? selectedElements
       : assemblyPrompt.assembled_elements;
 
-  const elementsText = elementsToInclude
-    .map((element) => `- ${element}`)
-    .join("\n");
-  const negativeText = assemblyPrompt.negative_prompts
-    .map((neg) => `- ${neg}`)
-    .join("\n");
+  const elementsText = elementsToInclude.join(", ");
+  const negativeText = assemblyPrompt.negative_prompts.join(", ");
 
-  return `
-ASSEMBLY RENOVATION - ${assemblyPrompt.prompt_name}
+  // Remove style name from room description to avoid redundancy
+  // e.g., "A large sunlit Scandinavian kitchen..." -> "A large, sunlit kitchen..."
+  let roomDesc = assemblyPrompt.room_description;
+  const styleWords = styleName.toLowerCase().split(" ");
+  styleWords.forEach((word) => {
+    const regex = new RegExp(`\\b${word}\\b`, "gi");
+    roomDesc = roomDesc.replace(regex, "");
+  });
+  roomDesc = roomDesc.replace(/\s+/g, " ").trim();
 
-PRESERVE STRUCTURAL POSITIONS EXACTLY:
-- Wall locations and dimensions (but CHANGE their appearance and materials completely)
-- Door openings (but update door styles/materials/colors)
-- Window openings (but update window frames/treatments)
-- Ceiling height (but change ceiling finishes/treatments)
-- Floor plan layout (but completely change flooring materials)
+  // Clean camera setup (remove redundant "Marketing-quality" prefix)
+  const cameraInfo = assemblyPrompt.camera_setup
+    .toLowerCase()
+    .replace(/marketing-quality,?\s*/i, "")
+    .trim();
 
-ROOM VISION:
-${assemblyPrompt.room_description}
+  return `${assemblyPrompt.prompt_name} — Interior Renovation
 
-CAMERA & STYLE:
-${assemblyPrompt.camera_setup}
-${assemblyPrompt.base_style}
+MANDATORY STRUCTURAL PRESERVATION: Keep wall positions EXACTLY as shown — do not move, resize, or reposition walls. Keep floor boundaries and floor plan layout IDENTICAL — floor area shape and dimensions must match the original. CRITICAL: Corner pixels (wall-wall and floor-wall intersections) must remain in the SAME exact pixel positions. Keep door and window openings at EXACT positions — same size, same location, same shape. CRITICAL: Do NOT create windows if the original image has no windows. Only preserve windows that already exist in the original image. Do NOT add window openings to windowless rooms. Keep ceiling height UNCHANGED. Keep camera perspective IDENTICAL — same viewing angle, same position, same spatial relationships. Keep key architectural elements (columns, beams, structural features) at EXACT positions and scale. DO NOT modify geometry, dimensions, or spatial layout. ONLY transform: materials, colors, finishes, furniture, decor, and surface textures.
 
-ASSEMBLED ELEMENTS TO TRANSFORM:
-${elementsText}
+FORBIDDEN: Do not move walls, change floor boundaries, alter corner pixel positions (wall-wall or floor-wall), modify edge lines, alter room dimensions, modify door/window positions, create new windows, add window openings, change ceiling height, adjust camera angle, or reposition structural elements.
 
-STYLE AESTHETIC:
-${styleInstructions}
+Transform to ${styleName} aesthetic: ${roomDesc} ${styleInstructions}
 
-MANDATORY REQUIREMENTS:
-- Transform ALL specified elements with completely different styles, colors, and arrangements
-- Remove all personal belongings, family photos, cultural symbols, memorabilia
-- Replace with neutral, contemporary decor appropriate for the space
-- Maintain photorealistic accuracy that respects the original space's positioning constraints
+Elements: ${elementsText}. Remove personal items, photos, cultural symbols. Use neutral, contemporary decor.
 
-NEGATIVE ELEMENTS:
-${negativeText}
+Camera: ${cameraInfo}. Style: ${assemblyPrompt.base_style.toLowerCase()}. Exclude: ${negativeText}, structural modifications, geometry changes, corner pixel alterations.
 
-CRITICAL: Every specified element must look completely renovated and different from the original image while maintaining the structural integrity and spatial relationships of the room.
-`;
+REMINDER: Corner pixels (wall-wall and floor-wall) must remain in the SAME exact positions. Wall positions, floor boundaries, and structural geometry must remain EXACTLY as in the original image. Do NOT create windows if the original image has no windows — only preserve windows that already exist.`;
 }
 
 // Re-export PropertyImage type for convenience

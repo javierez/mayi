@@ -2,6 +2,11 @@ import type { NextRequest } from "next/server";
 import { getSecureSession } from "~/lib/dal";
 import { freepikClient } from "~/lib/freepik-client";
 import { getListingHeaderData } from "~/server/queries/listing";
+import { calculateFreepikTokensWithFactor } from "~/lib/image-token-pricing";
+import {
+  checkSufficientTokens,
+  deductFreepikTokens,
+} from "~/server/services/token-service";
 
 /**
  * POST: Start image enhancement with Freepik API
@@ -26,23 +31,30 @@ export async function POST(
       imageUrl: string;
       referenceNumber: string;
       currentImageOrder: number;
+      imageWidth: number;
+      imageHeight: number;
+      upscaleFactor?: number;
     };
     const propertyId = BigInt(resolvedParams.id);
 
     if (
       !data.imageUrl ||
       !data.referenceNumber ||
-      data.currentImageOrder === undefined
+      data.currentImageOrder === undefined ||
+      !data.imageWidth ||
+      !data.imageHeight
     ) {
       console.error("Missing required fields for enhancement");
       return Response.json(
         {
           error:
-            "imageUrl, referenceNumber, and currentImageOrder are required",
+            "imageUrl, referenceNumber, currentImageOrder, imageWidth, and imageHeight are required",
         },
         { status: 400 },
       );
     }
+
+    const upscaleFactor = data.upscaleFactor ?? 2; // Default to 2x upscale
 
     // 3. Validate property ownership
     const propertyData = await getListingHeaderData(
@@ -62,11 +74,74 @@ export async function POST(
       );
     }
 
-    // 5. Call Freepik API v1 to start enhancement
+    // 5. Get account ID from session (not from propertyData)
+    const accountId = BigInt(session.user.accountId);
+
+    // 6. Calculate token cost based on output dimensions
+    const tokenCost = calculateFreepikTokensWithFactor(
+      data.imageWidth,
+      data.imageHeight,
+      upscaleFactor,
+    );
+
+    console.log("Freepik enhancement token cost:", {
+      inputWidth: data.imageWidth,
+      inputHeight: data.imageHeight,
+      upscaleFactor,
+      tokens: tokenCost.tokens,
+      estimatedCostEUR: tokenCost.estimatedCostEUR,
+    });
+
+    // 7. Check if account has sufficient tokens
+    const tokenCheck = await checkSufficientTokens(accountId, tokenCost.tokens);
+
+    if (!tokenCheck.sufficient) {
+      console.error("Insufficient tokens for enhancement:", {
+        required: tokenCost.tokens,
+        available: tokenCheck.currentBalance,
+        deficit: tokenCheck.deficit,
+      });
+
+      return Response.json(
+        {
+          error: "Insufficient tokens",
+          required: tokenCost.tokens,
+          available: tokenCheck.currentBalance,
+          deficit: tokenCheck.deficit,
+        },
+        { status: 402 }, // 402 Payment Required
+      );
+    }
+
+    // 8. Deduct tokens BEFORE calling Freepik API
+    try {
+      await deductFreepikTokens(
+        accountId,
+        tokenCost.tokens,
+        data.imageWidth,
+        data.imageHeight,
+        upscaleFactor,
+        undefined, // propertyImageId - we don't have this yet
+        propertyId,
+        session.user.id,
+      );
+
+      console.log(
+        `Deducted ${tokenCost.tokens} tokens from account ${accountId}`,
+      );
+    } catch (tokenError) {
+      console.error("Failed to deduct tokens:", tokenError);
+      return Response.json(
+        { error: "Failed to process token deduction" },
+        { status: 500 },
+      );
+    }
+
+    // 9. Call Freepik API v1 to start enhancement
     // Note: freepikClient.enhance() downloads the URL and converts to base64 internally
     const result = await freepikClient.enhance(data.imageUrl);
 
-    // 6. Return task information for polling
+    // 10. Return task information for polling
     return Response.json({
       success: true,
       taskId: result.taskId,

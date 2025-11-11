@@ -5,29 +5,36 @@ import { useState, useEffect } from "react";
 
 interface ProcessingOverlayProps {
   isVisible: boolean;
-  processingType: "mejora" | "renovación";
+  processingType: "mejora" | "renovación" | "desenfoque de caras" | "eliminación de desorden";
 }
 
 const processingSteps = [
-  "Analizando imagen",
-  "Optimizando calidad",
-  "Aplicando mejoras",
-  "Finalizando",
+  "Optimizando píxeles (esto no tributa... todavía)",
+  "Creando valor sin burocracia de por medio",
+  "Aplicando IA antes de que la regulen"
 ];
 
 export function ProcessingOverlay({ isVisible }: ProcessingOverlayProps) {
   const [currentStep, setCurrentStep] = useState(0);
 
-  // Cycle through steps every 20 seconds for a 3-minute process
+  // Randomize and cycle through steps every 5 seconds
   useEffect(() => {
     if (!isVisible) {
-      setCurrentStep(0);
+      // Start with random step when becoming visible
+      setCurrentStep(Math.floor(Math.random() * processingSteps.length));
       return;
     }
 
     const interval = setInterval(() => {
-      setCurrentStep((prev) => (prev + 1) % processingSteps.length);
-    }, 20000);
+      // Pick a random step different from current
+      setCurrentStep((prev) => {
+        let next = Math.floor(Math.random() * processingSteps.length);
+        while (next === prev && processingSteps.length > 1) {
+          next = Math.floor(Math.random() * processingSteps.length);
+        }
+        return next;
+      });
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [isVisible]);
@@ -36,70 +43,66 @@ export function ProcessingOverlay({ isVisible }: ProcessingOverlayProps) {
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
-          className="fixed inset-0 z-50"
-          style={{ pointerEvents: "none" }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          transition={{ duration: 0.3 }}
+          className="fixed bottom-8 right-8 z-50"
         >
-          {/* Subtle background overlay */}
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm" />
-
-          {/* Minimal centered content */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transform">
-            <div className="text-center">
+          {/* Compact card in bottom-right corner */}
+          <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-lg">
+            <div className="flex items-center gap-3">
               {/* Subtle pulsing dots */}
-              <div className="mb-8 flex justify-center space-x-2">
+              <div className="flex space-x-1.5">
                 <motion.div
                   animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [0.4, 0.8, 0.4],
+                    scale: [1, 1.3, 1],
+                    opacity: [0.3, 0.8, 0.3],
                   }}
                   transition={{
-                    duration: 2,
+                    duration: 1.5,
                     repeat: Infinity,
                     ease: "easeInOut",
                     delay: 0,
                   }}
-                  className="h-2 w-2 rounded-full bg-gray-400"
+                  className="h-1.5 w-1.5 rounded-full bg-gray-400"
                 />
                 <motion.div
                   animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [0.4, 0.8, 0.4],
+                    scale: [1, 1.3, 1],
+                    opacity: [0.3, 0.8, 0.3],
                   }}
                   transition={{
-                    duration: 2,
+                    duration: 1.5,
                     repeat: Infinity,
                     ease: "easeInOut",
                     delay: 0.2,
                   }}
-                  className="h-2 w-2 rounded-full bg-gray-400"
+                  className="h-1.5 w-1.5 rounded-full bg-gray-400"
                 />
                 <motion.div
                   animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [0.4, 0.8, 0.4],
+                    scale: [1, 1.3, 1],
+                    opacity: [0.3, 0.8, 0.3],
                   }}
                   transition={{
-                    duration: 2,
+                    duration: 1.5,
                     repeat: Infinity,
                     ease: "easeInOut",
                     delay: 0.4,
                   }}
-                  className="h-2 w-2 rounded-full bg-gray-400"
+                  className="h-1.5 w-1.5 rounded-full bg-gray-400"
                 />
               </div>
 
               {/* Processing step text */}
               <motion.p
                 key={currentStep}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -5 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 transition={{ duration: 0.5 }}
-                className="text-sm text-muted-foreground"
+                className="text-xs text-muted-foreground"
               >
                 {processingSteps[currentStep]}
               </motion.p>

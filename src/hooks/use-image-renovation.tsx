@@ -27,12 +27,14 @@ interface UseImageRenovationReturn {
     currentImageOrder: string;
     renovationType?: RenovationType;
   } | null;
+  reviewStatus: RenovationStatus;
   renovate: (
     imageUrl: string,
     referenceNumber: string,
     currentImageOrder: number,
     renovationType?: RenovationType,
   ) => Promise<void>;
+  reviewRenovation: (reviewText: string) => Promise<void>;
   saveRenovated: () => Promise<void>;
   reset: () => void;
 }
@@ -60,6 +62,7 @@ export function useImageRenovation({
     currentImageOrder: string;
     renovationType?: RenovationType;
   } | null>(null);
+  const [reviewStatus, setReviewStatus] = useState<RenovationStatus>("idle");
 
   // Mount/unmount management
   const [isMounted, setIsMounted] = useState(true);
@@ -276,6 +279,120 @@ export function useImageRenovation({
     isMounted,
   ]);
 
+  const reviewRenovation = useCallback(
+    async (reviewText: string) => {
+      if (!isMounted) {
+        return;
+      }
+
+      if (!originalImageUrl || !renovatedImageUrl || !renovationMetadata) {
+        toast.error("No hay imagen renovada para revisar");
+        return;
+      }
+
+      if (!reviewText || reviewText.trim().length === 0) {
+        toast.error("Por favor, proporciona un comentario");
+        return;
+      }
+
+      try {
+        setReviewStatus("processing");
+        setError(null);
+
+        console.log("Starting Gemini review:", {
+          reviewText,
+          referenceNumber: renovationMetadata.referenceNumber,
+          currentImageOrder: renovationMetadata.currentImageOrder,
+        });
+
+        // Call review API
+        const reviewResponse = await fetch(
+          `/api/properties/${propertyId}/gemini-review`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              originalImageUrl,
+              renovatedImageUrl,
+              reviewText: reviewText.trim(),
+              referenceNumber: renovationMetadata.referenceNumber,
+              currentImageOrder: parseInt(renovationMetadata.currentImageOrder),
+              renovationType: renovationMetadata.renovationType,
+            }),
+          },
+        );
+
+        if (!reviewResponse.ok) {
+          const errorData = (await reviewResponse.json()) as {
+            error?: string;
+            required?: number;
+            available?: number;
+            deficit?: number;
+          };
+
+          // Handle insufficient tokens
+          if (reviewResponse.status === 402) {
+            throw new Error(
+              `Tokens insuficientes. Necesitas ${errorData.required ?? 100} tokens, tienes ${errorData.available ?? 0}.`,
+            );
+          }
+
+          throw new Error(errorData.error ?? "Failed to review image");
+        }
+
+        const reviewData = (await reviewResponse.json()) as {
+          success: boolean;
+          status: string;
+          reviewedImageBase64?: string;
+          error?: string;
+        };
+
+        if (!isMounted) return;
+
+        if (reviewData.success && reviewData.reviewedImageBase64) {
+          // Convert base64 to data URL for display
+          const dataUrl = createDataUrl(reviewData.reviewedImageBase64);
+          setRenovatedImageUrl(dataUrl); // Update the renovated image URL with reviewed version
+
+          setReviewStatus("success");
+
+          // Show success toast
+          toast.success("¡Revisión completada! La imagen ha sido actualizada.");
+
+          // The comparison view will automatically update since renovatedImageUrl changed
+        } else {
+          throw new Error(reviewData.error ?? "No reviewed image generated");
+        }
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        const errorMessage =
+          error instanceof Error ? error.message : "Review failed";
+
+        setReviewStatus("error");
+        setError(errorMessage);
+
+        if (onError) {
+          onError(errorMessage);
+        }
+
+        toast.error("Error al revisar la imagen");
+
+        console.error("Review error:", error);
+      }
+    },
+    [
+      propertyId,
+      originalImageUrl,
+      renovatedImageUrl,
+      renovationMetadata,
+      onError,
+      isMounted,
+    ],
+  );
+
   const reset = useCallback(() => {
     setStatus("idle");
     setError(null);
@@ -283,6 +400,7 @@ export function useImageRenovation({
     setOriginalImageUrl(null);
     setRenovatedImageUrl(null);
     setRenovationMetadata(null);
+    setReviewStatus("idle");
   }, []);
 
   return {
@@ -292,7 +410,9 @@ export function useImageRenovation({
     originalImageUrl,
     renovatedImageUrl,
     renovationMetadata,
+    reviewStatus,
     renovate,
+    reviewRenovation,
     saveRenovated,
     reset,
   };

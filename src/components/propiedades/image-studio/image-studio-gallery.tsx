@@ -15,8 +15,12 @@ import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import type { PropertyImage } from "~/lib/data";
 import type { EnhancementStatus } from "~/types/freepik";
-import { ImageInfoIcon } from "./image-info-icon";
+import type { RenovationStatus } from "~/types/gemini";
 import { ImageRecommendationBadge } from "./image-recommendation-badge";
+import {
+  RenovationReviewToggle,
+  RenovationReviewModal,
+} from "./renovation-review";
 
 interface ImageStudioGalleryProps {
   images: PropertyImage[];
@@ -31,6 +35,10 @@ interface ImageStudioGalleryProps {
   enhancementStatus?: EnhancementStatus;
   onSave?: () => void;
   onDiscard?: () => void;
+  // Renovation review props
+  isRenovationComparison?: boolean;
+  onReview?: (reviewText: string) => Promise<void>;
+  reviewStatus?: RenovationStatus;
 }
 
 export function ImageStudioGallery({
@@ -45,6 +53,9 @@ export function ImageStudioGallery({
   enhancementStatus,
   onSave,
   onDiscard,
+  isRenovationComparison = false,
+  onReview,
+  reviewStatus = "idle",
 }: ImageStudioGalleryProps) {
   const [internalSelectedIndex, setInternalSelectedIndex] = useState(0);
   const [, setSelectedImage] = useState<PropertyImage | null>(
@@ -78,6 +89,9 @@ export function ImageStudioGallery({
   });
 
   const [imageLoaded, setImageLoaded] = useState<Record<string, boolean>>({});
+
+  // Review modal visibility state (only for renovation comparisons)
+  const [isReviewVisible, setIsReviewVisible] = useState(false);
 
   // Comparison slider interaction logic
   const updateSliderPosition = useCallback((clientX: number) => {
@@ -257,10 +271,10 @@ export function ImageStudioGallery({
   // Show only thumbnails
   if (showOnlyThumbnails) {
     return (
-      <div className="space-y-8">
+      <div>
         {/* Thumbnail Navigation */}
         {images.length > 1 && (
-          <div className="relative py-4">
+          <div className="relative">
             <div className="custom-scrollbar-thin flex space-x-4 overflow-x-auto pb-4 pl-4 pt-2">
               {images.map((image, index) => {
                 const imageId = image.propertyImageId.toString();
@@ -323,12 +337,6 @@ export function ImageStudioGallery({
                         />
                       </div>
                     )}
-                    {/* Info icon (top-right) */}
-                    {imageSources[imageId] && imageLoaded[imageId] && (
-                      <div className="absolute right-2 top-2 md:opacity-0 md:group-hover:opacity-100">
-                        <ImageInfoIcon imageUrl={imageSources[imageId]} />
-                      </div>
-                    )}
                   </button>
                 );
               })}
@@ -347,21 +355,22 @@ export function ImageStudioGallery({
     return (
       <div className="space-y-8">
         {/* Main Image Display */}
-        <div
-          ref={containerRef}
-          className={cn(
-            "group relative w-full overflow-hidden rounded-2xl bg-gray-100 shadow-lg transition-all duration-500 ease-in-out",
-            imageOrientation === "horizontal"
-              ? "aspect-[16/9]"
-              : "aspect-[3/4] max-h-[80vh]",
-            isComparisonMode && "cursor-col-resize",
-          )}
-          onClick={(e) => {
-            if (isComparisonMode && !isDragging) {
-              updateSliderPosition(e.clientX);
-            }
-          }}
-        >
+        <div className="relative">
+          <div
+            ref={containerRef}
+            className={cn(
+              "group relative w-full overflow-hidden rounded-2xl bg-gray-100 shadow-lg transition-all duration-500 ease-in-out",
+              imageOrientation === "horizontal"
+                ? "aspect-[16/9]"
+                : "aspect-[3/4] max-h-[80vh]",
+              isComparisonMode && "cursor-col-resize",
+            )}
+            onClick={(e) => {
+              if (isComparisonMode && !isDragging) {
+                updateSliderPosition(e.clientX);
+              }
+            }}
+          >
           {/* Original Image (always visible) */}
           {images.map((image, index) => {
             const imageId = image.propertyImageId.toString();
@@ -412,9 +421,9 @@ export function ImageStudioGallery({
                   <div className="absolute inset-0 animate-pulse bg-gray-200" />
                 )}
 
-                {/* Original image label in comparison mode */}
+                {/* Original image label in comparison mode - top right */}
                 {isComparisonMode && index === selectedIndex && (
-                  <div className="absolute left-4 top-4 rounded-lg bg-black/50 px-3 py-1 text-sm font-medium text-white backdrop-blur-sm">
+                  <div className="absolute right-4 top-4 rounded-lg bg-black/50 px-3 py-1 text-sm font-medium text-white backdrop-blur-sm">
                     Original
                   </div>
                 )}
@@ -439,10 +448,12 @@ export function ImageStudioGallery({
                 )}
                 priority
               />
-              {/* Enhanced image label */}
-              <div className="absolute left-4 top-4 rounded-lg bg-gradient-to-r from-amber-500 to-rose-500 px-3 py-1 text-sm font-medium text-white shadow-lg">
-                Mejorada con IA
-              </div>
+              {/* Enhanced image label - top left (only when slider reveals it) */}
+              {sliderPosition > 10 && (
+                <div className="absolute left-4 top-4 rounded-lg bg-gradient-to-r from-amber-500 to-rose-500 px-3 py-1 text-sm font-medium text-white shadow-lg">
+                  Mejorada con IA
+                </div>
+              )}
             </div>
           )}
 
@@ -549,39 +560,63 @@ export function ImageStudioGallery({
               </div>
             </div>
           )}
-        </div>
 
-        {/* Save/Discard Buttons (only in comparison mode) */}
-        {isComparisonMode && (
-          <div className="flex justify-center gap-4">
-            <Button
-              onClick={onSave}
-              disabled={enhancementStatus === "processing"}
-              className="border-0 bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-3 text-white shadow-lg transition-all hover:from-amber-500 hover:to-rose-500 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {enhancementStatus === "processing" ? (
-                <>
-                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Guardar versión mejorada
-                </>
+          {/* Save/Discard Buttons (only in comparison mode) - Positioned at bottom center */}
+          {isComparisonMode && (
+            <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 gap-3">
+              <Button
+                onClick={onSave}
+                disabled={enhancementStatus === "processing"}
+                className="border-0 bg-white/50 px-6 py-2.5 text-sm text-gray-700 shadow-xl backdrop-blur-md transition-all hover:bg-white/60 hover:shadow-2xl disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {enhancementStatus === "processing" ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-gray-700 border-t-transparent"></div>
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Guardar versión mejorada
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={onDiscard}
+                disabled={enhancementStatus === "processing"}
+                variant="outline"
+                className="border-white/20 bg-white/40 px-6 py-2.5 text-sm text-gray-700 shadow-xl backdrop-blur-md transition-all hover:bg-white/50 hover:shadow-2xl disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <X className="mr-2 h-4 w-4" />
+                Descartar
+              </Button>
+
+              {/* Renovation Review Toggle Button (inline with save/discard) */}
+              {isRenovationComparison && onReview && (
+                <RenovationReviewToggle
+                  onToggle={() => setIsReviewVisible(!isReviewVisible)}
+                  disabled={enhancementStatus === "processing"}
+                  isVisible={isReviewVisible}
+                />
               )}
-            </Button>
-            <Button
-              onClick={onDiscard}
-              disabled={enhancementStatus === "processing"}
-              variant="outline"
-              className="border-gray-200 px-6 py-3 shadow-lg transition-all hover:bg-gray-50 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <X className="mr-2 h-4 w-4" />
-              Descartar
-            </Button>
+            </div>
+          )}
+
+          {/* Renovation Review Modal (positioned above buttons) */}
+          {isComparisonMode &&
+            isRenovationComparison &&
+            onReview &&
+            isReviewVisible && (
+              <RenovationReviewModal
+                onReview={onReview}
+                reviewStatus={reviewStatus ?? "idle"}
+                disabled={enhancementStatus === "processing"}
+                isVisible={isReviewVisible}
+                onClose={() => setIsReviewVisible(false)}
+              />
+            )}
           </div>
-        )}
+        </div>
       </div>
     );
   }
@@ -652,12 +687,6 @@ export function ImageStudioGallery({
                       <ImageRecommendationBadge
                         imageUrl={imageSources[imageId]}
                       />
-                    </div>
-                  )}
-                  {/* Info icon (top-right) */}
-                  {imageSources[imageId] && imageLoaded[imageId] && (
-                    <div className="absolute right-2 top-2 md:opacity-0 md:group-hover:opacity-100">
-                      <ImageInfoIcon imageUrl={imageSources[imageId]} />
                     </div>
                   )}
                 </button>

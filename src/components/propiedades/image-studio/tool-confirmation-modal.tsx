@@ -1,14 +1,13 @@
 "use client";
 
-import { X, AlertTriangle } from "lucide-react";
+import { X } from "lucide-react";
 import { Button } from "~/components/ui/button";
 
 interface Tool {
   id: string;
   title: string;
   description: string;
-  price: string;
-  priceDescription: string;
+  tokens: number;
   icon: React.ReactNode;
 }
 
@@ -25,91 +24,75 @@ export function ToolConfirmationModal({
   onConfirm,
   onCancel,
 }: ToolConfirmationModalProps) {
-  console.log("🪟 [ToolConfirmationModal] Rendered", {
-    isOpen,
-    toolId: tool?.id,
-    toolTitle: tool?.title,
-  });
-
   if (!isOpen || !tool) return null;
-
-  const handleConfirm = () => {
-    console.log("✅ [ToolConfirmationModal] Confirm button clicked", {
-      toolId: tool.id,
-      toolTitle: tool.title,
-    });
-    onConfirm();
-  };
-
-  const handleCancel = () => {
-    console.log("❌ [ToolConfirmationModal] Cancel button clicked");
-    onCancel();
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={handleCancel}
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onCancel}
       />
 
       {/* Modal */}
-      <div className="animate-in zoom-in-95 relative w-full max-w-md rounded-2xl border border-gray-100 bg-white shadow-2xl duration-300">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-100 p-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-r from-amber-400 to-rose-400">
-              {tool.icon}
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                {tool.title}
-              </h3>
-              <p className="text-sm text-gray-500">Confirmar operación</p>
-            </div>
-          </div>
-          <button
-            onClick={handleCancel}
-            className="h-8 w-8 rounded-full bg-transparent p-0 text-gray-400 transition-all duration-200 hover:bg-gray-50 hover:text-gray-600"
-          >
-            <X className="mx-auto h-4 w-4" />
-          </button>
-        </div>
+      <div className="relative w-full max-w-sm rounded-lg bg-white shadow-xl ring-1 ring-gray-200">
+        {/* Close button */}
+        <button
+          onClick={onCancel}
+          className="absolute right-3 top-3 rounded-full p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+        >
+          <X className="h-4 w-4" />
+        </button>
 
         {/* Content */}
         <div className="p-6">
-          <div className="mb-4 flex items-start gap-3">
-            <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" />
-            <div>
-              <p className="mb-2 text-sm text-gray-700">
-                ¿Estás seguro que deseas proceder con esta operación?
-              </p>
-            </div>
+          <div className="mb-4 text-center">
+            <h3 className="mb-1 font-mono text-sm font-bold uppercase tracking-widest text-gray-900">
+              {tool.title}
+            </h3>
+            <p className="text-xs text-gray-500">
+              {tool.description}
+            </p>
           </div>
 
-          {/* Pricing */}
-          <div className="mb-4 rounded-xl bg-gradient-to-br from-amber-50 to-rose-50 p-4">
-            <div className="text-center">
-              <div className="mb-1 bg-gradient-to-r from-amber-600 to-rose-600 bg-clip-text text-2xl font-bold text-transparent">
-                {tool.price}
+          {/* Beta Banner - Only for Reform tool */}
+          {tool.id === "reform" && (
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50/50 px-3 py-2.5 text-left">
+              <div className="mb-1.5">
+                <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                  BETA
+                </span>
               </div>
-              <p className="text-xs font-medium text-gray-700">
-                {tool.priceDescription}
+              <p className="text-xs text-amber-700 leading-relaxed">
+                Este modelo puede generar errores, inventar elementos que no existen en la imagen original y requiere supervisión. Por esta razón ofrecemos un precio reducido.
               </p>
             </div>
+          )}
+
+          {/* Token Cost */}
+          <div className="mb-5 rounded-md bg-gray-50 px-4 py-3 text-center">
+            <div className="font-mono text-2xl font-bold text-gray-900">
+              {tool.tokens.toLocaleString()}
+            </div>
+            <p className="text-xs text-gray-600">
+              tokens
+            </p>
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={handleCancel} className="flex-1">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={onCancel}
+              className="flex-1 text-xs"
+            >
               Cancelar
             </Button>
             <Button
-              onClick={handleConfirm}
-              className="flex-1 border-0 bg-gradient-to-r from-amber-400 to-rose-400 text-white hover:from-amber-500 hover:to-rose-500"
+              onClick={onConfirm}
+              className="flex-1 bg-gray-900 text-xs text-white hover:bg-gray-800"
             >
-              Proceder
+              Confirmar
             </Button>
           </div>
         </div>

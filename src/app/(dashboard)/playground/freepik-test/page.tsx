@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -263,20 +264,28 @@ export default function FreepikTestPage() {
                 {/* Original */}
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground">Original</p>
-                  <img
-                    src={imageUrl}
-                    alt="Original"
-                    className="w-full rounded-md border"
-                  />
+                  <div className="relative w-full aspect-video">
+                    <Image
+                      src={imageUrl}
+                      alt="Original"
+                      fill
+                      className="object-contain rounded-md border"
+                      unoptimized
+                    />
+                  </div>
                 </div>
                 {/* Enhanced */}
                 <div className="space-y-2">
                   <p className="text-xs text-muted-foreground">Enhanced</p>
-                  <img
-                    src={enhancedImageUrl}
-                    alt="Enhanced"
-                    className="w-full rounded-md border"
-                  />
+                  <div className="relative w-full aspect-video">
+                    <Image
+                      src={enhancedImageUrl}
+                      alt="Enhanced"
+                      fill
+                      className="object-contain rounded-md border"
+                      unoptimized
+                    />
+                  </div>
                 </div>
               </div>
               <a

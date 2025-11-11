@@ -6,6 +6,8 @@ import { ImageStudioGallery } from "./image-studio-gallery";
 import { ImageStudioTools } from "./image-studio-tools";
 import { useImageEnhancement } from "~/hooks/use-image-enhancement";
 import { useImageRenovation } from "~/hooks/use-image-renovation";
+import { useImageBlurFaces } from "~/hooks/use-image-blur-faces";
+import { useImageRemoveClutter } from "~/hooks/use-image-remove-clutter";
 import type { PropertyImage } from "~/lib/data";
 import { toast } from "sonner";
 import { ProcessingOverlay } from "./processing-overlay";
@@ -27,7 +29,9 @@ export function ImageStudioClientWrapper({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [allImages, setAllImages] = useState<PropertyImage[]>(images);
   const [isComparisonVisible, setIsComparisonVisible] = useState(false);
-  const [isRenovationComparison, setIsRenovationComparison] = useState(false);
+  const [comparisonType, setComparisonType] = useState<
+    "enhancement" | "renovation" | "blur-faces" | "remove-clutter" | null
+  >(null);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   // Auto-open modal on page load
@@ -104,6 +108,8 @@ export function ImageStudioClientWrapper({
     renovate,
     saveRenovated,
     reset: resetRenovation,
+    reviewStatus,
+    reviewRenovation,
   } = useImageRenovation({
     propertyId,
     onSuccess: (newImage) => {
@@ -132,7 +138,7 @@ export function ImageStudioClientWrapper({
 
       // Hide comparison slider and reset
       setIsComparisonVisible(false);
-      setIsRenovationComparison(false);
+      setComparisonType(null);
       resetRenovation();
 
       console.log(
@@ -142,13 +148,141 @@ export function ImageStudioClientWrapper({
     onComparisonReady: () => {
       // Show comparison slider when renovation completes
       setIsComparisonVisible(true);
-      setIsRenovationComparison(true);
+      setComparisonType("renovation");
     },
     onError: (error) => {
       console.error("Renovation failed:", error);
       toast.error("Error al renovar la imagen");
     },
   });
+
+  // Image blur faces hook
+  const {
+    status: blurFacesStatus,
+    blurredImageUrl,
+    blurMetadata,
+    blurFaces,
+    saveBlurred,
+    reset: resetBlurFaces,
+  } = useImageBlurFaces({
+    propertyId,
+    onSuccess: (newImage) => {
+      console.log("🎉 Blur faces success - adding new image to gallery:", {
+        newImageId: newImage.propertyImageId.toString(),
+        imageOrder: newImage.imageOrder,
+        currentImagesCount: allImages.length,
+      });
+
+      // Add the new blurred image to the gallery
+      setAllImages((currentImages) => {
+        const newImages = [...currentImages, newImage];
+        const sortedImages = newImages.sort(
+          (a, b) => a.imageOrder - b.imageOrder,
+        );
+        console.log(
+          "📸 Updated gallery images:",
+          sortedImages.map((img) => ({
+            id: img.propertyImageId.toString(),
+            order: img.imageOrder,
+            tag: img.imageTag,
+          })),
+        );
+        return sortedImages;
+      });
+
+      // Hide comparison slider and reset
+      setIsComparisonVisible(false);
+      setComparisonType(null);
+      resetBlurFaces();
+
+      console.log(
+        "✅ Blur faces complete - mini gallery should now be visible",
+      );
+    },
+    onComparisonReady: () => {
+      // Show comparison slider when blur faces completes
+      setIsComparisonVisible(true);
+      setComparisonType("blur-faces");
+    },
+    onError: (error) => {
+      console.error("Blur faces failed:", error);
+      toast.error("Error al desenfocar las caras");
+    },
+  });
+
+  // Image remove clutter hook
+  const {
+    status: removeClutterStatus,
+    declutteredImageUrl,
+    removeClutterMetadata,
+    removeClutter,
+    saveDecluttered,
+    reset: resetRemoveClutter,
+  } = useImageRemoveClutter({
+    propertyId,
+    onSuccess: (newImage) => {
+      console.log("🎉 Remove clutter success - adding new image to gallery:", {
+        newImageId: newImage.propertyImageId.toString(),
+        imageOrder: newImage.imageOrder,
+        currentImagesCount: allImages.length,
+      });
+
+      // Add the new decluttered image to the gallery
+      setAllImages((currentImages) => {
+        const newImages = [...currentImages, newImage];
+        const sortedImages = newImages.sort(
+          (a, b) => a.imageOrder - b.imageOrder,
+        );
+        console.log(
+          "📸 Updated gallery images:",
+          sortedImages.map((img) => ({
+            id: img.propertyImageId.toString(),
+            order: img.imageOrder,
+            tag: img.imageTag,
+          })),
+        );
+        return sortedImages;
+      });
+
+      // Hide comparison slider and reset
+      setIsComparisonVisible(false);
+      setComparisonType(null);
+      resetRemoveClutter();
+
+      console.log(
+        "✅ Remove clutter complete - mini gallery should now be visible",
+      );
+    },
+    onComparisonReady: () => {
+      // Show comparison slider when remove clutter completes
+      setIsComparisonVisible(true);
+      setComparisonType("remove-clutter");
+    },
+    onError: (error) => {
+      console.error("Remove clutter failed:", error);
+      toast.error("Error al eliminar el desorden");
+    },
+  });
+
+  // Handle review request
+  const handleReviewRenovation = useCallback(
+    async (reviewText: string) => {
+      if (!renovatedImageUrl || !renovationMetadata) {
+        toast.error("No hay imagen renovada para revisar");
+        return;
+      }
+
+      try {
+        await reviewRenovation(reviewText);
+        // The hook updates renovatedImageUrl automatically, so the comparison view will update
+        console.log("✅ Review completed - image updated in comparison view");
+      } catch (error) {
+        console.error("Review failed:", error);
+        // Error is already handled by the hook with toast
+      }
+    },
+    [renovatedImageUrl, renovationMetadata, reviewRenovation],
+  );
 
   // Handle enhancement request from tools
   const handleEnhanceImage = useCallback(async () => {
@@ -198,6 +332,54 @@ export function ImageStudioClientWrapper({
     }
   }, [selectedImage, renovationStatus, renovate]);
 
+  // Handle blur faces request from tools
+  const handleBlurFaces = useCallback(async () => {
+    if (!selectedImage) {
+      toast.error("No hay imagen seleccionada");
+      return;
+    }
+
+    if (blurFacesStatus === "processing") {
+      toast.warning("Ya hay un desenfoque de caras en progreso");
+      return;
+    }
+
+    try {
+      await blurFaces(
+        selectedImage.imageUrl,
+        selectedImage.referenceNumber,
+        selectedImage.imageOrder,
+      );
+    } catch (error) {
+      console.error("Failed to start blur faces:", error);
+      toast.error("Error al iniciar el desenfoque de caras");
+    }
+  }, [selectedImage, blurFacesStatus, blurFaces]);
+
+  // Handle remove clutter request from tools
+  const handleRemoveClutter = useCallback(async () => {
+    if (!selectedImage) {
+      toast.error("No hay imagen seleccionada");
+      return;
+    }
+
+    if (removeClutterStatus === "processing") {
+      toast.warning("Ya hay una eliminación de desorden en progreso");
+      return;
+    }
+
+    try {
+      await removeClutter(
+        selectedImage.imageUrl,
+        selectedImage.referenceNumber,
+        selectedImage.imageOrder,
+      );
+    } catch (error) {
+      console.error("Failed to start remove clutter:", error);
+      toast.error("Error al iniciar la eliminación de desorden");
+    }
+  }, [selectedImage, removeClutterStatus, removeClutter]);
+
   // Handle saving the enhanced image
   const handleSaveEnhanced = useCallback(async () => {
     if (!enhancedImageUrl || !enhancementMetadata) {
@@ -244,7 +426,7 @@ export function ImageStudioClientWrapper({
   const handleDiscardRenovated = useCallback(() => {
     // Hide comparison and reset all renovation state
     setIsComparisonVisible(false);
-    setIsRenovationComparison(false);
+    setComparisonType(null);
     resetRenovation();
 
     // Similar to enhancement, renovation images are only saved on user confirmation
@@ -252,20 +434,83 @@ export function ImageStudioClientWrapper({
     toast.success("Imagen renovada descartada");
   }, [resetRenovation]);
 
+  // Handle saving the blurred faces image
+  const handleSaveBlurred = useCallback(async () => {
+    if (!blurredImageUrl || !blurMetadata) {
+      toast.error("No hay imagen con caras desenfocadas para guardar");
+      return;
+    }
+
+    try {
+      await saveBlurred();
+    } catch (error) {
+      console.error("Save blurred faces image failed:", error);
+    }
+  }, [blurredImageUrl, blurMetadata, saveBlurred]);
+
+  // Handle saving the decluttered image
+  const handleSaveDecluttered = useCallback(async () => {
+    if (!declutteredImageUrl || !removeClutterMetadata) {
+      toast.error("No hay imagen sin desorden para guardar");
+      return;
+    }
+
+    try {
+      await saveDecluttered();
+    } catch (error) {
+      console.error("Save decluttered image failed:", error);
+    }
+  }, [declutteredImageUrl, removeClutterMetadata, saveDecluttered]);
+
+  // Handle discarding the blurred faces image
+  const handleDiscardBlurred = useCallback(() => {
+    // Hide comparison and reset all blur faces state
+    setIsComparisonVisible(false);
+    setComparisonType(null);
+    resetBlurFaces();
+
+    // Discarding simply clears the temporary state
+    toast.success("Imagen con caras desenfocadas descartada");
+  }, [resetBlurFaces]);
+
+  // Handle discarding the decluttered image
+  const handleDiscardDecluttered = useCallback(() => {
+    // Hide comparison and reset all remove clutter state
+    setIsComparisonVisible(false);
+    setComparisonType(null);
+    resetRemoveClutter();
+
+    // Discarding simply clears the temporary state
+    toast.success("Imagen sin desorden descartada");
+  }, [resetRemoveClutter]);
+
   // Determine if AI is processing
   const isProcessing =
-    enhancementStatus === "processing" || renovationStatus === "processing";
+    enhancementStatus === "processing" ||
+    renovationStatus === "processing" ||
+    blurFacesStatus === "processing" ||
+    removeClutterStatus === "processing";
   const processingType =
-    renovationStatus === "processing" ? "renovación" : "mejora";
+    renovationStatus === "processing"
+      ? "renovación"
+      : blurFacesStatus === "processing"
+        ? "desenfoque de caras"
+        : removeClutterStatus === "processing"
+          ? "eliminación de desorden"
+          : "mejora";
 
   // Debug mini gallery visibility
   const shouldShowMiniGallery =
     enhancementStatus !== "processing" &&
     renovationStatus !== "processing" &&
+    blurFacesStatus !== "processing" &&
+    removeClutterStatus !== "processing" &&
     !isComparisonVisible;
   console.log("🔍 Mini gallery visibility check:", {
     enhancementStatus,
     renovationStatus,
+    blurFacesStatus,
+    removeClutterStatus,
     isComparisonVisible,
     shouldShow: shouldShowMiniGallery,
     imagesCount: allImages.length,
@@ -290,7 +535,7 @@ export function ImageStudioClientWrapper({
         </div>
       )}
 
-      <div className="space-y-16">
+      <div className="space-y-12">
         {/* Image Selection (thumbnails only) - Hidden when AI is processing or during comparison */}
         {shouldShowMiniGallery && (
           <section className="animate-in slide-in-from-bottom-8 delay-300 duration-700">
@@ -307,13 +552,17 @@ export function ImageStudioClientWrapper({
         {/* Tools Section */}
         <ImageStudioTools
           onEnhanceImage={handleEnhanceImage}
-          enhancementStatus={enhancementStatus}
+          _enhancementStatus={enhancementStatus}
           _enhancementProgress={enhancementProgress}
           _enhancementError={enhancementError}
           selectedImage={selectedImage}
-          isComparisonVisible={isComparisonVisible}
+          _isComparisonVisible={isComparisonVisible}
           onRenovateImage={handleRenovateImage}
-          renovationStatus={renovationStatus}
+          _renovationStatus={renovationStatus}
+          onBlurFaces={handleBlurFaces}
+          _blurFacesStatus={blurFacesStatus}
+          onRemoveClutter={handleRemoveClutter}
+          _removeClutterStatus={removeClutterStatus}
         />
 
         {/* Results Section (big image) */}
@@ -329,21 +578,44 @@ export function ImageStudioClientWrapper({
             onImageSelect={setSelectedIndex}
             isComparisonMode={isComparisonVisible}
             enhancedImageUrl={
-              isRenovationComparison
+              comparisonType === "renovation"
                 ? (renovatedImageUrl ?? "")
-                : (enhancedImageUrl ?? "")
+                : comparisonType === "blur-faces"
+                  ? (blurredImageUrl ?? "")
+                  : comparisonType === "remove-clutter"
+                    ? (declutteredImageUrl ?? "")
+                    : (enhancedImageUrl ?? "")
             }
             enhancementStatus={
-              isRenovationComparison ? renovationStatus : enhancementStatus
+              comparisonType === "renovation"
+                ? renovationStatus
+                : comparisonType === "blur-faces"
+                  ? blurFacesStatus
+                  : comparisonType === "remove-clutter"
+                    ? removeClutterStatus
+                    : enhancementStatus
             }
             onSave={
-              isRenovationComparison ? handleSaveRenovated : handleSaveEnhanced
+              comparisonType === "renovation"
+                ? handleSaveRenovated
+                : comparisonType === "blur-faces"
+                  ? handleSaveBlurred
+                  : comparisonType === "remove-clutter"
+                    ? handleSaveDecluttered
+                    : handleSaveEnhanced
             }
             onDiscard={
-              isRenovationComparison
+              comparisonType === "renovation"
                 ? handleDiscardRenovated
-                : handleDiscardEnhanced
+                : comparisonType === "blur-faces"
+                  ? handleDiscardBlurred
+                  : comparisonType === "remove-clutter"
+                    ? handleDiscardDecluttered
+                    : handleDiscardEnhanced
             }
+            isRenovationComparison={comparisonType === "renovation"}
+            onReview={comparisonType === "renovation" ? handleReviewRenovation : undefined}
+            reviewStatus={reviewStatus}
           />
         </section>
       </div>

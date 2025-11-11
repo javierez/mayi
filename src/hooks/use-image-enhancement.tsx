@@ -96,6 +96,19 @@ export function useImageEnhancement({
         setEnhancedImageUrl(null);
         setEnhancedPropertyImage(null);
 
+        // 0. Get image dimensions (use default for typical property images)
+        // Backend will download the image anyway, so we use reasonable defaults
+        // Most property images are 1920x1080 or similar
+        const imageWidth = 1920;
+        const imageHeight = 1080;
+        const upscaleFactor = 2;
+
+        console.log("📐 Using default dimensions for token calculation:", {
+          imageWidth,
+          imageHeight,
+          upscaleFactor,
+        });
+
         // 1. Start enhancement
         const startResponse = await fetch(
           `/api/properties/${propertyId}/freepik-enhance`,
@@ -106,6 +119,9 @@ export function useImageEnhancement({
               imageUrl,
               referenceNumber,
               currentImageOrder,
+              imageWidth,
+              imageHeight,
+              upscaleFactor,
             }),
           },
         );

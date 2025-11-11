@@ -50,6 +50,9 @@ export const accounts = pgTable("accounts", {
   subscriptionStartDate: timestamp("subscription_start_date"), // Subscription start date
   subscriptionEndDate: timestamp("subscription_end_date"), // Subscription end date
   status: varchar("status", { length: 20 }).default("active"), // active/inactive/suspended
+  // Image AI Token System
+  imageTokenBalance: integer("image_token_balance").default(0).notNull(), // Current token balance for AI image operations
+  imageTokensUsed: integer("image_tokens_used").default(0).notNull(), // Lifetime token usage tracking
   // Timestamps
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -1063,4 +1066,37 @@ export const fotocasaLogs = pgTable("fotocasa_logs", {
 
   // System field
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Image Token Transactions table (track all token usage and purchases)
+export const imageTokenTransactions = pgTable("image_token_transactions", {
+  // Primary Key
+  transactionId: bigserial("transaction_id", { mode: "bigint" })
+    .primaryKey(),
+
+  // Account reference
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
+
+  // Transaction type and details
+  operation: varchar("operation", { length: 50 }).notNull(), // 'freepik_enhance' | 'gemini_renovate' | 'gemini_detect' | 'token_purchase' | 'admin_credit' | 'admin_debit'
+  tokensChanged: integer("tokens_changed").notNull(), // Positive for purchases/credits, negative for usage
+  beforeBalance: integer("before_balance").notNull(), // Token balance before transaction
+  afterBalance: integer("after_balance").notNull(), // Token balance after transaction
+
+  // Operation metadata (flexible JSON for different operation types)
+  metadata: jsonb("metadata").default({}), // { imageWidth, imageHeight, upscaleFactor, roomType, style, etc. }
+
+  // Related entities
+  propertyImageId: bigint("property_image_id", { mode: "bigint" }), // FK → property_images (nullable)
+  propertyId: bigint("property_id", { mode: "bigint" }), // FK → properties (nullable)
+  userId: varchar("user_id", { length: 36 }), // FK → users.id (who performed the operation)
+
+  // Payment/purchase details (for token purchases)
+  purchaseAmount: decimal("purchase_amount", { precision: 10, scale: 2 }), // Amount paid in EUR (nullable)
+  paymentMethod: varchar("payment_method", { length: 50 }), // 'stripe' | 'paypal' | 'manual' | null
+  paymentReference: varchar("payment_reference", { length: 255 }), // External payment ID
+
+  // System fields
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  isActive: boolean("is_active").default(true),
 });
