@@ -286,6 +286,18 @@ export async function verifyResetCodeAndChangePassword(
     console.log("🔍 [Password Reset] Verification - Account password hash:", updatedAccount?.password?.substring(0, 20) + "...");
     console.log("🔍 [Password Reset] Hash saved correctly in account table:", updatedAccount?.password === hashedPassword);
 
+    // CRITICAL FIX: Also update users.password
+    // Better Auth checks users.password during email/password authentication
+    console.log("🔑 [Password Reset] Updating users.password for Better Auth compatibility...");
+    await db
+      .update(users)
+      .set({
+        password: hashedPassword,
+      })
+      .where(eq(users.id, user.id));
+
+    console.log("✅ [Password Reset] Updated users.password for Better Auth email/password authentication");
+
     // Mark token as used (prevents reuse)
     await db
       .update(passwordResetTokens)
