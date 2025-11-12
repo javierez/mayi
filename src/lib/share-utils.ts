@@ -137,3 +137,51 @@ export function isValidPhone(phone: string): boolean {
   const digitCount = cleaned.replace(/\+/g, "").length;
   return digitCount >= 9 && digitCount <= 15;
 }
+
+/**
+ * Opens WhatsApp without a specific recipient (user selects contact)
+ * @param message - The message to send
+ */
+export function openWhatsAppGeneric(message: string): void {
+  // Encode message for URL
+  const encodedMessage = encodeURIComponent(message);
+
+  // WhatsApp Web/App URL without phone number - lets user select contact
+  const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+
+  // Open in new window
+  window.open(whatsappUrl, "_blank");
+}
+
+/**
+ * Opens SMS app without a specific recipient (user selects contact)
+ * @param message - The message to send
+ */
+export function sendSMSGeneric(message: string): void {
+  // Encode message for URL
+  const encodedMessage = encodeURIComponent(message);
+
+  // SMS URL without recipient - user selects in SMS app
+  // Note: This works better on mobile devices
+  const smsUrl = `sms:${/iPhone|iPad|iPod/.test(navigator.userAgent) ? "&" : "?"}body=${encodedMessage}`;
+
+  // Open SMS app
+  window.location.href = smsUrl;
+}
+
+/**
+ * Opens email client without a specific recipient (user enters recipient)
+ * @param subject - The email subject
+ * @param message - The email body
+ */
+export function openEmailGeneric(subject: string, message: string): void {
+  // Encode subject and message for URL
+  const encodedSubject = encodeURIComponent(subject);
+  const encodedMessage = encodeURIComponent(message);
+
+  // mailto URL without recipient - user enters in email client
+  const mailtoUrl = `mailto:?subject=${encodedSubject}&body=${encodedMessage}`;
+
+  // Open email client
+  window.location.href = mailtoUrl;
+}

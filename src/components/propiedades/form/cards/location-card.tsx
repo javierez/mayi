@@ -1067,17 +1067,27 @@ export function LocationCard({
                 {streetValue.trim() && city.trim() && postalCodeValue.trim() && (
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
                       const cadastralRef = cadastralReferenceValue.trim();
                       if (cadastralRef) {
-                        const catastroUrl = `https://www1.sedecatastro.gob.es/CYCBienInmueble/OVCConCiud.aspx?UrbRus=U&RefC=${encodeURIComponent(cadastralRef)}&esBice=&RCBice1=&RCBice2=&DenoBice=&from=OVCBusqueda&pest=rc&RCCompleta=${encodeURIComponent(cadastralRef)}&final=&del=24&mun=900`;
-                        window.open(catastroUrl, "_blank", "noopener,noreferrer");
-                        console.log("🌐 Opening Catastro page:", catastroUrl);
+                        // Copy cadastral reference to clipboard
+                        try {
+                          await navigator.clipboard.writeText(cadastralRef);
+                          toast.success("Referencia catastral copiada al portapapeles");
+                        } catch (error) {
+                          console.error("Failed to copy to clipboard:", error);
+                          toast.error("Error al copiar la referencia");
+                        }
+
+                        // Open Catastro map
+                        const catastroMapUrl = "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?buscar=S";
+                        window.open(catastroMapUrl, "_blank", "noopener,noreferrer");
+                        console.log("🌐 Opening Catastro map:", catastroMapUrl);
                       }
                     }}
                     disabled={!canEdit}
                     className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-30"
-                    title="Abrir en Catastro"
+                    title="Copiar referencia y abrir mapa de Catastro"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"

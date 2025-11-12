@@ -14,12 +14,14 @@ import {
   MapPin,
   User,
   X,
+  Share2,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { formatPrice } from "~/lib/utils";
 import { formatListingType } from "./contactos/contact-config";
 import type { ListingOverview } from "~/types/listing";
 import { PropertyImagePlaceholder } from "./propiedades/PropertyImagePlaceholder";
+import { SharePropertyModal } from "./propiedades/share-property-modal";
 
 type Listing = {
   // Listing fields
@@ -85,6 +87,7 @@ export const PropertyCard = React.memo(function PropertyCard({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [image2Loaded, setImage2Loaded] = useState(false);
   const [isDeleteButtonHovered, setIsDeleteButtonHovered] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const getPropertyTypeLabel = (type: string | null) => {
     switch (type) {
@@ -129,21 +132,10 @@ export const PropertyCard = React.memo(function PropertyCard({
     setImageSrc2(null);
   };
 
-  const handleWhatsAppClick = (e: React.MouseEvent) => {
+  const handleShareClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
-    // Use account website or fallback to current origin
-    const baseUrl = accountWebsite ?? window.location.origin;
-    const cleanBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
-    const propertyUrl = `${cleanBaseUrl}/propiedades/${listing.listingId}`;
-    const message = `Échale un vistazo: ${propertyUrl}`;
-
-    // Create WhatsApp link with pre-filled message
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-
-    // Open WhatsApp
-    window.open(whatsappUrl, "_blank");
+    setShareModalOpen(true);
   };
 
   const handleRemoveClick = async (e: React.MouseEvent) => {
@@ -344,19 +336,22 @@ export const PropertyCard = React.memo(function PropertyCard({
           <Button
             variant="ghost"
             size="icon"
-            className="group absolute bottom-1 right-1 mr-2 h-8 w-8 text-muted-foreground/80 hover:bg-transparent"
-            onClick={handleWhatsAppClick}
+            className="group absolute bottom-1 right-1 mr-2 h-8 w-8 text-muted-foreground/80 hover:bg-transparent hover:text-primary"
+            onClick={handleShareClick}
+            title="Compartir propiedad"
           >
-            <Image
-              src="https://vesta-configuration-files.s3.amazonaws.com/logos/whatsapp.png"
-              alt="WhatsApp"
-              width={20}
-              height={20}
-              className="h-5 w-5 transition-transform duration-200 group-hover:scale-110"
-            />
+            <Share2 className="h-5 w-5 transition-transform duration-200 group-hover:scale-110" />
           </Button>
         </CardFooter>
       </Card>
+
+      {/* Share Modal */}
+      <SharePropertyModal
+        open={shareModalOpen}
+        onOpenChange={setShareModalOpen}
+        property={listing}
+        accountWebsite={accountWebsite}
+      />
     </Link>
   );
 });

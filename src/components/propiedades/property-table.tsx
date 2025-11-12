@@ -18,7 +18,6 @@ import {
   User,
   Briefcase,
   Share2,
-  MessageCircle,
   ChevronLeft,
   ChevronRight,
   Download,
@@ -32,6 +31,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
 import type { ListingOverview } from "~/types/listing";
 import { PropertyImagePlaceholder } from "./PropertyImagePlaceholder";
+import { SharePropertyModal } from "./share-property-modal";
 
 interface PropertyTableProps {
   listings: ListingOverview[];
@@ -98,6 +98,9 @@ export const PropertyTable = React.memo(function PropertyTable({
   const resizeStartRef = useRef<{ x: number; width: number } | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const [isHoveringTable, setIsHoveringTable] = React.useState(false);
+  const [shareModalOpen, setShareModalOpen] = React.useState(false);
+  const [selectedProperty, setSelectedProperty] =
+    React.useState<ListingOverview | null>(null);
 
   const handleResizeStart = useCallback(
     (column: string, e: React.MouseEvent) => {
@@ -263,62 +266,15 @@ export const PropertyTable = React.memo(function PropertyTable({
     void prefetchAdjacentPages();
   }, [currentPage, totalPages, onPrefetchPage]);
 
-  const handleWhatsAppClick = React.useCallback(
+  const handleShareOpen = React.useCallback(
     (listing: ListingOverview, e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
 
-      const baseUrl = accountWebsite ?? window.location.origin;
-      const cleanBaseUrl = baseUrl.endsWith("/")
-        ? baseUrl.slice(0, -1)
-        : baseUrl;
-      const propertyUrl = `${cleanBaseUrl}/propiedades/${listing.listingId}`;
-      const message = `Échale un vistazo: ${propertyUrl}`;
-
-      // WhatsApp URL without specific recipient - user selects in WhatsApp
-      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-
-      window.open(whatsappUrl, "_blank");
+      setSelectedProperty(listing);
+      setShareModalOpen(true);
     },
-    [accountWebsite],
-  );
-
-  const handleShareClick = React.useCallback(
-    async (listing: ListingOverview, e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const baseUrl = accountWebsite ?? window.location.origin;
-      const cleanBaseUrl = baseUrl.endsWith("/")
-        ? baseUrl.slice(0, -1)
-        : baseUrl;
-      const propertyUrl = `${cleanBaseUrl}/propiedades/${listing.listingId}`;
-      const message = `Échale un vistazo: ${propertyUrl}`;
-      const shareData = {
-        text: message,
-        // Only share our consistent message format
-      };
-
-      try {
-        if (navigator.share) {
-          await navigator.share(shareData);
-        } else {
-          // Fallback: copy to clipboard
-          await navigator.clipboard.writeText(message);
-          alert("Enlace copiado al portapapeles");
-        }
-      } catch (error) {
-        console.error("Error sharing:", error);
-        // Fallback: copy to clipboard
-        try {
-          await navigator.clipboard.writeText(message);
-          alert("Enlace copiado al portapapeles");
-        } catch (clipboardError) {
-          console.error("Clipboard fallback failed:", clipboardError);
-        }
-      }
-    },
-    [accountWebsite],
+    [],
   );
 
   // Export properties to CSV
@@ -605,26 +561,17 @@ export const PropertyTable = React.memo(function PropertyTable({
                           <Skeleton className="h-full w-full rounded-md" />
                         )}
 
-                        {/* Hover overlay with icons - only render when visible */}
+                        {/* Hover overlay with share icon - only render when visible */}
                         {isVisible && (
-                          <div className="absolute inset-0 flex items-center justify-center gap-1 bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 text-white hover:bg-white/20 hover:text-white"
-                              onClick={(e) => handleWhatsAppClick(listing, e)}
-                              title="Compartir por WhatsApp"
+                              className="h-7 w-7 text-white hover:bg-white/20 hover:text-white"
+                              onClick={(e) => handleShareOpen(listing, e)}
+                              title="Compartir propiedad"
                             >
-                              <MessageCircle className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 text-white hover:bg-white/20 hover:text-white"
-                              onClick={(e) => handleShareClick(listing, e)}
-                              title="Compartir enlace"
-                            >
-                              <Share2 className="h-3 w-3" />
+                              <Share2 className="h-4 w-4" />
                             </Button>
                           </div>
                         )}
@@ -770,6 +717,16 @@ export const PropertyTable = React.memo(function PropertyTable({
         </Table>
       </div>
       <PaginationControls />
+
+      {/* Share Modal */}
+      {selectedProperty && (
+        <SharePropertyModal
+          open={shareModalOpen}
+          onOpenChange={setShareModalOpen}
+          property={selectedProperty}
+          accountWebsite={accountWebsite}
+        />
+      )}
     </div>
   );
 });

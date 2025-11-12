@@ -15,14 +15,19 @@ import {
   Mail,
   MessageSquare,
   Copy,
-  MapPin,
-  Euro,
   Home,
+  Euro,
+  MapPin,
   Check,
 } from "lucide-react";
 import { toast } from "sonner";
-import { sendSMS, openWhatsApp, copyToClipboard } from "~/lib/share-utils";
-import type { ProspectMatch } from "~/types/connection-matches";
+import {
+  openWhatsAppGeneric,
+  sendSMSGeneric,
+  openEmailGeneric,
+  copyToClipboard,
+} from "~/lib/share-utils";
+import { formatPrice } from "~/lib/utils";
 import {
   Select,
   SelectContent,
@@ -31,105 +36,86 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 
-interface ShareListingModalProps {
+interface SharePropertyModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  match: ProspectMatch;
+  property: {
+    listingId: bigint;
+    title?: string | null;
+    referenceNumber?: string | null;
+    city?: string | null;
+    price: string;
+    bedrooms: number | null;
+    bathrooms: string | null;
+    squareMeter: number | null;
+    builtSurfaceArea?: number | null;
+  };
   accountWebsite?: string | null;
 }
 
-export function ShareListingModal({
+type MessageFormat = "simple" | "medium" | "detailed";
+
+export function SharePropertyModal({
   open,
   onOpenChange,
-  match,
+  property,
   accountWebsite,
-}: ShareListingModalProps) {
+}: SharePropertyModalProps) {
   const [isCopied, setIsCopied] = useState(false);
-  const [messageFormat, setMessageFormat] = useState<
-    "simple" | "medium" | "detailed"
-  >("detailed");
+  const [messageFormat, setMessageFormat] =
+    useState<MessageFormat>("medium");
 
-  const { listing, prospect } = match;
-  const contact = prospect.contacts;
-  const property = listing.properties;
-  const listingType =
-    listing.listings.listingType === "Sale" ? "Venta" : "Alquiler";
-  const price = parseFloat(listing.listings.price);
-
-  // Property summary for share message
-  const propertyTitle = property.title ?? "Propiedad sin título";
-  const propertyLocation =
-    listing.locations.neighborhood ?? "Ubicación no especificada";
-  const propertyPrice =
-    listingType === "Venta"
-      ? `${Math.round(price / 1000)}k €`
-      : `${price.toLocaleString()} €/mes`;
-
-  const propertyDetails = `${listingType} de ${propertyTitle}`;
-  const propertyInfo = `${property.bedrooms ?? "-"} hab, ${property.bathrooms ? Math.floor(Number(property.bathrooms)) : "-"} baños, ${property.squareMeter ?? "-"}m²`;
-
-  // Generate property URL using account website
+  // Build property URL
   const baseUrl = accountWebsite ?? window.location.origin;
   const cleanBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
-  const propertyUrl = `${cleanBaseUrl}/propiedades/${listing.listings.id.toString()}`;
+  const propertyUrl = `${cleanBaseUrl}/propiedades/${property.listingId}`;
 
-  // Generate message based on format
-  const generateMessage = (format: "simple" | "medium" | "detailed"): string => {
-    const firstName = contact.firstName ?? "Cliente";
+  // Generate share messages based on format
+  const generateMessage = (format: MessageFormat): string => {
+    const ref = property.referenceNumber ?? "REF";
+    const title = property.title ?? "Propiedad";
+    const city = property.city ?? "";
+    const price = property.price ? `${formatPrice(Number(property.price))}€` : "";
+    const beds = property.bedrooms ?? 0;
+    const baths = property.bathrooms
+      ? Math.floor(Number(property.bathrooms))
+      : 0;
+    const sqm = Math.round(
+      Number(property.squareMeter ?? property.builtSurfaceArea ?? 0),
+    );
 
     switch (format) {
       case "simple":
-        return `Hola ${firstName}, échale un vistazo: ${propertyUrl}`;
+        return `Échale un vistazo: ${propertyUrl}`;
 
       case "medium":
-        return `Hola ${firstName}, te comparto esta propiedad:\n\n${propertyDetails}\n${propertyLocation} - ${propertyPrice}\n\n${propertyUrl}`;
+        return `${ref} - ${city ? `${city} - ` : ""}${price}\n\n${propertyUrl}`;
 
       case "detailed":
-        return `Hola ${firstName}, te comparto esta propiedad que podría interesarte:\n\n${propertyDetails}\n📍 Ubicación: ${propertyLocation}\n💰 Precio: ${propertyPrice}\n🏠 Características: ${propertyInfo}\n\nMás información: ${propertyUrl}`;
+        return `🏡 ${title}\n${city ? `📍 ${city}\n` : ""}${price ? `💰 ${price}\n` : ""}${beds > 0 ? `🛏️ ${beds} dorm` : ""}${beds > 0 && baths > 0 ? " • " : ""}${baths > 0 ? `🚿 ${baths} baños` : ""}${sqm > 0 ? ` • 📐 ${sqm}m²` : ""}\n\n${propertyUrl}`;
 
       default:
-        return `Hola ${firstName}, échale un vistazo: ${propertyUrl}`;
+        return `Échale un vistazo: ${propertyUrl}`;
     }
   };
 
+  const emailSubject = `${property.referenceNumber ?? "Propiedad"} - ${property.city ?? ""}`;
+
   const handleEmailShare = () => {
-    if (!contact.email) {
-      toast.error("Este contacto no tiene email registrado");
-      return;
-    }
-
-    // Construct email subject and body
-    const subject = `Propiedad que podría interesarte: ${propertyDetails}`;
-    const body = generateMessage(messageFormat);
-
-    // Create mailto link
-    const mailtoLink = `mailto:${contact.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-    // Open email client
-    window.location.href = mailtoLink;
-
+    const message = generateMessage(messageFormat);
+    openEmailGeneric(emailSubject, message);
     toast.success("Se ha abierto tu cliente de email");
   };
 
   const handleSMSShare = () => {
-    if (!contact.phone) {
-      toast.error("Este contacto no tiene número de teléfono registrado");
-      return;
-    }
-
     const message = generateMessage(messageFormat);
-    sendSMS(contact.phone, message);
+    sendSMSGeneric(message);
     toast.success("Se ha abierto tu aplicación de mensajes");
   };
 
   const handleWhatsAppShare = () => {
-    if (!contact.phone) {
-      toast.error("Este contacto no tiene número de teléfono registrado");
-      return;
-    }
-
     const message = generateMessage(messageFormat);
-    openWhatsApp(contact.phone, message);
+    openWhatsAppGeneric(message);
     toast.success("Se ha abierto WhatsApp con el mensaje preparado");
   };
 
@@ -155,48 +141,33 @@ export function ShareListingModal({
         <DialogHeader>
           <DialogTitle>Compartir Propiedad</DialogTitle>
           <DialogDescription>
-            Comparte esta propiedad con {contact.firstName} {contact.lastName}
+            Selecciona el formato del mensaje y cómo compartirlo
           </DialogDescription>
         </DialogHeader>
 
         {/* Property Summary */}
         <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-4">
           <h4 className="text-sm font-semibold text-gray-900">
-            {propertyDetails}
+            {property.title ?? "Propiedad"}
           </h4>
           <div className="space-y-2 text-xs text-gray-600">
             <div className="flex items-center gap-2">
-              <MapPin className="h-3.5 w-3.5 text-gray-500" />
-              <span>{propertyLocation}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Euro className="h-3.5 w-3.5 text-gray-500" />
-              <span>{propertyPrice}</span>
-            </div>
-            <div className="flex items-center gap-2">
               <Home className="h-3.5 w-3.5 text-gray-500" />
-              <span>{propertyInfo}</span>
+              <span>{property.referenceNumber ?? "Sin referencia"}</span>
             </div>
+            {property.city && (
+              <div className="flex items-center gap-2">
+                <MapPin className="h-3.5 w-3.5 text-gray-500" />
+                <span>{property.city}</span>
+              </div>
+            )}
+            {property.price && (
+              <div className="flex items-center gap-2">
+                <Euro className="h-3.5 w-3.5 text-gray-500" />
+                <span>{formatPrice(Number(property.price))}€</span>
+              </div>
+            )}
           </div>
-        </div>
-
-        {/* Contact Info */}
-        <div className="space-y-2 rounded-lg border border-gray-200 bg-white p-4">
-          <p className="text-sm font-medium text-gray-900">
-            {contact.firstName} {contact.lastName}
-          </p>
-          {contact.email && (
-            <div className="flex items-center gap-2">
-              <Mail className="h-3.5 w-3.5 text-gray-500" />
-              <p className="text-xs text-gray-600">{contact.email}</p>
-            </div>
-          )}
-          {contact.phone && (
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-3.5 w-3.5 text-gray-500" />
-              <p className="text-xs text-gray-600">{contact.phone}</p>
-            </div>
-          )}
         </div>
 
         {/* Message Format Selector */}
@@ -206,9 +177,7 @@ export function ShareListingModal({
           </label>
           <Select
             value={messageFormat}
-            onValueChange={(value) =>
-              setMessageFormat(value as "simple" | "medium" | "detailed")
-            }
+            onValueChange={(value) => setMessageFormat(value as MessageFormat)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecciona un formato" />
@@ -218,7 +187,7 @@ export function ShareListingModal({
                 <div className="flex flex-col items-start">
                   <span className="font-medium">Simple</span>
                   <span className="text-xs text-muted-foreground">
-                    Solo saludo y enlace
+                    Solo el enlace
                   </span>
                 </div>
               </SelectItem>
@@ -226,7 +195,7 @@ export function ShareListingModal({
                 <div className="flex flex-col items-start">
                   <span className="font-medium">Medio</span>
                   <span className="text-xs text-muted-foreground">
-                    Datos principales
+                    Referencia, ciudad y precio
                   </span>
                 </div>
               </SelectItem>
@@ -257,7 +226,6 @@ export function ShareListingModal({
             variant="outline"
             className="flex h-20 flex-col items-center justify-center gap-2"
             onClick={handleEmailShare}
-            disabled={!contact.email}
           >
             <Mail className="h-5 w-5" />
             <span className="text-xs">Email</span>
@@ -268,7 +236,6 @@ export function ShareListingModal({
             variant="outline"
             className="flex h-20 flex-col items-center justify-center gap-2"
             onClick={handleSMSShare}
-            disabled={!contact.phone}
           >
             <MessageSquare className="h-5 w-5" />
             <span className="text-xs">SMS</span>
@@ -279,7 +246,6 @@ export function ShareListingModal({
             variant="outline"
             className="flex h-20 flex-col items-center justify-center gap-2"
             onClick={handleWhatsAppShare}
-            disabled={!contact.phone}
           >
             <MessageSquare className="h-5 w-5" />
             <span className="text-xs">WhatsApp</span>
