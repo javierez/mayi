@@ -47,6 +47,12 @@ import {
 } from "~/server/actions/listing-contact-comments";
 import type { ListingContactCommentWithUser } from "~/types/listing-contact-comments";
 import { useSession } from "~/lib/auth-client";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
+import { ListingContactActivityTimeline } from "~/components/contactos/listing-contact-activity-timeline";
+import { AddListingContactActivityModal } from "~/components/contactos/add-listing-contact-activity-modal";
+import { getListingContactActivityByListingContactIdWithAuth } from "~/server/queries/listing-contact-activity";
+import type { ListingContactActivityWithUser } from "~/server/queries/listing-contact-activity";
+import { Plus } from "lucide-react";
 
 interface ContactDetailSheetProps {
   contact: ContactSheetData | null;
@@ -160,6 +166,10 @@ export function ContactDetailSheet({
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
   const [comments, setComments] = useState<ListingContactCommentWithUser[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [activeTab, setActiveTab] = useState<"comments" | "actions">("comments");
+  const [activities, setActivities] = useState<ListingContactActivityWithUser[]>([]);
+  const [isLoadingActivities, setIsLoadingActivities] = useState(false);
+  const [isAddActivityModalOpen, setIsAddActivityModalOpen] = useState(false);
 
   // Fetch comments when sheet opens
   useEffect(() => {
@@ -188,6 +198,37 @@ export function ContactDetailSheet({
         .finally(() => setIsLoadingComments(false));
     }
   }, [isOpen, contact]);
+
+  // Fetch activities when Actions tab is active
+  useEffect(() => {
+    if (isOpen && contact && activeTab === "actions") {
+      setIsLoadingActivities(true);
+      getListingContactActivityByListingContactIdWithAuth(contact.listingContactId)
+        .then((data) => setActivities(data))
+        .catch((error) => {
+          console.error("Error loading activities:", error);
+          toast.error("Error al cargar las actividades");
+        })
+        .finally(() => setIsLoadingActivities(false));
+    }
+  }, [isOpen, contact, activeTab]);
+
+  // Refresh activities handler
+  const handleRefreshActivities = async () => {
+    if (!contact) return;
+    setIsLoadingActivities(true);
+    try {
+      const data = await getListingContactActivityByListingContactIdWithAuth(
+        contact.listingContactId,
+      );
+      setActivities(data);
+    } catch (error) {
+      console.error("Error refreshing activities:", error);
+      toast.error("Error al actualizar las actividades");
+    } finally {
+      setIsLoadingActivities(false);
+    }
+  };
 
   // Comment handlers
   const handleAddComment = async (tempComment: ListingContactCommentWithUser) => {
@@ -987,28 +1028,66 @@ export function ContactDetailSheet({
               </div>
             )}
 
-            {/* Listing Contact Comments Section */}
+            {/* Tabs Section: Comments and Actions */}
             <div className="border-t pt-4 mt-4">
-              {isLoadingComments ? (
-                <div className="flex justify-center py-8">
-                  <Loader className="h-6 w-6 animate-spin text-gray-400" />
+              <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "comments" | "actions")}>
+                <div className="flex items-center gap-2 mb-4">
+                  <TabsList className="grid w-full grid-cols-2 flex-1">
+                    <TabsTrigger value="comments">Comentarios</TabsTrigger>
+                    <TabsTrigger value="actions">Acciones</TabsTrigger>
+                  </TabsList>
+                  {activeTab === "actions" && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setIsAddActivityModalOpen(true)}
+                      className="h-8 w-8 p-0 shrink-0 hover:bg-gray-100"
+                      title="Agregar actividad"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
-              ) : (
-                <ListingContactComments
-                  listingContactId={contact.listingContactId}
-                  initialComments={comments}
-                  currentUserId={session?.user?.id}
-                  currentUser={session?.user ? {
-                    id: session.user.id,
-                    name: session.user.name ?? undefined,
-                    image: session.user.image ?? undefined,
-                  } : undefined}
-                  onAddComment={handleAddComment}
-                  onEditComment={handleEditComment}
-                  onDeleteComment={handleDeleteComment}
-                />
-              )}
+
+                <TabsContent value="comments" className="mt-4">
+                  {isLoadingComments ? (
+                    <div className="flex justify-center py-8">
+                      <Loader className="h-6 w-6 animate-spin text-gray-400" />
+                    </div>
+                  ) : (
+                    <ListingContactComments
+                      listingContactId={contact.listingContactId}
+                      initialComments={comments}
+                      currentUserId={session?.user?.id}
+                      currentUser={session?.user ? {
+                        id: session.user.id,
+                        name: session.user.name ?? undefined,
+                        image: session.user.image ?? undefined,
+                      } : undefined}
+                      onAddComment={handleAddComment}
+                      onEditComment={handleEditComment}
+                      onDeleteComment={handleDeleteComment}
+                    />
+                  )}
+                </TabsContent>
+
+                <TabsContent value="actions" className="mt-4">
+                  {/* Activities Timeline */}
+                  <ListingContactActivityTimeline
+                    activities={activities}
+                    loading={isLoadingActivities}
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
+
+            {/* Add Activity Modal */}
+            <AddListingContactActivityModal
+              open={isAddActivityModalOpen}
+              onOpenChange={setIsAddActivityModalOpen}
+              listingContactId={contact.listingContactId}
+              onSuccess={handleRefreshActivities}
+            />
             </div>
           </div>
         </ScrollArea>

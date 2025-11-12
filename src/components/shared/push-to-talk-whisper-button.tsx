@@ -241,7 +241,7 @@ export function PushToTalkWhisperButton({
   // Processing state (transcribing)
   if (isProcessing) {
     return (
-      <div className={cn("absolute right-2 top-2", className)}>
+      <div className={cn("absolute right-1 top-1", className)}>
         <button
           type="button"
           className="relative rounded-full bg-blue-500/10 p-1.5 transition-all"
@@ -257,7 +257,7 @@ export function PushToTalkWhisperButton({
   if (isRecording) {
     return (
       <div
-        className={cn("absolute right-2 top-2", className)}
+        className={cn("absolute right-1 top-1", className)}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
         onTouchEnd={handleTouchEnd}
@@ -276,7 +276,7 @@ export function PushToTalkWhisperButton({
 
   // Idle state - ready to record
   return (
-    <div className={cn("absolute right-2 top-2", className)}>
+    <div className={cn("absolute right-1 top-1", className)}>
       <button
         type="button"
         onMouseDown={handleMouseDown}

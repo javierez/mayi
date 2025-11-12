@@ -5,10 +5,10 @@ import { Card, CardContent } from "~/components/ui/card";
 import {
   Plus,
   CheckSquare,
-  FileText,
   Calendar,
   Users,
   Clock,
+  Phone,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { GlobalTaskModalTrigger } from "~/components/tasks/global-task-modal";
@@ -65,8 +65,8 @@ export default function OperacionesQuickActionsCard({
       href: "/calendario?new=true",
     },
     {
-      icon: FileText,
-      label: "Crear Contrato",
+      icon: Phone,
+      label: "Acción Rápida",
       isMock: true,
       isDisabled: true,
     },

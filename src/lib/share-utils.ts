@@ -24,6 +24,9 @@ export function sendSMS(phoneNumber: string, message: string): void {
   window.location.href = smsUrl;
 }
 
+// Store reference to WhatsApp window to reuse it
+let whatsappWindow: Window | null = null;
+
 /**
  * Opens WhatsApp with a pre-filled message
  * @param phoneNumber - The recipient's phone number (with country code)
@@ -52,8 +55,13 @@ export function openWhatsApp(phoneNumber: string, message: string): void {
   // WhatsApp Web/App URL
   const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
 
-  // Open in new window
-  window.open(whatsappUrl, "_blank");
+  // Reuse existing WhatsApp window if it's still open, otherwise open new one
+  if (whatsappWindow && !whatsappWindow.closed) {
+    whatsappWindow.location.href = whatsappUrl;
+    whatsappWindow.focus();
+  } else {
+    whatsappWindow = window.open(whatsappUrl, "whatsapp_share");
+  }
 }
 
 /**
@@ -149,8 +157,13 @@ export function openWhatsAppGeneric(message: string): void {
   // WhatsApp Web/App URL without phone number - lets user select contact
   const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
 
-  // Open in new window
-  window.open(whatsappUrl, "_blank");
+  // Reuse existing WhatsApp window if it's still open, otherwise open new one
+  if (whatsappWindow && !whatsappWindow.closed) {
+    whatsappWindow.location.href = whatsappUrl;
+    whatsappWindow.focus();
+  } else {
+    whatsappWindow = window.open(whatsappUrl, "whatsapp_share");
+  }
 }
 
 /**
