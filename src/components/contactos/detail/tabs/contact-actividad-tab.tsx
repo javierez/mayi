@@ -38,13 +38,18 @@ import AppointmentModal, {
 import { AppointmentDetailSheet } from "~/components/appointments/appointment-detail-sheet";
 import { ContactDetailSheet } from "~/components/contactos/contact-detail-sheet";
 import { Card } from "~/components/ui/card";
-import { Building, Home } from "lucide-react";
+import { Building, Home, Clock } from "lucide-react";
 import type {
   ContactVisitWithDetails,
   ContactRelatedContact,
   ContactSheetData,
 } from "~/types/activity";
 import { cn } from "~/lib/utils";
+import { GeneralActivityTimeline } from "~/components/contactos/general-activity-timeline";
+import { getAllListingContactActivityByContactIdWithAuth } from "~/server/queries/listing-contact-activity";
+import { getContactActivityByContactIdWithAuth } from "~/server/queries/contact-activity";
+import type { ListingContactActivityWithUser } from "~/server/queries/listing-contact-activity";
+import type { ContactActivityWithUser } from "~/server/queries/contact-activity";
 
 interface ContactActividadTabProps {
   contactId: bigint;
@@ -100,9 +105,9 @@ interface ListingActivityGroup {
 export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
   const router = useRouter();
 
-  const [selectedRole, setSelectedRole] = useState<"propiedades" | "intereses">(
-    "propiedades",
-  );
+  const [selectedRole, setSelectedRole] = useState<
+    "propiedades" | "intereses" | "general"
+  >("propiedades");
   const [listings, setListings] = useState<ListingInfo[]>([]);
   const [visits, setVisits] = useState<ContactVisitWithDetails[]>([]);
   const [relatedContacts, setRelatedContacts] = useState<
@@ -125,6 +130,15 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
     [],
   );
   const [isLoadingIntereses, setIsLoadingIntereses] = useState(false);
+
+  // General activities state
+  const [listingActivities, setListingActivities] = useState<
+    ListingContactActivityWithUser[]
+  >([]);
+  const [contactActivities, setContactActivities] = useState<
+    ContactActivityWithUser[]
+  >([]);
+  const [isLoadingGeneral, setIsLoadingGeneral] = useState(false);
 
   // Permission states
   const [hasEditCalendarPermission, setHasEditCalendarPermission] =
@@ -183,13 +197,16 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
           getContactVisitsSummaryAsOwner(contactId),
           getContactRelatedContactsAsOwner(contactId),
         ]);
-      } else {
+      } else if (selectedRole === "intereses") {
         // For "Intereses" (buyer role), fetch buyer-specific data
         [listingsData, visitsData, contactsData] = await Promise.all([
           getContactActivityByListing(contactId),
           getContactVisitsSummaryAsBuyer(contactId),
           getContactRelatedContactsForBuyerListings(contactId),
         ]);
+      } else {
+        // For "General" tab, no need to fetch this data
+        return;
       }
 
       setListings(listingsData);
@@ -204,8 +221,14 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
   }, [contactId, selectedRole]);
 
   useEffect(() => {
-    setIsLoading(true);
-    void fetchActivityData().finally(() => setIsLoading(false));
+    // Only fetch activity data for Propiedades and Intereses tabs
+    if (selectedRole === "propiedades" || selectedRole === "intereses") {
+      setIsLoading(true);
+      void fetchActivityData().finally(() => setIsLoading(false));
+    } else {
+      // For General tab, ensure loading state is false
+      setIsLoading(false);
+    }
   }, [contactId, selectedRole, fetchActivityData]);
 
   // Fetch buyer listings for "Intereses" tab
@@ -227,6 +250,32 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
       };
 
       void fetchBuyerListings();
+    }
+  }, [contactId, selectedRole]);
+
+  // Fetch general activities for "General" tab
+  useEffect(() => {
+    if (selectedRole === "general") {
+      const fetchGeneralActivities = async () => {
+        setIsLoadingGeneral(true);
+        try {
+          const [listingActivitiesData, contactActivitiesData] =
+            await Promise.all([
+              getAllListingContactActivityByContactIdWithAuth(contactId),
+              getContactActivityByContactIdWithAuth(contactId),
+            ]);
+          setListingActivities(listingActivitiesData);
+          setContactActivities(contactActivitiesData);
+        } catch (error) {
+          console.error("Error fetching general activities:", error);
+          setListingActivities([]);
+          setContactActivities([]);
+        } finally {
+          setIsLoadingGeneral(false);
+        }
+      };
+
+      void fetchGeneralActivities();
     }
   }, [contactId, selectedRole]);
 
@@ -324,7 +373,11 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
     }
   };
 
-  if (isLoading) {
+  // Preserve the original type to avoid TypeScript narrowing issues in UI
+  const currentRole: "propiedades" | "intereses" | "general" = selectedRole;
+
+  // Show loading only for Propiedades/Intereses tabs, not for General
+  if (isLoading && selectedRole !== "general") {
     return (
       <div className="space-y-4">
         {/* Role Toggle - visible during loading */}
@@ -334,7 +387,7 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
               onClick={() => setSelectedRole("propiedades")}
               className={cn(
                 "rounded-md px-4 py-2 text-sm font-medium transition-all duration-200",
-                selectedRole === "propiedades"
+                currentRole === "propiedades"
                   ? "bg-white text-gray-900 shadow-md"
                   : "text-gray-600 hover:text-gray-900",
               )}
@@ -346,13 +399,25 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
               onClick={() => setSelectedRole("intereses")}
               className={cn(
                 "rounded-md px-4 py-2 text-sm font-medium transition-all duration-200",
-                selectedRole === "intereses"
+                currentRole === "intereses"
                   ? "bg-white text-gray-900 shadow-md"
                   : "text-gray-600 hover:text-gray-900",
               )}
             >
               <Home className="mr-2 inline-block h-4 w-4" />
               Intereses
+            </button>
+            <button
+              onClick={() => setSelectedRole("general")}
+              className={cn(
+                "rounded-md px-4 py-2 text-sm font-medium transition-all duration-200",
+                currentRole === "general"
+                  ? "bg-white text-gray-900 shadow-md"
+                  : "text-gray-600 hover:text-gray-900",
+              )}
+            >
+              <Clock className="mr-2 inline-block h-4 w-4" />
+              General
             </button>
           </div>
         </div>
@@ -396,11 +461,31 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
             <Home className="mr-2 inline-block h-4 w-4" />
             Intereses
           </button>
+          <button
+            onClick={() => setSelectedRole("general")}
+            className={cn(
+              "rounded-md px-4 py-2 text-sm font-medium transition-all duration-200",
+              selectedRole === "general"
+                ? "bg-white text-gray-900 shadow-md"
+                : "text-gray-600 hover:text-gray-900",
+            )}
+          >
+            <Clock className="mr-2 inline-block h-4 w-4" />
+            General
+          </button>
         </div>
       </div>
 
       {/* Content based on selected role */}
-      {selectedRole === "propiedades" ? (
+      {selectedRole === "general" ? (
+        <Card className="p-6">
+          <GeneralActivityTimeline
+            listingActivities={listingActivities}
+            contactActivities={contactActivities}
+            loading={isLoadingGeneral}
+          />
+        </Card>
+      ) : selectedRole === "propiedades" ? (
         listings.length === 0 ? (
           <Card className="p-12">
             <div className="text-center">

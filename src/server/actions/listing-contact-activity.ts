@@ -14,6 +14,11 @@ export interface CreateListingContactActivityFormData {
   action: string;
   notes: string;
   topic?: string;
+  details?: {
+    isPending?: boolean;
+    activityType?: string;
+    [key: string]: unknown;
+  };
 }
 
 export interface ListingContactActivityActionResult {
@@ -64,7 +69,7 @@ export async function createListingContactActivityAction(
     let validatedAction: ListingContactActivityAction;
     try {
       validatedAction = validateListingContactActivityAction(formData.action);
-    } catch (error) {
+    } catch {
       return {
         success: false,
         error: `Tipo de acción inválido: ${formData.action}`,
@@ -79,11 +84,11 @@ export async function createListingContactActivityAction(
 
     // Extract topic from notes if not provided (first 50 chars or first sentence)
     const topic =
-      formData.topic?.trim() ||
+      formData.topic?.trim() ??
       (() => {
         const notes = formData.notes.trim();
         const sentences = notes.split(/[.!?]/);
-        const firstSentence = sentences[0]?.trim() || "";
+        const firstSentence = sentences[0]?.trim() ?? "";
         if (firstSentence && firstSentence.length > 50) {
           return firstSentence.substring(0, 50) + "...";
         }
@@ -95,6 +100,7 @@ export async function createListingContactActivityAction(
     const details: Record<string, unknown> = {
       notes: formData.notes.trim(),
       topic,
+      ...(formData.details ?? {}),
     };
 
     // Log the activity using the helper function
