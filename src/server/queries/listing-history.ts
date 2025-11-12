@@ -45,8 +45,6 @@ export async function getListingHistory(
     const totalPages = Math.ceil(totalCount / pageSize);
 
     // Fetch paginated listing activities with user information
-    // Note: Using BINARY comparison to avoid collation mismatch between
-    // listing_activity.user_id (utf8mb4_unicode_ci) and users.id (utf8mb4_general_ci)
     const activities = await db
       .select({
         id: listingActivity.id,
@@ -59,7 +57,7 @@ export async function getListingHistory(
         userEmail: users.email,
       })
       .from(listingActivity)
-      .leftJoin(users, sql`BINARY ${listingActivity.userId} = BINARY ${users.id}`)
+      .leftJoin(users, eq(listingActivity.userId, users.id))
       .where(eq(listingActivity.listingId, BigInt(listingId)))
       .orderBy(desc(listingActivity.createdAt))
       .limit(pageSize)
@@ -134,7 +132,7 @@ export async function getAllListingsHistory(
       .from(listingActivity)
       .innerJoin(listings, eq(listingActivity.listingId, listings.listingId))
       .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(users, sql`BINARY ${listingActivity.userId} = BINARY ${users.id}`)
+      .leftJoin(users, eq(listingActivity.userId, users.id))
       .where(eq(listings.accountId, BigInt(accountId)))
       .orderBy(desc(listingActivity.createdAt))
       .limit(pageSize)

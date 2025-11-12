@@ -524,23 +524,45 @@ export function ActivityTabContent({
     // Determine which flag applies to this contact (using same logic as badge in contact-detail-sheet)
     let contactFlag: string;
 
+    const contactName = `${c.firstName} ${c.lastName ?? ""}`.trim();
+
+    // Log all flags for this contact
+    console.log(`🏷️ [Contact Label] ${contactName} - All flags:`, {
+      hasUpcomingVisit: c.hasUpcomingVisit,
+      offerAccepted: c.offerAccepted,
+      hasOffer: c.hasOffer,
+      offer: c.offer,
+      hasMissedVisit: c.hasMissedVisit,
+      hasCancelledVisit: c.hasCancelledVisit,
+      hasCompletedVisit: c.hasCompletedVisit,
+      visitCount: c.visitCount,
+    });
+
     if (c.hasUpcomingVisit) {
       contactFlag = "hasUpcomingVisit";
+      console.log(`   ✅ Assigned: hasUpcomingVisit (1st priority - upcoming visit scheduled)`);
     } else if (c.offerAccepted === true) {
       contactFlag = "offerAccepted";
+      console.log(`   ✅ Assigned: offerAccepted (2nd priority - deal closing)`);
     } else if (c.offerAccepted === false) {
       contactFlag = "offerRejected";
+      console.log(`   ✅ Assigned: offerRejected (3rd priority - needs follow-up)`);
     } else if (c.hasOffer) {
       contactFlag = "hasOffer";
+      console.log(`   ✅ Assigned: hasOffer (4th priority - pending offer, offerAccepted=${c.offerAccepted})`);
     } else if (c.hasMissedVisit && !c.hasCancelledVisit) {
       contactFlag = "hasMissedVisit";
+      console.log(`   ✅ Assigned: hasMissedVisit (5th priority - no-show without cancellation)`);
     } else if (c.hasCancelledVisit) {
       contactFlag = "hasCancelledVisit";
+      console.log(`   ✅ Assigned: hasCancelledVisit (6th priority - needs rescheduling)`);
     } else if (c.hasCompletedVisit) {
       contactFlag = "hasCompletedVisit";
+      console.log(`   ✅ Assigned: hasCompletedVisit (7th priority - warm lead)`);
     } else {
       // No visits at all
       contactFlag = "noVisits";
+      console.log(`   ✅ Assigned: noVisits (default/fallback - cold lead)`);
     }
 
     return selectedContactFlags.has(contactFlag);

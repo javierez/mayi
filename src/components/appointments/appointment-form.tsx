@@ -20,6 +20,7 @@ import {
   Handshake,
   Train,
   X,
+  Plus,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -27,9 +28,15 @@ import {
   updateAppointmentAction,
   validateAppointmentForm,
 } from "~/server/actions/appointments";
-import { searchContactsWithAuth } from "~/server/queries/contact";
+import {
+  searchContactsWithAuth,
+  getContactByIdWithAuth,
+} from "~/server/queries/contact";
 import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
-import { listListingsCompactWithAuth } from "~/server/queries/listing";
+import {
+  listListingsCompactWithAuth,
+  getListingCompactByIdWithAuth,
+} from "~/server/queries/listing";
 import { getAgentsForSelectionWithAuth } from "~/server/queries/users";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { cn } from "~/lib/utils";
@@ -41,6 +48,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import ContactPopup from "~/components/crear/pages/contact-popup";
 
 // Appointment form data interface from PRP
 interface AppointmentFormData {
@@ -242,6 +250,7 @@ export default function AppointmentForm({
     { id: string; name: string; firstName?: string; lastName?: string }[]
   >([]);
   const [isLoadingAgents, setIsLoadingAgents] = useState(false);
+  const [showContactPopup, setShowContactPopup] = useState(false);
   const { data: session } = useSession();
 
   // Calculate endTime based on startTime and duration
@@ -268,15 +277,17 @@ export default function AppointmentForm({
 
   // Fetch last 10 contacts on mount, then fetch when user searches
   useEffect(() => {
-    // For initial data with contactId, we need to fetch all contacts to find the match (only once)
-    const needsAllContacts =
-      initialData.contactId && !selectedContact && contacts.length === 0;
+    // Skip this effect entirely if contact comes from URL - the dedicated effect below handles it
+    if (initialData.contactId && !selectedContact) {
+      return;
+    }
+
     // For initial load, fetch last 10 contacts
     const isInitialLoad = contacts.length === 0 && searchQuery.length === 0;
     // For search, we fetch based on query
     const hasSearchQuery = searchQuery.length > 0;
 
-    if (!needsAllContacts && !isInitialLoad && !hasSearchQuery) {
+    if (!isInitialLoad && !hasSearchQuery) {
       return;
     }
 
@@ -285,13 +296,7 @@ export default function AppointmentForm({
       try {
         let contactsData;
 
-        if (needsAllContacts) {
-          // For initial data, we need all contacts to find the match
-          const { listContactsWithAuth } = await import(
-            "~/server/queries/contact"
-          );
-          contactsData = await listContactsWithAuth();
-        } else if (isInitialLoad) {
+        if (isInitialLoad) {
           // For initial load, get last 10 contacts
           const { listContactsWithAuth } = await import(
             "~/server/queries/contact"
@@ -316,17 +321,6 @@ export default function AppointmentForm({
         }
 
         setContacts(contactsData);
-
-        // Set selected contact from initial data if provided and not already set
-        if (initialData.contactId && !selectedContact) {
-          const matchedContact = contactsData.find(
-            (contact) => contact.contactId === initialData.contactId,
-          );
-          if (matchedContact) {
-            setSelectedContact(matchedContact);
-            // Don't set search query - let user search freely
-          }
-        }
       } catch (error) {
         console.error("Error fetching contacts:", error);
         setContacts([]);
@@ -336,7 +330,7 @@ export default function AppointmentForm({
     };
 
     // Debounce the search to avoid too many requests (but not for initial loads)
-    if (needsAllContacts || isInitialLoad) {
+    if (isInitialLoad) {
       void fetchContacts();
     } else {
       const debounceTimer = setTimeout(() => {
@@ -346,6 +340,61 @@ export default function AppointmentForm({
       return () => clearTimeout(debounceTimer);
     }
   }, [searchQuery, initialData.contactId, selectedContact, contacts.length]);
+
+  // Dedicated effect to fetch a single contact when initialData.contactId is provided (e.g., from URL)
+  useEffect(() => {
+    // Only fetch if we have initialData.contactId but haven't set selectedContact yet
+    if (!initialData.contactId || selectedContact) {
+      return;
+    }
+
+    const fetchSingleContact = async () => {
+      setIsLoadingContacts(true);
+      try {
+        // Early return if contactId is somehow undefined (shouldn't happen due to effect guard)
+        if (!initialData.contactId) {
+          return;
+        }
+
+        // Fetch ONLY the specific contact by ID - much more efficient than fetching all contacts
+        // Convert to number since getContactByIdWithAuth accepts number parameter
+        const contactIdNumber =
+          typeof initialData.contactId === "bigint"
+            ? Number(initialData.contactId)
+            : Number(initialData.contactId);
+
+        const matchedContact = await getContactByIdWithAuth(contactIdNumber);
+
+        if (matchedContact) {
+          // Transform to match the Contact interface expected by the form
+          const formContact: Contact = {
+            contactId: matchedContact.contactId,
+            firstName: matchedContact.firstName,
+            lastName: matchedContact.lastName,
+            email: matchedContact.email,
+            phone: matchedContact.phone,
+          };
+
+          setSelectedContact(formContact);
+          // Also add to contacts array so it appears in search if needed
+          setContacts((prev) => {
+            // Only add if not already in the list
+            const exists = prev.some(
+              (c) =>
+                c.contactId.toString() === formContact.contactId.toString(),
+            );
+            return exists ? prev : [formContact, ...prev];
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching contact by ID:", error);
+      } finally {
+        setIsLoadingContacts(false);
+      }
+    };
+
+    void fetchSingleContact();
+  }, [initialData.contactId, selectedContact]);
 
   // Fetch all agents when user is on step 0 (contact selection)
   useEffect(() => {
@@ -381,10 +430,12 @@ export default function AppointmentForm({
 
   // Fetch last 10 listings on mount when on step 2, then fetch when user searches
   useEffect(() => {
-    // For initial data with listingId, we need to fetch all listings to find the match (only once)
-    const needsAllListings =
-      initialData.listingId && !selectedListing && listings.length === 0;
-    // For initial load on step 2, fetch last 10 listings
+    // Skip this effect entirely if listing comes from URL - the dedicated effect below handles it
+    if (initialData.listingId && !selectedListing) {
+      return;
+    }
+
+    // For initial load on step 1, fetch last 10 listings
     const isInitialLoad =
       currentStep === 1 &&
       listings.length === 0 &&
@@ -392,7 +443,7 @@ export default function AppointmentForm({
     // For search, we fetch based on query
     const hasSearchQuery = listingSearchQuery.length > 0;
 
-    if (!needsAllListings && !isInitialLoad && !hasSearchQuery) {
+    if (!isInitialLoad && !hasSearchQuery) {
       return;
     }
 
@@ -401,13 +452,8 @@ export default function AppointmentForm({
       try {
         let listingsData;
 
-        if (needsAllListings) {
-          // For initial data, we need all listings to find the match
-          listingsData = await listListingsCompactWithAuth({
-            // Get all non-draft listings (backend will handle default filtering)
-          });
-        } else if (isInitialLoad) {
-          // For initial load on step 2, get last 10 listings
+        if (isInitialLoad) {
+          // For initial load on step 1, get last 10 listings
           listingsData = await listListingsCompactWithAuth({
             // Get recent listings (backend will handle default filtering)
             page: 1,
@@ -423,17 +469,6 @@ export default function AppointmentForm({
         }
 
         setListings(listingsData);
-
-        // Set selected listing from initial data if provided and not already set
-        if (initialData.listingId && !selectedListing) {
-          const matchedListing = listingsData.find(
-            (listing) => listing.listingId === initialData.listingId,
-          );
-          if (matchedListing) {
-            setSelectedListing(matchedListing);
-            // Don't set search query - let user search freely
-          }
-        }
       } catch (error) {
         console.error("Error fetching listings:", error);
         setListings([]);
@@ -443,7 +478,7 @@ export default function AppointmentForm({
     };
 
     // Debounce the search to avoid too many requests (but not for initial loads)
-    if (needsAllListings || isInitialLoad) {
+    if (isInitialLoad) {
       void fetchListings();
     } else {
       const debounceTimer = setTimeout(() => {
@@ -459,6 +494,51 @@ export default function AppointmentForm({
     selectedListing,
     listings.length,
   ]);
+
+  // Dedicated effect to fetch a single listing when initialData.listingId is provided (e.g., from URL)
+  useEffect(() => {
+    // Only fetch if we have initialData.listingId but haven't set selectedListing yet
+    if (!initialData.listingId || selectedListing) {
+      return;
+    }
+
+    const fetchSingleListing = async () => {
+      setIsLoadingListings(true);
+      try {
+        // Early return if listingId is somehow undefined (shouldn't happen due to effect guard)
+        if (!initialData.listingId) {
+          return;
+        }
+
+        // Fetch ONLY the specific listing by ID - much more efficient than fetching all 100 listings
+        // Convert to BigInt to handle serialization from URL params
+        const listingIdBigInt =
+          typeof initialData.listingId === "string"
+            ? BigInt(initialData.listingId)
+            : initialData.listingId;
+
+        const matchedListing = await getListingCompactByIdWithAuth(listingIdBigInt);
+
+        if (matchedListing) {
+          setSelectedListing(matchedListing);
+          // Also add to listings array so it appears in search if needed
+          setListings((prev) => {
+            // Only add if not already in the list
+            const exists = prev.some(
+              (l) => l.listingId.toString() === matchedListing.listingId.toString(),
+            );
+            return exists ? prev : [matchedListing, ...prev];
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching listing by ID:", error);
+      } finally {
+        setIsLoadingListings(false);
+      }
+    };
+
+    void fetchSingleListing();
+  }, [initialData.listingId, selectedListing]);
 
   // Filter contacts based on search query and exclude selected contact
   const filteredContacts = contacts.filter((contact) => {
@@ -485,7 +565,7 @@ export default function AppointmentForm({
   // Filter listings based on search query and exclude selected listing
   const filteredListings = listings.filter((listing) => {
     // Exclude selected listing from search results
-    if (selectedListing && listing.listingId === selectedListing.listingId) {
+    if (selectedListing && listing.listingId.toString() === selectedListing.listingId.toString()) {
       return false;
     }
 
@@ -556,6 +636,53 @@ export default function AppointmentForm({
     setSearchQuery("");
     setContacts([]);
     setValidationError(null);
+  };
+
+  // Handle contact creation from popup
+  const handleContactCreated = (contact: unknown) => {
+    console.log("New contact created:", contact);
+
+    // Type guard to check if contact has the expected properties
+    interface NewContact {
+      contactId: number | bigint;
+      firstName: string;
+      lastName: string;
+      email?: string | null;
+      phone?: string | null;
+    }
+
+    const isValidContact = (obj: unknown): obj is NewContact => {
+      return (
+        typeof obj === "object" &&
+        obj !== null &&
+        "contactId" in obj &&
+        "firstName" in obj &&
+        "lastName" in obj
+      );
+    };
+
+    // Immediately add the new contact to the contacts list for instant UI update
+    if (isValidContact(contact)) {
+      const newContactForList: Contact = {
+        contactId: typeof contact.contactId === "bigint"
+          ? contact.contactId
+          : BigInt(contact.contactId),
+        firstName: contact.firstName,
+        lastName: contact.lastName,
+        email: contact.email ?? null,
+        phone: contact.phone ?? null,
+      };
+
+      // Add to contacts list at the top
+      setContacts((prev) => [newContactForList, ...prev]);
+
+      // Auto-select the new contact
+      setSelectedContact(newContactForList);
+      setFormData((prev) => ({ ...prev, contactId: newContactForList.contactId }));
+
+      // Clear validation error
+      setValidationError(null);
+    }
   };
 
   // Handle listing selection
@@ -819,12 +946,23 @@ export default function AppointmentForm({
             </div>
 
             <div className="space-y-2">
-              <label
-                htmlFor="contact-search"
-                className="text-sm font-medium text-gray-700"
-              >
-                Buscar contacto
-              </label>
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="contact-search"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Buscar contacto
+                </label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex h-8 items-center space-x-2"
+                  onClick={() => setShowContactPopup(true)}
+                >
+                  <Plus className="h-3 w-3" />
+                  <span>Agregar</span>
+                </Button>
+              </div>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
@@ -1060,8 +1198,8 @@ export default function AppointmentForm({
                   </div>
                 )}
 
-                {selectedListing && (
-                  // Show selected listing (always visible if a listing is selected)
+                {selectedListing && !initialData.listingId && (
+                  // Show selected listing (only when manually selected, not from URL)
                   <div className="rounded-lg border border-primary/40 bg-primary/5 p-2">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex-1">
@@ -1253,21 +1391,32 @@ export default function AppointmentForm({
                 </div>
               </div>
 
-              {selectedListing && formData.appointmentType === "Visita" && (
+              {formData.listingId && formData.appointmentType === "Visita" && (
                 <div className="flex items-center gap-3 rounded-lg border p-3">
                   <Home className="h-5 w-5 text-muted-foreground" />
                   <div>
-                    <div className="font-medium">
-                      {selectedListing.title ??
-                        `${selectedListing.propertyType} en ${selectedListing.city}`}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Ref: {selectedListing.referenceNumber} •{" "}
-                      {Math.floor(
-                        parseFloat(selectedListing.price),
-                      ).toLocaleString("es-ES")}
-                      €
-                    </div>
+                    {selectedListing ? (
+                      <>
+                        <div className="font-medium">
+                          {selectedListing.title ??
+                            `${selectedListing.propertyType} en ${selectedListing.city}`}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Ref: {selectedListing.referenceNumber} •{" "}
+                          {Math.floor(
+                            parseFloat(selectedListing.price),
+                          ).toLocaleString("es-ES")}
+                          €
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="font-medium">Propiedad seleccionada</div>
+                        <div className="text-sm text-muted-foreground">
+                          ID: {formData.listingId.toString()}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
@@ -1404,6 +1553,13 @@ export default function AppointmentForm({
           </div>
         </div>
       </div>
+
+      {/* Contact Creation Popup */}
+      <ContactPopup
+        isOpen={showContactPopup}
+        onClose={() => setShowContactPopup(false)}
+        onContactCreated={handleContactCreated}
+      />
     </div>
   );
 }

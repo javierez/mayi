@@ -41,6 +41,11 @@ export async function listListingsCompactWithAuth(
   return listListingsCompact(accountId, filters);
 }
 
+export async function getListingCompactByIdWithAuth(listingId: bigint) {
+  const accountId = await getCurrentUserAccountId();
+  return getListingCompactById(listingId, accountId);
+}
+
 export async function getAllAgentsWithAuth() {
   const accountId = await getCurrentUserAccountId();
   return getAllAgents(accountId);
@@ -982,6 +987,71 @@ export async function listListingsCompact(
   } catch (error) {
     console.error("Error listing compact listings:", error);
     return [];
+  }
+}
+
+// Get a single listing in compact format by ID
+export async function getListingCompactById(
+  listingId: bigint,
+  accountId: number,
+) {
+  try {
+    // Create the compact query with only essential fields - same as listListingsCompact
+    const listing = await db
+      .select({
+        listingId: listings.listingId,
+        title: properties.title,
+        referenceNumber: properties.referenceNumber,
+        price: listings.price,
+        listingType: listings.listingType,
+        propertyType: properties.propertyType,
+        bedrooms: properties.bedrooms,
+        bathrooms: properties.bathrooms,
+        squareMeter: properties.squareMeter,
+        city: locations.city,
+        agentName: users.name,
+        isOwned: sql<boolean>`CASE WHEN ${listingContacts.contactId} IS NOT NULL THEN true ELSE false END`,
+        imageUrl: propertyImages.imageUrl,
+      })
+      .from(listings)
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
+      .leftJoin(users, eq(listings.agentId, users.id))
+      .leftJoin(
+        listingContacts,
+        and(
+          eq(listingContacts.listingId, listings.listingId),
+          eq(listingContacts.contactType, "owner"),
+          eq(listingContacts.isActive, true),
+        ),
+      )
+      .leftJoin(
+        propertyImages,
+        and(
+          eq(propertyImages.propertyId, properties.propertyId),
+          eq(propertyImages.isActive, true),
+          eq(propertyImages.imageOrder, 1),
+          // Only get actual images, not videos, YouTube links, or virtual tours
+          sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`,
+        ),
+      )
+      .where(
+        and(
+          eq(listings.listingId, listingId),
+          eq(listings.accountId, BigInt(accountId)),
+          eq(listings.isActive, true),
+          sql`${listings.status} NOT IN ('Draft', 'Sold', 'Rented')`,
+        ),
+      )
+      .limit(1);
+
+    return listing[0] ?? null;
+  } catch (error) {
+    console.error("Error fetching compact listing by ID:", error);
+    return null;
   }
 }
 

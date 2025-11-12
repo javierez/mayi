@@ -5,6 +5,7 @@ import {
   listings,
   properties,
   users,
+  locations,
 } from "../db/schema";
 import { eq, and, or, between, inArray, sql } from "drizzle-orm";
 import type { Appointment } from "../../lib/data";
@@ -128,8 +129,10 @@ export async function getUserAppointments(userId: string) {
         // Add contact name from joined table
         contactFirstName: contacts.firstName,
         contactLastName: contacts.lastName,
-        // Add property address from joined listings/properties tables
+        // Add property address and title from joined listings/properties tables
         propertyStreet: properties.street,
+        propertyTitle: properties.title,
+        city: locations.city,
         // Add agent/user information
         agentName: users.name,
         agentFirstName: users.firstName,
@@ -139,6 +142,7 @@ export async function getUserAppointments(userId: string) {
       .leftJoin(contacts, eq(appointments.contactId, contacts.contactId))
       .leftJoin(listings, eq(appointments.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
       .leftJoin(users, eq(appointments.userId, users.id))
       .where(
         and(
@@ -180,8 +184,10 @@ export async function getUserAppointmentsByAccount(
         // Add contact name from joined table
         contactFirstName: contacts.firstName,
         contactLastName: contacts.lastName,
-        // Add property address from joined listings/properties tables
+        // Add property address and title from joined listings/properties tables
         propertyStreet: properties.street,
+        propertyTitle: properties.title,
+        city: locations.city,
         // Add agent/user information
         agentName: users.name,
         agentFirstName: users.firstName,
@@ -191,6 +197,7 @@ export async function getUserAppointmentsByAccount(
       .leftJoin(contacts, eq(appointments.contactId, contacts.contactId))
       .leftJoin(listings, eq(appointments.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
       .leftJoin(users, eq(appointments.userId, users.id))
       .where(
         and(
@@ -250,9 +257,15 @@ export async function getListingAppointments(listingId: number) {
         contactFirstName: contacts.firstName,
         contactLastName: contacts.lastName,
         contactEmail: contacts.email,
+        // Add property title from joined listings/properties tables
+        propertyTitle: properties.title,
+        city: locations.city,
       })
       .from(appointments)
       .leftJoin(contacts, eq(appointments.contactId, contacts.contactId))
+      .leftJoin(listings, eq(appointments.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
       .where(
         and(
           eq(appointments.listingId, BigInt(listingId)),
@@ -293,8 +306,10 @@ export async function getAppointmentsByDateRange(
         // Add contact name from joined table
         contactFirstName: contacts.firstName,
         contactLastName: contacts.lastName,
-        // Add property address from joined listings/properties tables
+        // Add property address and title from joined listings/properties tables
         propertyStreet: properties.street,
+        propertyTitle: properties.title,
+        city: locations.city,
         // Add agent/user information
         agentName: users.name,
         agentFirstName: users.firstName,
@@ -304,6 +319,7 @@ export async function getAppointmentsByDateRange(
       .leftJoin(contacts, eq(appointments.contactId, contacts.contactId))
       .leftJoin(listings, eq(appointments.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
       .leftJoin(users, eq(appointments.userId, users.id))
       .where(
         and(
@@ -349,8 +365,10 @@ export async function getAppointmentsByDateRangeAndAccount(
         // Add contact name from joined table
         contactFirstName: contacts.firstName,
         contactLastName: contacts.lastName,
-        // Add property address from joined listings/properties tables
+        // Add property address and title from joined listings/properties tables
         propertyStreet: properties.street,
+        propertyTitle: properties.title,
+        city: locations.city,
         // Add agent/user information
         agentName: users.name,
         agentFirstName: users.firstName,
@@ -360,6 +378,7 @@ export async function getAppointmentsByDateRangeAndAccount(
       .leftJoin(contacts, eq(appointments.contactId, contacts.contactId))
       .leftJoin(listings, eq(appointments.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
       .leftJoin(users, eq(appointments.userId, users.id))
       .where(
         and(
@@ -589,8 +608,10 @@ export async function getAppointmentsByDateRangeSecure(
         // Add contact name from joined table
         contactFirstName: contacts.firstName,
         contactLastName: contacts.lastName,
-        // Add property address from joined listings/properties tables
+        // Add property address and title from joined listings/properties tables
         propertyStreet: properties.street,
+        propertyTitle: properties.title,
+        city: locations.city,
         // Add creator user information
         creatorName: sql<string>`creator_user.name`,
         creatorFirstName: sql<string>`creator_user.first_name`,
@@ -604,6 +625,7 @@ export async function getAppointmentsByDateRangeSecure(
       .leftJoin(contacts, eq(appointments.contactId, contacts.contactId))
       .leftJoin(listings, eq(appointments.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
       .leftJoin(
         sql`users AS creator_user`,
         sql`${appointments.userId} = creator_user.id`,
@@ -668,8 +690,10 @@ export async function getUserAppointmentsSecure(userId: string) {
         // Add contact name from joined table
         contactFirstName: contacts.firstName,
         contactLastName: contacts.lastName,
-        // Add property address from joined listings/properties tables
+        // Add property address and title from joined listings/properties tables
         propertyStreet: properties.street,
+        propertyTitle: properties.title,
+        city: locations.city,
         // Add agent/user information
         agentName: users.name,
         agentFirstName: users.firstName,
@@ -679,6 +703,7 @@ export async function getUserAppointmentsSecure(userId: string) {
       .leftJoin(contacts, eq(appointments.contactId, contacts.contactId))
       .leftJoin(listings, eq(appointments.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
       .leftJoin(users, eq(appointments.userId, users.id))
       .where(
         and(eq(appointments.userId, userId), eq(appointments.isActive, true)),

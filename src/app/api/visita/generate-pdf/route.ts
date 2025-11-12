@@ -7,6 +7,33 @@ import { calculateDocumentHash, embedDocumentMetadata } from "~/lib/pdf-integrit
 import { uploadDocument } from "~/app/actions/upload";
 import { getAppointmentWithDetails } from "~/server/queries/visits";
 import { getListingDocumentsData } from "~/server/queries/listing";
+import { db } from "~/server/db";
+import { listingContacts } from "~/server/db/schema";
+import { and, eq } from "drizzle-orm";
+
+/**
+ * Get the owner's contactId for a listing
+ */
+async function getOwnerContactId(listingId: bigint): Promise<bigint | undefined> {
+  try {
+    const [ownerContact] = await db
+      .select({ contactId: listingContacts.contactId })
+      .from(listingContacts)
+      .where(
+        and(
+          eq(listingContacts.listingId, listingId),
+          eq(listingContacts.contactType, "owner"),
+          eq(listingContacts.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    return ownerContact?.contactId ?? undefined;
+  } catch (error) {
+    console.error("Error fetching owner contactId:", error);
+    return undefined;
+  }
+}
 
 /**
  * Sanitize a string for use in filenames
@@ -301,6 +328,10 @@ export async function POST(request: NextRequest) {
       const referenceNumber =
         listingData.referenceNumber ?? `VISIT_${appointmentId}`;
 
+      // Get owner's contactId from listing_contacts
+      const ownerContactId = await getOwnerContactId(BigInt(appointment.listingId));
+      console.log("👤 Owner contactId for document:", ownerContactId?.toString() ?? "not found");
+
       // Get current user session for upload
       const session = await getSecureSession();
       if (!session?.user?.id) {
@@ -319,7 +350,7 @@ export async function POST(request: NextRequest) {
           referenceNumber,
           1, // documentOrder
           "visita-pdf", // documentTag
-          appointment.contactId ? BigInt(appointment.contactId) : undefined,
+          ownerContactId, // Owner's contactId (from listing_contacts where contactType="owner")
           BigInt(appointment.listingId),
           undefined, // listingContactId
           undefined, // dealId

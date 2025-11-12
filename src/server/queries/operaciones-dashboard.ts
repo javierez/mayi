@@ -10,6 +10,7 @@ import {
   appointments,
   listings,
   properties,
+  locations,
 } from "~/server/db/schema";
 import { eq, and, lte, gte, sql, isNotNull, ne } from "drizzle-orm";
 import { getCurrentUserAccountId } from "~/lib/dal";
@@ -53,6 +54,7 @@ export interface TodayAppointment {
   contactName: string;
   contactPhone?: string;
   propertyAddress?: string;
+  city?: string;
   startTime: Date;
   endTime: Date;
   tripTimeMinutes?: number;
@@ -545,15 +547,17 @@ export async function getTodayAppointments(
         contactPhone: contacts.phone,
         // Property information (if linked to listing)
         propertyAddress: sql<string>`
-          CASE WHEN ${appointments.listingId} IS NOT NULL 
+          CASE WHEN ${appointments.listingId} IS NOT NULL
           THEN CONCAT(${properties.street}, ', ', ${properties.addressDetails})
           ELSE NULL END
         `,
+        city: locations.city,
       })
       .from(appointments)
       .innerJoin(contacts, eq(appointments.contactId, contacts.contactId))
       .leftJoin(listings, eq(appointments.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
       .where(and(...whereConditions))
       .orderBy(appointments.datetimeStart);
 
@@ -564,6 +568,7 @@ export async function getTodayAppointments(
       contactName: appt.contactName,
       contactPhone: appt.contactPhone ?? undefined,
       propertyAddress: appt.propertyAddress || undefined,
+      city: appt.city ?? undefined,
       startTime: appt.startTime,
       endTime: appt.endTime,
       tripTimeMinutes: appt.tripTimeMinutes ?? undefined,

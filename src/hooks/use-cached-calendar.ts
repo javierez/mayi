@@ -9,6 +9,8 @@ interface CalendarEvent {
   userId: string;
   contactName: string;
   propertyAddress?: string;
+  propertyTitle?: string;
+  city?: string;
   startTime: Date;
   endTime: Date;
   status: "Scheduled" | "Completed" | "Cancelled" | "Rescheduled" | "NoShow";
@@ -45,6 +47,8 @@ interface RawAppointment {
   contactFirstName: string | null;
   contactLastName: string | null;
   propertyStreet: string | null;
+  propertyTitle: string | null;
+  city: string | null;
   creatorName: string | null;
   creatorFirstName: string | null;
   creatorLastName: string | null;
@@ -111,6 +115,8 @@ function transformToOptimisticEvent(
     userId: eventData.userId ?? "",
     contactName: eventData.contactName ?? "New Contact",
     propertyAddress: eventData.propertyAddress,
+    propertyTitle: eventData.propertyTitle,
+    city: eventData.city,
     startTime: eventData.startTime ?? now,
     endTime: eventData.endTime ?? new Date(now.getTime() + 60 * 60 * 1000),
     status: eventData.status ?? "Scheduled",
@@ -146,6 +152,8 @@ function transformToCalendarEvent(
     userId: rawAppointment.userId,
     contactName,
     propertyAddress: rawAppointment.propertyStreet ?? undefined,
+    propertyTitle: rawAppointment.propertyTitle ?? undefined,
+    city: rawAppointment.city ?? undefined,
     startTime: rawAppointment.datetimeStart,
     endTime: rawAppointment.datetimeEnd,
     status:

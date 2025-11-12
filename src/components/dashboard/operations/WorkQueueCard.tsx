@@ -1047,6 +1047,7 @@ export default function WorkQueueCard({
                                       <MapPin className="mt-0.5 h-3 w-3 flex-shrink-0 text-gray-400" />
                                       <span className="line-clamp-2 text-xs leading-tight text-gray-600 hover:underline break-words min-w-0">
                                         {appointment.propertyAddress}
+                                        {appointment.city && ` - ${appointment.city}`}
                                       </span>
                                     </a>
                                   )}

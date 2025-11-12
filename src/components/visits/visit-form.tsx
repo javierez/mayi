@@ -191,10 +191,14 @@ export function VisitForm({ appointment }: VisitFormProps) {
       );
       const lastName = sanitizeFilename(appointment.contactLastName ?? "");
 
-      // Format date as YYYY-MM-DD
-      const dateStr = appointment.datetimeStart.toISOString().split("T")[0];
+      // Format date as DDMmmYYYY (e.g., 12Nov2025)
+      const dateStr = appointment.datetimeStart.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }).replace(/ /g, "");
 
-      const filename = `visita-${dateStr}-${ref}-${firstName}-${lastName}.pdf`;
+      const filename = `${ref}-${firstName}-${lastName}-${dateStr}.pdf`;
 
       // Create download link
       const pdfUrl = URL.createObjectURL(pdfBlob);

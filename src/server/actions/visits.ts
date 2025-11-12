@@ -150,8 +150,13 @@ export async function createVisitAction(formData: VisitFormData) {
         throw new Error("Failed to mark appointment as completed");
       }
 
-      // Update offer in listing_contacts if provided and listingContactId exists
-      if (formData.offer !== undefined && appointment.listingContactId) {
+      // Update offer in listing_contacts only if explicitly provided with a valid value
+      if (
+        formData.offer !== undefined &&
+        formData.offer !== null &&
+        formData.offer > 0 &&
+        appointment.listingContactId
+      ) {
         try {
           const db = await getSecureDb();
           await db.db

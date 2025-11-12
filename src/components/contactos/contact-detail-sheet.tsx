@@ -699,6 +699,19 @@ export function ContactDetailSheet({
                         size="sm"
                         className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
                         onClick={() => {
+                          const calendarUrl = `/calendario?new=true&listingId=${listingId}&contactId=${contact.contact.contactId}&type=Visita`;
+                          navigateToPage(calendarUrl, router);
+                          onClose();
+                        }}
+                      >
+                        <CalendarPlus className="mr-2 h-4 w-4 shrink-0" />
+                        <span className="truncate">Añadir Nueva Visita</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
+                        onClick={() => {
                           if (
                             confirm(
                               "¿Estás seguro de que deseas revocar el rechazo de esta oferta?",

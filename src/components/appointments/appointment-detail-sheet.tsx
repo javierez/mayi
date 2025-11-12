@@ -35,6 +35,7 @@ import {
   Trash2,
   Loader,
   Pencil,
+  ExternalLink,
 } from "lucide-react";
 import {
   updateAppointmentStatusAction,
@@ -268,7 +269,12 @@ export function AppointmentDetailSheet({
         | "Viaje",
     };
 
-    // Add context-specific fields
+    // Add listingId from appointment itself first, then override with context if provided
+    if (appointment.listingId) {
+      initialData.listingId = appointment.listingId;
+    }
+
+    // Add context-specific fields (can override appointment fields)
     if (context?.listingId) {
       initialData.listingId = context.listingId;
     }
@@ -412,14 +418,17 @@ export function AppointmentDetailSheet({
               </span>
             </div>
             {appointment.listingId && (
-              <div className="flex items-start gap-2 text-sm">
-                <Home className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="flex items-center gap-2 text-sm">
+                <Home className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="min-w-0 break-words">
+                  {appointment.propertyTitle ?? "Propiedad"}
+                </span>
                 <Link
                   href={`/propiedades/${appointment.listingId}`}
                   onClick={(e) => e.stopPropagation()}
-                  className="min-w-0 break-words underline decoration-dotted underline-offset-2 transition-all hover:decoration-solid"
+                  className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  Ver propiedad
+                  <ExternalLink className="h-3.5 w-3.5" />
                 </Link>
               </div>
             )}
@@ -427,12 +436,13 @@ export function AppointmentDetailSheet({
               <div className="flex items-start gap-2 text-sm">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                 <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(appointment.propertyAddress)}`}
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${appointment.propertyAddress}${appointment.city ? `, ${appointment.city}` : ""}`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="min-w-0 break-words underline decoration-dotted underline-offset-2 transition-all hover:decoration-solid"
                 >
                   {appointment.propertyAddress}
+                  {appointment.city && ` - ${appointment.city}`}
                 </a>
               </div>
             )}
