@@ -36,6 +36,7 @@ type Listing = {
   viewCount: number | null;
   inquiryCount: number | null;
   agentName: string | null;
+  publishToWebsite?: boolean;
 
   // Property fields
   referenceNumber: string | null;
@@ -72,6 +73,7 @@ interface PropertyCardProps {
   contactType?: "buyer" | "owner";
   onRemove?: (listingId: bigint) => Promise<void>;
   isRemoving?: boolean;
+  onPublishToggled?: () => void;
 }
 
 export const PropertyCard = React.memo(function PropertyCard({
@@ -82,6 +84,7 @@ export const PropertyCard = React.memo(function PropertyCard({
   contactType: _contactType,
   onRemove,
   isRemoving = false,
+  onPublishToggled,
 }: PropertyCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -351,6 +354,7 @@ export const PropertyCard = React.memo(function PropertyCard({
         onOpenChange={setShareModalOpen}
         property={listing}
         accountWebsite={accountWebsite}
+        onPublishToggled={onPublishToggled}
       />
     </Link>
   );

@@ -600,6 +600,7 @@ export function ConexionesPotenciales({
             onOpenChange={setShareModalOpen}
             match={selectedMatch}
             accountWebsite={accountWebsite}
+            onPublishToggled={fetchMatches}
           />
         )}
 

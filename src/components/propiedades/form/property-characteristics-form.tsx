@@ -1082,10 +1082,18 @@ export function PropertyCharacteristicsForm({
     try {
       const result = await toggleListingKeysWithAuth(Number(listing.listingId));
       setHasKeys(result.hasKeys);
+
+      // Show success toast
+      if (result.hasKeys) {
+        toast.success("Marcado: Tenemos las llaves");
+      } else {
+        toast.success("Desmarcado: No tenemos las llaves");
+      }
     } catch (error) {
       console.error("Error toggling keys:", error);
       // Revert optimistic update on error
       setHasKeys(previousValue);
+      toast.error("Error al actualizar el estado de las llaves");
     } finally {
       setKeysLoading(false);
     }
@@ -1105,10 +1113,18 @@ export function PropertyCharacteristicsForm({
         Number(listing.listingId),
       );
       setPublishToWebsite(result.publishToWebsite);
+
+      // Show success toast
+      if (result.publishToWebsite) {
+        toast.success("Publicado en la web");
+      } else {
+        toast.success("Retirado de la web");
+      }
     } catch (error) {
       console.error("Error toggling publishToWebsite:", error);
       // Revert optimistic update on error
       setPublishToWebsite(previousValue);
+      toast.error("Error al actualizar el estado de publicación");
     } finally {
       setWebsiteLoading(false);
     }

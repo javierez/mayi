@@ -19,6 +19,7 @@ export type ListingWithDetails = {
     price: string;
     status: string;
     prospectStatus: string | null;
+    publishToWebsite?: boolean | null;
     createdAt: Date;
     updatedAt: Date;
   };

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,9 +15,6 @@ import {
   Mail,
   MessageSquare,
   Copy,
-  Home,
-  Euro,
-  MapPin,
   Check,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -35,6 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ConfirmPublishDialog } from "./confirm-publish-dialog";
 
 interface SharePropertyModalProps {
   open: boolean;
@@ -49,8 +47,10 @@ interface SharePropertyModalProps {
     bathrooms: string | null;
     squareMeter: number | null;
     builtSurfaceArea?: number | null;
+    publishToWebsite?: boolean | null;
   };
   accountWebsite?: string | null;
+  onPublishToggled?: () => void;
 }
 
 type MessageFormat = "simple" | "medium" | "detailed";
@@ -60,10 +60,28 @@ export function SharePropertyModal({
   onOpenChange,
   property,
   accountWebsite,
+  onPublishToggled,
 }: SharePropertyModalProps) {
   const [isCopied, setIsCopied] = useState(false);
   const [messageFormat, setMessageFormat] =
     useState<MessageFormat>("medium");
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [isPublished, setIsPublished] = useState(
+    property.publishToWebsite ?? false,
+  );
+
+  useEffect(() => {
+    if (open && !isPublished) {
+      setShowConfirmDialog(true);
+      onOpenChange(false);
+    }
+  }, [open, isPublished, onOpenChange]);
+
+  const handlePublishConfirmed = () => {
+    setIsPublished(true);
+    onPublishToggled?.();
+    onOpenChange(true);
+  };
 
   // Build property URL
   const baseUrl = accountWebsite ?? window.location.origin;
@@ -136,88 +154,22 @@ export function SharePropertyModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+    <>
+      <ConfirmPublishDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        listingId={Number(property.listingId)}
+        onConfirm={handlePublishConfirmed}
+      />
+
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Compartir Propiedad</DialogTitle>
           <DialogDescription>
             Selecciona el formato del mensaje y cómo compartirlo
           </DialogDescription>
         </DialogHeader>
-
-        {/* Property Summary */}
-        <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-4">
-          <h4 className="text-sm font-semibold text-gray-900">
-            {property.title ?? "Propiedad"}
-          </h4>
-          <div className="space-y-2 text-xs text-gray-600">
-            <div className="flex items-center gap-2">
-              <Home className="h-3.5 w-3.5 text-gray-500" />
-              <span>{property.referenceNumber ?? "Sin referencia"}</span>
-            </div>
-            {property.city && (
-              <div className="flex items-center gap-2">
-                <MapPin className="h-3.5 w-3.5 text-gray-500" />
-                <span>{property.city}</span>
-              </div>
-            )}
-            {property.price && (
-              <div className="flex items-center gap-2">
-                <Euro className="h-3.5 w-3.5 text-gray-500" />
-                <span>{formatPrice(Number(property.price))}€</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Message Format Selector */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-900">
-            Formato del mensaje
-          </label>
-          <Select
-            value={messageFormat}
-            onValueChange={(value) => setMessageFormat(value as MessageFormat)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecciona un formato" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="simple">
-                <div className="flex flex-col items-start">
-                  <span className="font-medium">Simple</span>
-                  <span className="text-xs text-muted-foreground">
-                    Solo el enlace
-                  </span>
-                </div>
-              </SelectItem>
-              <SelectItem value="medium">
-                <div className="flex flex-col items-start">
-                  <span className="font-medium">Medio</span>
-                  <span className="text-xs text-muted-foreground">
-                    Referencia, ciudad y precio
-                  </span>
-                </div>
-              </SelectItem>
-              <SelectItem value="detailed">
-                <div className="flex flex-col items-start">
-                  <span className="font-medium">Detallado</span>
-                  <span className="text-xs text-muted-foreground">
-                    Información completa con emojis
-                  </span>
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Message Preview */}
-        <div className="rounded-lg border border-gray-200 bg-white p-3">
-          <p className="text-xs font-medium text-gray-700">Vista previa:</p>
-          <p className="mt-2 whitespace-pre-wrap text-xs text-gray-600">
-            {generateMessage(messageFormat)}
-          </p>
-        </div>
 
         {/* Share Actions */}
         <div className="grid grid-cols-2 gap-3">
@@ -270,6 +222,30 @@ export function SharePropertyModal({
           </Button>
         </div>
 
+        {/* Message Format Selector */}
+        <div className="space-y-2">
+          <Select
+            value={messageFormat}
+            onValueChange={(value) => setMessageFormat(value as MessageFormat)}
+          >
+            <SelectTrigger className="h-9 border-gray-300">
+              <SelectValue placeholder="Formato" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="simple">Simple</SelectItem>
+              <SelectItem value="medium">Medio</SelectItem>
+              <SelectItem value="detailed">Detallado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Message Preview */}
+        <div className="rounded-2xl bg-green-50 p-3 shadow-md">
+          <p className="whitespace-pre-wrap text-xs text-gray-900">
+            {generateMessage(messageFormat)}
+          </p>
+        </div>
+
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cerrar
@@ -277,5 +253,6 @@ export function SharePropertyModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

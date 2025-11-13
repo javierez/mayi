@@ -41,6 +41,7 @@ interface PropertyTableProps {
   onPageChange?: (page: number) => void;
   onPrefetchPage?: (page: number) => Promise<void>;
   onExport?: () => Promise<void>;
+  onPublishToggled?: () => void;
 }
 
 // Default column widths (in pixels)
@@ -83,6 +84,7 @@ export const PropertyTable = React.memo(function PropertyTable({
   onPageChange,
   onPrefetchPage,
   onExport,
+  onPublishToggled,
 }: PropertyTableProps) {
   const router = useRouter();
   const [loadedImages, setLoadedImages] = React.useState<Set<string>>(
@@ -725,6 +727,7 @@ export const PropertyTable = React.memo(function PropertyTable({
           onOpenChange={setShareModalOpen}
           property={selectedProperty}
           accountWebsite={accountWebsite}
+          onPublishToggled={onPublishToggled}
         />
       )}
     </div>

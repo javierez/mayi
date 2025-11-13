@@ -104,7 +104,7 @@ export async function uploadPropertyVideo(
       isActive: true,
       imageKey: videoKey,
       s3key,
-      imageOrder: videoOrder,
+      imageOrder: 99, // Non-image media always goes to order 99
       imageTag: "video", // This is the key difference
     });
 
@@ -233,23 +233,6 @@ export async function addYouTubeLink(
     // Create standard YouTube URL
     const standardYouTubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
-    // Get the current max order for YouTube links
-    const existingYouTubeLinks = await db
-      .select()
-      .from(propertyImages)
-      .where(
-        and(
-          eq(propertyImages.propertyId, propertyId),
-          eq(propertyImages.imageTag, "youtube"),
-          eq(propertyImages.isActive, true),
-        ),
-      );
-
-    const maxOrder =
-      existingYouTubeLinks.length > 0
-        ? Math.max(...existingYouTubeLinks.map((link) => link.imageOrder ?? 0))
-        : 0;
-
     // Create record in database with imageTag = 'youtube'
     const result = await createPropertyImage({
       propertyId,
@@ -258,7 +241,7 @@ export async function addYouTubeLink(
       isActive: true,
       imageKey: `youtube_${videoId}`, // Use video ID as key
       s3key: `youtube://${videoId}`, // Special S3 key to indicate YouTube
-      imageOrder: maxOrder + 1,
+      imageOrder: 99, // Non-image media always goes to order 99
       imageTag: "youtube",
     });
 
@@ -345,23 +328,6 @@ export async function addVirtualTourLink(
       tourId = Date.now().toString();
     }
 
-    // Get the current max order for virtual tours
-    const existingTours = await db
-      .select()
-      .from(propertyImages)
-      .where(
-        and(
-          eq(propertyImages.propertyId, propertyId),
-          eq(propertyImages.imageTag, "tour"),
-          eq(propertyImages.isActive, true),
-        ),
-      );
-
-    const maxOrder =
-      existingTours.length > 0
-        ? Math.max(...existingTours.map((tour) => tour.imageOrder ?? 0))
-        : 0;
-
     // Create record in database with imageTag = 'tour'
     const result = await createPropertyImage({
       propertyId,
@@ -370,7 +336,7 @@ export async function addVirtualTourLink(
       isActive: true,
       imageKey: `tour_${platform}_${tourId}`,
       s3key: `tour://${platform}/${tourId}`,
-      imageOrder: maxOrder + 1,
+      imageOrder: 99, // Non-image media always goes to order 99
       imageTag: "tour",
     });
 
