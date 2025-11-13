@@ -24,6 +24,7 @@ import {
   canEditCalendar,
   canDeleteCalendar,
   canEditContacts,
+  canDeleteAllTasks,
 } from "~/app/actions/permissions/check-permissions";
 import {
   getBuyerListingsWithAuth,
@@ -48,6 +49,7 @@ import { cn } from "~/lib/utils";
 import { GeneralActivityTimeline } from "~/components/contactos/general-activity-timeline";
 import { getAllListingContactActivityByContactIdWithAuth } from "~/server/queries/listing-contact-activity";
 import { getContactActivityByContactIdWithAuth } from "~/server/queries/contact-activity";
+import { deleteListingContactActivityAction } from "~/server/actions/listing-contact-activity";
 import type { ListingContactActivityWithUser } from "~/server/queries/listing-contact-activity";
 import type { ContactActivityWithUser } from "~/server/queries/contact-activity";
 
@@ -147,6 +149,8 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
     useState<boolean>(false);
   const [hasEditContactsPermission, setHasEditContactsPermission] =
     useState<boolean>(false);
+  const [hasDeleteAllPermission, setHasDeleteAllPermission] =
+    useState<boolean>(false);
 
   // Appointment modal state
   const {
@@ -164,15 +168,17 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
   useEffect(() => {
     const fetchPermissions = async () => {
       try {
-        const [editCalendarPerm, deleteCalendarPerm, editContactsPerm] =
+        const [editCalendarPerm, deleteCalendarPerm, editContactsPerm, deleteAllPerm] =
           await Promise.all([
             canEditCalendar(),
             canDeleteCalendar(),
             canEditContacts(),
+            canDeleteAllTasks(),
           ]);
         setHasEditCalendarPermission(editCalendarPerm);
         setHasDeleteCalendarPermission(deleteCalendarPerm);
         setHasEditContactsPermission(editContactsPerm);
+        setHasDeleteAllPermission(deleteAllPerm);
       } catch (error) {
         console.error(
           "❌ [Contact Activity] Error fetching permissions:",
@@ -278,6 +284,45 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
       void fetchGeneralActivities();
     }
   }, [contactId, selectedRole]);
+
+  // Refresh general activities handler
+  const handleRefreshGeneralActivities = async () => {
+    setIsLoadingGeneral(true);
+    try {
+      const [listingActivitiesData, contactActivitiesData] =
+        await Promise.all([
+          getAllListingContactActivityByContactIdWithAuth(contactId),
+          getContactActivityByContactIdWithAuth(contactId),
+        ]);
+      setListingActivities(listingActivitiesData);
+      setContactActivities(contactActivitiesData);
+    } catch (error) {
+      console.error("Error refreshing general activities:", error);
+      toast.error("Error al actualizar las actividades");
+    } finally {
+      setIsLoadingGeneral(false);
+    }
+  };
+
+  // Delete activity handler for general activities
+  const handleDeleteActivity = async (activityId: bigint, activityType: "listing" | "contact") => {
+    let result;
+
+    if (activityType === "listing") {
+      result = await deleteListingContactActivityAction(activityId);
+    } else {
+      // Import the delete contact activity action
+      const { deleteContactActivityAction } = await import("~/server/actions/contact-activity");
+      result = await deleteContactActivityAction(activityId);
+    }
+
+    if (result.success) {
+      // Refresh activities after deletion
+      await handleRefreshGeneralActivities();
+    } else {
+      throw new Error(result.error ?? "Error al eliminar la actividad");
+    }
+  };
 
   // Group visits and contacts by listing
   const listingGroups: ListingActivityGroup[] = listings.map((listing) => {
@@ -483,6 +528,10 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
             listingActivities={listingActivities}
             contactActivities={contactActivities}
             loading={isLoadingGeneral}
+            contactId={BigInt(contactId)}
+            onDelete={handleDeleteActivity}
+            canDeleteAll={hasDeleteAllPermission}
+            onActivityAdded={handleRefreshGeneralActivities}
           />
         </Card>
       ) : selectedRole === "propiedades" ? (

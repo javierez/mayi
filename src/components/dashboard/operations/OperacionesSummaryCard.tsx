@@ -102,9 +102,7 @@ export default function OperacionesSummaryCard({
     <Card className={className + " group relative"}>
       <CardContent>
         {/* Alternar entre Venta y Alquiler */}
-        <div className="mt-5 flex flex-col items-center gap-3">
-          <div className="flex w-full justify-center gap-2">
-            {/* Tarjeta de Venta */}
+        <div className="mt-5 flex flex-col items-center gap-3"> <div className="flex w-full justify-center gap-2"> {/* Tarjeta de Venta */}
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -155,21 +153,6 @@ export default function OperacionesSummaryCard({
 
           {/* Demandas y Propiedades en Oferta - Side by side */}
           <div className="mt-3 flex w-full gap-2">
-            {/* Tarjeta de Propiedades en Oferta */}
-            <Link
-              href="/propiedades"
-              className="flex flex-1 items-center justify-between rounded-lg border border-transparent bg-white px-3 py-2 shadow-sm transition-all duration-200 hover:bg-gray-50"
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700">
-                  Prop. en Oferta
-                </span>
-              </div>
-              <span className="text-sm font-bold text-primary">
-                {activeData.listings.toLocaleString("es-ES")}
-              </span>
-            </Link>
-
             {/* Tarjeta de Demandas - Expandable */}
             <div className="flex flex-1 flex-col gap-1">
               <motion.button
@@ -238,6 +221,21 @@ export default function OperacionesSummaryCard({
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Tarjeta de Propiedades en Oferta */}
+            <Link
+              href="/propiedades"
+              className="flex flex-1 items-center justify-between rounded-lg border border-transparent bg-white px-3 py-2 shadow-sm transition-all duration-200 hover:bg-gray-50"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">
+                  Prop. en Oferta
+                </span>
+              </div>
+              <span className="text-sm font-bold text-primary">
+                {activeData.listings.toLocaleString("es-ES")}
+              </span>
+            </Link>
           </div>
 
           {/* Desglose de Operaciones */}

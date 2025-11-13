@@ -4,6 +4,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Button } from "~/components/ui/button";
 import {
   Phone,
   Mail,
@@ -17,99 +18,114 @@ import {
   X,
   Check,
   Clock,
+  Trash2,
 } from "lucide-react";
 import type { ListingContactActivityWithUser } from "~/server/queries/listing-contact-activity";
 import { cn } from "~/lib/utils";
+import { useSession } from "~/lib/auth-client";
+import { toast } from "sonner";
+import { DeleteConfirmationModal } from "~/components/ui/delete-confirmation-modal";
 
 interface ListingContactActivityTimelineProps {
   activities: ListingContactActivityWithUser[];
   loading?: boolean;
+  onDelete?: (activityId: bigint) => Promise<void>;
+  canDeleteAll?: boolean;
 }
 
-function getActionConfig(action: string) {
-  // Elegant style with solid gradient backgrounds and solid icon colors
-  // Similar to PropertyImagePlaceholder but fully opaque
+function getActionConfig(action: string, pending: boolean = false) {
+  // Elegant style with gray gradient backgrounds and gray icon colors
+  // Amber colors when pending = true
+  
+  const iconColor = pending ? "text-amber-600" : "text-gray-600";
+  const bgGradient = pending 
+    ? "bg-gradient-to-br from-amber-100 to-orange-100"
+    : "bg-gradient-to-br from-gray-100 to-slate-100";
+  const borderColor = pending ? "border-amber-200" : "border-gray-200";
+  const hoverBg = pending 
+    ? "hover:from-amber-200 hover:to-orange-200"
+    : "hover:from-gray-200 hover:to-slate-200";
   
   switch (action) {
     case "call_logged":
       return {
-        icon: <Phone className="h-3.5 w-3.5 text-amber-600" />,
-        bgGradient: "bg-gradient-to-br from-amber-100 to-orange-100",
-        borderColor: "border-amber-200",
-        hoverBg: "hover:from-amber-200 hover:to-orange-200",
+        icon: <Phone className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "email_sent":
       return {
-        icon: <Mail className="h-3.5 w-3.5 text-rose-600" />,
-        bgGradient: "bg-gradient-to-br from-rose-100 to-pink-100",
-        borderColor: "border-rose-200",
-        hoverBg: "hover:from-rose-200 hover:to-pink-200",
+        icon: <Mail className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "whatsapp_sent":
     case "message_received":
       return {
-        icon: <MessageSquare className="h-3.5 w-3.5 text-green-600" />,
-        bgGradient: "bg-gradient-to-br from-green-100 to-emerald-100",
-        borderColor: "border-green-200",
-        hoverBg: "hover:from-green-200 hover:to-emerald-200",
+        icon: <MessageSquare className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "notes_added":
       return {
-        icon: <FileText className="h-3.5 w-3.5 text-slate-600" />,
-        bgGradient: "bg-gradient-to-br from-slate-100 to-gray-100",
-        borderColor: "border-slate-200",
-        hoverBg: "hover:from-slate-200 hover:to-gray-200",
+        icon: <FileText className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "appointment_scheduled":
     case "viewing_completed":
       return {
-        icon: <Calendar className="h-3.5 w-3.5 text-blue-600" />,
-        bgGradient: "bg-gradient-to-br from-blue-100 to-cyan-100",
-        borderColor: "border-blue-200",
-        hoverBg: "hover:from-blue-200 hover:to-cyan-200",
+        icon: <Calendar className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "offer_received":
     case "offer_accepted":
       return {
-        icon: <Handshake className="h-3.5 w-3.5 text-emerald-600" />,
-        bgGradient: "bg-gradient-to-br from-emerald-100 to-teal-100",
-        borderColor: "border-emerald-200",
-        hoverBg: "hover:from-emerald-200 hover:to-teal-200",
+        icon: <Handshake className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "offer_rejected":
       return {
-        icon: <Handshake className="h-3.5 w-3.5 text-red-600" />,
-        bgGradient: "bg-gradient-to-br from-red-100 to-rose-100",
-        borderColor: "border-red-200",
-        hoverBg: "hover:from-red-200 hover:to-rose-200",
+        icon: <Handshake className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "contact_assigned":
       return {
-        icon: <UserCheck className="h-3.5 w-3.5 text-indigo-600" />,
-        bgGradient: "bg-gradient-to-br from-indigo-100 to-purple-100",
-        borderColor: "border-indigo-200",
-        hoverBg: "hover:from-indigo-200 hover:to-purple-200",
+        icon: <UserCheck className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "appointment_cancelled":
       return {
-        icon: <X className="h-3.5 w-3.5 text-gray-600" />,
-        bgGradient: "bg-gradient-to-br from-gray-100 to-slate-100",
-        borderColor: "border-gray-200",
-        hoverBg: "hover:from-gray-200 hover:to-slate-200",
+        icon: <X className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "status_changed":
       return {
-        icon: <Check className="h-3.5 w-3.5 text-purple-600" />,
-        bgGradient: "bg-gradient-to-br from-purple-100 to-violet-100",
-        borderColor: "border-purple-200",
-        hoverBg: "hover:from-purple-200 hover:to-violet-200",
+        icon: <Check className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     default:
       return {
-        icon: <Clock className="h-3.5 w-3.5 text-gray-500" />,
-        bgGradient: "bg-gradient-to-br from-gray-100 to-slate-100",
-        borderColor: "border-gray-200",
-        hoverBg: "hover:from-gray-200 hover:to-slate-200",
+        icon: <Clock className={`h-3.5 w-3.5 ${pending ? "text-amber-500" : "text-gray-500"}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
   }
 }
@@ -145,8 +161,14 @@ function getInitials(
 export function ListingContactActivityTimeline({
   activities,
   loading = false,
+  onDelete,
+  canDeleteAll = false,
 }: ListingContactActivityTimelineProps) {
+  const { data: session } = useSession();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [activityToDelete, setActivityToDelete] = useState<ListingContactActivityWithUser | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const toggleExpand = (id: string) => {
     setExpandedIds((prev) => {
@@ -158,6 +180,42 @@ export function ListingContactActivityTimeline({
       }
       return next;
     });
+  };
+
+  const canUserDeleteActivity = (activity: ListingContactActivityWithUser): boolean => {
+    if (!onDelete) return false;
+    // User can delete if they created the activity OR have deleteAll permission
+    return activity.userId === session?.user?.id || canDeleteAll;
+  };
+
+  const handleDeleteClick = (activity: ListingContactActivityWithUser, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onDelete) return;
+    setActivityToDelete(activity);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!onDelete || !activityToDelete) return;
+
+    const activityIdStr = activityToDelete.id.toString();
+    setDeletingIds((prev) => new Set(prev).add(activityIdStr));
+
+    try {
+      await onDelete(activityToDelete.id);
+      toast.success("Actividad eliminada correctamente");
+      setIsDeleteModalOpen(false);
+      setActivityToDelete(null);
+    } catch (error) {
+      console.error("Error deleting activity:", error);
+      toast.error("Error al eliminar la actividad");
+    } finally {
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(activityIdStr);
+        return next;
+      });
+    }
   };
 
   if (loading) {
@@ -190,10 +248,11 @@ export function ListingContactActivityTimeline({
       {activities.map((activity, index) => {
         const isLast = index === activities.length - 1;
         const isExpanded = expandedIds.has(activity.id.toString());
-        const details = activity.details as { notes?: string; topic?: string } | null | undefined;
+        const details = activity.details as { notes?: string; topic?: string; pending?: boolean; isPending?: boolean } | null | undefined;
         const notes = details?.notes ?? "";
         const topic = details?.topic ?? notes.substring(0, 50) ?? "Sin tema";
-        const actionConfig = getActionConfig(activity.action);
+        const pending = details?.pending === true || details?.isPending === true;
+        const actionConfig = getActionConfig(activity.action, pending);
 
         return (
           <div key={activity.id.toString()} className="relative group">
@@ -223,18 +282,39 @@ export function ListingContactActivityTimeline({
                 isLast ? "" : "mb-6",
               )}
             >
-              {/* User avatar - top right with subtle ring */}
+              {/* User avatar - top right with subtle ring and delete button on hover */}
               <div className="absolute right-3 top-3">
-                <Avatar className="h-7 w-7 ring-1 ring-gray-100 transition-all duration-300 hover:ring-gray-200">
-                  <AvatarImage src={activity.user.image ?? undefined} />
-                  <AvatarFallback className="text-xs font-medium bg-gray-50 text-gray-600">
-                    {getInitials(
-                      activity.user.firstName,
-                      activity.user.lastName,
-                      activity.user.name,
-                    )}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                  <Avatar className="h-7 w-7 ring-1 ring-gray-100 transition-all duration-300 hover:ring-gray-200">
+                    <AvatarImage src={activity.user.image ?? undefined} />
+                    <AvatarFallback className="text-xs font-medium bg-gray-50 text-gray-600">
+                      {getInitials(
+                        activity.user.firstName,
+                        activity.user.lastName,
+                        activity.user.name,
+                      )}
+                    </AvatarFallback>
+                  </Avatar>
+                  {/* Delete button overlay on card hover */}
+                  {canUserDeleteActivity(activity) && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => handleDeleteClick(activity, e)}
+                        disabled={deletingIds.has(activity.id.toString())}
+                        className="h-full w-full rounded-full p-0 text-white hover:bg-transparent hover:text-white"
+                        title="Eliminar actividad"
+                      >
+                        {deletingIds.has(activity.id.toString()) ? (
+                          <Clock className="h-2.5 w-2.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-2.5 w-2.5" />
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2.5 pr-10">
@@ -245,52 +325,57 @@ export function ListingContactActivityTimeline({
                   })}
                 </p>
 
-                {/* Topic - elegant typography */}
-                <div className="text-sm font-medium text-gray-900 leading-snug transition-colors duration-200">
-                  {topic}
+                {/* Topic with expandable chevron */}
+                <div className="flex items-start gap-1.5">
+                  <div className="text-xs font-medium text-gray-900 leading-snug transition-colors duration-200">
+                    {topic}
+                  </div>
+                  {notes && (
+                    <button
+                      type="button"
+                      onClick={() => toggleExpand(activity.id.toString())}
+                      className="-mt-0.5 flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                      aria-label={isExpanded ? "Ocultar notas" : "Mostrar notas"}
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="h-4 w-4 transition-transform duration-200" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+                      )}
+                    </button>
+                  )}
                 </div>
 
-                {/* Notes preview/expandable */}
-                {notes && (
-                  <div className="space-y-1.5">
-                    {!isExpanded && notes.length > 100 ? (
-                      <>
-                        <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
-                          {notes}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => toggleExpand(activity.id.toString())}
-                          className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                        >
-                          <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200" />
-                          Ver más
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">
-                          {notes}
-                        </p>
-                        {notes.length > 100 && (
-                          <button
-                            type="button"
-                            onClick={() => toggleExpand(activity.id.toString())}
-                            className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                          >
-                            <ChevronUp className="h-3.5 w-3.5 transition-transform duration-200" />
-                            Ver menos
-                          </button>
-                        )}
-                      </>
-                    )}
+                {/* Notes - expandable */}
+                {notes && isExpanded && (
+                  <div className="pt-2 border-t border-gray-100">
+                    <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">
+                      {notes}
+                    </p>
                   </div>
                 )}
               </div>
+
             </div>
           </div>
         );
       })}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setActivityToDelete(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="¿Eliminar actividad?"
+        description="Esta acción eliminará permanentemente esta actividad. No se puede deshacer."
+        confirmText="Eliminar"
+        loadingText="Eliminando..."
+        variant="destructive"
+        isDeleting={activityToDelete ? deletingIds.has(activityToDelete.id.toString()) : false}
+      />
     </div>
   );
 }

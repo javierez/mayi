@@ -1,13 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentUser } from "../../lib/dal";
+import { getCurrentUser, getCurrentUserAccountId } from "../../lib/dal";
 import { logListingContactActivity } from "../queries/log-activity";
 import {
   validateListingContactActivityAction,
   type ListingContactActivityAction,
 } from "../../lib/constants/listing-contact-activity-actions";
 import type { ListingContactActivityDetailsMap } from "../../types/listing-contact-activity-details";
+import { generateActivityTitle } from "../openai/activity-title-generator";
+import { db } from "../db";
+import { listingContactActivity, contacts, listingContacts } from "../db/schema";
+import { eq, and } from "drizzle-orm";
 
 export interface CreateListingContactActivityFormData {
   listingContactId: string | bigint;
@@ -82,25 +86,51 @@ export async function createListingContactActivityAction(
         ? BigInt(formData.listingContactId)
         : formData.listingContactId;
 
-    // Extract topic from notes if not provided (first 50 chars or first sentence)
-    const topic =
-      formData.topic?.trim() ??
-      (() => {
+    // Generate topic from notes if not provided
+    // Try OpenAI first, fall back to simple algorithm if it fails
+    let topic: string;
+    if (formData.topic?.trim()) {
+      topic = formData.topic.trim();
+    } else {
+      try {
+        // Try to generate title using OpenAI
+        const activityType = formData.details?.activityType as
+          | string
+          | undefined;
+        topic = await generateActivityTitle(
+          formData.notes.trim(),
+          activityType,
+        );
+      } catch (error) {
+        // Fall back to simple algorithm if OpenAI fails
         const notes = formData.notes.trim();
         const sentences = notes.split(/[.!?]/);
         const firstSentence = sentences[0]?.trim() ?? "";
         if (firstSentence && firstSentence.length > 50) {
-          return firstSentence.substring(0, 50) + "...";
+          topic = firstSentence.substring(0, 50) + "...";
+        } else {
+          topic = firstSentence || notes.substring(0, 50);
         }
-        return firstSentence || notes.substring(0, 50);
-      })();
+        // Ensure we have a valid topic
+        if (!topic || !topic.trim()) {
+          topic = notes.substring(0, 50) || "Actividad sin título";
+        }
+      }
+    }
+
+    // Ensure topic is never empty
+    if (!topic || !topic.trim()) {
+      const notes = formData.notes.trim();
+      topic = notes.substring(0, 50) || "Actividad sin título";
+    }
 
     // Prepare details based on action type
-    // For simple note-based actions, we'll use a generic structure
+    // For simple note-based activities, we'll use a generic structure
+    // Spread formData.details first, then override with our generated topic to ensure it's saved
     const details: Record<string, unknown> = {
       notes: formData.notes.trim(),
-      topic,
       ...(formData.details ?? {}),
+      topic, // Set topic AFTER spread to ensure it's not overwritten
     };
 
     // Log the activity using the helper function
@@ -126,6 +156,83 @@ export async function createListingContactActivityAction(
     };
   } catch (error) {
     console.error("Error in createListingContactActivityAction:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error interno del servidor",
+    };
+  }
+}
+
+/**
+ * Delete a listing contact activity
+ * User can delete if they created it OR have deleteAll permission for tasks
+ */
+export async function deleteListingContactActivityAction(
+  activityId: bigint,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return {
+        success: false,
+        error: "No tienes permisos para eliminar actividades",
+      };
+    }
+
+    const accountId = await getCurrentUserAccountId();
+
+    // Verify the activity exists and belongs to the current account
+    const [activity] = await db
+      .select({
+        id: listingContactActivity.id,
+        userId: listingContactActivity.userId,
+      })
+      .from(listingContactActivity)
+      .innerJoin(
+        listingContacts,
+        eq(listingContactActivity.listingContactId, listingContacts.listingContactId),
+      )
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .where(
+        and(
+          eq(listingContactActivity.id, activityId),
+          eq(contacts.accountId, BigInt(accountId)),
+        ),
+      )
+      .limit(1);
+
+    if (!activity) {
+      return {
+        success: false,
+        error: "Actividad no encontrada o acceso denegado",
+      };
+    }
+
+    // Check permissions: user can delete if they created it OR have deleteAll permission
+    // For now, we'll use the same permission check as tasks
+    const { canDeleteAllTasks } = await import("../../app/actions/permissions/check-permissions");
+    const hasDeleteAllPermission = await canDeleteAllTasks();
+    const canDelete = activity.userId === currentUser.id || hasDeleteAllPermission;
+
+    if (!canDelete) {
+      return {
+        success: false,
+        error: "No tienes permisos para eliminar esta actividad",
+      };
+    }
+
+    // Delete the activity
+    await db
+      .delete(listingContactActivity)
+      .where(eq(listingContactActivity.id, activityId));
+
+    // Revalidate the page
+    revalidatePath(`/operaciones/leads`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error in deleteListingContactActivityAction:", error);
     return {
       success: false,
       error:

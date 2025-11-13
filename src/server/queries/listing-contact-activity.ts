@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "../db";
-import { listingContactActivity, users, listingContacts, contacts } from "../db/schema";
+import { listingContactActivity, users, listingContacts, contacts, listings, properties } from "../db/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { getCurrentUserAccountId } from "../../lib/dal";
 
@@ -20,6 +20,13 @@ export interface ListingContactActivityWithUser {
     lastName: string | null;
     image: string | null;
     initials: string;
+  };
+  property: {
+    title: string | null;
+    referenceNumber: string | null;
+  } | null;
+  listingContact: {
+    contactType: string | null;
   };
 }
 
@@ -52,6 +59,13 @@ export async function getListingContactActivityByListingContactIdWithAuth(
             COALESCE(LEFT(${users.lastName}, 1), '')
           )`,
         },
+        property: {
+          title: properties.title,
+          referenceNumber: properties.referenceNumber,
+        },
+        listingContact: {
+          contactType: listingContacts.contactType,
+        },
       })
       .from(listingContactActivity)
       .innerJoin(users, eq(listingContactActivity.userId, users.id))
@@ -60,6 +74,8 @@ export async function getListingContactActivityByListingContactIdWithAuth(
         eq(listingContactActivity.listingContactId, listingContacts.listingContactId),
       )
       .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .leftJoin(listings, eq(listingContacts.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
         and(
           eq(listingContactActivity.listingContactId, listingContactId),
@@ -107,6 +123,13 @@ export async function getAllListingContactActivityByContactIdWithAuth(
             COALESCE(LEFT(${users.lastName}, 1), '')
           )`,
         },
+        property: {
+          title: properties.title,
+          referenceNumber: properties.referenceNumber,
+        },
+        listingContact: {
+          contactType: listingContacts.contactType,
+        },
       })
       .from(listingContactActivity)
       .innerJoin(users, eq(listingContactActivity.userId, users.id))
@@ -115,6 +138,8 @@ export async function getAllListingContactActivityByContactIdWithAuth(
         eq(listingContactActivity.listingContactId, listingContacts.listingContactId),
       )
       .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .leftJoin(listings, eq(listingContacts.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
         and(
           eq(listingContacts.contactId, contactId),

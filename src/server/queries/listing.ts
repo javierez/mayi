@@ -41,6 +41,11 @@ export async function listListingsCompactWithAuth(
   return listListingsCompact(accountId, filters);
 }
 
+export async function listListingsForContactWithAuth(contactId: bigint, searchQuery?: string) {
+  const accountId = await getCurrentUserAccountId();
+  return listListingsForContact(accountId, contactId, searchQuery);
+}
+
 export async function getListingCompactByIdWithAuth(listingId: bigint) {
   const accountId = await getCurrentUserAccountId();
   return getListingCompactById(listingId, accountId);
@@ -986,6 +991,104 @@ export async function listListingsCompact(
     return compactListings;
   } catch (error) {
     console.error("Error listing compact listings:", error);
+    return [];
+  }
+}
+
+// Get listings associated with a specific contact (as owner or buyer)
+export async function listListingsForContact(
+  accountId: number,
+  contactId: bigint,
+  searchQuery?: string,
+) {
+  try {
+    // Build the where conditions array
+    const whereConditions = [];
+
+    // Always show active listings only for this account, excluding Draft, Sold, and Rented
+    whereConditions.push(eq(listings.isActive, true));
+    whereConditions.push(
+      sql`${listings.status} NOT IN ('Draft', 'Sold', 'Rented')`,
+    );
+    whereConditions.push(eq(listings.accountId, BigInt(accountId)));
+
+    // Add search query filter if provided
+    if (searchQuery && searchQuery.trim()) {
+      whereConditions.push(
+        sql`(
+          ${properties.title} LIKE ${`%${searchQuery}%`} OR
+          ${properties.referenceNumber} LIKE ${`%${searchQuery}%`} OR
+          ${properties.street} LIKE ${`%${searchQuery}%`} OR
+          ${locations.city} LIKE ${`%${searchQuery}%`} OR
+          ${locations.province} LIKE ${`%${searchQuery}%`}
+        )`,
+      );
+    }
+
+    // Create the compact query with contact relationship info
+    const query = db
+      .select({
+        listingId: listings.listingId,
+        title: properties.title,
+        referenceNumber: properties.referenceNumber,
+        price: listings.price,
+        listingType: listings.listingType,
+        propertyType: properties.propertyType,
+        bedrooms: properties.bedrooms,
+        bathrooms: properties.bathrooms,
+        squareMeter: properties.squareMeter,
+        city: locations.city,
+        agentName: users.name,
+        imageUrl: propertyImages.imageUrl,
+        contactType: sql<"owner" | "buyer" | null>`CASE
+          WHEN ${listingContacts.contactType} = 'owner' THEN 'owner'
+          WHEN ${listingContacts.contactType} = 'buyer' THEN 'buyer'
+          ELSE NULL
+        END`,
+      })
+      .from(listings)
+      .innerJoin(
+        listingContacts,
+        and(
+          eq(listingContacts.listingId, listings.listingId),
+          eq(listingContacts.contactId, contactId),
+          eq(listingContacts.isActive, true),
+        ),
+      )
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
+      .leftJoin(users, eq(listings.agentId, users.id))
+      .leftJoin(
+        propertyImages,
+        and(
+          eq(propertyImages.propertyId, properties.propertyId),
+          eq(propertyImages.isActive, true),
+          eq(propertyImages.imageOrder, 1),
+          // Only get actual images, not videos, YouTube links, or virtual tours
+          sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`,
+        ),
+      );
+
+    // Apply where conditions
+    const filteredQuery =
+      whereConditions.length > 0 ? query.where(and(...whereConditions)) : query;
+
+    // Get all listings ordered by contact type (owner first, then buyer), then by creation date
+    const contactListings = await filteredQuery.orderBy(
+      sql`CASE
+        WHEN ${listingContacts.contactType} = 'owner' THEN 1
+        WHEN ${listingContacts.contactType} = 'buyer' THEN 2
+        ELSE 3
+      END`,
+      sql`${listings.createdAt} DESC`,
+    );
+
+    return contactListings;
+  } catch (error) {
+    console.error("Error listing contact listings:", error);
     return [];
   }
 }

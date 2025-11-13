@@ -233,6 +233,22 @@ export interface GdprDataExportRequestedDetails {
 }
 
 // ============================================================================
+// MANUAL COMMUNICATION ACTIONS (5 actions from modal)
+// ============================================================================
+
+/**
+ * Generic manual activity details
+ * Used for simple manually-logged activities (email, whatsapp, call, visit, notes)
+ */
+export interface ManualActivityDetails {
+  notes: string; // User-provided description of the activity
+  topic?: string; // AI-generated or user-provided title
+  activityType?: string; // Type from modal (mail, whatsapp, call, visit, otros)
+  isPending?: boolean; // Whether this is a pending task
+  [key: string]: unknown; // Allow additional custom fields
+}
+
+// ============================================================================
 // UNION TYPE FOR ALL DETAILS
 // ============================================================================
 
@@ -248,7 +264,9 @@ export type ContactActivityDetails =
   | ConsentGivenDetails
   | ConsentWithdrawnDetails
   | DoNotContactSetDetails
-  | GdprDataExportRequestedDetails;
+  | GdprDataExportRequestedDetails
+  // Manual Communication
+  | ManualActivityDetails;
 
 // ============================================================================
 // MAPPING: ACTION → DETAILS TYPE
@@ -268,4 +286,10 @@ export interface ContactActivityDetailsMap {
   consent_withdrawn: ConsentWithdrawnDetails;
   do_not_contact_set: DoNotContactSetDetails;
   gdpr_data_export_requested: GdprDataExportRequestedDetails;
+  // Manual Communication
+  email_sent: ManualActivityDetails;
+  whatsapp_sent: ManualActivityDetails;
+  call_logged: ManualActivityDetails;
+  viewing_completed: ManualActivityDetails;
+  notes_added: ManualActivityDetails;
 }

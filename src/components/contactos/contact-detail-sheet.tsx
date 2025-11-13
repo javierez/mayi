@@ -52,6 +52,8 @@ import { ListingContactActivityTimeline } from "~/components/contactos/listing-c
 import { AddListingContactActivityModal } from "~/components/contactos/add-listing-contact-activity-modal";
 import { getListingContactActivityByListingContactIdWithAuth } from "~/server/queries/listing-contact-activity";
 import type { ListingContactActivityWithUser } from "~/server/queries/listing-contact-activity";
+import { deleteListingContactActivityAction } from "~/server/actions/listing-contact-activity";
+import { canDeleteAllTasks } from "~/app/actions/permissions/check-permissions";
 import { Plus } from "lucide-react";
 
 interface ContactDetailSheetProps {
@@ -166,10 +168,11 @@ export function ContactDetailSheet({
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
   const [comments, setComments] = useState<ListingContactCommentWithUser[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
-  const [activeTab, setActiveTab] = useState<"comments" | "actions">("comments");
+  const [activeTab, setActiveTab] = useState<"comments" | "actions">("actions");
   const [activities, setActivities] = useState<ListingContactActivityWithUser[]>([]);
   const [isLoadingActivities, setIsLoadingActivities] = useState(false);
   const [isAddActivityModalOpen, setIsAddActivityModalOpen] = useState(false);
+  const [hasDeleteAllPermission, setHasDeleteAllPermission] = useState(false);
 
   // Fetch comments when sheet opens
   useEffect(() => {
@@ -199,6 +202,20 @@ export function ContactDetailSheet({
     }
   }, [isOpen, contact]);
 
+  // Fetch delete permissions
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      try {
+        const deleteAllPerm = await canDeleteAllTasks();
+        setHasDeleteAllPermission(deleteAllPerm);
+      } catch (error) {
+        console.error("Error fetching delete permissions:", error);
+        setHasDeleteAllPermission(false);
+      }
+    };
+    void fetchPermissions();
+  }, []);
+
   // Fetch activities when Actions tab is active
   useEffect(() => {
     if (isOpen && contact && activeTab === "actions") {
@@ -227,6 +244,26 @@ export function ContactDetailSheet({
       toast.error("Error al actualizar las actividades");
     } finally {
       setIsLoadingActivities(false);
+    }
+  };
+
+  // Delete activity handler
+  const handleDeleteActivity = async (activityId: bigint, activityType: "listing" | "contact") => {
+    let result;
+
+    if (activityType === "listing") {
+      result = await deleteListingContactActivityAction(activityId);
+    } else {
+      // Import the delete contact activity action
+      const { deleteContactActivityAction } = await import("~/server/actions/contact-activity");
+      result = await deleteContactActivityAction(activityId);
+    }
+
+    if (result.success) {
+      // Refresh activities after deletion
+      await handleRefreshActivities();
+    } else {
+      throw new Error(result.error ?? "Error al eliminar la actividad");
     }
   };
 
@@ -1033,8 +1070,8 @@ export function ContactDetailSheet({
               <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "comments" | "actions")}>
                 <div className="flex items-center gap-2 mb-4">
                   <TabsList className="grid w-full grid-cols-2 flex-1">
-                    <TabsTrigger value="comments">Comentarios</TabsTrigger>
                     <TabsTrigger value="actions">Acciones</TabsTrigger>
+                    <TabsTrigger value="comments">Comentarios</TabsTrigger>
                   </TabsList>
                   {activeTab === "actions" && (
                     <Button
@@ -1076,6 +1113,8 @@ export function ContactDetailSheet({
                   <ListingContactActivityTimeline
                     activities={activities}
                     loading={isLoadingActivities}
+                    onDelete={async (activityId) => handleDeleteActivity(activityId, "listing")}
+                    canDeleteAll={hasDeleteAllPermission}
                   />
                 </TabsContent>
               </Tabs>

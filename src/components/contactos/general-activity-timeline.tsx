@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Button } from "~/components/ui/button";
 import {
   Phone,
   Mail,
@@ -24,12 +25,18 @@ import {
   ShieldAlert,
   FileDown,
   Ban,
+  Trash2,
 } from "lucide-react";
 import type { ListingContactActivityWithUser } from "~/server/queries/listing-contact-activity";
 import type { ContactActivityWithUser } from "~/server/queries/contact-activity";
 import { LISTING_CONTACT_ACTIVITY_LABELS } from "~/lib/constants/listing-contact-activity-actions";
 import { CONTACT_ACTIVITY_LABELS } from "~/lib/constants/contact-activity-actions";
 import { cn } from "~/lib/utils";
+import { useSession } from "~/lib/auth-client";
+import { toast } from "sonner";
+import { DeleteConfirmationModal } from "~/components/ui/delete-confirmation-modal";
+import { AddGeneralActivityModal } from "~/components/contactos/add-general-activity-modal";
+import { Plus } from "lucide-react";
 
 // Unified activity type with discriminator
 export type UnifiedActivity =
@@ -44,143 +51,156 @@ interface GeneralActivityTimelineProps {
   listingActivities: ListingContactActivityWithUser[];
   contactActivities: ContactActivityWithUser[];
   loading?: boolean;
+  onDelete?: (activityId: bigint, activityType: "listing" | "contact") => Promise<void>;
+  canDeleteAll?: boolean;
+  contactId: bigint;
+  onActivityAdded?: () => void;
 }
 
-function getActionConfig(action: string) {
-  // Elegant style with solid gradient backgrounds and solid icon colors
-  // Similar to PropertyImagePlaceholder but fully opaque
+function getActionConfig(action: string, pending = false) {
+  // Elegant style with gray gradient backgrounds and gray icon colors
+  // Amber colors when pending = true
+  
+  const iconColor = pending ? "text-amber-600" : "text-gray-600";
+  const bgGradient = pending 
+    ? "bg-gradient-to-br from-amber-100 to-orange-100"
+    : "bg-gradient-to-br from-gray-100 to-slate-100";
+  const borderColor = pending ? "border-amber-200" : "border-gray-200";
+  const hoverBg = pending 
+    ? "hover:from-amber-200 hover:to-orange-200"
+    : "hover:from-gray-200 hover:to-slate-200";
   
   switch (action) {
     // Listing contact activity actions
     case "call_logged":
       return {
-        icon: <Phone className="h-3.5 w-3.5 text-amber-600" />,
-        bgGradient: "bg-gradient-to-br from-amber-100 to-orange-100",
-        borderColor: "border-amber-200",
-        hoverBg: "hover:from-amber-200 hover:to-orange-200",
+        icon: <Phone className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "email_sent":
       return {
-        icon: <Mail className="h-3.5 w-3.5 text-rose-600" />,
-        bgGradient: "bg-gradient-to-br from-rose-100 to-pink-100",
-        borderColor: "border-rose-200",
-        hoverBg: "hover:from-rose-200 hover:to-pink-200",
+        icon: <Mail className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "whatsapp_sent":
     case "message_received":
       return {
-        icon: <MessageSquare className="h-3.5 w-3.5 text-green-600" />,
-        bgGradient: "bg-gradient-to-br from-green-100 to-emerald-100",
-        borderColor: "border-green-200",
-        hoverBg: "hover:from-green-200 hover:to-emerald-200",
+        icon: <MessageSquare className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "notes_added":
       return {
-        icon: <FileText className="h-3.5 w-3.5 text-slate-600" />,
-        bgGradient: "bg-gradient-to-br from-slate-100 to-gray-100",
-        borderColor: "border-slate-200",
-        hoverBg: "hover:from-slate-200 hover:to-gray-200",
+        icon: <FileText className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "appointment_scheduled":
     case "viewing_completed":
       return {
-        icon: <Calendar className="h-3.5 w-3.5 text-blue-600" />,
-        bgGradient: "bg-gradient-to-br from-blue-100 to-cyan-100",
-        borderColor: "border-blue-200",
-        hoverBg: "hover:from-blue-200 hover:to-cyan-200",
+        icon: <Calendar className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "offer_received":
     case "offer_accepted":
       return {
-        icon: <Handshake className="h-3.5 w-3.5 text-emerald-600" />,
-        bgGradient: "bg-gradient-to-br from-emerald-100 to-teal-100",
-        borderColor: "border-emerald-200",
-        hoverBg: "hover:from-emerald-200 hover:to-teal-200",
+        icon: <Handshake className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "offer_rejected":
       return {
-        icon: <Handshake className="h-3.5 w-3.5 text-red-600" />,
-        bgGradient: "bg-gradient-to-br from-red-100 to-rose-100",
-        borderColor: "border-red-200",
-        hoverBg: "hover:from-red-200 hover:to-rose-200",
+        icon: <Handshake className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "contact_assigned":
       return {
-        icon: <UserCheck className="h-3.5 w-3.5 text-indigo-600" />,
-        bgGradient: "bg-gradient-to-br from-indigo-100 to-purple-100",
-        borderColor: "border-indigo-200",
-        hoverBg: "hover:from-indigo-200 hover:to-purple-200",
+        icon: <UserCheck className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "appointment_cancelled":
       return {
-        icon: <X className="h-3.5 w-3.5 text-gray-600" />,
-        bgGradient: "bg-gradient-to-br from-gray-100 to-slate-100",
-        borderColor: "border-gray-200",
-        hoverBg: "hover:from-gray-200 hover:to-slate-200",
+        icon: <X className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "status_changed":
       return {
-        icon: <Check className="h-3.5 w-3.5 text-purple-600" />,
-        bgGradient: "bg-gradient-to-br from-purple-100 to-violet-100",
-        borderColor: "border-purple-200",
-        hoverBg: "hover:from-purple-200 hover:to-violet-200",
+        icon: <Check className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     // Contact activity actions
     case "contact_created":
       return {
-        icon: <UserPlus className="h-3.5 w-3.5 text-blue-600" />,
-        bgGradient: "bg-gradient-to-br from-blue-100 to-indigo-100",
-        borderColor: "border-blue-200",
-        hoverBg: "hover:from-blue-200 hover:to-indigo-200",
+        icon: <UserPlus className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "contact_deactivated":
       return {
-        icon: <UserMinus className="h-3.5 w-3.5 text-gray-600" />,
-        bgGradient: "bg-gradient-to-br from-gray-100 to-slate-100",
-        borderColor: "border-gray-200",
-        hoverBg: "hover:from-gray-200 hover:to-slate-200",
+        icon: <UserMinus className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "contact_merged":
       return {
-        icon: <Users className="h-3.5 w-3.5 text-purple-600" />,
-        bgGradient: "bg-gradient-to-br from-purple-100 to-violet-100",
-        borderColor: "border-purple-200",
-        hoverBg: "hover:from-purple-200 hover:to-violet-200",
+        icon: <Users className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "consent_given":
       return {
-        icon: <Shield className="h-3.5 w-3.5 text-green-600" />,
-        bgGradient: "bg-gradient-to-br from-green-100 to-emerald-100",
-        borderColor: "border-green-200",
-        hoverBg: "hover:from-green-200 hover:to-emerald-200",
+        icon: <Shield className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "consent_withdrawn":
       return {
-        icon: <ShieldAlert className="h-3.5 w-3.5 text-orange-600" />,
-        bgGradient: "bg-gradient-to-br from-orange-100 to-amber-100",
-        borderColor: "border-orange-200",
-        hoverBg: "hover:from-orange-200 hover:to-amber-200",
+        icon: <ShieldAlert className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "do_not_contact_set":
       return {
-        icon: <Ban className="h-3.5 w-3.5 text-red-600" />,
-        bgGradient: "bg-gradient-to-br from-red-100 to-rose-100",
-        borderColor: "border-red-200",
-        hoverBg: "hover:from-red-200 hover:to-rose-200",
+        icon: <Ban className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     case "gdpr_data_export_requested":
       return {
-        icon: <FileDown className="h-3.5 w-3.5 text-indigo-600" />,
-        bgGradient: "bg-gradient-to-br from-indigo-100 to-blue-100",
-        borderColor: "border-indigo-200",
-        hoverBg: "hover:from-indigo-200 hover:to-blue-200",
+        icon: <FileDown className={`h-3.5 w-3.5 ${iconColor}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
     default:
       return {
-        icon: <Clock className="h-3.5 w-3.5 text-gray-500" />,
-        bgGradient: "bg-gradient-to-br from-gray-100 to-slate-100",
-        borderColor: "border-gray-200",
-        hoverBg: "hover:from-gray-200 hover:to-slate-200",
+        icon: <Clock className={`h-3.5 w-3.5 ${pending ? "text-amber-500" : "text-gray-500"}`} />,
+        bgGradient,
+        borderColor,
+        hoverBg,
       };
   }
 }
@@ -281,8 +301,17 @@ export function GeneralActivityTimeline({
   listingActivities,
   contactActivities,
   loading = false,
+  onDelete,
+  canDeleteAll = false,
+  contactId,
+  onActivityAdded,
 }: GeneralActivityTimelineProps) {
+  const { data: session } = useSession();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [activityToDelete, setActivityToDelete] = useState<UnifiedActivity | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isAddActivityModalOpen, setIsAddActivityModalOpen] = useState(false);
 
   const toggleExpand = (id: string) => {
     setExpandedIds((prev) => {
@@ -294,6 +323,49 @@ export function GeneralActivityTimeline({
       }
       return next;
     });
+  };
+
+  const canUserDeleteActivity = (activity: UnifiedActivity): boolean => {
+    if (!onDelete) return false;
+
+    // Only allow deletion of manual activities (not automatic system actions)
+    if (activity.activityType === "contact") {
+      const isManualAction = ["email_sent", "whatsapp_sent", "call_logged", "viewing_completed", "notes_added"].includes(activity.action);
+      if (!isManualAction) return false; // Don't allow deleting automatic actions
+    }
+
+    // User can delete if they created the activity OR have deleteAll permission
+    return activity.userId === session?.user?.id || canDeleteAll;
+  };
+
+  const handleDeleteClick = (activity: UnifiedActivity, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onDelete) return;
+    setActivityToDelete(activity);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!onDelete || !activityToDelete) return;
+
+    const activityKey = `${activityToDelete.activityType}-${activityToDelete.id.toString()}`;
+    setDeletingIds((prev) => new Set(prev).add(activityKey));
+
+    try {
+      await onDelete(activityToDelete.id, activityToDelete.activityType);
+      toast.success("Actividad eliminada correctamente");
+      setIsDeleteModalOpen(false);
+      setActivityToDelete(null);
+    } catch (error) {
+      console.error("Error deleting activity:", error);
+      toast.error("Error al eliminar la actividad");
+    } finally {
+      setDeletingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(activityKey);
+        return next;
+      });
+    }
   };
 
   // Merge and sort activities by date (most recent first)
@@ -333,14 +405,42 @@ export function GeneralActivityTimeline({
   }
 
   return (
-    <div className="relative space-y-6 pl-10">
-      {/* Vertical connecting line - subtle gradient, centered with icon */}
-      <div className="absolute bottom-2 left-[28px] top-2 w-px bg-gradient-to-b from-gray-100 via-gray-200 to-gray-100" />
+    <div className="space-y-6">
+      {/* Add Activity Button and Legend - top */}
+      <div className="flex items-center justify-between">
+        {/* Legend */}
+        <div className="flex items-center gap-4 text-xs text-gray-500">
+          <div className="flex items-center gap-1.5">
+            <div className="h-2 w-2 rounded-full bg-rose-200" />
+            <span>Interesado</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="h-2 w-2 rounded-full bg-amber-200" />
+            <span>En propiedad</span>
+          </div>
+        </div>
+
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setIsAddActivityModalOpen(true)}
+          className="gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Agregar acción
+        </Button>
+      </div>
+
+      <div className="relative space-y-6 pl-10">
+        {/* Vertical connecting line - subtle gradient, centered with icon */}
+        <div className="absolute bottom-2 left-[28px] top-2 w-px bg-gradient-to-b from-gray-100 via-gray-200 to-gray-100" />
 
       {unifiedActivities.map((activity, index) => {
         const isLast = index === unifiedActivities.length - 1;
         const isExpanded = expandedIds.has(`${activity.activityType}-${activity.id.toString()}`);
-        const actionConfig = getActionConfig(activity.action);
+        const details = activity.details as { notes?: string; topic?: string; pending?: boolean; isPending?: boolean } | null | undefined;
+        const pending = details?.pending === true || details?.isPending === true;
+        const actionConfig = getActionConfig(activity.action, pending);
         const topic = getActivityTopic(
           activity.action,
           activity.details,
@@ -376,71 +476,91 @@ export function GeneralActivityTimeline({
                 isLast ? "" : "mb-6",
               )}
             >
-              {/* User avatar - top right with subtle ring */}
+              {/* User avatar - top right with subtle ring and delete button on hover */}
               <div className="absolute right-3 top-3">
-                <Avatar className="h-7 w-7 ring-1 ring-gray-100 transition-all duration-300 hover:ring-gray-200">
-                  <AvatarImage src={activity.user.image ?? undefined} />
-                  <AvatarFallback className="text-xs font-medium bg-gray-50 text-gray-600">
-                    {getInitials(
-                      activity.user.firstName,
-                      activity.user.lastName,
-                      activity.user.name,
-                    )}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                  <Avatar className="h-7 w-7 ring-1 ring-gray-100 transition-all duration-300 hover:ring-gray-200">
+                    <AvatarImage src={activity.user.image ?? undefined} />
+                    <AvatarFallback className="text-xs font-medium bg-gray-50 text-gray-600">
+                      {getInitials(
+                        activity.user.firstName,
+                        activity.user.lastName,
+                        activity.user.name,
+                      )}
+                    </AvatarFallback>
+                  </Avatar>
+                  {/* Delete button overlay on card hover */}
+                  {canUserDeleteActivity(activity) && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => handleDeleteClick(activity, e)}
+                        disabled={deletingIds.has(`${activity.activityType}-${activity.id.toString()}`)}
+                        className="h-full w-full rounded-full p-0 text-white hover:bg-transparent hover:text-white"
+                        title="Eliminar actividad"
+                      >
+                        {deletingIds.has(`${activity.activityType}-${activity.id.toString()}`) ? (
+                          <Clock className="h-2.5 w-2.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-2.5 w-2.5" />
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2.5 pr-10">
-                {/* Date - subtle and refined */}
-                <p className="text-xs text-gray-500 font-normal">
-                  {format(activity.createdAt, "d 'de' MMMM, yyyy 'a las' HH:mm", {
-                    locale: es,
-                  })}
-                </p>
-
-                {/* Topic - elegant typography */}
-                <div className="text-sm font-medium text-gray-900 leading-snug transition-colors duration-200">
-                  {topic}
+                {/* Date and property title inline */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-xs text-gray-500 font-normal">
+                    {format(activity.createdAt, "d 'de' MMMM, yyyy 'a las' HH:mm", {
+                      locale: es,
+                    })}
+                  </p>
+                  {/* Property title badge - only for listing activities */}
+                  {activity.activityType === "listing" && activity.property?.title && (
+                    <span className={cn(
+                      "text-xs font-medium px-2 py-0.5 rounded-md",
+                      activity.listingContact?.contactType === "buyer"
+                        ? "text-rose-700 bg-rose-50"
+                        : "text-amber-700 bg-amber-50"
+                    )}>
+                      {activity.property.title}
+                    </span>
+                  )}
                 </div>
 
-                {/* Notes preview/expandable */}
-                {notes && (
-                  <div className="space-y-1.5">
-                    {!isExpanded && notes.length > 100 ? (
-                      <>
-                        <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">
-                          {notes}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            toggleExpand(`${activity.activityType}-${activity.id.toString()}`)
-                          }
-                          className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                        >
-                          <ChevronDown className="h-3.5 w-3.5 transition-transform duration-200" />
-                          Ver más
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">
-                          {notes}
-                        </p>
-                        {notes.length > 100 && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              toggleExpand(`${activity.activityType}-${activity.id.toString()}`)
-                            }
-                            className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors duration-200"
-                          >
-                            <ChevronUp className="h-3.5 w-3.5 transition-transform duration-200" />
-                            Ver menos
-                          </button>
-                        )}
-                      </>
-                    )}
+                {/* Topic with expandable chevron */}
+                <div className="flex items-start gap-1.5">
+                  <div className="text-xs font-medium text-gray-900 leading-snug transition-colors duration-200">
+                    {topic}
+                  </div>
+                  {notes && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        toggleExpand(`${activity.activityType}-${activity.id.toString()}`)
+                      }
+                      className="-mt-0.5 flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                      aria-label={isExpanded ? "Ocultar notas" : "Mostrar notas"}
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="h-4 w-4 transition-transform duration-200" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {/* Notes - expandable */}
+                {notes && isExpanded && (
+                  <div className="pt-2 border-t border-gray-100">
+                    <p className="text-xs text-gray-600 whitespace-pre-wrap leading-relaxed">
+                      {notes}
+                    </p>
                   </div>
                 )}
               </div>
@@ -448,6 +568,34 @@ export function GeneralActivityTimeline({
           </div>
         );
       })}
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setActivityToDelete(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="¿Eliminar actividad?"
+        description="Esta acción eliminará permanentemente esta actividad. No se puede deshacer."
+        confirmText="Eliminar"
+        loadingText="Eliminando..."
+        variant="destructive"
+        isDeleting={activityToDelete ? deletingIds.has(`${activityToDelete.activityType}-${activityToDelete.id.toString()}`) : false}
+      />
+
+      {/* Add Activity Modal */}
+      <AddGeneralActivityModal
+        open={isAddActivityModalOpen}
+        onOpenChange={setIsAddActivityModalOpen}
+        contactId={contactId}
+        onSuccess={() => {
+          onActivityAdded?.();
+          setIsAddActivityModalOpen(false);
+        }}
+      />
     </div>
   );
 }
