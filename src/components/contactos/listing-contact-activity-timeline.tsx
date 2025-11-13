@@ -33,7 +33,7 @@ interface ListingContactActivityTimelineProps {
   canDeleteAll?: boolean;
 }
 
-function getActionConfig(action: string, pending: boolean = false) {
+function getActionConfig(action: string, pending = false) {
   // Elegant style with gray gradient backgrounds and gray icon colors
   // Amber colors when pending = true
   

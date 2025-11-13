@@ -1013,7 +1013,7 @@ export async function listListingsForContact(
     whereConditions.push(eq(listings.accountId, BigInt(accountId)));
 
     // Add search query filter if provided
-    if (searchQuery && searchQuery.trim()) {
+    if (searchQuery?.trim()) {
       whereConditions.push(
         sql`(
           ${properties.title} LIKE ${`%${searchQuery}%`} OR

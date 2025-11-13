@@ -136,9 +136,10 @@ export async function createContactActivityAction(
     } else {
       try {
         // Try to generate title using OpenAI
-        const activityType = formData.details?.activityType as
-          | string
-          | undefined;
+        const activityType =
+          typeof formData.details?.activityType === "string"
+            ? formData.details.activityType
+            : undefined;
         topic = await generateActivityTitle(
           formData.notes.trim(),
           action, // Pass the action type
@@ -153,17 +154,17 @@ export async function createContactActivityAction(
         if (firstSentence && firstSentence.length > 50) {
           topic = firstSentence.substring(0, 50) + "...";
         } else {
-          topic = firstSentence || notes.substring(0, 50);
+          topic = (firstSentence || notes.substring(0, 50)) ?? "";
         }
         // Ensure we have a valid topic
-        if (!topic || !topic.trim()) {
+        if (!topic?.trim()) {
           topic = notes.substring(0, 50) || "Actividad sin título";
         }
       }
     }
 
     // Ensure topic is never empty
-    if (!topic || !topic.trim()) {
+    if (!topic?.trim()) {
       const notes = formData.notes.trim();
       topic = notes.substring(0, 50) || "Actividad sin título";
     }
@@ -174,7 +175,7 @@ export async function createContactActivityAction(
       topic,
       activityType: formData.details?.activityType,
       isPending: formData.details?.isPending,
-      ...(formData.details || {}),
+      ...(formData.details ?? {}),
     };
 
     // Log the contact activity with the actual action type

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +26,6 @@ import {
   ArrowLeft,
   Search,
   X,
-  Home,
 } from "lucide-react";
 import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 import { createListingContactActivityAction } from "~/server/actions/listing-contact-activity";
@@ -139,7 +139,7 @@ export function AddGeneralActivityModal({
   useEffect(() => {
     if (step !== "listing" || !open || listingSearchQuery.length === 0) return;
 
-    const debounceTimer = setTimeout(async () => {
+    const searchListings = async () => {
       setIsLoadingListings(true);
       try {
         // When searching, search across all listings (not just contact-related)
@@ -153,6 +153,10 @@ export function AddGeneralActivityModal({
       } finally {
         setIsLoadingListings(false);
       }
+    };
+
+    const debounceTimer = setTimeout(() => {
+      void searchListings();
     }, 300);
 
     return () => clearTimeout(debounceTimer);
@@ -365,9 +369,11 @@ export function AddGeneralActivityModal({
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-3 flex-1">
                     {selectedListing.imageUrl && (
-                      <img
+                      <Image
                         src={selectedListing.imageUrl}
                         alt={selectedListing.title ?? "Property"}
+                        width={48}
+                        height={48}
                         className="h-12 w-12 rounded object-cover"
                       />
                     )}
@@ -431,9 +437,11 @@ export function AddGeneralActivityModal({
                     >
                       <div className="flex items-start gap-2">
                         {listing.imageUrl && (
-                          <img
+                          <Image
                             src={listing.imageUrl}
                             alt={listing.title ?? "Property"}
+                            width={40}
+                            height={40}
                             className="h-10 w-10 rounded object-cover shrink-0"
                           />
                         )}

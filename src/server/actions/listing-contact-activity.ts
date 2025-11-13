@@ -94,14 +94,15 @@ export async function createListingContactActivityAction(
     } else {
       try {
         // Try to generate title using OpenAI
-        const activityType = formData.details?.activityType as
-          | string
-          | undefined;
+        const activityType =
+          typeof formData.details?.activityType === "string"
+            ? formData.details.activityType
+            : undefined;
         topic = await generateActivityTitle(
           formData.notes.trim(),
           activityType,
         );
-      } catch (error) {
+      } catch {
         // Fall back to simple algorithm if OpenAI fails
         const notes = formData.notes.trim();
         const sentences = notes.split(/[.!?]/);
@@ -109,17 +110,17 @@ export async function createListingContactActivityAction(
         if (firstSentence && firstSentence.length > 50) {
           topic = firstSentence.substring(0, 50) + "...";
         } else {
-          topic = firstSentence || notes.substring(0, 50);
+          topic = (firstSentence || notes.substring(0, 50)) ?? "";
         }
         // Ensure we have a valid topic
-        if (!topic || !topic.trim()) {
+        if (!topic?.trim()) {
           topic = notes.substring(0, 50) || "Actividad sin título";
         }
       }
     }
 
     // Ensure topic is never empty
-    if (!topic || !topic.trim()) {
+    if (!topic?.trim()) {
       const notes = formData.notes.trim();
       topic = notes.substring(0, 50) || "Actividad sin título";
     }
