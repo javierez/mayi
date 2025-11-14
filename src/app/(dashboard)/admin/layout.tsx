@@ -20,7 +20,7 @@ export default async function AdminLayout({
   const hasRequiredRole = await userHasRole(session.user.id, 2);
 
   if (!hasRequiredRole) {
-    redirect("/dashboard");
+    redirect("/operaciones");
   }
 
   return <>{children}</>;

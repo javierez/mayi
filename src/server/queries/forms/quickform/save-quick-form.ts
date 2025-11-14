@@ -7,7 +7,6 @@ import {
 import { updateListingWithAuth } from "~/server/queries/listing";
 import { updateListingOwnersWithAuth } from "~/server/queries/contact";
 import { generatePropertyTitle } from "~/lib/property-title";
-import { createPropertyTasks } from "~/server/actions/property-tasks";
 
 export interface SaveOptions {
   showLoading?: boolean;
@@ -338,18 +337,8 @@ export async function saveQuickFormData(
       }
     }
 
-    // 4. Create default tasks when registration is completed
-    if (options.markAsCompleted && formData.agentId) {
-      console.log("=== CREATING DEFAULT TASKS ===");
-      console.log("Agent ID:", formData.agentId);
-      console.log("Listing ID:", listingId);
-
-      const tasksPromise = createPropertyTasks({
-        userId: formData.agentId,
-        listingId: BigInt(listingId),
-      });
-      promises.push(tasksPromise);
-    }
+    // 4. Task creation removed - now handled via task preferences modal
+    // Tasks will be created when user confirms preferences in the modal
 
     // Execute all save operations
     console.log("=== EXECUTING SAVE OPERATIONS ===");

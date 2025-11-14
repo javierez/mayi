@@ -21,7 +21,7 @@ export default async function AccountAdminLayout({
   const isInactive = await userHasRole(session.user.id, 5);
 
   if (!hasRequiredRole || isInactive) {
-    redirect("/dashboard");
+    redirect("/operaciones");
   }
 
   return <>{children}</>;

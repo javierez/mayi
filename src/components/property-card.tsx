@@ -45,6 +45,7 @@ type Listing = {
   bedrooms: number | null;
   bathrooms: string | null;
   squareMeter: number | null;
+  builtSurfaceArea: number | null;
   street: string | null;
   addressDetails: string | null;
   postalCode: string | null;
@@ -325,7 +326,7 @@ export const PropertyCard = React.memo(function PropertyCard({
               )}
             <div className="flex items-center">
               <SquareFoot className="mr-1 h-3.5 w-3.5" />
-              <span>{listing.squareMeter} m²</span>
+              <span>{(listing.squareMeter ?? listing.builtSurfaceArea) ?? "-"} m²</span>
             </div>
           </div>
         </CardContent>

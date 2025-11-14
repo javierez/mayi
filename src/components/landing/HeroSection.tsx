@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Button } from "~/components/ui/button";
-import { Play, Volume2, VolumeX } from "lucide-react";
+import { Volume2, VolumeX } from "lucide-react";
 import { motion } from "framer-motion";
 import { StaggerContainer } from "~/components/landing/animations";
 import Link from "next/link";
@@ -89,13 +89,14 @@ export function HeroSection() {
                 </Link>
               </Button>
 
-              <Button
+              {/* Temporarily hidden - Ver Demo button */}
+              {/* <Button
                 size="lg"
                 className="group bg-white px-8 py-6 text-lg text-gray-700 shadow-md transition-all hover:bg-gray-50 hover:shadow-lg"
               >
                 <Play className="mr-2 h-5 w-5" />
                 Ver Demo
-              </Button>
+              </Button> */}
             </motion.div>
 
             <StaggerContainer className="flex flex-col gap-3 text-sm text-gray-600 sm:flex-row sm:items-center sm:gap-8">

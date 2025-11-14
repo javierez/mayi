@@ -496,10 +496,10 @@ export function ProspectTable({
             )}
 
             {/* Square meters */}
-            {listing.properties.squareMeter ? (
+            {(listing.properties.squareMeter ?? listing.properties.builtSurfaceArea) ? (
               <div className="flex items-center gap-1 text-gray-700">
                 <Square className="h-3 w-3" />
-                <span>{listing.properties.squareMeter}m²</span>
+                <span>{(listing.properties.squareMeter ?? listing.properties.builtSurfaceArea)}m²</span>
               </div>
             ) : (
               <div className="flex items-center gap-1 text-gray-400">

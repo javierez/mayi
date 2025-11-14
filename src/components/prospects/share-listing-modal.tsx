@@ -83,7 +83,7 @@ export function ShareListingModal({
       : `${price.toLocaleString()} €/mes`;
 
   const propertyDetails = `${listingType} de ${propertyTitle}`;
-  const propertyInfo = `${property.bedrooms ?? "-"} hab, ${property.bathrooms ? Math.floor(Number(property.bathrooms)) : "-"} baños, ${property.squareMeter ?? "-"}m²`;
+  const propertyInfo = `${property.bedrooms ?? "-"} hab, ${property.bathrooms ? Math.floor(Number(property.bathrooms)) : "-"} baños, ${(property.squareMeter ?? property.builtSurfaceArea) ?? "-"}m²`;
 
   // Generate property URL using account website
   const baseUrl = accountWebsite ?? window.location.origin;

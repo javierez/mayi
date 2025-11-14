@@ -30,6 +30,7 @@ export type ListingWithDetails = {
     bedrooms: number | null;
     bathrooms: number | null;
     squareMeter: number | null;
+    builtSurfaceArea: number | null;
   };
   locations: {
     neighborhood: string;
@@ -66,6 +67,7 @@ export async function getAllListingsWithAuth(): Promise<ListingWithDetails[]> {
         bedrooms: properties.bedrooms,
         bathrooms: properties.bathrooms,
         squareMeter: properties.squareMeter,
+        builtSurfaceArea: properties.builtSurfaceArea,
 
         // Location fields
         neighborhood: locations.neighborhood,
@@ -122,6 +124,7 @@ export async function getAllListingsWithAuth(): Promise<ListingWithDetails[]> {
           bedrooms: item.bedrooms,
           bathrooms: item.bathrooms ? Number(item.bathrooms) : null,
           squareMeter: item.squareMeter,
+          builtSurfaceArea: item.builtSurfaceArea ? parseFloat(item.builtSurfaceArea) : null,
         },
         locations: {
           neighborhood: item.neighborhood ?? "Sin especificar",

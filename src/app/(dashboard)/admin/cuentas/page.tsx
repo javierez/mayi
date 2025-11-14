@@ -18,7 +18,7 @@ export default async function AdminCuentasPage() {
   const hasRequiredRole = await userHasRole(session.user.id, 2);
 
   if (!hasRequiredRole) {
-    redirect("/dashboard");
+    redirect("/operaciones");
   }
 
   return (

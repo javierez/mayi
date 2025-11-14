@@ -480,12 +480,12 @@ export function GeneralActivityTimeline({
               <div className="absolute right-3 top-3">
                 <div className="relative">
                   <Avatar className="h-7 w-7 ring-1 ring-gray-100 transition-all duration-300 hover:ring-gray-200">
-                    <AvatarImage src={activity.user.image ?? undefined} />
+                    <AvatarImage src={activity.user?.image ?? undefined} />
                     <AvatarFallback className="text-xs font-medium bg-gray-50 text-gray-600">
                       {getInitials(
-                        activity.user.firstName,
-                        activity.user.lastName,
-                        activity.user.name,
+                        activity.user?.firstName ?? null,
+                        activity.user?.lastName ?? null,
+                        activity.user?.name ?? null,
                       )}
                     </AvatarFallback>
                   </Avatar>

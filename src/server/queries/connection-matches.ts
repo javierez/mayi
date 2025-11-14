@@ -358,6 +358,7 @@ export async function getMatchesForProspects(
         propertyBedrooms: properties.bedrooms,
         propertyBathrooms: properties.bathrooms,
         propertySquareMeters: properties.squareMeter,
+        propertyBuiltSurfaceArea: properties.builtSurfaceArea,
         propertyNeighborhoodId: properties.neighborhoodId,
         propertyLatitude: properties.latitude,
         propertyLongitude: properties.longitude,
@@ -779,6 +780,9 @@ export async function getMatchesForProspects(
               ? parseFloat(result.propertyBathrooms)
               : null,
             squareMeter: result.propertySquareMeters,
+            builtSurfaceArea: result.propertyBuiltSurfaceArea
+              ? parseFloat(result.propertyBuiltSurfaceArea)
+              : null,
           },
           locations: {
             neighborhood: result.neighborhoodName ?? "Sin especificar",

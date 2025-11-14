@@ -227,14 +227,16 @@ function CommentItem({
                     onChange={(e) => setEditContent(e.target.value)}
                     className="min-h-[60px] resize-none pr-10"
                   />
-                  <PushToTalkWhisperButton
-                    onTranscript={(text) => {
-                      setEditContent(
-                        editContent ? `${editContent} ${text}`.trim() : text
-                      );
-                    }}
-                    language="es"
-                  />
+                  <div className="absolute right-2 top-2">
+                    <PushToTalkWhisperButton
+                      onTranscript={(text) => {
+                        setEditContent(
+                          editContent ? `${editContent} ${text}`.trim() : text
+                        );
+                      }}
+                      language="es"
+                    />
+                  </div>
                 </div>
                 <div className="mt-2 flex justify-end space-x-2">
                   <Button size="sm" variant="outline" onClick={cancelEditing}>
@@ -272,20 +274,22 @@ function CommentItem({
                   }
                   className="min-h-[60px] resize-none border-gray-200 pr-10"
                 />
-                <PushToTalkWhisperButton
-                  onTranscript={(text) => {
-                    setReplyContents((prev) => {
-                      const current = prev[comment.commentId.toString()] ?? "";
-                      return {
-                        ...prev,
-                        [comment.commentId.toString()]: current
-                          ? `${current} ${text}`.trim()
-                          : text,
-                      };
-                    });
-                  }}
-                  language="es"
-                />
+                <div className="absolute right-2 top-2">
+                  <PushToTalkWhisperButton
+                    onTranscript={(text) => {
+                      setReplyContents((prev) => {
+                        const current = prev[comment.commentId.toString()] ?? "";
+                        return {
+                          ...prev,
+                          [comment.commentId.toString()]: current
+                            ? `${current} ${text}`.trim()
+                            : text,
+                        };
+                      });
+                    }}
+                    language="es"
+                  />
+                </div>
                 <div className="mt-2 flex justify-end space-x-2">
                   <Button
                     size="sm"
@@ -710,13 +714,15 @@ export function Comments({
                 onChange={(e) => setNewComment(e.target.value)}
                 className="min-h-[80px] resize-none border-gray-200 pr-10"
               />
-              <PushToTalkWhisperButton
-                onTranscript={(text) => {
-                  setNewComment((prev) => (prev ? `${prev} ${text}`.trim() : text));
-                }}
-                language="es"
-                disabled={isPending}
-              />
+              <div className="absolute right-2 top-2">
+                <PushToTalkWhisperButton
+                  onTranscript={(text) => {
+                    setNewComment((prev) => (prev ? `${prev} ${text}`.trim() : text));
+                  }}
+                  language="es"
+                  disabled={isPending}
+                />
+              </div>
               <div className="mt-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Button

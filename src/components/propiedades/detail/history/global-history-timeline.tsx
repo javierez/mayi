@@ -1,32 +1,54 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { GlobalActivityCard } from "./global-activity-card";
 import { ActivityDetailModal } from "./activity-detail-modal";
+import { HistoryFilter } from "./history-filter";
 import type { ListingActivityRecord } from "~/server/queries/listing-history";
+import type { ContactActivityWithUser } from "~/server/queries/contact-activity";
+import type { ListingContactActivityWithUser } from "~/server/queries/listing-contact-activity";
 import { FileText, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
+// Union type for all activity types
+type AllActivityRecord =
+  | (ListingActivityRecord & { listingTitle: string; referenceNumber: string | null; activityType: 'listing' })
+  | (ContactActivityWithUser & { activityType: 'contact'; contactName: string; contactId: bigint })
+  | (ListingContactActivityWithUser & { activityType: 'listing_contact'; contactName: string; contactId: bigint; listingId: bigint | null });
+
 interface GlobalHistoryTimelineProps {
-  activities: Array<ListingActivityRecord & { listingTitle: string; referenceNumber: string | null }>;
+  activities: AllActivityRecord[];
   currentPage?: number;
   totalPages?: number;
+  agents?: Array<{ id: string; name: string }>;
 }
 
 export function GlobalHistoryTimeline({
   activities,
   currentPage = 1,
   totalPages = 1,
+  agents = [],
 }: GlobalHistoryTimelineProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedActivity, setSelectedActivity] =
-    useState<ListingActivityRecord | null>(null);
+    useState<AllActivityRecord | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
+
+  // Check if filters are active
+  const hasActiveFilters = useMemo(() => {
+    return Boolean(
+      searchParams.get("agent") ??
+      searchParams.get("dateFrom") ??
+      searchParams.get("dateTo") ??
+      searchParams.get("actions")
+    );
+  }, [searchParams]);
 
   // Group activities by date
   const groupedActivities = useMemo(() => {
@@ -51,7 +73,7 @@ export function GlobalHistoryTimeline({
       .sort((a, b) => b.dateKey.localeCompare(a.dateKey));
   }, [activities]);
 
-  const handleActivityClick = (activity: ListingActivityRecord) => {
+  const handleActivityClick = (activity: AllActivityRecord) => {
     setSelectedActivity(activity);
     setModalOpen(true);
   };
@@ -81,15 +103,24 @@ export function GlobalHistoryTimeline({
 
   if (activities.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
-          <FileText className="h-10 w-10 text-muted-foreground" />
+      <>
+        <HistoryFilter agents={agents} />
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+            <FileText className="h-10 w-10 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">
+            {hasActiveFilters
+              ? "No se encontraron actividades con los filtros aplicados"
+              : "No hay actividad registrada"}
+          </h3>
+          <p className="text-sm text-muted-foreground max-w-md">
+            {hasActiveFilters
+              ? "Intenta ajustar los filtros para ver más resultados."
+              : "Cuando se realicen cambios en las propiedades o contactos, aparecerán aquí."}
+          </p>
         </div>
-        <h3 className="text-lg font-semibold mb-2">No hay actividad registrada</h3>
-        <p className="text-sm text-muted-foreground max-w-md">
-          Cuando se realicen cambios en las propiedades, aparecerán aquí.
-        </p>
-      </div>
+      </>
     );
   }
 
@@ -189,6 +220,7 @@ export function GlobalHistoryTimeline({
 
   return (
     <>
+      <HistoryFilter agents={agents} />
       <div className="space-y-4">
         {groupedActivities.map((group) => {
           const isCollapsed = collapsedDates.has(group.dateKey);

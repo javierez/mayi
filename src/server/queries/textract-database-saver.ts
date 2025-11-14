@@ -13,7 +13,6 @@ import { generatePropertyTitle } from "~/lib/property-title";
 import { getCurrentUser } from "~/lib/dal";
 import { autoCompleteAddress } from "~/lib/address-autocomplete";
 import type { Property, Listing } from "~/lib/data";
-import { createPropertyTasksAsync } from "~/server/actions/property-tasks";
 
 type DbProperty = Omit<Property, "builtInWardrobes"> & {
   builtInWardrobes?: boolean;
@@ -769,18 +768,8 @@ export async function saveExtractedDataToDatabase(
     result.success =
       !hasErrors && (hasUpdates || highConfidenceFields.length === 0);
 
-    // Create default tasks when OCR processing is completed successfully
-    if (result.success && (result.propertyUpdated || result.listingUpdated)) {
-      console.log("=== CREATING DEFAULT TASKS ===");
-      console.log("Agent ID:", currentUser.id);
-      console.log("Listing ID:", listingId);
-
-      // Create tasks asynchronously (don't wait for completion)
-      await createPropertyTasksAsync({
-        userId: currentUser.id,
-        listingId: BigInt(listingId),
-      });
-    }
+    // Task creation removed - now handled via task preferences modal
+    // Tasks will be created when user confirms preferences in the modal
 
     console.log(`🎯 [DATABASE] Save operation completed:`);
     console.log(`   - Success: ${result.success}`);

@@ -139,7 +139,7 @@ export default function FinalizationPopup({
             ? listingId
             : "",
         );
-        router.push(`/propiedades/${idString}`);
+        router.push(`/propiedades/${idString}?new=true`);
       }, 2000);
     } catch (error) {
       console.error("Error in saveAndFinalize:", error);

@@ -15,6 +15,7 @@ import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import { Switch } from "~/components/ui/switch";
+import { Input } from "~/components/ui/input";
 import { toast } from "sonner";
 import {
   Loader,
@@ -26,31 +27,37 @@ import {
   ArrowLeft,
   Search,
   X,
+  User,
 } from "lucide-react";
 import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 import { NotesAiButtons, type TransformationType } from "~/components/shared/notes-ai-buttons";
 import { NotesTransformationPreviewModal } from "~/components/shared/notes-transformation-preview-modal";
 import { TaskSelectionModal } from "~/components/shared/task-selection-modal";
 import { createListingContactActivityAction } from "~/server/actions/listing-contact-activity";
-import {
-  createContactActivityAction,
-  findListingContactIdAction,
-} from "~/server/actions/contact-activity";
+import { createContactActivityAction, findListingContactIdAction } from "~/server/actions/contact-activity";
 import { listListingsCompactWithAuth, listListingsForContactWithAuth } from "~/server/queries/listing";
+import { listContactsWithAuth, searchContactsWithAuth } from "~/server/queries/contact";
 import type { ListingContactActivityAction } from "~/lib/constants/listing-contact-activity-actions";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Badge } from "~/components/ui/badge";
 import { summarizeNotes, extractTasksFromNotes, type ExtractedTask } from "~/server/openai/notes-transformer";
 import { createTaskAction } from "~/app/actions/create-task";
 
-interface AddGeneralActivityModalProps {
+interface QuickActionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  contactId: bigint;
   onSuccess?: () => void;
 }
 
 type ActivityType = "mail" | "whatsapp" | "call" | "visit" | "otros";
+
+interface Contact {
+  contactId: bigint;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string | null;
+}
 
 interface Listing {
   listingId: bigint;
@@ -81,13 +88,16 @@ const ACTIVITY_TYPES: Array<{
   { type: "otros", label: "Otros", action: "notes_added", icon: MoreHorizontal },
 ];
 
-export function AddGeneralActivityModal({
+export function QuickActionModal({
   open,
   onOpenChange,
-  contactId,
   onSuccess,
-}: AddGeneralActivityModalProps) {
-  const [step, setStep] = useState<"select" | "listing" | "notes">("select");
+}: QuickActionModalProps) {
+  const [step, setStep] = useState<"contact" | "activity" | "listing" | "notes">("contact");
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [contactSearchQuery, setContactSearchQuery] = useState("");
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [isLoadingContacts, setIsLoadingContacts] = useState(false);
   const [selectedType, setSelectedType] = useState<ActivityType | null>(null);
   const [action, setAction] = useState<ListingContactActivityAction | "">("");
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
@@ -109,7 +119,10 @@ export function AddGeneralActivityModal({
   // Reset form when modal closes
   React.useEffect(() => {
     if (!open) {
-      setStep("select");
+      setStep("contact");
+      setSelectedContact(null);
+      setContactSearchQuery("");
+      setContacts([]);
       setSelectedType(null);
       setAction("");
       setSelectedListing(null);
@@ -127,15 +140,93 @@ export function AddGeneralActivityModal({
     }
   }, [open]);
 
+  // Fetch contacts on initial load
+  useEffect(() => {
+    if (step !== "contact" || !open) return;
+
+    const fetchContacts = async () => {
+      if (contactSearchQuery.length === 0) {
+        setIsLoadingContacts(true);
+        try {
+          const contactsData = await listContactsWithAuth(1, 10);
+          setContacts(contactsData);
+        } catch (error) {
+          console.error("Error fetching contacts:", error);
+          setContacts([]);
+        } finally {
+          setIsLoadingContacts(false);
+        }
+      }
+    };
+
+    void fetchContacts();
+  }, [step, open, contactSearchQuery]);
+
+  // Search contacts when query changes
+  useEffect(() => {
+    if (step !== "contact" || !open || contactSearchQuery.length < 2) {
+      if (contactSearchQuery.length === 0) {
+        // Reset to initial list when query is cleared
+        const fetchContacts = async () => {
+          setIsLoadingContacts(true);
+          try {
+            const contactsData = await listContactsWithAuth(1, 10);
+            setContacts(contactsData);
+          } catch (error) {
+            console.error("Error fetching contacts:", error);
+            setContacts([]);
+          } finally {
+            setIsLoadingContacts(false);
+          }
+        };
+        void fetchContacts();
+      }
+      return;
+    }
+
+    const searchContacts = async () => {
+      setIsLoadingContacts(true);
+      try {
+        const searchResults = await searchContactsWithAuth(contactSearchQuery.trim());
+        // Transform search results to match Contact interface
+        const contactsData = searchResults.map((result) => {
+          const [firstName, ...lastNameParts] = result.name.split(" ");
+          return {
+            contactId: BigInt(result.id),
+            firstName: firstName ?? "",
+            lastName: lastNameParts.join(" ") || "",
+            email: result.email,
+            phone: result.phone,
+          };
+        });
+        setContacts(contactsData);
+      } catch (error) {
+        console.error("Error searching contacts:", error);
+        setContacts([]);
+      } finally {
+        setIsLoadingContacts(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(() => {
+      void searchContacts();
+    }, 300);
+
+    return () => clearTimeout(debounceTimer);
+  }, [contactSearchQuery, step, open]);
+
   // Fetch listings when on listing step
   useEffect(() => {
-    if (step !== "listing" || !open) return;
+    if (step !== "listing" || !open || !selectedContact) return;
 
     const fetchListings = async () => {
       setIsLoadingListings(true);
       try {
         // First try to fetch listings related to this contact
-        const contactListings = await listListingsForContactWithAuth(contactId, undefined);
+        const contactListings = await listListingsForContactWithAuth(
+          selectedContact.contactId,
+          undefined,
+        );
 
         // If no contact-related listings, fall back to general listings
         if (contactListings.length === 0) {
@@ -153,10 +244,10 @@ export function AddGeneralActivityModal({
       } finally {
         setIsLoadingListings(false);
       }
-  };
+    };
 
     void fetchListings();
-  }, [step, open, contactId]);
+  }, [step, open, selectedContact]);
 
   // Search listings when query changes
   useEffect(() => {
@@ -185,6 +276,11 @@ export function AddGeneralActivityModal({
     return () => clearTimeout(debounceTimer);
   }, [listingSearchQuery, step, open]);
 
+  const handleContactSelect = (contact: Contact) => {
+    setSelectedContact(contact);
+    setStep("activity");
+  };
+
   const handleActivityTypeSelect = (type: ActivityType) => {
     const activityConfig = ACTIVITY_TYPES.find((a) => a.type === type);
     if (activityConfig) {
@@ -206,7 +302,9 @@ export function AddGeneralActivityModal({
     if (step === "notes") {
       setStep("listing");
     } else if (step === "listing") {
-      setStep("select");
+      setStep("activity");
+    } else if (step === "activity") {
+      setStep("contact");
     }
   };
 
@@ -215,6 +313,11 @@ export function AddGeneralActivityModal({
   };
 
   const handleSubmit = async () => {
+    if (!selectedContact) {
+      toast.error("Por favor, selecciona un contacto");
+      return;
+    }
+
     if (!action) {
       toast.error("Por favor, selecciona un tipo de acción");
       return;
@@ -225,11 +328,6 @@ export function AddGeneralActivityModal({
       return;
     }
 
-    if (!contactId) {
-      toast.error("Error: ID de contacto no disponible");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -237,7 +335,7 @@ export function AddGeneralActivityModal({
         // Create listing contact activity
         // First, find the listing_contact_id
         const listingContactResult = await findListingContactIdAction(
-          contactId,
+          selectedContact.contactId,
           selectedListing.listingId,
         );
 
@@ -273,7 +371,7 @@ export function AddGeneralActivityModal({
       } else {
         // Create contact activity
         const result = await createContactActivityAction({
-          contactId: contactId.toString(),
+          contactId: selectedContact.contactId.toString(),
           action,
           notes: notes.trim(),
           topic: undefined,
@@ -356,8 +454,8 @@ export function AddGeneralActivityModal({
   };
 
   const handleConfirmTaskSelection = async (selectedTasks: ExtractedTask[]) => {
-    if (!contactId) {
-      toast.error("No se puede crear tareas sin un contacto");
+    if (!selectedContact) {
+      toast.error("No se puede crear tareas sin un contacto seleccionado");
       return;
     }
 
@@ -366,7 +464,7 @@ export function AddGeneralActivityModal({
       let listingContactId: bigint | undefined;
       if (selectedListing) {
         const listingContactResult = await findListingContactIdAction(
-          contactId,
+          selectedContact.contactId,
           selectedListing.listingId,
         );
         if (listingContactResult.success && listingContactResult.listingContactId) {
@@ -379,7 +477,7 @@ export function AddGeneralActivityModal({
         const taskResult = await createTaskAction({
           title: task.title,
           description: task.description,
-          contactId,
+          contactId: selectedContact.contactId,
           urgency: task.urgency,
           category: task.category,
           suggestedDueDays: task.suggestedDueDays,
@@ -423,28 +521,131 @@ export function AddGeneralActivityModal({
     );
   });
 
+  // Contacts are already filtered by the server search, so use them directly
+  const filteredContacts = contacts;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {step === "select"
-              ? "Agregar Actividad"
-              : step === "listing"
-                ? "Seleccionar Propiedad (Opcional)"
-                : selectedActivityConfig?.label}
+            {step === "contact"
+              ? "Acción Rápida - Seleccionar Contacto"
+              : step === "activity"
+                ? "Seleccionar Tipo de Actividad"
+                : step === "listing"
+                  ? "Seleccionar Propiedad (Opcional)"
+                  : selectedActivityConfig?.label}
           </DialogTitle>
           <DialogDescription>
-            {step === "select"
-              ? "Selecciona el tipo de actividad que deseas registrar"
-              : step === "listing"
-                ? "Selecciona una propiedad para asociar la actividad, o continúa sin seleccionar"
-                : "Registra los detalles de la actividad"}
+            {step === "contact"
+              ? "Busca y selecciona el contacto para registrar la actividad"
+              : step === "activity"
+                ? "Selecciona el tipo de actividad que deseas registrar"
+                : step === "listing"
+                  ? "Selecciona una propiedad para asociar la actividad, o continúa sin seleccionar"
+                  : "Registra los detalles de la actividad"}
           </DialogDescription>
         </DialogHeader>
 
-        {step === "select" ? (
-          /* Step 1: Activity Type Selection */
+        {step === "contact" ? (
+          /* Step 1: Contact Selection */
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="contact-search">Buscar contacto</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="contact-search"
+                  value={contactSearchQuery}
+                  onChange={(e) => setContactSearchQuery(e.target.value)}
+                  placeholder="Buscar contactos por nombre, email o teléfono..."
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {selectedContact && (
+              <div className="rounded-lg border border-primary/40 bg-primary/5 p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-3 flex-1">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                      <User className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium">
+                        {selectedContact.firstName} {selectedContact.lastName}
+                      </div>
+                      {selectedContact.email && (
+                        <div className="text-xs text-muted-foreground">
+                          {selectedContact.email}
+                        </div>
+                      )}
+                      {selectedContact.phone && (
+                        <div className="text-xs text-muted-foreground">
+                          {selectedContact.phone}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedContact(null)}
+                    className="h-6 w-6 shrink-0 p-0"
+                    title="Quitar contacto"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <ScrollArea className="h-[300px]">
+              {isLoadingContacts ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader className="h-5 w-5 animate-spin" />
+                </div>
+              ) : filteredContacts.length === 0 && contactSearchQuery.length > 0 ? (
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  No se encontraron contactos
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {filteredContacts.map((contact) => (
+                    <div
+                      key={contact.contactId.toString()}
+                      className="cursor-pointer rounded-lg border border-gray-100/50 bg-gray-50/30 p-2 transition-all hover:border-gray-200 hover:bg-gray-100/60 hover:shadow-sm"
+                      onClick={() => handleContactSelect(contact)}
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
+                          <User className="h-4 w-4 text-gray-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-600">
+                            {contact.firstName} {contact.lastName}
+                          </div>
+                          {contact.email && (
+                            <div className="text-xs text-gray-400">
+                              {contact.email}
+                            </div>
+                          )}
+                          {contact.phone && (
+                            <div className="text-xs text-gray-400">
+                              {contact.phone}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+        ) : step === "activity" ? (
+          /* Step 2: Activity Type Selection */
           <div className="grid grid-cols-2 gap-3 py-4">
             {ACTIVITY_TYPES.map((activityType) => {
               const Icon = activityType.icon;
@@ -462,7 +663,7 @@ export function AddGeneralActivityModal({
             })}
           </div>
         ) : step === "listing" ? (
-          /* Step 2: Listing Selection (Optional) */
+          /* Step 3: Listing Selection (Optional) */
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="listing-search">Buscar propiedad</Label>
@@ -594,7 +795,7 @@ export function AddGeneralActivityModal({
             </ScrollArea>
           </div>
         ) : (
-          /* Step 3: Notes Form */
+          /* Step 4: Notes Form */
           <div className="space-y-4">
             {/* Notes Input with Voice */}
             <div className="space-y-2">
@@ -645,7 +846,7 @@ export function AddGeneralActivityModal({
         )}
 
         <DialogFooter>
-          {step !== "select" && (
+          {step !== "contact" && (
             <Button
               variant="ghost"
               onClick={handleBack}
@@ -663,6 +864,11 @@ export function AddGeneralActivityModal({
           >
             Cancelar
           </Button>
+          {step === "contact" && selectedContact && (
+            <Button onClick={() => setStep("activity")} disabled={isSubmitting}>
+              Continuar
+            </Button>
+          )}
           {step === "listing" && (
             <Button onClick={handleContinueFromListing} disabled={isSubmitting}>
               Continuar

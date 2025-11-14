@@ -169,13 +169,13 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
   // Handle save and close action
   const handleSaveAndClose = async () => {
     setShouldBlockNavigation(false);
-    router.push("/propiedades");
+    router.push(`/propiedades/${listingId}?new=true`);
   };
 
   // Handle discard and close action
   const handleDiscardAndClose = () => {
     setShouldBlockNavigation(false);
-    router.push("/propiedades");
+    router.push(`/propiedades/${listingId}?new=true`);
   };
 
   // Handle close confirmation dialog close
@@ -470,13 +470,13 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
       const saved = await saveRegistrationData();
       if (saved) {
         setShouldBlockNavigation(false); // Disable blocking before navigation
-        router.push(`/propiedades`);
+        router.push(`/propiedades/${listingId}?new=true`);
       } else {
         // Show error, don't navigate
         alert("Error al guardar el registro. Por favor, inténtalo de nuevo.");
       }
     }
-  }, [currentStep, saveRegistrationData, router]);
+  }, [currentStep, saveRegistrationData, router, listingId]);
 
   // Shared props for all form pages
   const sharedPageProps = useMemo(

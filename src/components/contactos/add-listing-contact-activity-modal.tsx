@@ -17,8 +17,14 @@ import { Switch } from "~/components/ui/switch";
 import { toast } from "sonner";
 import { Loader, Mail, MessageSquare, Phone, UserCheck, MoreHorizontal, ArrowLeft } from "lucide-react";
 import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
+import { NotesAiButtons, type TransformationType } from "~/components/shared/notes-ai-buttons";
+import { NotesTransformationPreviewModal } from "~/components/shared/notes-transformation-preview-modal";
+import { TaskSelectionModal } from "~/components/shared/task-selection-modal";
 import { createListingContactActivityAction } from "~/server/actions/listing-contact-activity";
 import type { ListingContactActivityAction } from "~/lib/constants/listing-contact-activity-actions";
+import { summarizeNotes, extractTasksFromNotes, type ExtractedTask } from "~/server/openai/notes-transformer";
+import { createTaskAction } from "~/app/actions/create-task";
+import { getContactAndListingFromListingContactIdAction } from "~/server/actions/contact-activity";
 
 interface AddListingContactActivityModalProps {
   open: boolean;
@@ -55,6 +61,14 @@ export function AddListingContactActivityModal({
   const [isPending, setIsPending] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // AI transformation state
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [transformedContent, setTransformedContent] = useState("");
+  const [extractedTasks, setExtractedTasks] = useState<ExtractedTask[]>([]);
+  const [showTaskSelectionModal, setShowTaskSelectionModal] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingType, setProcessingType] = useState<TransformationType | null>(null);
+
   // Reset form when modal closes
   React.useEffect(() => {
     if (!open) {
@@ -63,6 +77,13 @@ export function AddListingContactActivityModal({
       setAction("");
       setNotes("");
       setIsPending(false);
+      // Reset AI transformation state
+      setShowPreviewModal(false);
+      setTransformedContent("");
+      setExtractedTasks([]);
+      setShowTaskSelectionModal(false);
+      setIsProcessing(false);
+      setProcessingType(null);
     }
   }, [open]);
 
@@ -130,6 +151,93 @@ export function AddListingContactActivityModal({
     setNotes((prev) => (prev ? `${prev} ${text}` : text));
   };
 
+  // AI transformation handlers
+  const handleAITransform = async (type: TransformationType) => {
+    if (!notes.trim()) {
+      toast.error("Las notas no pueden estar vacías");
+      return;
+    }
+
+    setIsProcessing(true);
+    setProcessingType(type);
+
+    try {
+      if (type === "summarize") {
+        const result = await summarizeNotes(notes);
+        if (result.success && result.content) {
+          setTransformedContent(result.content);
+          setShowPreviewModal(true);
+        } else {
+          toast.error(result.error ?? "Error al resumir las notas");
+        }
+      } else if (type === "tasks") {
+        const result = await extractTasksFromNotes(notes);
+        if (result.success && result.tasks && result.tasks.length > 0) {
+          setExtractedTasks(result.tasks);
+          setShowTaskSelectionModal(true);
+        } else if (result.success && result.tasks && result.tasks.length === 0) {
+          toast.info("No se encontraron tareas accionables en las notas");
+        } else {
+          toast.error(result.error ?? "Error al extraer tareas");
+        }
+      }
+    } catch (error) {
+      console.error("Error in AI transformation:", error);
+      toast.error("Error al procesar las notas");
+    } finally {
+      setIsProcessing(false);
+      setProcessingType(null);
+    }
+  };
+
+  const handleConfirmTransformation = async () => {
+    // Replace notes with transformed content (for summarize)
+    setNotes(transformedContent);
+    toast.success("Notas actualizadas correctamente");
+    setShowPreviewModal(false);
+  };
+
+  const handleConfirmTaskSelection = async (selectedTasks: ExtractedTask[]) => {
+    try {
+      // Get contactId and listingId from listingContactId
+      const result = await getContactAndListingFromListingContactIdAction(
+        listingContactId,
+      );
+
+      if (!result.success || !result.contactId) {
+        toast.error(
+          "No se pudo obtener la información del contacto. Por favor, usa el modal de actividad general del contacto.",
+        );
+        setShowTaskSelectionModal(false);
+        return;
+      }
+
+      let createdCount = 0;
+      for (const task of selectedTasks) {
+        const taskResult = await createTaskAction({
+          title: task.title,
+          description: task.description,
+          contactId: result.contactId,
+          urgency: task.urgency,
+          category: task.category,
+          suggestedDueDays: task.suggestedDueDays,
+          listingId: result.listingId,
+          listingContactId,
+        });
+        if (taskResult.success) {
+          createdCount++;
+        }
+      }
+      toast.success(
+        `${createdCount} tarea${createdCount !== 1 ? "s" : ""} creada${createdCount !== 1 ? "s" : ""} correctamente`,
+      );
+      setShowTaskSelectionModal(false);
+    } catch (error) {
+      console.error("Error creating tasks:", error);
+      toast.error("Error al crear las tareas");
+    }
+  };
+
   const selectedActivityConfig = selectedType
     ? ACTIVITY_TYPES.find((a) => a.type === selectedType)
     : null;
@@ -171,22 +279,32 @@ export function AddListingContactActivityModal({
           <div className="space-y-4">
             {/* Notes Input with Voice */}
             <div className="space-y-2">
-              <Label htmlFor="notes">Notas</Label>
-              <div className="relative">
-                <Textarea
-                  id="notes"
-                  placeholder="Describe la actividad o mantén presionado el micrófono para grabar..."
-                  value={notes}
-                  onChange={(e) => handleNotesChange(e.target.value)}
-                  rows={6}
-                  className="pr-10"
-                />
-                <PushToTalkWhisperButton
-                  onTranscript={handleVoiceTranscript}
-                  language="es"
-                  disabled={isSubmitting}
-                />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="notes">Notas</Label>
+                <div className="flex items-center gap-1.5">
+                  <NotesAiButtons
+                    notes={notes}
+                    isPending={isPending}
+                    onTransform={handleAITransform}
+                    disabled={isSubmitting}
+                    isProcessing={isProcessing}
+                    processingType={processingType}
+                  />
+                  <PushToTalkWhisperButton
+                    onTranscript={handleVoiceTranscript}
+                    language="es"
+                    disabled={isSubmitting}
+                  />
+                </div>
               </div>
+              <Textarea
+                id="notes"
+                placeholder="Describe la actividad o mantén presionado el micrófono para grabar..."
+                value={notes}
+                onChange={(e) => handleNotesChange(e.target.value)}
+                rows={6}
+                className="custom-scrollbar"
+              />
             </div>
 
             {/* Pending Toggle - Subtle and Elegant */}
@@ -236,6 +354,25 @@ export function AddListingContactActivityModal({
           )}
         </DialogFooter>
       </DialogContent>
+
+      {/* AI Transformation Preview Modal */}
+      <NotesTransformationPreviewModal
+        open={showPreviewModal}
+        onOpenChange={setShowPreviewModal}
+        title="Resumir notas"
+        description="Revisa el resumen antes de aplicar los cambios"
+        originalContent={notes}
+        transformedContent={transformedContent}
+        onConfirm={handleConfirmTransformation}
+        isLoading={isProcessing && processingType === "summarize"}
+      />
+      <TaskSelectionModal
+        open={showTaskSelectionModal}
+        onOpenChange={setShowTaskSelectionModal}
+        tasks={extractedTasks}
+        onConfirm={handleConfirmTaskSelection}
+        isLoading={isProcessing && processingType === "tasks"}
+      />
     </Dialog>
   );
 }

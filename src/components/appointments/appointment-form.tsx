@@ -85,6 +85,7 @@ interface Listing {
   bedrooms: number | null;
   bathrooms: string | null;
   squareMeter: number | null;
+  builtSurfaceArea: number | null;
   city: string | null;
   agentName: string | null;
   imageUrl: string | null;
@@ -468,7 +469,12 @@ export default function AppointmentForm({
           });
         }
 
-        setListings(listingsData);
+        setListings(listingsData.map(listing => ({
+          ...listing,
+          builtSurfaceArea: listing.builtSurfaceArea
+            ? parseFloat(listing.builtSurfaceArea as unknown as string)
+            : null
+        })));
       } catch (error) {
         console.error("Error fetching listings:", error);
         setListings([]);
@@ -520,14 +526,20 @@ export default function AppointmentForm({
         const matchedListing = await getListingCompactByIdWithAuth(listingIdBigInt);
 
         if (matchedListing) {
-          setSelectedListing(matchedListing);
+          const transformedListing = {
+            ...matchedListing,
+            builtSurfaceArea: matchedListing.builtSurfaceArea
+              ? parseFloat(matchedListing.builtSurfaceArea as unknown as string)
+              : null
+          };
+          setSelectedListing(transformedListing);
           // Also add to listings array so it appears in search if needed
           setListings((prev) => {
             // Only add if not already in the list
             const exists = prev.some(
-              (l) => l.listingId.toString() === matchedListing.listingId.toString(),
+              (l) => l.listingId.toString() === transformedListing.listingId.toString(),
             );
-            return exists ? prev : [matchedListing, ...prev];
+            return exists ? prev : [transformedListing, ...prev];
           });
         }
       } catch (error) {
@@ -1220,8 +1232,8 @@ export default function AppointmentForm({
                             `${selectedListing.bedrooms} hab`}
                           {selectedListing.bathrooms &&
                             ` • ${Math.floor(parseFloat(selectedListing.bathrooms))} baños`}
-                          {selectedListing.squareMeter &&
-                            ` • ${selectedListing.squareMeter}m²`}
+                          {(selectedListing.squareMeter ?? selectedListing.builtSurfaceArea) &&
+                            ` • ${(selectedListing.squareMeter ?? selectedListing.builtSurfaceArea)}m²`}
                         </div>
                       </div>
                       {/* Only show clear button if listing wasn't pre-selected via URL */}
@@ -1279,8 +1291,8 @@ export default function AppointmentForm({
                                     `${listing.bedrooms} hab`}
                                   {listing.bathrooms &&
                                     ` • ${Math.floor(parseFloat(listing.bathrooms))} baños`}
-                                  {listing.squareMeter &&
-                                    ` • ${listing.squareMeter}m²`}
+                                  {(listing.squareMeter ?? listing.builtSurfaceArea) &&
+                                    ` • ${(listing.squareMeter ?? listing.builtSurfaceArea)}m²`}
                                 </div>
                               </div>
                             </div>

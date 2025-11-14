@@ -51,7 +51,7 @@ export function PropertyMapCard({ listing }: PropertyMapCardProps) {
   const bathrooms = listing.bathrooms
     ? Math.floor(Number(listing.bathrooms))
     : "-";
-  const sqm = listing.squareMeter ?? "-";
+  const sqm = (listing.squareMeter ?? listing.builtSurfaceArea) ?? "-";
   const listingUrl = `/propiedades/${listing.listingId}`;
   const propertyTypeLabel = getPropertyTypeLabel(listing.propertyType);
   const listingTypeLabel = formatListingType(listing.listingType);

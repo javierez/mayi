@@ -66,9 +66,24 @@ export function PropertySummaryCard({
   const isGarageOrSolar = propertyType === "garaje" || propertyType === "solar";
   const shouldShowBedsAndBaths = !isGarageOrSolar;
   const isLocal = propertyType === "local";
-  const rawAreaValue = isGarageOrSolar
-    ? listing.builtSurfaceArea
-    : listing.squareMeter ?? listing.builtSurfaceArea;
+  
+  // Helper to safely convert to number (handles string decimals from DB)
+  const toNumber = (value: unknown): number | null => {
+    if (value == null) return null;
+    if (typeof value === "number") return isNaN(value) ? null : value;
+    if (typeof value === "string") {
+      const parsed = parseFloat(value);
+      return isNaN(parsed) ? null : parsed;
+    }
+    return null;
+  };
+
+  // Use fallback pattern for all property types: squareMeter ?? builtSurfaceArea
+  // Convert both to numbers first to handle string decimals from database
+  const squareMeterNum = toNumber(listing.squareMeter);
+  const builtSurfaceAreaNum = toNumber(listing.builtSurfaceArea);
+  const rawAreaValue = squareMeterNum ?? builtSurfaceAreaNum;
+  
   const areaValue =
     propertyType === "solar" && rawAreaValue != null
       ? Math.round(rawAreaValue)
@@ -122,7 +137,7 @@ export function PropertySummaryCard({
               </div>
             )}
 
-            {/* Area - use buildSurfaceArea for garage/solar, squareMeter for others */}
+            {/* Area - use fallback pattern (squareMeter ?? builtSurfaceArea) for all property types */}
             <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200 sm:h-9 sm:w-9 md:h-10 md:w-10">
                 <Square className="sm:h-4.5 sm:w-4.5 h-4 w-4 text-amber-800 md:h-5 md:w-5" />

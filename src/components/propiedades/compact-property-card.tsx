@@ -32,6 +32,7 @@ interface CompactPropertyCardProps {
     bedrooms: number | null;
     bathrooms: string | null;
     squareMeter: number | null;
+    builtSurfaceArea: number | null;
     street: string | null;
     city: string | null;
     referenceNumber: string | null;
@@ -152,10 +153,10 @@ export function CompactPropertyCard({
                 <span>{Math.floor(Number(listing.bathrooms))}</span>
               </div>
             )}
-            {listing.squareMeter != null && (
+            {(listing.squareMeter ?? listing.builtSurfaceArea) != null && (
               <div className="flex items-center gap-1">
                 <Maximize className="h-3 w-3" />
-                <span>{listing.squareMeter}m²</span>
+                <span>{(listing.squareMeter ?? listing.builtSurfaceArea)}m²</span>
               </div>
             )}
           </div>

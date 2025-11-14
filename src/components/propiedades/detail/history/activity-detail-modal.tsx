@@ -11,15 +11,24 @@ import {
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Separator } from "~/components/ui/separator";
 import type { ListingActivityRecord } from "~/server/queries/listing-history";
+import type { ContactActivityWithUser } from "~/server/queries/contact-activity";
+import type { ListingContactActivityWithUser } from "~/server/queries/listing-contact-activity";
 import {
   getActivityActionLabel,
   formatAbsoluteTime,
+  type AllActivityAction,
 } from "~/lib/formatters/activity-formatter";
 import { PriceHistoryChart } from "./price-history-chart";
 import { getListingPriceHistory } from "~/server/queries/listing-history";
 
+// Union type for all activity types
+type AllActivityRecord =
+  | (ListingActivityRecord & { listingTitle?: string; referenceNumber?: string | null; activityType?: 'listing' })
+  | (ContactActivityWithUser & { activityType?: 'contact'; contactName?: string; contactId?: bigint })
+  | (ListingContactActivityWithUser & { activityType?: 'listing_contact'; contactName?: string; contactId?: bigint; listingId?: bigint | null });
+
 interface ActivityDetailModalProps {
-  activity: ListingActivityRecord | null;
+  activity: AllActivityRecord | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -42,7 +51,7 @@ export function ActivityDetailModal({
 
   // Fetch price history when modal opens for price_changed action
   useEffect(() => {
-    if (open && activity?.action === "price_changed") {
+    if (open && activity?.action === "price_changed" && 'listingId' in activity && activity.listingId) {
       setLoadingPriceHistory(true);
       getListingPriceHistory(Number(activity.listingId))
         .then((history) => setPriceHistory(history))
@@ -56,7 +65,7 @@ export function ActivityDetailModal({
 
   if (!activity) return null;
 
-  const actionLabel = getActivityActionLabel(activity.action);
+  const actionLabel = getActivityActionLabel(activity.action as AllActivityAction);
   const absoluteTime = formatAbsoluteTime(activity.createdAt);
 
   return (
@@ -74,14 +83,14 @@ export function ActivityDetailModal({
               <h4 className="text-xs text-muted-foreground mb-1.5">Realizado por</h4>
               <div className="rounded-lg shadow-sm bg-muted/30 px-3 py-2">
                 <p className="text-sm font-medium">{activity.user?.name ?? "Usuario desconocido"}</p>
-                <p className="text-xs text-muted-foreground">{activity.user?.email}</p>
+                <p className="text-xs text-muted-foreground">{"email" in (activity.user ?? {}) ? (activity.user as { email: string }).email : ""}</p>
               </div>
             </div>
 
             <Separator />
 
             {/* Action-specific content */}
-            {activity.action === "price_changed" && (
+            {activity.action === "price_changed" && 'listingId' in activity && activity.listingId && (
               <div>
                 <h4 className="text-sm font-medium mb-3">Historial de precios</h4>
                 {loadingPriceHistory ? (
@@ -96,19 +105,19 @@ export function ActivityDetailModal({
               </div>
             )}
 
-            {activity.action === "status_changed" && (
+            {activity.action === "status_changed" && 'listingId' in activity && (
               <StatusChangeDetails details={activity.details} />
             )}
 
-            {activity.action === "agent_reassigned" && (
+            {activity.action === "agent_reassigned" && 'listingId' in activity && (
               <AgentReassignedDetails details={activity.details} />
             )}
 
-            {activity.action === "portal_published" && (
+            {activity.action === "portal_published" && 'listingId' in activity && (
               <PortalPublishedDetails details={activity.details} />
             )}
 
-            {activity.action === "images_updated" && (
+            {activity.action === "images_updated" && 'listingId' in activity && (
               <ImagesUpdatedDetails details={activity.details} />
             )}
 

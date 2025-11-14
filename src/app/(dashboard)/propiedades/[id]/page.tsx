@@ -20,16 +20,51 @@ import { getEnergyCertificate } from "~/server/queries/document";
 import type { PropertyImage } from "~/lib/data";
 import { convertDbListingToPropertyListing } from "~/types/property-listing";
 import { canEditProperties } from "~/app/actions/permissions/check-permissions";
+import { getCurrentUser } from "~/lib/dal";
+import { getAccountById } from "~/server/queries/accounts";
+import { TaskPreferencesModalWrapper } from "~/components/propiedades/task-preferences-modal-wrapper";
 
 interface PropertyPageProps {
   params: Promise<{
     id: string;
   }>;
+  searchParams: Promise<{
+    new?: string;
+  }>;
 }
 
-export default async function PropertyPage({ params }: PropertyPageProps) {
+export default async function PropertyPage({
+  params,
+  searchParams,
+}: PropertyPageProps) {
   const unwrappedParams = await params;
+  const unwrappedSearchParams = await searchParams;
   const listingId = parseInt(unwrappedParams.id);
+  const isNewProperty = unwrappedSearchParams.new === "true";
+
+  // Get current user and account data for task preferences modal
+  const currentUser = await getCurrentUser();
+  const accountData = currentUser?.accountId
+    ? await getAccountById(currentUser.accountId)
+    : null;
+
+  // Default task preferences if account doesn't have them
+  const defaultTaskPreferences = {
+    property: {
+      uploadPhotos: { enabled: true, dueDays: 7 },
+      completeInfo: { enabled: true, dueDays: 7 },
+      scheduleVisit: { enabled: true, dueDays: 10 },
+      pickupKeys: { enabled: true, dueDays: 10 },
+      valuation: { enabled: true, dueDays: 10 },
+      createHojaEncargo: { enabled: true, dueDays: 12 },
+      signHojaEncargo: { enabled: true, dueDays: 14 },
+      generateCartel: { enabled: true, dueDays: 16 },
+    },
+  };
+
+  const taskPreferences =
+    (accountData?.taskPreferences as typeof defaultTaskPreferences) ??
+    defaultTaskPreferences;
 
   // Get data with optimized queries, including permissions
   const [
@@ -152,12 +187,20 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   );
 
   return (
-    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <PropertyBreadcrumb
-        propertyType={breadcrumbData.propertyType ?? ""}
-        street={breadcrumbData.street ?? ""}
-        referenceNumber={breadcrumbData.referenceNumber ?? ""}
+    <>
+      {/* Task Preferences Modal */}
+      <TaskPreferencesModalWrapper
+        showModal={isNewProperty}
+        listingId={unwrappedParams.id}
+        taskPreferences={taskPreferences}
       />
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <PropertyBreadcrumb
+          propertyType={breadcrumbData.propertyType ?? ""}
+          street={breadcrumbData.street ?? ""}
+          referenceNumber={breadcrumbData.referenceNumber ?? ""}
+        />
 
       {/* Property Title - Always Visible */}
       <PropertyHeader
@@ -204,5 +247,6 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         </Suspense>
       </div>
     </div>
+    </>
   );
 }

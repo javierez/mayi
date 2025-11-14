@@ -66,9 +66,9 @@ export function SharePropertyModal({
   const [messageFormat, setMessageFormat] =
     useState<MessageFormat>("medium");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [isPublished, setIsPublished] = useState(
-    property.publishToWebsite ?? false,
-  );
+
+  // Derive isPublished from props to avoid state staleness
+  const isPublished = property.publishToWebsite ?? false;
 
   useEffect(() => {
     if (open && !isPublished) {
@@ -78,8 +78,9 @@ export function SharePropertyModal({
   }, [open, isPublished, onOpenChange]);
 
   const handlePublishConfirmed = () => {
-    setIsPublished(true);
-    onPublishToggled?.();
+    if (onPublishToggled) {
+      onPublishToggled();
+    }
     onOpenChange(true);
   };
 

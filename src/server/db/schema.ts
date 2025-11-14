@@ -41,6 +41,18 @@ export const accounts = pgTable("accounts", {
   preferences: jsonb("preferences").default({}), // General account preferences
   terms: jsonb("terms").default({}), // Terms and conditions configuration
   onboardingData: jsonb("onboarding_data").default({}), // Onboarding form responses: { completed, previousCrm, referralSource, teamSize, businessFocus, monthlyListings, challenge, email, website, domains, portals, notes, completedAt }
+  taskPreferences: jsonb("task_preferences").default({
+    property: {
+      uploadPhotos: { enabled: true, dueDays: 7 },
+      completeInfo: { enabled: true, dueDays: 7 },
+      scheduleVisit: { enabled: true, dueDays: 10 },
+      pickupKeys: { enabled: true, dueDays: 10 },
+      valuation: { enabled: true, dueDays: 10 },
+      createHojaEncargo: { enabled: true, dueDays: 12 },
+      signHojaEncargo: { enabled: true, dueDays: 14 },
+      generateCartel: { enabled: true, dueDays: 16 },
+    },
+  }), // Task creation preferences for automatic tasks (property listing tasks)
   // Subscription/billing info
   plan: varchar("plan", { length: 50 }).default("basic"), // basic, pro, enterprise
   subscriptionType: varchar("subscription_type", { length: 100 }), // More detailed subscription type

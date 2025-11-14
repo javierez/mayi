@@ -821,6 +821,7 @@ export async function getContactActivityByListing(contactId: bigint) {
         bedrooms: properties.bedrooms,
         bathrooms: properties.bathrooms,
         squareMeter: properties.squareMeter,
+        builtSurfaceArea: properties.builtSurfaceArea,
         street: properties.street,
         addressDetails: properties.addressDetails,
         postalCode: properties.postalCode,
@@ -941,6 +942,9 @@ export async function getContactActivityByListing(contactId: bigint) {
         bedrooms: listing.bedrooms,
         bathrooms: bathroomsStr,
         squareMeter: listing.squareMeter,
+        builtSurfaceArea: listing.builtSurfaceArea
+          ? parseFloat(listing.builtSurfaceArea)
+          : null,
         street: listing.street,
         addressDetails: listing.addressDetails,
         postalCode: listing.postalCode,
@@ -1002,6 +1006,7 @@ export async function getContactActivityByListingAsOwner(contactId: bigint) {
         bedrooms: properties.bedrooms,
         bathrooms: properties.bathrooms,
         squareMeter: properties.squareMeter,
+        builtSurfaceArea: properties.builtSurfaceArea,
         street: properties.street,
         addressDetails: properties.addressDetails,
         postalCode: properties.postalCode,
@@ -1119,6 +1124,9 @@ export async function getContactActivityByListingAsOwner(contactId: bigint) {
         bedrooms: listing.bedrooms,
         bathrooms: bathroomsStr,
         squareMeter: listing.squareMeter,
+        builtSurfaceArea: listing.builtSurfaceArea
+          ? parseFloat(listing.builtSurfaceArea)
+          : null,
         street: listing.street,
         addressDetails: listing.addressDetails,
         postalCode: listing.postalCode,

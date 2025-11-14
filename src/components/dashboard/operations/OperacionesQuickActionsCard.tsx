@@ -13,6 +13,7 @@ import {
 import { motion } from "framer-motion";
 import { GlobalTaskModalTrigger } from "~/components/tasks/global-task-modal";
 import { createQuickPropertyAction } from "~/app/actions/quick-property";
+import { QuickActionModal } from "~/components/contactos/quick-action-modal";
 
 interface OperacionesQuickActionsCardProps {
   onTaskCreated?: () => void;
@@ -23,6 +24,7 @@ export default function OperacionesQuickActionsCard({
 }: OperacionesQuickActionsCardProps = {}) {
   const router = useRouter();
   const [isCreatingProperty, setIsCreatingProperty] = useState(false);
+  const [isQuickActionModalOpen, setIsQuickActionModalOpen] = useState(false);
 
   const handleAddProperty = async () => {
     try {
@@ -67,8 +69,7 @@ export default function OperacionesQuickActionsCard({
     {
       icon: Phone,
       label: "Acción Rápida",
-      isMock: true,
-      isDisabled: true,
+      onClick: () => setIsQuickActionModalOpen(true),
     },
     {
       icon: Clock,
@@ -78,113 +79,88 @@ export default function OperacionesQuickActionsCard({
   ];
 
   return (
-    <Card className="group relative">
-      <CardContent>
-        <div className="mb-4 mt-8 grid grid-cols-2 gap-3">
-          {actions.map((action) => {
-            if (action.isModal && action.label === "Crear Tarea") {
-              return (
-                <GlobalTaskModalTrigger
-                  key={action.label}
-                  onSuccess={onTaskCreated}
-                >
-                  <motion.div
+    <>
+      <Card className="group relative">
+        <CardContent>
+          <div className="mb-4 mt-8 grid grid-cols-2 gap-3">
+            {actions.map((action) => {
+              if (action.isModal && action.label === "Crear Tarea") {
+                return (
+                  <GlobalTaskModalTrigger
+                    key={action.label}
+                    onSuccess={onTaskCreated}
+                  >
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md"
+                    >
+                      <action.icon className="mb-2 h-6 w-6" />
+                      <span className="text-center text-[10px] font-medium uppercase tracking-wide text-gray-600">
+                        {action.label}
+                      </span>
+                    </motion.div>
+                  </GlobalTaskModalTrigger>
+                );
+              }
+
+              // Handle onClick actions (like "Añadir Propiedad" and "Acción Rápida")
+              if (action.onClick) {
+                return (
+                  <motion.button
+                    key={action.label}
+                    onClick={action.onClick}
+                    disabled={
+                      action.label === "Añadir Propiedad" && isCreatingProperty
+                    }
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md"
+                    className={`flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md ${
+                      action.label === "Añadir Propiedad" && isCreatingProperty
+                        ? "cursor-wait opacity-50"
+                        : ""
+                    }`}
                   >
                     <action.icon className="mb-2 h-6 w-6" />
                     <span className="text-center text-[10px] font-medium uppercase tracking-wide text-gray-600">
-                      {action.label}
+                      {action.label === "Añadir Propiedad" && isCreatingProperty
+                        ? "Creando..."
+                        : action.label}
                     </span>
-                  </motion.div>
-                </GlobalTaskModalTrigger>
-              );
-            }
+                  </motion.button>
+                );
+              }
 
-            if (action.isMock) {
               return (
-                <motion.div
+                <motion.a
                   key={action.label}
-                  whileHover={action.isDisabled ? {} : { scale: 1.02 }}
-                  whileTap={action.isDisabled ? {} : { scale: 0.98 }}
-                  className={`relative flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 ${
-                    action.isDisabled
-                      ? "cursor-not-allowed opacity-50"
-                      : "cursor-pointer opacity-90 hover:shadow-md"
-                  }`}
-                  onClick={() => {
-                    if (action.isDisabled) return;
-                    // Mock button - just show an alert for now
-                    alert("Funcionalidad próximamente disponible");
-                  }}
-                >
-                  <action.icon className="mb-2 h-6 w-6" />
-                  <span className="text-center text-[10px] font-medium uppercase tracking-wide text-gray-600">
-                    {action.label}
-                  </span>
-                </motion.div>
-              );
-            }
-
-            if (action.isDisabled) {
-              return (
-                <motion.div
-                  key={action.label}
-                  className="flex cursor-not-allowed flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 opacity-50 shadow-sm transition-all duration-200"
-                >
-                  <action.icon className="mb-2 h-6 w-6" />
-                  <span className="text-center text-[10px] font-medium uppercase tracking-wide text-gray-600">
-                    {action.label}
-                  </span>
-                </motion.div>
-              );
-            }
-
-            // Handle onClick actions (like "Añadir Propiedad")
-            if (action.onClick) {
-              return (
-                <motion.button
-                  key={action.label}
-                  onClick={action.onClick}
-                  disabled={
-                    action.label === "Añadir Propiedad" && isCreatingProperty
-                  }
+                  href={action.href}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className={`flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md ${
-                    action.label === "Añadir Propiedad" && isCreatingProperty
-                      ? "cursor-wait opacity-50"
-                      : ""
-                  }`}
+                  className="flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md"
                 >
                   <action.icon className="mb-2 h-6 w-6" />
                   <span className="text-center text-[10px] font-medium uppercase tracking-wide text-gray-600">
-                    {action.label === "Añadir Propiedad" && isCreatingProperty
-                      ? "Creando..."
-                      : action.label}
+                    {action.label}
                   </span>
-                </motion.button>
+                </motion.a>
               );
-            }
-
-            return (
-              <motion.a
-                key={action.label}
-                href={action.href}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="flex flex-col items-center justify-center rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-all duration-200 hover:shadow-md"
-              >
-                <action.icon className="mb-2 h-6 w-6" />
-                <span className="text-center text-[10px] font-medium uppercase tracking-wide text-gray-600">
-                  {action.label}
-                </span>
-              </motion.a>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+            })}
+          </div>
+        </CardContent>
+      </Card>
+      <QuickActionModal
+        open={isQuickActionModalOpen}
+        onOpenChange={setIsQuickActionModalOpen}
+        onSuccess={() => {
+          // Optionally refresh or update UI after success
+          setIsQuickActionModalOpen(false);
+          // Refresh tasks if callback is provided
+          if (onTaskCreated) {
+            onTaskCreated();
+          }
+        }}
+      />
+    </>
   );
 }

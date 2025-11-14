@@ -241,7 +241,7 @@ export function PushToTalkWhisperButton({
   // Processing state (transcribing)
   if (isProcessing) {
     return (
-      <div className={cn("absolute right-1 top-1", className)}>
+      <div className={cn("", className)}>
         <button
           type="button"
           className="relative rounded-full bg-blue-500/10 p-1.5 transition-all"
@@ -257,7 +257,7 @@ export function PushToTalkWhisperButton({
   if (isRecording) {
     return (
       <div
-        className={cn("absolute right-1 top-1", className)}
+        className={cn("", className)}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
         onTouchEnd={handleTouchEnd}
@@ -276,7 +276,7 @@ export function PushToTalkWhisperButton({
 
   // Idle state - ready to record
   return (
-    <div className={cn("absolute right-1 top-1", className)}>
+    <div className={cn("", className)}>
       <button
         type="button"
         onMouseDown={handleMouseDown}
@@ -288,7 +288,7 @@ export function PushToTalkWhisperButton({
         onClick={handleClick}
         disabled={disabled}
         className={cn(
-          "group relative rounded-full bg-transparent p-1.5 transition-all hover:bg-gray-100",
+          "group relative rounded-full bg-white/60 backdrop-blur-sm p-1.5 transition-all hover:bg-gray-100/80",
           disabled && "cursor-not-allowed opacity-50",
         )}
         title="Mantén presionado para grabar"

@@ -24,7 +24,7 @@ const testimonials = [
     avatar: "CM",
     rating: 5,
     testimonial:
-      "Vesta ha revolucionado completamente nuestra forma de trabajar. Todas las funcionalidades de productividad y automatizaciones hacen que no pierda tiempo en tareas adminisstrativas y pueda dedicar más tiempo a la venta.",
+      "Vesta ha revolucionado completamente nuestra forma de trabajar. Todas las funcionalidades de productividad y automatizaciones hacen que no pierda tiempo en tareas administrativas y pueda dedicar más tiempo a la venta.",
     metrics: {
       sales: "+20%",
       time: "15h/sem",

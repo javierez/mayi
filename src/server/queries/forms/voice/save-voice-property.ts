@@ -5,7 +5,6 @@ import { createProperty } from "~/server/queries/properties";
 import { createDefaultListing } from "~/server/queries/listing";
 import { getCurrentUser } from "~/lib/dal";
 import { generatePropertyTitle } from "~/lib/property-title";
-import { createPropertyTasksAsync } from "~/server/actions/property-tasks";
 
 export interface SaveVoicePropertyResult {
   success: boolean;
@@ -192,18 +191,8 @@ export async function saveVoiceProperty(
       }
     }
 
-    // Create default tasks when property and listing creation is completed
-    if (newListing?.listingId) {
-      console.log("=== CREATING DEFAULT TASKS ===");
-      console.log("Agent ID:", currentUser.id);
-      console.log("Listing ID:", newListing.listingId);
-
-      // Create tasks asynchronously (don't wait for completion)
-      await createPropertyTasksAsync({
-        userId: currentUser.id,
-        listingId: BigInt(newListing.listingId),
-      });
-    }
+    // Task creation removed - now handled via task preferences modal
+    // Tasks will be created when user confirms preferences in the modal
 
     console.log("=== VOICE PROPERTY CREATION COMPLETED ===");
 

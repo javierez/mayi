@@ -638,3 +638,29 @@ export async function updateAccountOnboarding(
     throw error;
   }
 }
+
+// Update account task preferences
+export async function updateAccountTaskPreferences(
+  accountId: number | bigint,
+  taskPreferences: Record<string, unknown>,
+) {
+  try {
+    await db
+      .update(accounts)
+      .set({
+        taskPreferences: taskPreferences,
+        updatedAt: new Date(),
+      })
+      .where(eq(accounts.accountId, BigInt(accountId)));
+
+    console.log("Updated task preferences for account:", accountId);
+
+    return {
+      success: true,
+      message: "Task preferences updated successfully",
+    };
+  } catch (error) {
+    console.error("Error updating task preferences:", error);
+    throw error;
+  }
+}

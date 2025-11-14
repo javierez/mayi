@@ -84,6 +84,60 @@ export async function findListingContactIdAction(
 }
 
 /**
+ * Get contactId and listingId from listingContactId
+ */
+export async function getContactAndListingFromListingContactIdAction(
+  listingContactId: bigint,
+): Promise<{
+  success: boolean;
+  contactId?: bigint;
+  listingId?: bigint;
+  error?: string;
+}> {
+  try {
+    const accountId = await getCurrentUserAccountId();
+
+    const [listingContact] = await db
+      .select({
+        contactId: listingContacts.contactId,
+        listingId: listingContacts.listingId,
+      })
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .where(
+        and(
+          eq(listingContacts.listingContactId, listingContactId),
+          eq(listingContacts.isActive, true),
+          eq(contacts.accountId, BigInt(accountId)),
+          eq(contacts.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    if (!listingContact) {
+      return {
+        success: false,
+        error: "No se encontró la relación de contacto con propiedad",
+      };
+    }
+
+    const listingId: bigint | undefined = listingContact.listingId ?? undefined;
+
+    return {
+      success: true,
+      contactId: listingContact.contactId,
+      listingId,
+    };
+  } catch (error) {
+    console.error("Error getting contact and listing from listingContactId:", error);
+    return {
+      success: false,
+      error: "Error al obtener la información",
+    };
+  }
+}
+
+/**
  * Create a new contact activity
  * Used when adding activities without a specific listing
  */

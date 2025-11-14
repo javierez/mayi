@@ -78,6 +78,7 @@ interface ListingInfo {
   bedrooms: number | null;
   bathrooms: string | null;
   squareMeter: number | null;
+  builtSurfaceArea: number | null;
   street: string | null;
   addressDetails: string | null;
   postalCode: string | null;
@@ -613,6 +614,7 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
                       bedrooms: listing.bedrooms,
                       bathrooms: listing.bathrooms,
                       squareMeter: listing.squareMeter,
+                      builtSurfaceArea: listing.builtSurfaceArea ?? null,
                       street: listing.street,
                       city: listing.city,
                       referenceNumber: listing.referenceNumber,
@@ -1057,6 +1059,7 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
                       ? String(listing.bathrooms)
                       : null,
                     squareMeter: listing.squareMeter ?? null,
+                    builtSurfaceArea: listing.builtSurfaceArea ?? null,
                     street: listing.street ?? null,
                     city: listing.city ?? null,
                     referenceNumber:

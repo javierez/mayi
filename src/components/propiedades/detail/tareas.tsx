@@ -957,18 +957,20 @@ export function Tareas({
             }
             className="min-h-[80px] pr-10 text-sm"
           />
-          <PushToTalkWhisperButton
-            onTranscript={(text) => {
-              setNewTask((prev) => ({
-                ...prev,
-                description: prev.description
-                  ? `${prev.description} ${text}`.trim()
-                  : text,
-              }));
-            }}
-            language="es"
-            disabled={isSaving}
-          />
+          <div className="absolute right-2 top-2">
+            <PushToTalkWhisperButton
+              onTranscript={(text) => {
+                setNewTask((prev) => ({
+                  ...prev,
+                  description: prev.description
+                    ? `${prev.description} ${text}`.trim()
+                    : text,
+                }));
+              }}
+              language="es"
+              disabled={isSaving}
+            />
+          </div>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
