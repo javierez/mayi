@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { Palette, CheckCircle2, Clock } from "lucide-react";
+import { CheckCircle2, Clock } from "lucide-react";
 import type { StyleSelectorProps } from "~/types/carteleria";
 import { templateStyles } from "~/lib/carteleria/templates";
 import { TemplatePreviewRenderer } from "./templates/template-renderer";
@@ -18,13 +18,6 @@ export const StyleSelector: FC<StyleSelectorProps> = ({
 }) => {
   return (
     <div className="space-y-6">
-      <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-bold text-gray-900">Elige tu Estilo</h2>
-        <p className="text-gray-600">
-          Selecciona un estilo principal que se aplicará a todos tus carteles
-        </p>
-      </div>
-
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {styles.map((style) => (
           <StyleCard
@@ -111,33 +104,6 @@ const StyleCard: FC<StyleCardProps> = ({ style, isSelected, onSelect }) => {
         <CardDescription className="text-sm leading-relaxed">
           {style.description}
         </CardDescription>
-
-        {/* Color Palette Preview */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Palette className="h-4 w-4 text-gray-500" />
-            <span className="text-xs font-medium text-gray-700">
-              Paleta de colores
-            </span>
-          </div>
-          <div className="flex gap-2">
-            <div
-              className="h-8 w-8 rounded-full border-2 border-white shadow-sm"
-              style={{ backgroundColor: style.colorScheme.primary }}
-              title={`Primario: ${style.colorScheme.primary}`}
-            />
-            <div
-              className="h-8 w-8 rounded-full border-2 border-white shadow-sm"
-              style={{ backgroundColor: style.colorScheme.secondary }}
-              title={`Secundario: ${style.colorScheme.secondary}`}
-            />
-            <div
-              className="h-8 w-8 rounded-full border-2 border-white shadow-sm"
-              style={{ backgroundColor: style.colorScheme.accent }}
-              title={`Acento: ${style.colorScheme.accent}`}
-            />
-          </div>
-        </div>
 
         {/* Status Feedback */}
         {isInactive && (

@@ -25,6 +25,7 @@ import {
   getAgentNameAction,
   getOfficeInfoAction,
 } from "~/app/actions/agent-info";
+import { getListingDocumentsData } from "~/server/queries/listing";
 
 /**
  * Create a new visit by saving signatures and updating appointment status
@@ -61,6 +62,17 @@ export async function createVisitAction(formData: VisitFormData) {
       throw new Error("Property listing is required for the visit");
     }
 
+    // Get listing reference number for consistent S3 folder structure
+    const listingData = await getListingDocumentsData(
+      Number(appointment.listingId),
+    );
+    const referenceNumber =
+      listingData.referenceNumber ?? `VISIT_${formData.appointmentId}`;
+
+    console.log(
+      `📂 Using reference number for signatures: ${referenceNumber}`,
+    );
+
     // Convert signatures to files and upload as documents
     try {
       console.log(
@@ -76,8 +88,11 @@ export async function createVisitAction(formData: VisitFormData) {
       // Upload agent signature
       const agentSignatureFile = await convertSignatureToFile(
         formData.agentSignature,
-        formData.appointmentId,
         "agent",
+        referenceNumber,
+        appointment.contactFirstName ?? "Cliente",
+        appointment.contactLastName ?? "",
+        appointment.datetimeStart,
       );
 
       console.log(
@@ -87,7 +102,7 @@ export async function createVisitAction(formData: VisitFormData) {
       const agentDocument = await uploadDocument(
         agentSignatureFile,
         currentUser.id,
-        `VISIT_${formData.appointmentId}`,
+        referenceNumber,
         1, // documentOrder
         "firma-visita", // documentTag to identify visit signatures
         appointment.contactId,
@@ -110,8 +125,11 @@ export async function createVisitAction(formData: VisitFormData) {
       // Upload visitor signature
       const visitorSignatureFile = await convertSignatureToFile(
         formData.visitorSignature,
-        formData.appointmentId,
         "visitor",
+        referenceNumber,
+        appointment.contactFirstName ?? "Cliente",
+        appointment.contactLastName ?? "",
+        appointment.datetimeStart,
       );
 
       console.log(
@@ -121,7 +139,7 @@ export async function createVisitAction(formData: VisitFormData) {
       const visitorDocument = await uploadDocument(
         visitorSignatureFile,
         currentUser.id,
-        `VISIT_${formData.appointmentId}`,
+        referenceNumber,
         2, // documentOrder
         "firma-visita", // documentTag to identify visit signatures
         appointment.contactId,

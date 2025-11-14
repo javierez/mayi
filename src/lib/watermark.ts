@@ -84,7 +84,7 @@ export async function downloadImageBuffer(
 
 /**
  * Add watermark to image using Sharp composite
- * Implements dynamic watermark sizing (40% of image width) with 70% transparency
+ * Implements dynamic watermark sizing with configurable transparency
  * Follows error handling patterns from color-extraction.ts
  */
 export async function addWatermark(
@@ -92,6 +92,7 @@ export async function addWatermark(
   watermarkUrl: string,
   position: WatermarkPosition = "southeast",
   sizePercentage = 40,
+  opacity = 0.8,
 ): Promise<WatermarkResult> {
   try {
     if (!imageBuffer || imageBuffer.length === 0) {
@@ -141,7 +142,7 @@ export async function addWatermark(
       })
       .composite([
         {
-          input: Buffer.from([255, 255, 255, Math.round(255 * 0.4)]), // 70% transparency
+          input: Buffer.from([255, 255, 255, Math.round(255 * opacity)]), // Configurable transparency
           raw: {
             width: 1,
             height: 1,
@@ -237,6 +238,7 @@ export async function processImagesWithWatermark(
           watermarkConfig.logoUrl,
           watermarkConfig.position,
           watermarkConfig.size,
+          watermarkConfig.opacity,
         );
 
         if (watermarkResult.success && watermarkResult.imageBuffer) {

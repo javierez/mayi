@@ -401,7 +401,7 @@ export function LeadTable({
   return (
     <TooltipProvider>
       <div className="space-y-4">
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="custom-scrollbar overflow-x-auto rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>

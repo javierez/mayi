@@ -31,6 +31,7 @@ export interface TemplateFormat {
   };
   orientation: "portrait" | "landscape";
   category: "paper" | "digital";
+  isActive: boolean;
 }
 
 export interface PropertyType {

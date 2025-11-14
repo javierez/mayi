@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { Search } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Search, Info } from "lucide-react";
 import {
   FormControl,
   FormDescription,
@@ -16,6 +16,20 @@ export function SEOSection({
   isActive,
   onUnsavedChanges,
 }: SEOSectionProps) {
+  const [visibleDescriptions, setVisibleDescriptions] = useState<Set<string>>(new Set());
+
+  const toggleDescription = useCallback((fieldName: string) => {
+    setVisibleDescriptions(prev => {
+      const next = new Set(prev);
+      if (next.has(fieldName)) {
+        next.delete(fieldName);
+      } else {
+        next.add(fieldName);
+      }
+      return next;
+    });
+  }, []);
+
   // Watch for form changes to detect unsaved changes - PRESERVE existing logic
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
@@ -48,11 +62,22 @@ export function SEOSection({
           name="seoProps.title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Título del Sitio</FormLabel>
-              <FormDescription>
-                Aparece en los resultados de búsqueda y en la pestaña del
-                navegador
-              </FormDescription>
+              <div className="flex items-center gap-1">
+                <FormLabel>Título del Sitio</FormLabel>
+                <button
+                  type="button"
+                  onClick={() => toggleDescription("seoProps.title")}
+                  className="focus:outline-none"
+                >
+                  <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                </button>
+              </div>
+              {visibleDescriptions.has("seoProps.title") && (
+                <FormDescription className="text-xs">
+                  Aparece en los resultados de búsqueda y en la pestaña del
+                  navegador
+                </FormDescription>
+              )}
               <FormControl>
                 <Input
                   {...field}
@@ -69,10 +94,21 @@ export function SEOSection({
           name="seoProps.description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Meta Descripción</FormLabel>
-              <FormDescription>
-                Descripción breve que aparece en los resultados de búsqueda
-              </FormDescription>
+              <div className="flex items-center gap-1">
+                <FormLabel>Meta Descripción</FormLabel>
+                <button
+                  type="button"
+                  onClick={() => toggleDescription("seoProps.description")}
+                  className="focus:outline-none"
+                >
+                  <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                </button>
+              </div>
+              {visibleDescriptions.has("seoProps.description") && (
+                <FormDescription className="text-xs">
+                  Descripción breve que aparece en los resultados de búsqueda
+                </FormDescription>
+              )}
               <FormControl>
                 <Textarea
                   {...field}
@@ -90,10 +126,21 @@ export function SEOSection({
           name="seoProps.keywords"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Palabras Clave</FormLabel>
-              <FormDescription>
-                Separadas por comas, ayudan a los motores de búsqueda
-              </FormDescription>
+              <div className="flex items-center gap-1">
+                <FormLabel>Palabras Clave</FormLabel>
+                <button
+                  type="button"
+                  onClick={() => toggleDescription("seoProps.keywords")}
+                  className="focus:outline-none"
+                >
+                  <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                </button>
+              </div>
+              {visibleDescriptions.has("seoProps.keywords") && (
+                <FormDescription className="text-xs">
+                  Separadas por comas, ayudan a los motores de búsqueda
+                </FormDescription>
+              )}
               <FormControl>
                 <Input
                   {...field}
@@ -110,10 +157,21 @@ export function SEOSection({
           name="seoProps.ogImage"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Imagen Open Graph</FormLabel>
-              <FormDescription>
-                Imagen que aparece al compartir en redes sociales
-              </FormDescription>
+              <div className="flex items-center gap-1">
+                <FormLabel>Imagen Open Graph</FormLabel>
+                <button
+                  type="button"
+                  onClick={() => toggleDescription("seoProps.ogImage")}
+                  className="focus:outline-none"
+                >
+                  <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                </button>
+              </div>
+              {visibleDescriptions.has("seoProps.ogImage") && (
+                <FormDescription className="text-xs">
+                  Imagen que aparece al compartir en redes sociales
+                </FormDescription>
+              )}
               <FormControl>
                 <Input
                   {...field}

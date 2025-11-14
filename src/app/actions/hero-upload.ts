@@ -64,6 +64,22 @@ export async function uploadHeroImage(
           );
         }
       }
+
+      // Delete old background video if exists (when switching from video to image)
+      if (existingHeroProps.backgroundVideo) {
+        const urlParts = existingHeroProps.backgroundVideo.split(".com/");
+        const oldS3Key = urlParts.length > 1 ? urlParts[1] : null;
+
+        if (oldS3Key) {
+          console.log("Deleting old hero background video from S3:", oldS3Key);
+          await s3Client.send(
+            new DeleteObjectCommand({
+              Bucket: bucketName,
+              Key: oldS3Key,
+            }),
+          );
+        }
+      }
     }
 
     // Generate file extension
@@ -115,6 +131,7 @@ export async function uploadHeroImage(
       const updatedHeroProps: HeroProps = {
         ...heroProps,
         backgroundImage: imageUrl,
+        backgroundVideo: "", // Clear video when uploading image
         backgroundType: "image",
       };
 
@@ -190,6 +207,22 @@ export async function uploadHeroVideo(
           );
         }
       }
+
+      // Delete old background image if exists (when switching from image to video)
+      if (existingHeroProps.backgroundImage) {
+        const urlParts = existingHeroProps.backgroundImage.split(".com/");
+        const oldS3Key = urlParts.length > 1 ? urlParts[1] : null;
+
+        if (oldS3Key) {
+          console.log("Deleting old hero background image from S3:", oldS3Key);
+          await s3Client.send(
+            new DeleteObjectCommand({
+              Bucket: bucketName,
+              Key: oldS3Key,
+            }),
+          );
+        }
+      }
     }
 
     // Generate file extension
@@ -240,6 +273,7 @@ export async function uploadHeroVideo(
 
       const updatedHeroProps: HeroProps = {
         ...heroProps,
+        backgroundImage: "", // Clear image when uploading video
         backgroundVideo: videoUrl,
         backgroundType: "video",
       };

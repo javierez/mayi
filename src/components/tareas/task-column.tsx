@@ -45,7 +45,7 @@ export function TaskColumn({ id, title, tasks }: TaskColumnProps) {
         </h3>
         <span className="text-xs text-muted-foreground">{tasks.length}</span>
       </div>
-      <div className="flex-1 space-y-2 overflow-y-auto p-3">
+      <div className="custom-scrollbar flex-1 space-y-2 overflow-y-auto p-3">
         {tasks.length === 0 ? (
           <div className="flex h-32 items-center justify-center rounded-md border border-dashed border-muted-foreground/25">
             <p className="text-xs text-muted-foreground">

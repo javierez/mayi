@@ -157,7 +157,7 @@ export function CalendarFeatureCard() {
 
                   {/* Calendar Body with Time Slots */}
                   <div
-                    className="relative max-h-[280px] sm:max-h-[350px] md:max-h-[400px] overflow-y-auto border [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded"
+                    className="custom-scrollbar-thin relative max-h-[280px] sm:max-h-[350px] md:max-h-[400px] overflow-y-auto border"
                   >
                     <div className="grid grid-cols-8">
                       {/* Hours column */}

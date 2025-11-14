@@ -69,8 +69,9 @@ export function HeroSection({
           file.name,
         );
 
-        // Update form with new image URL
+        // Update form with new image URL and clear video
         form.setValue("heroProps.backgroundImage", result.imageUrl);
+        form.setValue("heroProps.backgroundVideo", ""); // Clear video when uploading image
         form.setValue("heroProps.backgroundType", "image");
         onUnsavedChanges(true);
         setShowUploadDialog(false);
@@ -86,7 +87,8 @@ export function HeroSection({
           file.name,
         );
 
-        // Update form with new video URL
+        // Update form with new video URL and clear image
+        form.setValue("heroProps.backgroundImage", ""); // Clear image when uploading video
         form.setValue("heroProps.backgroundVideo", result.videoUrl);
         form.setValue("heroProps.backgroundType", "video");
         onUnsavedChanges(true);

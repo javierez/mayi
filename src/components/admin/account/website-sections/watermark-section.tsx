@@ -65,41 +65,28 @@ export function WatermarkSection({
 
       <div className="space-y-6">
         {/* Enable/Disable Watermark */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">
-              Estado de la Marca de Agua
-            </CardTitle>
-            <CardDescription>
-              Activa o desactiva la aplicación automática de marca de agua a las
-              imágenes
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <FormField
-              control={form.control}
-              name="watermarkProps.enabled"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                  <div className="space-y-0.5">
-                    <FormLabel className="text-base">
-                      Marca de Agua Activa
-                    </FormLabel>
-                    <FormDescription>
-                      Las imágenes se marcarán automáticamente con tu logo
-                    </FormDescription>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </CardContent>
-        </Card>
+        <FormField
+          control={form.control}
+          name="watermarkProps.enabled"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg p-4 shadow-lg">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">
+                  Marca de Agua Activa
+                </FormLabel>
+                <FormDescription>
+                  Las imágenes se marcarán automáticamente con tu logo
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
 
         {/* Logo Warning - Only show if watermark is enabled and logo is missing */}
         {watermarkEnabled && !logoUrl && (
@@ -131,15 +118,7 @@ export function WatermarkSection({
         {/* Position Settings - Only show if watermark is enabled */}
         {watermarkEnabled && (
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">
-                Posición de la Marca de Agua
-              </CardTitle>
-              <CardDescription>
-                Selecciona dónde aparecerá la marca de agua en las imágenes
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <FormField
                 control={form.control}
                 name="watermarkProps.position"
@@ -150,10 +129,10 @@ export function WatermarkSection({
                       {positionOptions.map((option) => (
                         <label
                           key={option.value}
-                          className={`relative flex cursor-pointer rounded-lg border p-4 transition-colors ${
+                          className={`relative flex cursor-pointer rounded-lg p-4 shadow-md transition-colors ${
                             field.value === option.value
-                              ? "border-primary bg-primary/10 text-primary"
-                              : "border-gray-200 hover:bg-gray-50"
+                              ? "bg-primary/10 text-primary"
+                              : "hover:bg-gray-50"
                           }`}
                         >
                           <input
@@ -191,25 +170,20 @@ export function WatermarkSection({
               <CardTitle className="text-lg">
                 Tamaño de la Marca de Agua
               </CardTitle>
-              <CardDescription>
-                Ajusta el tamaño de la marca de agua como porcentaje del ancho
-                de la imagen
-              </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
               <FormField
                 control={form.control}
                 name="watermarkProps.sizePercentage"
                 render={({ field }) => (
                   <FormItem>
                     <div className="flex items-center justify-between">
-                      <FormLabel>
-                        Tamaño ({field.value || 30}% del ancho de la imagen)
-                      </FormLabel>
+                      <FormLabel>Tamaño</FormLabel>
                       <Badge variant="outline" className="text-xs">
                         {field.value || 30}%
                       </Badge>
                     </div>
+
                     <FormControl>
                       <Slider
                         value={[field.value || 30]}
@@ -220,15 +194,13 @@ export function WatermarkSection({
                         className="w-full"
                       />
                     </FormControl>
+
                     <div className="flex justify-between text-xs text-gray-500">
-                      <span>10% (Pequeño)</span>
-                      <span>30% (Medio)</span>
-                      <span>50% (Grande)</span>
+                      <span>Pequeño</span>
+                      <span>Medio</span>
+                      <span>Grande</span>
                     </div>
-                    <FormDescription>
-                      Un tamaño entre 20-40% es recomendado para la mayoría de
-                      imágenes
-                    </FormDescription>
+
                     <FormMessage />
                   </FormItem>
                 )}
@@ -237,44 +209,58 @@ export function WatermarkSection({
           </Card>
         )}
 
-        {/* Information Card */}
-        <Card className="border-blue-200 bg-blue-50">
-          <CardContent className="pt-6">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <ImageIcon
-                  className="h-5 w-5 text-blue-400"
-                  aria-hidden="true"
-                />
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-blue-800">
-                  Información sobre la Marca de Agua
-                </h3>
-                <div className="mt-2 text-sm text-blue-700">
-                  <ul className="list-disc space-y-1 pl-5">
-                    <li>
-                      Las marcas de agua se aplican automáticamente a las
-                      imágenes cuando se publican en portales
-                    </li>
-                    <li>
-                      Se recomienda usar un logo en formato PNG con fondo
-                      transparente
-                    </li>
-                    <li>
-                      La marca de agua se aplicará con 60% de transparencia para
-                      mantener la calidad de la imagen
-                    </li>
-                    <li>
-                      El tamaño se ajusta automáticamente según las dimensiones
-                      de cada imagen
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Opacity Settings - Only show if watermark is enabled */}
+        {watermarkEnabled && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">
+                Transparencia de la Marca de Agua
+              </CardTitle>
+              <CardDescription>
+                Ajusta la opacidad de la marca de agua (0 = transparente, 100 =
+                opaco)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <FormField
+                control={form.control}
+                name="watermarkProps.opacity"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Opacidad</FormLabel>
+                      <Badge variant="outline" className="text-xs">
+                        {Math.round((field.value ?? 0.8) * 100)}%
+                      </Badge>
+                    </div>
+
+                    <FormControl>
+                      <Slider
+                        value={[(field.value ?? 0.8) * 100]}
+                        onValueChange={(value) =>
+                          field.onChange(value[0]! / 100)
+                        }
+                        max={100}
+                        min={0}
+                        step={5}
+                        className="w-full"
+                      />
+                    </FormControl>
+
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>Transparente</span>
+                      <span>Medio</span>
+                      <span>Opaco</span>
+                    </div>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+        )}
+
       </div>
     </div>
   );

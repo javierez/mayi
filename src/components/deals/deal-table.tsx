@@ -287,7 +287,7 @@ export function DealTable({
       </div>
 
       {/* Desktop Table View - with horizontal scroll for very wide content */}
-      <div className="hidden md:block rounded-md border overflow-x-auto">
+      <div className="custom-scrollbar hidden md:block rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

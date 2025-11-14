@@ -96,6 +96,7 @@ export const templateFormats: TemplateFormat[] = [
     dimensions: { width: 210, height: 297, unit: "mm" },
     orientation: "portrait",
     category: "paper",
+    isActive: true,
   },
   {
     id: "horizontal",
@@ -103,6 +104,7 @@ export const templateFormats: TemplateFormat[] = [
     dimensions: { width: 297, height: 210, unit: "mm" },
     orientation: "landscape",
     category: "paper",
+    isActive: true,
   },
   {
     id: "story",
@@ -110,6 +112,7 @@ export const templateFormats: TemplateFormat[] = [
     dimensions: { width: 1080, height: 1920, unit: "px" },
     orientation: "portrait",
     category: "digital",
+    isActive: false,
   },
   {
     id: "post",
@@ -117,6 +120,7 @@ export const templateFormats: TemplateFormat[] = [
     dimensions: { width: 1080, height: 1080, unit: "px" },
     orientation: "portrait",
     category: "digital",
+    isActive: false,
   },
 ];
 

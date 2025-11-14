@@ -13,9 +13,10 @@ interface PushToTalkWhisperButtonProps {
 }
 
 /**
- * Push-to-talk microphone button using OpenAI Whisper (GPT-4o transcription)
- * Records audio only while the button is held down
+ * Click-to-record microphone button using OpenAI Whisper (GPT-4o transcription)
+ * Click once to start recording, click again to stop
  * Processes complete audio file after recording stops (batch transcription)
+ * Maximum recording duration: 5 minutes
  *
  * @example
  * ```tsx
@@ -38,8 +39,9 @@ export function PushToTalkWhisperButton({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const recordingToastIdRef = useRef<string | number | undefined>(undefined);
 
-  const MAX_RECORDING_DURATION = 120000; // 120 seconds (2 minutes)
+  const MAX_RECORDING_DURATION = 300000; // 300 seconds (5 minutes)
 
   const startRecording = async () => {
     if (disabled || isRecording || isProcessing) return;
@@ -72,6 +74,12 @@ export function PushToTalkWhisperButton({
       mediaRecorder.start(1000);
       setIsRecording(true);
 
+      // Show persistent recording toast
+      const toastId = toast.loading("Grabando audio...", {
+        duration: Infinity,
+      });
+      recordingToastIdRef.current = toastId;
+
       // Optional: Haptic feedback on mobile
       if ("vibrate" in navigator) {
         navigator.vibrate(50);
@@ -81,7 +89,7 @@ export function PushToTalkWhisperButton({
       setTimeout(() => {
         if (mediaRecorderRef.current?.state === "recording") {
           stopRecording();
-          toast.warning("Grabación detenida: duración máxima alcanzada (2 min)");
+          toast.warning("Grabación detenida: duración máxima alcanzada (5 min)");
         }
       }, MAX_RECORDING_DURATION);
     } catch (error) {
@@ -105,6 +113,12 @@ export function PushToTalkWhisperButton({
     }
 
     setIsRecording(false);
+
+    // Dismiss the recording toast
+    if (recordingToastIdRef.current !== undefined) {
+      toast.dismiss(recordingToastIdRef.current);
+      recordingToastIdRef.current = undefined;
+    }
 
     // Optional: Haptic feedback on mobile
     if ("vibrate" in navigator) {
@@ -172,56 +186,17 @@ export function PushToTalkWhisperButton({
     }
   };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleClick = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isRecording && !isProcessing) {
+
+    if (isProcessing) return;
+
+    if (isRecording) {
+      stopRecording();
+    } else {
       void startRecording();
     }
-  };
-
-  const handleMouseUp = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (isRecording) {
-      stopRecording();
-    }
-  };
-
-  const handleMouseLeave = () => {
-    // Stop recording if user drags away (safety feature)
-    if (isRecording) {
-      stopRecording();
-    }
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isRecording && !isProcessing) {
-      void startRecording();
-    }
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (isRecording) {
-      stopRecording();
-    }
-  };
-
-  const handleTouchCancel = () => {
-    // Stop recording if touch is interrupted (e.g., notification, call)
-    if (isRecording) {
-      stopRecording();
-    }
-  };
-
-  const handleClick = (e: React.MouseEvent) => {
-    // Prevent click events to avoid toggle behavior
-    e.preventDefault();
-    e.stopPropagation();
   };
 
   // Cleanup on unmount
@@ -256,17 +231,12 @@ export function PushToTalkWhisperButton({
   // Recording state
   if (isRecording) {
     return (
-      <div
-        className={cn("", className)}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseLeave}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchCancel}
-      >
+      <div className={cn("", className)}>
         <button
           type="button"
-          className="relative rounded-full bg-red-500/10 p-1.5 transition-all"
-          title="Grabando... Suelta para detener"
+          onClick={handleClick}
+          className="relative rounded-full bg-red-500/20 p-1.5 transition-all shadow-md ring-2 ring-red-500/50"
+          title="Grabando... Haz clic para detener"
         >
           <Mic className="h-3.5 w-3.5 animate-pulse text-red-600" />
         </button>
@@ -279,19 +249,13 @@ export function PushToTalkWhisperButton({
     <div className={cn("", className)}>
       <button
         type="button"
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseLeave}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchCancel}
         onClick={handleClick}
         disabled={disabled}
         className={cn(
           "group relative rounded-full bg-white/60 backdrop-blur-sm p-1.5 transition-all hover:bg-gray-100/80",
           disabled && "cursor-not-allowed opacity-50",
         )}
-        title="Mantén presionado para grabar"
+        title="Haz clic para grabar"
       >
         <Mic className="h-3.5 w-3.5 text-gray-400 transition-colors group-hover:text-gray-600" />
       </button>

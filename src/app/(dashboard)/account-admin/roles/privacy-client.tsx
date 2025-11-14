@@ -395,20 +395,13 @@ export default function PrivacyPermissionsClient({ initialRoles }: Props) {
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {role.roleId !== 4 && (
-                          <div
-                            className={`h-2 w-2 rounded-full ${ROLE_COLORS[role.roleId] ?? "bg-blue-500"}`}
-                          />
-                        )}
-                        <div className={role.roleId === 4 ? "ml-5" : ""}>
-                          <p className="font-medium text-gray-900">
-                            {ROLE_NAMES[role.roleId] ?? `Role ${role.roleId}`}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {ROLE_DESCRIPTIONS[role.roleId] ?? "Custom role"}
-                          </p>
-                        </div>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {ROLE_NAMES[role.roleId] ?? `Role ${role.roleId}`}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {ROLE_DESCRIPTIONS[role.roleId] ?? "Custom role"}
+                        </p>
                       </div>
                       {selectedRoleId === role.roleId && (
                         <ChevronRight className="h-4 w-4 text-gray-400" />

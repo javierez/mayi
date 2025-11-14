@@ -479,7 +479,7 @@ export function ContactSpreadsheetTable({
         </Button>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="custom-scrollbar overflow-x-auto">
         <Table ref={tableRef}>
           <TableHeader>
             <TableRow>

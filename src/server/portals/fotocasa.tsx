@@ -232,14 +232,6 @@ export async function buildFotocasaPayload(
       try {
         const watermarkConfig = await getAccountWatermarkConfig(accountId);
 
-        console.log("Processing Fotocasa images with watermarking:", {
-          listingId,
-          accountId: accountId.toString(),
-          watermarkEnabled: watermarkConfig.watermarkEnabled,
-          hasLogo: !!watermarkConfig.logoTransparent,
-          imageCount: images.length,
-        });
-
         // Process images with watermarking if enabled
         if (
           watermarkConfig.watermarkEnabled &&
@@ -278,10 +270,6 @@ export async function buildFotocasaPayload(
             );
 
             if (processedResult?.watermarked) {
-              console.log(
-                `Using watermarked version for image order ${originalImage.imageOrder}`,
-              );
-
               // Track watermarked keys for cleanup
               if (processedResult.watermarkedKey) {
                 watermarkedKeys.push(processedResult.watermarkedKey);
@@ -312,13 +300,11 @@ export async function buildFotocasaPayload(
             (img, index) => watermarkResults[index]?.watermarked,
           ).length;
 
-          console.log(
-            `Fotocasa watermarking completed: ${watermarkedCount}/${images.length} images uploaded to S3`,
-          );
-        } else {
-          console.log(
-            "Watermarking disabled or no logo available, using original images",
-          );
+          if (watermarkedCount > 0) {
+            console.log(
+              `Watermarked ${watermarkedCount}/${images.length} images for Fotocasa`,
+            );
+          }
         }
       } catch (watermarkError) {
         // CRITICAL: Never fail Fotocasa upload due to watermarking issues
@@ -328,10 +314,6 @@ export async function buildFotocasaPayload(
         );
         processedImages = images; // Fallback to original images
       }
-    } else {
-      console.warn(
-        `Could not find account for listing ${listingId}, skipping watermarking`,
-      );
     }
 
     // Fetch additional media types for Fotocasa
@@ -349,13 +331,6 @@ export async function buildFotocasaPayload(
       "blueprint",
       true,
     );
-
-    console.log("Fetched additional media for Fotocasa:", {
-      videosCount: videos.length,
-      youtubeLinksCount: youtubeLinks.length,
-      virtualToursCount: virtualTours.length,
-      blueprintsCount: blueprints.length,
-    });
 
     // Extract floor number from addressDetails (get second number if exists)
     const getFloorId = (addressDetails: string | null): number | undefined => {
@@ -1138,15 +1113,6 @@ export async function buildFotocasaPayload(
       ...blueprintDocuments,
     ];
 
-    console.log("Fotocasa PropertyDocument summary:", {
-      images: imageDocuments.length,
-      videos: videoDocuments.length,
-      youtubeLinks: youtubeDocuments.length,
-      virtualTours: virtualTourDocuments.length,
-      blueprints: blueprintDocuments.length,
-      total: propertyDocuments.length,
-    });
-
     // Build PropertyContactInfo (hardcoded for now - should come from agent/owner data)
     const propertyContactInfo: PropertyContactInfo[] = [
       {
@@ -1243,21 +1209,12 @@ export async function publishToFotocasa(
       hidePrice,
     );
 
-    // Log the payload for debugging
-    console.log("Fotocasa POST Payload:", JSON.stringify(payload, null, 2));
-
     // Prepare request headers
     const requestHeaders = {
       "Content-Type": "application/json",
       "Api-Key": FOTOCASA_API_KEY,
       "X-Source": env.FOTOCASA_ID,
     };
-
-    // Log headers for debugging
-    console.log("=== FOTOCASA API HEADERS ===");
-    console.log("Api-Key:", FOTOCASA_API_KEY);
-    console.log("X-Source (Account ID from env):", env.FOTOCASA_ID);
-    console.log("===========================");
 
     // Make the API call to Fotocasa
     const response = await fetch(
@@ -1277,8 +1234,7 @@ export async function publishToFotocasa(
       responseHeaders[key] = value;
     });
 
-    // Log the response for debugging
-    console.log("Fotocasa POST API Response:", responseData);
+    console.log("Fotocasa POST Response:", responseData);
 
     // Check if the request was successful
     const isSuccess =
@@ -1300,9 +1256,6 @@ export async function publishToFotocasa(
       // Update database to set fotocasa = true ONLY on successful API response
       try {
         await updateListing(listingId, Number(accountId), { fotocasa: true });
-        console.log(
-          `Successfully updated database: listings.fotocasa = true for listing ${listingId}`,
-        );
       } catch (dbError) {
         console.error(
           "Error updating database after successful Fotocasa publish:",
@@ -1314,18 +1267,8 @@ export async function publishToFotocasa(
       // Clean up watermarked images after successful upload
       if (watermarkedKeys.length > 0) {
         try {
-          const cleanupResult = await cleanupWatermarkedImages(watermarkedKeys);
-          console.log(
-            `Cleanup completed: ${cleanupResult.deletedCount} watermarked images removed`,
-          );
-          if (!cleanupResult.success) {
-            console.warn(
-              "Some watermarked images could not be cleaned up:",
-              cleanupResult.errors,
-            );
-          }
+          await cleanupWatermarkedImages(watermarkedKeys);
         } catch (cleanupError) {
-          // Don't fail the main operation due to cleanup issues
           console.error(
             "Error during watermarked image cleanup:",
             cleanupError,
@@ -1415,25 +1358,12 @@ export async function updateFotocasa(
       hidePrice,
     );
 
-    // Log the payload for debugging
-    console.log(
-      "Fotocasa PUT Update Payload:",
-      JSON.stringify(payload, null, 2),
-    );
-    console.log(`Updating listing ${listingId} on Fotocasa`);
-
     // Prepare request headers
     const requestHeaders = {
       "Content-Type": "application/json",
       "Api-Key": FOTOCASA_API_KEY,
       "X-Source": env.FOTOCASA_ID,
     };
-
-    // Log headers for debugging
-    console.log("=== FOTOCASA API HEADERS (PUT) ===");
-    console.log("Api-Key:", FOTOCASA_API_KEY);
-    console.log("X-Source (Account ID from env):", env.FOTOCASA_ID);
-    console.log("==================================");
 
     // Make the PUT API call to Fotocasa
     // According to Fotocasa API docs: PUT api/property (no URI parameters)
@@ -1454,8 +1384,7 @@ export async function updateFotocasa(
       responseHeaders[key] = value;
     });
 
-    // Log the response for debugging
-    console.log("Fotocasa PUT Update API Response:", responseData);
+    console.log("Fotocasa PUT Response:", responseData);
 
     // Check if the request was successful
     const isSuccess =
@@ -1478,9 +1407,6 @@ export async function updateFotocasa(
       // (It should already be true, but this ensures consistency)
       try {
         await updateListing(listingId, Number(accountId), { fotocasa: true });
-        console.log(
-          `Successfully confirmed database: listings.fotocasa = true for listing ${listingId}`,
-        );
       } catch (dbError) {
         console.error(
           "Error confirming database after successful Fotocasa update:",
@@ -1492,18 +1418,8 @@ export async function updateFotocasa(
       // Clean up watermarked images after successful update
       if (watermarkedKeys.length > 0) {
         try {
-          const cleanupResult = await cleanupWatermarkedImages(watermarkedKeys);
-          console.log(
-            `Cleanup completed: ${cleanupResult.deletedCount} watermarked images removed`,
-          );
-          if (!cleanupResult.success) {
-            console.warn(
-              "Some watermarked images could not be cleaned up:",
-              cleanupResult.errors,
-            );
-          }
+          await cleanupWatermarkedImages(watermarkedKeys);
         } catch (cleanupError) {
-          // Don't fail the main operation due to cleanup issues
           console.error(
             "Error during watermarked image cleanup:",
             cleanupError,
@@ -1583,21 +1499,11 @@ export async function deleteFromFotocasa(
     const externalId = listingId.toString();
     const base64ExternalId = Buffer.from(externalId).toString("base64");
 
-    console.log(
-      `Deleting listing ${listingId} from Fotocasa (base64: ${base64ExternalId})`,
-    );
-
     // Prepare request headers
     const requestHeaders = {
       "Api-Key": FOTOCASA_API_KEY,
       "X-Source": env.FOTOCASA_ID,
     };
-
-    // Log headers for debugging
-    console.log("=== FOTOCASA API HEADERS (DELETE) ===");
-    console.log("Api-Key:", FOTOCASA_API_KEY);
-    console.log("X-Source (Account ID from env):", env.FOTOCASA_ID);
-    console.log("=====================================");
 
     // Make the DELETE API call to Fotocasa
     const response = await fetch(
@@ -1614,13 +1520,10 @@ export async function deleteFromFotocasa(
       responseHeaders[key] = value;
     });
 
-    // Log the response for debugging
-    console.log("Fotocasa DELETE API Response status:", response.status);
+    console.log("Fotocasa DELETE Response:", { status: response.status, ok: response.ok });
 
     // Check if the request was successful
     if (response.ok) {
-      console.log("Successfully deleted from Fotocasa");
-
       // Log successful deletion
       await logDeleteRequest(
         listingId,
@@ -1635,9 +1538,6 @@ export async function deleteFromFotocasa(
       // Update database to set fotocasa = false ONLY on successful API response
       try {
         await updateListing(listingId, Number(accountId), { fotocasa: false });
-        console.log(
-          `Successfully updated database: listings.fotocasa = false for listing ${listingId}`,
-        );
       } catch (dbError) {
         console.error(
           "Error updating database after successful Fotocasa delete:",

@@ -15,3 +15,7 @@ export {
   SolicitudesSkeleton,
   SolicitudesCardSkeleton,
 } from "./solicitudes-skeleton";
+export {
+  BrandingSkeleton,
+  BrandingPageSkeleton,
+} from "./branding-skeleton";

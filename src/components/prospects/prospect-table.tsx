@@ -862,7 +862,7 @@ export function ProspectTable({
   return (
     <div className="space-y-4">
       <div className="rounded-md border">
-        <div className="max-h-[600px] overflow-x-auto overflow-y-auto">
+        <div className="custom-scrollbar max-h-[600px] overflow-x-auto overflow-y-auto">
           <Table ref={tableRef}>
             <TableHeader>
               <TableRow>

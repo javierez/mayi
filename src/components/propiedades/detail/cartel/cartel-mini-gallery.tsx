@@ -186,24 +186,30 @@ export function CartelMiniGallery({
               Seleccionar todas
             </Button>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleClearAll}
-            disabled={selectedIndices.length === 0}
-          >
-            Limpiar selección
-          </Button>
+          {selectedIndices.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearAll}
+            >
+              Limpiar selección
+            </Button>
+          )}
         </div>
       </div>
 
       {/* Selection warnings */}
-      {selectedIndices.length >= maxSelection && (
+      {selectedIndices.length === 0 ? (
+        <div className="rounded border border-red-200 bg-red-50 p-2 text-xs text-red-600">
+          Debes seleccionar al menos 1 imagen para generar el cartel.
+          Haz clic en las imágenes para comenzar la selección.
+        </div>
+      ) : selectedIndices.length >= maxSelection ? (
         <div className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-600">
           Has alcanzado el límite de {maxSelection} imágenes. Deselecciona una
           imagen para cambiar la selección.
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

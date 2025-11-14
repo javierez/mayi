@@ -112,7 +112,7 @@ export const AccountAdminNavigationCards: FC = () => {
 
           if (!section.available) {
             return (
-              <Card key={section.title} className="opacity-60">
+              <Card key={section.title} className="flex flex-col opacity-60">
                 <CardHeader className="space-y-1">
                   <div className="flex items-center space-x-3">
                     <div className="rounded-lg bg-gray-100 p-2">
@@ -125,8 +125,8 @@ export const AccountAdminNavigationCards: FC = () => {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-sm">
+                <CardContent className="flex flex-1 flex-col">
+                  <CardDescription className="min-h-[2.5rem] text-sm">
                     {section.description}
                   </CardDescription>
                   <p className="mt-3 text-xs text-gray-400">Próximamente</p>
@@ -137,7 +137,7 @@ export const AccountAdminNavigationCards: FC = () => {
 
           return (
             <Link key={section.title} href={section.href}>
-              <Card className="group cursor-pointer transition-all duration-200 hover:bg-gray-100">
+              <Card className="group flex flex-col cursor-pointer transition-all duration-200 hover:bg-gray-100">
                 <CardHeader className="space-y-1">
                   <div className="flex items-center space-x-3">
                     <div className="rounded-lg bg-gray-100 p-2 group-hover:bg-gray-200">
@@ -150,8 +150,8 @@ export const AccountAdminNavigationCards: FC = () => {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-sm group-hover:text-gray-600">
+                <CardContent className="flex flex-1 flex-col">
+                  <CardDescription className="min-h-[2.5rem] text-sm group-hover:text-gray-600">
                     {section.description}
                   </CardDescription>
                 </CardContent>

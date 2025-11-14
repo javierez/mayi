@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { accounts } from "../db/schema";
+import { accounts, websiteProperties } from "../db/schema";
 import { eq, like, or } from "drizzle-orm";
 import { initializeAccountRoles } from "./account-roles";
 
@@ -273,7 +273,7 @@ export async function validateInvitationCode(accountId: number) {
   }
 }
 
-// Get account watermark configuration from portal settings and preferences
+// Get account watermark configuration from portal settings and websiteProperties
 export async function getAccountWatermarkConfig(accountId: number | bigint) {
   try {
     const account = await getAccountById(accountId);
@@ -287,25 +287,22 @@ export async function getAccountWatermarkConfig(accountId: number | bigint) {
       };
     }
 
-    // Extract portal settings and preferences with proper type casting
+    // Extract portal settings with proper type casting
     const portalSettings =
       (account.portalSettings as Record<string, unknown>) ?? {};
-    const preferences = (account.preferences as Record<string, unknown>) ?? {};
 
     // Get watermark settings from general portal configuration
     const general = (portalSettings.general as Record<string, unknown>) ?? {};
     const watermarkEnabled = Boolean(general.watermarkEnabled);
     const watermarkPosition = (general.watermarkPosition as string) || "center";
 
-    // Get transparent logo URL from preferences
-    const logoTransparent = preferences.logoTransparent as string;
+    // Get transparent logo URL from websiteProperties table
+    const [websiteConfig] = await db
+      .select({ logo: websiteProperties.logo })
+      .from(websiteProperties)
+      .where(eq(websiteProperties.accountId, BigInt(accountId)));
 
-    console.log("Retrieved watermark config for account:", {
-      accountId: accountId.toString(),
-      watermarkEnabled,
-      hasLogo: !!logoTransparent,
-      position: watermarkPosition,
-    });
+    const logoTransparent = websiteConfig?.logo ?? null;
 
     return {
       watermarkEnabled,

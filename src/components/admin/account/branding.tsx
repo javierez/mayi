@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { LogoUpload } from "~/components/ui/logo-upload";
+import { BrandingSkeleton } from "~/components/ui/skeletons";
 import {
   removeBackground,
   canRemoveBackground,
@@ -57,6 +58,7 @@ export const AccountBranding = () => {
   // State management
   const [accountId, setAccountId] = useState<string | null>(null);
   const [brandAsset, setBrandAsset] = useState<BrandAsset | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<
     LogoUploadProgress | undefined
@@ -73,11 +75,18 @@ export const AccountBranding = () => {
   >({});
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [showReplaceDialog, setShowReplaceDialog] = useState(false);
+  const [browserSupported, setBrowserSupported] = useState(true); // Default to true to avoid hydration mismatch
+
+  // Check browser compatibility on mount (client-side only)
+  useEffect(() => {
+    setBrowserSupported(canRemoveBackground());
+  }, []);
 
   // Load account data on mount
   useEffect(() => {
     async function loadAccountData() {
       if (session?.user?.id) {
+        setIsLoading(true);
         try {
           const userAccountId = await getCurrentUserAccountIdAction();
           if (userAccountId) {
@@ -98,7 +107,11 @@ export const AccountBranding = () => {
             description: "No se pudo cargar la información de la cuenta",
             variant: "destructive",
           });
+        } finally {
+          setIsLoading(false);
         }
+      } else {
+        setIsLoading(false);
       }
     }
     void loadAccountData();
@@ -291,8 +304,10 @@ export const AccountBranding = () => {
     }
   };
 
-  // Browser compatibility check
-  const browserSupported = canRemoveBackground();
+  // Show skeleton while loading
+  if (isLoading) {
+    return <BrandingSkeleton />;
+  }
 
   return (
     <div className="space-y-6">

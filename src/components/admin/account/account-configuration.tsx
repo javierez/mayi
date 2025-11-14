@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useCallback } from "react";
 import { useSession } from "~/lib/auth-client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,6 +29,7 @@ import {
   ChevronRight,
   RefreshCw,
   Image,
+  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -69,7 +70,7 @@ const navigationItems: AccountTab[] = [
   },
   {
     id: "preferences",
-    label: "Preferencias",
+    label: "Condiciones de Servicio",
     description: "Configuraciones adicionales",
     icon: Settings,
   },
@@ -84,6 +85,19 @@ export function AccountConfiguration() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [activeSection, setActiveSection] = useState("basic");
   const [showLogoInput, setShowLogoInput] = useState(false);
+  const [visibleDescriptions, setVisibleDescriptions] = useState<Set<string>>(new Set());
+
+  const toggleDescription = useCallback((fieldName: string) => {
+    setVisibleDescriptions(prev => {
+      const next = new Set(prev);
+      if (next.has(fieldName)) {
+        next.delete(fieldName);
+      } else {
+        next.add(fieldName);
+      }
+      return next;
+    });
+  }, []);
 
   const form = useForm<AccountConfigurationInput>({
     resolver: zodResolver(accountConfigurationSchema),
@@ -311,11 +325,11 @@ export function AccountConfiguration() {
             {activeSection === "basic" && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="flex items-center gap-2 text-xl font-semibold text-gray-900">
-                    <Building className="h-5 w-5 text-gray-500" />
+                  <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                    <Building className="h-4 w-4 text-gray-500" />
                     Información Básica
                   </h2>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-xs text-gray-500">
                     Información principal de tu cuenta
                   </p>
                 </div>
@@ -326,10 +340,21 @@ export function AccountConfiguration() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nombre de la Empresa *</FormLabel>
-                        <FormDescription>
-                          Nombre principal que se mostrará en el sistema
-                        </FormDescription>
+                        <div className="flex items-center gap-1">
+                          <FormLabel>Nombre de la Empresa *</FormLabel>
+                          <button
+                            type="button"
+                            onClick={() => toggleDescription("name")}
+                            className="focus:outline-none"
+                          >
+                            <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                          </button>
+                        </div>
+                        {visibleDescriptions.has("name") && (
+                          <FormDescription className="text-xs">
+                            Nombre principal que se mostrará en el sistema
+                          </FormDescription>
+                        )}
                         <FormControl>
                           <Input {...field} placeholder="Mi Inmobiliaria" />
                         </FormControl>
@@ -343,10 +368,21 @@ export function AccountConfiguration() {
                     name="shortName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Nombre Corto</FormLabel>
-                        <FormDescription>
-                          Versión abreviada del nombre para espacios reducidos
-                        </FormDescription>
+                        <div className="flex items-center gap-1">
+                          <FormLabel>Nombre Corto</FormLabel>
+                          <button
+                            type="button"
+                            onClick={() => toggleDescription("shortName")}
+                            className="focus:outline-none"
+                          >
+                            <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                          </button>
+                        </div>
+                        {visibleDescriptions.has("shortName") && (
+                          <FormDescription className="text-xs">
+                            Versión abreviada del nombre para espacios reducidos
+                          </FormDescription>
+                        )}
                         <FormControl>
                           <Input {...field} placeholder="MI" />
                         </FormControl>
@@ -355,12 +391,23 @@ export function AccountConfiguration() {
                   />
 
                   <div>
-                    <FormLabel>Logo</FormLabel>
-                    <FormDescription className="mb-3">
-                      Logo de tu empresa que aparecerá en el sistema
-                    </FormDescription>
+                    <div className="flex items-center gap-1">
+                      <FormLabel>Logo</FormLabel>
+                      <button
+                        type="button"
+                        onClick={() => toggleDescription("logo")}
+                        className="focus:outline-none"
+                      >
+                        <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                      </button>
+                    </div>
+                    {visibleDescriptions.has("logo") && (
+                      <FormDescription className="mb-3 text-xs">
+                        Logo de tu empresa que aparecerá en el sistema
+                      </FormDescription>
+                    )}
                     {form.watch("logo") && !showLogoInput ? (
-                      <div className="group relative inline-block">
+                      <div className="group relative mt-3 inline-block">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={form.watch("logo")}
@@ -390,6 +437,7 @@ export function AccountConfiguration() {
                         variant="outline"
                         size="sm"
                         onClick={() => setShowLogoInput(true)}
+                        className="mt-3"
                       >
                         {/* eslint-disable-next-line jsx-a11y/alt-text */}
                         <Image className="mr-2 h-4 w-4" />
@@ -432,11 +480,11 @@ export function AccountConfiguration() {
             {activeSection === "contact" && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="flex items-center gap-2 text-xl font-semibold text-gray-900">
-                    <Phone className="h-5 w-5 text-gray-500" />
+                  <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                    <Phone className="h-4 w-4 text-gray-500" />
                     Información de Contacto
                   </h2>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-xs text-gray-500">
                     Datos de contacto de tu empresa
                   </p>
                 </div>
@@ -515,11 +563,11 @@ export function AccountConfiguration() {
             {activeSection === "legal" && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="flex items-center gap-2 text-xl font-semibold text-gray-900">
-                    <Shield className="h-5 w-5 text-gray-500" />
+                  <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                    <Shield className="h-4 w-4 text-gray-500" />
                     Información Legal
                   </h2>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-xs text-gray-500">
                     Datos legales y fiscales de tu empresa
                   </p>
                 </div>
@@ -559,11 +607,21 @@ export function AccountConfiguration() {
                     name="collegiateNumber"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Número de Colegiado</FormLabel>
-                        <FormDescription>
-                          Número de colegiado API (Agente de la Propiedad
-                          Inmobiliaria)
-                        </FormDescription>
+                        <div className="flex items-center gap-1">
+                          <FormLabel>Número de Colegiado</FormLabel>
+                          <button
+                            type="button"
+                            onClick={() => toggleDescription("collegiateNumber")}
+                            className="focus:outline-none"
+                          >
+                            <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                          </button>
+                        </div>
+                        {visibleDescriptions.has("collegiateNumber") && (
+                          <FormDescription className="text-xs">
+                            Número de colegiado API (Agente de la Propiedad Inmobiliaria)
+                          </FormDescription>
+                        )}
                         <FormControl>
                           <Input {...field} placeholder="API-12345" />
                         </FormControl>
@@ -642,10 +700,21 @@ export function AccountConfiguration() {
                     name="dpoEmail"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email DPO</FormLabel>
-                        <FormDescription>
-                          Delegado de Protección de Datos
-                        </FormDescription>
+                        <div className="flex items-center gap-1">
+                          <FormLabel>Email DPO</FormLabel>
+                          <button
+                            type="button"
+                            onClick={() => toggleDescription("dpoEmail")}
+                            className="focus:outline-none"
+                          >
+                            <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                          </button>
+                        </div>
+                        {visibleDescriptions.has("dpoEmail") && (
+                          <FormDescription className="text-xs">
+                            Delegado de Protección de Datos
+                          </FormDescription>
+                        )}
                         <FormControl>
                           <Input {...field} placeholder="dpo@miempresa.com" />
                         </FormControl>
@@ -661,21 +730,21 @@ export function AccountConfiguration() {
             {activeSection === "preferences" && (
               <div className="space-y-6">
                 <div>
-                  <h2 className="flex items-center gap-2 text-xl font-semibold text-gray-900">
-                    <Settings className="h-5 w-5 text-gray-500" />
+                  <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                    <Settings className="h-4 w-4 text-gray-500" />
                     Preferencias
                   </h2>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <p className="mt-1 text-xs text-gray-500">
                     Configuraciones adicionales del sistema
                   </p>
                 </div>
 
                 <div className="space-y-6">
                   <div className="rounded-lg border border-gray-200 p-6">
-                    <h3 className="mb-4 text-lg font-medium text-gray-900">
+                    <h3 className="mb-4 text-base font-medium text-gray-900">
                       Términos por Defecto
                     </h3>
-                    <p className="mb-6 text-sm text-gray-600">
+                    <p className="mb-6 text-xs text-gray-600">
                       Configuración de términos y condiciones para contratos
                     </p>
 
@@ -686,10 +755,21 @@ export function AccountConfiguration() {
                           name="terms.commission"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Comisión (%)</FormLabel>
-                              <FormDescription>
-                                Porcentaje de comisión por defecto
-                              </FormDescription>
+                              <div className="flex items-center gap-1">
+                                <FormLabel>Comisión (%)</FormLabel>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleDescription("terms.commission")}
+                                  className="focus:outline-none"
+                                >
+                                  <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                                </button>
+                              </div>
+                              {visibleDescriptions.has("terms.commission") && (
+                                <FormDescription className="text-xs">
+                                  Porcentaje de comisión por defecto
+                                </FormDescription>
+                              )}
                               <FormControl>
                                 <Input
                                   type="number"
@@ -715,10 +795,21 @@ export function AccountConfiguration() {
                           name="terms.min_commission"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Comisión Mínima (€)</FormLabel>
-                              <FormDescription>
-                                Cantidad mínima de comisión
-                              </FormDescription>
+                              <div className="flex items-center gap-1">
+                                <FormLabel>Comisión Mínima (€)</FormLabel>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleDescription("terms.min_commission")}
+                                  className="focus:outline-none"
+                                >
+                                  <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                                </button>
+                              </div>
+                              {visibleDescriptions.has("terms.min_commission") && (
+                                <FormDescription className="text-xs">
+                                  Cantidad mínima de comisión
+                                </FormDescription>
+                              )}
                               <FormControl>
                                 <Input
                                   type="number"
@@ -744,10 +835,21 @@ export function AccountConfiguration() {
                         name="terms.duration"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Duración (meses)</FormLabel>
-                            <FormDescription>
-                              Duración por defecto del contrato en meses
-                            </FormDescription>
+                            <div className="flex items-center gap-1">
+                              <FormLabel>Duración (meses)</FormLabel>
+                              <button
+                                type="button"
+                                onClick={() => toggleDescription("terms.duration")}
+                                className="focus:outline-none"
+                              >
+                                <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                              </button>
+                            </div>
+                            {visibleDescriptions.has("terms.duration") && (
+                              <FormDescription className="text-xs">
+                                Duración por defecto del contrato en meses
+                              </FormDescription>
+                            )}
                             <FormControl>
                               <Input
                                 type="number"
@@ -770,21 +872,32 @@ export function AccountConfiguration() {
                           control={form.control}
                           name="terms.exclusivity"
                           render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                              <div className="space-y-0.5">
-                                <FormLabel className="text-base">
-                                  Exclusividad
-                                </FormLabel>
-                                <FormDescription>
+                            <FormItem className="rounded-lg p-4 shadow-md">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5">
+                                  <FormLabel className="text-base">
+                                    Exclusividad
+                                  </FormLabel>
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleDescription("terms.exclusivity")}
+                                    className="focus:outline-none"
+                                  >
+                                    <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                                  </button>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </div>
+                              {visibleDescriptions.has("terms.exclusivity") && (
+                                <FormDescription className="text-xs mt-2">
                                   Contrato de exclusividad por defecto
                                 </FormDescription>
-                              </div>
-                              <FormControl>
-                                <Switch
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
+                              )}
                             </FormItem>
                           )}
                         />
@@ -793,22 +906,32 @@ export function AccountConfiguration() {
                           control={form.control}
                           name="terms.communications"
                           render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                              <div className="space-y-0.5">
-                                <FormLabel className="text-base">
-                                  Comunicaciones
-                                </FormLabel>
-                                <FormDescription>
-                                  Permitir comunicaciones comerciales por
-                                  defecto
-                                </FormDescription>
+                            <FormItem className="rounded-lg p-4 shadow-md">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5">
+                                  <FormLabel className="text-base">
+                                    Comunicaciones
+                                  </FormLabel>
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleDescription("terms.communications")}
+                                    className="focus:outline-none"
+                                  >
+                                    <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                                  </button>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
                               </div>
-                              <FormControl>
-                                <Switch
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
-                              </FormControl>
+                              {visibleDescriptions.has("terms.communications") && (
+                                <FormDescription className="text-xs mt-2">
+                                  Permitir comunicaciones comerciales por defecto
+                                </FormDescription>
+                              )}
                             </FormItem>
                           )}
                         />

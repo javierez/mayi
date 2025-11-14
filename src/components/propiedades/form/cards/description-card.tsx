@@ -159,7 +159,7 @@ export function DescriptionCard({
                 <Textarea
                   id="shortDescription"
                   defaultValue={shortDescription}
-                  className="min-h-[80px] resize-y border-gray-200 pr-10 transition-colors focus:border-gray-400 focus:ring-gray-300"
+                  className="custom-scrollbar min-h-[80px] resize-y border-gray-200 pr-10 transition-colors focus:border-gray-400 focus:ring-gray-300"
                   placeholder="Breve resumen de la propiedad para carteles y vistas previas (máximo 200 caracteres)"
                   maxLength={200}
                   onChange={(e) => {
@@ -213,7 +213,7 @@ export function DescriptionCard({
                 <Textarea
                   id="description"
                   defaultValue={description}
-                  className="min-h-[200px] resize-y border-gray-200 pr-10 transition-colors focus:border-gray-400 focus:ring-gray-300"
+                  className="custom-scrollbar min-h-[200px] resize-y border-gray-200 pr-10 transition-colors focus:border-gray-400 focus:ring-gray-300"
                   placeholder="Describe las características principales de la propiedad, su ubicación, y cualquier detalle relevante que pueda interesar a los potenciales compradores o inquilinos."
                   onChange={(e) => {
                     setDescription(e.target.value);
@@ -268,7 +268,7 @@ export function DescriptionCard({
               placeholder="Escribe tu firma aquí..."
               value={signature}
               onChange={handleSignatureChange}
-              className="min-h-[100px] resize-y"
+              className="custom-scrollbar min-h-[100px] resize-y"
               disabled={!canEdit}
             />
           </div>

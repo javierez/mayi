@@ -217,6 +217,7 @@ export const watermarkPropsSchema = z.object({
     .enum(["southeast", "northeast", "southwest", "northwest", "center"])
     .default("southeast"),
   sizePercentage: z.number().min(10).max(50).default(30),
+  opacity: z.number().min(0).max(1).default(0.8),
 });
 
 // Metadata Schema

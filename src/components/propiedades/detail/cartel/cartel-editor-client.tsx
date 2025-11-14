@@ -33,23 +33,18 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Slider } from "~/components/ui/slider";
 import {
-  Download,
-  Eye,
   FileText,
   Image as ImageIcon,
   Settings,
-  Loader2,
   AlignLeft,
   AlignCenter,
   AlignRight,
   ZoomIn,
   ZoomOut,
-  RotateCcw,
   ChevronRight,
   ChevronLeft,
   ChevronUp,
   ChevronDown,
-  Save,
 } from "lucide-react";
 import { getExtendedDefaultPropertyData } from "~/lib/carteleria/mock-data";
 import {
@@ -65,7 +60,8 @@ import type {
 import { AdditionalFieldsSelector } from "~/components/admin/carteleria/controls/additional-fields-selector";
 import { toast } from "sonner";
 import { getTemplateImages } from "~/lib/carteleria/s3-images";
-import { CartelMiniGallery } from "./cartel-mini-gallery";
+import { CartelImageGallerySection } from "./cartel-image-gallery-section";
+import { CartelPreviewPanel } from "./cartel-preview-panel";
 import { SaveConfigurationModal } from "./save-configuration-modal";
 import { SavedConfigurations } from "./saved-configurations";
 import { getListingCartelSaveData } from "~/server/queries/listing";
@@ -289,6 +285,9 @@ export function CartelEditorClient({
     },
   );
 
+  // Track if user has manually changed image selection
+  const hasUserInteractedWithSelection = useRef(false);
+
   // Wizard state
   const [currentStep, setCurrentStep] = useState(0);
   const totalSteps = 3;
@@ -351,8 +350,13 @@ export function CartelEditorClient({
   }, [images, selectedImageIndices, templateImages, config.imageCount]);
 
   // Update selected images when images prop changes (after server-side load)
+  // Only auto-select if user hasn't manually changed the selection
   React.useEffect(() => {
-    if (images.length > 0 && selectedImageIndices.length === 0) {
+    if (
+      images.length > 0 &&
+      selectedImageIndices.length === 0 &&
+      !hasUserInteractedWithSelection.current
+    ) {
       const minImages = 1;
       const maxImages = 4;
       const availableImages = images.length;
@@ -502,20 +506,6 @@ export function CartelEditorClient({
     setPanY(0);
   };
 
-  // Trackpad/mouse wheel zoom handler
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY;
-    const zoomFactor = 0.1;
-
-    if (delta < 0) {
-      // Zoom in
-      setPreviewZoom((prev) => Math.min(prev + zoomFactor, 1.0));
-    } else {
-      // Zoom out
-      setPreviewZoom((prev) => Math.max(prev - zoomFactor, 0.2));
-    }
-  };
 
   // Drag start handler
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -893,24 +883,20 @@ export function CartelEditorClient({
     }
   };
 
+  // Handle image selection changes and mark user interaction
+  const handleImageSelectionChange = (indices: number[]) => {
+    hasUserInteractedWithSelection.current = true;
+    setSelectedImageIndices(indices);
+  };
+
   return (
     <div className="w-full p-4 md:p-6">
       {/* Image Selection Section */}
-      {images.length > 0 && (
-        <div className="mb-6">
-          <Card>
-            <CardContent className="p-4">
-              <CartelMiniGallery
-                images={images}
-                title="Selecciona 3 o 4 imágenes para el cartel"
-                maxSelection={4}
-                selectedIndices={selectedImageIndices}
-                onSelectionChange={setSelectedImageIndices}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <CartelImageGallerySection
+        images={images}
+        selectedIndices={selectedImageIndices}
+        onSelectionChange={handleImageSelectionChange}
+      />
 
       <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
         {/* Configuration Panel */}
@@ -3655,190 +3641,35 @@ export function CartelEditorClient({
         </div>
 
         {/* Preview Panel */}
+        <CartelPreviewPanel
+          showPreview={showPreview}
+          previewZoom={previewZoom}
+          panX={panX}
+          panY={panY}
+          isDragging={isDragging}
+          previewRef={previewRef}
+          TemplateComponent={TemplateComponent}
+          propertyData={propertyData}
+          config={config}
+          templateImages={templateImages}
+          isGenerating={isGenerating}
+          isSavingCartel={isSavingCartel}
+          lastGeneratedPdf={lastGeneratedPdf}
+          selectedImageIndices={selectedImageIndices}
+          listingId={listingId}
+          onZoomIn={zoomIn}
+          onZoomOut={zoomOut}
+          onResetZoom={resetZoom}
+          onZoomChange={setPreviewZoom}
+          onMouseDown={handleMouseDown}
+          onGeneratePDF={generatePDF}
+          onSaveCartel={saveCartelAsDocument}
+          onPreviewTemplate={previewTemplate}
+          onShowSaveModal={() => setShowSaveModal(true)}
+        />
+
         {showPreview && (
           <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                  <div className="flex items-center gap-2">
-                    <ImageIcon className="h-5 w-5" />
-                    Previsualización
-                  </div>
-                  <div className="flex items-center gap-1 md:gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={zoomOut}
-                      disabled={previewZoom <= 0.2}
-                    >
-                      <ZoomOut className="h-4 w-4" />
-                    </Button>
-                    <span className="min-w-[60px] text-center text-sm font-medium">
-                      {Math.round(previewZoom * 100)}%
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={zoomIn}
-                      disabled={previewZoom >= 1.0}
-                    >
-                      <ZoomIn className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={resetZoom}
-                      title="Reset zoom and position"
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardTitle>
-                <CardDescription>
-                  Preview en tiempo real de la plantilla con configuración
-                  actual.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div
-                  ref={previewRef}
-                  className="overflow-auto border border-gray-300 bg-gray-100 p-2 md:p-4"
-                  style={{
-                    height: "60vh",
-                    minHeight: "400px",
-                    maxHeight: "90vh",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "flex-start",
-                    cursor: isDragging ? "grabbing" : "grab",
-                    paddingTop: "20px",
-                  }}
-                  onWheel={handleWheel}
-                  onMouseDown={handleMouseDown}
-                >
-                  <div
-                    style={{
-                      transform: `scale(${previewZoom}) translate(${panX}px, ${panY}px)`,
-                      transformOrigin: "top center",
-                      border: "1px solid #ccc",
-                      boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                      transition: isDragging
-                        ? "none"
-                        : "transform 0.2s ease-in-out",
-                      maxWidth: "100%",
-                      overflow: "visible",
-                    }}
-                  >
-                    <TemplateComponent
-                      data={{
-                        ...propertyData,
-                        images: templateImages,
-                      }}
-                      config={config}
-                      className="print-preview"
-                    />
-                  </div>
-                </div>
-                <div className="mt-2 flex items-center justify-end">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Zoom:</span>
-                    <Slider
-                      value={[previewZoom]}
-                      onValueChange={([value]) => setPreviewZoom(value!)}
-                      max={1.0}
-                      min={0.2}
-                      step={0.05}
-                      className="w-16 md:w-24"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Action Buttons - Below Preview */}
-            <Card className="mt-4">
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <Button
-                    onClick={generatePDF}
-                    disabled={isGenerating || selectedImageIndices.length < 1}
-                    size="lg"
-                    title={
-                      selectedImageIndices.length < 1
-                        ? "Selecciona al menos 1 imagen"
-                        : ""
-                    }
-                  >
-                    {isGenerating ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generando PDF...
-                      </>
-                    ) : (
-                      <>
-                        <Download className="mr-2 h-4 w-4" />
-                        Generar PDF
-                      </>
-                    )}
-                  </Button>
-
-                  <Button
-                    onClick={saveCartelAsDocument}
-                    disabled={
-                      isSavingCartel ||
-                      !listingId ||
-                      selectedImageIndices.length < 1
-                    }
-                    className="flex items-center gap-2"
-                    title={
-                      !listingId
-                        ? "ID de listing no disponible"
-                        : selectedImageIndices.length < 1
-                          ? "Selecciona al menos 1 imagen"
-                          : ""
-                    }
-                  >
-                    {isSavingCartel ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Guardando...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4" />
-                        Guardar Cartel
-                      </>
-                    )}
-                  </Button>
-
-                  <Button
-                    onClick={() => setShowSaveModal(true)}
-                    variant="outline"
-                    className="flex items-center gap-2"
-                  >
-                    <Save className="h-4 w-4" />
-                    Guardar Plantilla
-                  </Button>
-
-                  <Button onClick={previewTemplate} variant="outline">
-                    <Eye className="mr-2 h-4 w-4" />
-                    Vista Rápida
-                  </Button>
-
-                  {lastGeneratedPdf && (
-                    <Button
-                      onClick={() => window.open(lastGeneratedPdf, "_blank")}
-                      variant="secondary"
-                      className="col-span-2"
-                    >
-                      <FileText className="mr-2 h-4 w-4" />
-                      Abrir Último PDF
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Saved Configurations Section */}
             <SavedConfigurations
               savedConfigurations={savedConfigurations}

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import {
   Card,
   CardContent,
@@ -10,7 +9,7 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
-import { Users, ChevronRight, UserCircle, Mail } from "lucide-react";
+import { Users, ChevronRight, Mail } from "lucide-react";
 import { ROLE_NAMES, ROLE_COLORS } from "~/types/account-roles";
 import { updateUserRole } from "./actions";
 import {
@@ -166,39 +165,24 @@ export default function UsuariosClient({ initialUsers }: Props) {
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {user.image ? (
-                            <Image
-                              src={user.image}
-                              alt={user.name}
-                              width={40}
-                              height={40}
-                              className="h-10 w-10 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200">
-                              <UserCircle className="h-6 w-6 text-gray-500" />
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {user.name}
+                          </p>
+                          <p className="flex items-center gap-1 text-xs text-gray-500">
+                            <Mail className="h-3 w-3" />
+                            {user.email}
+                          </p>
+                          {user.roleId && (
+                            <div className="mt-1 flex items-center gap-2">
+                              <div
+                                className={`h-2 w-2 rounded-full ${ROLE_COLORS[user.roleId] ?? "bg-gray-500"}`}
+                              />
+                              <span className="text-xs text-gray-600">
+                                {ROLE_NAMES[user.roleId] ?? "Sin rol"}
+                              </span>
                             </div>
                           )}
-                          <div>
-                            <p className="font-medium text-gray-900">
-                              {user.name}
-                            </p>
-                            <p className="flex items-center gap-1 text-xs text-gray-500">
-                              <Mail className="h-3 w-3" />
-                              {user.email}
-                            </p>
-                            {user.roleId && (
-                              <div className="mt-1 flex items-center gap-2">
-                                <div
-                                  className={`h-2 w-2 rounded-full ${ROLE_COLORS[user.roleId] ?? "bg-gray-500"}`}
-                                />
-                                <span className="text-xs text-gray-600">
-                                  {ROLE_NAMES[user.roleId] ?? "Sin rol"}
-                                </span>
-                              </div>
-                            )}
-                          </div>
                         </div>
                         {selectedUserId === user.id && (
                           <ChevronRight className="h-4 w-4 text-gray-400" />
@@ -215,8 +199,7 @@ export default function UsuariosClient({ initialUsers }: Props) {
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserCircle className="h-5 w-5" />
+                <CardTitle>
                   Asignación de Rol
                 </CardTitle>
                 <CardDescription>
@@ -225,45 +208,7 @@ export default function UsuariosClient({ initialUsers }: Props) {
               </CardHeader>
               <CardContent className="space-y-6">
                 {selectedUser && (
-                  <>
-                    <div className="rounded-lg bg-gray-50 p-4">
-                      <div className="flex items-center gap-4">
-                        {selectedUser.image ? (
-                          <Image
-                            src={selectedUser.image}
-                            alt={selectedUser.name}
-                            width={64}
-                            height={64}
-                            className="h-16 w-16 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-200">
-                            <UserCircle className="h-10 w-10 text-gray-500" />
-                          </div>
-                        )}
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {selectedUser.name}
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            {selectedUser.email}
-                          </p>
-                          {selectedUser.roleId && (
-                            <div className="mt-2 flex items-center gap-2">
-                              <div
-                                className={`h-2 w-2 rounded-full ${ROLE_COLORS[selectedUser.roleId] ?? "bg-gray-500"}`}
-                              />
-                              <span className="text-sm text-gray-700">
-                                Rol actual:{" "}
-                                {ROLE_NAMES[selectedUser.roleId] ?? "Sin rol"}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
+                  <div className="space-y-4">
                       <div>
                         <Label
                           htmlFor="role-select"
@@ -284,12 +229,7 @@ export default function UsuariosClient({ initialUsers }: Props) {
                                 key={roleId}
                                 value={roleId.toString()}
                               >
-                                <div className="flex items-center gap-2">
-                                  <div
-                                    className={`h-2 w-2 rounded-full ${ROLE_COLORS[roleId] ?? "bg-gray-500"}`}
-                                  />
-                                  {ROLE_NAMES[roleId] ?? `Rol ${roleId}`}
-                                </div>
+                                {ROLE_NAMES[roleId] ?? `Rol ${roleId}`}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -348,8 +288,7 @@ export default function UsuariosClient({ initialUsers }: Props) {
                           </div>
                         </div>
                       )}
-                    </div>
-                  </>
+                  </div>
                 )}
               </CardContent>
             </Card>

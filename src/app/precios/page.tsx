@@ -188,8 +188,8 @@ export default function PreciosPage() {
         },
         "Todas las herramientas básicas",
       ],
-      monthlyPrice: 49.9,
-      annualPrice: 479,
+      monthlyPrice: 34.90,
+      annualPrice: 349,
     },
     {
       id: "website",
@@ -269,8 +269,8 @@ export default function PreciosPage() {
         "Pixelación de rostros",
         "Reforma de viviendas",
       ],
-      monthlyPrice: 11.90,
-      annualPrice: 100,
+      monthlyPrice: 8.90,
+      annualPrice: 79,
     },
     {
       id: "seo-sem",
@@ -285,8 +285,8 @@ export default function PreciosPage() {
         "Informes mensuales detallados",
         "Estrategia de contenidos",
       ],
-      monthlyPrice: 14.9,
-      annualPrice: 283.7,
+      monthlyPrice: 10.90,
+      annualPrice: 199,
     },
     {
       id: "club-membership",
@@ -299,8 +299,8 @@ export default function PreciosPage() {
         "Anonimificación de los cruces",
         "Gestión de acuerdos y tasas",
       ],
-      monthlyPrice: 5.9,
-      annualPrice: 59,
+      monthlyPrice: 3.90,
+      annualPrice: 39,
     },
     {
       id: "search-tool",
@@ -320,8 +320,8 @@ export default function PreciosPage() {
         },
         "Matching inteligente",
       ],
-      monthlyPrice: 19.9,
-      annualPrice: 199,
+      monthlyPrice: 14.90,
+      annualPrice: 149,
       inDevelopment: true,
     },
     {
@@ -336,8 +336,8 @@ export default function PreciosPage() {
         "Gestión de incidencias",
         "Documentación automática",
       ],
-      monthlyPrice: 29.9,
-      annualPrice: 299,
+      monthlyPrice: 19.90,
+      annualPrice: 199,
       inDevelopment: true,
     },
     {
@@ -353,8 +353,8 @@ export default function PreciosPage() {
         "Calendario de reuniones",
         "Informes financieros",
       ],
-      monthlyPrice: 49.9,
-      annualPrice: 479,
+      monthlyPrice: 34.90,
+      annualPrice: 349,
       inDevelopment: true,
     },
     {
@@ -367,8 +367,8 @@ export default function PreciosPage() {
         "Mensajes automáticos por WhatsApp",
         "Respuestas inteligentes",
         "Seguimiento de conversaciones",      ],
-      monthlyPrice: 12.9,
-      annualPrice: 129,
+      monthlyPrice: 8.90,
+      annualPrice: 89,
       inDevelopment: true,
     },
   ];
@@ -744,7 +744,7 @@ export default function PreciosPage() {
                             </div>
                             {service.id === "seo-sem" && (
                               <p className="mt-1 text-xs font-semibold text-gray-700">
-                                * 104,90€ setup inicial
+                                * 79€ setup inicial
                               </p>
                             )}
                             {billingCycle === "annual" && (

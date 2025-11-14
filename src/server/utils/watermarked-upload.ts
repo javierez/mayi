@@ -52,6 +52,7 @@ export async function uploadWatermarkedImageToS3(
       watermarkConfig.logoUrl,
       watermarkConfig.position,
       watermarkConfig.size,
+      watermarkConfig.opacity,
     );
 
     if (!watermarkResult.success || !watermarkResult.imageBuffer) {

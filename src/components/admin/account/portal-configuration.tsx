@@ -362,23 +362,6 @@ export function PortalConfiguration() {
             {/* General Section */}
             {activeSection === "general" && (
               <div className="space-y-6">
-                {/* Header Card */}
-                <div className="rounded-2xl bg-white p-6 shadow-md">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-50">
-                      <Settings className="h-6 w-6 text-gray-600" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-900">
-                        Configuración General
-                      </h2>
-                      <p className="mt-1 text-sm text-gray-500">
-                        Ajustes que aplican a todos los portales
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Watermark Card */}
                 <div className="rounded-2xl bg-white p-6 shadow-md">
                   <FormField

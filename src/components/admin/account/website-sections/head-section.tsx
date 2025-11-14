@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
-import { Code } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Code, Info } from "lucide-react";
 import {
   FormControl,
   FormDescription,
@@ -18,6 +18,20 @@ export function HeadSection({
   isActive,
   onUnsavedChanges,
 }: HeadSectionProps) {
+  const [visibleDescriptions, setVisibleDescriptions] = useState<Set<string>>(new Set());
+
+  const toggleDescription = useCallback((fieldName: string) => {
+    setVisibleDescriptions(prev => {
+      const next = new Set(prev);
+      if (next.has(fieldName)) {
+        next.delete(fieldName);
+      } else {
+        next.add(fieldName);
+      }
+      return next;
+    });
+  }, []);
+
   // Watch for form changes to detect unsaved changes - PRESERVE existing logic
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
@@ -50,10 +64,21 @@ export function HeadSection({
           name="headProps.googleAnalytics"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Google Analytics ID</FormLabel>
-              <FormDescription>
-                ID de seguimiento de Google Analytics (ej: G-XXXXXXXXXX)
-              </FormDescription>
+              <div className="flex items-center gap-1">
+                <FormLabel>Google Analytics ID</FormLabel>
+                <button
+                  type="button"
+                  onClick={() => toggleDescription("headProps.googleAnalytics")}
+                  className="focus:outline-none"
+                >
+                  <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                </button>
+              </div>
+              {visibleDescriptions.has("headProps.googleAnalytics") && (
+                <FormDescription className="text-xs">
+                  ID de seguimiento de Google Analytics (ej: G-XXXXXXXXXX)
+                </FormDescription>
+              )}
               <FormControl>
                 <Input {...field} placeholder="G-XXXXXXXXXX" />
               </FormControl>
@@ -67,10 +92,21 @@ export function HeadSection({
           name="headProps.facebookPixel"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Facebook Pixel ID</FormLabel>
-              <FormDescription>
-                ID del píxel de Facebook para seguimiento
-              </FormDescription>
+              <div className="flex items-center gap-1">
+                <FormLabel>Facebook Pixel ID</FormLabel>
+                <button
+                  type="button"
+                  onClick={() => toggleDescription("headProps.facebookPixel")}
+                  className="focus:outline-none"
+                >
+                  <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                </button>
+              </div>
+              {visibleDescriptions.has("headProps.facebookPixel") && (
+                <FormDescription className="text-xs">
+                  ID del píxel de Facebook para seguimiento
+                </FormDescription>
+              )}
               <FormControl>
                 <Input {...field} placeholder="1234567890" />
               </FormControl>
@@ -84,10 +120,21 @@ export function HeadSection({
           name="headProps.customScripts"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Scripts Personalizados</FormLabel>
-              <FormDescription>
-                Código HTML/JavaScript personalizado para el head
-              </FormDescription>
+              <div className="flex items-center gap-1">
+                <FormLabel>Scripts Personalizados</FormLabel>
+                <button
+                  type="button"
+                  onClick={() => toggleDescription("headProps.customScripts")}
+                  className="focus:outline-none"
+                >
+                  <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                </button>
+              </div>
+              {visibleDescriptions.has("headProps.customScripts") && (
+                <FormDescription className="text-xs">
+                  Código HTML/JavaScript personalizado para el head
+                </FormDescription>
+              )}
               <FormControl>
                 <Textarea
                   {...field}

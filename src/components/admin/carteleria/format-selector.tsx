@@ -8,7 +8,7 @@ import {
 } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Checkbox } from "~/components/ui/checkbox";
-import { FileText, Smartphone } from "lucide-react";
+import { FileText, Smartphone, Clock } from "lucide-react";
 import type { FormatSelectorProps } from "~/types/carteleria";
 import { templateFormats } from "~/lib/carteleria/templates";
 
@@ -21,18 +21,13 @@ export const FormatSelector: FC<FormatSelectorProps> = ({
   const digitalFormats = formats.filter(
     (format) => format.category === "digital",
   );
+  const activePaperFormats = paperFormats.filter((format) => format.isActive);
+  const activeDigitalFormats = digitalFormats.filter(
+    (format) => format.isActive,
+  );
 
   return (
     <div className="space-y-8">
-      <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-bold text-gray-900">
-          Selecciona los Formatos
-        </h2>
-        <p className="text-gray-600">
-          Elige los tamaños y orientaciones que necesitas para tus carteles
-        </p>
-      </div>
-
       {/* Paper Formats Section */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
@@ -41,7 +36,7 @@ export const FormatSelector: FC<FormatSelectorProps> = ({
             Formatos Impresos
           </h3>
           <Badge variant="secondary" className="ml-2">
-            {paperFormats.length} disponibles
+            {activePaperFormats.length} disponibles
           </Badge>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -64,7 +59,7 @@ export const FormatSelector: FC<FormatSelectorProps> = ({
             Formatos Digitales
           </h3>
           <Badge variant="secondary" className="ml-2">
-            {digitalFormats.length} disponibles
+            {activeDigitalFormats.length} disponibles
           </Badge>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -89,6 +84,8 @@ interface FormatCardProps {
 }
 
 const FormatCard: FC<FormatCardProps> = ({ format, isSelected, onToggle }) => {
+  const isInactive = !format.isActive;
+
   // Calculate aspect ratio for visual representation
   const aspectRatio = format.dimensions.width / format.dimensions.height;
   const isLandscape = format.orientation === "landscape";
@@ -107,12 +104,18 @@ const FormatCard: FC<FormatCardProps> = ({ format, isSelected, onToggle }) => {
 
   return (
     <Card
-      className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-        isSelected
+      className={`transition-all duration-200 ${
+        isInactive
+          ? "cursor-not-allowed opacity-60 grayscale"
+          : "cursor-pointer hover:shadow-md"
+      } ${
+        isSelected && !isInactive
           ? "bg-primary/5 shadow-md ring-2 ring-primary"
-          : "hover:bg-gray-50"
+          : isInactive
+            ? ""
+            : "hover:bg-gray-50"
       }`}
-      onClick={onToggle}
+      onClick={isInactive ? undefined : onToggle}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
@@ -120,6 +123,7 @@ const FormatCard: FC<FormatCardProps> = ({ format, isSelected, onToggle }) => {
           <Checkbox
             checked={isSelected}
             onCheckedChange={onToggle}
+            disabled={isInactive}
             className="mt-1"
           />
         </div>
@@ -173,11 +177,23 @@ const FormatCard: FC<FormatCardProps> = ({ format, isSelected, onToggle }) => {
         </div>
 
         {/* Usage hint */}
-        <CardDescription className="text-center text-xs text-gray-500">
-          {format.category === "paper"
-            ? "Ideal para impresión física"
-            : "Optimizado para redes sociales"}
-        </CardDescription>
+        {!isInactive && (
+          <CardDescription className="text-center text-xs text-gray-500">
+            {format.category === "paper"
+              ? "Ideal para impresión física"
+              : "Optimizado para redes sociales"}
+          </CardDescription>
+        )}
+
+        {/* Status Feedback */}
+        {isInactive && (
+          <div className="rounded-lg border border-orange-200 bg-orange-50 p-3">
+            <div className="flex items-center justify-center gap-2 text-orange-700">
+              <Clock className="h-4 w-4" />
+              <span className="text-sm font-medium">Próximamente</span>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

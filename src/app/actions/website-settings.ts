@@ -291,6 +291,7 @@ export async function getWebsiteConfigurationAction(
             enabled: false,
             position: "southeast",
             sizePercentage: 30,
+            opacity: 0.8,
           },
           metadata: {
             id: "",
@@ -443,7 +444,7 @@ export async function getWebsiteConfigurationAction(
       ),
       watermarkProps: safeJsonParse<WatermarkProps>(
         config.watermarkProps,
-        { enabled: false, position: "southeast", sizePercentage: 30 },
+        { enabled: false, position: "southeast", sizePercentage: 30, opacity: 0.8 },
         "watermarkProps",
       ),
       metadata: {

@@ -23,28 +23,6 @@ export async function logFotocasaRequest(
   try {
     const timestamp = new Date();
 
-    // Log full data to server console
-    console.log("=== FOTOCASA API LOG ===");
-    console.log("Timestamp:", timestamp.toISOString());
-    console.log("Listing ID:", entry.listingId);
-    console.log("Operation:", entry.operation);
-    console.log("Success:", entry.success);
-    if (entry.requestHeaders) {
-      console.log("Request Headers:", JSON.stringify(entry.requestHeaders, null, 2));
-    }
-    console.log("Request Data:", JSON.stringify(entry.request, null, 2));
-    if (entry.responseHeaders) {
-      console.log("Response Headers:", JSON.stringify(entry.responseHeaders, null, 2));
-    }
-    console.log("Response Data:", JSON.stringify(entry.response, null, 2));
-    if (entry.error) {
-      console.log("Error:", entry.error);
-    }
-    if (entry.metadata) {
-      console.log("Metadata:", JSON.stringify(entry.metadata, null, 2));
-    }
-    console.log("========================");
-
     // Build request data with headers
     const requestData = entry.requestHeaders
       ? {

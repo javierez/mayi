@@ -428,7 +428,7 @@ export default function WhisperPlayground() {
                   </button>
                 </div>
               </div>
-              <div className="max-h-[400px] overflow-y-auto rounded bg-gray-900 p-4 font-mono text-xs text-green-400">
+              <div className="custom-scrollbar max-h-[400px] overflow-y-auto rounded bg-gray-900 p-4 font-mono text-xs text-green-400">
                 <pre>{JSON.stringify(jsonResponse, null, 2)}</pre>
               </div>
             </div>
@@ -438,7 +438,7 @@ export default function WhisperPlayground() {
         {/* Logs */}
         <div className="rounded-lg border p-6">
           <h2 className="text-xl font-semibold mb-4">Debug Logs</h2>
-          <div className="h-[600px] overflow-y-auto rounded bg-black p-4 font-mono text-xs text-green-400">
+          <div className="custom-scrollbar h-[600px] overflow-y-auto rounded bg-black p-4 font-mono text-xs text-green-400">
             {logs.length === 0 ? (
               <div className="text-gray-500">Logs will appear here...</div>
             ) : (

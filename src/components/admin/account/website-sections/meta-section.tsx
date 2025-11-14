@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Database, Plus, Trash2, Edit3 } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Database, Plus, Trash2, Edit3, Info } from "lucide-react";
 import {
   FormControl,
   FormDescription,
@@ -57,6 +57,20 @@ export function MetaSection({
   isActive,
   onUnsavedChanges,
 }: MetaSectionProps) {
+  const [visibleDescriptions, setVisibleDescriptions] = useState<Set<string>>(new Set());
+
+  const toggleDescription = useCallback((fieldName: string) => {
+    setVisibleDescriptions(prev => {
+      const next = new Set(prev);
+      if (next.has(fieldName)) {
+        next.delete(fieldName);
+      } else {
+        next.add(fieldName);
+      }
+      return next;
+    });
+  }, []);
+
   const [mainPageConfig, setMainPageConfig] = useState<MainPageConfig>({
     title: "",
     description: "",
@@ -790,10 +804,21 @@ export function MetaSection({
           name="metadata.mainpage"
           render={({ field }) => (
             <FormItem>
-              <FormDescription>
-                Configuración completa en formato JSON. Los cambios aquí
-                sobrescribirán la configuración visual anterior.
-              </FormDescription>
+              <div className="flex items-center gap-1 mb-2">
+                <button
+                  type="button"
+                  onClick={() => toggleDescription("metadata.mainpage")}
+                  className="focus:outline-none"
+                >
+                  <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                </button>
+              </div>
+              {visibleDescriptions.has("metadata.mainpage") && (
+                <FormDescription className="text-xs">
+                  Configuración completa en formato JSON. Los cambios aquí
+                  sobrescribirán la configuración visual anterior.
+                </FormDescription>
+              )}
               <FormControl>
                 <Textarea
                   value={

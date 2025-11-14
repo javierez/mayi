@@ -189,7 +189,7 @@ export default function Navbar({
       >
         <div className="flex h-full flex-col">
           {/* Main Navigation */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="custom-scrollbar flex-1 overflow-y-auto">
             <div className="space-y-6 px-4 py-6">
               {/* Auth Section */}
               <div className="space-y-3">
