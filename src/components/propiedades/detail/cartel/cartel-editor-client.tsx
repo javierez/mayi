@@ -62,7 +62,6 @@ import { getTemplateImages } from "~/lib/carteleria/s3-images";
 import { CartelImageGallerySection } from "./cartel-image-gallery-section";
 import { CartelPreviewPanel } from "./cartel-preview-panel";
 import { SaveConfigurationModal } from "./save-configuration-modal";
-import { SavedConfigurations } from "./saved-configurations";
 import { getListingCartelSaveData } from "~/server/queries/listing";
 import { CartelEditorPage1 } from "./cartel-editor-page1";
 import { CartelEditorPage2 } from "./cartel-editor-page2";
@@ -2627,6 +2626,10 @@ export function CartelEditorClient({
           lastGeneratedPdf={lastGeneratedPdf}
           selectedImageIndices={selectedImageIndices}
           listingId={listingId}
+          savedConfigurations={savedConfigurations}
+          selectedConfigurationId={currentConfigurationId}
+          isLoadingConfigurations={isLoadingConfigurations}
+          onLoadConfiguration={loadConfiguration}
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
           onResetZoom={resetZoom}
@@ -2637,21 +2640,6 @@ export function CartelEditorClient({
           onPreviewTemplate={previewTemplate}
           onShowSaveModal={() => setShowSaveModal(true)}
         />
-
-        {showPreview && (
-          <div className="lg:col-span-2">
-            {/* Saved Configurations Section */}
-            <SavedConfigurations
-              savedConfigurations={savedConfigurations}
-              selectedConfigurationId={currentConfigurationId}
-              isLoading={isLoadingConfigurations}
-              onLoadConfiguration={loadConfiguration}
-              onDeleteConfiguration={deleteConfiguration}
-              onSetDefaultConfiguration={setDefaultConfiguration}
-              onRefreshConfigurations={fetchConfigurations}
-            />
-          </div>
-        )}
       </div>
 
       {/* Save Configuration Modal */}

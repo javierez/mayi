@@ -20,7 +20,9 @@ import {
 import type {
   TemplateConfiguration,
   ExtendedTemplatePropertyData,
+  SavedCartelConfiguration,
 } from "~/types/template-data";
+import { SavedConfigurations } from "./saved-configurations";
 
 interface CartelPreviewPanelProps {
   // Preview state
@@ -47,6 +49,12 @@ interface CartelPreviewPanelProps {
   lastGeneratedPdf: string | null;
   selectedImageIndices: number[];
   listingId: number | null;
+
+  // Saved configurations
+  savedConfigurations: SavedCartelConfiguration[];
+  selectedConfigurationId: string | null;
+  isLoadingConfigurations: boolean;
+  onLoadConfiguration: (config: SavedCartelConfiguration) => void;
 
   // Handlers
   onZoomIn: () => void;
@@ -76,6 +84,10 @@ export function CartelPreviewPanel({
   lastGeneratedPdf,
   selectedImageIndices,
   listingId,
+  savedConfigurations,
+  selectedConfigurationId,
+  isLoadingConfigurations,
+  onLoadConfiguration,
   onZoomIn,
   onZoomOut,
   onResetZoom,
@@ -99,34 +111,43 @@ export function CartelPreviewPanel({
               <ImageIcon className="h-5 w-5" />
               Previsualización
             </div>
-            <div className="flex items-center gap-1 md:gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onZoomOut}
-                disabled={previewZoom <= 0.2}
-              >
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-              <span className="min-w-[60px] text-center text-sm font-medium">
-                {Math.round(previewZoom * 100)}%
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onZoomIn}
-                disabled={previewZoom >= 1.0}
-              >
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onResetZoom}
-                title="Reset zoom and position"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
+            <div className="flex items-center gap-2">
+              {/* Saved Configurations Dropdown - inline with zoom controls */}
+              <SavedConfigurations
+                savedConfigurations={savedConfigurations}
+                selectedConfigurationId={selectedConfigurationId}
+                isLoading={isLoadingConfigurations}
+                onLoadConfiguration={onLoadConfiguration}
+              />
+              <div className="flex items-center gap-1 md:gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onZoomOut}
+                  disabled={previewZoom <= 0.2}
+                >
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+                <span className="min-w-[60px] text-center text-sm font-medium">
+                  {Math.round(previewZoom * 100)}%
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onZoomIn}
+                  disabled={previewZoom >= 1.0}
+                >
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onResetZoom}
+                  title="Reset zoom and position"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </CardTitle>
         </CardHeader>
