@@ -25,7 +25,6 @@ import {
 import {
   ROLE_NAMES,
   ROLE_DESCRIPTIONS,
-  ROLE_COLORS,
   type AccountRole,
   type AccountRolePermissions,
 } from "~/types/account-roles";

@@ -2,7 +2,6 @@ import type { FC } from "react";
 import { cn } from "~/lib/utils";
 import type { TemplateConfiguration } from "~/types/template-data";
 import {
-  Zap,
   Calendar,
   ArrowUp,
   Car,
@@ -21,14 +20,8 @@ interface AdditionalFieldsSelectorProps {
 // Available fields for selection based on database schema
 const AVAILABLE_FIELDS = [
   {
-    value: "energyConsumptionScale",
-    label: "Certificación Energética",
-    icon: Zap,
-    description: "Calificación energética A-G",
-  },
-  {
     value: "yearBuilt",
-    label: "Año de Construcción",
+    label: "Construcción",
     icon: Calendar,
     description: "Año en que se construyó",
   },
@@ -111,16 +104,6 @@ export const AdditionalFieldsSelector: FC<AdditionalFieldsSelectorProps> = ({
     <div className="space-y-4">
       <div className="mb-2">
         <h3 className="text-lg font-medium">Información Adicional</h3>
-        <p className="text-sm text-gray-600">
-          {config.showIcons
-            ? `Selecciona hasta 6 campos (3 por defecto + 3 adicionales).`
-            : `Selecciona hasta 3 campos.`}
-        </p>
-        {config.showIcons && (
-          <p className="mt-1 text-xs text-blue-600">
-            Con iconos habilitados, puedes mostrar más información adicional.
-          </p>
-        )}
       </div>
 
       <div className="grid grid-cols-3 gap-2">

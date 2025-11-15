@@ -611,17 +611,45 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
           </div>
         </div>
 
-        {/* QR Code - Top Right */}
-        {config.showQR && (
-          <div style={{ display: "flex", justifyContent: "center" }}>
+        {/* Right side - QR Code and Energy Certificate (for vertical layout with descripción/lista) */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", justifyContent: "center" }}>
+          {/* Energy Certificate - Show in header for vertical layout when descripción or lista is selected */}
+          {config.orientation === "vertical" &&
+            config.showEnergyRating &&
+            config.energyConsumptionScale &&
+            (config.showShortDescription ||
+              (!config.showIcons && !config.showShortDescription)) && (
+              <div
+                style={{
+                  transform: "scale(1.3)",
+                  transformOrigin: "center",
+                  marginRight: "16px",
+                }}
+              >
+                <MiniEnergyCertificate
+                  energyRating={config.energyConsumptionScale}
+                />
+              </div>
+            )}
+
+          {/* QR Code - Top Right */}
+          {config.showQR && (
             <PropertyQRCode
               phone={data.contact.phone}
               email={data.contact.email}
-              size={80}
+              size={
+                config.orientation === "vertical" &&
+                config.showEnergyRating &&
+                config.energyConsumptionScale &&
+                (config.showShortDescription ||
+                  (!config.showIcons && !config.showShortDescription))
+                  ? 104
+                  : 80
+              }
               className="border-0 bg-transparent p-0 shadow-none"
             />
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* 2. RESERVED SPACE - Always maintain space for consistent image positioning */}
@@ -1112,21 +1140,28 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
                 )}
               </div>
 
-              {/* Energy Certificate - Right aligned */}
-              {config.showEnergyRating && config.energyConsumptionScale && (
-                <div
-                  style={{
-                    position: "absolute",
-                    right: "0px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                  }}
-                >
-                  <MiniEnergyCertificate
-                    energyRating={config.energyConsumptionScale}
-                  />
-                </div>
-              )}
+              {/* Energy Certificate - Right aligned (for iconos or horizontal layout) */}
+              {config.showEnergyRating &&
+                config.energyConsumptionScale &&
+                (config.showIcons ||
+                  config.orientation !== "vertical") && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      right: "0px",
+                      top: "50%",
+                      transform:
+                        config.orientation !== "vertical"
+                          ? "translateY(-50%) scale(1.3)"
+                          : "translateY(-50%)",
+                      transformOrigin: "center",
+                    }}
+                  >
+                    <MiniEnergyCertificate
+                      energyRating={config.energyConsumptionScale}
+                    />
+                  </div>
+                )}
             </div>
           </div>
         )}

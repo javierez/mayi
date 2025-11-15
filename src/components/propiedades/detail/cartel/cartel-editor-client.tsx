@@ -29,13 +29,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Slider } from "~/components/ui/slider";
 import {
   FileText,
   Image as ImageIcon,
   Settings,
+  Palette,
   AlignLeft,
   AlignCenter,
   AlignRight,
@@ -57,7 +57,6 @@ import type {
   SavedCartelConfiguration,
   SaveConfigurationRequest,
 } from "~/types/template-data";
-import { AdditionalFieldsSelector } from "~/components/admin/carteleria/controls/additional-fields-selector";
 import { toast } from "sonner";
 import { getTemplateImages } from "~/lib/carteleria/s3-images";
 import { CartelImageGallerySection } from "./cartel-image-gallery-section";
@@ -65,6 +64,10 @@ import { CartelPreviewPanel } from "./cartel-preview-panel";
 import { SaveConfigurationModal } from "./save-configuration-modal";
 import { SavedConfigurations } from "./saved-configurations";
 import { getListingCartelSaveData } from "~/server/queries/listing";
+import { CartelEditorPage1 } from "./cartel-editor-page1";
+import { CartelEditorPage2 } from "./cartel-editor-page2";
+import { CartelEditorPage3 } from "./cartel-editor-page3";
+import { CartelEditorPage4 } from "./cartel-editor-page4";
 
 export function CartelEditorClient({
   images = [],
@@ -110,7 +113,7 @@ export function CartelEditorClient({
       twoImageLayout: "vertical",
       showPhone: true,
       showEmail: true,
-      showWebsite: true,
+      showWebsite: false,
       showQR: true,
       showReference: true,
       showWatermark: true,
@@ -309,9 +312,8 @@ export function CartelEditorClient({
   // Icon grid customization toggle state
   const [showIconCustomization, setShowIconCustomization] = useState(false);
 
-  // Reference text customization toggle state
-  const [showReferenceCustomization, setShowReferenceCustomization] =
-    useState(false);
+  // Page navigation state
+  const [currentPage, setCurrentPage] = useState<1 | 2 | 3 | 4>(1);
 
   // Configuration management state
   const [savedConfigurations, setSavedConfigurations] = useState<
@@ -906,1121 +908,84 @@ export function CartelEditorClient({
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  <span className="mr-1">1.</span>
-                  Configuración
+                  {currentPage === 1 && (
+                    <>
+                      <Settings className="h-5 w-5" />
+                      <span className="mr-1">1.</span>
+                      Configuración
+                    </>
+                  )}
+                  {currentPage === 2 && (
+                    <>
+                      <FileText className="h-5 w-5" />
+                      <span className="mr-1">2.</span>
+                      Contenido
+                    </>
+                  )}
+                  {currentPage === 3 && (
+                    <>
+                      <Palette className="h-5 w-5" />
+                      <span className="mr-1">3.</span>
+                      Personalización
+                    </>
+                  )}
+                  {currentPage === 4 && (
+                    <>
+                      <ImageIcon className="h-5 w-5" />
+                      <span className="mr-1">4.</span>
+                      Imágenes
+                    </>
+                  )}
                 </CardTitle>
                 <CardDescription>
-                  Configura el diseño de la plantilla
+                  {currentPage === 1 && "Configura el diseño básico de la plantilla"}
+                  {currentPage === 2 && "Gestiona el contenido del cartel"}
+                  {currentPage === 3 && "Personaliza el estilo visual del cartel"}
+                  {currentPage === 4 && "Selecciona y organiza las imágenes"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Basic Settings */}
-                <div className="space-y-3">
-                  <div>
-                    <Label htmlFor="orientation">Orientación</Label>
-                    <Select
-                      value={config.orientation}
-                      onValueChange={(value: "vertical" | "horizontal") =>
-                        updateConfig({ orientation: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="vertical">Vertical</SelectItem>
-                        <SelectItem value="horizontal">Horizontal</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="overlayColor">Color de Fondo</Label>
-                    <Select
-                      value={config.overlayColor}
-                      onValueChange={(value) =>
-                        updateConfig({ overlayColor: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {/* Default color options */}
-                        <SelectItem value="default">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="h-4 w-4 rounded-full border border-gray-300"
-                              style={{ backgroundColor: "#9CA3AF" }}
-                            />
-                            <span>Gris</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="light">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="h-4 w-4 rounded-full border border-gray-300"
-                              style={{ backgroundColor: "#E5E7EB" }}
-                            />
-                            <span>Claro</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="dark">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="h-4 w-4 rounded-full border border-gray-300"
-                              style={{ backgroundColor: "#1F2937" }}
-                            />
-                            <span>Oscuro</span>
-                          </div>
-                        </SelectItem>
-
-                        {/* Standard color options - matching other selectors */}
-                        <SelectItem value="white">
-                          <div className="flex items-center gap-2">
-                            <div className="h-4 w-4 rounded-full border border-gray-300 bg-white"></div>
-                            <span>Blanco</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="black">
-                          <div className="flex items-center gap-2">
-                            <div className="h-4 w-4 rounded-full bg-black"></div>
-                            <span>Negro</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="gray">
-                          <div className="flex items-center gap-2">
-                            <div className="h-4 w-4 rounded-full bg-gray-500"></div>
-                            <span>Gris Estándar</span>
-                          </div>
-                        </SelectItem>
-
-                        {/* Account color palette */}
-                        {accountColorPalette.length > 0 &&
-                          accountColorPalette.map((color, index) => (
-                            <SelectItem key={color} value={color}>
-                              <div className="flex items-center gap-2">
-                                <div
-                                  className="h-4 w-4 rounded-full border border-gray-300"
-                                  style={{ backgroundColor: color }}
-                                />
-                                <span>Corporativo {index + 1}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Display Options - Grouped */}
-                <div className="space-y-4">
-                  <h4 className="font-medium">Opciones de Visualización</h4>
-
-                  {/* Contact Information Group */}
-                  <div className="space-y-2">
-                    <h5 className="text-sm font-medium text-muted-foreground">
-                      Contacto
-                    </h5>
-                    {config.templateStyle === "basic" && (
-                      <div className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-600">
-                        <strong>Nota:</strong> La plantilla básica solo permite
-                        mostrar 2 elementos de contacto máximo.
-                      </div>
-                    )}
-                    <div className="space-y-2">
-                      {[
-                        { key: "showPhone" as const, label: "Teléfono" },
-                        { key: "showEmail" as const, label: "Email" },
-                        { key: "showWebsite" as const, label: "Website" },
-                      ].map(({ key, label }) => {
-                        const isChecked = config[key] ?? false;
-
-                        // Count currently selected contact elements
-                        const selectedCount = [
-                          config.showPhone,
-                          config.showEmail,
-                          config.showWebsite,
-                        ].filter(Boolean).length;
-
-                        // Disable if trying to select more than 2 elements in basic template
-                        const wouldExceedLimit =
-                          config.templateStyle === "basic" &&
-                          !isChecked &&
-                          selectedCount >= 2;
-
-                        return (
-                          <div
-                            key={key}
-                            className="flex items-center space-x-2"
-                          >
-                            <Checkbox
-                              id={key}
-                              checked={isChecked}
-                              onCheckedChange={(checked) => {
-                                if (
-                                  config.templateStyle === "basic" &&
-                                  checked &&
-                                  selectedCount >= 2
-                                ) {
-                                  // If trying to select a 3rd element in basic template, deselect another one
-                                  const otherKeys = [
-                                    "showPhone",
-                                    "showEmail",
-                                    "showWebsite",
-                                  ].filter((k) => k !== key);
-                                  const firstOtherKey = otherKeys.find(
-                                    (k) => config[k as keyof typeof config],
-                                  ) as keyof typeof config;
-                                  if (firstOtherKey) {
-                                    updateConfig({
-                                      [firstOtherKey]: false,
-                                      [key]: true,
-                                    });
-                                  }
-                                } else {
-                                  updateConfig({ [key]: checked === true });
-                                }
-                              }}
-                              disabled={wouldExceedLimit}
-                              className="no-checkmark h-3 w-3"
-                            />
-                            <Label
-                              htmlFor={key}
-                              className={`text-xs ${wouldExceedLimit ? "text-gray-500" : ""}`}
-                            >
-                              {label}
-                            </Label>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Visual Elements Group */}
-                  <div className="space-y-2">
-                    <h5 className="text-sm font-medium text-muted-foreground">
-                      Elementos Visuales
-                    </h5>
-                    <div className="space-y-2">
-                      {/* QR Code Checkbox */}
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="showQR"
-                          checked={config.showQR ?? false}
-                          onCheckedChange={(checked) =>
-                            updateConfig({ showQR: checked === true })
-                          }
-                          className="no-checkmark h-3 w-3"
-                        />
-                        <Label htmlFor="showQR" className="text-xs">
-                          Código QR
-                        </Label>
-                      </div>
-
-                      {/* Watermark Checkbox */}
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="showWatermark"
-                          checked={config.showWatermark ?? false}
-                          onCheckedChange={(checked) =>
-                            updateConfig({ showWatermark: checked === true })
-                          }
-                          className="no-checkmark h-3 w-3"
-                        />
-                        <Label htmlFor="showWatermark" className="text-xs">
-                          Marca de Agua
-                        </Label>
-                      </div>
-
-                      {/* Icons with Editable List */}
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="showIcons"
-                            checked={config.showIcons ?? false}
-                            onCheckedChange={(checked) =>
-                              updateConfig({ showIcons: checked === true })
-                            }
-                            className="no-checkmark h-3 w-3"
-                          />
-                          <Label htmlFor="showIcons" className="text-xs">
-                            Iconos
-                          </Label>
-                        </div>
-                        {!config.showIcons && (
-                          <div className="ml-5">
-                            <textarea
-                              value={propertyData.iconListText ?? ""}
-                              onChange={(e) =>
-                                updatePropertyData({
-                                  iconListText: e.target.value,
-                                })
-                              }
-                              placeholder="Lista de características (una por línea)..."
-                              className="w-full resize-none rounded border border-gray-200 p-3 text-sm md:p-2 md:text-xs"
-                              rows={4}
-                            />
-
-                            {/* Bullet List Styling Controls */}
-                            <div className="mt-3 space-y-3 rounded-lg bg-gray-50 p-3">
-                              <Label className="text-xs font-medium">
-                                Personalización de Lista
-                              </Label>
-
-                              {/* Font and Size */}
-                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                <div>
-                                  <Label className="text-xs">Fuente</Label>
-                                  <Select
-                                    value={config.bulletFont}
-                                    onValueChange={(value) =>
-                                      updateConfig({
-                                        bulletFont:
-                                          value as TemplateConfiguration["bulletFont"],
-                                      })
-                                    }
-                                  >
-                                    <SelectTrigger className="h-8 text-xs">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="default">
-                                        Por defecto
-                                      </SelectItem>
-                                      <SelectItem value="serif">
-                                        Serif
-                                      </SelectItem>
-                                      <SelectItem value="sans">Sans</SelectItem>
-                                      <SelectItem value="mono">Mono</SelectItem>
-                                      <SelectItem value="elegant">
-                                        Elegante
-                                      </SelectItem>
-                                      <SelectItem value="modern">
-                                        Moderno
-                                      </SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-
-                                <div>
-                                  <Label className="text-xs">Tamaño</Label>
-                                  <div className="flex items-center space-x-2">
-                                    <Slider
-                                      value={[config.bulletSize]}
-                                      onValueChange={([value]) =>
-                                        updateConfig({ bulletSize: value })
-                                      }
-                                      max={24}
-                                      min={12}
-                                      step={1}
-                                      className="flex-1"
-                                    />
-                                    <span className="w-8 text-xs">
-                                      {config.bulletSize}px
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Alignment and Color */}
-                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                <div>
-                                  <Label className="text-xs">Alineación</Label>
-                                  <div className="flex rounded-md border">
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        updateConfig({
-                                          bulletAlignment: "left",
-                                        })
-                                      }
-                                      className={`flex-1 rounded-l-md border-r p-2 ${
-                                        config.bulletAlignment === "left"
-                                          ? "bg-blue-500 text-white"
-                                          : "bg-white text-gray-700 hover:bg-gray-50"
-                                      }`}
-                                    >
-                                      <AlignLeft className="mx-auto h-4 w-4" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        updateConfig({
-                                          bulletAlignment: "center",
-                                        })
-                                      }
-                                      className={`flex-1 border-r p-2 ${
-                                        config.bulletAlignment === "center"
-                                          ? "bg-blue-500 text-white"
-                                          : "bg-white text-gray-700 hover:bg-gray-50"
-                                      }`}
-                                    >
-                                      <AlignCenter className="mx-auto h-4 w-4" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        updateConfig({
-                                          bulletAlignment: "right",
-                                        })
-                                      }
-                                      className={`flex-1 rounded-r-md p-2 ${
-                                        config.bulletAlignment === "right"
-                                          ? "bg-blue-500 text-white"
-                                          : "bg-white text-gray-700 hover:bg-gray-50"
-                                      }`}
-                                    >
-                                      <AlignRight className="mx-auto h-4 w-4" />
-                                    </button>
-                                  </div>
-                                </div>
-
-                                <div>
-                                  <Label className="text-xs">Color</Label>
-                                  <Input
-                                    type="color"
-                                    value={config.bulletColor}
-                                    onChange={(e) =>
-                                      updateConfig({
-                                        bulletColor: e.target.value,
-                                      })
-                                    }
-                                    className="h-8"
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Position Controls - Joystick Style */}
-                              <div>
-                                <Label className="text-xs text-gray-600">
-                                  Posición
-                                </Label>
-                                <div className="mt-2 flex items-center justify-center">
-                                  <div className="flex flex-col items-center">
-                                    {/* Up Arrow */}
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="mb-0.5 h-6 w-6 p-0"
-                                      onClick={() =>
-                                        updateConfig({
-                                          bulletPositionY: Math.max(
-                                            (config.bulletPositionY || 0) - 5,
-                                            -30,
-                                          ),
-                                        })
-                                      }
-                                      disabled={
-                                        (config.bulletPositionY || 0) <= -30
-                                      }
-                                    >
-                                      <ChevronUp className="h-3 w-3" />
-                                    </Button>
-
-                                    <div className="flex items-center gap-0.5">
-                                      {/* Left Arrow */}
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-6 w-6 p-0"
-                                        onClick={() =>
-                                          updateConfig({
-                                            bulletPositionX: Math.max(
-                                              (config.bulletPositionX || 0) - 5,
-                                              -50,
-                                            ),
-                                          })
-                                        }
-                                        disabled={
-                                          (config.bulletPositionX || 0) <= -50
-                                        }
-                                      >
-                                        <ChevronLeft className="h-3 w-3" />
-                                      </Button>
-
-                                      {/* Center/Reset Button */}
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-6 w-6 rounded-full p-0"
-                                        onClick={() =>
-                                          updateConfig({
-                                            bulletPositionX: 0,
-                                            bulletPositionY: 0,
-                                          })
-                                        }
-                                      >
-                                        <div className="h-2 w-2 rounded-full bg-gray-400"></div>
-                                      </Button>
-
-                                      {/* Right Arrow */}
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-6 w-6 p-0"
-                                        onClick={() =>
-                                          updateConfig({
-                                            bulletPositionX: Math.min(
-                                              (config.bulletPositionX || 0) + 5,
-                                              50,
-                                            ),
-                                          })
-                                        }
-                                        disabled={
-                                          (config.bulletPositionX || 0) >= 50
-                                        }
-                                      >
-                                        <ChevronRight className="h-3 w-3" />
-                                      </Button>
-                                    </div>
-
-                                    {/* Down Arrow */}
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="mt-0.5 h-6 w-6 p-0"
-                                      onClick={() =>
-                                        updateConfig({
-                                          bulletPositionY: Math.min(
-                                            (config.bulletPositionY || 0) + 5,
-                                            30,
-                                          ),
-                                        })
-                                      }
-                                      disabled={
-                                        (config.bulletPositionY || 0) >= 30
-                                      }
-                                    >
-                                      <ChevronDown className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                </div>
-                                <div className="mt-2 text-center">
-                                  <span className="text-xs text-gray-500">
-                                    {config.bulletPositionX}px,{" "}
-                                    {config.bulletPositionY}px
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Content Group */}
-                  <div className="space-y-2">
-                    <h5 className="text-sm font-medium text-muted-foreground">
-                      Contenido
-                    </h5>
-                    <div className="space-y-2">
-                      {/* Reference Checkbox */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id="showReference"
-                              checked={config.showReference ?? false}
-                              onCheckedChange={(checked) =>
-                                updateConfig({
-                                  showReference: checked === true,
-                                })
-                              }
-                              className="no-checkmark h-3 w-3"
-                            />
-                            <Label htmlFor="showReference" className="text-xs">
-                              Referencia
-                            </Label>
-                          </div>
-
-                          {/* Reference Customization Toggle - Only show when reference is enabled */}
-                          {config.showReference && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setShowReferenceCustomization(
-                                  !showReferenceCustomization,
-                                )
-                              }
-                              className="group rounded-md p-2 transition-colors duration-150 hover:bg-gray-100"
-                              title="Personalizar referencia"
-                            >
-                              <div
-                                className={`text-gray-400 transition-transform duration-200 group-hover:text-gray-600 ${showReferenceCustomization ? "rotate-180" : "rotate-0"} `}
-                              >
-                                <ChevronDown className="h-4 w-4" />
-                              </div>
-                            </button>
-                          )}
-                        </div>
-
-                        {/* Reference Text Color - Only show when reference is enabled and customization is open */}
-                        {config.showReference && showReferenceCustomization && (
-                          <div className="ml-5 space-y-3 rounded-lg bg-gray-50 p-3">
-                            <Label className="text-xs font-medium">
-                              Personalización de Referencia
-                            </Label>
-
-                            <div>
-                              <Label className="text-xs">Color del texto</Label>
-                              <div className="mt-1 flex gap-2">
-                                <Input
-                                  type="color"
-                                  value={config.referenceTextColor || "#000000"}
-                                  onChange={(e) =>
-                                    updateConfig({
-                                      referenceTextColor: e.target.value,
-                                    })
-                                  }
-                                  className="h-8 flex-1"
-                                />
-                                <div className="flex gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      updateConfig({
-                                        referenceTextColor: "#000000",
-                                      })
-                                    }
-                                    className={`rounded px-2 py-1 text-xs ${
-                                      config.referenceTextColor === "#000000" ||
-                                      !config.referenceTextColor
-                                        ? "bg-black text-white"
-                                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                                    }`}
-                                  >
-                                    Negro
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      updateConfig({
-                                        referenceTextColor: "#ffffff",
-                                      })
-                                    }
-                                    className={`rounded px-2 py-1 text-xs ${
-                                      config.referenceTextColor === "#ffffff"
-                                        ? "border border-gray-300 bg-white text-black"
-                                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                                    }`}
-                                  >
-                                    Blanco
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Energy Certificate - Only show for basic template when description is OFF and icons are ON */}
-                      {config.templateStyle === "basic" &&
-                        !config.showShortDescription &&
-                        config.showIcons && (
-                          <div className="space-y-2">
-                            <div className="flex items-center space-x-2">
-                              <Checkbox
-                                id="showEnergyRating"
-                                checked={config.showEnergyRating ?? false}
-                                onCheckedChange={(checked) =>
-                                  updateConfig({
-                                    showEnergyRating: checked === true,
-                                  })
-                                }
-                                className="no-checkmark h-3 w-3"
-                              />
-                              <Label
-                                htmlFor="showEnergyRating"
-                                className="text-xs"
-                              >
-                                Certificado Energético
-                              </Label>
-                            </div>
-
-                            {/* Energy Rating Controls - Only show when enabled */}
-                            {config.showEnergyRating && (
-                              <div className="ml-5 space-y-3 rounded-lg bg-gray-50 p-3">
-                                <Label className="text-xs font-medium">
-                                  Configuración Energética
-                                </Label>
-
-                                {/* Energy Scale Selector */}
-                                <div>
-                                  <Label className="text-xs">
-                                    Calificación
-                                  </Label>
-                                  <div className="mt-1 flex gap-1">
-                                    {["A", "B", "C", "D", "E", "F", "G"].map(
-                                      (rating) => {
-                                        const isSelected =
-                                          config.energyConsumptionScale ===
-                                          rating;
-                                        const getColor = (r: string) => {
-                                          const colors = {
-                                            A: "#22c55e",
-                                            B: "#4ade80",
-                                            C: "#facc15",
-                                            D: "#eab308",
-                                            E: "#fb923c",
-                                            F: "#f97316",
-                                            G: "#ef4444",
-                                          };
-                                          return (
-                                            colors[r as keyof typeof colors] ||
-                                            "#6b7280"
-                                          );
-                                        };
-
-                                        return (
-                                          <button
-                                            key={rating}
-                                            type="button"
-                                            onClick={() =>
-                                              updateConfig({
-                                                energyConsumptionScale: rating,
-                                              })
-                                            }
-                                            className={`h-8 w-8 rounded text-xs font-bold text-white transition-all ${
-                                              isSelected
-                                                ? "scale-110 ring-2 ring-blue-500 ring-offset-2"
-                                                : "hover:scale-105"
-                                            }`}
-                                            style={{
-                                              backgroundColor: getColor(rating),
-                                            }}
-                                          >
-                                            {rating}
-                                          </button>
-                                        );
-                                      },
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                      {/* Short Description with Edit */}
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="showShortDescription"
-                            checked={config.showShortDescription ?? false}
-                            onCheckedChange={(checked) =>
-                              updateConfig({
-                                showShortDescription: checked === true,
-                              })
-                            }
-                            className="no-checkmark h-3 w-3"
-                          />
-                          <Label
-                            htmlFor="showShortDescription"
-                            className="text-xs"
-                          >
-                            Descripción Corta
-                          </Label>
-                        </div>
-                        {config.showShortDescription && (
-                          <div className="ml-5">
-                            <textarea
-                              value={propertyData.shortDescription ?? ""}
-                              onChange={(e) => {
-                                console.log(
-                                  "Updating shortDescription:",
-                                  e.target.value,
-                                );
-                                updatePropertyData({
-                                  shortDescription: e.target.value,
-                                });
-                              }}
-                              placeholder="Escribe una descripción personalizada..."
-                              className="w-full resize-none rounded border border-gray-200 p-3 text-sm md:p-2 md:text-xs"
-                              rows={2}
-                            />
-
-                            {/* Description Styling Controls */}
-                            <div className="mt-3 space-y-3 rounded-lg bg-gray-50 p-3">
-                              <Label className="text-xs font-medium">
-                                Personalización de Descripción
-                              </Label>
-
-                              {/* Font and Size */}
-                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                <div>
-                                  <Label className="text-xs">Fuente</Label>
-                                  <Select
-                                    value={config.descriptionFont}
-                                    onValueChange={(value) =>
-                                      updateConfig({
-                                        descriptionFont:
-                                          value as TemplateConfiguration["descriptionFont"],
-                                      })
-                                    }
-                                  >
-                                    <SelectTrigger className="h-8 text-xs">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="default">
-                                        Por defecto
-                                      </SelectItem>
-                                      <SelectItem value="serif">
-                                        Serif
-                                      </SelectItem>
-                                      <SelectItem value="sans">Sans</SelectItem>
-                                      <SelectItem value="mono">Mono</SelectItem>
-                                      <SelectItem value="elegant">
-                                        Elegante
-                                      </SelectItem>
-                                      <SelectItem value="modern">
-                                        Moderno
-                                      </SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-
-                                <div>
-                                  <Label className="text-xs">Tamaño</Label>
-                                  <div className="flex items-center space-x-2">
-                                    <Slider
-                                      value={[config.descriptionSize]}
-                                      onValueChange={([value]) =>
-                                        updateConfig({ descriptionSize: value })
-                                      }
-                                      max={32}
-                                      min={12}
-                                      step={1}
-                                      className="flex-1"
-                                    />
-                                    <span className="w-8 text-xs">
-                                      {config.descriptionSize}px
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Alignment and Color */}
-                              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                <div>
-                                  <Label className="text-xs">Alineación</Label>
-                                  <div className="flex rounded-md border">
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        updateConfig({
-                                          descriptionAlignment: "left",
-                                        })
-                                      }
-                                      className={`flex-1 rounded-l-md border-r p-2 ${
-                                        config.descriptionAlignment === "left"
-                                          ? "bg-blue-500 text-white"
-                                          : "bg-white text-gray-700 hover:bg-gray-50"
-                                      }`}
-                                    >
-                                      <AlignLeft className="mx-auto h-4 w-4" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        updateConfig({
-                                          descriptionAlignment: "center",
-                                        })
-                                      }
-                                      className={`flex-1 border-r p-2 ${
-                                        config.descriptionAlignment === "center"
-                                          ? "bg-blue-500 text-white"
-                                          : "bg-white text-gray-700 hover:bg-gray-50"
-                                      }`}
-                                    >
-                                      <AlignCenter className="mx-auto h-4 w-4" />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        updateConfig({
-                                          descriptionAlignment: "right",
-                                        })
-                                      }
-                                      className={`flex-1 rounded-r-md p-2 ${
-                                        config.descriptionAlignment === "right"
-                                          ? "bg-blue-500 text-white"
-                                          : "bg-white text-gray-700 hover:bg-gray-50"
-                                      }`}
-                                    >
-                                      <AlignRight className="mx-auto h-4 w-4" />
-                                    </button>
-                                  </div>
-                                </div>
-
-                                <div>
-                                  <Label className="text-xs">Color</Label>
-                                  <Input
-                                    type="color"
-                                    value={config.descriptionColor}
-                                    onChange={(e) =>
-                                      updateConfig({
-                                        descriptionColor: e.target.value,
-                                      })
-                                    }
-                                    className="h-8"
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Position Controls */}
-                              <div>
-                                <Label className="text-xs text-gray-600">
-                                  Posición
-                                </Label>
-                                <div className="mt-2 flex items-center justify-center">
-                                  <div className="flex flex-col items-center">
-                                    {/* Up Arrow */}
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="mb-0.5 h-6 w-6 p-0"
-                                      onClick={() =>
-                                        updateConfig({
-                                          descriptionPositionY: Math.max(
-                                            (config.descriptionPositionY || 0) -
-                                              5,
-                                            -30,
-                                          ),
-                                        })
-                                      }
-                                      disabled={
-                                        (config.descriptionPositionY || 0) <=
-                                        -30
-                                      }
-                                    >
-                                      <ChevronUp className="h-3 w-3" />
-                                    </Button>
-
-                                    <div className="flex items-center gap-0.5">
-                                      {/* Left Arrow */}
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-6 w-6 p-0"
-                                        onClick={() =>
-                                          updateConfig({
-                                            descriptionPositionX: Math.max(
-                                              (config.descriptionPositionX ||
-                                                0) - 5,
-                                              -50,
-                                            ),
-                                          })
-                                        }
-                                        disabled={
-                                          (config.descriptionPositionX || 0) <=
-                                          -50
-                                        }
-                                      >
-                                        <ChevronLeft className="h-3 w-3" />
-                                      </Button>
-
-                                      {/* Center/Reset Button */}
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-6 w-6 rounded-full p-0"
-                                        onClick={() =>
-                                          updateConfig({
-                                            descriptionPositionX: 0,
-                                            descriptionPositionY: 0,
-                                          })
-                                        }
-                                      >
-                                        <div className="h-2 w-2 rounded-full bg-gray-400"></div>
-                                      </Button>
-
-                                      {/* Right Arrow */}
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-6 w-6 p-0"
-                                        onClick={() =>
-                                          updateConfig({
-                                            descriptionPositionX: Math.min(
-                                              (config.descriptionPositionX ||
-                                                0) + 5,
-                                              50,
-                                            ),
-                                          })
-                                        }
-                                        disabled={
-                                          (config.descriptionPositionX || 0) >=
-                                          50
-                                        }
-                                      >
-                                        <ChevronRight className="h-3 w-3" />
-                                      </Button>
-                                    </div>
-
-                                    {/* Down Arrow */}
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="mt-0.5 h-6 w-6 p-0"
-                                      onClick={() =>
-                                        updateConfig({
-                                          descriptionPositionY: Math.min(
-                                            (config.descriptionPositionY || 0) +
-                                              5,
-                                            30,
-                                          ),
-                                        })
-                                      }
-                                      disabled={
-                                        (config.descriptionPositionY || 0) >= 30
-                                      }
-                                    >
-                                      <ChevronDown className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Additional Fields Selector */}
-                <div>
-                  <AdditionalFieldsSelector
+                {/* Page Content */}
+                {currentPage === 1 && (
+                  <CartelEditorPage1
                     config={config}
-                    onChange={updateConfig}
+                    updateConfig={updateConfig}
+                    accountColorPalette={accountColorPalette}
+                    onNext={() => setCurrentPage(2)}
                   />
-                </div>
-
-                {/* Icon Grid Customization - Only show when icons are enabled */}
-                {config.showIcons && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-medium text-gray-700">
-                        Personalización de Iconos
-                      </h3>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowIconCustomization(!showIconCustomization)
-                        }
-                        className="group rounded-md p-2 transition-colors duration-150 hover:bg-gray-100"
-                        title="Personalizar iconos"
-                      >
-                        <div
-                          className={`text-gray-400 transition-transform duration-200 group-hover:text-gray-600 ${showIconCustomization ? "rotate-180" : "rotate-0"} `}
-                        >
-                          <ChevronDown className="h-4 w-4" />
-                        </div>
-                      </button>
-                    </div>
-
-                    {/* Icon Customization Controls */}
-                    {showIconCustomization && (
-                      <div className="mt-3 space-y-4 rounded-lg bg-gray-50 p-4">
-                        <div className="space-y-4">
-                          {/* Icon Size */}
-                          <div className="space-y-2">
-                            <Label className="font-medium">
-                              Tamaño de Iconos
-                            </Label>
-                            <div className="flex items-center gap-3">
-                              <span className="text-sm text-gray-500">A</span>
-                              <Slider
-                                value={[config.iconSize]}
-                                onValueChange={([value]) =>
-                                  updateConfig({ iconSize: value })
-                                }
-                                max={2.0}
-                                min={0.5}
-                                step={0.1}
-                                className="flex-1"
-                              />
-                              <span className="text-xl font-bold text-gray-500">
-                                A
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Spacing Controls */}
-                          <div className="space-y-3">
-                            <Label className="font-medium">
-                              Separación de Iconos
-                            </Label>
-
-                            {/* Icon-Text Gap */}
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">
-                                  Distancia Icono-Número
-                                </span>
-                                <span className="rounded bg-white px-2 py-1 font-mono text-xs text-gray-600">
-                                  {config.iconTextGap}px
-                                </span>
-                              </div>
-                              <Slider
-                                value={[config.iconTextGap]}
-                                onValueChange={([value]) =>
-                                  updateConfig({ iconTextGap: value })
-                                }
-                                max={20}
-                                min={2}
-                                step={1}
-                                className="w-full"
-                              />
-                            </div>
-
-                            {/* Icon Pair Gap */}
-                            <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-gray-600">
-                                  Distancia entre Pares
-                                </span>
-                                <span className="rounded bg-white px-2 py-1 font-mono text-xs text-gray-600">
-                                  {config.iconPairGap}px
-                                </span>
-                              </div>
-                              <Slider
-                                value={[config.iconPairGap]}
-                                onValueChange={([value]) =>
-                                  updateConfig({ iconPairGap: value })
-                                }
-                                max={40}
-                                min={8}
-                                step={2}
-                                className="w-full"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
                 )}
 
-                {/* Navigation */}
-                <div className="mt-6 flex justify-end">
-                  <Button
-                    onClick={goToNextStep}
-                    disabled={selectedImageIndices.length < 1}
-                    title={
-                      selectedImageIndices.length < 1
-                        ? "Selecciona al menos 1 imagen"
-                        : ""
-                    }
-                  >
-                    Siguiente
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
+                {currentPage === 2 && (
+                  <CartelEditorPage2
+                    config={config}
+                    updateConfig={updateConfig}
+                    propertyData={propertyData}
+                    updatePropertyData={updatePropertyData}
+                    onPrevious={() => setCurrentPage(1)}
+                    onNext={() => setCurrentPage(3)}
+                  />
+                )}
+
+                {currentPage === 3 && (
+                  <CartelEditorPage3
+                    config={config}
+                    updateConfig={updateConfig}
+                    accountColorPalette={accountColorPalette}
+                    onPrevious={() => setCurrentPage(2)}
+                    onNext={() => setCurrentPage(4)}
+                  />
+                )}
+
+                {currentPage === 4 && (
+                  <CartelEditorPage4
+                    config={config}
+                    updateConfig={updateConfig}
+                    images={images}
+                    updateImagePosition={updateImagePosition}
+                    updateImageZoom={updateImageZoom}
+                    onPrevious={() => setCurrentPage(3)}
+                  />
+                )}
               </CardContent>
             </Card>
           )}

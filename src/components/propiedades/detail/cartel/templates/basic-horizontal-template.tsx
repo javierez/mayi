@@ -647,9 +647,17 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
 
           {/* Energy Certificate - positioned to the left of QR or in QR's place */}
           {config.showEnergyRating && config.energyConsumptionScale && (
-            <MiniEnergyCertificate
-              energyRating={config.energyConsumptionScale}
-            />
+            <div
+              style={{
+                transform: "scale(1.3)",
+                transformOrigin: "center",
+                marginRight: "16px",
+              }}
+            >
+              <MiniEnergyCertificate
+                energyRating={config.energyConsumptionScale}
+              />
+            </div>
           )}
 
           {/* QR Code */}
@@ -657,7 +665,7 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
             <PropertyQRCode
               phone={data.contact.phone}
               email={data.contact.email}
-              size={60}
+              size={78}
               className="border-0 bg-transparent p-0 shadow-none"
             />
           )}
