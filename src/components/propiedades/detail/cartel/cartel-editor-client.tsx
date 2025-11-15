@@ -62,7 +62,6 @@ import { getTemplateImages } from "~/lib/carteleria/s3-images";
 import { CartelImageGallerySection } from "./cartel-image-gallery-section";
 import { CartelPreviewPanel } from "./cartel-preview-panel";
 import { SaveConfigurationModal } from "./save-configuration-modal";
-import { getListingCartelSaveData } from "~/server/queries/listing";
 import { CartelEditorPage1 } from "./cartel-editor-page1";
 import { CartelEditorPage2 } from "./cartel-editor-page2";
 import { CartelEditorPage3 } from "./cartel-editor-page3";
@@ -602,10 +601,7 @@ export function CartelEditorClient({
     try {
       console.log("🚀 Starting cartel save process...");
 
-      // Get listing data for reference number
-      const listingData = await getListingCartelSaveData(listingId);
-
-      // Generate PDF blob
+      // Generate PDF and save directly to S3 (server-side)
       const response = await fetch("/api/puppet/generate-pdf", {
         method: "POST",
         headers: {
@@ -617,46 +613,33 @@ export function CartelEditorClient({
             ...propertyData,
             images: templateImages,
           },
+          saveToS3: true,
+          listingId: listingId.toString(),
         }),
       });
 
       if (!response.ok) {
         const errorData = (await response.json()) as { error?: string };
-        throw new Error(errorData.error ?? "PDF generation failed");
+        throw new Error(errorData.error ?? "PDF generation and save failed");
       }
 
-      // Get the PDF blob
-      const pdfBlob = await response.blob();
+      // Handle JSON response (PDF was saved server-side)
+      const result = (await response.json()) as {
+        success: boolean;
+        documentUrl: string;
+        filename: string;
+        documentId: string;
+      };
 
-      // Convert blob to File object for upload
-      const timestamp = new Date()
-        .toISOString()
-        .slice(0, 19)
-        .replace(/:/g, "-");
-      const fileName = `cartel_${listingData.referenceNumber}_${timestamp}.pdf`;
-      const file = new File([pdfBlob], fileName, { type: "application/pdf" });
-
-      // Create FormData for upload using the existing API endpoint
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folderType", "carteles");
-
-      // Upload using the properties documents API (which handles authentication internally)
-      const uploadResponse = await fetch(
-        `/api/properties/${listingId}/documents`,
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
-
-      if (!uploadResponse.ok) {
-        const errorData = (await uploadResponse.json()) as { error?: string };
-        throw new Error(errorData.error ?? "Failed to upload document");
+      if (!result.success) {
+        throw new Error("Failed to save PDF");
       }
 
       toast.success("Cartel guardado exitosamente en documentos!");
-      console.log("✅ Cartel saved successfully");
+      console.log("✅ Cartel saved successfully:", {
+        documentId: result.documentId,
+        filename: result.filename,
+      });
     } catch (error) {
       console.error("❌ Cartel save error:", error);
       toast.error(
