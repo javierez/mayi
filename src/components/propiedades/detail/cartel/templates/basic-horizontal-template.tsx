@@ -19,7 +19,7 @@ import {
   Package,
   Trees,
   Wrench,
-  ArrowUp,
+  ArrowUpDown,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { getDimensionsForOrientation } from "~/lib/carteleria/classic-vertical-constants";
@@ -99,7 +99,7 @@ const getTextColorForOverlay = (overlayType: string) => {
 const getFieldIcon = (fieldValue: string) => {
   const iconMap: Record<string, LucideIcon> = {
     yearBuilt: Calendar,
-    hasElevator: ArrowUp,
+    hasElevator: ArrowUpDown,
     hasGarage: Car,
     hasStorageRoom: Package,
     terrace: Trees,

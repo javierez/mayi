@@ -103,7 +103,7 @@ export const AdditionalFieldsSelector: FC<AdditionalFieldsSelectorProps> = ({
   return (
     <div className="space-y-4">
       <div className="mb-2">
-        <h3 className="text-lg font-medium">Información Adicional</h3>
+        <p className="text-sm font-medium">Información Adicional</p>
       </div>
 
       <div className="grid grid-cols-3 gap-2">

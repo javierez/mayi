@@ -970,6 +970,10 @@ export function CartelEditorClient({
                   <CartelEditorPage3
                     config={config}
                     updateConfig={updateConfig}
+                    propertyData={propertyData}
+                    updatePropertyData={updatePropertyData}
+                    locationText={locationText}
+                    setLocationText={setLocationText}
                     accountColorPalette={accountColorPalette}
                     onPrevious={() => setCurrentPage(2)}
                     onNext={() => setCurrentPage(4)}
@@ -980,7 +984,8 @@ export function CartelEditorClient({
                   <CartelEditorPage4
                     config={config}
                     updateConfig={updateConfig}
-                    images={images}
+                    propertyData={propertyData}
+                    templateImages={templateImages}
                     updateImagePosition={updateImagePosition}
                     updateImageZoom={updateImageZoom}
                     onPrevious={() => setCurrentPage(3)}

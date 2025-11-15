@@ -90,7 +90,6 @@ export function CartelEditorPage2({
     <div className="space-y-6">
       {/* Content Type Selection */}
       <div className="space-y-2">
-        <Label className="text-xs font-medium">Tipo de Contenido</Label>
         <div className="grid grid-cols-3 gap-3">
           {contentTypeOptions.map((option) => {
             const Icon = option.icon;

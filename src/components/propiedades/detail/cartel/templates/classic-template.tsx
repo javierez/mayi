@@ -21,7 +21,7 @@ import {
   Package,
   Trees,
   Wrench,
-  ArrowUp,
+  ArrowUpDown,
   Award,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -540,7 +540,7 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
     const iconMap: Record<string, LucideIcon> = {
       energyConsumptionScale: Award,
       yearBuilt: Calendar,
-      hasElevator: ArrowUp,
+      hasElevator: ArrowUpDown,
       hasGarage: Car,
       hasStorageRoom: Package,
       terrace: Trees,

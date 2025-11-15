@@ -21,11 +21,18 @@ import {
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
-import type { TemplateConfiguration } from "~/types/template-data";
+import type {
+  TemplateConfiguration,
+  ExtendedTemplatePropertyData,
+} from "~/types/template-data";
 
 interface CartelEditorPage3Props {
   config: TemplateConfiguration;
   updateConfig: (updates: Partial<TemplateConfiguration>) => void;
+  propertyData: ExtendedTemplatePropertyData;
+  updatePropertyData: (updates: Partial<ExtendedTemplatePropertyData>) => void;
+  locationText: string;
+  setLocationText: (text: string) => void;
   accountColorPalette?: string[];
   onPrevious?: () => void;
   onNext?: () => void;
@@ -34,6 +41,10 @@ interface CartelEditorPage3Props {
 export function CartelEditorPage3({
   config,
   updateConfig,
+  propertyData,
+  updatePropertyData,
+  locationText,
+  setLocationText,
   accountColorPalette = [],
   onPrevious,
   onNext,
@@ -50,24 +61,31 @@ export function CartelEditorPage3({
     <div className="space-y-6">
       {/* Title Customization Section */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-gray-700">
-            Personalización de Título
-          </h3>
+        {/* Title Input Field */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <Label htmlFor="title">Título</Label>
+            <Input
+              id="title"
+              value={propertyData.title}
+              onChange={(e) => updatePropertyData({ title: e.target.value })}
+            />
+          </div>
           <button
             type="button"
             onClick={() => setShowTitleCustomization(!showTitleCustomization)}
-            className="group rounded-md p-2 transition-colors duration-150 hover:bg-gray-100"
+            className="group mt-6 rounded-md p-2 transition-colors duration-150 hover:bg-gray-100"
             title="Personalizar título"
           >
             <div
-              className={`text-gray-400 transition-transform duration-200 group-hover:text-gray-600 ${showTitleCustomization ? "rotate-180" : "rotate-0"}`}
+              className={`text-gray-400 transition-transform duration-200 group-hover:text-gray-600 ${showTitleCustomization ? "rotate-180" : "rotate-0"} `}
             >
               <ChevronDown className="h-4 w-4" />
             </div>
           </button>
         </div>
 
+        {/* Title Styling Controls */}
         {showTitleCustomization && (
           <div className="space-y-4 rounded-lg bg-gray-50 p-3">
             <div className="space-y-3">
@@ -336,16 +354,23 @@ export function CartelEditorPage3({
 
       {/* Location Customization Section */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-gray-700">
-            Personalización de Ubicación
-          </h3>
+        {/* Location Input Field */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1">
+            <Label htmlFor="location">Ubicación</Label>
+            <Input
+              id="location"
+              value={locationText}
+              onChange={(e) => setLocationText(e.target.value)}
+              placeholder="Barrio (Ciudad)"
+            />
+          </div>
           <button
             type="button"
             onClick={() =>
               setShowLocationCustomization(!showLocationCustomization)
             }
-            className="group rounded-md p-2 transition-colors duration-150 hover:bg-gray-100"
+            className="group mt-6 rounded-md p-2 transition-colors duration-150 hover:bg-gray-100"
             title="Personalizar ubicación"
           >
             <div
@@ -356,6 +381,7 @@ export function CartelEditorPage3({
           </button>
         </div>
 
+        {/* Location Styling Controls */}
         {showLocationCustomization && (
           <div className="space-y-4 rounded-lg bg-gray-50 p-3">
             <div className="space-y-3">

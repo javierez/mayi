@@ -6,17 +6,16 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { Slider } from "~/components/ui/slider";
 import {
   Download,
   Eye,
-  FileText,
+  HardDrive,
   Image as ImageIcon,
   Loader2,
+  Settings,
   ZoomIn,
   ZoomOut,
   RotateCcw,
-  Save,
 } from "lucide-react";
 import type {
   TemplateConfiguration,
@@ -168,44 +167,29 @@ export function CartelPreviewPanel({
               />
             </div>
           </div>
-          <div className="mt-2 flex items-center justify-end">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Zoom:</span>
-              <Slider
-                value={[previewZoom]}
-                onValueChange={([value]) => onZoomChange(value!)}
-                max={1.0}
-                min={0.2}
-                step={0.05}
-                className="w-16 md:w-24"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Action Buttons - Below Preview */}
-      <Card className="mt-4">
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          
+          {/* Subtle action controls below preview */}
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 border-t border-gray-200 pt-4">
             <Button
               onClick={onGeneratePDF}
               disabled={isGenerating || selectedImageIndices.length < 1}
-              size="lg"
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs"
               title={
                 selectedImageIndices.length < 1
                   ? "Selecciona al menos 1 imagen"
-                  : ""
+                  : "Generar PDF"
               }
             >
               {isGenerating ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generando PDF...
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  Generando...
                 </>
               ) : (
                 <>
-                  <Download className="mr-2 h-4 w-4" />
+                  <Download className="mr-1.5 h-3.5 w-3.5" />
                   Generar PDF
                 </>
               )}
@@ -218,23 +202,25 @@ export function CartelPreviewPanel({
                 !listingId ||
                 selectedImageIndices.length < 1
               }
-              className="flex items-center gap-2"
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs"
               title={
                 !listingId
                   ? "ID de listing no disponible"
                   : selectedImageIndices.length < 1
                     ? "Selecciona al menos 1 imagen"
-                    : ""
+                    : "Guardar Cartel"
               }
             >
               {isSavingCartel ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                   Guardando...
                 </>
               ) : (
                 <>
-                  <Save className="h-4 w-4" />
+                  <HardDrive className="mr-1.5 h-3.5 w-3.5" />
                   Guardar Cartel
                 </>
               )}
@@ -243,27 +229,24 @@ export function CartelPreviewPanel({
             <Button
               onClick={onShowSaveModal}
               variant="outline"
-              className="flex items-center gap-2"
+              size="sm"
+              className="h-8 text-xs"
+              title="Guardar Plantilla"
             >
-              <Save className="h-4 w-4" />
-              Guardar Plantilla
+              <Settings className="mr-1.5 h-3.5 w-3.5" />
+              Guardar Configuración
             </Button>
 
-            <Button onClick={onPreviewTemplate} variant="outline">
-              <Eye className="mr-2 h-4 w-4" />
+            <Button
+              onClick={onPreviewTemplate}
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs"
+              title="Vista Rápida"
+            >
+              <Eye className="mr-1.5 h-3.5 w-3.5" />
               Vista Rápida
             </Button>
-
-            {lastGeneratedPdf && (
-              <Button
-                onClick={() => window.open(lastGeneratedPdf, "_blank")}
-                variant="secondary"
-                className="col-span-2"
-              >
-                <FileText className="mr-2 h-4 w-4" />
-                Abrir último PDF generado
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>
