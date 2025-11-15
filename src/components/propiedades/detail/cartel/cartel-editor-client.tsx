@@ -308,9 +308,6 @@ export function CartelEditorClient({
   const [showContactCustomization, setShowContactCustomization] =
     useState(false);
 
-  // Icon grid customization toggle state
-  const [showIconCustomization, setShowIconCustomization] = useState(false);
-
   // Page navigation state
   const [currentPage, setCurrentPage] = useState<1 | 2 | 3 | 4>(1);
 
@@ -772,64 +769,6 @@ export function CartelEditorClient({
     } catch (error) {
       console.error("Error loading configuration:", error);
       toast.error("Error al cargar la configuración");
-    }
-  };
-
-  const deleteConfiguration = async (
-    configurationId: string,
-  ): Promise<void> => {
-    try {
-      const response = await fetch(
-        `/api/cartel-configurations/${configurationId}`,
-        {
-          method: "DELETE",
-        },
-      );
-
-      const data = (await response.json()) as {
-        success: boolean;
-        error?: string;
-      };
-
-      if (data.success) {
-        await fetchConfigurations(); // Refresh the list
-        if (currentConfigurationId === configurationId) {
-          setCurrentConfigurationId(null);
-          setHasUnsavedChanges(false);
-        }
-      } else {
-        throw new Error(data.error ?? "Error deleting configuration");
-      }
-    } catch (error) {
-      console.error("Error deleting configuration:", error);
-      throw error;
-    }
-  };
-
-  const setDefaultConfiguration = async (
-    configurationId: string,
-  ): Promise<void> => {
-    try {
-      const response = await fetch(
-        `/api/cartel-configurations/${configurationId}/set-default`,
-        {
-          method: "POST",
-        },
-      );
-
-      const data = (await response.json()) as {
-        success: boolean;
-        error?: string;
-      };
-
-      if (data.success) {
-        await fetchConfigurations(); // Refresh the list
-      } else {
-        throw new Error(data.error ?? "Error setting default configuration");
-      }
-    } catch (error) {
-      console.error("Error setting default configuration:", error);
-      throw error;
     }
   };
 
@@ -2623,7 +2562,7 @@ export function CartelEditorClient({
           templateImages={templateImages}
           isGenerating={isGenerating}
           isSavingCartel={isSavingCartel}
-          lastGeneratedPdf={lastGeneratedPdf}
+          _lastGeneratedPdf={lastGeneratedPdf}
           selectedImageIndices={selectedImageIndices}
           listingId={listingId}
           savedConfigurations={savedConfigurations}
@@ -2633,7 +2572,7 @@ export function CartelEditorClient({
           onZoomIn={zoomIn}
           onZoomOut={zoomOut}
           onResetZoom={resetZoom}
-          onZoomChange={setPreviewZoom}
+          _onZoomChange={setPreviewZoom}
           onMouseDown={handleMouseDown}
           onGeneratePDF={generatePDF}
           onSaveCartel={saveCartelAsDocument}

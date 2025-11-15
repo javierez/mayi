@@ -46,7 +46,7 @@ interface CartelPreviewPanelProps {
   // Action states
   isGenerating: boolean;
   isSavingCartel: boolean;
-  lastGeneratedPdf: string | null;
+  _lastGeneratedPdf: string | null;
   selectedImageIndices: number[];
   listingId: number | null;
 
@@ -60,7 +60,7 @@ interface CartelPreviewPanelProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
   onResetZoom: () => void;
-  onZoomChange: (value: number) => void;
+  _onZoomChange: (value: number) => void;
   onMouseDown: (e: React.MouseEvent) => void;
   onGeneratePDF: () => void;
   onSaveCartel: () => void;
@@ -81,7 +81,7 @@ export function CartelPreviewPanel({
   templateImages,
   isGenerating,
   isSavingCartel,
-  lastGeneratedPdf,
+  _lastGeneratedPdf,
   selectedImageIndices,
   listingId,
   savedConfigurations,
@@ -91,7 +91,7 @@ export function CartelPreviewPanel({
   onZoomIn,
   onZoomOut,
   onResetZoom,
-  onZoomChange,
+  _onZoomChange,
   onMouseDown,
   onGeneratePDF,
   onSaveCartel,

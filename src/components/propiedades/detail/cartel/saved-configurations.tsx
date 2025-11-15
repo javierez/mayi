@@ -35,8 +35,8 @@ export function SavedConfigurations({
   return (
     <>
       {isLoading ? (
-        <div className="flex items-center justify-center">
-          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+        <div className="flex h-9 items-center justify-center">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         </div>
       ) : (
         <Select
@@ -48,7 +48,7 @@ export function SavedConfigurations({
             }
           }}
         >
-          <SelectTrigger className="h-8 w-40 border-0 bg-white text-xs shadow-sm">
+          <SelectTrigger className="h-9 w-40 border-0 bg-white text-xs shadow-md">
             <SelectValue placeholder="Cargar..." />
           </SelectTrigger>
           <SelectContent>
