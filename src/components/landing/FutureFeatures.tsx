@@ -74,7 +74,10 @@ const futureFeatures = [
 
 export function FutureFeatures() {
   return (
-    <section className="bg-white px-4 py-12 sm:px-6 sm:py-16 lg:py-24 lg:px-8">
+    <section
+      id="future"
+      className="bg-white px-4 py-12 sm:px-6 sm:py-16 lg:py-24 lg:px-8"
+    >
       <div className="mx-auto max-w-7xl">
         <div className="text-center">
           <Badge variant="outline" className="mb-3 sm:mb-4">

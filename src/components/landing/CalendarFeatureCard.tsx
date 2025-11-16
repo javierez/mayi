@@ -1,14 +1,24 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "~/lib/utils";
 import { motion } from "framer-motion";
 import { Check, ChevronLeft, ChevronRight, Car } from "lucide-react";
+import { SubscribeInfoModal } from "~/components/landing/SubscribeInfoModal";
 
 export function CalendarFeatureCard() {
+  const [isSubscribeModalOpen, setIsSubscribeModalOpen] = useState(false);
+
   return (
-    <motion.div
+    <>
+      <SubscribeInfoModal
+        open={isSubscribeModalOpen}
+        onOpenChange={setIsSubscribeModalOpen}
+      />
+
+      <motion.div
       key="calendar"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -60,7 +70,11 @@ export function CalendarFeatureCard() {
               >
                 Probar Gratis
               </Link>
-              <button disabled className="w-full rounded-lg bg-gray-100 px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-medium text-gray-400 shadow-sm cursor-not-allowed">
+              <button
+                type="button"
+                onClick={() => setIsSubscribeModalOpen(true)}
+                className="w-full rounded-lg bg-gray-100 px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-200"
+              >
                 Más información
               </button>
             </div>
@@ -350,5 +364,6 @@ export function CalendarFeatureCard() {
         </div>
       </div>
     </motion.div>
+    </>
   );
 }

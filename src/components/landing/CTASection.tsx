@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { ArrowRight, Check } from "lucide-react";
@@ -125,13 +126,15 @@ export function CTASection() {
         >
           <p className="text-sm leading-6 text-primary-foreground/80">
             ¿Ya tienes cuenta?{" "}
-            <motion.button
-              className="font-semibold underline hover:no-underline"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Iniciar sesión
-            </motion.button>
+            <Link href="/auth/signin" className="inline-block">
+              <motion.span
+                className="font-semibold underline hover:no-underline"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Iniciar sesión
+              </motion.span>
+            </Link>
           </p>
         </motion.div>
 
