@@ -1,33 +1,20 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Card, CardContent } from "~/components/ui/card";
-import { SubscribeInfoModal } from "~/components/landing/SubscribeInfoModal";
 
 interface PortalsFeatureCardProps {
   portalStates: Record<string, boolean>;
   setPortalStates: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
 }
 
-export function PortalsFeatureCard({
-  portalStates,
-  setPortalStates,
-}: PortalsFeatureCardProps) {
-  const [isSubscribeModalOpen, setIsSubscribeModalOpen] = useState(false);
-
+export function PortalsFeatureCard({ portalStates, setPortalStates }: PortalsFeatureCardProps) {
   return (
-    <>
-      <SubscribeInfoModal
-        open={isSubscribeModalOpen}
-        onOpenChange={setIsSubscribeModalOpen}
-      />
-
-      <motion.div
+    <motion.div
       key="portals"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -79,11 +66,7 @@ export function PortalsFeatureCard({
               >
                 Probar Gratis
               </Link>
-              <button
-                type="button"
-                onClick={() => setIsSubscribeModalOpen(true)}
-                className="w-full rounded-lg bg-gray-100 px-4 md:px-6 py-2.5 md:py-3 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-200"
-              >
+              <button disabled className="w-full rounded-lg bg-gray-100 px-4 md:px-6 py-2.5 md:py-3 text-sm font-medium text-gray-400 shadow-sm cursor-not-allowed">
                 Más información
               </button>
             </div>
@@ -388,6 +371,5 @@ export function PortalsFeatureCard({
         </div>
       </div>
     </motion.div>
-    </>
   );
 }

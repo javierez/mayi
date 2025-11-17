@@ -250,10 +250,7 @@ export function FeaturesGrid() {
   }, [activeFeature]);
 
   return (
-    <section
-      id="features"
-      className="bg-white px-4 pt-8 pb-16 sm:px-6 sm:pt-12 sm:pb-24 lg:px-8"
-    >
+    <section className="bg-white px-4 pt-8 pb-16 sm:px-6 sm:pt-12 sm:pb-24 lg:px-8">
       <div className="mx-auto max-w-7xl">
         <motion.div
           className="mb-12 text-center"

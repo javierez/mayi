@@ -171,7 +171,7 @@ export function FutureFeaturesLeaderboard() {
                       </span>
                     </div>
                     <div className="font-mono text-2xl font-bold text-red-600">
-                      12h
+                      48h
                     </div>
                     <p className="mt-1 text-xs text-gray-600">
                       Bugs críticos que afectan funcionalidad principal
@@ -186,7 +186,7 @@ export function FutureFeaturesLeaderboard() {
                       </span>
                     </div>
                     <div className="font-mono text-2xl font-bold text-amber-600">
-                      5 días
+                      7 días
                     </div>
                     <p className="mt-1 text-xs text-gray-600">
                       Problemas menores que no bloquean el trabajo diario

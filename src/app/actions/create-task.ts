@@ -17,6 +17,8 @@ export async function createTaskAction(params: {
   suggestedDueDays?: number; // Will be converted to dueDate if dueDate not provided
   listingId?: bigint;
   listingContactId?: bigint;
+  activityId?: bigint;
+  activityType?: "contact_activity" | "listing_contact_activity";
 }) {
   try {
     const currentUser = await getCurrentUser();
@@ -47,6 +49,8 @@ export async function createTaskAction(params: {
       category: params.category,
       listingId: params.listingId,
       listingContactId: params.listingContactId,
+      activityId: params.activityId,
+      activityType: params.activityType,
     };
 
     const newTask = await createTaskWithAuth(taskData);

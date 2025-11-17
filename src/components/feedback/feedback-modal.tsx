@@ -121,19 +121,21 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                     placeholder="Comparte tus comentarios, sugerencias o problemas que hayas encontrado..."
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    className="min-h-[100px] resize-none pr-10 focus:border-gray-400 focus:ring-gray-400"
+                    className="min-h-[100px] resize-none pr-12 focus:border-gray-400 focus:ring-gray-400"
                     maxLength={500}
                   />
-                  <PushToTalkWhisperButton
-                    onTranscript={(text) => {
-                      setComment((prev) => {
-                        const newValue = prev ? `${prev} ${text}`.trim() : text;
-                        return newValue.slice(0, 500);
-                      });
-                    }}
-                    language="es"
-                    disabled={isSubmitting}
-                  />
+                  <div className="absolute bottom-2 right-2">
+                    <PushToTalkWhisperButton
+                      onTranscript={(text) => {
+                        setComment((prev) => {
+                          const newValue = prev ? `${prev} ${text}`.trim() : text;
+                          return newValue.slice(0, 500);
+                        });
+                      }}
+                      language="es"
+                      disabled={isSubmitting}
+                    />
+                  </div>
                 </div>
                 <div className="text-right text-xs text-gray-500">
                   {comment.length}/500 caracteres

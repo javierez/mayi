@@ -59,6 +59,7 @@ export function AddListingContactActivityModal({
   const [action, setAction] = useState<ListingContactActivityAction | "">("");
   const [notes, setNotes] = useState("");
   const [isPending, setIsPending] = useState(false);
+  const [deadlineHours, setDeadlineHours] = useState(48);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // AI transformation state
@@ -77,6 +78,7 @@ export function AddListingContactActivityModal({
       setAction("");
       setNotes("");
       setIsPending(false);
+      setDeadlineHours(48);
       // Reset AI transformation state
       setShowPreviewModal(false);
       setTransformedContent("");
@@ -122,6 +124,7 @@ export function AddListingContactActivityModal({
         topic: undefined,
         details: {
           isPending,
+          deadlineHours: isPending ? deadlineHours : undefined,
           activityType: selectedType ?? undefined,
         },
       });
@@ -321,6 +324,36 @@ export function AddListingContactActivityModal({
               >
                 Marcar como pendiente
               </Label>
+              {isPending && (
+                <>
+                  <span className="text-xs font-normal text-gray-600">en</span>
+                  <input
+                    id="deadlineHours"
+                    type="number"
+                    min="1"
+                    value={deadlineHours === 0 ? "" : deadlineHours}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "") {
+                        setDeadlineHours(0);
+                      } else {
+                        const num = parseInt(val);
+                        if (!isNaN(num) && num >= 1) {
+                          setDeadlineHours(num);
+                        }
+                      }
+                    }}
+                    onBlur={() => {
+                      if (deadlineHours === 0) {
+                        setDeadlineHours(48);
+                      }
+                    }}
+                    className="h-7 w-16 rounded border border-input bg-background px-2 text-xs text-center"
+                    placeholder="48"
+                  />
+                  <span className="text-xs font-normal text-gray-600">horas</span>
+                </>
+              )}
             </div>
           </div>
         )}

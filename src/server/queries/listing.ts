@@ -11,6 +11,7 @@ import {
   contacts,
   accounts,
   websiteProperties,
+  documents,
 } from "../db/schema";
 import { eq, and, ne, sql } from "drizzle-orm";
 import type { Listing } from "../../lib/data";
@@ -1753,6 +1754,30 @@ export async function deleteProperty(propertyId: number, accountId: number) {
       throw new Error("Property not found or access denied");
     }
 
+    // IMPORTANT: Delete all S3 files (images, videos, documents, etc.) BEFORE deleting database records
+    let s3CleanupResult = {
+      deletedCount: 0,
+      deletedFiles: [] as string[],
+    };
+
+    if (property.referenceNumber) {
+      try {
+        const { deletePropertyS3Folder } = await import("~/lib/s3");
+        const result = await deletePropertyS3Folder(property.referenceNumber);
+        s3CleanupResult = {
+          deletedCount: result.deletedCount,
+          deletedFiles: result.deletedFiles,
+        };
+        console.log(
+          `Deleted ${result.deletedCount} S3 files for property ${property.referenceNumber}`,
+        );
+      } catch (s3Error) {
+        console.error("Error deleting S3 files:", s3Error);
+        // Log the error but continue with database cleanup
+        // This prevents partial deletion if S3 fails
+      }
+    }
+
     // Get all listings for this property to get their IDs
     const propertyListings = await db
       .select({ listingId: listings.listingId })
@@ -1777,12 +1802,17 @@ export async function deleteProperty(propertyId: number, accountId: number) {
       }
     }
 
-    // 2. Delete all property_images for this property
+    // 2. Delete all documents associated with this property
+    await db
+      .delete(documents)
+      .where(eq(documents.propertyId, BigInt(propertyId)));
+
+    // 3. Delete all property_images for this property
     await db
       .delete(propertyImages)
       .where(eq(propertyImages.propertyId, BigInt(propertyId)));
 
-    // 3. Delete all listings for this property
+    // 4. Delete all listings for this property
     await db
       .delete(listings)
       .where(
@@ -1792,7 +1822,7 @@ export async function deleteProperty(propertyId: number, accountId: number) {
         ),
       );
 
-    // 4. Finally delete the property itself
+    // 5. Finally delete the property itself
     await db
       .delete(properties)
       .where(
@@ -1807,6 +1837,7 @@ export async function deleteProperty(propertyId: number, accountId: number) {
       message:
         "Propiedad y todos sus datos relacionados eliminados correctamente",
       deletedListings: propertyListings.length,
+      deletedS3Files: s3CleanupResult.deletedCount,
     };
   } catch (error) {
     console.error("Error deleting property:", error);

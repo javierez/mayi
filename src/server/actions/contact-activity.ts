@@ -19,6 +19,7 @@ export interface CreateContactActivityFormData {
   topic?: string;
   details?: {
     isPending?: boolean;
+    deadlineHours?: number;
     activityType?: string;
     [key: string]: unknown;
   };
@@ -42,7 +43,7 @@ export interface ContactActivityActionResult {
 export async function findListingContactIdAction(
   contactId: bigint,
   listingId: bigint,
-): Promise<{ success: boolean; listingContactId?: bigint; error?: string }> {
+): Promise<{ success: boolean; listingContactId?: bigint; error?: string; notFound?: boolean }> {
   try {
     const accountId = await getCurrentUserAccountId();
 
@@ -66,6 +67,7 @@ export async function findListingContactIdAction(
     if (!listingContact) {
       return {
         success: false,
+        notFound: true,
         error: "No se encontró la relación entre el contacto y la propiedad",
       };
     }
@@ -79,6 +81,68 @@ export async function findListingContactIdAction(
     return {
       success: false,
       error: "Error al buscar la relación",
+    };
+  }
+}
+
+/**
+ * Create a listing-contact relationship with 'buyer' contact type
+ */
+export async function createListingContactRelationshipAction(
+  contactId: bigint,
+  listingId: bigint,
+): Promise<{ success: boolean; listingContactId?: bigint; error?: string }> {
+  try {
+    const accountId = await getCurrentUserAccountId();
+
+    // Verify that the contact belongs to the current account
+    const [contact] = await db
+      .select({ contactId: contacts.contactId })
+      .from(contacts)
+      .where(
+        and(
+          eq(contacts.contactId, contactId),
+          eq(contacts.accountId, BigInt(accountId)),
+          eq(contacts.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    if (!contact) {
+      return {
+        success: false,
+        error: "Contacto no encontrado o acceso denegado",
+      };
+    }
+
+    // Create the listing-contact relationship
+    const [newRelation] = await db
+      .insert(listingContacts)
+      .values({
+        contactId,
+        listingId,
+        contactType: "buyer",
+        isActive: true,
+        status: "active",
+      })
+      .returning({ listingContactId: listingContacts.listingContactId });
+
+    if (!newRelation) {
+      return {
+        success: false,
+        error: "Error al crear la relación",
+      };
+    }
+
+    return {
+      success: true,
+      listingContactId: newRelation.listingContactId,
+    };
+  } catch (error) {
+    console.error("Error creating listing contact relationship:", error);
+    return {
+      success: false,
+      error: "Error al crear la relación entre el contacto y la propiedad",
     };
   }
 }
@@ -233,12 +297,49 @@ export async function createContactActivityAction(
     };
 
     // Log the contact activity with the actual action type
-    await logContactActivity({
+    const activityId = await logContactActivity({
       contactId,
       userId: currentUser.id,
       action,
       details: details as never, // Type assertion needed due to strict typing
     });
+
+    // Auto-create task if isPending is true
+    if (formData.details?.isPending === true) {
+      try {
+        const { createTaskAction } = await import("../../app/actions/create-task");
+        const {
+          fetchContactName,
+          generateTaskTitleFromActivity,
+        } = await import("./task-helpers");
+
+        // Fetch contact name for task title
+        const contactName = await fetchContactName(contactId);
+
+        // Generate task title
+        const taskTitle = await generateTaskTitleFromActivity(action, contactName);
+
+        // Calculate due date from hours (default 48 hours)
+        const deadlineHours = formData.details.deadlineHours ?? 48;
+        const dueDate = new Date();
+        dueDate.setHours(dueDate.getHours() + deadlineHours);
+
+        // Create follow-up task with calculated due date and activity reference
+        await createTaskAction({
+          title: taskTitle,
+          description: formData.notes.trim(),
+          contactId,
+          urgency: 2, // Medium urgency
+          category: "contact",
+          dueDate,
+          activityId, // Link task to the activity that created it
+          activityType: "contact_activity", // Specify this came from contact_activity
+        });
+      } catch (taskError) {
+        // Log error but don't fail the activity creation
+        console.error("Error creating task from pending activity:", taskError);
+      }
+    }
 
     // Revalidate the page
     revalidatePath(`/contactos`);

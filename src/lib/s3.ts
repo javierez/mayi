@@ -35,6 +35,9 @@ const s3Client = new S3Client({
   },
 });
 
+// Export S3 client for use in other modules
+export { s3Client };
+
 export async function uploadImageToS3(
   file: File,
   referenceNumber: string,
@@ -312,6 +315,74 @@ export async function renameS3Folder(
     return results;
   } catch (error) {
     console.error("Error renaming S3 folder:", error);
+    throw error;
+  }
+}
+
+/**
+ * Delete all files in a property's S3 folder (images, videos, documents, etc.)
+ * This should be called before deleting a property from the database to clean up storage
+ */
+export async function deletePropertyS3Folder(
+  referenceNumber: string,
+): Promise<{
+  success: boolean;
+  deletedCount: number;
+  deletedFiles: string[];
+}> {
+  try {
+    if (!referenceNumber) {
+      throw new Error("Reference number is required");
+    }
+
+    // Get dynamic bucket name based on current user's account
+    const bucket = await getDynamicBucketName();
+    const deletedFiles: string[] = [];
+
+    // List all objects in the property folder
+    const listCommand = new ListObjectsV2Command({
+      Bucket: bucket,
+      Prefix: `${referenceNumber}/`,
+    });
+
+    const listedObjects = await s3Client.send(listCommand);
+
+    if (!listedObjects.Contents || listedObjects.Contents.length === 0) {
+      console.log(
+        `No S3 objects found for property folder: ${referenceNumber}`,
+      );
+      return {
+        success: true,
+        deletedCount: 0,
+        deletedFiles: [],
+      };
+    }
+
+    // Delete each object
+    for (const object of listedObjects.Contents) {
+      if (!object.Key) continue;
+
+      const deleteCommand = new DeleteObjectCommand({
+        Bucket: bucket,
+        Key: object.Key,
+      });
+
+      await s3Client.send(deleteCommand);
+      deletedFiles.push(object.Key);
+      console.log(`Deleted S3 object: ${object.Key}`);
+    }
+
+    console.log(
+      `Successfully deleted ${deletedFiles.length} files from S3 for property: ${referenceNumber}`,
+    );
+
+    return {
+      success: true,
+      deletedCount: deletedFiles.length,
+      deletedFiles,
+    };
+  } catch (error) {
+    console.error("Error deleting property S3 folder:", error);
     throw error;
   }
 }

@@ -9,6 +9,8 @@ import {
   listings,
   properties,
   users,
+  contactActivity,
+  listingContactActivity,
 } from "../db/schema";
 import { eq, and, or, sql, isNotNull, asc, lte } from "drizzle-orm";
 import type { Task } from "../../lib/data";
@@ -563,6 +565,8 @@ export async function updateTask(
         title: tasks.title,
         completed: tasks.completed,
         userId: tasks.userId,
+        activityId: tasks.activityId,
+        activityType: tasks.activityType,
       })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
@@ -612,6 +616,96 @@ export async function updateTask(
       .update(tasks)
       .set(updateData)
       .where(and(eq(tasks.taskId, BigInt(taskId)), eq(tasks.isActive, true)));
+
+    // If task completion status changed and has an associated activity, update the activity's pending status
+    if (
+      data.completed !== undefined &&
+      data.completed !== existingTask.completed &&
+      existingTask.activityId &&
+      existingTask.activityType
+    ) {
+      try {
+        const newIsPendingValue = !data.completed; // If completed=true, isPending=false; if completed=false, isPending=true
+
+        // Use activityType to determine which table to update
+        if (existingTask.activityType === "contact_activity") {
+          // Update contact activity
+          const [contactAct] = await db
+            .select({
+              id: contactActivity.id,
+              details: contactActivity.details,
+            })
+            .from(contactActivity)
+            .where(eq(contactActivity.id, existingTask.activityId))
+            .limit(1);
+
+          if (contactAct) {
+            // Parse details if it's a string, or use as-is if it's an object
+            const currentDetails =
+              typeof contactAct.details === "string"
+                ? (JSON.parse(contactAct.details) as Record<string, unknown>)
+                : (contactAct.details as Record<string, unknown>);
+
+            // Update the details JSON to set isPending
+            const updatedDetails = {
+              ...currentDetails,
+              isPending: newIsPendingValue,
+            };
+
+            await db
+              .update(contactActivity)
+              .set({ details: updatedDetails })
+              .where(eq(contactActivity.id, existingTask.activityId));
+
+            console.log(
+              `[ACTIVITY UPDATED] Contact Activity ID: ${existingTask.activityId}, isPending set to ${newIsPendingValue}`,
+            );
+          }
+        } else if (existingTask.activityType === "listing_contact_activity") {
+          // Update listing contact activity
+          const [listingContactAct] = await db
+            .select({
+              id: listingContactActivity.id,
+              details: listingContactActivity.details,
+            })
+            .from(listingContactActivity)
+            .where(eq(listingContactActivity.id, existingTask.activityId))
+            .limit(1);
+
+          if (listingContactAct) {
+            // Parse details if it's a string, or use as-is if it's an object
+            const currentDetails =
+              typeof listingContactAct.details === "string"
+                ? (JSON.parse(listingContactAct.details) as Record<
+                    string,
+                    unknown
+                  >)
+                : (listingContactAct.details as Record<string, unknown>);
+
+            // Update the details JSON to set isPending
+            const updatedDetails = {
+              ...currentDetails,
+              isPending: newIsPendingValue,
+            };
+
+            await db
+              .update(listingContactActivity)
+              .set({ details: updatedDetails })
+              .where(eq(listingContactActivity.id, existingTask.activityId));
+
+            console.log(
+              `[ACTIVITY UPDATED] Listing Contact Activity ID: ${existingTask.activityId}, isPending set to ${newIsPendingValue}`,
+            );
+          }
+        }
+      } catch (activityError) {
+        // Log error but don't fail task update
+        console.error(
+          `Error updating activity ${existingTask.activityId}:`,
+          activityError,
+        );
+      }
+    }
 
     // Log the edit action
     const updatedFields = Object.keys(data).join(", ");
@@ -791,12 +885,14 @@ export async function completeTask(
   completedBy?: string,
 ) {
   try {
-    // First verify the task belongs to this account
+    // First verify the task belongs to this account and get activityId and activityType
     const [existingTask] = await db
       .select({
         taskId: tasks.taskId,
         title: tasks.title,
         completed: tasks.completed,
+        activityId: tasks.activityId,
+        activityType: tasks.activityType,
       })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
@@ -837,6 +933,201 @@ export async function completeTask(
         completedBy: completedBy ?? null,
       })
       .where(and(eq(tasks.taskId, BigInt(taskId)), eq(tasks.isActive, true)));
+
+    // If task has an associated activity, update the activity's pending status
+    console.log(
+      `[DEBUG] Task ${taskId} - activityId: ${existingTask.activityId ?? "NULL"}, activityType: ${existingTask.activityType ?? "NULL"}`,
+    );
+
+    if (existingTask.activityId && existingTask.activityType) {
+      try {
+        console.log(
+          `[DEBUG] Proceeding with activity update for activityId: ${existingTask.activityId}, activityType: ${existingTask.activityType}`,
+        );
+
+        // Use activityType to determine which table to update
+        if (existingTask.activityType === "contact_activity") {
+          // Update contact activity
+          const [contactAct] = await db
+            .select({
+              id: contactActivity.id,
+              details: contactActivity.details,
+            })
+            .from(contactActivity)
+            .where(eq(contactActivity.id, existingTask.activityId))
+            .limit(1);
+
+          console.log(
+            `[DEBUG] Contact Activity found:`,
+            contactAct
+              ? {
+                  id: contactAct.id,
+                  detailsType: typeof contactAct.details,
+                  detailsRaw: JSON.stringify(contactAct.details),
+                }
+              : "NOT FOUND",
+          );
+
+          if (contactAct) {
+            // Parse details if it's a string, or use as-is if it's an object
+            const currentDetails =
+              typeof contactAct.details === "string"
+                ? (JSON.parse(contactAct.details) as Record<string, unknown>)
+                : (contactAct.details as Record<string, unknown>);
+
+            console.log(
+              `[DEBUG] Current details parsed:`,
+              JSON.stringify(currentDetails),
+            );
+            console.log(
+              `[DEBUG] Current isPending value:`,
+              currentDetails.isPending,
+            );
+
+            // Update the details JSON to set isPending = false
+            const updatedDetails = {
+              ...currentDetails,
+              isPending: false,
+            };
+
+            console.log(
+              `[DEBUG] Updated details to save:`,
+              JSON.stringify(updatedDetails),
+            );
+
+            await db
+              .update(contactActivity)
+              .set({ details: updatedDetails })
+              .where(eq(contactActivity.id, existingTask.activityId));
+
+            console.log(
+              `[ACTIVITY UPDATED] Contact Activity ID: ${existingTask.activityId}, isPending set to false`,
+            );
+
+            // Verify the update
+            const [verifyAct] = await db
+              .select({
+                id: contactActivity.id,
+                details: contactActivity.details,
+              })
+              .from(contactActivity)
+              .where(eq(contactActivity.id, existingTask.activityId))
+              .limit(1);
+
+            console.log(
+              `[DEBUG] Verification - Activity after update:`,
+              verifyAct
+                ? {
+                    id: verifyAct.id,
+                    detailsType: typeof verifyAct.details,
+                    detailsRaw: JSON.stringify(verifyAct.details),
+                  }
+                : "NOT FOUND",
+            );
+          } else {
+            console.log(
+              `[DEBUG] Contact activity with ID ${existingTask.activityId} not found`,
+            );
+          }
+        } else if (existingTask.activityType === "listing_contact_activity") {
+          // Update listing contact activity
+          const [listingContactAct] = await db
+            .select({
+              id: listingContactActivity.id,
+              details: listingContactActivity.details,
+            })
+            .from(listingContactActivity)
+            .where(eq(listingContactActivity.id, existingTask.activityId))
+            .limit(1);
+
+          console.log(
+            `[DEBUG] Listing Contact Activity found:`,
+            listingContactAct
+              ? {
+                  id: listingContactAct.id,
+                  detailsType: typeof listingContactAct.details,
+                  detailsRaw: JSON.stringify(listingContactAct.details),
+                }
+              : "NOT FOUND",
+          );
+
+          if (listingContactAct) {
+            // Parse details if it's a string, or use as-is if it's an object
+            const currentDetails =
+              typeof listingContactAct.details === "string"
+                ? (JSON.parse(listingContactAct.details) as Record<
+                    string,
+                    unknown
+                  >)
+                : (listingContactAct.details as Record<string, unknown>);
+
+            console.log(
+              `[DEBUG] Current details parsed:`,
+              JSON.stringify(currentDetails),
+            );
+            console.log(
+              `[DEBUG] Current isPending value:`,
+              currentDetails.isPending,
+            );
+
+            // Update the details JSON to set isPending = false
+            const updatedDetails = {
+              ...currentDetails,
+              isPending: false,
+            };
+
+            console.log(
+              `[DEBUG] Updated details to save:`,
+              JSON.stringify(updatedDetails),
+            );
+
+            await db
+              .update(listingContactActivity)
+              .set({ details: updatedDetails })
+              .where(eq(listingContactActivity.id, existingTask.activityId));
+
+            console.log(
+              `[ACTIVITY UPDATED] Listing Contact Activity ID: ${existingTask.activityId}, isPending set to false`,
+            );
+
+            // Verify the update
+            const [verifyAct] = await db
+              .select({
+                id: listingContactActivity.id,
+                details: listingContactActivity.details,
+              })
+              .from(listingContactActivity)
+              .where(eq(listingContactActivity.id, existingTask.activityId))
+              .limit(1);
+
+            console.log(
+              `[DEBUG] Verification - Activity after update:`,
+              verifyAct
+                ? {
+                    id: verifyAct.id,
+                    detailsType: typeof verifyAct.details,
+                    detailsRaw: JSON.stringify(verifyAct.details),
+                  }
+                : "NOT FOUND",
+            );
+          } else {
+            console.log(
+              `[DEBUG] Listing contact activity with ID ${existingTask.activityId} not found`,
+            );
+          }
+        } else {
+          console.log(
+            `[DEBUG] Unknown activityType: ${existingTask.activityType}`,
+          );
+        }
+      } catch (activityError) {
+        // Log error but don't fail task completion
+        console.error(
+          `Error updating activity ${existingTask.activityId}:`,
+          activityError,
+        );
+      }
+    }
 
     // Log the completion action
     console.log(

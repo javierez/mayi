@@ -20,6 +20,7 @@ export interface CreateListingContactActivityFormData {
   topic?: string;
   details?: {
     isPending?: boolean;
+    deadlineHours?: number;
     activityType?: string;
     [key: string]: unknown;
   };
@@ -135,12 +136,74 @@ export async function createListingContactActivityAction(
     };
 
     // Log the activity using the helper function
-    await logListingContactActivity({
+    const activityId = await logListingContactActivity({
       listingContactId,
       userId: currentUser.id,
       action: validatedAction,
       details: details as unknown as ListingContactActivityDetailsMap[typeof validatedAction],
     });
+
+    // Auto-create task if isPending is true
+    if (formData.details?.isPending === true) {
+      try {
+        const { createTaskAction } = await import("../../app/actions/create-task");
+        const {
+          fetchContactName,
+          fetchListingTitle,
+          generateTaskTitleFromActivity,
+        } = await import("./task-helpers");
+
+        // Fetch contactId and listingId from listingContactId
+        const [listingContact] = await db
+          .select({
+            contactId: listingContacts.contactId,
+            listingId: listingContacts.listingId,
+          })
+          .from(listingContacts)
+          .where(eq(listingContacts.listingContactId, listingContactId))
+          .limit(1);
+
+        if (listingContact) {
+          // Fetch contact name for task title
+          const contactName = await fetchContactName(listingContact.contactId);
+
+          // Fetch listing title if available
+          let listingTitle: string | null = null;
+          if (listingContact.listingId) {
+            listingTitle = await fetchListingTitle(listingContact.listingId);
+          }
+
+          // Generate task title
+          const taskTitle = await generateTaskTitleFromActivity(
+            validatedAction,
+            contactName,
+            listingTitle,
+          );
+
+          // Calculate due date from hours (default 48 hours)
+          const deadlineHours = formData.details?.deadlineHours ?? 48;
+          const dueDate = new Date();
+          dueDate.setHours(dueDate.getHours() + deadlineHours);
+
+          // Create follow-up task with calculated due date and activity reference
+          await createTaskAction({
+            title: taskTitle,
+            description: formData.notes.trim(),
+            contactId: listingContact.contactId,
+            urgency: 2, // Medium urgency
+            category: "contact",
+            dueDate,
+            listingId: listingContact.listingId ?? undefined,
+            listingContactId,
+            activityId, // Link task to the activity that created it
+            activityType: "listing_contact_activity", // Specify this came from listing_contact_activity
+          });
+        }
+      } catch (taskError) {
+        // Log error but don't fail the activity creation
+        console.error("Error creating task from pending activity:", taskError);
+      }
+    }
 
     // Revalidate the page
     revalidatePath(`/operaciones/leads`);

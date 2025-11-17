@@ -16,7 +16,7 @@ interface NotesAiButtonsProps {
 
 export function NotesAiButtons({
   notes,
-  isPending,
+  isPending: _isPending,
   onTransform,
   disabled = false,
   isProcessing = false,
@@ -27,8 +27,8 @@ export function NotesAiButtons({
   // Show summarize button when notes > 400 characters
   const showSummarize = noteLength > 400;
 
-  // Show tasks button only when pending toggle is enabled
-  const showTasks = isPending;
+  // Show tasks button always
+  const showTasks = true;
 
   const buttonBaseClass = "inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/60 backdrop-blur-sm text-gray-400 transition-all hover:bg-gray-100/80 hover:text-gray-700 active:bg-gray-100/80 disabled:pointer-events-none disabled:opacity-50";
 

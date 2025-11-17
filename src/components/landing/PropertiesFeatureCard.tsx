@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,25 +13,14 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardFooter } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { SubscribeInfoModal } from "~/components/landing/SubscribeInfoModal";
 
 interface PropertiesFeatureCardProps {
   cardSetIndex: number;
 }
 
-export function PropertiesFeatureCard({
-  cardSetIndex,
-}: PropertiesFeatureCardProps) {
-  const [isSubscribeModalOpen, setIsSubscribeModalOpen] = useState(false);
-
+export function PropertiesFeatureCard({ cardSetIndex }: PropertiesFeatureCardProps) {
   return (
-    <>
-      <SubscribeInfoModal
-        open={isSubscribeModalOpen}
-        onOpenChange={setIsSubscribeModalOpen}
-      />
-
-      <motion.div
+    <motion.div
       key="properties"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -120,11 +108,7 @@ export function PropertiesFeatureCard({
               >
                 Probar Gratis
               </Link>
-              <button
-                type="button"
-                onClick={() => setIsSubscribeModalOpen(true)}
-                className="w-full rounded-lg bg-gray-100 px-4 md:px-6 py-2.5 md:py-3 text-xs md:text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-200"
-              >
+              <button disabled className="w-full rounded-lg bg-gray-100 px-4 md:px-6 py-2.5 md:py-3 text-xs md:text-sm font-medium text-gray-400 shadow-sm cursor-not-allowed">
                 Más información
               </button>
             </div>
@@ -472,6 +456,5 @@ export function PropertiesFeatureCard({
         </div>
       </div>
     </motion.div>
-    </>
   );
 }

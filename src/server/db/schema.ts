@@ -743,6 +743,8 @@ export const tasks = pgTable("tasks", {
   appointmentId: bigint("appointment_id", { mode: "bigint" }), // FK → appointments.appointment_id (nullable)
   prospectId: bigint("prospect_id", { mode: "bigint" }), // FK → prospects.prospect_id (nullable)
   contactId: bigint("contact_id", { mode: "bigint" }), // FK → contacts.contact_id (nullable)
+  activityId: bigint("activity_id", { mode: "bigint" }), // FK → activity log/table (nullable)
+  activityType: varchar("activity_type", { length: 50 }), // Type of activity this task is related to (e.g., 'contact_activity', 'listing_contact_activity')
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

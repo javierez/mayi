@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Check, Brain, Zap, Languages, PenTool } from "lucide-react";
-import { SubscribeInfoModal } from "~/components/landing/SubscribeInfoModal";
 
 interface AIFeatureCardProps {
   generatedTitleText: string;
@@ -19,15 +17,7 @@ export function AIFeatureCard({
   descriptionText,
   isTypingDescription,
 }: AIFeatureCardProps) {
-  const [isSubscribeModalOpen, setIsSubscribeModalOpen] = useState(false);
-
   return (
-    <>
-      <SubscribeInfoModal
-        open={isSubscribeModalOpen}
-        onOpenChange={setIsSubscribeModalOpen}
-      />
-
     <motion.div
       key="ai"
       initial={{ opacity: 0, y: -20 }}
@@ -80,11 +70,7 @@ export function AIFeatureCard({
               >
                 Probar Gratis
               </Link>
-              <button
-                type="button"
-                onClick={() => setIsSubscribeModalOpen(true)}
-                className="w-full rounded-lg bg-gray-100 px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-200"
-              >
+              <button disabled className="w-full rounded-lg bg-gray-100 px-4 sm:px-6 py-2.5 sm:py-3 text-sm font-medium text-gray-400 shadow-sm cursor-not-allowed">
                 Más información
               </button>
             </div>
@@ -160,6 +146,5 @@ export function AIFeatureCard({
         </div>
       </div>
     </motion.div>
-    </>
   );
 }

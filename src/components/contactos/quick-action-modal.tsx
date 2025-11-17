@@ -33,8 +33,9 @@ import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whispe
 import { NotesAiButtons, type TransformationType } from "~/components/shared/notes-ai-buttons";
 import { NotesTransformationPreviewModal } from "~/components/shared/notes-transformation-preview-modal";
 import { TaskSelectionModal } from "~/components/shared/task-selection-modal";
+import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { createListingContactActivityAction } from "~/server/actions/listing-contact-activity";
-import { createContactActivityAction, findListingContactIdAction } from "~/server/actions/contact-activity";
+import { createContactActivityAction, findListingContactIdAction, createListingContactRelationshipAction } from "~/server/actions/contact-activity";
 import { listListingsCompactWithAuth, listListingsForContactWithAuth } from "~/server/queries/listing";
 import { listContactsWithAuth, searchContactsWithAuth } from "~/server/queries/contact";
 import type { ListingContactActivityAction } from "~/lib/constants/listing-contact-activity-actions";
@@ -106,6 +107,7 @@ export function QuickActionModal({
   const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [notes, setNotes] = useState("");
   const [isPending, setIsPending] = useState(false);
+  const [deadlineHours, setDeadlineHours] = useState(48);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // AI transformation state
@@ -115,6 +117,10 @@ export function QuickActionModal({
   const [showTaskSelectionModal, setShowTaskSelectionModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingType, setProcessingType] = useState<TransformationType | null>(null);
+
+  // Confirmation dialog state for creating listing-contact relationship
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingListingId, setPendingListingId] = useState<bigint | null>(null);
 
   // Reset form when modal closes
   React.useEffect(() => {
@@ -130,6 +136,7 @@ export function QuickActionModal({
       setListingSearchQuery("");
       setNotes("");
       setIsPending(false);
+      setDeadlineHours(48);
       // Reset AI transformation state
       setShowPreviewModal(false);
       setTransformedContent("");
@@ -137,6 +144,9 @@ export function QuickActionModal({
       setShowTaskSelectionModal(false);
       setIsProcessing(false);
       setProcessingType(null);
+      // Reset confirmation dialog state
+      setShowConfirmDialog(false);
+      setPendingListingId(null);
     }
   }, [open]);
 
@@ -340,9 +350,19 @@ export function QuickActionModal({
         );
 
         if (!listingContactResult.success || !listingContactResult.listingContactId) {
+          // Check if the relationship was not found
+          if (listingContactResult.notFound) {
+            // Show confirmation dialog to create the relationship
+            setPendingListingId(selectedListing.listingId);
+            setShowConfirmDialog(true);
+            setIsSubmitting(false);
+            return;
+          }
+
+          // Other errors
           toast.error(
             listingContactResult.error ??
-              "No se encontró la relación entre el contacto y la propiedad",
+              "Error al buscar la relación entre el contacto y la propiedad",
           );
           setIsSubmitting(false);
           return;
@@ -355,6 +375,7 @@ export function QuickActionModal({
           topic: undefined,
           details: {
             isPending,
+            deadlineHours: isPending ? deadlineHours : undefined,
             activityType: selectedType ?? undefined,
           },
         });
@@ -377,6 +398,7 @@ export function QuickActionModal({
           topic: undefined,
           details: {
             isPending,
+            deadlineHours: isPending ? deadlineHours : undefined,
             activityType: selectedType ?? undefined,
           },
         });
@@ -397,6 +419,64 @@ export function QuickActionModal({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleConfirmCreateRelationship = async () => {
+    if (!pendingListingId || !selectedContact) return;
+
+    setIsSubmitting(true);
+    setShowConfirmDialog(false);
+
+    try {
+      // Create the relationship
+      const createResult = await createListingContactRelationshipAction(
+        selectedContact.contactId,
+        pendingListingId,
+      );
+
+      if (!createResult.success || !createResult.listingContactId) {
+        toast.error(
+          createResult.error ?? "Error al crear la relación",
+        );
+        setPendingListingId(null);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Now create the activity with the new relationship
+      const result = await createListingContactActivityAction({
+        listingContactId: createResult.listingContactId.toString(),
+        action,
+        notes: notes.trim(),
+        topic: undefined,
+        details: {
+          isPending,
+          deadlineHours: isPending ? deadlineHours : undefined,
+          activityType: selectedType ?? undefined,
+        },
+      });
+
+      if (result.success) {
+        toast.success("Relación creada y actividad registrada correctamente");
+        setPendingListingId(null);
+        onOpenChange(false);
+        if (onSuccess) {
+          onSuccess();
+        }
+      } else {
+        toast.error(result.error ?? "Error al registrar la actividad");
+      }
+    } catch (error) {
+      console.error("Error creating relationship and activity:", error);
+      toast.error("Error al crear la relación y registrar la actividad");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancelCreateRelationship = () => {
+    setPendingListingId(null);
+    setShowConfirmDialog(false);
   };
 
   const handleNotesChange = (value: string) => {
@@ -841,6 +921,36 @@ export function QuickActionModal({
               >
                 Marcar como pendiente
               </Label>
+              {isPending && (
+                <>
+                  <span className="text-xs font-normal text-gray-600">en</span>
+                  <input
+                    id="deadlineHours"
+                    type="number"
+                    min="1"
+                    value={deadlineHours === 0 ? "" : deadlineHours}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "") {
+                        setDeadlineHours(0);
+                      } else {
+                        const num = parseInt(val);
+                        if (!isNaN(num) && num >= 1) {
+                          setDeadlineHours(num);
+                        }
+                      }
+                    }}
+                    onBlur={() => {
+                      if (deadlineHours === 0) {
+                        setDeadlineHours(48);
+                      }
+                    }}
+                    className="h-7 w-16 rounded border border-input bg-background px-2 text-xs text-center"
+                    placeholder="48"
+                  />
+                  <span className="text-xs font-normal text-gray-600">horas</span>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -906,6 +1016,19 @@ export function QuickActionModal({
         tasks={extractedTasks}
         onConfirm={handleConfirmTaskSelection}
         isLoading={isProcessing && processingType === "tasks"}
+      />
+
+      {/* Confirmation dialog for creating listing-contact relationship */}
+      <ConfirmDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        title="Crear relación con la propiedad"
+        description="No se ha encontrado relación entre el contacto y la propiedad. ¿Deseas crearla?"
+        confirmText="Sí, crear relación"
+        cancelText="Cancelar"
+        confirmVariant="default"
+        onConfirm={handleConfirmCreateRelationship}
+        onCancel={handleCancelCreateRelationship}
       />
     </Dialog>
   );

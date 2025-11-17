@@ -257,15 +257,17 @@ export async function logListingContactActivity<
   userId: string;
   action: T;
   details: ListingContactActivityDetailsMap[T];
-}): Promise<void> {
+}): Promise<bigint> {
   const { listingContactId, userId, action, details } = params;
 
-  await db.insert(listingContactActivity).values({
+  const [result] = await db.insert(listingContactActivity).values({
     listingContactId,
     userId,
     action,
     details: details as unknown as Record<string, unknown>,
-  });
+  }).returning({ id: listingContactActivity.id });
+
+  return result!.id;
 }
 
 /**
@@ -852,15 +854,17 @@ export async function logContactActivity<T extends ContactActivityAction>(params
   userId: string;
   action: T;
   details: ContactActivityDetailsMap[T];
-}): Promise<void> {
+}): Promise<bigint> {
   const { contactId, userId, action, details } = params;
 
-  await db.insert(contactActivity).values({
+  const [result] = await db.insert(contactActivity).values({
     contactId,
     userId,
     action,
     details: details as unknown as Record<string, unknown>,
-  });
+  }).returning({ id: contactActivity.id });
+
+  return result!.id;
 }
 
 /**

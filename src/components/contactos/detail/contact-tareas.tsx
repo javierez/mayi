@@ -932,7 +932,26 @@ export function ContactTareas({
       {isAdding && !editingTask && taskForm}
 
       <div className="space-y-2">
-        {filteredTasks.length === 0 ? (
+        {externalLoading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="animate-pulse rounded-xl bg-white p-3 shadow-md sm:p-4"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="h-5 w-5 rounded-md bg-gray-200" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-3/4 rounded bg-gray-200" />
+                    <div className="h-3 w-full rounded bg-gray-100" />
+                    <div className="h-3 w-5/6 rounded bg-gray-100" />
+                  </div>
+                  <div className="h-6 w-6 rounded-full bg-gray-200 sm:h-7 sm:w-7" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredTasks.length === 0 ? (
           <div className="py-6 text-center text-gray-500 sm:py-8">
             <p className="text-sm sm:text-base">
               {categoryFilter !== "all"
