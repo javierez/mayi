@@ -180,6 +180,16 @@ export function TaskPreferencesModal({
             duration: 4000,
           });
 
+          // Trigger task refresh via global callback
+          if (typeof window !== "undefined") {
+            const refreshCallback = (
+              window as { refreshPropertyTasks?: () => void }
+            ).refreshPropertyTasks;
+            if (refreshCallback) {
+              refreshCallback();
+            }
+          }
+
           // Remove the ?new=true param from URL and refresh
           router.replace(`/propiedades/${listingId}`);
           router.refresh();

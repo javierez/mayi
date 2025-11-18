@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-breadcrump";
 import { PropertyHeader } from "~/components/propiedades/detail/property-header";
-import { PropertyTabs } from "~/components/propiedades/detail/property-tabs";
+import { PropertyTabsClientWrapper } from "~/components/propiedades/detail/property-page-client-wrapper";
 import {
   getPropertyImages,
   getPropertyImagesCount,
@@ -230,7 +230,7 @@ export default async function PropertyPage({
         <Suspense
           fallback={<div className="py-8 text-center">Cargando...</div>}
         >
-          <PropertyTabs
+          <PropertyTabsClientWrapper
             listing={tabsData}
             convertedListing={
               isValidRecord(fullListingDetails)

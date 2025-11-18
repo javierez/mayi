@@ -355,6 +355,7 @@ ${EXAMPLES_FILE_ID ? `CRITICAL: Before writing, carefully study the uploaded exa
     - Flowing narrative without numbers or bullet points
     - Keep descriptions concise and avoid overly elaborate language
     - Focus on key features without excessive embellishment
+    - Format square meters as numeric notation (e.g., "80m2", "120m2") not as written text
 
     CRITICAL REQUIREMENTS:
     ${

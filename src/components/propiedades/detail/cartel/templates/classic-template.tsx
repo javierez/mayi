@@ -1116,6 +1116,11 @@ export const ClassicTemplate: FC<ConfigurableTemplateProps> = ({
           <PropertyQRCode
             phone={data.contact.phone}
             email={data.contact.email}
+            url={
+              data.contact.website && data.id
+                ? `${data.contact.website.endsWith("/") ? data.contact.website.slice(0, -1) : data.contact.website}/propiedades/${data.id}`
+                : undefined
+            }
             size={config.orientation === "vertical" ? 80 : 100}
             className="border-0 bg-transparent p-0 shadow-none"
           />

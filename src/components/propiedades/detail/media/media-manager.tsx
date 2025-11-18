@@ -18,6 +18,8 @@ interface MediaManagerProps {
   propertyId: bigint;
   referenceNumber: string;
   onImageUploaded?: (image: PropertyImage) => void;
+  onImageDeleted?: (imageKey: string) => void;
+  onImagesReordered?: (images: PropertyImage[]) => void;
   onVideoUploaded?: (video: PropertyImage) => void;
   onYouTubeLinkAdded?: (link: PropertyImage) => void;
   onVirtualTourAdded?: (tour: PropertyImage) => void;
@@ -34,6 +36,8 @@ export function MediaManager({
   propertyId,
   referenceNumber,
   onImageUploaded,
+  onImageDeleted,
+  onImagesReordered,
   onVideoUploaded,
   onYouTubeLinkAdded,
   onVirtualTourAdded,
@@ -58,6 +62,8 @@ export function MediaManager({
             propertyId={propertyId}
             referenceNumber={referenceNumber}
             onImageUploaded={onImageUploaded}
+            onImageDeleted={onImageDeleted}
+            onImagesReordered={onImagesReordered}
             canEdit={canEdit}
           />
         );

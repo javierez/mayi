@@ -14,6 +14,7 @@ import {
 import { FileText, Upload, Trash2, Eye, Plus, X } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { toast } from "sonner";
+import { PdfPreview } from "./cartel/pdf-preview";
 
 interface Cartel {
   docId: bigint;
@@ -213,24 +214,18 @@ export function CartelesManager({
           {carteles.map((cartel) => (
             <Card
               key={cartel.docId.toString()}
-              className="group relative overflow-hidden border-0 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+              className="group relative overflow-hidden border-0 bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
             >
               <CardContent className="p-0">
-                {/* PDF Preview Area */}
-                <div className="relative aspect-[3/4] overflow-hidden rounded-t-lg border-b bg-gradient-to-br from-gray-50 to-gray-100">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    {/* PDF Preview - Using iframe with zoom for better coverage */}
-                    <iframe
-                      src={`${cartel.fileUrl}#toolbar=0&navpanes=0&scrollbar=0&page=1&view=FitH&zoom=120`}
-                      className="h-[110%] w-[110%] scale-110 transform object-cover transition-all duration-300 group-hover:opacity-30"
-                      title={`Preview of ${cartel.filename}`}
-                      style={{
-                        filter: "contrast(1.1) brightness(0.95)",
-                        transform: "scale(1.1) translate(-5%, -5%)",
-                      }}
-                    />
+                {/* PDF Preview Area - Flexible height to accommodate both portrait and landscape */}
+                <div className="relative h-80 overflow-hidden rounded-t-lg border-b bg-gradient-to-br from-gray-50 to-gray-100">
+                  <div className="absolute inset-0 p-4">
+                    {/* PDF Preview using react-pdf - No scrollbars! */}
+                    <div className="relative h-full w-full transition-all duration-300 group-hover:opacity-30">
+                      <PdfPreview fileUrl={cartel.fileUrl} className="h-full w-full" />
+                    </div>
                     {/* Subtle overlay for better visual integration */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/20 transition-all duration-300 group-hover:to-white/10" />
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/20 transition-all duration-300 group-hover:to-white/10" />
                   </div>
 
                   {/* Action buttons overlay */}

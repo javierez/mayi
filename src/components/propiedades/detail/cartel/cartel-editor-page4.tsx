@@ -170,11 +170,11 @@ export function CartelEditorPage4({
                       onClick={() =>
                         updateImagePosition(
                           imageUrl,
-                          Math.min(position.x + 5, 500),
+                          Math.max(position.x - 5, -500),
                           position.y,
                         )
                       }
-                      disabled={position.x >= 500}
+                      disabled={position.x <= -500}
                     >
                       <ChevronLeft className="h-3 w-3" />
                     </Button>
@@ -197,11 +197,11 @@ export function CartelEditorPage4({
                       onClick={() =>
                         updateImagePosition(
                           imageUrl,
-                          Math.max(position.x - 5, -500),
+                          Math.min(position.x + 5, 500),
                           position.y,
                         )
                       }
-                      disabled={position.x <= -500}
+                      disabled={position.x >= 500}
                     >
                       <ChevronRight className="h-3 w-3" />
                     </Button>

@@ -109,6 +109,7 @@ interface PropertyTabsProps {
   } | null;
   convertedListing?: PropertyListing;
   canEdit?: boolean; // Permission flag to control editing capabilities
+  tasksRefreshTrigger?: number; // Trigger to refresh tasks after external creation
 }
 
 export function PropertyTabs({
@@ -120,6 +121,7 @@ export function PropertyTabs({
   virtualTours,
   energyCertificate,
   canEdit = true, // Default to true for backward compatibility
+  tasksRefreshTrigger,
 }: PropertyTabsProps) {
   const { data: session } = useSession();
   const router = useRouter();
@@ -529,6 +531,13 @@ export function PropertyTabs({
     }
   }, [tabParam]);
 
+  // Refresh tasks when external trigger changes
+  useEffect(() => {
+    if (tasksRefreshTrigger && tasksRefreshTrigger > 0) {
+      void fetchTasksData();
+    }
+  }, [tasksRefreshTrigger, fetchTasksData]);
+
   return (
     <Tabs
       value={activeTab}
@@ -651,6 +660,20 @@ export function PropertyTabs({
               setTabData((prev) => ({
                 ...prev,
                 images: prev.images ? [...prev.images, image] : [image],
+              }));
+            }}
+            onImageDeleted={(imageKey) => {
+              setTabData((prev) => ({
+                ...prev,
+                images: prev.images
+                  ? prev.images.filter((img) => img.imageKey !== imageKey)
+                  : null,
+              }));
+            }}
+            onImagesReordered={(reorderedImages) => {
+              setTabData((prev) => ({
+                ...prev,
+                images: reorderedImages,
               }));
             }}
             onVideoUploaded={(video) => {

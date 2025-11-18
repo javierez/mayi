@@ -11,14 +11,14 @@ import {
   Bed,
   Bath,
   Maximize,
-  Calendar,
+  Hammer,
   Car,
   Home,
   Compass,
   Flame,
   Package,
-  Trees,
-  Wrench,
+  Fence,
+  BadgeCheck,
   ArrowUpDown,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -101,14 +101,14 @@ const getTextColorForOverlay = (overlayType: string) => {
 // Helper functions for additional fields
 const getFieldIcon = (fieldValue: string) => {
   const iconMap: Record<string, LucideIcon> = {
-    yearBuilt: Calendar,
+    yearBuilt: Hammer,
     hasElevator: ArrowUpDown,
     hasGarage: Car,
     hasStorageRoom: Package,
-    terrace: Trees,
+    terrace: Fence,
     orientation: Compass,
     heatingType: Flame,
-    conservationStatus: Wrench,
+    conservationStatus: BadgeCheck,
   };
   return iconMap[fieldValue] ?? Home;
 };
@@ -637,6 +637,11 @@ export const BasicTemplate: FC<ConfigurableTemplateProps> = ({
             <PropertyQRCode
               phone={data.contact.phone}
               email={data.contact.email}
+              url={
+                data.contact.website && data.id
+                  ? `${data.contact.website.endsWith("/") ? data.contact.website.slice(0, -1) : data.contact.website}/propiedades/${data.id}`
+                  : undefined
+              }
               size={
                 config.orientation === "vertical" &&
                 config.showEnergyRating &&

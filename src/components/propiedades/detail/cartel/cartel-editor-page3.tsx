@@ -68,7 +68,12 @@ export function CartelEditorPage3({
             <Input
               id="title"
               value={propertyData.title}
-              onChange={(e) => updatePropertyData({ title: e.target.value })}
+              onChange={(e) => {
+                if (e.target.value.length <= 25) {
+                  updatePropertyData({ title: e.target.value });
+                }
+              }}
+              maxLength={25}
             />
           </div>
           <button
@@ -969,29 +974,30 @@ export function CartelEditorPage3({
         )}
       </div>
 
-      {/* Contact Customization Section */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-gray-700">
-            Personalización de Contacto
-          </h3>
-          <button
-            type="button"
-            onClick={() =>
-              setShowContactCustomization(!showContactCustomization)
-            }
-            className="group rounded-md p-2 transition-colors duration-150 hover:bg-gray-100"
-            title="Personalizar información de contacto"
-          >
-            <div
-              className={`text-gray-400 transition-transform duration-200 group-hover:text-gray-600 ${showContactCustomization ? "rotate-180" : "rotate-0"}`}
+      {/* Contact Customization Section - Hidden for basic template */}
+      {config.templateStyle !== "basic" && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium text-gray-700">
+              Personalización de Contacto
+            </h3>
+            <button
+              type="button"
+              onClick={() =>
+                setShowContactCustomization(!showContactCustomization)
+              }
+              className="group rounded-md p-2 transition-colors duration-150 hover:bg-gray-100"
+              title="Personalizar información de contacto"
             >
-              <ChevronDown className="h-4 w-4" />
-            </div>
-          </button>
-        </div>
+              <div
+                className={`text-gray-400 transition-transform duration-200 group-hover:text-gray-600 ${showContactCustomization ? "rotate-180" : "rotate-0"}`}
+              >
+                <ChevronDown className="h-4 w-4" />
+              </div>
+            </button>
+          </div>
 
-        {showContactCustomization && (
+          {showContactCustomization && (
           <div className="space-y-4 rounded-lg bg-gray-50 p-3">
             <div className="space-y-3">
               {/* Background Color */}
@@ -1194,8 +1200,9 @@ export function CartelEditorPage3({
               </div>
             </div>
           </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Navigation */}
       {(onPrevious ?? onNext) && (

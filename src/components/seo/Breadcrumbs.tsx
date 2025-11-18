@@ -17,8 +17,8 @@ export function Breadcrumbs() {
     })),
   ];
 
-  // Don't show breadcrumbs on homepage
-  if (pathname === '/') {
+  // Don't show breadcrumbs on homepage or templates page (used for PDF generation)
+  if (pathname === '/' || pathname.startsWith('/templates')) {
     return null;
   }
 

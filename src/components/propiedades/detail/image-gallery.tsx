@@ -36,6 +36,8 @@ interface ImageGalleryProps {
   propertyId: bigint;
   referenceNumber: string;
   onImageUploaded?: (image: PropertyImage) => void;
+  onImageDeleted?: (imageKey: string) => void;
+  onImagesReordered?: (images: PropertyImage[]) => void;
   canEdit?: boolean; // Permission flag to control upload/delete actions
 }
 
@@ -45,6 +47,8 @@ export function ImageGallery({
   propertyId,
   referenceNumber,
   onImageUploaded,
+  onImageDeleted,
+  onImagesReordered,
   canEdit = true, // Default to true for backward compatibility
 }: ImageGalleryProps) {
   const [images, setImages] = useState<PropertyImage[]>(initialImages);
@@ -179,6 +183,8 @@ export function ImageGallery({
     try {
       for (const image of imagesToDelete) {
         await deletePropertyImage(image.imageKey, propertyId);
+        // Notify parent component of each successful deletion
+        onImageDeleted?.(image.imageKey);
       }
     } catch (error) {
       console.error("Error deleting images:", error);
@@ -311,6 +317,8 @@ export function ImageGallery({
     setIsDeleting(true);
     try {
       await deletePropertyImage(imageToRemove.imageKey, propertyId);
+      // Notify parent component of successful deletion
+      onImageDeleted?.(imageToRemove.imageKey);
     } catch (error) {
       console.error("Error deleting image:", error);
       // Revert optimistic update on error
@@ -450,6 +458,9 @@ export function ImageGallery({
 
       // Update the database
       await updateImageOrders(updates);
+
+      // Notify parent component of successful reordering
+      onImagesReordered?.(pendingImages);
 
       setHasUnsavedChanges(false);
       setPendingImages([]);

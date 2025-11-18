@@ -1060,9 +1060,9 @@ export default function WorkQueueCard({
                                     appointment.status === "Scheduled" && (
                                       <div className="mt-2 pt-2 border-t border-gray-200">
                                         <Button
-                                          variant="ghost"
+                                          variant="outline"
                                           size="sm"
-                                          className="h-7 w-full justify-start px-2 py-1 text-xs text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                                          className="h-6 w-auto bg-white px-2 text-xs font-medium shadow-sm transition-all hover:bg-gray-50 hover:shadow-md"
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             router.push(
@@ -1070,8 +1070,8 @@ export default function WorkQueueCard({
                                             );
                                           }}
                                         >
-                                          <Calendar className="mr-1.5 h-3 w-3 shrink-0" />
-                                          <span className="truncate">Registrar Visita</span>
+                                          <Calendar className="mr-1 h-3 w-3 shrink-0" />
+                                          <span>Registrar Visita</span>
                                         </Button>
                                       </div>
                                     )}

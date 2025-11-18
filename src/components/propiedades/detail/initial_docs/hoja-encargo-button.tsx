@@ -174,7 +174,12 @@ export function HojaEncargoButton({
 
   return (
     <div className={cn("w-full", className)}>
-      <div className="flex h-[200px] flex-col justify-center rounded-lg border border-gray-200 bg-gray-50/50 p-4 text-center transition-colors hover:bg-gray-100/50">
+      <div className="relative flex h-[200px] flex-col justify-center rounded-lg border border-gray-200 bg-gray-50/50 p-4 text-center transition-colors hover:bg-gray-100/50">
+        {/* Beta label */}
+        <div className="absolute right-2 top-2 rounded-md bg-gray-200 px-2 py-0.5 font-mono text-xs font-medium tracking-wider text-gray-600">
+          BETA
+        </div>
+
         {/* Icon container */}
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-amber-100 to-rose-100">
           <FileText className="h-6 w-6 text-amber-600" />
@@ -193,16 +198,10 @@ export function HojaEncargoButton({
 
         {/* Button */}
         <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log("Button clicked - Opening modal...");
-            setIsModalOpen(true);
-            console.log("Modal state set to true");
-          }}
+          disabled
           className={cn(
-            "w-full rounded-md bg-gradient-to-r from-amber-400 to-rose-400 px-4 py-2 text-sm font-medium text-white",
-            "shadow-sm transition-all duration-200 hover:scale-105 hover:from-amber-500 hover:to-rose-500",
+            "w-full rounded-md bg-gray-300 px-4 py-2 text-sm font-medium text-gray-500",
+            "cursor-not-allowed opacity-60",
           )}
         >
           Generar ahora

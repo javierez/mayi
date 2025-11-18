@@ -7,6 +7,7 @@ import { cn } from "~/lib/utils";
 interface ContactInfo {
   phone?: string;
   email?: string;
+  url?: string;
 }
 
 interface QRCodeComponentProps {
@@ -24,6 +25,12 @@ export const QRCode: FC<QRCodeComponentProps> = ({
 }) => {
   // Generate QR code value from contact information
   const generateQRValue = (contact: ContactInfo): string => {
+    // If URL is provided, use it directly (most common use case for QR codes)
+    if (contact.url) {
+      return contact.url;
+    }
+
+    // Fallback to contact info if no URL
     const parts: string[] = [];
 
     if (contact.phone) {
@@ -42,7 +49,7 @@ export const QRCode: FC<QRCodeComponentProps> = ({
   };
 
   // Handle cases where contact info is missing or invalid
-  if (!contactInfo || (!contactInfo.phone && !contactInfo.email)) {
+  if (!contactInfo || (!contactInfo.phone && !contactInfo.email && !contactInfo.url)) {
     return (
       <div
         className={cn(
@@ -104,6 +111,7 @@ export const QRCode: FC<QRCodeComponentProps> = ({
 interface PropertyQRCodeProps {
   phone?: string;
   email?: string;
+  url?: string;
   size?: number;
   className?: string;
 }
@@ -111,12 +119,13 @@ interface PropertyQRCodeProps {
 export const PropertyQRCode: FC<PropertyQRCodeProps> = ({
   phone,
   email,
+  url,
   size,
   className,
 }) => {
   return (
     <QRCode
-      contactInfo={{ phone, email }}
+      contactInfo={{ phone, email, url }}
       size={size}
       className={className}
       level="M"
