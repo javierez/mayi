@@ -386,18 +386,20 @@ export function VisitForm({ appointment }: VisitFormProps) {
                   className="pr-10 text-sm"
                   rows={3}
                 />
-                <PushToTalkWhisperButton
-                  onTranscript={(text) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      notes: prev.notes
-                        ? `${prev.notes} ${text}`.trim()
-                        : text,
-                    }));
-                  }}
-                  language="es"
-                  disabled={isLoading}
-                />
+                <div className="absolute right-2 top-2">
+                  <PushToTalkWhisperButton
+                    onTranscript={(text) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        notes: prev.notes
+                          ? `${prev.notes} ${text}`.trim()
+                          : text,
+                      }));
+                    }}
+                    language="es"
+                    disabled={isLoading}
+                  />
+                </div>
               </div>
             </div>
 

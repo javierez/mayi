@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useReducer, useCallback } from "react";
 import Image from "next/image";
 import {
   Plus,
@@ -75,15 +75,16 @@ export function ImageGallery({
 
   // State for managing image sources with fallbacks
   const [imageSources, setImageSources] = useState<Record<number, string>>({});
-  const [imageLoaded, setImageLoaded] = useState<Record<number, boolean>>({});
 
-  // Sync images state when initialImages prop changes (e.g., when switching tabs)
+  // Use ref for image loaded state to avoid excessive re-renders
+  const imageLoadedRef = useRef<Record<number, boolean>>({});
+  const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
+
+  // Sync images state and image sources when initialImages prop changes (e.g., when switching tabs)
   React.useEffect(() => {
     setImages(initialImages);
-  }, [initialImages]);
 
-  // Initialize image sources
-  React.useEffect(() => {
+    // Build image sources at the same time to avoid double render
     const sources: Record<number, string> = {};
     initialImages.forEach((image, index) => {
       if (image.imageUrl) {
@@ -91,18 +92,23 @@ export function ImageGallery({
       }
     });
     setImageSources(sources);
+
+    // Reset loaded state when images change
+    imageLoadedRef.current = {};
   }, [initialImages]);
 
   const handleImageError = (index: number) => {
     console.log("Image failed to load:", imageSources[index]);
   };
 
-  const handleImageLoad = (index: number) => {
-    setImageLoaded((prev) => ({
-      ...prev,
-      [index]: true,
-    }));
-  };
+  const handleImageLoad = useCallback((index: number) => {
+    imageLoadedRef.current[index] = true;
+    // Only force update every 10 images or on the last image to batch updates
+    const loadedCount = Object.keys(imageLoadedRef.current).length;
+    if (loadedCount === images.length || loadedCount % 10 === 0) {
+      forceUpdate();
+    }
+  }, [images.length]);
 
   const handleDownload = async (imageUrl: string, fileName: string) => {
     setIsDownloading(true);
@@ -166,15 +172,6 @@ export function ImageGallery({
     const newImages = images.filter((_, i) => !selectedImages.has(i));
     setImages(newImages);
 
-    // Update imageSources to match new indices
-    const newImageSources: Record<number, string> = {};
-    newImages.forEach((image, idx) => {
-      if (image.imageUrl) {
-        newImageSources[idx] = image.imageUrl;
-      }
-    });
-    setImageSources(newImageSources);
-
     // Clear selection and exit select mode immediately
     setSelectedImages(new Set());
     setIsSelectMode(false);
@@ -190,14 +187,7 @@ export function ImageGallery({
       console.error("Error deleting images:", error);
       // Revert optimistic update on error
       setImages(images);
-      // Restore original imageSources
-      const originalImageSources: Record<number, string> = {};
-      images.forEach((image, idx) => {
-        if (image.imageUrl) {
-          originalImageSources[idx] = image.imageUrl;
-        }
-      });
-      setImageSources(originalImageSources);
+      // imageSources will be automatically updated by the useEffect when images changes
       // TODO: Show error toast
     } finally {
       setIsDeleting(false);
@@ -305,15 +295,6 @@ export function ImageGallery({
     setImages(newImages);
     setImageToDelete(null);
 
-    // Update imageSources to match new indices
-    const newImageSources: Record<number, string> = {};
-    newImages.forEach((image, idx) => {
-      if (image.imageUrl) {
-        newImageSources[idx] = image.imageUrl;
-      }
-    });
-    setImageSources(newImageSources);
-
     setIsDeleting(true);
     try {
       await deletePropertyImage(imageToRemove.imageKey, propertyId);
@@ -323,14 +304,7 @@ export function ImageGallery({
       console.error("Error deleting image:", error);
       // Revert optimistic update on error
       setImages(images);
-      // Restore original imageSources
-      const originalImageSources: Record<number, string> = {};
-      images.forEach((image, idx) => {
-        if (image.imageUrl) {
-          originalImageSources[idx] = image.imageUrl;
-        }
-      });
-      setImageSources(originalImageSources);
+      // imageSources will be automatically updated by the useEffect when images changes
       // TODO: Show error toast
     } finally {
       setIsDeleting(false);
@@ -511,7 +485,7 @@ export function ImageGallery({
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
         {images.map((image, idx) => (
           <div
-            key={image.propertyImageId.toString()}
+            key={image.imageKey}
             className={cn(
               "group relative overflow-hidden rounded-lg border bg-muted transition-all duration-200",
               isSelectMode && "cursor-pointer",
@@ -547,9 +521,6 @@ export function ImageGallery({
                 onError={() => handleImageError(idx)}
                 onLoad={() => handleImageLoad(idx)}
               />
-            )}
-            {!imageLoaded[idx] && (
-              <div className="absolute inset-0 animate-pulse bg-muted" />
             )}
 
             {isSelectMode ? (

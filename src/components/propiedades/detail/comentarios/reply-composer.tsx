@@ -54,16 +54,18 @@ export function ReplyComposer({
           disabled={isSubmitting}
           autoFocus
         />
-        <PushToTalkWhisperButton
-          onTranscript={(text) => {
-            setContent((prev) => {
-              const newContent = prev ? `${prev} ${text}`.trim() : text;
-              return newContent.slice(0, maxLength);
-            });
-          }}
-          language="es"
-          disabled={isSubmitting}
-        />
+        <div className="absolute right-2 top-2">
+          <PushToTalkWhisperButton
+            onTranscript={(text) => {
+              setContent((prev) => {
+                const newContent = prev ? `${prev} ${text}`.trim() : text;
+                return newContent.slice(0, maxLength);
+              });
+            }}
+            language="es"
+            disabled={isSubmitting}
+          />
+        </div>
 
         <div className="mt-3 flex items-center justify-between border-t pt-3">
           <span

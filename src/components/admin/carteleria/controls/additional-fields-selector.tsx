@@ -2,14 +2,14 @@ import type { FC } from "react";
 import { cn } from "~/lib/utils";
 import type { TemplateConfiguration } from "~/types/template-data";
 import {
-  Calendar,
-  ArrowUp,
+  Hammer,
+  ArrowUpDown,
   Car,
   Package,
-  TreePine,
+  Fence,
   Compass,
   Flame,
-  Home,
+  BadgeCheck,
 } from "lucide-react";
 
 interface AdditionalFieldsSelectorProps {
@@ -22,13 +22,13 @@ const AVAILABLE_FIELDS = [
   {
     value: "yearBuilt",
     label: "Construcción",
-    icon: Calendar,
+    icon: Hammer,
     description: "Año en que se construyó",
   },
   {
     value: "hasElevator",
     label: "Ascensor",
-    icon: ArrowUp,
+    icon: ArrowUpDown,
     description: "Disponibilidad de ascensor",
   },
   {
@@ -46,7 +46,7 @@ const AVAILABLE_FIELDS = [
   {
     value: "terrace",
     label: "Terraza",
-    icon: TreePine,
+    icon: Fence,
     description: "Terraza disponible",
   },
   {
@@ -64,7 +64,7 @@ const AVAILABLE_FIELDS = [
   {
     value: "conservationStatus",
     label: "Estado",
-    icon: Home,
+    icon: BadgeCheck,
     description: "Estado de conservación",
   },
 ] as const;

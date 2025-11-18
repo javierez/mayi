@@ -292,7 +292,7 @@ export function CartelEditorClient({
 
   // Wizard state
   const [currentStep, setCurrentStep] = useState(0);
-  const totalSteps = 3;
+  const totalSteps = 2;
 
   // Title customization toggle state
   const [showTitleCustomization, setShowTitleCustomization] = useState(false);
@@ -2259,34 +2259,6 @@ export function CartelEditorClient({
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Step 3: Image Positioning Controls */}
-          {currentStep === 2 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ImageIcon className="h-5 w-5" />
-                  <span className="mr-1">3.</span>
-                  Imágenes
-                </CardTitle>
-                <CardDescription>
-                  Posiciona las imágenes dentro de sus contenedores para mejor
-                  encuadre
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <CartelEditorPage4
-                  config={config}
-                  updateConfig={updateConfig}
-                  propertyData={propertyData}
-                  templateImages={templateImages}
-                  updateImagePosition={updateImagePosition}
-                  updateImageZoom={updateImageZoom}
-                  onPrevious={goToPreviousStep}
-                />
               </CardContent>
             </Card>
           )}

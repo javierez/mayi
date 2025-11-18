@@ -383,18 +383,20 @@ export function GlobalTaskModal({
                   }
                   className="min-h-[80px] pr-10"
                 />
-                <PushToTalkWhisperButton
-                  onTranscript={(text) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      description: prev.description
-                        ? `${prev.description} ${text}`.trim()
-                        : text,
-                    }));
-                  }}
-                  language="es"
-                  disabled={loading.saving}
-                />
+                <div className="absolute right-2 top-2">
+                  <PushToTalkWhisperButton
+                    onTranscript={(text) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        description: prev.description
+                          ? `${prev.description} ${text}`.trim()
+                          : text,
+                      }));
+                    }}
+                    language="es"
+                    disabled={loading.saving}
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

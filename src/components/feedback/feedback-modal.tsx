@@ -124,7 +124,7 @@ export function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
                     className="min-h-[100px] resize-none pr-12 focus:border-gray-400 focus:ring-gray-400"
                     maxLength={500}
                   />
-                  <div className="absolute bottom-2 right-2">
+                  <div className="absolute right-2 top-2">
                     <PushToTalkWhisperButton
                       onTranscript={(text) => {
                         setComment((prev) => {

@@ -548,18 +548,20 @@ export default function ContactForm() {
                   rows={4}
                   className="resize-none border-gray-200 pr-10 focus:border-amber-300 focus:ring-amber-200"
                 />
-                <PushToTalkWhisperButton
-                  onTranscript={(text) => {
-                    handleEventInputChange("notes")({
-                      target: {
-                        value: formData.notes
-                          ? `${formData.notes} ${text}`.trim()
-                          : text,
-                      },
-                    } as React.ChangeEvent<HTMLTextAreaElement>);
-                  }}
-                  language="es"
-                />
+                <div className="absolute right-2 top-2">
+                  <PushToTalkWhisperButton
+                    onTranscript={(text) => {
+                      handleEventInputChange("notes")({
+                        target: {
+                          value: formData.notes
+                            ? `${formData.notes} ${text}`.trim()
+                            : text,
+                        },
+                      } as React.ChangeEvent<HTMLTextAreaElement>);
+                    }}
+                    language="es"
+                  />
+                </div>
               </div>
             </div>
 

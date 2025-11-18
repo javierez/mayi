@@ -137,14 +137,16 @@ function CommentItem({
                     onChange={(e) => setEditContent(e.target.value)}
                     className="min-h-[50px] sm:min-h-[60px] w-full resize-none text-sm pr-10"
                   />
-                  <PushToTalkWhisperButton
-                    onTranscript={(text) => {
-                      setEditContent(
-                        editContent ? `${editContent} ${text}`.trim() : text
-                      );
-                    }}
-                    language="es"
-                  />
+                  <div className="absolute right-2 top-2">
+                    <PushToTalkWhisperButton
+                      onTranscript={(text) => {
+                        setEditContent(
+                          editContent ? `${editContent} ${text}`.trim() : text
+                        );
+                      }}
+                      language="es"
+                    />
+                  </div>
                 </div>
                 <div className="mt-2 flex flex-wrap justify-end gap-2">
                   <Button size="sm" variant="outline" onClick={cancelEditing}>
@@ -229,20 +231,22 @@ function CommentItem({
                   }
                   className="min-h-[50px] sm:min-h-[60px] w-full resize-none border-gray-200 text-sm pr-10"
                 />
-                <PushToTalkWhisperButton
-                  onTranscript={(text) => {
-                    setReplyContents((prev) => {
-                      const current = prev[comment.commentId.toString()] ?? "";
-                      return {
-                        ...prev,
-                        [comment.commentId.toString()]: current
-                          ? `${current} ${text}`.trim()
-                          : text,
-                      };
-                    });
-                  }}
-                  language="es"
-                />
+                <div className="absolute right-2 top-2">
+                  <PushToTalkWhisperButton
+                    onTranscript={(text) => {
+                      setReplyContents((prev) => {
+                        const current = prev[comment.commentId.toString()] ?? "";
+                        return {
+                          ...prev,
+                          [comment.commentId.toString()]: current
+                            ? `${current} ${text}`.trim()
+                            : text,
+                        };
+                      });
+                    }}
+                    language="es"
+                  />
+                </div>
               </div>
               <div className="mt-2 flex flex-wrap justify-end gap-2">
                 <Button
@@ -654,13 +658,15 @@ export function ListingContactComments({
                 onChange={(e) => setNewComment(e.target.value)}
                 className="min-h-[60px] sm:min-h-[80px] w-full resize-none border-gray-200 text-sm pr-10"
               />
-              <PushToTalkWhisperButton
-                onTranscript={(text) => {
-                  setNewComment((prev) => (prev ? `${prev} ${text}`.trim() : text));
-                }}
-                language="es"
-                disabled={isPending}
-              />
+              <div className="absolute right-2 top-2">
+                <PushToTalkWhisperButton
+                  onTranscript={(text) => {
+                    setNewComment((prev) => (prev ? `${prev} ${text}`.trim() : text));
+                  }}
+                  language="es"
+                  disabled={isPending}
+                />
+              </div>
               <div className="flex flex-wrap justify-end gap-2">
                 <Button
                   onClick={handleAddComment}

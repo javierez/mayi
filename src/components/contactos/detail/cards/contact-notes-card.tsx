@@ -50,15 +50,17 @@ export function ContactNotesCard({
             className="min-h-[120px] resize-y border-gray-200 pr-10 transition-colors focus:border-gray-400 focus:ring-gray-300"
             placeholder="Información adicional sobre el contacto..."
           />
-          <PushToTalkWhisperButton
-            onTranscript={(text) => {
-              const newValue = notes ? `${notes} ${text}`.trim() : text;
-              setNotes(newValue);
-              onUpdateModule(true);
-            }}
-            language="es"
-            disabled={!canEdit}
-          />
+          <div className="absolute right-2 top-2">
+            <PushToTalkWhisperButton
+              onTranscript={(text) => {
+                const newValue = notes ? `${notes} ${text}`.trim() : text;
+                setNotes(newValue);
+                onUpdateModule(true);
+              }}
+              language="es"
+              disabled={!canEdit}
+            />
+          </div>
         </div>
       </div>
     </Card>

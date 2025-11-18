@@ -656,13 +656,15 @@ export function CartelEditorPage2({
         </div>
       </div>
 
-      {/* Additional Fields Selector */}
-      <div>
-        <AdditionalFieldsSelector
-          config={config}
-          onChange={updateConfig}
-        />
-      </div>
+      {/* Additional Fields Selector - Only show when icons are selected */}
+      {currentSelection === "iconos" && (
+        <div>
+          <AdditionalFieldsSelector
+            config={config}
+            onChange={updateConfig}
+          />
+        </div>
+      )}
 
       {/* Navigation */}
       {(onPrevious ?? onNext) && (

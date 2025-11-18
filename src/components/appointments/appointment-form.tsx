@@ -1344,14 +1344,16 @@ export default function AppointmentForm({
                   placeholder="Notas adicionales sobre la cita..."
                   className="min-h-[60px] border-gray-200 shadow-md pr-10"
                 />
-                <PushToTalkWhisperButton
-                  onTranscript={(text) => {
-                    handleInputChange("notes")(
-                      formData.notes ? `${formData.notes} ${text}`.trim() : text
-                    );
-                  }}
-                  language="es"
-                />
+                <div className="absolute right-2 top-2">
+                  <PushToTalkWhisperButton
+                    onTranscript={(text) => {
+                      handleInputChange("notes")(
+                        formData.notes ? `${formData.notes} ${text}`.trim() : text
+                      );
+                    }}
+                    language="es"
+                  />
+                </div>
               </div>
             </div>
           </div>
