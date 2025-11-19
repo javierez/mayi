@@ -122,25 +122,25 @@ export default function WorkQueueCard({
   const canUserEditTask = (task: DetailedTask): boolean => {
     if (!session?.user?.id || !permissionsLoaded) return false;
 
-    // Tasks without owner require editAll permission
-    if (!task.userId) {
+    // Tasks without creator require editAll permission
+    if (!task.createdBy) {
       return hasEditAllPermission;
     }
 
-    // User can edit if they are assigned to the task OR have editAll permission
-    return task.userId === session.user.id || hasEditAllPermission;
+    // User can edit if they created the task OR have editAll permission
+    return task.createdBy === session.user.id || hasEditAllPermission;
   };
 
   const canUserDeleteTask = (task: DetailedTask): boolean => {
     if (!session?.user?.id || !permissionsLoaded) return false;
 
-    // Tasks without owner require deleteAll permission
-    if (!task.userId) {
+    // Tasks without creator require deleteAll permission
+    if (!task.createdBy) {
       return hasDeleteAllPermission;
     }
 
-    // User can delete if they are assigned to the task OR have deleteAll permission
-    return task.userId === session.user.id || hasDeleteAllPermission;
+    // User can delete if they created the task OR have deleteAll permission
+    return task.createdBy === session.user.id || hasDeleteAllPermission;
   };
 
   // Read filters from URL params - updates automatically when searchParams change
@@ -634,17 +634,7 @@ export default function WorkQueueCard({
                           (task.completed ?? false)
                             ? "bg-gray-50 opacity-75"
                             : "bg-white"
-                        } ${taskStates[taskIdStr] === "saving" ? "opacity-70" : ""} ${
-                          canEdit ? "cursor-pointer hover:shadow-lg" : "cursor-not-allowed opacity-60"
-                        }`}
-                        onClick={() => {
-                          if (canEdit) {
-                            void handleToggleCompleted(
-                              task.taskId,
-                              task.completed ?? false,
-                            );
-                          }
-                        }}
+                        } ${taskStates[taskIdStr] === "saving" ? "opacity-70" : ""}`}
                       >
                         {/* Days remaining badge and Avatar - top right, side by side */}
                         <div className="absolute right-2 top-2 mt-1.5 flex items-center gap-1">
@@ -707,11 +697,20 @@ export default function WorkQueueCard({
                           <div className="flex items-start gap-1.5 sm:gap-2">
                             {/* Checkbox */}
                             <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (canEdit) {
+                                  void handleToggleCompleted(
+                                    task.taskId,
+                                    task.completed ?? false,
+                                  );
+                                }
+                              }}
                               className={`mt-1 flex h-3 w-3 flex-shrink-0 items-center justify-center rounded border-2 transition-all duration-200 ${
                                 (task.completed ?? false)
                                   ? "border-emerald-500 bg-emerald-500 text-white shadow-sm"
                                   : "border-gray-300 hover:border-gray-400"
-                              }`}
+                              } ${canEdit ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`}
                             >
                               {(task.completed ?? false) && (
                                 <Check className="h-2 w-2" />

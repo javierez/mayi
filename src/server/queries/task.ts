@@ -565,6 +565,7 @@ export async function updateTask(
         title: tasks.title,
         completed: tasks.completed,
         userId: tasks.userId,
+        createdBy: tasks.createdBy,
         activityId: tasks.activityId,
         activityType: tasks.activityType,
       })
@@ -600,7 +601,7 @@ export async function updateTask(
 
     // Check user permissions for this specific task
     const { canEditTask } = await import("~/app/actions/permissions/check-permissions");
-    const hasPermission = await canEditTask(existingTask.userId);
+    const hasPermission = await canEditTask(existingTask.createdBy);
 
     if (!hasPermission) {
       throw new Error("Permission denied: Cannot edit this task");
@@ -1434,6 +1435,7 @@ export async function deleteTask(taskId: number, accountId: number) {
       .select({
         taskId: tasks.taskId,
         userId: tasks.userId,
+        createdBy: tasks.createdBy,
       })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
@@ -1466,7 +1468,7 @@ export async function deleteTask(taskId: number, accountId: number) {
 
     // Check user permissions for this specific task
     const { canDeleteTask } = await import("~/app/actions/permissions/check-permissions");
-    const hasPermission = await canDeleteTask(existingTask.userId);
+    const hasPermission = await canDeleteTask(existingTask.createdBy);
 
     if (!hasPermission) {
       throw new Error("Permission denied: Cannot delete this task");
@@ -1660,6 +1662,7 @@ export async function getMostUrgentTasks(
       .select({
         taskId: sql<number>`CAST(${tasks.taskId} AS BIGINT)`,
         userId: tasks.userId,
+        createdBy: tasks.createdBy,
         title: tasks.title,
         description: tasks.description,
         dueDate: tasks.dueDate,

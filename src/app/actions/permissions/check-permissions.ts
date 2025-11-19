@@ -147,10 +147,10 @@ export async function canDeleteContacts(): Promise<boolean> {
 
 /**
  * Check if user can edit a specific task
- * @param taskOwnerId - The userId of the task owner/assignee
- * @returns true if user has editAll permission OR (has editOwn permission AND is the task owner)
+ * @param taskCreatorId - The createdBy userId of the task creator
+ * @returns true if user has editAll permission OR (has editOwn permission AND is the task creator)
  */
-export async function canEditTask(taskOwnerId: string | null): Promise<boolean> {
+export async function canEditTask(taskCreatorId: string | null): Promise<boolean> {
   try {
     const { getSecureSession } = await import("~/lib/dal");
     const session = await getSecureSession();
@@ -162,8 +162,8 @@ export async function canEditTask(taskOwnerId: string | null): Promise<boolean> 
     // Can edit if has editAll permission
     if (permissions.tasks?.editAll) return true;
 
-    // Can edit if has editOwn permission AND is the task owner
-    if (permissions.tasks?.editOwn && taskOwnerId === session.user.id) {
+    // Can edit if has editOwn permission AND is the task creator
+    if (permissions.tasks?.editOwn && taskCreatorId === session.user.id) {
       return true;
     }
 
@@ -176,10 +176,10 @@ export async function canEditTask(taskOwnerId: string | null): Promise<boolean> 
 
 /**
  * Check if user can delete a specific task
- * @param taskOwnerId - The userId of the task owner/assignee
- * @returns true if user has deleteAll permission OR (has deleteOwn permission AND is the task owner)
+ * @param taskCreatorId - The createdBy userId of the task creator
+ * @returns true if user has deleteAll permission OR (has deleteOwn permission AND is the task creator)
  */
-export async function canDeleteTask(taskOwnerId: string | null): Promise<boolean> {
+export async function canDeleteTask(taskCreatorId: string | null): Promise<boolean> {
   try {
     const { getSecureSession } = await import("~/lib/dal");
     const session = await getSecureSession();
@@ -191,8 +191,8 @@ export async function canDeleteTask(taskOwnerId: string | null): Promise<boolean
     // Can delete if has deleteAll permission
     if (permissions.tasks?.deleteAll) return true;
 
-    // Can delete if has deleteOwn permission AND is the task owner
-    if (permissions.tasks?.deleteOwn && taskOwnerId === session.user.id) {
+    // Can delete if has deleteOwn permission AND is the task creator
+    if (permissions.tasks?.deleteOwn && taskCreatorId === session.user.id) {
       return true;
     }
 

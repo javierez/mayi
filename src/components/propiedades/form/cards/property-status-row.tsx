@@ -187,12 +187,12 @@ export function PropertyStatusRow({
     );
   }, 0);
 
-  // Progress fills to the middle of the previous cell to current process
-  // If there's an ongoing process, fill to the middle of the last completed cell
-  // If all are completed or none are completed, fill to the end of completed cells
+  // Progress fills to the middle of the current ongoing task
+  // When a task is completed, the next task becomes ongoing
+  // Bar should always stop at the middle between two milestones (except at 0% or 100%)
   const progressPercent =
-    ongoingSubstages > 0 && completedSubstages > 0
-      ? ((completedSubstages - 0.5) / totalSubstagesForBar) * 100
+    ongoingSubstages > 0
+      ? ((completedSubstages + 0.5) / totalSubstagesForBar) * 100
       : (completedSubstages / totalSubstagesForBar) * 100;
 
   console.log("📊 Progress Bar Debug:", {
@@ -202,8 +202,8 @@ export function PropertyStatusRow({
     ongoingSubstages,
     progressPercent,
     formula:
-      ongoingSubstages > 0 && completedSubstages > 0
-        ? "completedSubstages - 0.5"
+      ongoingSubstages > 0
+        ? "completedSubstages + 0.5"
         : "completedSubstages",
   });
 
@@ -426,13 +426,13 @@ export function PropertyStatusRow({
             </div>
 
             {/* Icon Row - Status Indicators */}
-            <div className="mt-14 flex items-center justify-between gap-2 px-4 sm:gap-3 sm:px-6 md:gap-4 md:px-8">
+            <div className="mt-14 flex items-center justify-center gap-4 px-4 sm:gap-5 sm:px-6 md:gap-6 md:px-8">
               {/* Keys */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div
                     className={cn(
-                      "rounded-lg p-2.5 transition-all duration-300 sm:p-3",
+                      "rounded-lg p-2 transition-all duration-300 sm:p-2.5",
                       hasKeys
                         ? "bg-white shadow-md hover:shadow-lg"
                         : "bg-white opacity-20 hover:opacity-30",
@@ -458,7 +458,7 @@ export function PropertyStatusRow({
                 <TooltipTrigger asChild>
                   <div
                     className={cn(
-                      "rounded-lg p-2.5 transition-all duration-300 sm:p-3",
+                      "rounded-lg p-2 transition-all duration-300 sm:p-2.5",
                       hasCartel
                         ? "bg-white shadow-md hover:shadow-lg"
                         : "bg-white opacity-20 hover:opacity-30",
@@ -484,7 +484,7 @@ export function PropertyStatusRow({
                 <TooltipTrigger asChild>
                   <div
                     className={cn(
-                      "rounded-lg p-2.5 transition-all duration-300 sm:p-3",
+                      "rounded-lg p-2 transition-all duration-300 sm:p-2.5",
                       publishedToWebsite
                         ? "bg-white shadow-md hover:shadow-lg"
                         : "bg-white opacity-20 hover:opacity-30",
@@ -508,13 +508,13 @@ export function PropertyStatusRow({
               </Tooltip>
 
               {/* Portals Group - Fotocasa & Idealista */}
-              <div className="flex gap-1.5 sm:gap-2">
+              <div className="flex gap-3 sm:gap-4">
                 {/* Fotocasa */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div
                       className={cn(
-                        "rounded-lg p-2 transition-all duration-300 sm:p-2.5",
+                        "rounded-lg p-1.5 transition-all duration-300 sm:p-2",
                         fotocasaActive
                           ? "bg-white shadow-md hover:shadow-lg"
                           : "bg-white opacity-20 hover:opacity-30",
@@ -546,7 +546,7 @@ export function PropertyStatusRow({
                   <TooltipTrigger asChild>
                     <div
                       className={cn(
-                        "rounded-lg p-2 transition-all duration-300 sm:p-2.5",
+                        "rounded-lg p-1.5 transition-all duration-300 sm:p-2",
                         idealistaActive
                           ? "bg-white shadow-md hover:shadow-lg"
                           : "bg-white opacity-20 hover:opacity-30",
@@ -579,7 +579,7 @@ export function PropertyStatusRow({
                 <TooltipTrigger asChild>
                   <div
                     className={cn(
-                      "rounded-lg p-2.5 transition-all duration-300 sm:p-3",
+                      "rounded-lg p-2 transition-all duration-300 sm:p-2.5",
                       enEscaparate
                         ? "bg-white shadow-md hover:shadow-lg"
                         : "bg-white opacity-20 hover:opacity-30",
