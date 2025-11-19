@@ -28,6 +28,7 @@ import { searchContactsWithAuth } from "~/server/queries/contact";
 import { listListingsForContactWithAuth, listContactsForListingWithAuth, listListingsCompactWithAuth } from "~/server/queries/listing";
 import { findListingContactIdAction } from "~/server/actions/contact-activity";
 import { useSession } from "~/lib/auth-client";
+import { getAgentsForSelectionWithAuth } from "~/server/queries/users";
 import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Badge } from "~/components/ui/badge";
@@ -106,6 +107,7 @@ export function GlobalTaskModal({
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [agents, setAgents] = useState<Array<{ id: string; name: string; firstName?: string; lastName?: string }>>([]);
 
   // Confirmation dialog state for creating listing-contact relationship
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -115,17 +117,37 @@ export function GlobalTaskModal({
   const debouncedContactSearchQuery = useDebounce(contactSearchQuery, 300);
   const debouncedPropertySearchQuery = useDebounce(propertySearchQuery, 300);
 
-  // Agents list - simplified to just current user
-  const agents = session?.user
-    ? [
-        {
-          id: session.user.id,
-          name: session.user.name || "",
-          firstName: session.user.name?.split(" ")[0] ?? undefined,
-          lastName: session.user.name?.split(" ")[1] ?? undefined,
-        },
-      ]
-    : [];
+  // Fetch agents when modal opens
+  useEffect(() => {
+    if (open) {
+      const fetchAgents = async () => {
+        try {
+          const agentsData = await getAgentsForSelectionWithAuth();
+          const formattedAgents = agentsData.map((agent) => ({
+            id: agent.id,
+            name: agent.name,
+            firstName: agent.firstName,
+            lastName: agent.lastName ?? undefined,
+          }));
+          setAgents(formattedAgents);
+        } catch (error) {
+          console.error("Error fetching agents:", error);
+          // Fallback to current user if fetch fails
+          if (session?.user) {
+            setAgents([
+              {
+                id: session.user.id,
+                name: session.user.name || "",
+                firstName: session.user.name?.split(" ")[0] ?? undefined,
+                lastName: session.user.name?.split(" ")[1] ?? undefined,
+              },
+            ]);
+          }
+        }
+      };
+      void fetchAgents();
+    }
+  }, [open, session?.user]);
 
   // Reset form when modal opens
   useEffect(() => {
@@ -755,11 +777,17 @@ export function GlobalTaskModal({
                 <SelectValue placeholder="Seleccionar agente" />
               </SelectTrigger>
               <SelectContent>
-                {agents.map((agent) => (
-                  <SelectItem key={agent.id} value={agent.id}>
-                    {agent.name ?? agent.id}
-                  </SelectItem>
-                ))}
+                {agents.map((agent) => {
+                  const displayName = agent.name || 
+                    (agent.firstName && agent.lastName 
+                      ? `${agent.firstName} ${agent.lastName}` 
+                      : agent.firstName || agent.lastName || agent.id);
+                  return (
+                    <SelectItem key={agent.id} value={agent.id}>
+                      {displayName}
+                    </SelectItem>
+                  );
+                })}
               </SelectContent>
             </Select>
           </div>

@@ -11,8 +11,10 @@ import {
   users,
   contactActivity,
   listingContactActivity,
+  propertyImages,
+  locations,
 } from "../db/schema";
-import { eq, and, or, sql, isNotNull, asc, lte } from "drizzle-orm";
+import { eq, and, or, sql, isNotNull, isNull, asc, desc, lte, gte } from "drizzle-orm";
 import type { Task } from "../../lib/data";
 import { getCurrentUserAccountId, getSecureSession } from "../../lib/dal";
 
@@ -21,7 +23,16 @@ export async function createTaskWithAuth(
   data: Omit<Task, "taskId" | "createdAt" | "updatedAt">,
 ) {
   const accountId = await getCurrentUserAccountId();
-  return createTask(data, accountId);
+  const session = await getSecureSession();
+  const userId = session?.user?.id;
+  
+  // Set createdBy to the current user's ID if not already provided
+  const taskData = {
+    ...data,
+    createdBy: data.createdBy ?? userId ?? undefined,
+  };
+  
+  return createTask(taskData, accountId);
 }
 
 export async function getTaskByIdWithAuth(taskId: number) {
@@ -174,6 +185,7 @@ export async function createAppointmentTaskWithAuth(
     // Create the task using the existing createTask function
     const taskData = {
       userId: session.user.id,
+      createdBy: session.user.id, // Set createdBy to the current user
       title: "Configurar cita para ver propiedades",
       description,
       dueDate,
@@ -291,12 +303,41 @@ export async function createTask(
   }
 }
 
-// Get task by ID
+// Get task by ID with all related data (contact, property, images, location)
 export async function getTaskById(taskId: number, accountId: number) {
   try {
-    // Complex query to verify account access through various relationships
-    const [task] = await db
-      .select()
+    // Enhanced query to include contact details, property images, and location data
+    const result = await db
+      .select({
+        // Task fields
+        tasks: tasks,
+        // Contact fields
+        contacts: {
+          contactId: contacts.contactId,
+          firstName: contacts.firstName,
+          lastName: contacts.lastName,
+          email: contacts.email,
+          phone: contacts.phone,
+        },
+        // Listing fields
+        listings: {
+          listingId: listings.listingId,
+        },
+        // Property fields
+        properties: {
+          propertyId: properties.propertyId,
+          title: properties.title,
+          referenceNumber: properties.referenceNumber,
+        },
+        // Property image (first image only)
+        propertyImages: {
+          imageUrl: propertyImages.imageUrl,
+        },
+        // Location fields
+        locations: {
+          city: locations.city,
+        },
+      })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
       .leftJoin(
@@ -312,6 +353,20 @@ export async function getTaskById(taskId: number, accountId: number) {
       )
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
+      .leftJoin(
+        propertyImages,
+        and(
+          eq(propertyImages.propertyId, properties.propertyId),
+          eq(propertyImages.isActive, true),
+          eq(propertyImages.imageOrder, 1),
+          // Only get actual images, not videos, YouTube links, or virtual tours
+          sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`,
+        ),
+      )
       .where(
         and(
           eq(tasks.taskId, BigInt(taskId)),
@@ -324,6 +379,7 @@ export async function getTaskById(taskId: number, accountId: number) {
           ),
         ),
       );
+    const task = result[0] ?? null;
     return task;
   } catch (error) {
     console.error("Error fetching task:", error);
@@ -355,12 +411,28 @@ export async function getUserTasks(
       ),
     ];
 
-    // Apply filters if provided
+    // Filter by completed status
+    // If completed is explicitly false, get only incomplete tasks
+    // Otherwise (undefined or true), include incomplete tasks AND completed tasks from last 10 days
+    if (filters?.completed === false) {
+      whereConditions.push(eq(tasks.completed, false));
+    } else {
+      // Include incomplete tasks OR completed tasks from last 10 days
+      const tenDaysAgo = new Date();
+      tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+      whereConditions.push(
+        or(
+          eq(tasks.completed, false),
+          and(
+            eq(tasks.completed, true),
+            gte(tasks.updatedAt, tenDaysAgo),
+          ),
+        ),
+      );
+    }
+
+    // Apply other filters if provided
     if (filters) {
-      // Filter by completed status
-      if (filters.completed !== undefined) {
-        whereConditions.push(eq(tasks.completed, filters.completed));
-      }
 
       // Filter by createdBy
       if (filters.createdBy && filters.createdBy.length > 0) {
@@ -693,10 +765,6 @@ export async function updateTask(
               .update(listingContactActivity)
               .set({ details: updatedDetails })
               .where(eq(listingContactActivity.id, existingTask.activityId));
-
-            console.log(
-              `[ACTIVITY UPDATED] Listing Contact Activity ID: ${existingTask.activityId}, isPending set to ${newIsPendingValue}`,
-            );
           }
         }
       } catch (activityError) {
@@ -707,12 +775,6 @@ export async function updateTask(
         );
       }
     }
-
-    // Log the edit action
-    const updatedFields = Object.keys(data).join(", ");
-    console.log(
-      `[TASK EDITED] Task ID: ${taskId}, Title: "${existingTask.title}", Edited by: ${editedBy ?? "unknown"}, Account ID: ${accountId}, Updated fields: [${updatedFields}], Timestamp: ${new Date().toISOString()}`,
-    );
 
     const [updatedTask] = await db
       .select({
@@ -1625,11 +1687,27 @@ export async function getMostUrgentTasks(
     const whereConditions = [
       eq(tasks.isActive, true),
       eq(tasks.completed, false),
-      isNotNull(tasks.dueDate),
-      lte(tasks.dueDate, endDate),
+      // Include tasks with urgency = 5 (critical) regardless of due date (even if null),
+      // OR regular tasks with dueDate within the daysAhead limit
       or(
-        eq(contacts.accountId, BigInt(accountId)),
-        eq(properties.accountId, BigInt(accountId)),
+        eq(tasks.urgency, 5), // Critical tasks always included (even without deadline)
+        and(
+          isNotNull(tasks.dueDate), // Regular tasks must have a due date
+          lte(tasks.dueDate, endDate), // Regular tasks within deadline
+        ),
+      ),
+      // Account filtering: task belongs to account through contact, property, or user
+      // Handle NULLs from LEFT JOINs properly - if contact/property is NULL, check user accountId
+      or(
+        and(
+          isNotNull(contacts.accountId),
+          eq(contacts.accountId, BigInt(accountId)),
+        ),
+        and(
+          isNotNull(properties.accountId),
+          eq(properties.accountId, BigInt(accountId)),
+        ),
+        eq(users.accountId, BigInt(accountId)), // Users is INNER JOIN, always present
       ),
     ];
 
@@ -1706,7 +1784,13 @@ export async function getMostUrgentTasks(
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(and(...whereConditions))
-      .orderBy(asc(tasks.dueDate))
+      // Sort by urgency first (5 = critical comes first), then by due date
+      // Critical tasks without dates come first, then critical with dates, then regular tasks
+      .orderBy(
+        desc(tasks.urgency),
+        sql`CASE WHEN ${tasks.dueDate} IS NULL THEN 0 ELSE 1 END`, // Null dates first within same urgency
+        asc(tasks.dueDate)
+      )
       .limit(limit);
 
     return urgentTasks;

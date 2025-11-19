@@ -14,6 +14,7 @@ import {
 import { TaskColumn } from "./task-column";
 import { TaskDragOverlay } from "./task-drag-overlay";
 import { useToast } from "~/components/hooks/use-toast";
+import { updateTaskWithAuth } from "~/server/queries/task";
 
 interface Task {
   taskId: string;
@@ -24,6 +25,12 @@ interface Task {
   category: string | null;
   status: string;
   completed: boolean | null;
+  createdAt: Date | null;
+  listingId?: string | null;
+  contactId?: string | null;
+  propertyTitle?: string | null;
+  contactFirstName?: string | null;
+  contactLastName?: string | null;
 }
 
 interface TaskBoardProps {
@@ -31,7 +38,7 @@ interface TaskBoardProps {
 }
 
 const TASK_STATUSES = [
-  { id: "backlog", label: "Por Hacer", color: "gray" },
+  { id: "backlog", label: "Nuevas", color: "gray" },
   { id: "ready", label: "Listo", color: "blue" },
   { id: "in_progress", label: "En Progreso", color: "yellow" },
   { id: "validation", label: "Validación", color: "purple" },
@@ -69,6 +76,16 @@ export function TaskBoard({ initialTasks }: TaskBoardProps) {
       }
     });
 
+    // Sort backlog tasks by createdAt (newest first)
+    if (grouped.backlog) {
+      grouped.backlog.sort((a, b) => {
+        if (!a.createdAt && !b.createdAt) return 0;
+        if (!a.createdAt) return 1;
+        if (!b.createdAt) return -1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+    }
+
     return grouped;
   }, [tasks]);
 
@@ -103,6 +120,54 @@ export function TaskBoard({ initialTasks }: TaskBoardProps) {
           ),
         );
       }
+    }
+  }
+
+  async function handleToggleCompleted(taskId: string, currentCompleted: boolean) {
+    const newCompleted = !currentCompleted;
+    // When completing, move to "finished"; when uncompleting, always move to "validation"
+    const newStatus = newCompleted ? "finished" : "validation";
+
+    // Optimistic update - immediately update the UI
+    // This will automatically move the task to the correct column via tasksByStatus
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.taskId === taskId
+          ? {
+              ...task,
+              completed: newCompleted,
+              status: newStatus,
+            }
+          : task,
+      ),
+    );
+
+    // Store previous state for potential rollback
+    const previousState = tasks;
+
+    try {
+      // Update task completed status and status in database
+      // When completing, move to "finished"; when uncompleting, move to "validation"
+      await updateTaskWithAuth(Number(taskId), {
+        completed: newCompleted,
+        status: newStatus as "finished" | "validation",
+      });
+
+      toast({
+        title: newCompleted ? "Tarea completada" : "Tarea reactivada",
+        description: newCompleted
+          ? "La tarea se movió a Finalizado"
+          : "La tarea se movió a Validación",
+      });
+    } catch (error) {
+      console.error("Error updating task:", error);
+      // Revert optimistic update on error
+      setTasks(previousState);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la tarea. Intenta de nuevo.",
+        variant: "destructive",
+      });
     }
   }
 
@@ -169,6 +234,7 @@ export function TaskBoard({ initialTasks }: TaskBoardProps) {
             title={status.label}
             tasks={tasksByStatus[status.id] ?? []}
             color={status.color}
+            onToggleCompleted={handleToggleCompleted}
           />
         ))}
       </div>

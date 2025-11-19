@@ -13,6 +13,11 @@ interface Task {
   category: string | null;
   status: string;
   completed: boolean | null;
+  listingId?: string | null;
+  contactId?: string | null;
+  propertyTitle?: string | null;
+  contactFirstName?: string | null;
+  contactLastName?: string | null;
 }
 
 interface TaskColumnProps {
@@ -20,9 +25,10 @@ interface TaskColumnProps {
   title: string;
   tasks: Task[];
   color?: string;
+  onToggleCompleted?: (taskId: string, currentCompleted: boolean) => void;
 }
 
-export function TaskColumn({ id, title, tasks }: TaskColumnProps) {
+export function TaskColumn({ id, title, tasks, onToggleCompleted }: TaskColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id,
     data: {
@@ -53,7 +59,13 @@ export function TaskColumn({ id, title, tasks }: TaskColumnProps) {
             </p>
           </div>
         ) : (
-          tasks.map((task) => <TaskCard key={task.taskId} task={task} />)
+          tasks.map((task) => (
+            <TaskCard
+              key={task.taskId}
+              task={task}
+              onToggleCompleted={onToggleCompleted}
+            />
+          ))
         )}
       </div>
     </div>

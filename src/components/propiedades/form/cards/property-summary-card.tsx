@@ -152,7 +152,7 @@ export function PropertySummaryCard({
                 >
                   <Users className="h-2.5 w-2.5 text-amber-800 sm:h-3 sm:w-3" />
                 </button>
-                <p className="max-w-16 truncate text-xs font-medium text-gray-900 sm:max-w-20 sm:text-sm md:max-w-32 lg:max-w-40">
+                <p className="max-w-16 truncate text-[10px] font-medium text-gray-900 sm:max-w-20 sm:text-xs md:max-w-32 md:text-sm lg:max-w-40">
                   {listing.owners?.[0]?.name ??
                     (selectedOwnerIds.length > 0
                       ? (owners.find(
@@ -176,7 +176,7 @@ export function PropertySummaryCard({
                 <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-amber-200 to-rose-200 sm:h-6 sm:w-6">
                   <Briefcase className="h-2.5 w-2.5 text-amber-800 sm:h-3 sm:w-3" />
                 </div>
-                <p className="max-w-16 truncate text-xs font-medium text-gray-900 sm:max-w-20 sm:text-sm md:max-w-32 lg:max-w-40">
+                <p className="max-w-16 truncate text-[10px] font-medium text-gray-900 sm:max-w-20 sm:text-xs md:max-w-32 md:text-sm lg:max-w-40">
                   {listing.agent?.name ??
                     (selectedAgentId
                       ? (agents.find((a) => a.id === selectedAgentId)?.name ??

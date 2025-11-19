@@ -2,9 +2,9 @@
 
 import { useDraggable } from "@dnd-kit/core";
 import { Card, CardContent } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
-import { Calendar, AlertCircle } from "lucide-react";
+import { Calendar, AlertCircle, Home, User, Check } from "lucide-react";
 import { cn } from "~/lib/utils";
+import Link from "next/link";
 
 interface TaskCardProps {
   task: {
@@ -16,7 +16,13 @@ interface TaskCardProps {
     category: string | null;
     status: string;
     completed: boolean | null;
+    listingId?: string | null;
+    contactId?: string | null;
+    propertyTitle?: string | null;
+    contactFirstName?: string | null;
+    contactLastName?: string | null;
   };
+  onToggleCompleted?: (taskId: string, currentCompleted: boolean) => void;
 }
 
 function getUrgencyColor(urgency: number | null): string {
@@ -35,6 +41,25 @@ function getUrgencyColor(urgency: number | null): string {
       return "bg-green-100 text-green-800";
     default:
       return "bg-gray-100 text-gray-800";
+  }
+}
+
+function getUrgencyBgColor(urgency: number | null): string {
+  if (!urgency) return "bg-gray-300/60";
+
+  switch (urgency) {
+    case 5:
+      return "bg-red-500/60";
+    case 4:
+      return "bg-orange-500/60";
+    case 3:
+      return "bg-yellow-500/60";
+    case 2:
+      return "bg-blue-500/60";
+    case 1:
+      return "bg-gray-400/60";
+    default:
+      return "bg-gray-300/60";
   }
 }
 
@@ -69,7 +94,7 @@ function isOverdue(dueDate: Date | null): boolean {
   return new Date(dueDate) < new Date();
 }
 
-export function TaskCard({ task }: TaskCardProps) {
+export function TaskCard({ task, onToggleCompleted }: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -101,46 +126,121 @@ export function TaskCard({ task }: TaskCardProps) {
           overdue && "border-red-300",
         )}
       >
-        <CardContent className="p-3">
+        <CardContent className="relative p-3">
           <div className="space-y-2">
-            <div>
-              <h4 className="text-sm font-medium leading-tight">
+            <div className="flex items-start gap-1.5">
+              {/* Checkbox */}
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onToggleCompleted) {
+                    onToggleCompleted(task.taskId, task.completed ?? false);
+                  }
+                }}
+                className={cn(
+                  "mt-1 flex h-3 w-3 flex-shrink-0 items-center justify-center rounded border-2 transition-all duration-200",
+                  (task.completed ?? false)
+                    ? "border-emerald-500 bg-emerald-500 text-white shadow-sm"
+                    : "border-gray-300 hover:border-gray-400",
+                  onToggleCompleted ? "cursor-pointer" : "cursor-not-allowed opacity-60",
+                )}
+              >
+                {(task.completed ?? false) && (
+                  <Check className="h-2 w-2" />
+                )}
+              </div>
+
+              {/* Title */}
+              <h4
+                className={cn(
+                  "text-sm font-medium leading-tight flex-1",
+                  (task.completed ?? false) && "text-gray-500 line-through",
+                )}
+              >
                 {task.title}
               </h4>
-              {task.description && (
-                <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                  {task.description}
-                </p>
-              )}
             </div>
+
+            {/* Property and Contact badges */}
+            {(Boolean(task.listingId && task.propertyTitle) ||
+              Boolean(
+                task.contactId &&
+                  (task.contactFirstName ?? task.contactLastName),
+              )) && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {/* Property Link */}
+                {task.listingId && task.propertyTitle && (
+                  <Link
+                    href={`/propiedades/${task.listingId}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-all duration-300",
+                      (task.completed ?? false)
+                        ? "bg-gray-50/50 text-gray-400 shadow-sm hover:bg-gray-100/60 hover:shadow-md"
+                        : "bg-white text-gray-700 shadow-sm hover:-translate-y-0.5 hover:shadow-md",
+                    )}
+                  >
+                    <Home className="h-2.5 w-2.5 flex-shrink-0 opacity-60" />
+                    <span className="break-words">
+                      {task.propertyTitle.length > 30
+                        ? `${task.propertyTitle.substring(0, 30)}...`
+                        : task.propertyTitle}
+                    </span>
+                  </Link>
+                )}
+
+                {/* Contact Link */}
+                {task.contactId &&
+                  (task.contactFirstName ?? task.contactLastName) && (
+                    <Link
+                      href={`/contactos/${task.contactId}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className={cn(
+                        "inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-all duration-300",
+                        (task.completed ?? false)
+                          ? "bg-gray-50/50 text-gray-400 shadow-sm hover:bg-gray-100/60 hover:shadow-md"
+                          : "bg-white text-gray-700 shadow-sm hover:-translate-y-0.5 hover:shadow-md",
+                      )}
+                    >
+                      <User className="h-2.5 w-2.5 flex-shrink-0 opacity-60" />
+                      <span className="break-words">
+                        {(() => {
+                          const fullName = `${task.contactFirstName ?? ""} ${task.contactLastName ?? ""}`.trim();
+                          return fullName.length > 20
+                            ? `${fullName.substring(0, 20)}...`
+                            : fullName;
+                        })()}
+                      </span>
+                    </Link>
+                  )}
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center gap-1.5">
               {task.urgency && (
-                <Badge
-                  variant="secondary"
-                  className={cn("text-xs", getUrgencyColor(task.urgency))}
-                >
-                  {getUrgencyLabel(task.urgency)}
-                </Badge>
-              )}
-
-              {task.dueDate && (
                 <div
-                  className={cn(
-                    "flex items-center gap-1 text-xs",
-                    overdue ? "text-red-600 font-medium" : "text-muted-foreground",
-                  )}
-                >
-                  {overdue ? (
-                    <AlertCircle className="h-3 w-3" />
-                  ) : (
-                    <Calendar className="h-3 w-3" />
-                  )}
-                  <span>{formatDate(task.dueDate)}</span>
-                </div>
+                  className={cn("h-1 w-16 rounded-full", getUrgencyBgColor(task.urgency))}
+                />
               )}
             </div>
           </div>
+
+          {/* Due date in bottom right */}
+          {task.dueDate && (
+            <div
+              className={cn(
+                "absolute bottom-2 right-2 flex items-center gap-0.5 text-[10px]",
+                overdue ? "text-red-600 font-medium" : "text-muted-foreground",
+              )}
+            >
+              {overdue ? (
+                <AlertCircle className="h-2.5 w-2.5" />
+              ) : (
+                <Calendar className="h-2.5 w-2.5" />
+              )}
+              <span>{formatDate(task.dueDate)}</span>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

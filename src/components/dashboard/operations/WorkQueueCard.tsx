@@ -44,6 +44,7 @@ import {
 } from "~/app/actions/permissions/check-permissions";
 import { TaskFilter, type TaskFilters } from "./TaskFilter";
 import { AppointmentFilter } from "./AppointmentFilter";
+import { TaskViewModal } from "~/components/tasks/task-view-modal";
 
 type DetailedTask = Awaited<ReturnType<typeof getMostUrgentTasksWithAuth>>[0];
 
@@ -85,6 +86,10 @@ export default function WorkQueueCard({
   } | null>(null);
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
   const [expandedPhones, setExpandedPhones] = useState<Set<string>>(new Set());
+  const [selectedTaskForView, setSelectedTaskForView] = useState<{
+    taskId: number;
+    task: DetailedTask;
+  } | null>(null);
 
   // Permission states
   const [hasEditAllPermission, setHasEditAllPermission] = useState(false);
@@ -206,10 +211,37 @@ export default function WorkQueueCard({
     if ((a.completed ?? false) !== (b.completed ?? false)) {
       return (a.completed ?? false) ? 1 : -1;
     }
-    // Otherwise sort by due date
-    return (
-      new Date(a.dueDate ?? 0).getTime() - new Date(b.dueDate ?? 0).getTime()
-    );
+    
+    // Priority order:
+    // 1. Critical tasks (urgency = 5) with NO due date (highest priority)
+    // 2. Critical tasks (urgency = 5) with due date
+    // 3. Non-critical tasks with NO due date
+    // 4. Non-critical tasks with due date (lowest priority)
+    
+    const aIsCritical = (a.urgency ?? 0) === 5;
+    const bIsCritical = (b.urgency ?? 0) === 5;
+    const aHasDate = a.dueDate != null;
+    const bHasDate = b.dueDate != null;
+    
+    // Calculate priority score: critical + no date = highest priority
+    const getPriorityScore = (isCritical: boolean, hasDate: boolean) => {
+      if (isCritical && !hasDate) return 0; // Highest priority
+      if (isCritical && hasDate) return 1;
+      if (!isCritical && !hasDate) return 2;
+      return 3; // Lowest priority
+    };
+    
+    const aPriority = getPriorityScore(aIsCritical, aHasDate);
+    const bPriority = getPriorityScore(bIsCritical, bHasDate);
+    
+    if (aPriority !== bPriority) {
+      return aPriority - bPriority; // Lower priority score = higher priority
+    }
+    
+    // Same priority level - sort by due date (earlier dates first, null dates treated as 0)
+    const aDate = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+    const bDate = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+    return aDate - bDate;
   });
 
   const formatTime = (date: Date | string) => {
@@ -630,11 +662,23 @@ export default function WorkQueueCard({
                             confirmDeleteTask(task.taskId, task.title);
                           }
                         }}
+                        onClick={(e) => {
+                          // Don't open modal if clicking on interactive elements
+                          const target = e.target as HTMLElement;
+                          if (
+                            target.closest("a") ||
+                            target.closest("button") ||
+                            target.closest('[role="button"]')
+                          ) {
+                            return;
+                          }
+                          setSelectedTaskForView({ taskId: task.taskId, task });
+                        }}
                         className={`relative z-10 rounded-lg p-2 shadow-md transition-shadow duration-200 sm:p-3 ${
                           (task.completed ?? false)
                             ? "bg-gray-50 opacity-75"
                             : "bg-white"
-                        } ${taskStates[taskIdStr] === "saving" ? "opacity-70" : ""}`}
+                        } ${taskStates[taskIdStr] === "saving" ? "opacity-70" : ""} cursor-pointer hover:shadow-lg`}
                       >
                         {/* Days remaining badge and Avatar - top right, side by side */}
                         <div className="absolute right-2 top-2 mt-1.5 flex items-center gap-1">
@@ -650,10 +694,12 @@ export default function WorkQueueCard({
                             );
                             const diffMs = fullDueDateTime.getTime() - now.getTime();
                             const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                            const remainingTimeText = getRemainingTime(task.dueDate);
 
-                            // Determine color based on time remaining (matching tareas.tsx)
+                            // Determine color based on time remaining
+                            // If text contains "vencido" or diffMs is negative, use rose
                             let colorClasses = "";
-                            if (diffMs < 0) {
+                            if (diffMs < 0 || (remainingTimeText && remainingTimeText.includes("vencido"))) {
                               // Overdue - rose
                               colorClasses = "bg-rose-100 text-rose-800";
                             } else if (diffHours < 24) {
@@ -668,7 +714,7 @@ export default function WorkQueueCard({
                               <span
                                 className={`whitespace-nowrap rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none ${colorClasses}`}
                               >
-                                {getRemainingTime(task.dueDate)}
+                                {remainingTimeText}
                               </span>
                             );
                           })()}
@@ -1129,6 +1175,18 @@ export default function WorkQueueCard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Task View Modal */}
+      <TaskViewModal
+        open={selectedTaskForView !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedTaskForView(null);
+          }
+        }}
+        taskId={selectedTaskForView?.taskId ?? null}
+        initialTask={selectedTaskForView?.task ?? null}
+      />
     </Card>
   );
 }

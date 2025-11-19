@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Card } from "~/components/ui/card";
 import { PropertyImagePlaceholder } from "~/components/propiedades/PropertyImagePlaceholder";
 import { ImageViewer } from "~/components/ui/image-viewer";
-import { getAllPropertyImages } from "~/app/actions/property-images";
+import { getAllPropertyImages, getPropertyImageCount } from "~/app/actions/property-images";
 import { getProcessStages } from "~/lib/constants/process-stages";
 import { calculateCompletion } from "~/lib/properties/completion-tracker";
 import { ProcessStageModal } from "~/components/propiedades/detail/process-stage-modal";
@@ -118,25 +118,47 @@ export function PropertyStatusRow({
     id: string;
     label: string;
   } | null>(null);
+  const [imageCount, setImageCount] = useState<number>(
+    listing?.imageCount ?? 0,
+  );
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Extract imageCount, deal, and listingId from listing prop
-  const imageCount = listing?.imageCount ?? 0;
+  // Extract deal and listingId from listing prop
   const deal = listing?.deal ?? null;
   const listingId = listing?.listingId
     ? (typeof listing.listingId === "bigint" ? Number(listing.listingId) : Number(listing.listingId))
     : null;
 
-  console.log("🏠 PropertyStatusRow - Data check:", {
-    hasListing: !!listing,
-    listingKeys: listing ? Object.keys(listing) : [],
-    rawListingId: listing?.listingId,
-    parsedListingId: listingId,
-    propertyId,
-    imageCount,
-    hasDeal: !!deal,
-  });
+  // Fetch imageCount if not provided in listing prop
+  useEffect(() => {
+    // If imageCount is already in listing prop, use it
+    if (listing?.imageCount !== undefined && listing.imageCount !== null) {
+      setImageCount(Number(listing.imageCount));
+      return;
+    }
+
+    // Otherwise, fetch it using propertyId
+    if (propertyId) {
+      const fetchImageCount = async () => {
+        try {
+          const id =
+            typeof propertyId === "string"
+              ? Number(propertyId)
+              : typeof propertyId === "bigint"
+                ? Number(propertyId)
+                : propertyId;
+          const count = await getPropertyImageCount(BigInt(id));
+          setImageCount(count);
+        } catch (error) {
+          console.error("Error fetching property image count:", error);
+          setImageCount(0);
+        }
+      };
+
+      void fetchImageCount();
+    }
+  }, [propertyId, listing?.imageCount]);
 
   const handleImageClick = async () => {
     if (!propertyId) return;
