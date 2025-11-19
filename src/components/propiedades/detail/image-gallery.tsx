@@ -469,15 +469,33 @@ export function ImageGallery({
     <div className="space-y-4">
       {/* Help text for drag and drop */}
       {images.length > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <p className="text-center text-sm text-gray-500">
-            Arrastra y suelta las imágenes para reordenarlas
-          </p>
+        <div className="flex flex-col gap-3">
+          {!hasUnsavedChanges && (
+            <p className="flex h-10 items-center justify-center text-center text-sm text-gray-500">
+              Arrastra y suelta las imágenes para reordenarlas
+            </p>
+          )}
           {hasUnsavedChanges && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-600" />
-              Cambios sin guardar
-            </span>
+            <div className="flex h-10 items-center justify-end transition-all duration-200">
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCancelOrder}
+                  className="h-7 text-xs text-gray-600 hover:bg-white/80"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSaveOrder}
+                  disabled={isUpdatingOrder}
+                  className="h-7 bg-gray-700 text-xs text-white hover:bg-gray-800"
+                >
+                  {isUpdatingOrder ? "Guardando..." : "Guardar orden"}
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -642,7 +660,7 @@ export function ImageGallery({
       </div>
 
       {/* Selection Controls - Moved to bottom */}
-      {canEdit && (
+      {canEdit && !hasUnsavedChanges && (
         <div className="mt-4 flex items-center space-x-2">
           {isSelectMode ? (
             <>
@@ -676,26 +694,6 @@ export function ImageGallery({
               >
                 <Trash2 className="mr-1.5 h-4 w-4" />
                 Eliminar
-              </Button>
-            </>
-          ) : hasUnsavedChanges ? (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCancelOrder}
-                className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSaveOrder}
-                disabled={isUpdatingOrder}
-                className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-              >
-                {isUpdatingOrder ? "Guardando..." : "Guardar"}
               </Button>
             </>
           ) : (

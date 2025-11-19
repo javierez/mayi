@@ -91,6 +91,9 @@ interface PropertyTabsProps {
     idealista?: boolean | null;
     habitaclia?: boolean | null;
     milanuncios?: boolean | null;
+    publishToWebsite?: boolean | null;
+    hasCartel?: boolean | null;
+    enEscaparate?: boolean | null;
     fotocasaProps?: unknown;
     idealistaProps?: unknown;
     habitacliaProps?: unknown;
@@ -584,7 +587,7 @@ export function PropertyTabs({
       </TabsList>
 
       <TabsContent value="general" className="mt-8 sm:mt-6">
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-6xl">
           {loading.caracteristicas ? (
             <CharacteristicsSkeleton />
           ) : (tabData.convertedListing ?? convertedListing) ? (
@@ -752,6 +755,9 @@ export function PropertyTabs({
             idealista={listing.idealista ?? undefined}
             habitaclia={listing.habitaclia ?? undefined}
             milanuncios={listing.milanuncios ?? undefined}
+            publishToWebsite={listing.publishToWebsite ?? undefined}
+            hasCartel={listing.hasCartel ?? undefined}
+            enEscaparate={listing.enEscaparate ?? undefined}
             fotocasaProps={listing.fotocasaProps ?? undefined}
             idealistaProps={listing.idealistaProps ?? undefined}
             habitacliaProps={listing.habitacliaProps ?? undefined}

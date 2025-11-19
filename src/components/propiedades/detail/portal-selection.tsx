@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "~/components/ui/card";
 import { Switch } from "~/components/ui/switch";
 import { Button } from "~/components/ui/button";
-import { RefreshCcw } from "lucide-react";
+import { RefreshCcw, Store, Globe, FileImage } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { updateListingWithAuth } from "~/server/queries/listing";
 import { toast } from "sonner";
@@ -17,6 +17,11 @@ import {
   deleteFromFotocasa,
   updateFotocasa,
 } from "~/server/portals/fotocasa";
+import { useSession } from "~/lib/auth-client";
+import {
+  getAccountDetailsAction,
+  getCurrentUserAccountId,
+} from "~/app/actions/account-settings";
 
 interface Platform {
   id: string;
@@ -39,6 +44,10 @@ interface PortalSelectionProps {
   idealista?: boolean;
   habitaclia?: boolean;
   milanuncios?: boolean;
+  // Additional listing fields
+  publishToWebsite?: boolean;
+  hasCartel?: boolean;
+  enEscaparate?: boolean;
   // Portal props from database (JSON columns)
   fotocasaProps?: unknown;
   idealistaProps?: unknown;
@@ -92,6 +101,27 @@ const platformConfig = [
     description: "Portal de anuncios clasificados líder en España",
     isDefault: defaultPortalSettings.milanuncios,
   },
+  {
+    id: "publishToWebsite",
+    name: "Publicar en Web",
+    logo: "/vestazoomin.jpeg", // Vesta logo from dashboard
+    description: "Publicar propiedad en el sitio web",
+    isDefault: false,
+  },
+  {
+    id: "hasCartel",
+    name: "Tiene Cartel",
+    logo: "", // Will use FileImage icon instead
+    description: "Propiedad con cartel físico",
+    isDefault: false,
+  },
+  {
+    id: "enEscaparate",
+    name: "En Escaparate",
+    logo: "", // Will use Store icon instead
+    description: "Destacar propiedad en escaparate",
+    isDefault: false,
+  },
 ];
 
 export function PortalSelection({
@@ -101,6 +131,9 @@ export function PortalSelection({
   idealista = false,
   habitaclia = false,
   milanuncios = false,
+  publishToWebsite = false,
+  hasCartel = false,
+  enEscaparate = false,
   fotocasaProps,
   idealistaProps: _idealistaProps,
   habitacliaProps: _habitacliaProps,
@@ -110,12 +143,14 @@ export function PortalSelection({
   initialHidePriceModes,
   onPortalStateChange,
 }: PortalSelectionProps) {
+  const { data: session } = useSession();
   const [platforms, setPlatforms] = useState<Platform[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [savedPlatformStates, setSavedPlatformStates] = useState<
     Record<string, boolean>
   >({});
+  const [accountLogo, setAccountLogo] = useState<string | null>(null);
   // Type guard for fotocasaProps
   const parsedFotocasaProps = fotocasaProps as
     | { visibilityMode?: number; hidePrice?: boolean }
@@ -137,10 +172,39 @@ export function PortalSelection({
     Record<string, boolean>
   >({});
 
+  // Fetch account logo
+  useEffect(() => {
+    const fetchAccountLogo = async () => {
+      if (!session?.user?.id) return;
+
+      try {
+        const userAccountId = await getCurrentUserAccountId(session.user.id);
+        if (!userAccountId) return;
+
+        const result = await getAccountDetailsAction(userAccountId);
+        if (result.success && result.data?.logo) {
+          setAccountLogo(result.data.logo);
+        }
+      } catch (error) {
+        console.error("Error fetching account logo:", error);
+      }
+    };
+
+    void fetchAccountLogo();
+  }, [session?.user?.id]);
+
   // Initialize platforms based on portal fields and defaults
   useEffect(() => {
     const initializePlatforms = () => {
-      const portalValues = { fotocasa, idealista, habitaclia, milanuncios };
+      const portalValues = {
+        fotocasa,
+        idealista,
+        habitaclia,
+        milanuncios,
+        publishToWebsite,
+        hasCartel,
+        enEscaparate,
+      };
 
       const initializedPlatforms = platformConfig.map((config) => {
         // Check if we have cached platform state from parent first
@@ -190,6 +254,9 @@ export function PortalSelection({
     idealista,
     habitaclia,
     milanuncios,
+    publishToWebsite,
+    hasCartel,
+    enEscaparate,
     hidePriceModes.fotocasa,
     visibilityModes.fotocasa,
     initialPlatformStates,
@@ -319,6 +386,12 @@ export function PortalSelection({
           platforms.find((p) => p.id === "habitaclia")?.isActive ?? false,
         milanuncios:
           platforms.find((p) => p.id === "milanuncios")?.isActive ?? false,
+        publishToWebsite:
+          platforms.find((p) => p.id === "publishToWebsite")?.isActive ?? false,
+        hasCartel:
+          platforms.find((p) => p.id === "hasCartel")?.isActive ?? false,
+        enEscaparate:
+          platforms.find((p) => p.id === "enEscaparate")?.isActive ?? false,
         // Save portal-specific configuration props
         fotocasaProps: {
           visibilityMode: visibilityModes.fotocasa ?? 1,
@@ -536,14 +609,14 @@ export function PortalSelection({
         transition={{ delay: 0.1, duration: 0.3 }}
       ></motion.div>
 
-      {/* Platforms Grid */}
+      {/* Platforms Grid - First Row (4 portals) */}
       <motion.div
         className="grid grid-cols-4 gap-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.3 }}
       >
-        {platforms.map((platform, index) => (
+        {platforms.slice(0, 4).map((platform, index) => (
           <motion.div
             key={platform.id}
             initial={{ opacity: 0, y: 10 }}
@@ -711,6 +784,111 @@ export function PortalSelection({
             </Card>
           </motion.div>
         ))}
+      </motion.div>
+
+      {/* Second Row - Combined Card with Logo and Toggle Rows */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3, duration: 0.3 }}
+      >
+        <Card className="relative bg-white shadow-sm transition-all duration-300">
+          {/* Orange Dot if any field has pending changes */}
+          {platforms.slice(4).some(
+            (p) => p.isActive && !savedPlatformStates[p.id],
+          ) && (
+            <div className="absolute left-2 top-2 h-2 w-2 rounded-full bg-orange-400"></div>
+          )}
+
+          <CardContent className="flex items-center gap-8 p-6">
+            {/* Logo on the left */}
+            <div className="flex flex-shrink-0 items-center justify-center">
+              <div className="relative h-48 w-48">
+                <Image
+                  src={accountLogo ?? "/vestazoomin.jpeg"}
+                  alt="Account Logo"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="h-48 w-px bg-gray-200"></div>
+
+            {/* Toggle rows on the right */}
+            <div className="flex flex-1 flex-col gap-4">
+              {/* Publicar en Web */}
+              {(() => {
+                const publishPlatform = platforms.find(
+                  (p) => p.id === "publishToWebsite",
+                );
+                if (!publishPlatform) return null;
+                return (
+                  <div className="flex items-center gap-3">
+                    <Globe className="h-5 w-5 flex-shrink-0 text-gray-400" />
+                    <span className="text-sm font-medium text-gray-700">
+                      Publicar en Web
+                    </span>
+                    <Switch
+                      checked={publishPlatform.isActive}
+                      onCheckedChange={(checked) =>
+                        handlePlatformToggle("publishToWebsite", checked)
+                      }
+                      className="ml-auto data-[state=checked]:bg-gray-900"
+                    />
+                  </div>
+                );
+              })()}
+
+              {/* Tiene Cartel */}
+              {(() => {
+                const cartelPlatform = platforms.find(
+                  (p) => p.id === "hasCartel",
+                );
+                if (!cartelPlatform) return null;
+                return (
+                  <div className="flex items-center gap-3">
+                    <FileImage className="h-5 w-5 flex-shrink-0 text-gray-400" />
+                    <span className="text-sm font-medium text-gray-700">
+                      Tiene Cartel
+                    </span>
+                    <Switch
+                      checked={cartelPlatform.isActive}
+                      onCheckedChange={(checked) =>
+                        handlePlatformToggle("hasCartel", checked)
+                      }
+                      className="ml-auto data-[state=checked]:bg-gray-900"
+                    />
+                  </div>
+                );
+              })()}
+
+              {/* En Escaparate */}
+              {(() => {
+                const escaparatePlatform = platforms.find(
+                  (p) => p.id === "enEscaparate",
+                );
+                if (!escaparatePlatform) return null;
+                return (
+                  <div className="flex items-center gap-3">
+                    <Store className="h-5 w-5 flex-shrink-0 text-gray-400" />
+                    <span className="text-sm font-medium text-gray-700">
+                      En Escaparate
+                    </span>
+                    <Switch
+                      checked={escaparatePlatform.isActive}
+                      onCheckedChange={(checked) =>
+                        handlePlatformToggle("enEscaparate", checked)
+                      }
+                      className="ml-auto data-[state=checked]:bg-gray-900"
+                    />
+                  </div>
+                );
+              })()}
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* Confirm Button for Any Unsaved Changes */}

@@ -2,16 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { Card } from "~/components/ui/card";
-import { Button } from "~/components/ui/button";
 import {
   Bed,
   Bath,
   Square,
   Users,
   Briefcase,
-  Key,
-  Globe,
-  Loader2,
   DoorOpen,
   Pencil,
 } from "lucide-react";
@@ -36,13 +32,7 @@ interface PropertySummaryCardProps {
   owners: Owner[];
   selectedAgentId: string;
   agents: Agent[];
-  hasKeys: boolean;
-  keysLoading: boolean;
-  publishToWebsite: boolean;
-  websiteLoading: boolean;
   canEdit?: boolean;
-  onToggleKeys: () => void;
-  onToggleWebsite: () => void;
   onEditOwner?: () => void;
 }
 
@@ -53,13 +43,7 @@ export function PropertySummaryCard({
   owners,
   selectedAgentId,
   agents,
-  hasKeys,
-  keysLoading,
-  publishToWebsite,
-  websiteLoading,
   canEdit = true,
-  onToggleKeys,
-  onToggleWebsite,
   onEditOwner,
 }: PropertySummaryCardProps) {
   const router = useRouter();
@@ -97,8 +81,10 @@ export function PropertySummaryCard({
   };
 
   const handleOwnerClick = () => {
-    if (selectedOwnerIds.length > 0) {
-      const ownerId = selectedOwnerIds[0];
+    const ownerId =
+      listing.owners?.[0]?.id ??
+      (selectedOwnerIds.length > 0 ? selectedOwnerIds[0] : null);
+    if (ownerId) {
       navigateToPage(`/contactos/${ownerId}`, router);
     }
   };
@@ -153,8 +139,8 @@ export function PropertySummaryCard({
             </div>
           </div>
 
-          {/* Second row on mobile: Owner/Agent group and Toggle buttons group with space between */}
-          <div className="flex items-center justify-between md:justify-center md:gap-4">
+          {/* Second row on mobile: Owner/Agent group */}
+          <div className="flex items-center justify-center gap-4">
             {/* Owner and Agent - grouped together */}
             <div className="ml-2 flex items-center gap-2 sm:gap-3 md:ml-0">
               {/* Owner */}
@@ -167,11 +153,12 @@ export function PropertySummaryCard({
                   <Users className="h-2.5 w-2.5 text-amber-800 sm:h-3 sm:w-3" />
                 </button>
                 <p className="max-w-16 truncate text-xs font-medium text-gray-900 sm:max-w-20 sm:text-sm md:max-w-32 lg:max-w-40">
-                  {selectedOwnerIds.length > 0
-                    ? (owners.find(
-                        (o) => o.id.toString() === selectedOwnerIds[0],
-                      )?.name ?? "Sin asignar")
-                    : "Sin asignar"}
+                  {listing.owners?.[0]?.name ??
+                    (selectedOwnerIds.length > 0
+                      ? (owners.find(
+                          (o) => o.id.toString() === selectedOwnerIds[0],
+                        )?.name ?? "Sin asignar")
+                      : "Sin asignar")}
                 </p>
                 {onEditOwner && canEdit && (
                   <button
@@ -190,10 +177,11 @@ export function PropertySummaryCard({
                   <Briefcase className="h-2.5 w-2.5 text-amber-800 sm:h-3 sm:w-3" />
                 </div>
                 <p className="max-w-16 truncate text-xs font-medium text-gray-900 sm:max-w-20 sm:text-sm md:max-w-32 lg:max-w-40">
-                  {selectedAgentId
-                    ? (agents.find((a) => a.id === selectedAgentId)?.name ??
-                      "Sin asignar")
-                    : "Sin asignar"}
+                  {listing.agent?.name ??
+                    (selectedAgentId
+                      ? (agents.find((a) => a.id === selectedAgentId)?.name ??
+                        "Sin asignar")
+                      : "Sin asignar")}
                 </p>
                 {onEditOwner && canEdit && (
                   <button
@@ -205,51 +193,6 @@ export function PropertySummaryCard({
                   </button>
                 )}
               </div>
-            </div>
-
-            {/* Toggle buttons - grouped together */}
-            <div className="mr-6 flex items-center gap-2 sm:gap-3 md:mr-0">
-              {/* Keys toggle button */}
-              <Button
-                onClick={onToggleKeys}
-                disabled={!canEdit || keysLoading}
-                size="sm"
-                variant="ghost"
-                className={`h-7 w-7 flex-shrink-0 rounded-full p-0 transition-all duration-200 sm:h-10 sm:w-10 md:h-11 md:w-11 ${
-                  hasKeys
-                    ? "scale-105 bg-white text-black shadow-xl hover:bg-gray-50"
-                    : "bg-transparent text-gray-400 shadow-sm hover:bg-gray-50"
-                }`}
-                title={hasKeys ? "Tenemos las llaves" : "No tenemos las llaves"}
-              >
-                {keysLoading ? (
-                  <Loader2 className="h-3 w-3 animate-spin sm:h-4 sm:w-4" />
-                ) : (
-                  <Key className="h-3 w-3 sm:h-4 sm:w-4" />
-                )}
-              </Button>
-
-              {/* Website toggle button */}
-              <Button
-                onClick={onToggleWebsite}
-                disabled={!canEdit || websiteLoading}
-                size="sm"
-                variant="ghost"
-                className={`h-7 w-7 flex-shrink-0 rounded-full p-0 transition-all duration-200 sm:h-10 sm:w-10 md:h-11 md:w-11 ${
-                  publishToWebsite
-                    ? "scale-105 bg-white text-black shadow-xl hover:bg-gray-50"
-                    : "bg-transparent text-gray-400 shadow-sm hover:bg-gray-50"
-                }`}
-                title={
-                  publishToWebsite ? "Publicar en web" : "No publicar en web"
-                }
-              >
-                {websiteLoading ? (
-                  <Loader2 className="h-3 w-3 animate-spin sm:h-4 sm:w-4" />
-                ) : (
-                  <Globe className="h-3 w-3 sm:h-4 sm:w-4" />
-                )}
-              </Button>
             </div>
           </div>
         </div>

@@ -965,37 +965,39 @@ export function PropertyCharacteristicsForm({
     owner.name.toLowerCase().includes(ownerSearch.toLowerCase()),
   );
 
-  // Set selectedAgentId when listing agent data is available
+  // Set selectedAgentId and selectedOwnerIds from listing data
   useEffect(() => {
     if (listing.agent?.id) {
       setSelectedAgentId(listing.agent.id.toString());
     }
-  }, [listing.agent?.id]);
+    if (listing.owners && listing.owners.length > 0) {
+      setSelectedOwnerIds(listing.owners.map((owner) => owner.id.toString()));
+    }
+    // Set toggle states from listing data
+    if (listing.hasKeys !== undefined) {
+      setHasKeys(listing.hasKeys);
+    }
+    if (listing.publishToWebsite !== undefined) {
+      setPublishToWebsite(listing.publishToWebsite);
+    }
+  }, [listing.agent?.id, listing.owners, listing.hasKeys, listing.publishToWebsite]);
 
-  // Comprehensive data fetching - batch all API calls
+  // Simplified data fetching - only fetch dropdown lists and permissions
   useEffect(() => {
-    const fetchAllFormData = async () => {
+    const fetchFormData = async () => {
       try {
-        console.log("Fetching all form data in single batch...");
+        console.log("Fetching dropdown lists and permissions...");
 
-        // Batch all API calls in parallel for maximum performance
+        // Only fetch what's needed for dropdowns and permissions
         const [
           agentsData,
           potentialOwnersData,
-          currentOwnersData,
-          listingDetailsData,
           firstImage,
           hasDeletePermission,
           hasEditPermission,
         ] = await Promise.all([
-          getAllAgentsWithAuth(),
-          getAllPotentialOwnersWithAuth(),
-          listing.listingId
-            ? getCurrentListingOwnersWithAuth(Number(listing.listingId))
-            : Promise.resolve([]),
-          listing.listingId
-            ? getListingDetailsWithAuth(Number(listing.listingId))
-            : Promise.resolve(null),
+          getAllAgentsWithAuth(), // For agent dropdown in ContactInfoCard
+          getAllPotentialOwnersWithAuth(), // For owner dropdown in ContactInfoCard
           listing.propertyId
             ? getFirstImage(Number(listing.propertyId))
             : Promise.resolve(null),
@@ -1003,7 +1005,7 @@ export function PropertyCharacteristicsForm({
           canEditProperties(),
         ]);
 
-        // Process agents data
+        // Process agents data for dropdown
         setAgents(
           agentsData.map((agent) => ({
             id: agent.id,
@@ -1011,30 +1013,13 @@ export function PropertyCharacteristicsForm({
           })),
         );
 
-        // Process owners data
+        // Process owners data for dropdown
         setOwners(
           potentialOwnersData.map((owner) => ({
             id: Number(owner.id),
             name: owner.name,
           })),
         );
-
-        // Process current listing owners
-        if (currentOwnersData.length > 0) {
-          setSelectedOwnerIds(
-            currentOwnersData.map((owner) => owner.id.toString()),
-          );
-        }
-
-        // Process listing details for toggle states
-        if (listingDetailsData) {
-          const details = listingDetailsData as {
-            hasKeys?: boolean;
-            publishToWebsite?: boolean;
-          };
-          setHasKeys(details.hasKeys ?? false);
-          setPublishToWebsite(details.publishToWebsite ?? false);
-        }
 
         // Set first image URL
         setFirstImageUrl(firstImage);
@@ -1050,24 +1035,21 @@ export function PropertyCharacteristicsForm({
         });
 
         console.log(
-          "✅ All form data fetched successfully - Performance optimized!",
+          "✅ Dropdown lists and permissions loaded - Using listing data for display!",
         );
       } catch (error) {
-        console.error("❌ Error fetching form data:", error);
-        // Set fallback values on error
+        console.error("❌ Error fetching dropdown data:", error);
+        // Set fallback values on error (but keep listing data)
         setAgents([]);
         setOwners([]);
-        setSelectedOwnerIds([]);
-        setHasKeys(false);
-        setPublishToWebsite(false);
         setFirstImageUrl(null);
         setCanDelete(false);
         setCanEdit(false);
       }
     };
 
-    void fetchAllFormData();
-  }, [listing.listingId, listing.propertyId]);
+    void fetchFormData();
+  }, [listing.propertyId]); // Removed serverAgents, serverOwners, serverCurrentOwners - no longer needed
 
   // Toggle handlers
   const handleToggleKeys = async () => {
@@ -1420,13 +1402,7 @@ export function PropertyCharacteristicsForm({
           owners={owners}
           selectedAgentId={selectedAgentId}
           agents={agents}
-          hasKeys={hasKeys}
-          keysLoading={keysLoading}
-          publishToWebsite={publishToWebsite}
-          websiteLoading={websiteLoading}
           canEdit={canEdit}
-          onToggleKeys={handleToggleKeys}
-          onToggleWebsite={handleToggleWebsite}
           onEditOwner={handleEditOwner}
         />
 

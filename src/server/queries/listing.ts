@@ -16,6 +16,7 @@ import {
 import { eq, and, ne, sql } from "drizzle-orm";
 import type { Listing } from "../../lib/data";
 import { getCurrentUserAccountId } from "../../lib/dal";
+import { getCurrentListingOwners } from "./contact";
 
 // Wrapper functions that automatically get accountId from current session
 // These maintain backward compatibility while adding account filtering
@@ -1222,6 +1223,8 @@ export async function getListingDetails(listingId: number, accountId: number) {
         optionalStorageRoom: listings.optionalStorageRoom,
         optionalStorageRoomPrice: listings.optionalStorageRoomPrice,
         hasKeys: listings.hasKeys,
+        hasCartel: listings.hasCartel,
+        enEscaparate: listings.enEscaparate,
         encargo: listings.encargo,
         studentFriendly: listings.studentFriendly,
         petsAllowed: listings.petsAllowed,
@@ -1425,15 +1428,40 @@ export async function getListingDetails(listingId: number, accountId: number) {
           image: users.image,
         },
 
-        // Owner information - optimized with JOIN
-        owner: sql<string>`CONCAT(owner_contact.first_name, ' ', owner_contact.last_name)`,
-
         // Offer accepted status - check if ANY listing_contact has offer_accepted = true
         offerAccepted: sql<boolean>`EXISTS(
           SELECT 1 FROM listing_contacts
           WHERE listing_contacts.listing_id = ${listings.listingId}
             AND listing_contacts.offer_accepted = true
             AND listing_contacts.is_active = true
+        )`,
+
+        // Image count - count active property images (excluding videos, youtube, tours)
+        imageCount: sql<number>`(
+          SELECT COUNT(*)
+          FROM property_images
+          WHERE property_images.property_id = ${properties.propertyId}
+            AND property_images.is_active = true
+            AND (property_images.image_tag IS NULL OR property_images.image_tag NOT IN ('video', 'youtube', 'tour'))
+        )`,
+
+        // Active deal data for progress tracking
+        deal: sql<Record<string, unknown> | null>`(
+          SELECT json_build_object(
+            'dealId', d.deal_id,
+            'listingId', d.listing_id,
+            'status', d.stage,
+            'arrasDate', d.arras_date,
+            'arrasSigningDate', d.arras_signing_date,
+            'expectedDeedDate', d.expected_deed_date,
+            'actualDeedDate', d.actual_deed_date,
+            'closeDate', d.close_date,
+            'keyHandoverDate', d.key_handover_date
+          )
+          FROM deals d
+          WHERE d.listing_id = ${listings.listingId}
+          ORDER BY d.created_at DESC
+          LIMIT 1
         )`,
       })
       .from(listings)
@@ -1443,19 +1471,6 @@ export async function getListingDetails(listingId: number, accountId: number) {
         eq(properties.neighborhoodId, locations.neighborhoodId),
       )
       .leftJoin(users, eq(listings.agentId, users.id))
-      .leftJoin(
-        sql`(
-          SELECT 
-            lc.listing_id,
-            c.first_name,
-            c.last_name,
-            ROW_NUMBER() OVER (PARTITION BY lc.listing_id ORDER BY lc.created_at ASC) as rn
-          FROM listing_contacts lc
-          JOIN contacts c ON lc.contact_id = c.contact_id
-          WHERE lc.contact_type = 'owner' AND lc.is_active = true AND c.is_active = true
-        ) owner_contact`,
-        sql`owner_contact.listing_id = ${listings.listingId} AND owner_contact.rn = 1`,
-      )
       .where(
         and(
           eq(listings.listingId, BigInt(listingId)),
@@ -1468,7 +1483,14 @@ export async function getListingDetails(listingId: number, accountId: number) {
       throw new Error("Listing not found");
     }
 
-    return listingDetails;
+    // Fetch owners for this listing
+    const owners = await getCurrentListingOwners(listingId, accountId);
+
+    // Return listing details with owners array
+    return {
+      ...listingDetails,
+      owners,
+    };
   } catch (error) {
     console.error("Error fetching listing details:", error);
     throw error;

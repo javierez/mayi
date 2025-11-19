@@ -77,7 +77,7 @@ export default async function PropertyPage({
     getListingBreadcrumbData(listingId),
     getListingHeaderData(listingId),
     getListingTabsData(listingId),
-    getListingDetailsWithAuth(listingId),
+    getListingDetailsWithAuth(listingId), // Now includes agent and owners data
     canEditProperties(), // Fetch edit permission
   ]);
 

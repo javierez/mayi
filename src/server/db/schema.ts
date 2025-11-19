@@ -456,6 +456,8 @@ export const listings = pgTable("listings", {
   isBankOwned: boolean("is_bank_owned").default(false),
   isActive: boolean("is_active").default(true),
   publishToWebsite: boolean("publish_to_website").default(false), // Controls whether listing appears on company website
+  enEscaparate: boolean("en_escaparate").default(false).notNull(), // Property poster/sign displayed in office shop window
+  hasCartel: boolean("has_cartel").default(false).notNull(), // Whether a cartel (property poster/sign) has been designed
   visibilityMode: smallint("visibility_mode").default(1), // 1=Exact location | 2=Street level | 3=Zone/neighborhood level
 
   // Analytics

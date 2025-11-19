@@ -6,3 +6,4 @@ export default function DashboardRedirect() {
   redirect("/operaciones");
 }
 
+

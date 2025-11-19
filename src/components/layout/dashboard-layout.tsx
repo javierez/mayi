@@ -257,7 +257,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
           className="fixed inset-0 bg-gray-600 bg-opacity-75"
           onClick={() => setSidebarOpen(false)}
         />
-        <div className="fixed inset-y-0 left-0 flex w-64 flex-col overflow-visible bg-white">
+        <div className="fixed inset-y-0 left-0 flex w-60 flex-col overflow-visible bg-white">
           <div className="mt-6 flex h-16 items-center justify-between px-4">
             <div className="relative flex h-16 w-40 items-center justify-center">
               <Image
@@ -288,10 +288,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
                       className="group flex cursor-not-allowed items-center rounded-md px-2 py-2 text-sm font-medium text-gray-400 opacity-50"
                     >
                       <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                      <span className="flex-1">{item.name}</span>
-                      <span className="text-[10px] text-gray-400">
-                        (próximamente)
-                      </span>
+                      {item.name}
                     </div>
                   );
                 }
@@ -362,10 +359,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
                             style={{ animationDelay }}
                           >
                             <subItem.icon className="mr-2.5 h-3.5 w-3.5 flex-shrink-0" />
-                            <span className="flex-1">{subItem.name}</span>
-                            <span className="text-[9px] text-gray-400">
-                              (próximamente)
-                            </span>
+                            {subItem.name}
                           </div>
                         );
                       }
@@ -412,10 +406,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
                       className="group flex cursor-not-allowed items-center rounded-md px-2 py-2 text-sm font-medium text-gray-400 opacity-50"
                     >
                       <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                      <span className="flex-1">{item.name}</span>
-                      <span className="text-[10px] text-gray-400">
-                        (próximamente)
-                      </span>
+                      {item.name}
                     </div>
                   );
                 }
@@ -524,7 +515,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
       </div>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
+      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-60 lg:flex-col">
         <div className="flex min-h-0 flex-1 flex-col overflow-visible border-r border-gray-200 bg-white">
           <div className="mt-4 flex h-16 items-center px-4">
             <div className="relative flex h-16 w-40 items-center justify-center">
@@ -549,10 +540,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
                       className="group flex cursor-not-allowed items-center rounded-md px-2 py-2 text-sm font-medium text-gray-400 opacity-50"
                     >
                       <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                      <span className="flex-1">{item.name}</span>
-                      <span className="text-[10px] text-gray-400">
-                        (próximamente)
-                      </span>
+                      {item.name}
                     </div>
                   );
                 }
@@ -667,10 +655,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
                       className="group flex cursor-not-allowed items-center rounded-md px-2 py-2 text-sm font-medium text-gray-400 opacity-50"
                     >
                       <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                      <span className="flex-1">{item.name}</span>
-                      <span className="text-[10px] text-gray-400">
-                        (próximamente)
-                      </span>
+                      {item.name}
                     </div>
                   );
                 }
@@ -777,7 +762,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className="lg:pl-60">
         <div className="sticky top-0 flex h-4 flex-shrink-0">
           <Button
             variant="ghost"

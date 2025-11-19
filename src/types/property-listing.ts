@@ -18,6 +18,7 @@ export interface PropertyListing {
   isFeatured?: boolean;
   newConstruction?: boolean;
   publishToWebsite?: boolean;
+  hasKeys?: boolean;
   encargo?: boolean;
   offerAccepted?: boolean;
 
@@ -171,6 +172,10 @@ export interface PropertyListing {
     id: string;
     name: string;
   };
+  owners?: Array<{
+    id: number;
+    name: string;
+  }>;
 
   // Timestamps
   createdAt?: Date | null;
@@ -330,6 +335,15 @@ export function convertDbListingToPropertyListing(
             id: String((dbListing.agent as Record<string, unknown>).id),
             name: `${String((dbListing.agent as Record<string, unknown>).firstName)} ${String((dbListing.agent as Record<string, unknown>).lastName)}`,
           }
+        : undefined,
+    owners:
+      dbListing.owners && Array.isArray(dbListing.owners)
+        ? (dbListing.owners as Array<{ id: bigint; name: string }>).map(
+            (owner) => ({
+              id: Number(owner.id),
+              name: owner.name,
+            }),
+          )
         : undefined,
     createdAt: dbListing.createdAt instanceof Date ? dbListing.createdAt : null,
     updatedAt: dbListing.updatedAt instanceof Date ? dbListing.updatedAt : null,

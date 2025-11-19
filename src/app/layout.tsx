@@ -8,7 +8,6 @@ import { CookieConsentBanner } from "~/components/cookie-consent-banner";
 import { OrganizationSchema } from "~/components/seo/OrganizationSchema";
 import { SoftwareApplicationSchema } from "~/components/seo/SoftwareApplicationSchema";
 import { WebSiteSchema } from "~/components/seo/WebSiteSchema";
-import { Breadcrumbs } from "~/components/seo/Breadcrumbs";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -77,8 +76,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={inter.className}>
-        <Breadcrumbs />
+      <body className={`${inter.className} bg-gray-50`}>
         <UserRoleProvider>{children}</UserRoleProvider>
         <CookieConsentBanner />
         <SpeedInsights />
