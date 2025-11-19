@@ -26,6 +26,12 @@ import {
   Radio,
   CheckCircle2
 } from "lucide-react";
+import { KeysModal } from "./keys-modal";
+import { PublishToWebsiteModal } from "./publish-to-website-modal";
+import { CartelModal } from "./cartel-modal";
+import { PortalsModal } from "./portals-modal";
+import { EnEscaparateModal } from "./en-escaparate-modal";
+import type { CommentWithUser } from "~/types/comments";
 
 const scrollbarStyles = `
   .property-status-scrollbar::-webkit-scrollbar {
@@ -98,6 +104,28 @@ export interface PropertyStatusRowProps {
     imageCount?: number;
     deal?: Record<string, unknown> | null;
   };
+  // Modal props
+  currentUserId?: string;
+  currentUser?: {
+    id: string;
+    name?: string;
+    image?: string;
+  };
+  onAddComment?: (
+    comment: CommentWithUser,
+  ) => Promise<{ success: boolean; error?: string }>;
+  onEditComment?: (
+    commentId: bigint,
+    content: string,
+  ) => Promise<{ success: boolean; error?: string }>;
+  onDeleteComment?: (
+    commentId: bigint,
+  ) => Promise<{ success: boolean; error?: string }>;
+  keysComments?: CommentWithUser[];
+  publishToWebsiteComments?: CommentWithUser[];
+  cartelComments?: CommentWithUser[];
+  portalsComments?: CommentWithUser[];
+  enEscaparateComments?: CommentWithUser[];
 }
 
 export function PropertyStatusRow({
@@ -107,6 +135,16 @@ export function PropertyStatusRow({
   propertyId,
   createdAt,
   listing,
+  currentUserId,
+  currentUser,
+  onAddComment,
+  onEditComment,
+  onDeleteComment,
+  keysComments,
+  publishToWebsiteComments,
+  cartelComments,
+  portalsComments,
+  enEscaparateComments,
 }: PropertyStatusRowProps) {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [propertyImages, setPropertyImages] = useState<string[]>([]);
@@ -121,6 +159,12 @@ export function PropertyStatusRow({
   const [imageCount, setImageCount] = useState<number>(
     listing?.imageCount ?? 0,
   );
+  const [keysModalOpen, setKeysModalOpen] = useState(false);
+  const [publishToWebsiteModalOpen, setPublishToWebsiteModalOpen] =
+    useState(false);
+  const [cartelModalOpen, setCartelModalOpen] = useState(false);
+  const [portalsModalOpen, setPortalsModalOpen] = useState(false);
+  const [enEscaparateModalOpen, setEnEscaparateModalOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -525,21 +569,23 @@ export function PropertyStatusRow({
 
             {/* Icon Row - Status Indicators */}
             <div className="mt-14 flex items-center justify-center gap-4 px-4 sm:gap-5 sm:px-6 md:gap-6 md:px-8">
+              {/* All cards use consistent height with h-10 sm:h-12 */}
               {/* Keys */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div
+                    onClick={() => setKeysModalOpen(true)}
                     className={cn(
-                      "rounded-lg p-2 transition-all duration-300 sm:p-2.5",
+                      "flex items-center justify-center rounded-lg h-10 w-10 transition-all duration-300 sm:h-12 sm:w-12 cursor-pointer",
                       hasKeys
                         ? "bg-white shadow-md hover:shadow-lg"
-                        : "bg-white opacity-20 hover:opacity-30",
+                        : "bg-white opacity-20 hover:opacity-100 hover:shadow-md hover:scale-105 shadow-sm",
                     )}
                   >
                     <Key
                       className={cn(
                         "h-4 w-4 transition-all sm:h-5 sm:w-5",
-                        hasKeys ? "text-gray-700" : "text-gray-400",
+                        hasKeys ? "text-gray-700" : "text-gray-400 hover:text-gray-700",
                       )}
                     />
                   </div>
@@ -555,17 +601,18 @@ export function PropertyStatusRow({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div
+                    onClick={() => setCartelModalOpen(true)}
                     className={cn(
-                      "rounded-lg p-2 transition-all duration-300 sm:p-2.5",
+                      "flex items-center justify-center rounded-lg h-10 w-10 transition-all duration-300 sm:h-12 sm:w-12 cursor-pointer",
                       hasCartel
                         ? "bg-white shadow-md hover:shadow-lg"
-                        : "bg-white opacity-20 hover:opacity-30",
+                        : "bg-white opacity-20 hover:opacity-100 hover:shadow-md hover:scale-105 shadow-sm",
                     )}
                   >
                     <FileCheck
                       className={cn(
                         "h-4 w-4 transition-all sm:h-5 sm:w-5",
-                        hasCartel ? "text-gray-700" : "text-gray-400",
+                        hasCartel ? "text-gray-700" : "text-gray-400 hover:text-gray-700",
                       )}
                     />
                   </div>
@@ -581,17 +628,18 @@ export function PropertyStatusRow({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div
+                    onClick={() => setPublishToWebsiteModalOpen(true)}
                     className={cn(
-                      "rounded-lg p-2 transition-all duration-300 sm:p-2.5",
+                      "flex items-center justify-center rounded-lg h-10 w-10 transition-all duration-300 sm:h-12 sm:w-12 cursor-pointer",
                       publishedToWebsite
                         ? "bg-white shadow-md hover:shadow-lg"
-                        : "bg-white opacity-20 hover:opacity-30",
+                        : "bg-white opacity-20 hover:opacity-100 hover:shadow-md hover:scale-105 shadow-sm",
                     )}
                   >
                     <Globe
                       className={cn(
                         "h-4 w-4 transition-all sm:h-5 sm:w-5",
-                        publishedToWebsite ? "text-gray-700" : "text-gray-400",
+                        publishedToWebsite ? "text-gray-700" : "text-gray-400 hover:text-gray-700",
                       )}
                     />
                   </div>
@@ -605,88 +653,71 @@ export function PropertyStatusRow({
                 </TooltipContent>
               </Tooltip>
 
-              {/* Portals Group - Fotocasa & Idealista */}
-              <div className="flex gap-3 sm:gap-4">
-                {/* Fotocasa */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div
+              {/* Portals Group - Fotocasa & Idealista Combined */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div
+                    onClick={() => setPortalsModalOpen(true)}
+                    className={cn(
+                      "flex items-center justify-center rounded-lg h-10 w-auto transition-all duration-300 sm:h-12 gap-2 px-2 cursor-pointer",
+                      fotocasaActive || idealistaActive
+                        ? "bg-white shadow-md hover:shadow-lg"
+                        : "bg-white opacity-20 hover:opacity-100 hover:shadow-md hover:scale-105 shadow-sm",
+                    )}
+                  >
+                    {/* Fotocasa */}
+                    <Image
+                      src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/faviconfoto.png"
+                      alt="Fotocasa"
+                      width={20}
+                      height={20}
                       className={cn(
-                        "rounded-lg p-1.5 transition-all duration-300 sm:p-2",
-                        fotocasaActive
-                          ? "bg-white shadow-md hover:shadow-lg"
-                          : "bg-white opacity-20 hover:opacity-30",
+                        "h-4 w-4 transition-all sm:h-5 sm:w-5",
+                        !fotocasaActive && "grayscale",
                       )}
-                    >
-                      <Image
-                        src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/faviconfoto.png"
-                        alt="Fotocasa"
-                        width={20}
-                        height={20}
-                        className={cn(
-                          "h-4 w-4 transition-all sm:h-5 sm:w-5",
-                          !fotocasaActive && "grayscale",
-                        )}
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-[10px]">
-                      {fotocasaActive
+                    />
+                    {/* Idealista */}
+                    <Image
+                      src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/faviconide.png"
+                      alt="Idealista"
+                      width={20}
+                      height={20}
+                      className={cn(
+                        "h-4 w-4 transition-all sm:h-5 sm:w-5",
+                        !idealistaActive && "grayscale",
+                      )}
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-[10px]">
+                    {fotocasaActive && idealistaActive
+                      ? "Publicado en Fotocasa e Idealista"
+                      : fotocasaActive
                         ? "Publicado en Fotocasa"
-                        : "No publicado en Fotocasa"}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-
-                {/* Idealista */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div
-                      className={cn(
-                        "rounded-lg p-1.5 transition-all duration-300 sm:p-2",
-                        idealistaActive
-                          ? "bg-white shadow-md hover:shadow-lg"
-                          : "bg-white opacity-20 hover:opacity-30",
-                      )}
-                    >
-                      <Image
-                        src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/faviconide.png"
-                        alt="Idealista"
-                        width={20}
-                        height={20}
-                        className={cn(
-                          "h-4 w-4 transition-all sm:h-5 sm:w-5",
-                          !idealistaActive && "grayscale",
-                        )}
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-[10px]">
-                      {idealistaActive
-                        ? "Publicado en Idealista"
-                        : "No publicado en Idealista"}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
+                        : idealistaActive
+                          ? "Publicado en Idealista"
+                          : "No publicado en portales"}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
 
               {/* Cartel Colgado */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div
+                    onClick={() => setEnEscaparateModalOpen(true)}
                     className={cn(
-                      "rounded-lg p-2 transition-all duration-300 sm:p-2.5",
+                      "flex items-center justify-center rounded-lg h-10 w-10 transition-all duration-300 sm:h-12 sm:w-12 cursor-pointer",
                       enEscaparate
                         ? "bg-white shadow-md hover:shadow-lg"
-                        : "bg-white opacity-20 hover:opacity-30",
+                        : "bg-white opacity-20 hover:opacity-100 hover:shadow-md hover:scale-105 shadow-sm",
                     )}
                   >
                     <CheckCircle2
                       className={cn(
                         "h-4 w-4 transition-all sm:h-5 sm:w-5",
-                        enEscaparate ? "text-gray-700" : "text-gray-400",
+                        enEscaparate ? "text-gray-700" : "text-gray-400 hover:text-gray-700",
                       )}
                     />
                   </div>
@@ -762,6 +793,126 @@ export function PropertyStatusRow({
             onSuccess={handleSuccess}
           />
         )}
+
+        {/* Keys Modal */}
+        {onAddComment &&
+          onEditComment &&
+          onDeleteComment &&
+          listingId !== null &&
+          propertyId !== null && (
+            <KeysModal
+              open={keysModalOpen}
+              onOpenChange={setKeysModalOpen}
+              listingId={BigInt(listingId)}
+              propertyId={
+                typeof propertyId === "bigint"
+                  ? propertyId
+                  : BigInt(Number(propertyId))
+              }
+              currentUserId={currentUserId}
+              currentUser={currentUser}
+              onAddComment={onAddComment as (comment: CommentWithUser) => Promise<{ success: boolean; error?: string }>}
+              onEditComment={onEditComment}
+              onDeleteComment={onDeleteComment}
+              keysComments={keysComments}
+            />
+          )}
+
+        {/* Publish to Website Modal */}
+        {onAddComment &&
+          onEditComment &&
+          onDeleteComment &&
+          listingId !== null &&
+          propertyId !== null && (
+            <PublishToWebsiteModal
+              open={publishToWebsiteModalOpen}
+              onOpenChange={setPublishToWebsiteModalOpen}
+              listingId={BigInt(listingId)}
+              propertyId={
+                typeof propertyId === "bigint"
+                  ? propertyId
+                  : BigInt(Number(propertyId))
+              }
+              currentUserId={currentUserId}
+              currentUser={currentUser}
+              onAddComment={onAddComment as (comment: CommentWithUser) => Promise<{ success: boolean; error?: string }>}
+              onEditComment={onEditComment}
+              onDeleteComment={onDeleteComment}
+              publishToWebsiteComments={publishToWebsiteComments}
+            />
+          )}
+
+        {/* Cartel Modal */}
+        {onAddComment &&
+          onEditComment &&
+          onDeleteComment &&
+          listingId !== null &&
+          propertyId !== null && (
+            <CartelModal
+              open={cartelModalOpen}
+              onOpenChange={setCartelModalOpen}
+              listingId={BigInt(listingId)}
+              propertyId={
+                typeof propertyId === "bigint"
+                  ? propertyId
+                  : BigInt(Number(propertyId))
+              }
+              currentUserId={currentUserId}
+              currentUser={currentUser}
+              onAddComment={onAddComment as (comment: CommentWithUser) => Promise<{ success: boolean; error?: string }>}
+              onEditComment={onEditComment}
+              onDeleteComment={onDeleteComment}
+              cartelComments={cartelComments}
+            />
+          )}
+
+        {/* Portals Modal */}
+        {onAddComment &&
+          onEditComment &&
+          onDeleteComment &&
+          listingId !== null &&
+          propertyId !== null && (
+            <PortalsModal
+              open={portalsModalOpen}
+              onOpenChange={setPortalsModalOpen}
+              listingId={BigInt(listingId)}
+              propertyId={
+                typeof propertyId === "bigint"
+                  ? propertyId
+                  : BigInt(Number(propertyId))
+              }
+              currentUserId={currentUserId}
+              currentUser={currentUser}
+              onAddComment={onAddComment as (comment: CommentWithUser) => Promise<{ success: boolean; error?: string }>}
+              onEditComment={onEditComment}
+              onDeleteComment={onDeleteComment}
+              portalsComments={portalsComments}
+            />
+          )}
+
+        {/* En Escaparate Modal */}
+        {onAddComment &&
+          onEditComment &&
+          onDeleteComment &&
+          listingId !== null &&
+          propertyId !== null && (
+            <EnEscaparateModal
+              open={enEscaparateModalOpen}
+              onOpenChange={setEnEscaparateModalOpen}
+              listingId={BigInt(listingId)}
+              propertyId={
+                typeof propertyId === "bigint"
+                  ? propertyId
+                  : BigInt(Number(propertyId))
+              }
+              currentUserId={currentUserId}
+              currentUser={currentUser}
+              onAddComment={onAddComment as (comment: CommentWithUser) => Promise<{ success: boolean; error?: string }>}
+              onEditComment={onEditComment}
+              onDeleteComment={onDeleteComment}
+              enEscaparateComments={enEscaparateComments}
+            />
+          )}
       </div>
     </TooltipProvider>
   );

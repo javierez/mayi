@@ -13,12 +13,10 @@ import {
 } from "~/components/ui/skeletons";
 import {
   getOperacionesSummaryWithAuth,
-  getUrgentTasksWithAuth,
   getTodayAppointmentsWithAuth,
 } from "~/server/queries/operaciones-dashboard";
 import type {
   OperacionesSummary,
-  UrgentTask,
   TodayAppointment,
 } from "~/server/queries/operaciones-dashboard";
 import { getMostUrgentTasksWithAuth } from "~/server/queries/task";
@@ -29,7 +27,6 @@ export default function OperacionesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<OperacionesSummary | null>(null);
-  const [urgentTasks, setUrgentTasks] = useState<UrgentTask[]>([]);
   const [appointments, setAppointments] = useState<TodayAppointment[]>([]);
   const [mostUrgentTasks, setMostUrgentTasks] = useState<
     Awaited<ReturnType<typeof getMostUrgentTasksWithAuth>>
@@ -65,17 +62,15 @@ export default function OperacionesPage() {
         };
         
         // Obtención de datos iniciales en paralelo para mejor rendimiento
-        const [summaryData, tasksData, appointmentsData, mostUrgentTasksData, usersData] =
+        const [summaryData, appointmentsData, mostUrgentTasksData, usersData] =
           await Promise.all([
             getOperacionesSummaryWithAuth(),
-            getUrgentTasksWithAuth(5), // 5 días laborables
             getTodayAppointmentsWithAuth(appointmentFilters),
             getMostUrgentTasksWithAuth(10, tasksDaysFilter, filters), // Initial detailed tasks
             getAgentsForSelectionWithAuth(),
           ]);
 
         setSummary(summaryData);
-        setUrgentTasks(tasksData);
         setAppointments(appointmentsData);
         setMostUrgentTasks(mostUrgentTasksData);
         setUsers(usersData);
@@ -157,11 +152,7 @@ export default function OperacionesPage() {
         appointmentContactId: appointmentContactId ? Number(appointmentContactId) : undefined,
       };
       
-      const [urgentTasksData, mostUrgentTasksData] = await Promise.all([
-        getUrgentTasksWithAuth(5),
-        getMostUrgentTasksWithAuth(10, tasksDaysFilter, filters),
-      ]);
-      setUrgentTasks(urgentTasksData);
+      const mostUrgentTasksData = await getMostUrgentTasksWithAuth(10, tasksDaysFilter, filters);
       setMostUrgentTasks(mostUrgentTasksData);
     } catch (error) {
       console.error("Error refreshing tasks:", error);
@@ -196,7 +187,6 @@ export default function OperacionesPage() {
           <OperacionesSummaryCard data={summary!} className="lg:col-span-2" />
           <OperacionesQuickActionsCard onTaskCreated={refreshTasks} />
           <WorkQueueCard
-            tasks={urgentTasks}
             appointments={appointments}
             detailedTasks={mostUrgentTasks}
             loading={tasksLoading}

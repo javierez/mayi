@@ -6,6 +6,11 @@ import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent } from "~/components/ui/collapsible";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
+import {
   Filter,
   Check,
   ChevronDown,
@@ -13,17 +18,20 @@ import {
   Tag,
   AlertCircle,
   FilterX,
+  X,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 interface TaskFilterProps {
   users?: Array<{ id: string; name: string }>;
   categories?: string[];
+  searchBar?: React.ReactNode;
 }
 
 export function TaskFilter({
   users = [],
   categories = [],
+  searchBar,
 }: TaskFilterProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -32,7 +40,9 @@ export function TaskFilter({
     createdBy: [] as string[],
     category: [] as string[],
     urgency: [] as string[],
+    assignedTo: [] as string[],
   });
+  const [assignedToFilters, setAssignedToFilters] = useState<string[]>([]);
   const [expandedCategories, setExpandedCategories] = useState<
     Record<string, boolean>
   >({
@@ -46,12 +56,15 @@ export function TaskFilter({
     const createdBy = searchParams.get("createdBy");
     const category = searchParams.get("category");
     const urgency = searchParams.get("urgency");
+    const assignedTo = searchParams.get("assignedTo");
 
     setTaskFilters({
       createdBy: createdBy ? createdBy.split(",") : [],
       category: category ? category.split(",") : [],
       urgency: urgency ? urgency.split(",") : [],
+      assignedTo: assignedTo ? assignedTo.split(",") : [],
     });
+    setAssignedToFilters(assignedTo ? assignedTo.split(",") : []);
   }, [searchParams]);
 
   const updateUrlParams = (newTaskFilters: typeof taskFilters) => {
@@ -78,11 +91,14 @@ export function TaskFilter({
       params.delete("urgency");
     }
 
-    // Get current agentId from path
-    const pathParts = window.location.pathname.split("/");
-    const agentId = pathParts[pathParts.length - 1];
+    // Update assignedTo
+    if (newTaskFilters.assignedTo.length > 0) {
+      params.set("assignedTo", newTaskFilters.assignedTo.join(","));
+    } else {
+      params.delete("assignedTo");
+    }
 
-    router.push(`/agents/tareas/${agentId}?${params.toString()}`);
+    router.push(`/tareas?${params.toString()}`);
   };
 
   const toggleFilter = (
@@ -107,12 +123,38 @@ export function TaskFilter({
     }));
   };
 
+  const toggleAssignedToFilter = (userId: string) => {
+    const newAssignedToFilters = assignedToFilters.includes(userId)
+      ? assignedToFilters.filter((id) => id !== userId)
+      : [...assignedToFilters, userId];
+    
+    setAssignedToFilters(newAssignedToFilters);
+    const newFilters = {
+      ...taskFilters,
+      assignedTo: newAssignedToFilters,
+    };
+    setTaskFilters(newFilters);
+    updateUrlParams(newFilters);
+  };
+
+  const clearAssignedToFilters = () => {
+    const newFilters = {
+      ...taskFilters,
+      assignedTo: [],
+    };
+    setAssignedToFilters([]);
+    setTaskFilters(newFilters);
+    updateUrlParams(newFilters);
+  };
+
   const clearFilters = () => {
     const newFilters = {
       createdBy: [],
       category: [],
       urgency: [],
+      assignedTo: [],
     };
+    setAssignedToFilters([]);
     setTaskFilters(newFilters);
     updateUrlParams(newFilters);
   };
@@ -121,6 +163,34 @@ export function TaskFilter({
     taskFilters.createdBy.length +
     taskFilters.category.length +
     taskFilters.urgency.length;
+
+  const AssignedToFilterOption = ({
+    value,
+    label,
+  }: {
+    value: string;
+    label: string;
+  }) => {
+    const isSelected = assignedToFilters.includes(value);
+
+    return (
+      <div
+        className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 transition-colors hover:bg-accent"
+        onClick={() => toggleAssignedToFilter(value)}
+      >
+        <div
+          className={`flex h-3 w-3 items-center justify-center rounded border ${
+            isSelected ? "border-primary bg-primary" : "border-input"
+          }`}
+        >
+          {isSelected && <Check className="h-2 w-2 text-primary-foreground" />}
+        </div>
+        <span className={`text-[12px] ${isSelected ? "font-medium" : ""}`}>
+          {label}
+        </span>
+      </div>
+    );
+  };
 
   const FilterOption = ({
     value,
@@ -193,30 +263,88 @@ export function TaskFilter({
   ];
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-end">
-        <Button
-          variant="outline"
-          size="sm"
-          className="relative h-8 text-xs"
-          onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-        >
-          <Filter className="mr-1.5 h-3.5 w-3.5" />
-          <span>Filtros</span>
-          {activeFiltersCount > 0 && (
-            <Badge
-              variant="secondary"
-              className="ml-1.5 h-4 min-w-4 rounded-full px-1 text-[12px] font-normal"
-            >
-              {activeFiltersCount}
-            </Badge>
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 items-center gap-2">
+          {searchBar}
+        </div>
+        <div className="flex items-center gap-1.5">
+          {/* Assigned To Button */}
+          {users.length > 0 && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="relative h-7 w-7 p-0"
+                >
+                  <User className="h-3 w-3" />
+                  {assignedToFilters.length > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="absolute -right-1 -top-1 h-4 min-w-4 rounded-full px-1 text-[12px] font-normal"
+                    >
+                      {assignedToFilters.length}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-0" align="end">
+                <div className="flex flex-col">
+                  <ScrollArea className="h-[200px]">
+                    <div className="space-y-3 p-3">
+                      <div className="space-y-0.5">
+                        {users.map((user) => (
+                          <AssignedToFilterOption
+                            key={user.id}
+                            value={user.id}
+                            label={user.name}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </ScrollArea>
+                  {assignedToFilters.length > 0 && (
+                    <div className="border-t p-1.5">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearAssignedToFilters}
+                        className="h-6 w-full text-[12px]"
+                      >
+                        <X className="mr-1 h-3 w-3" />
+                        Borrar
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
           )}
-          <ChevronDown
-            className={`ml-1 h-3 w-3 transition-transform ${
-              isFiltersOpen ? "rotate-180 transform" : ""
-            }`}
-          />
-        </Button>
+          {/* Filter Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="relative h-7 text-xs px-2"
+            onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+          >
+            <Filter className="mr-1.5 h-3 w-3" />
+            <span>Filtros</span>
+            {activeFiltersCount > 0 && (
+              <Badge
+                variant="secondary"
+                className="ml-1.5 h-4 min-w-4 rounded-full px-1 text-[12px] font-normal"
+              >
+                {activeFiltersCount}
+              </Badge>
+            )}
+            <ChevronDown
+              className={`ml-1 h-3 w-3 transition-transform ${
+                isFiltersOpen ? "rotate-180 transform" : ""
+              }`}
+            />
+          </Button>
+        </div>
       </div>
 
       <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>

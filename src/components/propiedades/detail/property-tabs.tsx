@@ -593,6 +593,20 @@ export function PropertyTabs({
           ) : (tabData.convertedListing ?? convertedListing) ? (
             <PropertyCharacteristicsForm
               listing={tabData.convertedListing ?? convertedListing!}
+              currentUserId={session?.user?.id}
+              currentUser={
+                session?.user
+                  ? {
+                      id: session.user.id,
+                      name: session.user.name ?? undefined,
+                      image: session.user.image ?? undefined,
+                    }
+                  : undefined
+              }
+              comments={tabData.comments ?? []}
+              onAddComment={handleAddComment}
+              onEditComment={handleEditComment}
+              onDeleteComment={handleDeleteComment}
             />
           ) : (
             <div className="py-8 text-center">

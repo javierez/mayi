@@ -13,6 +13,7 @@ import {
 } from "@dnd-kit/core";
 import { TaskColumn } from "./task-column";
 import { TaskDragOverlay } from "./task-drag-overlay";
+import { TaskViewModal } from "~/components/tasks/task-view-modal";
 import { useToast } from "~/components/hooks/use-toast";
 import { updateTaskWithAuth } from "~/server/queries/task";
 
@@ -35,6 +36,7 @@ interface Task {
 
 interface TaskBoardProps {
   initialTasks: Task[];
+  searchQuery?: string;
 }
 
 const TASK_STATUSES = [
@@ -46,11 +48,32 @@ const TASK_STATUSES = [
   { id: "blocked", label: "Bloqueado", color: "red" },
 ];
 
-export function TaskBoard({ initialTasks }: TaskBoardProps) {
+export function TaskBoard({ initialTasks, searchQuery = "" }: TaskBoardProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const previousTasks = useRef<Task[]>(initialTasks);
   const { toast } = useToast();
+
+  // Client-side search filtering
+  const filteredTasks = useMemo(() => {
+    if (!searchQuery.trim()) return tasks;
+    const query = searchQuery.toLowerCase();
+    return tasks.filter((task) => {
+      // Search in title
+      const titleMatch = task.title.toLowerCase().includes(query);
+      
+      // Search in contact name
+      const contactName = `${task.contactFirstName || ""} ${task.contactLastName || ""}`.trim().toLowerCase();
+      const contactMatch = contactName.includes(query);
+      
+      // Search in property title
+      const propertyMatch = task.propertyTitle?.toLowerCase().includes(query) ?? false;
+      
+      return titleMatch || contactMatch || propertyMatch;
+    });
+  }, [tasks, searchQuery]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -67,7 +90,7 @@ export function TaskBoard({ initialTasks }: TaskBoardProps) {
       grouped[status.id] = [];
     });
 
-    tasks.forEach((task) => {
+    filteredTasks.forEach((task) => {
       if (grouped[task.status]) {
         grouped[task.status]?.push(task);
       } else {
@@ -87,14 +110,19 @@ export function TaskBoard({ initialTasks }: TaskBoardProps) {
     }
 
     return grouped;
-  }, [tasks]);
+  }, [filteredTasks]);
 
   function handleDragStart(event: DragStartEvent) {
     const { active } = event;
-    const task = tasks.find((t) => t.taskId === active.id);
+    const task = filteredTasks.find((t) => t.taskId === active.id);
     setActiveTask(task ?? null);
     // Store current state before drag
-    previousTasks.current = tasks;
+    previousTasks.current = filteredTasks;
+  }
+
+  function handleTaskClick(taskId: string) {
+    setSelectedTaskId(Number(taskId));
+    setIsModalOpen(true);
   }
 
   function handleDragOver(event: DragOverEvent) {
@@ -106,7 +134,7 @@ export function TaskBoard({ initialTasks }: TaskBoardProps) {
 
     if (activeId === overId) return;
 
-    const activeTask = tasks.find((t) => t.taskId === activeId);
+    const activeTask = filteredTasks.find((t) => t.taskId === activeId);
     if (!activeTask) return;
 
     const overData = over.data.current;
@@ -182,7 +210,7 @@ export function TaskBoard({ initialTasks }: TaskBoardProps) {
     }
 
     const activeId = active.id;
-    const task = tasks.find((t) => t.taskId === activeId);
+    const task = filteredTasks.find((t) => t.taskId === activeId);
 
     if (!task) return;
 
@@ -226,7 +254,7 @@ export function TaskBoard({ initialTasks }: TaskBoardProps) {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div className="flex gap-2 overflow-x-auto pb-4">
         {TASK_STATUSES.map((status) => (
           <TaskColumn
             key={status.id}
@@ -235,10 +263,16 @@ export function TaskBoard({ initialTasks }: TaskBoardProps) {
             tasks={tasksByStatus[status.id] ?? []}
             color={status.color}
             onToggleCompleted={handleToggleCompleted}
+            onTaskClick={handleTaskClick}
           />
         ))}
       </div>
       <TaskDragOverlay activeTask={activeTask} />
+      <TaskViewModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        taskId={selectedTaskId}
+      />
     </DndContext>
   );
 }

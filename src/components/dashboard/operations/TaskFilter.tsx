@@ -12,7 +12,6 @@ import {
   AlertCircle,
   CheckSquare,
   User,
-  Tag,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -26,7 +25,6 @@ export interface TaskFilters {
   urgency: number[];
   status: string[];
   assignedTo: string[];
-  category: string[];
 }
 
 // Task urgency levels (1-5)
@@ -48,18 +46,6 @@ const STATUS_OPTIONS = [
   { value: "finished", label: "Finalizado" },
 ];
 
-// Common task categories (can be expanded based on your needs)
-const CATEGORY_OPTIONS = [
-  { value: "follow_up", label: "Seguimiento" },
-  { value: "viewing", label: "Visita" },
-  { value: "documentation", label: "Documentación" },
-  { value: "valuation", label: "Valoración" },
-  { value: "negotiation", label: "Negociación" },
-  { value: "marketing", label: "Marketing" },
-  { value: "administrative", label: "Administrativo" },
-  { value: "other", label: "Otro" },
-];
-
 export function TaskFilter({
   users = [],
   inline = false,
@@ -74,14 +60,12 @@ export function TaskFilter({
     urgency: false,
     status: false,
     assignedTo: false,
-    category: false,
   });
 
   const [filters, setFilters] = useState<TaskFilters>({
     urgency: [],
     status: [],
     assignedTo: [],
-    category: [],
   });
 
   // Initialize filters from URL on mount
@@ -89,13 +73,11 @@ export function TaskFilter({
     const urgency = searchParams.get("urgency");
     const status = searchParams.get("status");
     const assignedTo = searchParams.get("assignedTo");
-    const category = searchParams.get("category");
 
     const newFilters: TaskFilters = {
       urgency: urgency ? urgency.split(",").map(Number) : [],
       status: status ? status.split(",") : [],
       assignedTo: assignedTo ? assignedTo.split(",") : [],
-      category: category ? category.split(",") : [],
     };
 
     setFilters(newFilters);
@@ -125,13 +107,6 @@ export function TaskFilter({
       params.set("assignedTo", newFilters.assignedTo.join(","));
     } else {
       params.delete("assignedTo");
-    }
-
-    // Update category
-    if (newFilters.category.length > 0) {
-      params.set("category", newFilters.category.join(","));
-    } else {
-      params.delete("category");
     }
 
     router.push(`?${params.toString()}`);
@@ -164,7 +139,6 @@ export function TaskFilter({
       urgency: [],
       status: [],
       assignedTo: [],
-      category: [],
     };
     setFilters(newFilters);
     updateUrlParams(newFilters);
@@ -173,8 +147,7 @@ export function TaskFilter({
   const activeFiltersCount =
     filters.urgency.length +
     filters.status.length +
-    filters.assignedTo.length +
-    filters.category.length;
+    filters.assignedTo.length;
 
   const FilterOption = ({
     value,
@@ -342,24 +315,6 @@ export function TaskFilter({
                       ))}
                     </div>
                   </FilterCategory>
-
-                  {/* Category Filter */}
-                  <FilterCategory
-                    title="Categoría"
-                    category="category"
-                    icon={Tag}
-                  >
-                    <div className="grid grid-cols-1 gap-x-2">
-                      {CATEGORY_OPTIONS.map((option) => (
-                        <FilterOption
-                          key={option.value}
-                          value={option.value}
-                          label={option.label}
-                          filterType="category"
-                        />
-                      ))}
-                    </div>
-                  </FilterCategory>
                 </div>
               </div>
 
@@ -393,7 +348,7 @@ export function TaskFilter({
           <div className="rounded-lg bg-card p-2 shadow-md">
             <div className="space-y-2">
               {/* Row: All filters */}
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {/* Urgency Filter */}
                 <FilterCategory
                   title="Urgencia"
@@ -443,24 +398,6 @@ export function TaskFilter({
                         value={user.id}
                         label={user.name}
                         filterType="assignedTo"
-                      />
-                    ))}
-                  </div>
-                </FilterCategory>
-
-                {/* Category Filter */}
-                <FilterCategory
-                  title="Categoría"
-                  category="category"
-                  icon={Tag}
-                >
-                  <div className="grid grid-cols-1 gap-x-2">
-                    {CATEGORY_OPTIONS.map((option) => (
-                      <FilterOption
-                        key={option.value}
-                        value={option.value}
-                        label={option.label}
-                        filterType="category"
                       />
                     ))}
                   </div>

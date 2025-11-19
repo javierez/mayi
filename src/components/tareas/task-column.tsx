@@ -26,9 +26,10 @@ interface TaskColumnProps {
   tasks: Task[];
   color?: string;
   onToggleCompleted?: (taskId: string, currentCompleted: boolean) => void;
+  onTaskClick?: (taskId: string) => void;
 }
 
-export function TaskColumn({ id, title, tasks, onToggleCompleted }: TaskColumnProps) {
+export function TaskColumn({ id, title, tasks, onToggleCompleted, onTaskClick }: TaskColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id,
     data: {
@@ -41,7 +42,7 @@ export function TaskColumn({ id, title, tasks, onToggleCompleted }: TaskColumnPr
     <div
       ref={setNodeRef}
       className={cn(
-        "flex w-80 shrink-0 flex-col rounded-lg border bg-muted/30 transition-colors",
+        "flex w-64 shrink-0 flex-col rounded-lg border bg-muted/30 transition-colors",
         isOver && "bg-muted/60 ring-2 ring-primary/20",
       )}
     >
@@ -64,6 +65,7 @@ export function TaskColumn({ id, title, tasks, onToggleCompleted }: TaskColumnPr
               key={task.taskId}
               task={task}
               onToggleCompleted={onToggleCompleted}
+              onClick={onTaskClick}
             />
           ))
         )}

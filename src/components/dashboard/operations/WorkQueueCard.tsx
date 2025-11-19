@@ -30,7 +30,6 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "~/lib/auth-client";
 import type {
-  UrgentTask,
   TodayAppointment,
 } from "~/server/queries/operaciones-dashboard";
 import {
@@ -49,7 +48,6 @@ import { TaskViewModal } from "~/components/tasks/task-view-modal";
 type DetailedTask = Awaited<ReturnType<typeof getMostUrgentTasksWithAuth>>[0];
 
 interface WorkQueueCardProps {
-  tasks: UrgentTask[];
   appointments: TodayAppointment[];
   detailedTasks?: DetailedTask[];
   loading?: boolean;
@@ -62,7 +60,6 @@ interface WorkQueueCardProps {
 }
 
 export default function WorkQueueCard({
-  tasks,
   appointments,
   detailedTasks = [],
   loading = false,
@@ -159,9 +156,6 @@ export default function WorkQueueCard({
     assignedTo: searchParams.get("assignedTo")
       ? searchParams.get("assignedTo")!.split(",")
       : [],
-    category: searchParams.get("category")
-      ? searchParams.get("category")!.split(",")
-      : [],
   };
 
   // Apply filters to tasks
@@ -187,14 +181,6 @@ export default function WorkQueueCard({
       if (
         taskFilters.assignedTo.length > 0 &&
         !taskFilters.assignedTo.includes(task.userId ?? "")
-      ) {
-        return false;
-      }
-
-      // Filter by category
-      if (
-        taskFilters.category.length > 0 &&
-        !taskFilters.category.includes(task.category ?? "")
       ) {
         return false;
       }
@@ -284,28 +270,6 @@ export default function WorkQueueCard({
     }).format(taskDate);
   };
 
-  const getDaysUntilDueColor = (days: number) => {
-    if (days <= 1) return "bg-red-100 text-red-800 border-red-200";
-    if (days <= 3) return "bg-yellow-100 text-yellow-800 border-yellow-200";
-    return "bg-blue-100 text-blue-800 border-blue-200";
-  };
-
-  const getEntityTypeIcon = (entityType: UrgentTask["entityType"]) => {
-    switch (entityType) {
-      case "prospect":
-        return <User className="h-3 w-3" />;
-      case "lead":
-        return <User className="h-3 w-3" />;
-      case "deal":
-        return <CheckCircle2 className="h-3 w-3" />;
-      case "listing":
-        return <MapPin className="h-3 w-3" />;
-      case "appointment":
-        return <Calendar className="h-3 w-3" />;
-      default:
-        return <CheckSquare className="h-3 w-3" />;
-    }
-  };
 
   const formatAppointmentDate = (date: Date | string) => {
     const today = new Date();
@@ -557,10 +521,6 @@ export default function WorkQueueCard({
     }
   };
 
-  // Legacy handler for old task format
-  const handleCompleteTask = async (taskId: bigint) => {
-    await handleToggleCompleted(Number(taskId), false); // Assume task is not completed when using this legacy handler
-  };
 
   const toggleDateCollapse = (dateLabel: string) => {
     setCollapsedDates((prev) => {
@@ -615,8 +575,7 @@ export default function WorkQueueCard({
                   </div>
                 ))}
               </div>
-            ) : (tasksToDisplay.length > 0 ? tasksToDisplay : tasks).length ===
-              0 ? (
+            ) : tasksToDisplay.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <CheckCircle2 className="mb-2 h-12 w-12 text-green-500" />
                 <p className="text-sm font-medium text-gray-900">
@@ -624,8 +583,8 @@ export default function WorkQueueCard({
                 </p>
                 <p className="text-xs text-gray-500">No hay tareas urgentes</p>
               </div>
-            ) : tasksToDisplay.length > 0 ? (
-              <div className="custom-scrollbar max-h-80 space-y-1.5 overflow-y-auto px-1 py-1.5">
+            ) : (
+              <div className="custom-scrollbar max-h-80 space-y-1.5 overflow-y-auto px-3 py-1.5">
                 {(showAllTasks ? tasksToDisplay : tasksToDisplay.slice(0, 10)).map((task) => {
                   const taskIdStr = task.taskId.toString();
                   const canEdit = canUserEditTask(task);
@@ -852,64 +811,6 @@ export default function WorkQueueCard({
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="custom-scrollbar max-h-80 space-y-3 overflow-y-auto pr-1">
-                {tasks.slice(0, 10).map((task, index) => (
-                  <motion.div
-                    key={task.taskId.toString()}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="rounded-lg bg-white p-3 shadow-md transition-all duration-200 hover:shadow-lg"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="mb-1 flex items-center gap-2">
-                          {getEntityTypeIcon(task.entityType)}
-                          <span className="text-xs font-medium capitalize text-gray-600">
-                            {task.entityType ?? "General"}
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className={`text-xs ${getDaysUntilDueColor(task.daysUntilDue)}`}
-                          >
-                            {task.daysUntilDue === 1
-                              ? "Vence Mañana"
-                              : `${task.daysUntilDue} días`}
-                          </Badge>
-                        </div>
-
-                        <p className="line-clamp-2 text-sm font-medium text-gray-900">
-                          {task.description}
-                        </p>
-
-                        <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
-                          <span>{task.entityName}</span>
-                          <span>•</span>
-                          <span>{formatDate(task.dueDate)}</span>
-                        </div>
-                      </div>
-
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleCompleteTask(task.taskId)}
-                        className="flex-shrink-0"
-                      >
-                        <CheckSquare className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </motion.div>
-                ))}
-
-                {tasks.length > 10 && (
-                  <div className="pt-2 text-center">
-                    <Button variant="ghost" size="sm">
-                      Ver todas las {tasks.length} tareas
-                    </Button>
-                  </div>
-                )}
-              </div>
             )}
           </div>
 
@@ -929,7 +830,7 @@ export default function WorkQueueCard({
                 <Calendar className="mb-2 h-10 w-10 sm:h-12 sm:w-12 text-gray-400" />
                 <p className="text-sm font-medium text-gray-900">Sin eventos</p>
                 <p className="text-xs text-gray-500">
-                  No hay eventos programados para los próximos 7 días
+                  No hay eventos programados para los próximos 14 días
                 </p>
               </div>
             ) : (
@@ -1018,7 +919,7 @@ export default function WorkQueueCard({
                                 className={`group relative cursor-pointer rounded-lg p-3 sm:p-4 transition-all duration-200 ${
                                   isSelected
                                     ? "bg-gray-100 shadow-lg"
-                                    : "bg-white shadow-sm hover:shadow-md"
+                                    : "bg-white shadow-md hover:shadow-lg"
                                 }`}
                               >
                                 {/* Type Badge */}

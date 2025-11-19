@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
-import { TaskBoard } from "~/components/tareas/task-board";
-import { TaskFilter } from "~/components/tareas/task-filter";
 import { getUserTasksWithAuth } from "~/server/queries/task";
 import { getSecureSession, getCurrentUserAccountId } from "~/lib/dal";
 import { listUsersByAccount } from "~/server/queries/users";
+import { TareasPageClient } from "./tareas-page-client";
 
 export default async function TareasPage({
   searchParams,
@@ -31,6 +30,9 @@ export default async function TareasPage({
   const urgencyFilter = filters.urgency
     ? String(filters.urgency).split(",").map(Number)
     : undefined;
+  const assignedToFilter = filters.assignedTo
+    ? String(filters.assignedTo).split(",")
+    : undefined;
 
   // Fetch tasks for the current user with filters
   // Include incomplete tasks and completed tasks from last 10 days
@@ -38,6 +40,7 @@ export default async function TareasPage({
     createdBy: createdByFilter,
     category: categoryFilter,
     urgency: urgencyFilter,
+    assignedTo: assignedToFilter,
     // Don't filter by completed - let the query include completed tasks from last 10 days
   });
 
@@ -91,11 +94,12 @@ export default async function TareasPage({
         </p>
       </div>
 
-      {/* Filters */}
-      <TaskFilter users={users} categories={uniqueCategories} />
-
-      {/* Task Board */}
-      <TaskBoard initialTasks={tasks} />
+      {/* Search and Filters */}
+      <TareasPageClient
+        initialTasks={tasks}
+        users={users}
+        categories={uniqueCategories}
+      />
     </div>
   );
 }

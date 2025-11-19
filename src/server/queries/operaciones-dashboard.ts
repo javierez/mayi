@@ -477,7 +477,7 @@ export async function getUrgentTasks(
   }
 }
 
-// Get today's and next 7 days appointments
+// Get today's and next 14 days appointments
 export async function getTodayAppointments(
   accountId: bigint,
   filters?: {
@@ -486,16 +486,16 @@ export async function getTodayAppointments(
   },
 ): Promise<TodayAppointment[]> {
   try {
-    // Calculate date ranges for today and next 7 days
+    // Calculate date ranges for today and next 14 days
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const nextWeek = new Date(today);
-    nextWeek.setDate(today.getDate() + 7); // End of 7 days from today
+    nextWeek.setDate(today.getDate() + 14); // End of 14 days from today
 
     const whereConditions = [
       // Account filtering
       eq(contacts.accountId, accountId),
-      // Date range filtering (today and next 7 days)
+      // Date range filtering (today and next 14 days)
       gte(appointments.datetimeStart, today),
       lte(appointments.datetimeStart, nextWeek),
       // Only active appointments

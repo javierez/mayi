@@ -11,10 +11,6 @@ import {
   Trash2,
   Loader2,
   CheckCircle2,
-  Key,
-  ChevronDown,
-  ChevronUp,
-  FileImage,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -26,7 +22,7 @@ import { CommentsSkeleton } from "~/components/ui/skeletons";
 import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 
 // Extended Comment type with status
-interface CommentWithStatus extends CommentWithUser {
+export interface CommentWithStatus extends CommentWithUser {
   status?: "sending" | "sent" | "error";
 }
 
@@ -54,7 +50,7 @@ interface CommentsProps {
   ) => Promise<{ success: boolean; error?: string }>;
 }
 
-interface CommentItemProps {
+export interface CommentItemProps {
   comment: CommentWithStatus;
   isReply?: boolean;
   currentUserId?: string;
@@ -79,7 +75,7 @@ interface CommentItemProps {
   setDeleteConfirmOpen: (open: boolean) => void;
 }
 
-function CommentItem({
+export function CommentItem({
   comment,
   isReply = false,
   currentUserId,
@@ -488,11 +484,6 @@ export function Comments({
   );
   const [editingComment, setEditingComment] = useState<bigint | null>(null);
   const [editContent, setEditContent] = useState("");
-  const [keysCollapsed, setKeysCollapsed] = useState(true);
-  const [cartelCollapsed, setCartelCollapsed] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<
-    null | "keys" | "cartel"
-  >(null);
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
@@ -503,7 +494,7 @@ export function Comments({
       propertyId,
       userId: currentUserId ?? "temp",
       content: newComment,
-      category: selectedCategory,
+      category: null,
       parentId: null,
       isDeleted: false,
       createdAt: new Date(),
@@ -518,9 +509,8 @@ export function Comments({
       status: "sending",
     };
 
-    // Clear form and reset category immediately so user can type more
+    // Clear form immediately so user can type more
     setNewComment("");
-    setSelectedCategory(null);
 
     // Call parent function and add optimistic comment inside transition
     startTransition(async () => {
@@ -684,18 +674,21 @@ export function Comments({
     return <CommentsSkeleton />;
   }
 
-  // Separate keys comment, cartel comment, and regular comments
-  const keysComment = optimisticComments.find(
-    (comment) => comment.category === "keys" && comment.parentId === null,
-  );
-  const cartelComment = optimisticComments.find(
-    (comment) => comment.category === "cartel" && comment.parentId === null,
-  );
+  // Filter regular comments (exclude categories handled in modals)
   const regularComments = optimisticComments.filter(
-    (comment) =>
-      comment.category !== "keys" &&
-      comment.category !== "cartel" &&
-      comment.parentId === null,
+    (comment) => {
+      const category = comment.category;
+      return (
+        category !== "keys" &&
+        category !== "publishToWebsite" &&
+        category !== "cartel" &&
+        category !== "portales" &&
+        category !== "fotocasa" &&
+        category !== "idealista" &&
+        category !== "enEscaparate" &&
+        comment.parentId === null
+      );
+    },
   );
 
   return (
@@ -723,47 +716,7 @@ export function Comments({
                   disabled={isPending}
                 />
               </div>
-              <div className="mt-3 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setSelectedCategory(
-                        selectedCategory === "keys" ? null : "keys",
-                      )
-                    }
-                    className={clsx(
-                      "h-8 transition-all",
-                      selectedCategory === "keys"
-                        ? "border-amber-200 bg-gray-100 text-amber-600 hover:border-amber-200 hover:bg-gray-100 hover:text-amber-600"
-                        : "text-gray-500 hover:border-amber-200 hover:text-amber-600"
-                    )}
-                    title="Comentario sobre llaves"
-                  >
-                    <Key className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setSelectedCategory(
-                        selectedCategory === "cartel" ? null : "cartel",
-                      )
-                    }
-                    className={clsx(
-                      "h-8 transition-all",
-                      selectedCategory === "cartel"
-                        ? "border-orange-200 bg-gray-100 text-orange-600 hover:border-orange-200 hover:bg-gray-100 hover:text-orange-600"
-                        : "text-gray-500 hover:border-orange-200 hover:text-orange-600"
-                    )}
-                    title="Comentario sobre cartel"
-                  >
-                    <FileImage className="h-4 w-4" />
-                  </Button>
-                </div>
+              <div className="mt-3 flex items-center justify-end">
                 <Button
                   onClick={handleAddComment}
                   disabled={!newComment.trim()}
@@ -778,129 +731,9 @@ export function Comments({
         </CardContent>
       </Card>
 
-      {/* Keys Section */}
-      {keysComment && (
-        <Card className="border-0 shadow-md transition-shadow hover:shadow-lg">
-          <CardContent className="p-3">
-            <div
-              className="group flex cursor-pointer items-center justify-between"
-              onClick={() => setKeysCollapsed(!keysCollapsed)}
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 shadow-sm">
-                  <Key className="h-4 w-4 text-gray-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900">
-                    Llaves
-                  </h3>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
-              >
-                {keysCollapsed ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronUp className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-
-            {!keysCollapsed && (
-              <div className="mt-3 border-t border-gray-200 pt-3">
-                <CommentItem
-                  comment={keysComment}
-                  currentUserId={currentUserId}
-                  replyingTo={replyingTo}
-                  setReplyingTo={setReplyingTo}
-                  replyContents={replyContents}
-                  setReplyContents={setReplyContents}
-                  editingComment={editingComment}
-                  setEditingComment={setEditingComment}
-                  editContent={editContent}
-                  setEditContent={setEditContent}
-                  isPending={isPending}
-                  isDeleting={isDeleting}
-                  handleAddReply={handleAddReply}
-                  handleEditComment={handleEditComment}
-                  handleDeleteComment={handleDeleteComment}
-                  startEditingComment={startEditingComment}
-                  cancelEditing={cancelEditing}
-                  setCommentToDelete={setCommentToDelete}
-                  setDeleteConfirmOpen={setDeleteConfirmOpen}
-                />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Cartel Section */}
-      {cartelComment && (
-        <Card className="border-0 shadow-md transition-shadow hover:shadow-lg">
-          <CardContent className="p-3">
-            <div
-              className="group flex cursor-pointer items-center justify-between"
-              onClick={() => setCartelCollapsed(!cartelCollapsed)}
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 shadow-sm">
-                  <FileImage className="h-4 w-4 text-gray-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900">
-                    Cartel
-                  </h3>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
-              >
-                {cartelCollapsed ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronUp className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-
-            {!cartelCollapsed && (
-              <div className="mt-3 border-t border-gray-200 pt-3">
-                <CommentItem
-                  comment={cartelComment}
-                  currentUserId={currentUserId}
-                  replyingTo={replyingTo}
-                  setReplyingTo={setReplyingTo}
-                  replyContents={replyContents}
-                  setReplyContents={setReplyContents}
-                  editingComment={editingComment}
-                  setEditingComment={setEditingComment}
-                  editContent={editContent}
-                  setEditContent={setEditContent}
-                  isPending={isPending}
-                  isDeleting={isDeleting}
-                  handleAddReply={handleAddReply}
-                  handleEditComment={handleEditComment}
-                  handleDeleteComment={handleDeleteComment}
-                  startEditingComment={startEditingComment}
-                  cancelEditing={cancelEditing}
-                  setCommentToDelete={setCommentToDelete}
-                  setDeleteConfirmOpen={setDeleteConfirmOpen}
-                />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
       {/* Regular Comments */}
       <div className="space-y-1">
-        {regularComments.length === 0 && !keysComment && !cartelComment ? (
+        {regularComments.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center">
               <p className="text-gray-500">

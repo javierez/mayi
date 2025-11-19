@@ -95,7 +95,6 @@ export default function AgentWorkQueuePage() {
         </Card>
       ) : (
         <WorkQueueCard
-          tasks={[]}
           appointments={appointments}
           detailedTasks={detailedTasks}
           selectedAgentId={selectedAgentId}

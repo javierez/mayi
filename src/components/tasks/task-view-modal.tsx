@@ -7,6 +7,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
@@ -14,18 +15,25 @@ import {
   Clock,
   Home,
   AlertCircle,
-  CheckCircle2,
   Loader2,
   Mail,
   Phone,
-  Calendar,
+  Pencil,
+  Trash2,
+  X,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import Link from "next/link";
-import { getTaskByIdWithAuth } from "~/server/queries/task";
+import { getTaskByIdWithAuth, deleteTaskWithAuth } from "~/server/queries/task";
 import type { DetailedTask } from "~/lib/operations/task-utils";
 import { getInitials, getRemainingTime } from "~/lib/operations/task-utils";
+import { TaskEditModal } from "./task-edit-modal";
+import { useSession } from "~/lib/auth-client";
+import {
+  canEditAllTasks,
+  canDeleteAllTasks,
+} from "~/app/actions/permissions/check-permissions";
 
 interface TaskViewModalProps {
   open: boolean;
@@ -47,6 +55,35 @@ export function TaskViewModal({
   const [listingImageUrl, setListingImageUrl] = useState<string | null>(null);
   const [listingReferenceNumber, setListingReferenceNumber] = useState<string | null>(null);
   const [listingCity, setListingCity] = useState<string | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Permission states
+  const [hasEditAllPermission, setHasEditAllPermission] = useState<boolean>(false);
+  const [hasDeleteAllPermission, setHasDeleteAllPermission] = useState<boolean>(false);
+  
+  const { data: session } = useSession();
+
+  // Fetch user permissions on component mount
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      try {
+        const [editAllPerm, deleteAllPerm] = await Promise.all([
+          canEditAllTasks(),
+          canDeleteAllTasks(),
+        ]);
+        setHasEditAllPermission(editAllPerm);
+        setHasDeleteAllPermission(deleteAllPerm);
+      } catch (error) {
+        console.error("Error fetching task permissions:", error);
+        setHasEditAllPermission(false);
+        setHasDeleteAllPermission(false);
+      }
+    };
+
+    void fetchPermissions();
+  }, []); // Run once on mount
 
   useEffect(() => {
     if (open && taskId) {
@@ -63,6 +100,7 @@ export function TaskViewModal({
       setListingImageUrl(null);
       setListingReferenceNumber(null);
       setListingCity(null);
+      setIsDeleteModalOpen(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, taskId]);
@@ -211,13 +249,102 @@ export function TaskViewModal({
     return labels[status] ?? status;
   };
 
+  const getStatusColor = (status: string | null, completed: boolean | null) => {
+    // If task is completed and status is "finished", show green
+    if (completed && status === "finished") {
+      return "bg-green-100 text-green-700";
+    }
+    // Default amber color for other statuses
+    return "bg-amber-100 text-amber-700";
+  };
+
+  // Permission helper functions
+  const canUserEditTask = (task: DetailedTask | null): boolean => {
+    if (!task) return false;
+    // User can edit if they created the task OR have editAll permission
+    return task.createdBy === session?.user?.id || hasEditAllPermission;
+  };
+
+  const canUserDeleteTask = (task: DetailedTask | null): boolean => {
+    if (!task) return false;
+    // User can delete if they created the task OR have deleteAll permission
+    return task.createdBy === session?.user?.id || hasDeleteAllPermission;
+  };
+
+  const handleDeleteTask = async () => {
+    if (!task || !taskId) return;
+
+    // Check permission
+    if (!canUserDeleteTask(task)) {
+      console.warn("User does not have permission to delete this task");
+      setIsDeleteModalOpen(false);
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await deleteTaskWithAuth(taskId);
+      // Close both modals and refresh parent
+      setIsDeleteModalOpen(false);
+      onOpenChange(false);
+      // Optionally trigger a refresh callback if provided
+      // For now, the parent component should handle refreshing the task list
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      // Error handling - could show a toast notification here
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-semibold text-gray-900">
-            {loading ? "Cargando..." : task ? task.title : "Tarea"}
-          </DialogTitle>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px] [&>button]:hidden">
+        <DialogHeader className="space-y-0 -mb-6">
+          <div className="flex items-start justify-between gap-4">
+            <DialogTitle className="text-xl font-semibold text-gray-900 flex-1">
+              {loading ? "Cargando..." : task ? task.title : "Tarea"}
+            </DialogTitle>
+            {task && !loading && (
+              <div className="flex items-center gap-1 shrink-0">
+                {canUserEditTask(task) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setIsEditModalOpen(true);
+                    }}
+                    className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                    title="Editar tarea"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
+                {canUserDeleteTask(task) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setIsDeleteModalOpen(true);
+                    }}
+                    className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                    title="Eliminar tarea"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onOpenChange(false)}
+                  className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                  title="Cerrar"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
           <DialogDescription className="sr-only">
             {loading
               ? "Cargando detalles de la tarea"
@@ -232,35 +359,12 @@ export function TaskViewModal({
           </div>
         ) : task ? (
           <>
-            <div className="flex items-start justify-between gap-4 -mt-4 mb-2">
-              <div className="flex-1">
-                {task.completed && (
-                  <div className="mt-2">
-                    <Badge className="bg-emerald-500 text-white">
-                      <CheckCircle2 className="mr-1 h-3 w-3" />
-                      Completada
-                    </Badge>
-                  </div>
-                )}
-              </div>
-            </div>
-
             <div className="space-y-4 py-2">
               {/* Description */}
-              {task.description && (
+              {(task as any).description && (
                 <p className="text-sm leading-relaxed text-gray-900 whitespace-pre-wrap">
-                  {task.description}
+                  {(task as any).description}
                 </p>
-              )}
-
-              {/* Due Date - Subtle with remaining time */}
-              {task.dueDate && (
-                <div className="flex items-center gap-2 text-xs text-gray-500">
-                  <Clock className="h-3.5 w-3.5 text-gray-400" />
-                  <span>
-                    {getRemainingTime(task.dueDate) || formatDateTime(task.dueDate, task.dueTime)}
-                  </span>
-                </div>
               )}
 
               {/* Contact Information - Styled like creation modal */}
@@ -378,70 +482,59 @@ export function TaskViewModal({
                 </div>
               )}
 
-              {/* Status and Urgency Information */}
-              {(task.urgency || task.status) && (
-                <div className="flex flex-wrap items-center gap-2">
-                  {task.urgency && (
-                    <Badge className={getUrgencyColor(task.urgency)}>
-                      {getUrgencyLabel(task.urgency)}
-                    </Badge>
+              {/* Status, Urgency, and Due Date Information */}
+              {(task.urgency || task.status || task.dueDate) && (
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {task.urgency && (
+                      <Badge className={getUrgencyColor(task.urgency)}>
+                        {getUrgencyLabel(task.urgency)}
+                      </Badge>
+                    )}
+                    {task.status && (
+                      <Badge className={getStatusColor(task.status, task.completed)}>
+                        {getStatusLabel(task.status)}
+                      </Badge>
+                    )}
+                    <Link
+                      href="/tareas"
+                      className="text-xs text-gray-500 hover:text-primary transition-colors"
+                    >
+                      Ver todas las tareas →
+                    </Link>
+                  </div>
+                  {task.dueDate && (
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                      <Clock className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                      <span>
+                        {getRemainingTime(task.dueDate) || formatDateTime(task.dueDate, (task as any).dueTime)}
+                      </span>
+                    </div>
                   )}
-                  {task.status && (
-                    <Badge className="bg-amber-100 text-amber-700">
-                      {getStatusLabel(task.status)}
-                    </Badge>
-                  )}
-                  <Link
-                    href="/tareas"
-                    className="text-xs text-gray-500 hover:text-primary transition-colors"
-                  >
-                    Ver todas las tareas →
-                  </Link>
                 </div>
               )}
 
-              {/* Footer with Metadata and Assigned User */}
-              <div className="pt-4 border-t border-gray-200">
-                <div className="flex items-center justify-between">
-                  {/* Assigned User */}
-                  {task.userName || task.userFirstName || task.userLastName ? (
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback className="bg-gray-100 text-gray-700 text-[10px] font-medium">
-                          {getInitials(
-                            task.userFirstName ?? undefined,
-                            task.userLastName ?? undefined,
-                            task.userName ?? undefined,
-                          )}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-xs text-gray-600">
-                        {task.userName ??
-                          ((`${task.userFirstName ?? ""} ${task.userLastName ?? ""}`.trim() ||
-                            "Usuario"))}
-                      </span>
-                    </div>
-                  ) : (
-                    <div />
-                  )}
-
-                  {/* Metadata */}
-                  {task.createdAt && (
-                    <div className="flex items-center gap-1 text-xs text-gray-400">
-                      <Calendar className="h-3 w-3" />
-                      <span>
-                        {new Intl.DateTimeFormat("es-ES", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }).format(new Date(task.createdAt))}
-                      </span>
-                    </div>
-                  )}
+              {/* Footer with Assigned User */}
+              {(task.userName || task.userFirstName || task.userLastName) && (
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-6 w-6">
+                      <AvatarFallback className="bg-gray-100 text-gray-700 text-[10px] font-medium">
+                        {getInitials(
+                          task.userFirstName ?? undefined,
+                          task.userLastName ?? undefined,
+                          task.userName ?? undefined,
+                        )}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-xs text-gray-600">
+                      {task.userName ??
+                        ((`${task.userFirstName ?? ""} ${task.userLastName ?? ""}`.trim() ||
+                          "Usuario"))}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </>
         ) : (
@@ -456,6 +549,62 @@ export function TaskViewModal({
           </div>
         )}
       </DialogContent>
+      
+      {/* Edit Modal */}
+      {task && taskId && (
+        <TaskEditModal
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          taskId={taskId}
+          onSuccess={() => {
+            // Refresh task data after successful update
+            void fetchTask();
+            setIsEditModalOpen(false);
+          }}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Eliminar tarea</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que quieres eliminar esta tarea? Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          {task && (
+            <div className="py-4">
+              <p className="line-clamp-2 text-sm font-medium text-gray-900">
+                {task.title}
+              </p>
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteModalOpen(false)}
+              disabled={isDeleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => void handleDeleteTask()}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Eliminando...
+                </>
+              ) : (
+                "Eliminar"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }

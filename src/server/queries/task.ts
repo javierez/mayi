@@ -46,6 +46,7 @@ export async function getUserTasksWithAuth(
     createdBy?: string[];
     category?: string[];
     urgency?: number[];
+    assignedTo?: string[];
     completed?: boolean;
   },
 ) {
@@ -147,7 +148,7 @@ export async function getMostUrgentTasksWithAuth(
   },
 ) {
   const accountId = await getCurrentUserAccountId();
-  return getMostUrgentTasks(accountId, limit, daysAhead, filters);
+  return getMostUrgentTasks(BigInt(accountId), limit, daysAhead, filters);
 }
 
 export async function createAppointmentTaskWithAuth(
@@ -367,6 +368,7 @@ export async function getTaskById(taskId: number, accountId: number) {
           sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`,
         ),
       )
+      .leftJoin(users, eq(tasks.userId, users.id))
       .where(
         and(
           eq(tasks.taskId, BigInt(taskId)),
@@ -376,6 +378,8 @@ export async function getTaskById(taskId: number, accountId: number) {
             eq(contacts.accountId, BigInt(accountId)),
             // Task belongs to account through listing->property
             eq(properties.accountId, BigInt(accountId)),
+            // Task belongs to account through user (for tasks without contact/listing relationships)
+            eq(users.accountId, BigInt(accountId)),
           ),
         ),
       );
@@ -395,19 +399,27 @@ export async function getUserTasks(
     createdBy?: string[];
     category?: string[];
     urgency?: number[];
+    assignedTo?: string[];
     completed?: boolean;
   },
 ) {
   try {
     // Build the where conditions array
+    // If assignedTo filter is provided, filter by those user IDs instead of just the current userId
+    const userIdCondition = filters?.assignedTo && filters.assignedTo.length > 0
+      ? sql`${tasks.userId} IN (${sql.join(filters.assignedTo.map((id) => sql`${id}`), sql`, `)})`
+      : eq(tasks.userId, userId);
+    
     const whereConditions = [
-      eq(tasks.userId, userId),
+      userIdCondition,
       eq(tasks.isActive, true),
       or(
         // Task belongs to account through prospect->contact
         eq(contacts.accountId, BigInt(accountId)),
         // Task belongs to account through listing->property
         eq(properties.accountId, BigInt(accountId)),
+        // Task belongs to account through user (for tasks without contact/listing relationships)
+        eq(users.accountId, BigInt(accountId)),
       ),
     ];
 
@@ -459,6 +471,7 @@ export async function getUserTasks(
     const userTasks = await db
       .select()
       .from(tasks)
+      .leftJoin(users, eq(tasks.userId, users.id))
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
       .leftJoin(
         contacts,
@@ -1635,6 +1648,8 @@ export async function listTasks(
       or(
         eq(contacts.accountId, BigInt(accountId)),
         eq(properties.accountId, BigInt(accountId)),
+        // Task belongs to account through user (for tasks without contact/listing relationships)
+        eq(users.accountId, BigInt(accountId)),
       ),
     );
 
@@ -1642,6 +1657,7 @@ export async function listTasks(
     const allTasks = await db
       .select()
       .from(tasks)
+      .leftJoin(users, eq(tasks.userId, users.id))
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
       .leftJoin(
         contacts,
@@ -1669,7 +1685,7 @@ export async function listTasks(
 
 // Get most urgent tasks sorted by due date
 export async function getMostUrgentTasks(
-  accountId: number,
+  accountId: bigint,
   limit = 10,
   daysAhead = 30,
   filters?: {
@@ -1686,33 +1702,19 @@ export async function getMostUrgentTasks(
 
     // Debug: Check if critical tasks exist in database
     const criticalTasksCheck = await db
-      .select({ 
+      .select({
         count: sql<number>`COUNT(*)`,
         withDate: sql<number>`COUNT(CASE WHEN ${tasks.dueDate} IS NOT NULL THEN 1 END)`,
         withoutDate: sql<number>`COUNT(CASE WHEN ${tasks.dueDate} IS NULL THEN 1 END)`,
       })
       .from(tasks)
       .innerJoin(users, eq(tasks.userId, users.id))
-      .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
-      .leftJoin(
-        contacts,
-        or(
-          eq(prospects.contactId, contacts.contactId),
-          eq(tasks.contactId, contacts.contactId),
-        ),
-      )
-      .leftJoin(listings, eq(tasks.listingId, listings.listingId))
-      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
         and(
           eq(tasks.isActive, true),
           eq(tasks.completed, false),
           eq(tasks.urgency, 5),
-          or(
-            and(isNotNull(contacts.accountId), eq(contacts.accountId, BigInt(accountId))),
-            and(isNotNull(properties.accountId), eq(properties.accountId, BigInt(accountId))),
-            eq(users.accountId, BigInt(accountId)),
-          ),
+          sql`${users.accountId} = ${accountId}`, // accountId is already bigint
         ),
       );
     
@@ -1729,26 +1731,12 @@ export async function getMostUrgentTasks(
         .select({ taskId: tasks.taskId, urgency: tasks.urgency, dueDate: tasks.dueDate })
         .from(tasks)
         .innerJoin(users, eq(tasks.userId, users.id))
-        .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
-        .leftJoin(
-          contacts,
-          or(
-            eq(prospects.contactId, contacts.contactId),
-            eq(tasks.contactId, contacts.contactId),
-          ),
-        )
-        .leftJoin(listings, eq(tasks.listingId, listings.listingId))
-        .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
         .where(
           and(
             eq(tasks.isActive, true),
             eq(tasks.completed, false),
             eq(tasks.urgency, 5),
-            or(
-              and(isNotNull(contacts.accountId), eq(contacts.accountId, BigInt(accountId))),
-              and(isNotNull(properties.accountId), eq(properties.accountId, BigInt(accountId))),
-              eq(users.accountId, BigInt(accountId)),
-            ),
+            eq(users.accountId, accountId),
           ),
         )
         .limit(5);
@@ -1794,10 +1782,9 @@ export async function getMostUrgentTasks(
           userAccountId: t.userAccountId?.toString(),
           contactAccountId: t.contactAccountId?.toString(),
           propertyAccountId: t.propertyAccountId?.toString(),
+          queryAccountId: accountId.toString(),
           matchesAccount: (
-            (t.contactAccountId && Number(t.contactAccountId) === accountId) ||
-            (t.propertyAccountId && Number(t.propertyAccountId) === accountId) ||
-            (t.userAccountId && Number(t.userAccountId) === accountId)
+            t.userAccountId && t.userAccountId === accountId
           ),
         })));
       }
@@ -1806,31 +1793,24 @@ export async function getMostUrgentTasks(
       (globalThis as any).__criticalTaskIds = criticalIds;
     }
 
+    // Build WHERE conditions
+    // Separate urgency filter from array to avoid Drizzle ORM issues with or() in array spread
+    const urgencyFilter = or(
+      eq(tasks.urgency, 5), // Critical tasks always included (even without deadline)
+      and(
+        isNotNull(tasks.dueDate), // Regular tasks must have a due date
+        lte(tasks.dueDate, endDate), // Regular tasks within deadline
+      ),
+    );
+
     const whereConditions = [
       eq(tasks.isActive, true),
       eq(tasks.completed, false),
-      // Include tasks with urgency = 5 (critical) regardless of due date (even if null),
-      // OR regular tasks with dueDate within the daysAhead limit
-      or(
-        eq(tasks.urgency, 5), // Critical tasks always included (even without deadline)
-        and(
-          isNotNull(tasks.dueDate), // Regular tasks must have a due date
-          lte(tasks.dueDate, endDate), // Regular tasks within deadline
-        ),
-      ),
-      // Account filtering: task belongs to account through contact, property, or user
-      // Handle NULLs from LEFT JOINs properly - if contact/property is NULL, check user accountId
-      or(
-        and(
-          isNotNull(contacts.accountId),
-          eq(contacts.accountId, BigInt(accountId)),
-        ),
-        and(
-          isNotNull(properties.accountId),
-          eq(properties.accountId, BigInt(accountId)),
-        ),
-        eq(users.accountId, BigInt(accountId)), // Users is INNER JOIN, always present
-      ),
+      // Account filtering: task belongs to account through the assigned user
+      // userId is required (NOT NULL), so this is the most reliable way to filter by account
+      // Tasks are always assigned to users in the same account, making users.accountId the source of truth
+      // accountId parameter is already bigint, no conversion needed
+      sql`${users.accountId} = ${accountId}`,
     ];
 
     // Add appointment-based filtering if provided
@@ -1845,7 +1825,7 @@ export async function getMostUrgentTasks(
           and(
             listingIdCondition,
             eq(tasks.contactId, BigInt(filters.appointmentContactId))
-          )
+          )!
         );
       } else {
         // Appointment has no contactId: just match listingId (don't filter by contactId)
@@ -1864,22 +1844,13 @@ export async function getMostUrgentTasks(
         userId: tasks.userId,
         createdBy: tasks.createdBy,
         title: tasks.title,
-        description: tasks.description,
         dueDate: tasks.dueDate,
-        dueTime: tasks.dueTime,
         completed: tasks.completed,
         urgency: tasks.urgency,
         status: tasks.status,
         category: tasks.category,
         listingId: sql<number>`CAST(${tasks.listingId} AS BIGINT)`,
-        listingContactId: sql<number>`CAST(${tasks.listingContactId} AS BIGINT)`,
-        dealId: sql<number>`CAST(${tasks.dealId} AS BIGINT)`,
-        appointmentId: sql<number>`CAST(${tasks.appointmentId} AS BIGINT)`,
-        prospectId: sql<number>`CAST(${tasks.prospectId} AS BIGINT)`,
         contactId: sql<number>`CAST(${tasks.contactId} AS BIGINT)`,
-        isActive: tasks.isActive,
-        createdAt: tasks.createdAt,
-        updatedAt: tasks.updatedAt,
         userName: users.name,
         userFirstName: users.firstName,
         userLastName: users.lastName,
@@ -1905,13 +1876,29 @@ export async function getMostUrgentTasks(
       )
       .leftJoin(listings, eq(tasks.listingId, listings.listingId))
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .where(and(...whereConditions))
-      // Sort by urgency first (5 = critical comes first), then by due date
-      // Critical tasks without dates come first, then critical with dates, then regular tasks
+      .where(and(...whereConditions, urgencyFilter))
+      // Smart priority-based sorting for "Tareas Urgentes" (Urgent Tasks)
+      // Priority Tiers (Most → Least Urgent):
+      //   1. 🔥 Critical + Overdue (urgency=5, past due) - IMMEDIATE ACTION NEEDED
+      //   2. 🔥 Critical + Due Today (urgency=5, due today) - VERY URGENT
+      //   3. ⚠️  Critical + Due Soon (urgency=5, upcoming deadline) - URGENT
+      //   4. ⚠️  Critical + No Deadline (urgency=5, no date) - IMPORTANT but flexible
+      //   5. 📌 Regular + Overdue (urgency<5, past due) - LATE
+      //   6. 📌 Regular + Due Today (urgency<5, due today) - DUE NOW
+      //   7. 📅 Regular + Due Soon (urgency<5, upcoming) - UPCOMING
+      // Within each tier: sorted by dueDate ASC (closest deadlines first)
       .orderBy(
-        desc(tasks.urgency),
-        sql`CASE WHEN ${tasks.dueDate} IS NULL THEN 0 ELSE 1 END`, // Null dates first within same urgency
-        asc(tasks.dueDate)
+        sql`CASE
+          WHEN ${tasks.urgency} = 5 AND ${tasks.dueDate} < NOW() THEN 1
+          WHEN ${tasks.urgency} = 5 AND ${tasks.dueDate}::date = CURRENT_DATE THEN 2
+          WHEN ${tasks.urgency} = 5 AND ${tasks.dueDate} IS NOT NULL THEN 3
+          WHEN ${tasks.urgency} = 5 THEN 4
+          WHEN ${tasks.dueDate} < NOW() THEN 5
+          WHEN ${tasks.dueDate}::date = CURRENT_DATE THEN 6
+          WHEN ${tasks.dueDate} IS NOT NULL THEN 7
+          ELSE 8
+        END`,
+        asc(tasks.dueDate), // Within same priority tier, closest deadline first
       )
       .limit(limit);
 

@@ -315,7 +315,13 @@ export function GlobalTaskModal({
     setSaveError(null);
 
     try {
-      const selectedUserId = formData.agentId ?? session?.user?.id ?? "";
+      const selectedUserId = formData.agentId || session?.user?.id;
+      
+      if (!selectedUserId) {
+        setSaveError("No se pudo determinar el usuario asignado");
+        setLoading((prev) => ({ ...prev, saving: false }));
+        return;
+      }
 
       // Get listingContactId if both contact and listing are selected
       let listingContactId: bigint | undefined;
@@ -347,6 +353,7 @@ export function GlobalTaskModal({
         dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
         dueTime: formData.dueDate ? formData.dueTime || "00:00" : undefined,
         urgency: formData.urgency ? parseInt(formData.urgency) : undefined,
+        createdBy: session?.user?.id,
         // Entity associations (all optional)
         contactId: formData.contactId ? BigInt(formData.contactId) : undefined,
         listingId: formData.listingId ? BigInt(formData.listingId) : undefined,
@@ -395,7 +402,13 @@ export function GlobalTaskModal({
       }
 
       // Now create the task with the new relationship
-      const selectedUserId = formData.agentId ?? session?.user?.id ?? "";
+      const selectedUserId = formData.agentId || session?.user?.id;
+      
+      if (!selectedUserId) {
+        setSaveError("No se pudo determinar el usuario asignado");
+        setLoading((prev) => ({ ...prev, saving: false }));
+        return;
+      }
 
       const taskData = {
         userId: selectedUserId,
@@ -406,6 +419,7 @@ export function GlobalTaskModal({
         dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
         dueTime: formData.dueDate ? formData.dueTime || "00:00" : undefined,
         urgency: formData.urgency ? parseInt(formData.urgency) : undefined,
+        createdBy: session?.user?.id,
         contactId: BigInt(formData.contactId),
         listingId: BigInt(formData.listingId),
         listingContactId: createResult.listingContactId,

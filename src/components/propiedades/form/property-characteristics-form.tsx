@@ -54,6 +54,7 @@ import {
 } from "~/app/actions/permissions/check-permissions";
 
 import type { PropertyListing } from "~/types/property-listing";
+import type { CommentWithUser } from "~/types/comments";
 
 // Type definitions
 interface Agent {
@@ -90,10 +91,34 @@ type ModuleName =
 
 interface PropertyCharacteristicsFormProps {
   listing: PropertyListing;
+  // Optional comment management props
+  currentUserId?: string;
+  currentUser?: {
+    id: string;
+    name?: string;
+    image?: string;
+  };
+  comments?: CommentWithUser[];
+  onAddComment?: (
+    comment: CommentWithUser,
+  ) => Promise<{ success: boolean; error?: string }>;
+  onEditComment?: (
+    commentId: bigint,
+    content: string,
+  ) => Promise<{ success: boolean; error?: string }>;
+  onDeleteComment?: (
+    commentId: bigint,
+  ) => Promise<{ success: boolean; error?: string }>;
 }
 
 export function PropertyCharacteristicsForm({
   listing,
+  currentUserId,
+  currentUser,
+  comments,
+  onAddComment,
+  onEditComment,
+  onDeleteComment,
 }: PropertyCharacteristicsFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1414,6 +1439,49 @@ export function PropertyCharacteristicsForm({
           propertyId={listing.propertyId}
           createdAt={listing.createdAt ?? null}
           listing={listing as unknown as Record<string, unknown>}
+          currentUserId={currentUserId}
+          currentUser={currentUser}
+          onAddComment={onAddComment}
+          onEditComment={onEditComment}
+          onDeleteComment={onDeleteComment}
+          keysComments={
+            comments
+              ? comments.filter(
+                  (c) => c.category === "keys" && (c.parentId === null || c.parentId === undefined),
+                )
+              : undefined
+          }
+          publishToWebsiteComments={
+            comments
+              ? comments.filter(
+                  (c) =>
+                    c.category === "publishToWebsite" && (c.parentId === null || c.parentId === undefined),
+                )
+              : undefined
+          }
+          cartelComments={
+            comments
+              ? comments.filter(
+                  (c) => c.category === "cartel" && (c.parentId === null || c.parentId === undefined),
+                )
+              : undefined
+          }
+          portalsComments={
+            comments
+              ? comments.filter(
+                  (c) =>
+                    c.category === "portales" &&
+                    (c.parentId === null || c.parentId === undefined),
+                )
+              : undefined
+          }
+          enEscaparateComments={
+            comments
+              ? comments.filter(
+                  (c) => c.category === "enEscaparate" && (c.parentId === null || c.parentId === undefined),
+                )
+              : undefined
+          }
         />
       </div>
 

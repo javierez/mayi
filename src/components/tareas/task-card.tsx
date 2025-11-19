@@ -1,10 +1,11 @@
 "use client";
 
-import { useDraggable } from "@dnd-kit/core";
+import { useDraggable, useDndMonitor } from "@dnd-kit/core";
 import { Card, CardContent } from "~/components/ui/card";
 import { Calendar, AlertCircle, Home, User, Check } from "lucide-react";
 import { cn } from "~/lib/utils";
 import Link from "next/link";
+import { useRef } from "react";
 
 interface TaskCardProps {
   task: {
@@ -23,6 +24,7 @@ interface TaskCardProps {
     contactLastName?: string | null;
   };
   onToggleCompleted?: (taskId: string, currentCompleted: boolean) => void;
+  onClick?: (taskId: string) => void;
 }
 
 function getUrgencyColor(urgency: number | null): string {
@@ -94,7 +96,7 @@ function isOverdue(dueDate: Date | null): boolean {
   return new Date(dueDate) < new Date();
 }
 
-export function TaskCard({ task, onToggleCompleted }: TaskCardProps) {
+export function TaskCard({ task, onToggleCompleted, onClick }: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -116,15 +118,66 @@ export function TaskCard({ task, onToggleCompleted }: TaskCardProps) {
     : undefined;
 
   const overdue = isOverdue(task.dueDate);
+  
+  // Track if a drag occurred to distinguish from clicks
+  const dragOccurredRef = useRef(false);
+  const lastDragEndTimeRef = useRef<number>(0);
+
+  // Monitor drag events to track when dragging starts and ends
+  useDndMonitor({
+    onDragStart(event) {
+      if (event.active.id === task.taskId) {
+        dragOccurredRef.current = true;
+      }
+    },
+    onDragEnd(event) {
+      if (event.active.id === task.taskId) {
+        lastDragEndTimeRef.current = Date.now();
+        // Reset after a delay to allow click detection
+        setTimeout(() => {
+          dragOccurredRef.current = false;
+        }, 150);
+      }
+    },
+  });
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Prevent click if we're currently dragging
+    if (isDragging) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
+    // Prevent click if a drag just occurred (within last 200ms)
+    // This prevents clicks from firing after drag ends
+    const timeSinceDragEnd = Date.now() - lastDragEndTimeRef.current;
+    if (dragOccurredRef.current || timeSinceDragEnd < 200) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
+    // If we get here, it's a genuine click (not a drag)
+    if (onClick) {
+      onClick(task.taskId);
+    }
+  };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+    >
       <Card
         className={cn(
           "cursor-grab active:cursor-grabbing transition-shadow hover:shadow-md select-none",
-          isDragging && "opacity-50",
+          isDragging && "opacity-0",
           overdue && "border-red-300",
         )}
+        onClick={handleCardClick}
       >
         <CardContent className="relative p-3">
           <div className="space-y-2">

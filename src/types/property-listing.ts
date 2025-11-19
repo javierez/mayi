@@ -19,8 +19,16 @@ export interface PropertyListing {
   newConstruction?: boolean;
   publishToWebsite?: boolean;
   hasKeys?: boolean;
+  hasCartel?: boolean;
+  enEscaparate?: boolean;
   encargo?: boolean;
   offerAccepted?: boolean;
+  
+  // Portal publication flags
+  fotocasa?: boolean;
+  idealista?: boolean;
+  habitaclia?: boolean;
+  milanuncios?: boolean;
 
   // Dimensions
   bedrooms?: number;
@@ -215,8 +223,15 @@ export function convertDbListingToPropertyListing(
     isFeatured: (dbListing.isFeatured as boolean) ?? undefined,
     newConstruction: (dbListing.newConstruction as boolean) ?? undefined,
     publishToWebsite: (dbListing.publishToWebsite as boolean) ?? undefined,
+    hasKeys: getBoolean(dbListing.hasKeys),
+    hasCartel: getBoolean(dbListing.hasCartel),
+    enEscaparate: getBoolean(dbListing.enEscaparate),
     encargo: (dbListing.encargo as boolean) ?? undefined,
     offerAccepted: (dbListing.offerAccepted as boolean) ?? undefined,
+    fotocasa: getBoolean(dbListing.fotocasa),
+    idealista: getBoolean(dbListing.idealista),
+    habitaclia: getBoolean(dbListing.habitaclia),
+    milanuncios: getBoolean(dbListing.milanuncios),
     bedrooms: (dbListing.bedrooms as number) ?? undefined,
     bathrooms: (dbListing.bathrooms as number) ?? undefined,
     squareMeter: (dbListing.squareMeter as number) ?? undefined,
