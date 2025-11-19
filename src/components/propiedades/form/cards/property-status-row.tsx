@@ -7,6 +7,8 @@ import { PropertyImagePlaceholder } from "~/components/propiedades/PropertyImage
 import { ImageViewer } from "~/components/ui/image-viewer";
 import { getAllPropertyImages } from "~/app/actions/property-images";
 import { getProcessStages } from "~/lib/constants/process-stages";
+import { calculateCompletion } from "~/lib/properties/completion-tracker";
+import { ProcessStageModal } from "~/components/propiedades/detail/process-stage-modal";
 import { cn } from "~/lib/utils";
 import {
   Tooltip,
@@ -86,6 +88,7 @@ export interface PropertyStatusRowProps {
   propertyId?: number | string | bigint | null;
   createdAt?: Date | null;
   listing?: Record<string, unknown> & {
+    listingId?: number | string | bigint;
     hasKeys?: boolean;
     hasCartel?: boolean;
     publishToWebsite?: boolean;
@@ -110,12 +113,30 @@ export function PropertyStatusRow({
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
   const [isInfoTooltipOpen, setIsInfoTooltipOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedStage, setSelectedStage] = useState<{
+    id: string;
+    label: string;
+  } | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Extract imageCount and deal from listing prop (now fetched in getListingDetails)
+  // Extract imageCount, deal, and listingId from listing prop
   const imageCount = listing?.imageCount ?? 0;
   const deal = listing?.deal ?? null;
+  const listingId = listing?.listingId
+    ? (typeof listing.listingId === "bigint" ? Number(listing.listingId) : Number(listing.listingId))
+    : null;
+
+  console.log("🏠 PropertyStatusRow - Data check:", {
+    hasListing: !!listing,
+    listingKeys: listing ? Object.keys(listing) : [],
+    rawListingId: listing?.listingId,
+    parsedListingId: listingId,
+    propertyId,
+    imageCount,
+    hasDeal: !!deal,
+  });
 
   const handleImageClick = async () => {
     if (!propertyId) return;
@@ -132,6 +153,29 @@ export function PropertyStatusRow({
     } finally {
       setIsLoadingImages(false);
     }
+  };
+
+  // Handle stage label click
+  const handleStageClick = (stageId: string, stageLabel: string) => {
+    if (!listingId) {
+      console.error("No listingId available. listing:", listing);
+      alert("Error: No se pudo encontrar el ID del listado");
+      return;
+    }
+    setSelectedStage({ id: stageId, label: stageLabel });
+    setIsModalOpen(true);
+  };
+
+  // Handle modal close
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedStage(null);
+  };
+
+  // Handle successful stage completion
+  const handleSuccess = () => {
+    // Refresh the page to show updated progress
+    window.location.reload();
   };
 
   // Handle scroll events to show/hide scrollbar
@@ -166,6 +210,20 @@ export function PropertyStatusRow({
 
   // Get dynamic process stages based on listing completion and deal data
   const processStages = getProcessStages(listingWithImages, deal);
+
+  // Calculate current progress for the modal
+  const completion = listingWithImages ? calculateCompletion(listingWithImages) : null;
+  const currentProgress = {
+    hasEncargo: Boolean(listing?.encargo),
+    hasOfferAccepted: Boolean(listing?.offerAccepted),
+    hasDeal: !!deal,
+    hasArrasDate: !!deal?.arrasDate,
+    hasActualDeedDate: !!deal?.actualDeedDate,
+    hasCloseDate: !!deal?.closeDate,
+    dealStatus: (deal?.status as string | null) ?? null,
+    canPublishToPortals: completion?.canPublishToPortals ?? false,
+    hasActiveContacts: true, // TODO: Get from listing contacts
+  };
 
   // Calculate total substages for proportional width (excluding the last one)
   const totalSubstages = processStages.reduce(
@@ -341,7 +399,13 @@ export function PropertyStatusRow({
                                 isReached ? "text-gray-800" : "text-gray-400",
                               )}
                             >
-                              {substage.label}
+                              <button
+                                type="button"
+                                onClick={() => handleStageClick(substage.id, substage.label)}
+                                className="cursor-pointer transition-all hover:text-amber-600 hover:underline"
+                              >
+                                {substage.label}
+                              </button>
                               {showInfoButton && infoContent && (
                                 <Tooltip
                                   open={isInfoTooltipOpen}
@@ -386,7 +450,13 @@ export function PropertyStatusRow({
                                 transform: "translateX(-50%)",
                               }}
                             >
-                              {substage.label}
+                              <button
+                                type="button"
+                                onClick={() => handleStageClick(substage.id, substage.label)}
+                                className="cursor-pointer transition-all hover:text-amber-600 hover:underline"
+                              >
+                                {substage.label}
+                              </button>
                             </div>
                           )}
                         </div>
@@ -418,7 +488,13 @@ export function PropertyStatusRow({
                         isReached ? "text-gray-800" : "text-gray-400",
                       )}
                     >
-                      {lastSubstage.label}
+                      <button
+                        type="button"
+                        onClick={() => handleStageClick(lastSubstage.id, lastSubstage.label)}
+                        className="cursor-pointer transition-all hover:text-amber-600 hover:underline"
+                      >
+                        {lastSubstage.label}
+                      </button>
                     </div>
                   );
                 })()}
@@ -650,6 +726,20 @@ export function PropertyStatusRow({
           onClose={() => setIsViewerOpen(false)}
           title="Imágenes de la propiedad"
         />
+
+        {/* Process Stage Modal */}
+        {selectedStage && listingId && (
+          <ProcessStageModal
+            isOpen={isModalOpen}
+            onClose={handleModalClose}
+            listingId={listingId}
+            targetStageId={selectedStage.id}
+            targetStageLabel={selectedStage.label}
+            processStages={processStages}
+            currentProgress={currentProgress}
+            onSuccess={handleSuccess}
+          />
+        )}
       </div>
     </TooltipProvider>
   );

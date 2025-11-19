@@ -48,6 +48,11 @@ export async function listListingsForContactWithAuth(contactId: bigint, searchQu
   return listListingsForContact(accountId, contactId, searchQuery);
 }
 
+export async function listContactsForListingWithAuth(listingId: bigint, searchQuery?: string) {
+  const accountId = await getCurrentUserAccountId();
+  return listContactsForListing(accountId, listingId, searchQuery);
+}
+
 export async function getListingCompactByIdWithAuth(listingId: bigint) {
   const accountId = await getCurrentUserAccountId();
   return getListingCompactById(listingId, accountId);
@@ -1095,6 +1100,77 @@ export async function listListingsForContact(
     return contactListings;
   } catch (error) {
     console.error("Error listing contact listings:", error);
+    return [];
+  }
+}
+
+// Get contacts associated with a specific listing (as owner or buyer)
+export async function listContactsForListing(
+  accountId: number,
+  listingId: bigint,
+  searchQuery?: string,
+) {
+  try {
+    // Build the where conditions array
+    const whereConditions = [];
+
+    // Always show active contacts only for this account
+    whereConditions.push(eq(contacts.isActive, true));
+    whereConditions.push(eq(contacts.accountId, BigInt(accountId)));
+
+    // Add search query filter if provided
+    if (searchQuery?.trim()) {
+      whereConditions.push(
+        sql`(
+          ${contacts.firstName} LIKE ${`%${searchQuery}%`} OR
+          ${contacts.lastName} LIKE ${`%${searchQuery}%`} OR
+          ${contacts.email} LIKE ${`%${searchQuery}%`} OR
+          ${contacts.phone} LIKE ${`%${searchQuery}%`}
+        )`,
+      );
+    }
+
+    // Create the compact query with listing relationship info
+    const query = db
+      .select({
+        contactId: contacts.contactId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        email: contacts.email,
+        phone: contacts.phone,
+        contactType: sql<"owner" | "buyer" | null>`CASE
+          WHEN ${listingContacts.contactType} = 'owner' THEN 'owner'
+          WHEN ${listingContacts.contactType} = 'buyer' THEN 'buyer'
+          ELSE NULL
+        END`,
+      })
+      .from(contacts)
+      .innerJoin(
+        listingContacts,
+        and(
+          eq(listingContacts.contactId, contacts.contactId),
+          eq(listingContacts.listingId, listingId),
+          eq(listingContacts.isActive, true),
+        ),
+      );
+
+    // Apply where conditions
+    const filteredQuery =
+      whereConditions.length > 0 ? query.where(and(...whereConditions)) : query;
+
+    // Get all contacts ordered by contact type (owner first, then buyer)
+    const listingContacts$ = await filteredQuery.orderBy(
+      sql`CASE
+        WHEN ${listingContacts.contactType} = 'owner' THEN 1
+        WHEN ${listingContacts.contactType} = 'buyer' THEN 2
+        ELSE 3
+      END`,
+      sql`${contacts.createdAt} DESC`,
+    );
+
+    return listingContacts$;
+  } catch (error) {
+    console.error("Error listing listing contacts:", error);
     return [];
   }
 }

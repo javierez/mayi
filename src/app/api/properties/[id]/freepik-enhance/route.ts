@@ -6,6 +6,7 @@ import { calculateFreepikTokensWithFactor } from "~/lib/image-token-pricing";
 import {
   checkSufficientTokens,
   deductFreepikTokens,
+  addTokens,
 } from "~/server/services/token-service";
 
 /**
@@ -35,7 +36,6 @@ export async function POST(
       imageHeight: number;
       upscaleFactor?: number;
     };
-    const propertyId = BigInt(resolvedParams.id);
 
     if (
       !data.imageUrl ||
@@ -65,6 +65,9 @@ export async function POST(
       return Response.json({ error: "Property not found" }, { status: 404 });
     }
 
+    // Extract propertyId from propertyData (may be null if property doesn't exist)
+    const propertyId = propertyData.propertyId ?? undefined;
+
     // 4. Validate image URL format
     if (!data.imageUrl.startsWith("http")) {
       console.error("Invalid image URL format");
@@ -92,7 +95,18 @@ export async function POST(
       estimatedCostEUR: tokenCost.estimatedCostEUR,
     });
 
-    // 7. Check if account has sufficient tokens
+    // 7. Validate Freepik API is available BEFORE deducting tokens
+    if (!process.env.FREEPIK_API_KEY) {
+      console.error("Freepik API key not configured");
+      return Response.json(
+        {
+          error: "Enhancement service is not configured. Please contact support.",
+        },
+        { status: 503 },
+      );
+    }
+
+    // 8. Check if account has sufficient tokens
     const tokenCheck = await checkSufficientTokens(accountId, tokenCost.tokens);
 
     if (!tokenCheck.sufficient) {
@@ -113,7 +127,8 @@ export async function POST(
       );
     }
 
-    // 8. Deduct tokens BEFORE calling Freepik API
+    // 9. Deduct tokens BEFORE calling Freepik API
+    let tokensDeducted = false;
     try {
       await deductFreepikTokens(
         accountId,
@@ -122,10 +137,11 @@ export async function POST(
         data.imageHeight,
         upscaleFactor,
         undefined, // propertyImageId - we don't have this yet
-        propertyId,
+        propertyId, // propertyId from propertyData (may be undefined)
         session.user.id,
       );
 
+      tokensDeducted = true;
       console.log(
         `Deducted ${tokenCost.tokens} tokens from account ${accountId}`,
       );
@@ -137,24 +153,63 @@ export async function POST(
       );
     }
 
-    // 9. Call Freepik API v1 to start enhancement
+    // 10. Call Freepik API v1 to start enhancement
     // Note: freepikClient.enhance() downloads the URL and converts to base64 internally
-    const result = await freepikClient.enhance(data.imageUrl);
+    let result;
+    try {
+      result = await freepikClient.enhance(data.imageUrl);
+    } catch (apiError) {
+      // If API call fails after tokens were deducted, refund them
+      if (tokensDeducted) {
+        console.error(
+          `Freepik API call failed after token deduction. Refunding ${tokenCost.tokens} tokens...`,
+        );
+        try {
+          await addTokens({
+            accountId,
+            tokens: tokenCost.tokens,
+            operation: "admin_credit",
+            metadata: {
+              reason: "Refund due to Freepik API failure",
+              originalOperation: "freepik_enhance",
+              error: apiError instanceof Error ? apiError.message : String(apiError),
+            },
+            userId: session.user.id,
+          });
+          console.log(
+            `✅ Refunded ${tokenCost.tokens} tokens to account ${accountId}`,
+          );
+        } catch (refundError) {
+          console.error("Failed to refund tokens:", refundError);
+          // Continue to throw the original API error
+        }
+      }
+      throw apiError;
+    }
 
-    // 10. Return task information for polling
+    // 11. Return task information for polling
     return Response.json({
       success: true,
       taskId: result.taskId,
       status: result.status,
       referenceNumber: data.referenceNumber,
       currentImageOrder: data.currentImageOrder,
-      propertyId: propertyId.toString(),
+      propertyId: propertyId?.toString() ?? null,
     });
   } catch (error) {
     console.error("Freepik enhancement API error:", error);
 
     // Return specific error messages for common issues
     if (error instanceof Error) {
+      if (error.message.includes("Missing required Freepik environment variables")) {
+        return Response.json(
+          {
+            error:
+              "Enhancement service is not configured. Please contact support.",
+          },
+          { status: 503 },
+        );
+      }
       if (error.message.includes("fetch")) {
         return Response.json(
           { error: "Failed to download image. Please check the image URL." },

@@ -161,6 +161,17 @@ export const fieldRules: FieldRule[] = [
       const count = Number(v ?? 0);
       const propertyType = listing?.propertyType as PropertyType | undefined;
 
+      // Only log if imageCount is problematic (0 or missing)
+      if (count === 0 || v === undefined || v === null) {
+        console.warn("⚠️ Image count issue:", {
+          rawValue: v,
+          parsedCount: count,
+          propertyType,
+          listingImageCount: listing?.imageCount,
+          allListingKeys: listing ? Object.keys(listing).filter(k => k.includes('image') || k.includes('Image')) : [],
+        });
+      }
+
       // Residential properties (piso, casa) and commercial (local) need minimum 5 images
       if (
         propertyType === "piso" ||
@@ -568,6 +579,10 @@ function getImageLabel(propertyType?: string): string {
   return "Imágenes (mínimo 5)";
 }
 
+// Cache to prevent excessive logging for the same listing
+const logCache = new Map<string, boolean>();
+const LOG_CACHE_DURATION = 2000; // 2 seconds
+
 export function calculateCompletion(
   listing: Record<string, unknown>,
 ): CompletionResult {
@@ -599,6 +614,21 @@ export function calculateCompletion(
 
   // Get property type from listing
   const propertyType = listing.propertyType as PropertyType | undefined;
+
+  // Create a cache key for this listing
+  const cacheKey = `${listing.listingId}_${listing.imageCount}`;
+  const shouldLog = !logCache.has(cacheKey);
+
+  if (shouldLog) {
+    logCache.set(cacheKey, true);
+    setTimeout(() => logCache.delete(cacheKey), LOG_CACHE_DURATION);
+
+    console.log("🔍 calculateCompletion called for listing:", {
+      listingId: listing.listingId,
+      imageCount: listing.imageCount,
+      propertyType,
+    });
+  }
 
   // Filter and process field rules based on property type
   fieldRules.forEach((rule) => {

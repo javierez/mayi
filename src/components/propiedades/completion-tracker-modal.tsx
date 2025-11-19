@@ -31,16 +31,26 @@ export function CompletionTrackerModal({
   isOpen,
   onClose,
 }: CompletionTrackerModalProps) {
-  const [imageCount, setImageCount] = useState(0);
-  const [isLoadingImages, setIsLoadingImages] = useState(true);
+  // Initialize imageCount from listing prop if available
+  const initialImageCount = typeof listing?.imageCount === 'number' ? listing.imageCount : 0;
+  const [imageCount, setImageCount] = useState(initialImageCount);
+  const [isLoadingImages, setIsLoadingImages] = useState(!listing?.imageCount);
 
   const [expandedSections, setExpandedSections] = useState({
     mandatory: true,
     nth: false,
   });
 
-  // Fetch property images when modal opens
+  // Fetch property images when modal opens (only if not already provided in listing)
   useEffect(() => {
+    // Skip fetching if imageCount is already in the listing prop
+    if (listing?.imageCount !== undefined && typeof listing.imageCount === 'number') {
+      setImageCount(listing.imageCount);
+      setIsLoadingImages(false);
+      return;
+    }
+
+    // Otherwise fetch it
     if (isOpen && listing?.propertyId) {
       setIsLoadingImages(true);
       // Convert propertyId to bigint if necessary
@@ -60,7 +70,7 @@ export function CompletionTrackerModal({
           setIsLoadingImages(false);
         });
     }
-  }, [isOpen, listing?.propertyId]);
+  }, [isOpen, listing?.propertyId, listing?.imageCount]);
 
   // Calculate completion with image count
   const listingWithImages: Record<string, unknown> = {

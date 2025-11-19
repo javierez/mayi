@@ -154,8 +154,15 @@ export function getProcessStages(
     return PROCESS_STAGES;
   }
 
+  // IMPORTANT: Ensure imageCount defaults to 0 if not present
+  // This prevents validation from failing when listing is passed before imageCount is merged
+  const listingWithDefaults = {
+    ...listing,
+    imageCount: listing.imageCount ?? 0,
+  };
+
   // Calculate completion status
-  const completion = calculateCompletion(listing);
+  const completion = calculateCompletion(listingWithDefaults);
 
   // Log completion calculation results
   console.log("📊 Property Completion Calculation:", {
@@ -243,6 +250,7 @@ export function getProcessStages(
         console.log(
           "🚫 Step 1: Blocking at 'Ficha completa' - mandatory fields incomplete",
         );
+        console.log("   Missing fields:", completion.mandatory.pending.map((f) => f.label).join(", "));
       }
       // Step 2: If ficha is complete but encargo is false, block at "Encargo"
       else if (!hasEncargo && encargoSubstage) {
@@ -264,6 +272,7 @@ export function getProcessStages(
         }
 
         console.log("✋ Step 2: Blocking at 'Encargo' - contract not signed");
+        console.log("   Need to complete: Encargo (firma de contrato)");
       }
       // Step 3: If encargo is true but offerAccepted is false, block at "Visitas"
       else if (hasEncargo && encargoSubstage) {
@@ -308,6 +317,7 @@ export function getProcessStages(
             console.log(
               "🔍 Step 3: Blocking at 'Visitas' - no offer accepted yet",
             );
+            console.log("   Need to complete: Accept an offer from a contact");
           }
         } else {
           // Step 4: offerAccepted is true, mark visitas as accomplished and continue
@@ -365,6 +375,7 @@ export function getProcessStages(
               console.log(
                 "✅ Step 4a: Offer accepted - progressing to 'Arras' (ongoing)",
               );
+              console.log("   Need to complete: Sign arras (deposit contract)");
             } else if (!hasEscrituraCompleted) {
               // Step 4b: Arras completed, Escritura not completed
               if (arrasSubstage) {
@@ -380,6 +391,7 @@ export function getProcessStages(
               console.log(
                 "📝 Step 5: Arras completed - progressing to 'Escritura' (ongoing)",
               );
+              console.log("   Need to complete: Sign escritura (public deed)");
             } else if (!hasDealClosed) {
               // Step 6: Escritura completed, deal not closed
               if (arrasSubstage) {
@@ -395,6 +407,7 @@ export function getProcessStages(
               console.log(
                 "🏁 Step 7: Escritura completed - progressing to 'Cierre' (ongoing)",
               );
+              console.log("   Need to complete: Close the deal (set close date and status)");
             } else {
               // Step 7: Deal fully closed
               if (arrasSubstage) {

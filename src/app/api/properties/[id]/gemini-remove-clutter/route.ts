@@ -39,7 +39,6 @@ export async function POST(
       referenceNumber: string;
       currentImageOrder: number;
     };
-    const propertyId = BigInt(resolvedParams.id);
 
     if (
       !data.imageUrl ||
@@ -64,6 +63,9 @@ export async function POST(
       console.error("Property not found for remove clutter");
       return Response.json({ error: "Property not found" }, { status: 404 });
     }
+
+    // Extract propertyId from propertyData (may be null if property doesn't exist)
+    const propertyId = propertyData.propertyId ?? undefined;
 
     // 4. Download and validate image
     const imageBase64 = await imageUrlToBase64(data.imageUrl);
@@ -127,7 +129,7 @@ export async function POST(
     }
 
     console.log("Starting Gemini remove clutter:", {
-      propertyId: propertyId.toString(),
+      propertyId: propertyId?.toString() ?? "null",
       imageSize: getImageSizeInMB(imageBase64).toFixed(2) + "MB",
       tokensToDeduct: totalTokensNeeded,
     });
@@ -138,7 +140,7 @@ export async function POST(
         accountId,
         totalTokensNeeded,
         undefined, // propertyImageId
-        propertyId,
+        propertyId, // propertyId from propertyData (may be undefined)
         session.user.id,
       );
       console.log(
@@ -180,7 +182,7 @@ export async function POST(
       declutteredImageBase64: result.renovatedImageBase64,
       referenceNumber: data.referenceNumber,
       currentImageOrder: data.currentImageOrder,
-      propertyId: propertyId.toString(),
+      propertyId: propertyId?.toString() ?? null,
     });
   } catch (error) {
     console.error("Gemini remove clutter API error:", error);

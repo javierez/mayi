@@ -1,3 +1,4 @@
+import sharp from "sharp";
 import {
   LIGHT_ENHANCEMENT_SETTINGS,
   type FreepikEnhanceResponse,
@@ -33,6 +34,7 @@ class FreepikClient {
   /**
    * Enhance an image using Freepik's Image Upscaler Precision API v1
    * Converts image URL to base64 and uses minimal settings for cost optimization
+   * Automatically converts unsupported formats (AVIF, WebP, etc.) to JPEG
    */
   async enhance(imageUrl: string): Promise<FreepikEnhanceResponse> {
     // Download and convert image to base64 (v1 requires base64)
@@ -41,8 +43,65 @@ class FreepikClient {
       throw new Error(`Failed to download image: ${imageResponse.status}`);
     }
 
-    const imageBuffer = await imageResponse.arrayBuffer();
-    const base64Image = Buffer.from(imageBuffer).toString("base64");
+    // Get content type and validate it's a supported format
+    const contentType = imageResponse.headers.get("content-type") || "";
+    const supportedFormats = ["image/jpeg", "image/jpg", "image/png"];
+    const isSupportedFormat = supportedFormats.some((format) =>
+      contentType.toLowerCase().includes(format),
+    );
+
+    let imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+    
+    // Validate image buffer is not empty
+    if (imageBuffer.length === 0) {
+      throw new Error("Downloaded image is empty");
+    }
+
+    // Validate image size (Freepik has limits, typically 10MB)
+    const originalSizeMB = imageBuffer.length / (1024 * 1024);
+    if (originalSizeMB > 10) {
+      throw new Error(
+        `Image too large (${originalSizeMB.toFixed(2)}MB). Maximum size is 10MB`,
+      );
+    }
+
+    // Convert unsupported formats to JPEG using sharp
+    if (!isSupportedFormat && contentType) {
+      console.log(
+        `Converting unsupported format ${contentType} to JPEG for Freepik API...`,
+      );
+      try {
+        // Use sharp to convert to JPEG (high quality to preserve image quality)
+        const convertedBuffer = await sharp(imageBuffer)
+          .jpeg({ quality: 95 })
+          .toBuffer();
+        imageBuffer = Buffer.from(convertedBuffer);
+        console.log(
+          `✅ Converted to JPEG. New size: ${(imageBuffer.length / (1024 * 1024)).toFixed(2)}MB`,
+        );
+      } catch (conversionError) {
+        console.error("Failed to convert image format:", conversionError);
+        throw new Error(
+          `Unsupported image format: ${contentType}. Freepik requires JPEG or PNG. Image conversion failed.`,
+        );
+      }
+    }
+
+    const base64Image = imageBuffer.toString("base64");
+
+    // Validate base64 encoding
+    if (!base64Image || base64Image.length === 0) {
+      throw new Error("Failed to encode image to base64");
+    }
+
+    const finalSizeMB = imageBuffer.length / (1024 * 1024);
+    console.log("Freepik API request:", {
+      originalFormat: contentType,
+      finalFormat: isSupportedFormat ? contentType : "image/jpeg (converted)",
+      imageSizeMB: finalSizeMB.toFixed(2),
+      base64Length: base64Image.length,
+      wasConverted: !isSupportedFormat && contentType,
+    });
 
     const requestBody = {
       image: base64Image, // v1 requires base64, not URL
@@ -131,25 +190,71 @@ class FreepikClient {
             continue;
           }
 
-          // Try to get error message from response
+          // Don't retry on client errors (4xx) - they won't succeed
+          if (response.status >= 400 && response.status < 500) {
+            // Try to get error message from response
+            let errorMessage = `API error: ${response.status}`;
+            try {
+              const errorData = (await response.json()) as {
+                error?: string;
+                message?: string;
+                details?: string;
+                invalid_params?: Array<{
+                  field?: string;
+                  name?: string;
+                  reason?: string;
+                }>;
+              };
+              console.error("Freepik API error details:", {
+                status: response.status,
+                statusText: response.statusText,
+                errorData,
+                fullError: JSON.stringify(errorData, null, 2),
+              });
+
+              // Check for image validation errors
+              if (errorData.invalid_params) {
+                const imageParamError = errorData.invalid_params.find(
+                  (param) =>
+                    (param.field === "body.image" ||
+                      param.name === "image" ||
+                      param.reason?.toLowerCase().includes("image") ||
+                      param.reason?.toLowerCase().includes("base64")) &&
+                    param.reason,
+                );
+                if (imageParamError) {
+                  errorMessage = `Image validation failed: ${imageParamError.reason}. Please ensure the image is a valid JPEG or PNG format.`;
+                }
+              }
+
+              if (!errorMessage.includes("Image validation failed")) {
+                if (errorData.error) {
+                  errorMessage = `API error: ${response.status} - ${errorData.error}`;
+                } else if (errorData.message) {
+                  errorMessage = `API error: ${response.status} - ${errorData.message}`;
+                } else if (errorData.details) {
+                  errorMessage = `API error: ${response.status} - ${errorData.details}`;
+                }
+              }
+            } catch (parseError) {
+              console.error(
+                "Failed to parse Freepik error response:",
+                parseError,
+              );
+              // If we can't parse the error response, use the status code
+            }
+
+            throw new Error(errorMessage);
+          }
+
+          // For server errors (5xx), try to get error message but allow retry
           let errorMessage = `API error: ${response.status}`;
           try {
             const errorData = (await response.json()) as {
               error?: string;
               message?: string;
               details?: string;
-              invalid_params?: Array<{
-                name: string;
-                reason: string;
-              }>;
             };
-            console.error("Freepik API error details:", {
-              status: response.status,
-              statusText: response.statusText,
-              errorData,
-              fullError: JSON.stringify(errorData, null, 2),
-            });
-
             if (errorData.error) {
               errorMessage = `API error: ${response.status} - ${errorData.error}`;
             } else if (errorData.message) {
@@ -158,11 +263,7 @@ class FreepikClient {
               errorMessage = `API error: ${response.status} - ${errorData.details}`;
             }
           } catch (parseError) {
-            console.error(
-              "Failed to parse Freepik error response:",
-              parseError,
-            );
-            // If we can't parse the error response, use the status code
+            // If we can't parse, continue with retry
           }
 
           throw new Error(errorMessage);

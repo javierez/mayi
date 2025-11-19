@@ -43,7 +43,6 @@ export async function POST(
       currentImageOrder: number;
       renovationType?: RenovationType;
     };
-    const propertyId = BigInt(resolvedParams.id);
 
     if (
       !data.imageUrl ||
@@ -68,6 +67,9 @@ export async function POST(
       console.error("Property not found for renovation");
       return Response.json({ error: "Property not found" }, { status: 404 });
     }
+
+    // Extract propertyId from propertyData (may be null if property doesn't exist)
+    const propertyId = propertyData.propertyId ?? undefined;
 
     // 4. Download and validate image
     const imageBase64 = await imageUrlToBase64(data.imageUrl);
@@ -139,7 +141,7 @@ export async function POST(
     }
 
     console.log("Starting Gemini renovation with ASSEMBLY PROMPTS:", {
-      propertyId: propertyId.toString(),
+      propertyId: propertyId?.toString() ?? "null",
       imageSize: getImageSizeInMB(imageBase64).toFixed(2) + "MB",
       renovationType: data.renovationType ?? "auto-detect",
       usingAssemblyPrompts: true,
@@ -175,7 +177,7 @@ export async function POST(
           accountId,
           GEMINI_TOKEN_COSTS.ROOM_DETECTION,
           undefined, // propertyImageId
-          propertyId,
+          propertyId, // propertyId from propertyData (may be undefined)
           session.user.id,
         );
         console.log(
@@ -249,7 +251,7 @@ export async function POST(
         "default", // style
         undefined, // selectedElements (all)
         undefined, // propertyImageId
-        propertyId,
+        propertyId, // propertyId from propertyData (may be undefined)
         session.user.id,
       );
       console.log(
@@ -296,7 +298,7 @@ export async function POST(
       renovatedImageBase64: result.renovatedImageBase64,
       referenceNumber: data.referenceNumber,
       currentImageOrder: data.currentImageOrder,
-      propertyId: propertyId.toString(),
+      propertyId: propertyId?.toString() ?? null,
       renovationType: finalRoomType, // Return the actual detected/used room type
       detectedRoomType: finalRoomType, // Explicitly include detected type
     });

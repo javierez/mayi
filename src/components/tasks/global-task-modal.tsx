@@ -20,22 +20,28 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Label } from "~/components/ui/label";
-import { AlertCircle, Loader2, User, Search, X } from "lucide-react";
+import { AlertCircle, Loader2, User, Search, X, Mail, Phone } from "lucide-react";
+import { Avatar, AvatarFallback } from "~/components/ui/avatar";
+import { getInitials } from "~/lib/operations/task-utils";
 import { createTaskWithAuth } from "~/server/queries/task";
 import { searchContactsWithAuth } from "~/server/queries/contact";
-import { listListingsForContactWithAuth } from "~/server/queries/listing";
+import { listListingsForContactWithAuth, listContactsForListingWithAuth, listListingsCompactWithAuth } from "~/server/queries/listing";
 import { findListingContactIdAction } from "~/server/actions/contact-activity";
 import { useSession } from "~/lib/auth-client";
 import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import { Badge } from "~/components/ui/badge";
+import { ConfirmDialog } from "~/components/ui/confirm-dialog";
+import { createListingContactRelationshipAction } from "~/server/actions/contact-activity";
 import Image from "next/image";
 
 interface Contact {
   contactId: bigint;
   firstName: string;
   lastName: string;
-  email?: string;
-  phone?: string;
+  email?: string | null;
+  phone?: string | null;
+  contactType?: "owner" | "buyer" | null;
 }
 
 interface Listing {
@@ -90,6 +96,7 @@ export function GlobalTaskModal({
     contactId: "",
     listingId: "",
     agentId: "",
+    urgency: "" as "" | "1" | "2" | "3" | "4" | "5",
   });
 
   const [contactSearchQuery, setContactSearchQuery] = useState("");
@@ -99,11 +106,14 @@ export function GlobalTaskModal({
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [showContactSearch, setShowContactSearch] = useState(false);
-  const [showPropertySearch, setShowPropertySearch] = useState(false);
+
+  // Confirmation dialog state for creating listing-contact relationship
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
 
   // Debounce search queries to prevent excessive API calls
   const debouncedContactSearchQuery = useDebounce(contactSearchQuery, 300);
+  const debouncedPropertySearchQuery = useDebounce(propertySearchQuery, 300);
 
   // Agents list - simplified to just current user
   const agents = session?.user
@@ -128,6 +138,7 @@ export function GlobalTaskModal({
         contactId: "",
         listingId: "",
         agentId: session?.user?.id ?? "",
+        urgency: "",
       });
       setSelectedContact(null);
       setSelectedListing(null);
@@ -136,34 +147,50 @@ export function GlobalTaskModal({
       setContactSearchQuery("");
       setPropertySearchQuery("");
       setSearchResults([]);
-      setShowContactSearch(false);
-      setShowPropertySearch(false);
+      setShowConfirmDialog(false);
+      setPendingSubmit(false);
     }
   }, [open, session?.user?.id]);
 
   // Search contacts when debounced query changes
   useEffect(() => {
-    if (!open || !showContactSearch) return;
+    if (!open) return;
 
     if (debouncedContactSearchQuery.length >= 2) {
       void searchContacts(debouncedContactSearchQuery);
     } else {
-      setSearchResults([]);
+      // If a listing is selected, load contacts for that listing
+      if (selectedListing && !debouncedContactSearchQuery) {
+        void loadContactsForListing();
+      } else {
+        setSearchResults([]);
+      }
     }
-  }, [debouncedContactSearchQuery, open, showContactSearch]);
+  }, [debouncedContactSearchQuery, open, selectedListing]);
 
-  // Fetch listings when contact is selected and property search is shown
+  // Fetch listings when contact is selected or when debounced property search query changes
   useEffect(() => {
-    if (!open || !selectedContact || !showPropertySearch) return;
+    if (!open) return;
 
     const fetchListings = async () => {
       setLoading((prev) => ({ ...prev, listings: true }));
       try {
-        const contactListings = await listListingsForContactWithAuth(
-          selectedContact.contactId,
-          undefined,
-        );
-        setListings(contactListings);
+        if (debouncedPropertySearchQuery.length >= 2) {
+          // If user is actively searching, search ALL listings regardless of contact selection
+          const allListings = await listListingsCompactWithAuth({
+            searchQuery: debouncedPropertySearchQuery.trim(),
+          });
+          setListings(allListings);
+        } else if (selectedContact) {
+          // If contact selected but no search query, fetch their related listings
+          const contactListings = await listListingsForContactWithAuth(
+            selectedContact.contactId,
+            undefined,
+          );
+          setListings(contactListings);
+        } else {
+          setListings([]);
+        }
       } catch (error) {
         console.error("Error fetching listings:", error);
         setListings([]);
@@ -172,8 +199,12 @@ export function GlobalTaskModal({
       }
     };
 
-    void fetchListings();
-  }, [open, selectedContact, showPropertySearch]);
+    if (selectedContact || debouncedPropertySearchQuery.length >= 2) {
+      void fetchListings();
+    } else {
+      setListings([]);
+    }
+  }, [open, selectedContact, debouncedPropertySearchQuery]);
 
   const searchContacts = async (query: string) => {
     if (query.length < 2) {
@@ -191,7 +222,8 @@ export function GlobalTaskModal({
           contactId: contact.id,
           firstName: firstName ?? "",
           lastName: lastNameParts.join(" ") ?? "",
-          email: undefined,
+          email: contact.email ?? null,
+          phone: contact.phone ?? null,
         };
       });
       setSearchResults(formattedContacts);
@@ -203,32 +235,52 @@ export function GlobalTaskModal({
     }
   };
 
+  const loadContactsForListing = async () => {
+    if (!selectedListing) return;
+
+    setLoading((prev) => ({ ...prev, searching: true }));
+    try {
+      const contactsData = await listContactsForListingWithAuth(
+        selectedListing.listingId,
+        debouncedContactSearchQuery.trim() || undefined,
+      );
+      setSearchResults(contactsData);
+    } catch (error) {
+      console.error("Error loading contacts for listing:", error);
+      setSearchResults([]);
+    } finally {
+      setLoading((prev) => ({ ...prev, searching: false }));
+    }
+  };
+
   const handleContactSelect = (contact: Contact) => {
     setSelectedContact(contact);
     setFormData((prev) => ({ ...prev, contactId: contact.contactId.toString() }));
-    setShowContactSearch(false);
     setContactSearchQuery("");
+    setSearchResults([]);
   };
 
   const handleClearContact = () => {
     setSelectedContact(null);
-    setFormData((prev) => ({ ...prev, contactId: "", listingId: "" }));
-    setSelectedListing(null);
+    setFormData((prev) => ({ ...prev, contactId: "" }));
     setContactSearchQuery("");
-    setShowPropertySearch(false);
+    setSearchResults([]);
+    // Listings will be updated by the effect
   };
 
   const handleListingSelect = (listing: Listing) => {
     setSelectedListing(listing);
     setFormData((prev) => ({ ...prev, listingId: listing.listingId.toString() }));
-    setShowPropertySearch(false);
     setPropertySearchQuery("");
+    setListings([]);
   };
 
   const handleClearListing = () => {
     setSelectedListing(null);
     setFormData((prev) => ({ ...prev, listingId: "" }));
     setPropertySearchQuery("");
+    setListings([]);
+    // Contacts will be updated by the effect
   };
 
   const handleSubmit = async () => {
@@ -250,6 +302,15 @@ export function GlobalTaskModal({
           BigInt(formData.contactId),
           BigInt(formData.listingId),
         );
+
+        // If relationship not found, show confirmation dialog
+        if (result.notFound) {
+          setShowConfirmDialog(true);
+          setPendingSubmit(true);
+          setLoading((prev) => ({ ...prev, saving: false }));
+          return;
+        }
+
         if (result.success && result.listingContactId) {
           listingContactId = result.listingContactId;
         }
@@ -263,6 +324,7 @@ export function GlobalTaskModal({
         isActive: true,
         dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
         dueTime: formData.dueDate ? formData.dueTime || "00:00" : undefined,
+        urgency: formData.urgency ? parseInt(formData.urgency) : undefined,
         // Entity associations (all optional)
         contactId: formData.contactId ? BigInt(formData.contactId) : undefined,
         listingId: formData.listingId ? BigInt(formData.listingId) : undefined,
@@ -291,36 +353,73 @@ export function GlobalTaskModal({
     }
   };
 
-  const handleClose = () => {
-    onOpenChange(false);
-    setSelectedContact(null);
-    setSelectedListing(null);
-    setListings([]);
-    setSaveError(null);
-    setShowContactSearch(false);
-    setShowPropertySearch(false);
+  const handleConfirmCreateRelationship = async () => {
+    if (!formData.contactId || !formData.listingId) return;
+
+    setShowConfirmDialog(false);
+    setLoading((prev) => ({ ...prev, saving: true }));
+
+    try {
+      // Create the relationship
+      const createResult = await createListingContactRelationshipAction(
+        BigInt(formData.contactId),
+        BigInt(formData.listingId),
+      );
+
+      if (!createResult.success || !createResult.listingContactId) {
+        setSaveError(createResult.error ?? "Error al crear la relación");
+        setLoading((prev) => ({ ...prev, saving: false }));
+        return;
+      }
+
+      // Now create the task with the new relationship
+      const selectedUserId = formData.agentId ?? session?.user?.id ?? "";
+
+      const taskData = {
+        userId: selectedUserId,
+        title: formData.title,
+        description: formData.description,
+        completed: false,
+        isActive: true,
+        dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
+        dueTime: formData.dueDate ? formData.dueTime || "00:00" : undefined,
+        urgency: formData.urgency ? parseInt(formData.urgency) : undefined,
+        contactId: BigInt(formData.contactId),
+        listingId: BigInt(formData.listingId),
+        listingContactId: createResult.listingContactId,
+        dealId: undefined,
+        appointmentId: undefined,
+        prospectId: undefined,
+      };
+
+      const savedTask = await createTaskWithAuth(taskData);
+
+      if (!savedTask) {
+        throw new Error("Failed to save task");
+      }
+
+      // Success - close modal and call success callback
+      setPendingSubmit(false);
+      onOpenChange(false);
+      onSuccess?.();
+    } catch (error) {
+      console.error("Error creating relationship and task:", error);
+      setSaveError(
+        error instanceof Error ? error.message : "Error al crear la relación y la tarea",
+      );
+    } finally {
+      setLoading((prev) => ({ ...prev, saving: false }));
+    }
   };
 
-  // Filter listings based on search query
-  const filteredListings = listings.filter((listing) => {
-    if (
-      selectedListing &&
-      listing.listingId.toString() === selectedListing.listingId.toString()
-    ) {
-      return false;
-    }
+  const handleCancelCreateRelationship = () => {
+    setShowConfirmDialog(false);
+    setPendingSubmit(false);
+  };
 
-    if (propertySearchQuery.length === 0) {
-      return true;
-    }
-
-    const query = propertySearchQuery.toLowerCase();
-    return (
-      listing.title?.toLowerCase().includes(query) ||
-      listing.referenceNumber?.toLowerCase().includes(query) ||
-      listing.city?.toLowerCase().includes(query)
-    );
-  });
+  const handleClose = () => {
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -373,20 +472,47 @@ export function GlobalTaskModal({
 
           {/* Contact Selection */}
           <div className="space-y-2">
-            <Label>Contacto (opcional)</Label>
+            <Label>Contacto</Label>
 
             {selectedContact ? (
               <div className="rounded-lg border border-primary/40 bg-primary/5 p-3">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2 flex-1">
-                    <User className="h-4 w-4 text-gray-600" />
+                  <div className="flex items-start gap-3 flex-1">
+                    <Avatar className="h-10 w-10 shrink-0">
+                      <AvatarFallback className="bg-primary/20 text-primary text-xs font-medium">
+                        {getInitials(selectedContact.firstName, selectedContact.lastName)}
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">
-                        {selectedContact.firstName} {selectedContact.lastName}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-sm font-medium truncate">
+                          {selectedContact.firstName} {selectedContact.lastName}
+                        </div>
+                        {selectedContact.contactType === "owner" && (
+                          <Badge variant="secondary" className="shrink-0 text-xs ml-auto">
+                            En Propiedad
+                          </Badge>
+                        )}
+                        {selectedContact.contactType === "buyer" && (
+                          <Badge className="shrink-0 text-xs ml-auto bg-amber-500 hover:bg-amber-600">
+                            Interés
+                          </Badge>
+                        )}
                       </div>
                       {selectedContact.email && (
-                        <div className="text-xs text-muted-foreground truncate">
-                          {selectedContact.email}
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <Mail className="h-3 w-3 text-muted-foreground shrink-0" />
+                          <div className="text-xs text-muted-foreground truncate">
+                            {selectedContact.email}
+                          </div>
+                        </div>
+                      )}
+                      {selectedContact.phone && (
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <Phone className="h-3 w-3 text-muted-foreground shrink-0" />
+                          <div className="text-xs text-muted-foreground truncate">
+                            {selectedContact.phone}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -402,15 +528,6 @@ export function GlobalTaskModal({
                   </Button>
                 </div>
               </div>
-            ) : !showContactSearch ? (
-              <Button
-                variant="outline"
-                onClick={() => setShowContactSearch(true)}
-                className="w-full justify-start text-gray-500"
-              >
-                <User className="mr-2 h-4 w-4" />
-                Añadir contacto
-              </Button>
             ) : (
               <div className="space-y-2">
                 <div className="relative">
@@ -423,140 +540,155 @@ export function GlobalTaskModal({
                   />
                 </div>
 
-                <ScrollArea className="h-[200px]">
-                  {loading.searching ? (
-                    <div className="flex items-center justify-center py-6">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    </div>
-                  ) : contactSearchQuery.length < 2 ? (
-                    <div className="py-6 text-center text-sm text-muted-foreground">
-                      Escribe al menos 2 caracteres para buscar
-                    </div>
-                  ) : searchResults.length === 0 ? (
-                    <div className="py-6 text-center text-sm text-muted-foreground">
-                      No se encontraron contactos
-                    </div>
-                  ) : (
-                    <div className="space-y-1.5">
-                      {searchResults.map((contact) => (
-                        <div
-                          key={contact.contactId.toString()}
-                          className="cursor-pointer rounded-lg border border-gray-100/50 bg-gray-50/30 p-3 transition-all hover:border-gray-200 hover:bg-gray-100/60 hover:shadow-sm"
-                          onClick={() => handleContactSelect(contact)}
-                        >
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 flex-shrink-0 text-gray-400" />
-                            <div className="min-w-0 flex-1">
-                              <div className="text-sm font-medium text-gray-900 truncate">
-                                {contact.firstName} {contact.lastName}
-                              </div>
-                              {contact.email && (
-                                <div className="truncate text-xs text-gray-500">
-                                  {contact.email}
+                {(contactSearchQuery.length >= 2 || selectedListing) && (
+                  <ScrollArea className="h-[200px]">
+                    {loading.searching ? (
+                      <div className="flex items-center justify-center py-6">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      </div>
+                    ) : searchResults.length === 0 ? (
+                      <div className="py-6 text-center text-sm text-muted-foreground">
+                        No se encontraron contactos
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {searchResults.map((contact) => (
+                          <div
+                            key={contact.contactId.toString()}
+                            className="cursor-pointer rounded-lg border border-gray-100/50 bg-gray-50/30 p-3 transition-all hover:border-gray-200 hover:bg-gray-100/60 hover:shadow-sm"
+                            onClick={() => handleContactSelect(contact)}
+                          >
+                            <div className="flex items-start gap-3">
+                              <Avatar className="h-10 w-10 shrink-0">
+                                <AvatarFallback className="bg-gray-200 text-gray-700 text-xs font-medium">
+                                  {getInitials(contact.firstName, contact.lastName)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-1.5">
+                                  <div className="text-sm font-medium text-gray-900 truncate">
+                                    {contact.firstName} {contact.lastName}
+                                  </div>
+                                  {contact.contactType === "owner" && (
+                                    <Badge variant="secondary" className="shrink-0 text-[10px] px-1.5 py-0 ml-auto">
+                                      En Propiedad
+                                    </Badge>
+                                  )}
+                                  {contact.contactType === "buyer" && (
+                                    <Badge className="shrink-0 text-[10px] px-1.5 py-0 ml-auto bg-amber-500 hover:bg-amber-600">
+                                      Interés
+                                    </Badge>
+                                  )}
                                 </div>
-                              )}
+                                {contact.email && (
+                                  <div className="flex items-center gap-1.5 mt-1">
+                                    <Mail className="h-3 w-3 text-gray-400 shrink-0" />
+                                    <div className="truncate text-xs text-gray-500">
+                                      {contact.email}
+                                    </div>
+                                  </div>
+                                )}
+                                {contact.phone && (
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    <Phone className="h-3 w-3 text-gray-400 shrink-0" />
+                                    <div className="truncate text-xs text-gray-500">
+                                      {contact.phone}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </ScrollArea>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setShowContactSearch(false);
-                    setContactSearchQuery("");
-                    setSearchResults([]);
-                  }}
-                  className="w-full"
-                >
-                  Cancelar
-                </Button>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                )}
               </div>
             )}
           </div>
 
           {/* Property Selection */}
-          {selectedContact && (
-            <div className="space-y-2">
-              <Label>Propiedad (opcional)</Label>
+          <div className="space-y-2">
+            <Label>Propiedad</Label>
 
-              {selectedListing ? (
-                <div className="rounded-lg border border-primary/40 bg-primary/5 p-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-start gap-3 flex-1">
-                      {selectedListing.imageUrl && (
-                        <Image
-                          src={selectedListing.imageUrl}
-                          alt={selectedListing.title ?? "Property"}
-                          width={48}
-                          height={48}
-                          className="h-12 w-12 rounded object-cover"
-                        />
-                      )}
-                      <div className="flex-1 min-w-0">
+            {selectedListing ? (
+              <div className="rounded-lg border border-primary/40 bg-primary/5 p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-3 flex-1">
+                    {selectedListing.imageUrl && (
+                      <Image
+                        src={selectedListing.imageUrl}
+                        alt={selectedListing.title ?? "Property"}
+                        width={48}
+                        height={48}
+                        className="h-12 w-12 rounded object-cover"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
                         <div className="text-sm font-medium truncate">
                           {selectedListing.title ?? "Sin título"}
                         </div>
-                        {selectedListing.referenceNumber && (
-                          <div className="text-xs text-muted-foreground">
-                            Ref: {selectedListing.referenceNumber}
-                          </div>
+                        {selectedListing.contactType === "owner" && (
+                          <Badge variant="secondary" className="shrink-0 text-xs ml-auto">
+                            En Propiedad
+                          </Badge>
                         )}
-                        {selectedListing.city && (
-                          <div className="text-xs text-muted-foreground">
-                            {selectedListing.city}
-                          </div>
+                        {selectedListing.contactType === "buyer" && (
+                          <Badge className="shrink-0 text-xs ml-auto bg-amber-500 hover:bg-amber-600">
+                            Interés
+                          </Badge>
                         )}
                       </div>
+                      {selectedListing.referenceNumber && (
+                        <div className="text-xs text-muted-foreground">
+                          Ref: {selectedListing.referenceNumber}
+                        </div>
+                      )}
+                      {selectedListing.city && (
+                        <div className="text-xs text-muted-foreground">
+                          {selectedListing.city}
+                        </div>
+                      )}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleClearListing}
-                      className="h-6 w-6 shrink-0 p-0"
-                      title="Quitar propiedad"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearListing}
+                    className="h-6 w-6 shrink-0 p-0"
+                    title="Quitar propiedad"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
-              ) : !showPropertySearch ? (
-                <Button
-                  variant="outline"
-                  onClick={() => setShowPropertySearch(true)}
-                  className="w-full justify-start text-gray-500"
-                >
-                  <Search className="mr-2 h-4 w-4" />
-                  Añadir propiedad
-                </Button>
-              ) : (
-                <div className="space-y-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      value={propertySearchQuery}
-                      onChange={(e) => setPropertySearchQuery(e.target.value)}
-                      placeholder="Buscar propiedades..."
-                      className="pl-10"
-                    />
-                  </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={propertySearchQuery}
+                    onChange={(e) => setPropertySearchQuery(e.target.value)}
+                    placeholder="Buscar propiedades..."
+                    className="pl-10"
+                  />
+                </div>
 
+                {(propertySearchQuery.length >= 2 || selectedContact) && (
                   <ScrollArea className="h-[200px]">
                     {loading.listings ? (
                       <div className="flex items-center justify-center py-6">
                         <Loader2 className="h-5 w-5 animate-spin" />
                       </div>
-                    ) : filteredListings.length === 0 ? (
+                    ) : listings.length === 0 ? (
                       <div className="py-6 text-center text-sm text-muted-foreground">
                         No se encontraron propiedades
                       </div>
                     ) : (
                       <div className="space-y-1.5">
-                        {filteredListings.map((listing, index) => (
+                        {listings.map((listing, index) => (
                           <div
                             key={`${listing.listingId.toString()}-${index}`}
                             className="cursor-pointer rounded-lg border border-gray-100/50 bg-gray-50/30 p-2 transition-all hover:border-gray-200 hover:bg-gray-100/60 hover:shadow-sm"
@@ -573,8 +705,20 @@ export function GlobalTaskModal({
                                 />
                               )}
                               <div className="flex-1 min-w-0">
-                                <div className="text-sm font-medium text-gray-600 truncate">
-                                  {listing.title ?? "Sin título"}
+                                <div className="flex items-center justify-between gap-1.5">
+                                  <div className="text-sm font-medium text-gray-600 truncate">
+                                    {listing.title ?? "Sin título"}
+                                  </div>
+                                  {listing.contactType === "owner" && (
+                                    <Badge variant="secondary" className="shrink-0 text-[10px] px-1.5 py-0 ml-auto">
+                                      En Propiedad
+                                    </Badge>
+                                  )}
+                                  {listing.contactType === "buyer" && (
+                                    <Badge className="shrink-0 text-[10px] px-1.5 py-0 ml-auto bg-amber-500 hover:bg-amber-600">
+                                      Interés
+                                    </Badge>
+                                  )}
                                 </div>
                                 {listing.referenceNumber && (
                                   <div className="text-xs text-gray-400">
@@ -593,22 +737,10 @@ export function GlobalTaskModal({
                       </div>
                     )}
                   </ScrollArea>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setShowPropertySearch(false);
-                      setPropertySearchQuery("");
-                    }}
-                    className="w-full"
-                  >
-                    Cancelar
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Agent Assignment */}
           <div className="space-y-2">
@@ -628,6 +760,28 @@ export function GlobalTaskModal({
                     {agent.name ?? agent.id}
                   </SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Urgency */}
+          <div className="space-y-2">
+            <Label htmlFor="urgency-select">Urgencia</Label>
+            <Select
+              value={formData.urgency}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, urgency: value as "" | "1" | "2" | "3" | "4" | "5" }))
+              }
+            >
+              <SelectTrigger className="h-8 text-gray-500">
+                <SelectValue placeholder="Seleccionar urgencia" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Muy Baja</SelectItem>
+                <SelectItem value="2">Baja</SelectItem>
+                <SelectItem value="3">Media</SelectItem>
+                <SelectItem value="4">Alta</SelectItem>
+                <SelectItem value="5">Crítica</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -707,6 +861,19 @@ export function GlobalTaskModal({
           </div>
         </DialogFooter>
       </DialogContent>
+
+      {/* Confirmation dialog for creating listing-contact relationship */}
+      <ConfirmDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        title="Crear relación con la propiedad"
+        description="No se ha encontrado relación entre el contacto y la propiedad. ¿Deseas crearla?"
+        confirmText="Sí, crear relación"
+        cancelText="Cancelar"
+        confirmVariant="default"
+        onConfirm={handleConfirmCreateRelationship}
+        onCancel={handleCancelCreateRelationship}
+      />
     </Dialog>
   );
 }

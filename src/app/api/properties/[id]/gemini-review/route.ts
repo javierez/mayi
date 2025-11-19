@@ -44,7 +44,6 @@ export async function POST(
       currentImageOrder: number;
       renovationType?: RenovationType;
     };
-    const propertyId = BigInt(resolvedParams.id);
 
     if (
       !data.originalImageUrl ||
@@ -71,6 +70,9 @@ export async function POST(
       console.error("Property not found for review");
       return Response.json({ error: "Property not found" }, { status: 404 });
     }
+
+    // Extract propertyId from propertyData (may be null if property doesn't exist)
+    const propertyId = propertyData.propertyId ?? undefined;
 
     // 4. Download and validate images
     const [originalImageBase64, renovatedImageBase64] = await Promise.all([
@@ -154,7 +156,7 @@ export async function POST(
     }
 
     console.log("Starting Gemini review:", {
-      propertyId: propertyId.toString(),
+      propertyId: propertyId?.toString() ?? "null",
       originalImageSize: getImageSizeInMB(originalImageBase64).toFixed(2) + "MB",
       renovatedImageSize: getImageSizeInMB(renovatedImageBase64).toFixed(2) + "MB",
       reviewTextLength: data.reviewText.length,
@@ -168,7 +170,7 @@ export async function POST(
         GEMINI_TOKEN_COSTS.REVIEW,
         data.reviewText,
         undefined, // propertyImageId
-        propertyId,
+        propertyId, // propertyId from propertyData (may be undefined)
         session.user.id,
       );
       console.log(
@@ -214,7 +216,7 @@ export async function POST(
       reviewedImageBase64: result.reviewedImageBase64,
       referenceNumber: data.referenceNumber,
       currentImageOrder: data.currentImageOrder,
-      propertyId: propertyId.toString(),
+      propertyId: propertyId?.toString() ?? null,
       renovationType: data.renovationType,
     });
   } catch (error) {
