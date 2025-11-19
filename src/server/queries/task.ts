@@ -1684,6 +1684,128 @@ export async function getMostUrgentTasks(
     const endDate = new Date(today);
     endDate.setDate(today.getDate() + daysAhead);
 
+    // Debug: Check if critical tasks exist in database
+    const criticalTasksCheck = await db
+      .select({ 
+        count: sql<number>`COUNT(*)`,
+        withDate: sql<number>`COUNT(CASE WHEN ${tasks.dueDate} IS NOT NULL THEN 1 END)`,
+        withoutDate: sql<number>`COUNT(CASE WHEN ${tasks.dueDate} IS NULL THEN 1 END)`,
+      })
+      .from(tasks)
+      .innerJoin(users, eq(tasks.userId, users.id))
+      .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
+      .leftJoin(
+        contacts,
+        or(
+          eq(prospects.contactId, contacts.contactId),
+          eq(tasks.contactId, contacts.contactId),
+        ),
+      )
+      .leftJoin(listings, eq(tasks.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(
+        and(
+          eq(tasks.isActive, true),
+          eq(tasks.completed, false),
+          eq(tasks.urgency, 5),
+          or(
+            and(isNotNull(contacts.accountId), eq(contacts.accountId, BigInt(accountId))),
+            and(isNotNull(properties.accountId), eq(properties.accountId, BigInt(accountId))),
+            eq(users.accountId, BigInt(accountId)),
+          ),
+        ),
+      );
+    
+    const criticalResult = criticalTasksCheck[0];
+    const criticalCount = criticalResult?.count ?? 0;
+    if (criticalCount > 0 && criticalResult) {
+      console.log(`[getMostUrgentTasks] DEBUG: Found ${criticalCount} critical tasks in DB:`, {
+        withDate: criticalResult.withDate ?? 0,
+        withoutDate: criticalResult.withoutDate ?? 0,
+      });
+      
+      // Get actual critical task IDs to see why they're not in main query
+      const criticalTaskIds = await db
+        .select({ taskId: tasks.taskId, urgency: tasks.urgency, dueDate: tasks.dueDate })
+        .from(tasks)
+        .innerJoin(users, eq(tasks.userId, users.id))
+        .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
+        .leftJoin(
+          contacts,
+          or(
+            eq(prospects.contactId, contacts.contactId),
+            eq(tasks.contactId, contacts.contactId),
+          ),
+        )
+        .leftJoin(listings, eq(tasks.listingId, listings.listingId))
+        .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+        .where(
+          and(
+            eq(tasks.isActive, true),
+            eq(tasks.completed, false),
+            eq(tasks.urgency, 5),
+            or(
+              and(isNotNull(contacts.accountId), eq(contacts.accountId, BigInt(accountId))),
+              and(isNotNull(properties.accountId), eq(properties.accountId, BigInt(accountId))),
+              eq(users.accountId, BigInt(accountId)),
+            ),
+          ),
+        )
+        .limit(5);
+      
+      const criticalIds = criticalTaskIds.map(t => t.taskId.toString());
+      console.log(`[getMostUrgentTasks] DEBUG: Critical task IDs:`, criticalIds);
+      
+      // Check why these specific tasks aren't matching the main query
+      if (criticalIds.length > 0) {
+        const taskIdsToCheck = criticalIds.slice(0, 3).map(id => BigInt(id));
+        const whyNotIncluded = await db
+          .select({
+            taskId: tasks.taskId,
+            urgency: tasks.urgency,
+            dueDate: tasks.dueDate,
+            isActive: tasks.isActive,
+            completed: tasks.completed,
+            userId: tasks.userId,
+            userAccountId: users.accountId,
+            contactAccountId: contacts.accountId,
+            propertyAccountId: properties.accountId,
+          })
+          .from(tasks)
+          .innerJoin(users, eq(tasks.userId, users.id))
+          .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
+          .leftJoin(
+            contacts,
+            or(
+              eq(prospects.contactId, contacts.contactId),
+              eq(tasks.contactId, contacts.contactId),
+            ),
+          )
+          .leftJoin(listings, eq(tasks.listingId, listings.listingId))
+          .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+          .where(sql`${tasks.taskId} IN (${sql.join(taskIdsToCheck.map(id => sql`${id}`), sql`, `)})`);
+        
+        console.log(`[getMostUrgentTasks] DEBUG: Why critical tasks not included:`, whyNotIncluded.map(t => ({
+          id: t.taskId.toString(),
+          urgency: t.urgency,
+          dueDate: t.dueDate,
+          isActive: t.isActive,
+          completed: t.completed,
+          userAccountId: t.userAccountId?.toString(),
+          contactAccountId: t.contactAccountId?.toString(),
+          propertyAccountId: t.propertyAccountId?.toString(),
+          matchesAccount: (
+            (t.contactAccountId && Number(t.contactAccountId) === accountId) ||
+            (t.propertyAccountId && Number(t.propertyAccountId) === accountId) ||
+            (t.userAccountId && Number(t.userAccountId) === accountId)
+          ),
+        })));
+      }
+      
+      // Store for comparison after main query
+      (globalThis as any).__criticalTaskIds = criticalIds;
+    }
+
     const whereConditions = [
       eq(tasks.isActive, true),
       eq(tasks.completed, false),
@@ -1792,6 +1914,42 @@ export async function getMostUrgentTasks(
         asc(tasks.dueDate)
       )
       .limit(limit);
+
+    // Compact logging of fetched tasks with detailed urgency info
+    if (urgentTasks.length > 0) {
+      const criticalNoDate = urgentTasks.filter(t => t.urgency === 5 && !t.dueDate).length;
+      const criticalWithDate = urgentTasks.filter(t => t.urgency === 5 && t.dueDate).length;
+      const regular = urgentTasks.filter(t => t.urgency !== 5).length;
+      const nullUrgency = urgentTasks.filter(t => t.urgency == null).length;
+      
+      const returnedIds = urgentTasks.map(t => t.taskId.toString());
+      const criticalIds = (globalThis as any).__criticalTaskIds || [];
+      const missingCritical = criticalIds.filter((id: string) => !returnedIds.includes(id));
+      
+      // Log sample of actual urgency values
+      const urgencySamples = urgentTasks.slice(0, 5).map(t => ({
+        id: t.taskId,
+        urgency: t.urgency,
+        urgencyType: typeof t.urgency,
+        dueDate: t.dueDate,
+      }));
+      
+      console.log(`[getMostUrgentTasks] Fetched ${urgentTasks.length} tasks:`, {
+        total: urgentTasks.length,
+        criticalNoDate,
+        criticalWithDate,
+        regular,
+        nullUrgency,
+        taskIds: urgentTasks.map(t => `${t.taskId}(${t.urgency ?? 'null'}${t.dueDate ? '' : ',no-date'})`).join(', '),
+        urgencySamples,
+        missingCritical: missingCritical.length > 0 ? `Critical tasks NOT returned: ${missingCritical.join(', ')}` : 'All critical tasks returned',
+      });
+      
+      // Clean up
+      delete (globalThis as any).__criticalTaskIds;
+    } else {
+      console.log(`[getMostUrgentTasks] No tasks found for accountId=${accountId}, limit=${limit}, daysAhead=${daysAhead}`);
+    }
 
     return urgentTasks;
   } catch (error) {

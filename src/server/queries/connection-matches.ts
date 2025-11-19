@@ -545,20 +545,6 @@ export async function getMatchesForProspects(
 
     // EXECUTE the base query
     const rawResults = await baseQuery;
-
-    console.log("📊 Raw SQL results count:", rawResults.length);
-    console.log(
-      "🔍 First raw result sample:",
-      rawResults[0]
-        ? JSON.stringify(
-            rawResults[0] as Record<string, unknown>,
-            (key, value) =>
-              typeof value === "bigint" ? value.toString() : (value as string),
-            2,
-          )
-        : "No results",
-    );
-
     // CRITICAL: Post-process for location and feature matching, tolerance classification
     const processedMatches: ProspectMatch[] = [];
 
