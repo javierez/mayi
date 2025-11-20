@@ -32,6 +32,7 @@ import { TareasSkeleton } from "~/components/ui/skeletons";
 import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 import { TaskCard } from "~/components/tasks/task-card";
 import { TaskViewModal } from "~/components/tasks/task-view-modal";
+import { GlobalTaskModal } from "~/components/tasks/global-task-modal";
 import { createTaskWithAuth, updateTaskWithAuth } from "~/server/queries/task";
 import {
   getAllPotentialOwnersWithAuth,
@@ -154,6 +155,7 @@ export function Tareas({
     task: Task;
   } | null>(null);
   const [optimisticTasks, setOptimisticTasks] = useState<Task[]>([]);
+  const [showGlobalTaskModal, setShowGlobalTaskModal] = useState(false);
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [contacts, setContacts] = useState<ContactOption[]>([]);
@@ -1439,8 +1441,7 @@ export function Tareas({
           </Popover>
           <Button
             onClick={() => {
-              setEditingTask(null);
-              setIsAdding(true);
+              setShowGlobalTaskModal(true);
             }}
             variant="outline"
             className="flex h-8 items-center gap-2 text-sm text-gray-600 shadow"
@@ -1528,6 +1529,17 @@ export function Tareas({
         onSuccess={() => {
           // Close modal and refresh if needed
           setSelectedTaskForView(null);
+        }}
+      />
+
+      {/* Global Task Modal with pre-selected listing */}
+      <GlobalTaskModal
+        open={showGlobalTaskModal}
+        onOpenChange={setShowGlobalTaskModal}
+        initialListingId={listingId}
+        onSuccess={() => {
+          // Close modal - parent component will handle refresh
+          setShowGlobalTaskModal(false);
         }}
       />
     </div>

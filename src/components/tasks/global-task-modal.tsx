@@ -25,7 +25,7 @@ import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { getInitials } from "~/lib/operations/task-utils";
 import { createTaskWithAuth } from "~/server/queries/task";
 import { searchContactsWithAuth } from "~/server/queries/contact";
-import { listListingsForContactWithAuth, listContactsForListingWithAuth, listListingsCompactWithAuth } from "~/server/queries/listing";
+import { listListingsForContactWithAuth, listContactsForListingWithAuth, listListingsCompactWithAuth, getListingCompactByIdWithAuth } from "~/server/queries/listing";
 import { findListingContactIdAction } from "~/server/actions/contact-activity";
 import { useSession } from "~/lib/auth-client";
 import { getAgentsForSelectionWithAuth } from "~/server/queries/users";
@@ -65,6 +65,7 @@ interface GlobalTaskModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  initialListingId?: bigint;
 }
 
 // Debounce hook for search optimization
@@ -81,6 +82,7 @@ export function GlobalTaskModal({
   open,
   onOpenChange,
   onSuccess,
+  initialListingId,
 }: GlobalTaskModalProps) {
   const { data: session } = useSession();
   const [loading, setLoading] = useState({
@@ -158,7 +160,7 @@ export function GlobalTaskModal({
         dueDate: "",
         dueTime: "",
         contactId: "",
-        listingId: "",
+        listingId: initialListingId ? initialListingId.toString() : "",
         agentId: session?.user?.id ?? "",
         urgency: "",
       });
@@ -172,7 +174,60 @@ export function GlobalTaskModal({
       setShowConfirmDialog(false);
       setPendingSubmit(false);
     }
-  }, [open, session?.user?.id]);
+  }, [open, session?.user?.id, initialListingId]);
+
+  // Fetch and set initial listing when provided
+  useEffect(() => {
+    if (!open || !initialListingId) return;
+
+    const fetchInitialListingAndContacts = async () => {
+      setLoading((prev) => ({ ...prev, listings: true, searching: true }));
+      try {
+        // Fetch listing data
+        const listingData = await getListingCompactByIdWithAuth(initialListingId);
+
+        if (listingData) {
+          const listing: Listing = {
+            listingId: listingData.listingId,
+            title: listingData.title,
+            referenceNumber: listingData.referenceNumber,
+            price: listingData.price ?? "",
+            listingType: listingData.listingType ?? "",
+            propertyType: listingData.propertyType,
+            bedrooms: listingData.bedrooms,
+            bathrooms: listingData.bathrooms,
+            squareMeter: listingData.squareMeter,
+            city: listingData.city,
+            agentName: listingData.agentName,
+            imageUrl: listingData.imageUrl,
+          };
+          setSelectedListing(listing);
+          setFormData((prev) => ({
+            ...prev,
+            listingId: initialListingId.toString()
+          }));
+
+          // Also fetch contacts for this listing
+          try {
+            const contactsData = await listContactsForListingWithAuth(
+              initialListingId,
+              undefined,
+            );
+            setSearchResults(contactsData);
+          } catch (error) {
+            console.error("Error loading contacts for listing:", error);
+            setSearchResults([]);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching initial listing:", error);
+      } finally {
+        setLoading((prev) => ({ ...prev, listings: false, searching: false }));
+      }
+    };
+
+    void fetchInitialListingAndContacts();
+  }, [open, initialListingId]);
 
   // Search contacts when debounced query changes
   useEffect(() => {
@@ -461,10 +516,23 @@ export function GlobalTaskModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Crear Tarea</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="custom-scrollbar max-h-[90vh] overflow-y-auto sm:max-w-[600px] [&>button]:hidden">
+        <DialogHeader className="space-y-0 -mb-6">
+          <div className="flex items-start justify-between gap-4">
+            <DialogTitle className="text-xl font-semibold text-gray-900 flex-1">
+              Crear Tarea
+            </DialogTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClose}
+              className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              title="Cerrar"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <DialogDescription className="sr-only">
             Completa los detalles de la nueva tarea
           </DialogDescription>
         </DialogHeader>
@@ -650,7 +718,12 @@ export function GlobalTaskModal({
           <div className="space-y-2">
             <Label>Propiedad</Label>
 
-            {selectedListing ? (
+            {loading.listings && initialListingId ? (
+              <div className="flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 p-6">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">Cargando propiedad...</span>
+              </div>
+            ) : selectedListing ? (
               <div className="rounded-lg border border-primary/40 bg-primary/5 p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-3 flex-1">
@@ -691,18 +764,20 @@ export function GlobalTaskModal({
                       )}
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClearListing}
-                    className="h-6 w-6 shrink-0 p-0"
-                    title="Quitar propiedad"
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
+                  {!initialListingId && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClearListing}
+                      className="h-6 w-6 shrink-0 p-0"
+                      title="Quitar propiedad"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
               </div>
-            ) : (
+            ) : !initialListingId ? (
               <div className="space-y-2">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -776,6 +851,10 @@ export function GlobalTaskModal({
                     )}
                   </ScrollArea>
                 )}
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                Propiedad pre-seleccionada
               </div>
             )}
           </div>
