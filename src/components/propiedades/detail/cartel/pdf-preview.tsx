@@ -14,12 +14,11 @@ interface PdfPreviewProps {
 }
 
 export function PdfPreview({ fileUrl, className = "" }: PdfPreviewProps) {
-  const [numPages, setNumPages] = useState<number | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
-  function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
-    setNumPages(numPages);
+  function onDocumentLoadSuccess() {
+    // PDF loaded successfully
   }
 
   React.useEffect(() => {

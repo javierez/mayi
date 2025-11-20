@@ -16,6 +16,8 @@ import { TaskDragOverlay } from "./task-drag-overlay";
 import { TaskViewModal } from "~/components/tasks/task-view-modal";
 import { useToast } from "~/components/hooks/use-toast";
 import { updateTaskWithAuth } from "~/server/queries/task";
+import { useRouter } from "next/navigation";
+import type { DetailedTask } from "~/lib/operations/task-utils";
 
 interface Task {
   taskId: string;
@@ -41,7 +43,7 @@ interface TaskBoardProps {
 
 const TASK_STATUSES = [
   { id: "backlog", label: "Nuevas", color: "gray" },
-  { id: "ready", label: "Listo", color: "blue" },
+  { id: "ready", label: "Pendiente", color: "blue" },
   { id: "in_progress", label: "En Progreso", color: "yellow" },
   { id: "validation", label: "Validación", color: "purple" },
   { id: "finished", label: "Finalizado", color: "green" },
@@ -52,9 +54,11 @@ export function TaskBoard({ initialTasks, searchQuery = "" }: TaskBoardProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const previousTasks = useRef<Task[]>(initialTasks);
   const { toast } = useToast();
+  const router = useRouter();
 
   // Client-side search filtering
   const filteredTasks = useMemo(() => {
@@ -65,7 +69,7 @@ export function TaskBoard({ initialTasks, searchQuery = "" }: TaskBoardProps) {
       const titleMatch = task.title.toLowerCase().includes(query);
       
       // Search in contact name
-      const contactName = `${task.contactFirstName || ""} ${task.contactLastName || ""}`.trim().toLowerCase();
+      const contactName = `${task.contactFirstName ?? ""} ${task.contactLastName ?? ""}`.trim().toLowerCase();
       const contactMatch = contactName.includes(query);
       
       // Search in property title
@@ -121,7 +125,9 @@ export function TaskBoard({ initialTasks, searchQuery = "" }: TaskBoardProps) {
   }
 
   function handleTaskClick(taskId: string) {
+    const task = tasks.find((t) => t.taskId === taskId);
     setSelectedTaskId(Number(taskId));
+    setSelectedTask(task ?? null);
     setIsModalOpen(true);
   }
 
@@ -178,7 +184,7 @@ export function TaskBoard({ initialTasks, searchQuery = "" }: TaskBoardProps) {
       // When completing, move to "finished"; when uncompleting, move to "validation"
       await updateTaskWithAuth(Number(taskId), {
         completed: newCompleted,
-        status: newStatus as "finished" | "validation",
+        status: newStatus,
       });
 
       toast({
@@ -254,7 +260,7 @@ export function TaskBoard({ initialTasks, searchQuery = "" }: TaskBoardProps) {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-2 overflow-x-auto pb-4">
+      <div className="flex gap-6 overflow-x-auto pb-4">
         {TASK_STATUSES.map((status) => (
           <TaskColumn
             key={status.id}
@@ -270,8 +276,43 @@ export function TaskBoard({ initialTasks, searchQuery = "" }: TaskBoardProps) {
       <TaskDragOverlay activeTask={activeTask} />
       <TaskViewModal
         open={isModalOpen}
-        onOpenChange={setIsModalOpen}
+        onOpenChange={(open) => {
+          setIsModalOpen(open);
+          if (!open) {
+            // Reset state when modal closes
+            setSelectedTaskId(null);
+            setSelectedTask(null);
+          }
+        }}
         taskId={selectedTaskId}
+        initialTask={selectedTask ? (() => {
+          const task: Partial<DetailedTask> = {
+            taskId: Number(selectedTask.taskId),
+            userId: "",
+            title: selectedTask.title,
+            dueDate: selectedTask.dueDate ?? undefined,
+            completed: selectedTask.completed ?? false,
+            urgency: selectedTask.urgency ?? undefined,
+            status: (selectedTask.status as DetailedTask["status"]) ?? "backlog",
+            category: selectedTask.category ?? undefined,
+            listingId: selectedTask.listingId ? Number(selectedTask.listingId) : undefined,
+            contactId: selectedTask.contactId ? Number(selectedTask.contactId) : undefined,
+            contactFirstName: selectedTask.contactFirstName ?? undefined,
+            contactLastName: selectedTask.contactLastName ?? undefined,
+            propertyTitle: selectedTask.propertyTitle ?? undefined,
+          };
+          return task as DetailedTask;
+        })() : null}
+        onSuccess={() => {
+          // Refresh the page to get updated task data
+          router.refresh();
+          // Also optimistically remove the task from local state if it was deleted
+          if (selectedTaskId) {
+            setTasks((prev) =>
+              prev.filter((t) => t.taskId !== selectedTaskId.toString())
+            );
+          }
+        }}
       />
     </DndContext>
   );

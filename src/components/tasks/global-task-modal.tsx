@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Label } from "~/components/ui/label";
-import { AlertCircle, Loader2, User, Search, X, Mail, Phone } from "lucide-react";
+import { AlertCircle, Loader2, Search, X, Mail, Phone } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { getInitials } from "~/lib/operations/task-utils";
 import { createTaskWithAuth } from "~/server/queries/task";
@@ -111,7 +111,7 @@ export function GlobalTaskModal({
 
   // Confirmation dialog state for creating listing-contact relationship
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [pendingSubmit, setPendingSubmit] = useState(false);
+  const [, setPendingSubmit] = useState(false);
 
   // Debounce search queries to prevent excessive API calls
   const debouncedContactSearchQuery = useDebounce(contactSearchQuery, 300);
@@ -188,6 +188,8 @@ export function GlobalTaskModal({
         setSearchResults([]);
       }
     }
+    // loadContactsForListing is defined later and is stable, safe to use without adding to deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedContactSearchQuery, open, selectedListing]);
 
   // Fetch listings when contact is selected or when debounced property search query changes
@@ -792,10 +794,10 @@ export function GlobalTaskModal({
               </SelectTrigger>
               <SelectContent>
                 {agents.map((agent) => {
-                  const displayName = agent.name || 
-                    (agent.firstName && agent.lastName 
-                      ? `${agent.firstName} ${agent.lastName}` 
-                      : agent.firstName || agent.lastName || agent.id);
+                  const displayName = agent.name ??
+                    (agent.firstName && agent.lastName
+                      ? `${agent.firstName} ${agent.lastName}`
+                      : agent.firstName ?? agent.lastName ?? agent.id);
                   return (
                     <SelectItem key={agent.id} value={agent.id}>
                       {displayName}

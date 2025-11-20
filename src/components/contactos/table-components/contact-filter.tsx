@@ -447,10 +447,10 @@ export function ContactFilter({ onFilterChange }: ContactFilterProps) {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 items-center gap-2">
           <div className="relative w-full md:max-w-sm md:flex-1">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               placeholder="Buscar por nombre, email, teléfono o DNI..."
-              className="pl-8"
+              className="h-8 border-0 pl-8 text-sm shadow-md"
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
             />

@@ -5,13 +5,10 @@ import { db } from "~/server/db";
 import { listings, deals, listingContacts } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getCurrentUserAccountId } from "~/lib/dal";
-import { updateListingWithAuth } from "~/server/queries/listing";
 import {
   createDealWithAuth,
   getActiveDealForListingWithAuth,
-  updateDealWithAuth,
 } from "~/server/queries/deal";
-import type { Deal } from "~/lib/data";
 
 export interface CompleteStagesResult {
   success: boolean;

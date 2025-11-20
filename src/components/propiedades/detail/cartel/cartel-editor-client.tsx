@@ -39,8 +39,6 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-  ZoomIn,
-  ZoomOut,
   ChevronRight,
   ChevronLeft,
   ChevronUp,

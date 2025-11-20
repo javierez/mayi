@@ -34,12 +34,14 @@ import {
   canEditAllTasks,
   canDeleteAllTasks,
 } from "~/app/actions/permissions/check-permissions";
+import { useRouter } from "next/navigation";
 
 interface TaskViewModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   taskId: number | null;
   initialTask?: DetailedTask | null;
+  onSuccess?: () => void; // Optional callback for refresh after edit/delete
 }
 
 export function TaskViewModal({
@@ -47,6 +49,7 @@ export function TaskViewModal({
   onOpenChange,
   taskId,
   initialTask,
+  onSuccess,
 }: TaskViewModalProps) {
   const [task, setTask] = useState<DetailedTask | null>(initialTask ?? null);
   const [loading, setLoading] = useState(false);
@@ -58,12 +61,15 @@ export function TaskViewModal({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  // Store raw task data to pass to edit modal
+  const [rawTaskData, setRawTaskData] = useState<Awaited<ReturnType<typeof getTaskByIdWithAuth>> | null>(null);
   
   // Permission states
   const [hasEditAllPermission, setHasEditAllPermission] = useState<boolean>(false);
   const [hasDeleteAllPermission, setHasDeleteAllPermission] = useState<boolean>(false);
   
   const { data: session } = useSession();
+  const router = useRouter();
 
   // Fetch user permissions on component mount
   useEffect(() => {
@@ -101,6 +107,7 @@ export function TaskViewModal({
       setListingReferenceNumber(null);
       setListingCity(null);
       setIsDeleteModalOpen(false);
+      setRawTaskData(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, taskId]);
@@ -114,6 +121,9 @@ export function TaskViewModal({
     setLoading(true);
     try {
       const taskData = await getTaskByIdWithAuth(taskId);
+      // Store raw task data for passing to edit modal
+      setRawTaskData(taskData);
+      
       if (taskData?.tasks) {
         // Transform the task data to match DetailedTask format
         // Note: getTaskById doesn't include user info, so those fields will be null
@@ -284,11 +294,16 @@ export function TaskViewModal({
     setIsDeleting(true);
     try {
       await deleteTaskWithAuth(taskId);
-      // Close both modals and refresh parent
+      // Close both modals
       setIsDeleteModalOpen(false);
       onOpenChange(false);
-      // Optionally trigger a refresh callback if provided
-      // For now, the parent component should handle refreshing the task list
+      
+      // Trigger refresh: use callback if provided, otherwise use router.refresh()
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.refresh();
+      }
     } catch (error) {
       console.error("Error deleting task:", error);
       // Error handling - could show a toast notification here
@@ -361,14 +376,14 @@ export function TaskViewModal({
           <>
             <div className="space-y-4 py-2">
               {/* Description */}
-              {(task as any).description && (
-                <p className="text-sm leading-relaxed text-gray-900 whitespace-pre-wrap">
-                  {(task as any).description}
+              {rawTaskData?.tasks.description && (
+                <p className="mt-2 text-sm leading-relaxed text-gray-900 whitespace-pre-wrap">
+                  {rawTaskData.tasks.description}
                 </p>
               )}
 
               {/* Contact Information - Styled like creation modal */}
-              {(task.contactFirstName || task.contactLastName) && (
+              {(task.contactFirstName ?? task.contactLastName) && (
                 <div className="rounded-lg bg-white p-3 shadow-md">
                   <div className="flex items-start gap-3">
                     <Avatar className="h-10 w-10 shrink-0">
@@ -483,7 +498,7 @@ export function TaskViewModal({
               )}
 
               {/* Status, Urgency, and Due Date Information */}
-              {(task.urgency || task.status || task.dueDate) && (
+              {(Boolean(task.urgency) || Boolean(task.status) || Boolean(task.dueDate)) && (
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
                     {task.urgency && (
@@ -507,7 +522,7 @@ export function TaskViewModal({
                     <div className="flex items-center gap-1.5 text-xs text-gray-500">
                       <Clock className="h-3.5 w-3.5 text-gray-400 shrink-0" />
                       <span>
-                        {getRemainingTime(task.dueDate) || formatDateTime(task.dueDate, (task as any).dueTime)}
+                        {getRemainingTime(task.dueDate) ?? formatDateTime(task.dueDate, rawTaskData?.tasks.dueTime ?? null)}
                       </span>
                     </div>
                   )}
@@ -556,10 +571,18 @@ export function TaskViewModal({
           open={isEditModalOpen}
           onOpenChange={setIsEditModalOpen}
           taskId={taskId}
+          initialTaskData={rawTaskData} // Pass pre-fetched data to avoid redundant API call
           onSuccess={() => {
             // Refresh task data after successful update
             void fetchTask();
             setIsEditModalOpen(false);
+            
+            // Trigger refresh: use callback if provided, otherwise use router.refresh()
+            if (onSuccess) {
+              onSuccess();
+            } else {
+              router.refresh();
+            }
           }}
         />
       )}

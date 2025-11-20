@@ -198,25 +198,27 @@ export default function AgentsPage() {
   // Show loading state while session and roles are loading
   if (sessionLoading || rolesLoading) {
     return (
-      <div className="container mx-auto space-y-6 p-6">
-        <div className="space-y-2">
+      <div className="space-y-4">
+        <div className="mb-6 space-y-2">
           <Skeleton className="h-8 w-64" />
           <Skeleton className="h-4 w-96" />
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-24" />
-          ))}
+        <div className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-24" />
+            ))}
+          </div>
+          <Skeleton className="h-96" />
         </div>
-        <Skeleton className="h-96" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto space-y-6 p-6">
+    <div className="space-y-4">
       {/* Header with Agent Selector */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="mb-6 flex items-start justify-between gap-4">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">
             Información de Agentes
@@ -239,8 +241,9 @@ export default function AgentsPage() {
         )}
       </div>
 
-      {/* Error State */}
-      {error && (
+      <div className="space-y-6">
+        {/* Error State */}
+        {error && (
         <Card className="border-red-200 bg-red-50">
           <CardContent className="flex items-center gap-2 p-4 text-red-800">
             <AlertCircle className="h-5 w-5" />
@@ -269,7 +272,6 @@ export default function AgentsPage() {
 
           {/* Urgent Actions */}
           <WorkQueueCard
-            tasks={[]}
             appointments={agentData.todayAppointments}
             detailedTasks={agentData.detailedTasks}
             selectedAgentId={selectedAgentId}
@@ -297,7 +299,8 @@ export default function AgentsPage() {
             </p>
           </CardContent>
         </Card>
-      )}
+        )}
+      </div>
     </div>
   );
 }

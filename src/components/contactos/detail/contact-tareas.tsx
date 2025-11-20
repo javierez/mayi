@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import Image from "next/image";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -21,21 +20,15 @@ import {
 } from "~/components/ui/popover";
 import {
   Plus,
-  Trash2,
   Check,
   Mic,
   AlertCircle,
-  CheckCircle2,
   Loader2,
-  User,
-  Calendar,
-  ChevronDown,
-  ChevronUp,
-  Edit,
   Filter,
   X,
 } from "lucide-react";
-import { Avatar, AvatarFallback } from "~/components/ui/avatar";
+import { TaskCard } from "~/components/tasks/task-card";
+import { TaskViewModal } from "~/components/tasks/task-view-modal";
 import { createTaskWithAuth, updateTaskWithAuth } from "~/server/queries/task";
 import { getContactListingsForTasksWithAuth } from "~/server/queries/user-comments";
 import { useSession } from "~/lib/auth-client";
@@ -81,6 +74,8 @@ interface Task {
   userName?: string;
   userFirstName?: string;
   userLastName?: string;
+  // Property information for badge display
+  propertyTitle?: string;
   // Related entity info for display
   relatedContact?: {
     contactId: bigint;
@@ -138,14 +133,15 @@ export function ContactTareas({
   const [taskStates, setTaskStates] = useState<
     Record<string, "saving" | "saved" | "error">
   >({});
-  const [expandedDescriptions, setExpandedDescriptions] = useState<
-    Record<string, boolean>
-  >({});
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<
     "all" | "contact" | "property"
   >("all");
+  const [selectedTaskForView, setSelectedTaskForView] = useState<{
+    taskId: string;
+    task: Task;
+  } | null>(null);
 
   // Permission states
   const [hasEditAllPermission, setHasEditAllPermission] =
@@ -431,31 +427,31 @@ export function ContactTareas({
     }
   };
 
-  const handleEditTask = (task: Task) => {
-    setEditingTask(task);
-    setIsAdding(true);
+  // const handleEditTask = (task: Task) => {
+  //   setEditingTask(task);
+  //   setIsAdding(true);
 
-    // Pre-fill form with task data
-    const dueDateString: string =
-      task.dueDate?.toISOString().split("T")[0] ?? "";
-    const dueTimeString: string =
-      task.dueDate?.toTimeString().slice(0, 5) ?? "";
+  //   // Pre-fill form with task data
+  //   const dueDateString: string =
+  //     task.dueDate?.toISOString().split("T")[0] ?? "";
+  //   const dueTimeString: string =
+  //     task.dueDate?.toTimeString().slice(0, 5) ?? "";
 
-    setNewTask({
-      title: task.title,
-      description: task.description,
-      dueDate: dueDateString,
-      dueTime: dueTimeString,
-      agentId: task.userId,
-    });
+  //   setNewTask({
+  //     title: task.title,
+  //     description: task.description,
+  //     dueDate: dueDateString,
+  //     dueTime: dueTimeString,
+  //     agentId: task.userId,
+  //   });
 
-    // Set the selected listing if the task has one
-    if (task.listingId) {
-      setSelectedListingId(task.listingId.toString());
-    } else {
-      setSelectedListingId("");
-    }
-  };
+  //   // Set the selected listing if the task has one
+  //   if (task.listingId) {
+  //     setSelectedListingId(task.listingId.toString());
+  //   } else {
+  //     setSelectedListingId("");
+  //   }
+  // };
 
   const handleUpdateTask = async () => {
     if (!editingTask || !newTask.title.trim() || !newTask.description.trim())
@@ -558,13 +554,13 @@ export function ContactTareas({
     await onDeleteTask(id);
   };
 
-  const toggleDescriptionExpansion = (taskId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent task toggle
-    setExpandedDescriptions((prev) => ({
-      ...prev,
-      [taskId]: !prev[taskId],
-    }));
-  };
+  // const toggleDescriptionExpansion = (taskId: string, e: React.MouseEvent) => {
+  //   e.stopPropagation(); // Prevent task toggle
+  //   setExpandedDescriptions((prev) => ({
+  //     ...prev,
+  //     [taskId]: !prev[taskId],
+  //   }));
+  // };
 
   // Filter and sort tasks by category
   const filteredTasks = useMemo(() => {
@@ -960,277 +956,53 @@ export function ContactTareas({
             </p>
           </div>
         ) : (
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             {filteredTasks.map((task) => {
-              const getInitials = (
-                firstName?: string,
-                lastName?: string,
-                name?: string,
-              ) => {
-                if (firstName && lastName) {
-                  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-                }
-                if (name) {
-                  const parts = name.split(" ").filter((p) => p.length > 0);
-                  if (parts.length >= 2 && parts[0] && parts[1]) {
-                    return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
-                  } else if (parts[0]) {
-                    return parts[0].charAt(0).toUpperCase();
-                  }
-                }
-                return "U";
-              };
-
-              const getRemainingTime = (dueDate?: Date) => {
-                if (!dueDate) return null;
-
-                const now = new Date();
-                const today = new Date(
-                  now.getFullYear(),
-                  now.getMonth(),
-                  now.getDate(),
-                );
-                const taskDate = new Date(
-                  dueDate.getFullYear(),
-                  dueDate.getMonth(),
-                  dueDate.getDate(),
-                );
-
-                // Create full datetime - defaulting to end of day
-                const fullDueDateTime = new Date(
-                  dueDate.getFullYear(),
-                  dueDate.getMonth(),
-                  dueDate.getDate(),
-                  23,
-                  59,
-                );
-
-                const diffMs = fullDueDateTime.getTime() - now.getTime();
-                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-                const diffMinutes = Math.floor(diffMs / (1000 * 60));
-
-                if (diffMs < 0) {
-                  const overdueDays = Math.abs(diffDays);
-                  const overdueHours = Math.abs(diffHours);
-                  if (overdueDays > 0) {
-                    return `${overdueDays} día${overdueDays !== 1 ? "s" : ""} vencido`;
-                  } else if (overdueHours > 0) {
-                    return `${overdueHours} hora${overdueHours !== 1 ? "s" : ""} vencido`;
-                  } else {
-                    return "Vencido";
-                  }
-                }
-
-                if (taskDate.getTime() === today.getTime()) {
-                  // Same day
-                  if (diffHours > 0) {
-                    return `${diffHours} hora${diffHours !== 1 ? "s" : ""} restantes`;
-                  } else if (diffMinutes > 0) {
-                    return `${diffMinutes} minuto${diffMinutes !== 1 ? "s" : ""} restantes`;
-                  } else {
-                    return "Vence ahora";
-                  }
-                } else {
-                  // Different day
-                  return `${diffDays} día${diffDays !== 1 ? "s" : ""} restantes`;
-                }
-              };
+              const canEdit = canUserEditTask(task);
+              const canDelete = canUserDeleteTask(task);
 
               return (
-                <div key={task.id}>
-                  <div
-                    className={`group relative cursor-pointer rounded-xl p-3 shadow-md transition-all duration-200 hover:shadow-lg sm:p-4 ${
-                      task.completed ? "bg-gray-50/50 opacity-75" : "bg-white"
-                    } ${taskStates[task.id] === "saving" ? "opacity-70" : ""}`}
-                    onClick={() => handleToggleCompleted(task.id)}
-                  >
-                    {/* User avatar - top right */}
-                    <div className="absolute right-2 top-2 flex flex-col items-center gap-1 sm:right-3 sm:top-3">
-                      <div
-                        title={
-                          task.userName ??
-                          (`${task.userFirstName ?? ""} ${task.userLastName ?? ""}`.trim() ||
-                            "Usuario")
-                        }
-                      >
-                        <Avatar className="h-6 w-6 ring-2 ring-gray-100 sm:h-7 sm:w-7">
-                          <AvatarFallback className="text-xs font-medium">
-                            {getInitials(
-                              task.userFirstName,
-                              task.userLastName,
-                              task.userName,
-                            )}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
-                      {/* System task indicator - under avatar */}
-                      {task.createdBy === "0" && (
-                        <div
-                          className="flex h-5 w-5 items-center justify-center sm:h-6 sm:w-6"
-                          title="Tarea del sistema"
-                        >
-                          <Image
-                            src="/favicon.ico"
-                            alt="Sistema"
-                            width={20}
-                            height={20}
-                            className="h-4 w-4 object-contain opacity-60 sm:h-5 sm:w-5"
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Task content */}
-                    <div className="pr-8 sm:pr-10">
-                      <div className="mb-2 flex items-center gap-2 sm:gap-3">
-                        {/* Checkbox */}
-                        <div
-                          className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border-2 transition-all duration-200 ${
-                            task.completed
-                              ? "border-emerald-500 bg-emerald-500 text-white shadow-sm"
-                              : "border-gray-300 hover:border-gray-400"
-                          }`}
-                        >
-                          {task.completed && <Check className="h-3 w-3" />}
-                        </div>
-
-                        <h3
-                          className={`text-sm font-semibold leading-tight ${task.completed ? "text-gray-500 line-through" : "text-gray-900"}`}
-                        >
-                          {task.title}
-                        </h3>
-
-                        {taskStates[task.id] === "saving" && (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />
-                        )}
-                        {taskStates[task.id] === "saved" && (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                        )}
-                      </div>
-
-                      <div className="mb-3 ml-6 sm:ml-8">
-                        {(() => {
-                          const isExpanded = expandedDescriptions[task.id];
-                          const isLongDescription =
-                            task.description.length > 120;
-                          const displayText =
-                            isExpanded || !isLongDescription
-                              ? task.description
-                              : task.description.substring(0, 120) + "...";
-
-                          return (
-                            <div className="group">
-                              <p
-                                className={`text-sm leading-relaxed ${task.completed ? "text-gray-400 line-through" : "text-gray-600"}`}
-                              >
-                                {displayText}
-                              </p>
-                              {isLongDescription && (
-                                <button
-                                  onClick={(e) =>
-                                    toggleDescriptionExpansion(task.id, e)
-                                  }
-                                  className={`mt-1 flex items-center gap-1 text-xs transition-colors ${
-                                    task.completed
-                                      ? "text-gray-400 hover:text-gray-500"
-                                      : "text-gray-500 hover:text-gray-700"
-                                  }`}
-                                >
-                                  {isExpanded ? (
-                                    <>
-                                      <span>Ver menos</span>
-                                      <ChevronUp className="h-3 w-3" />
-                                    </>
-                                  ) : (
-                                    <>
-                                      <span>Ver más</span>
-                                      <ChevronDown className="h-3 w-3" />
-                                    </>
-                                  )}
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </div>
-
-                      {/* Related items with time */}
-                      {(task.relatedContact ??
-                        task.relatedAppointment ??
-                        task.dueDate) && (
-                        <div className="mb-1 ml-6 flex flex-wrap items-center gap-2 sm:ml-8">
-                          {task.relatedContact && (
-                            <span className="flex items-center gap-1 break-words text-xs font-normal text-gray-500">
-                              <User className="h-3 w-3 flex-shrink-0 opacity-60" />
-                              <span className="max-w-32 truncate sm:max-w-none">
-                                {task.relatedContact.name}
-                              </span>
-                            </span>
-                          )}
-                          {task.relatedAppointment && (
-                            <Badge
-                              variant="outline"
-                              className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium sm:px-2.5"
-                            >
-                              <Calendar className="h-3 w-3 flex-shrink-0" />
-                              <span className="truncate">
-                                {task.relatedAppointment.type}
-                              </span>
-                            </Badge>
-                          )}
-                          {task.dueDate && (
-                            <span className="whitespace-nowrap rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-normal text-amber-600 sm:px-2.5">
-                              {getRemainingTime(task.dueDate)}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Action buttons - bottom right */}
-                    <div className="absolute bottom-1 right-1 flex items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 sm:bottom-2 sm:right-2">
-                      {canUserEditTask(task) && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditTask(task);
-                          }}
-                          className="h-6 w-6 rounded-lg p-0 text-gray-400 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-500 sm:h-7 sm:w-7"
-                          title="Editar tarea"
-                        >
-                          <Edit className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                        </Button>
-                      )}
-                      {canUserDeleteTask(task) && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            void handleDeleteTask(task.id);
-                          }}
-                          className="h-6 w-6 rounded-lg p-0 text-gray-400 transition-colors duration-200 hover:bg-red-50 hover:text-red-500 sm:h-7 sm:w-7"
-                          title="Eliminar tarea"
-                        >
-                          <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Show edit form inline after this task if it's being edited */}
-                  {editingTask?.id === task.id && (
-                    <div className="mt-2">{taskForm}</div>
-                  )}
-                </div>
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  showPropertyBadge={true}
+                  onToggleCompleted={async (taskId, _currentCompleted) => {
+                    await handleToggleCompleted(taskId.toString());
+                  }}
+                  onDeleteClick={(taskId, _title) => {
+                    void handleDeleteTask(taskId.toString());
+                  }}
+                  onTaskClick={(taskId, task) => {
+                    setSelectedTaskForView({
+                      taskId: taskId.toString(),
+                      task,
+                    });
+                  }}
+                  taskState={taskStates[task.id]}
+                  canEdit={canEdit}
+                  canDelete={canDelete}
+                />
               );
             })}
           </div>
         )}
       </div>
+
+      {/* Task View Modal */}
+      <TaskViewModal
+        open={selectedTaskForView !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedTaskForView(null);
+          }
+        }}
+        taskId={selectedTaskForView?.taskId ? Number(selectedTaskForView.taskId) : null}
+        initialTask={null}
+        onSuccess={() => {
+          // Close modal and refresh if needed
+          setSelectedTaskForView(null);
+        }}
+      />
     </div>
   );
 }

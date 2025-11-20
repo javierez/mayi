@@ -44,7 +44,7 @@ class FreepikClient {
     }
 
     // Get content type and validate it's a supported format
-    const contentType = imageResponse.headers.get("content-type") || "";
+    const contentType = imageResponse.headers.get("content-type") ?? "";
     const supportedFormats = ["image/jpeg", "image/jpg", "image/png"];
     const isSupportedFormat = supportedFormats.some((format) =>
       contentType.toLowerCase().includes(format),
@@ -218,8 +218,8 @@ class FreepikClient {
                   (param) =>
                     (param.field === "body.image" ||
                       param.name === "image" ||
-                      param.reason?.toLowerCase().includes("image") ||
-                      param.reason?.toLowerCase().includes("base64")) &&
+                      Boolean(param.reason?.toLowerCase().includes("image")) ||
+                      Boolean(param.reason?.toLowerCase().includes("base64"))) &&
                     param.reason,
                 );
                 if (imageParamError) {
@@ -262,7 +262,7 @@ class FreepikClient {
             } else if (errorData.details) {
               errorMessage = `API error: ${response.status} - ${errorData.details}`;
             }
-          } catch (parseError) {
+          } catch {
             // If we can't parse, continue with retry
           }
 

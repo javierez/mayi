@@ -35,6 +35,7 @@ import { Badge } from "~/components/ui/badge";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { createListingContactRelationshipAction } from "~/server/actions/contact-activity";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 interface Contact {
   contactId: bigint;
@@ -61,11 +62,14 @@ interface Listing {
   contactType?: "owner" | "buyer" | null;
 }
 
+type TaskDataFromQuery = Awaited<ReturnType<typeof getTaskByIdWithAuth>>;
+
 interface TaskEditModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   taskId: number;
   onSuccess?: () => void;
+  initialTaskData?: TaskDataFromQuery | null; // Optional pre-fetched task data
 }
 
 // Debounce hook for search optimization
@@ -83,8 +87,10 @@ export function TaskEditModal({
   onOpenChange,
   taskId,
   onSuccess,
+  initialTaskData,
 }: TaskEditModalProps) {
   const { data: session } = useSession();
+  const router = useRouter();
   const [loading, setLoading] = useState({
     listings: false,
     saving: false,
@@ -111,11 +117,11 @@ export function TaskEditModal({
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [agents, setAgents] = useState<Array<{ id: string; name: string; firstName?: string; lastName?: string }>>([]);
-  const [existingListingContactId, setExistingListingContactId] = useState<bigint | null>(null);
+  const [, setExistingListingContactId] = useState<bigint | null>(null);
 
   // Confirmation dialog state for creating listing-contact relationship
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [pendingSubmit, setPendingSubmit] = useState(false);
+  const [, setPendingSubmit] = useState(false);
 
   // Debounce search queries to prevent excessive API calls
   const debouncedContactSearchQuery = useDebounce(contactSearchQuery, 300);
@@ -153,21 +159,31 @@ export function TaskEditModal({
     }
   }, [open, session?.user]);
 
-  // Fetch task data when modal opens
+  // Fetch task data when modal opens (only if not provided via props)
   useEffect(() => {
     if (open && taskId) {
-      void fetchTaskData();
+      if (initialTaskData) {
+        // Use provided data instead of fetching
+        void populateFormFromTaskData(initialTaskData);
+      } else {
+        // Fetch if not provided
+        void fetchTaskData();
+      }
     }
-  }, [open, taskId]);
+    // fetchTaskData is an async function defined in the effect, doesn't need to be in deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, taskId, initialTaskData]);
 
-  const fetchTaskData = async () => {
-    if (!taskId) return;
+  const populateFormFromTaskData = async (taskData: TaskDataFromQuery) => {
+    if (!taskData) {
+      setSaveError("No se pudo cargar la tarea");
+      return;
+    }
 
     setLoading((prev) => ({ ...prev, fetching: true }));
     setSaveError(null);
 
     try {
-      const taskData = await getTaskByIdWithAuth(taskId);
       
       if (!taskData?.tasks) {
         setSaveError("No se pudo cargar la tarea");
@@ -290,6 +306,32 @@ export function TaskEditModal({
       setSearchResults([]);
       setListings([]);
     } catch (error) {
+      console.error("Error populating form from task data:", error);
+      setSaveError(
+        error instanceof Error ? error.message : "Error al cargar la tarea"
+      );
+    } finally {
+      setLoading((prev) => ({ ...prev, fetching: false }));
+    }
+  };
+
+  const fetchTaskData = async () => {
+    if (!taskId) return;
+
+    setLoading((prev) => ({ ...prev, fetching: true }));
+    setSaveError(null);
+
+    try {
+      const taskData = await getTaskByIdWithAuth(taskId);
+      
+      if (!taskData?.tasks) {
+        setSaveError("No se pudo cargar la tarea");
+        setLoading((prev) => ({ ...prev, fetching: false }));
+        return;
+      }
+
+      await populateFormFromTaskData(taskData);
+    } catch (error) {
       console.error("Error fetching task data:", error);
       setSaveError(
         error instanceof Error ? error.message : "Error al cargar la tarea"
@@ -313,6 +355,8 @@ export function TaskEditModal({
         setSearchResults([]);
       }
     }
+    // loadContactsForListing is defined later and is stable, safe to use without adding to deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedContactSearchQuery, open, selectedListing]);
 
   // Fetch listings when contact is selected or when debounced property search query changes
@@ -487,9 +531,15 @@ export function TaskEditModal({
 
       await updateTaskWithAuth(taskId, taskData);
 
-      // Success - close modal and call success callback
+      // Success - close modal and trigger refresh
       onOpenChange(false);
-      onSuccess?.();
+      
+      // Trigger refresh: use callback if provided, otherwise use router.refresh()
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.refresh();
+      }
     } catch (error) {
       console.error("Error updating task:", error);
       setSaveError(
@@ -542,10 +592,16 @@ export function TaskEditModal({
 
       await updateTaskWithAuth(taskId, taskData);
 
-      // Success - close modal and call success callback
+      // Success - close modal and trigger refresh
       setPendingSubmit(false);
       onOpenChange(false);
-      onSuccess?.();
+      
+      // Trigger refresh: use callback if provided, otherwise use router.refresh()
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.refresh();
+      }
     } catch (error) {
       console.error("Error creating relationship and updating task:", error);
       setSaveError(
@@ -567,10 +623,25 @@ export function TaskEditModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Editar Tarea</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="max-h-[90vh] sm:max-w-[600px] [&>button]:hidden">
+        <DialogHeader className="space-y-0 -mb-6">
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <DialogTitle className="text-xl font-semibold text-gray-900 flex-1">
+              Editar Tarea
+            </DialogTitle>
+            {!loading.fetching && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClose}
+                className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                title="Cerrar"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          <DialogDescription className="sr-only">
             Modifica los detalles de la tarea
           </DialogDescription>
         </DialogHeader>
@@ -580,7 +651,8 @@ export function TaskEditModal({
             <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
           </div>
         ) : (
-          <div className="space-y-4 py-4">
+          <ScrollArea className="max-h-[calc(90vh-180px)]">
+            <div className="space-y-4 py-2 pr-4">
             {/* Title */}
             <Input
               placeholder="Título de la tarea *"
@@ -905,10 +977,10 @@ export function TaskEditModal({
                 </SelectTrigger>
                 <SelectContent>
                   {agents.map((agent) => {
-                    const displayName = agent.name || 
-                      (agent.firstName && agent.lastName 
-                        ? `${agent.firstName} ${agent.lastName}` 
-                        : agent.firstName || agent.lastName || agent.id);
+                    const displayName = agent.name ??
+                      (agent.firstName && agent.lastName
+                        ? `${agent.firstName} ${agent.lastName}`
+                        : agent.firstName ?? agent.lastName ?? agent.id);
                     return (
                       <SelectItem key={agent.id} value={agent.id}>
                         {displayName}
@@ -982,7 +1054,8 @@ export function TaskEditModal({
                 <span className="text-sm text-red-700">{saveError}</span>
               </div>
             )}
-          </div>
+            </div>
+          </ScrollArea>
         )}
 
         <DialogFooter>

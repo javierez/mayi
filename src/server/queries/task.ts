@@ -14,9 +14,15 @@ import {
   propertyImages,
   locations,
 } from "../db/schema";
-import { eq, and, or, sql, isNotNull, isNull, asc, desc, lte, gte } from "drizzle-orm";
+import { eq, and, or, sql, isNotNull, asc, lte, gte } from "drizzle-orm";
 import type { Task } from "../../lib/data";
 import { getCurrentUserAccountId, getSecureSession } from "../../lib/dal";
+
+// Extend globalThis to include debug properties
+declare global {
+  // eslint-disable-next-line no-var
+  var __criticalTaskIds: string[] | undefined;
+}
 
 // Wrapper functions that automatically get accountId from current session
 export async function createTaskWithAuth(
@@ -1790,7 +1796,7 @@ export async function getMostUrgentTasks(
       }
       
       // Store for comparison after main query
-      (globalThis as any).__criticalTaskIds = criticalIds;
+      globalThis.__criticalTaskIds = criticalIds;
     }
 
     // Build WHERE conditions
@@ -1910,8 +1916,8 @@ export async function getMostUrgentTasks(
       const nullUrgency = urgentTasks.filter(t => t.urgency == null).length;
       
       const returnedIds = urgentTasks.map(t => t.taskId.toString());
-      const criticalIds = (globalThis as any).__criticalTaskIds || [];
-      const missingCritical = criticalIds.filter((id: string) => !returnedIds.includes(id));
+      const criticalIds = globalThis.__criticalTaskIds ?? [];
+      const missingCritical = criticalIds.filter((id) => !returnedIds.includes(id));
       
       // Log sample of actual urgency values
       const urgencySamples = urgentTasks.slice(0, 5).map(t => ({
@@ -1933,7 +1939,7 @@ export async function getMostUrgentTasks(
       });
       
       // Clean up
-      delete (globalThis as any).__criticalTaskIds;
+      delete globalThis.__criticalTaskIds;
     } else {
       console.log(`[getMostUrgentTasks] No tasks found for accountId=${accountId}, limit=${limit}, daysAhead=${daysAhead}`);
     }

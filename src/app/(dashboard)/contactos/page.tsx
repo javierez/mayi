@@ -340,9 +340,9 @@ export default function ContactsPage() {
   }, [getFiltersFromUrl, processContactsData]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Contactos</h1>
+    <div className="space-y-4">
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Contactos</h1>
         <div className="flex gap-2">
           <Button asChild>
             <Link href="/contactos/crear">
@@ -358,9 +358,10 @@ export default function ContactsPage() {
         </div>
       </div>
 
-      <ContactFilter onFilterChange={handleFilterChange} />
+      <div className="space-y-2">
+        <ContactFilter onFilterChange={handleFilterChange} />
 
-      {showSkeleton ? (
+        {showSkeleton ? (
         <div className="space-y-4">
           {Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="h-16 animate-pulse rounded bg-muted" />
@@ -380,7 +381,8 @@ export default function ContactsPage() {
             onSortChange={handleSortChange}
           />
         </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

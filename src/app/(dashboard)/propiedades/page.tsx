@@ -409,9 +409,9 @@ export default function PropertiesPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Propiedades</h1>
+    <div className="space-y-4">
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Propiedades</h1>
         <div className="flex gap-2">
           <Button asChild>
             <Link href="/propiedades/registro">
@@ -427,15 +427,16 @@ export default function PropertiesPage() {
         </div>
       </div>
 
-      <PropertyFilter
-        view={view}
-        agents={agents}
-        cities={cities}
-        priceRange={priceRange}
-        areaRange={areaRange}
-      />
+      <div className="space-y-2">
+        <PropertyFilter
+          view={view}
+          agents={agents}
+          cities={cities}
+          priceRange={priceRange}
+          areaRange={areaRange}
+        />
 
-      {isLoading ? (
+        {isLoading ? (
         view === "grid" ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
@@ -469,7 +470,8 @@ export default function PropertiesPage() {
           onPrefetchPage={prefetchPage}
           onExport={handleExport}
         />
-      )}
+        )}
+      </div>
     </div>
   );
 }

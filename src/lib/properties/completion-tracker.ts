@@ -616,7 +616,7 @@ export function calculateCompletion(
   const propertyType = listing.propertyType as PropertyType | undefined;
 
   // Create a cache key for this listing
-  const cacheKey = `${listing.listingId}_${listing.imageCount}`;
+  const cacheKey = `${String(listing.listingId)}_${String(listing.imageCount)}`;
   const shouldLog = !logCache.has(cacheKey);
 
   if (shouldLog) {

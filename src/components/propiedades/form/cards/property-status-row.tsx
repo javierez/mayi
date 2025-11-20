@@ -16,16 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
-import {
-  Calendar,
-  Key,
-  FileCheck,
-  Globe,
-  Share2,
-  Upload,
-  Radio,
-  CheckCircle2
-} from "lucide-react";
+import { Calendar } from "lucide-react";
 import { KeysModal } from "./keys-modal";
 import { PublishToWebsiteModal } from "./publish-to-website-modal";
 import { CartelModal } from "./cartel-modal";
@@ -567,167 +558,156 @@ export function PropertyStatusRow({
               </div>
             </div>
 
-            {/* Icon Row - Status Indicators */}
-            <div className="mt-14 flex items-center justify-center gap-4 px-4 sm:gap-5 sm:px-6 md:gap-6 md:px-8">
-              {/* All cards use consistent height with h-10 sm:h-12 */}
-              {/* Keys */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div
-                    onClick={() => setKeysModalOpen(true)}
-                    className={cn(
-                      "flex items-center justify-center rounded-lg h-10 w-10 transition-all duration-300 sm:h-12 sm:w-12 cursor-pointer",
-                      hasKeys
-                        ? "bg-white shadow-md hover:shadow-lg"
-                        : "bg-white opacity-20 hover:opacity-100 hover:shadow-md hover:scale-105 shadow-sm",
-                    )}
-                  >
-                    <Key
-                      className={cn(
-                        "h-4 w-4 transition-all sm:h-5 sm:w-5",
-                        hasKeys ? "text-gray-700" : "text-gray-400 hover:text-gray-700",
-                      )}
-                    />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-[10px]">
-                    {hasKeys ? "Llaves recogidas" : "Sin llaves"}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
+            {/* Status Indicators with Text-based Chips */}
+            <div className="mt-14 px-4 sm:px-6 md:px-8">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 sm:text-xs">
+                  Notas
+                </span>
+                <div className="h-px flex-1 bg-gray-200" />
+              </div>
 
-              {/* Cartel Generado */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div
-                    onClick={() => setCartelModalOpen(true)}
-                    className={cn(
-                      "flex items-center justify-center rounded-lg h-10 w-10 transition-all duration-300 sm:h-12 sm:w-12 cursor-pointer",
-                      hasCartel
-                        ? "bg-white shadow-md hover:shadow-lg"
-                        : "bg-white opacity-20 hover:opacity-100 hover:shadow-md hover:scale-105 shadow-sm",
-                    )}
-                  >
-                    <FileCheck
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                {/* Keys Chip */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setKeysModalOpen(true)}
                       className={cn(
-                        "h-4 w-4 transition-all sm:h-5 sm:w-5",
-                        hasCartel ? "text-gray-700" : "text-gray-400 hover:text-gray-700",
+                        "rounded-full bg-white px-4 py-2 shadow-sm transition-all duration-300 cursor-pointer text-[10px] uppercase tracking-widest sm:px-5 sm:py-2.5 sm:text-xs",
+                        hasKeys
+                          ? "font-bold text-gray-800"
+                          : "font-medium text-gray-400",
                       )}
-                    />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-[10px]">
-                    {hasCartel ? "Cartel generado" : "Sin cartel"}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
+                    >
+                      Llaves
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-[10px]">
+                      {hasKeys ? "Llaves recogidas" : "Haz clic para marcar llaves recogidas"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
 
-              {/* Web */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div
-                    onClick={() => setPublishToWebsiteModalOpen(true)}
-                    className={cn(
-                      "flex items-center justify-center rounded-lg h-10 w-10 transition-all duration-300 sm:h-12 sm:w-12 cursor-pointer",
-                      publishedToWebsite
-                        ? "bg-white shadow-md hover:shadow-lg"
-                        : "bg-white opacity-20 hover:opacity-100 hover:shadow-md hover:scale-105 shadow-sm",
-                    )}
-                  >
-                    <Globe
+                {/* Cartel en Vivienda Chip */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setCartelModalOpen(true)}
                       className={cn(
-                        "h-4 w-4 transition-all sm:h-5 sm:w-5",
-                        publishedToWebsite ? "text-gray-700" : "text-gray-400 hover:text-gray-700",
+                        "rounded-full bg-white px-4 py-2 shadow-sm transition-all duration-300 cursor-pointer text-[10px] uppercase tracking-widest sm:px-5 sm:py-2.5 sm:text-xs",
+                        hasCartel
+                          ? "font-bold text-gray-800"
+                          : "font-medium text-gray-400",
                       )}
-                    />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-[10px]">
-                    {publishedToWebsite
-                      ? "Publicado en web"
-                      : "No publicado en web"}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
+                    >
+                      Cartel
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-[10px]">
+                      {hasCartel ? "Cartel en vivienda" : "Haz clic para marcar cartel en vivienda"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
 
-              {/* Portals Group - Fotocasa & Idealista Combined */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div
-                    onClick={() => setPortalsModalOpen(true)}
-                    className={cn(
-                      "flex items-center justify-center rounded-lg h-10 w-auto transition-all duration-300 sm:h-12 gap-2 px-2 cursor-pointer",
-                      fotocasaActive || idealistaActive
-                        ? "bg-white shadow-md hover:shadow-lg"
-                        : "bg-white opacity-20 hover:opacity-100 hover:shadow-md hover:scale-105 shadow-sm",
-                    )}
-                  >
-                    {/* Fotocasa */}
-                    <Image
-                      src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/faviconfoto.png"
-                      alt="Fotocasa"
-                      width={20}
-                      height={20}
+                {/* Web Chip */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setPublishToWebsiteModalOpen(true)}
                       className={cn(
-                        "h-4 w-4 transition-all sm:h-5 sm:w-5",
-                        !fotocasaActive && "grayscale",
+                        "rounded-full bg-white px-4 py-2 shadow-sm transition-all duration-300 cursor-pointer text-[10px] uppercase tracking-widest sm:px-5 sm:py-2.5 sm:text-xs",
+                        publishedToWebsite
+                          ? "font-bold text-gray-800"
+                          : "font-medium text-gray-400",
                       )}
-                    />
-                    {/* Idealista */}
-                    <Image
-                      src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/faviconide.png"
-                      alt="Idealista"
-                      width={20}
-                      height={20}
-                      className={cn(
-                        "h-4 w-4 transition-all sm:h-5 sm:w-5",
-                        !idealistaActive && "grayscale",
-                      )}
-                    />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-[10px]">
-                    {fotocasaActive && idealistaActive
-                      ? "Publicado en Fotocasa e Idealista"
-                      : fotocasaActive
-                        ? "Publicado en Fotocasa"
-                        : idealistaActive
-                          ? "Publicado en Idealista"
-                          : "No publicado en portales"}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
+                    >
+                      Web
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-[10px]">
+                      {publishedToWebsite
+                        ? "Publicado en web"
+                        : "Haz clic para publicar en web"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
 
-              {/* Cartel Colgado */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div
-                    onClick={() => setEnEscaparateModalOpen(true)}
-                    className={cn(
-                      "flex items-center justify-center rounded-lg h-10 w-10 transition-all duration-300 sm:h-12 sm:w-12 cursor-pointer",
-                      enEscaparate
-                        ? "bg-white shadow-md hover:shadow-lg"
-                        : "bg-white opacity-20 hover:opacity-100 hover:shadow-md hover:scale-105 shadow-sm",
-                    )}
-                  >
-                    <CheckCircle2
+                {/* Portals Group Chip - Fotocasa & Idealista Combined */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setPortalsModalOpen(true)}
                       className={cn(
-                        "h-4 w-4 transition-all sm:h-5 sm:w-5",
-                        enEscaparate ? "text-gray-700" : "text-gray-400 hover:text-gray-700",
+                        "flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-sm transition-all duration-300 cursor-pointer text-[10px] uppercase tracking-widest sm:px-5 sm:py-2.5 sm:text-xs",
+                        fotocasaActive || idealistaActive
+                          ? "font-bold text-gray-800"
+                          : "font-medium text-gray-400",
                       )}
-                    />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-[10px]">
-                    {enEscaparate ? "En escaparate" : "No en escaparate"}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
+                    >
+                      {/* Fotocasa Logo */}
+                      <Image
+                        src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/faviconfoto.png"
+                        alt="Fotocasa"
+                        width={14}
+                        height={14}
+                        className={cn(
+                          "h-3 w-3 sm:h-3.5 sm:w-3.5",
+                          !(fotocasaActive || idealistaActive) && "grayscale opacity-50",
+                        )}
+                      />
+                      {/* Idealista Logo */}
+                      <Image
+                        src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/faviconide.png"
+                        alt="Idealista"
+                        width={14}
+                        height={14}
+                        className={cn(
+                          "h-3 w-3 sm:h-3.5 sm:w-3.5",
+                          !(fotocasaActive || idealistaActive) && "grayscale opacity-50",
+                        )}
+                      />
+                      <span>Portales</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-[10px]">
+                      {fotocasaActive && idealistaActive
+                        ? "Publicado en Fotocasa e Idealista"
+                        : fotocasaActive
+                          ? "Publicado en Fotocasa"
+                          : idealistaActive
+                            ? "Publicado en Idealista"
+                            : "Haz clic para publicar en portales"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* Cartel Colgado Chip */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setEnEscaparateModalOpen(true)}
+                      className={cn(
+                        "rounded-full bg-white px-4 py-2 shadow-sm transition-all duration-300 cursor-pointer text-[10px] uppercase tracking-widest sm:px-5 sm:py-2.5 sm:text-xs",
+                        enEscaparate
+                          ? "font-bold text-gray-800"
+                          : "font-medium text-gray-400",
+                      )}
+                    >
+                      Escaparate
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-[10px]">
+                      {enEscaparate ? "En escaparate" : "Haz clic para marcar en escaparate"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
           </div>
         </div>

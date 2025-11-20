@@ -6,10 +6,11 @@ import { Textarea } from "~/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import type { CommentWithUser } from "~/types/comments";
 import { CommentItem, type CommentWithStatus } from "~/components/propiedades/detail/comments";
@@ -372,14 +373,30 @@ export function EnEscaparateModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto [&>button]:hidden">
           <DialogHeader>
-            <DialogTitle>En Escaparate</DialogTitle>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <DialogTitle>En Escaparate</DialogTitle>
+                <DialogDescription className="mt-2">
+                  ¿Está colocado el cartel en el escaparate?
+                </DialogDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onOpenChange(false)}
+                className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                title="Cerrar"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </DialogHeader>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Add New Comment */}
-            <div className="rounded-lg p-4">
+            <div className="rounded-lg p-3">
                 <div className="relative">
                   <Textarea
                     placeholder="Escribe una nota sobre el escaparate..."
@@ -387,7 +404,7 @@ export function EnEscaparateModal({
                     onChange={(e) => setNewComment(e.target.value)}
                     className="min-h-[80px] resize-none border-gray-200 pr-24"
                   />
-                  <div className="absolute right-2 top-2 flex items-center gap-2">
+                  <div className="absolute right-1 top-1 flex items-center gap-2">
                     <PushToTalkWhisperButton
                       onTranscript={(text) => {
                         setNewComment((prev) =>
@@ -404,10 +421,8 @@ export function EnEscaparateModal({
                       variant="ghost"
                       className="h-7 px-2 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100"
                     >
-                      {isPending ? (
+                      {isPending && (
                         <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : (
-                        "Añadir nota"
                       )}
                     </Button>
                   </div>
@@ -416,7 +431,7 @@ export function EnEscaparateModal({
 
             {/* Comments Section */}
             {optimisticComments.length > 0 && (
-              <div className="space-y-3">
+              <div className="space-y-4 px-4 text-sm">
                 {optimisticComments.map((comment) => (
                   <div key={comment.commentId.toString()}>
                     <CommentItem

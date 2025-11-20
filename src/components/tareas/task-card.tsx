@@ -27,24 +27,24 @@ interface TaskCardProps {
   onClick?: (taskId: string) => void;
 }
 
-function getUrgencyColor(urgency: number | null): string {
-  if (!urgency) return "bg-gray-100 text-gray-800";
+// function getUrgencyColor(urgency: number | null): string {
+//   if (!urgency) return "bg-gray-100 text-gray-800";
 
-  switch (urgency) {
-    case 5:
-      return "bg-red-100 text-red-800";
-    case 4:
-      return "bg-orange-100 text-orange-800";
-    case 3:
-      return "bg-yellow-100 text-yellow-800";
-    case 2:
-      return "bg-blue-100 text-blue-800";
-    case 1:
-      return "bg-green-100 text-green-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-}
+//   switch (urgency) {
+//     case 5:
+//       return "bg-red-100 text-red-800";
+//     case 4:
+//       return "bg-orange-100 text-orange-800";
+//     case 3:
+//       return "bg-yellow-100 text-yellow-800";
+//     case 2:
+//       return "bg-blue-100 text-blue-800";
+//     case 1:
+//       return "bg-green-100 text-green-800";
+//     default:
+//       return "bg-gray-100 text-gray-800";
+//   }
+// }
 
 function getUrgencyBgColor(urgency: number | null): string {
   if (!urgency) return "bg-gray-300/60";
@@ -65,24 +65,24 @@ function getUrgencyBgColor(urgency: number | null): string {
   }
 }
 
-function getUrgencyLabel(urgency: number | null): string {
-  if (!urgency) return "Sin prioridad";
+// function getUrgencyLabel(urgency: number | null): string {
+//   if (!urgency) return "Sin prioridad";
 
-  switch (urgency) {
-    case 5:
-      return "Crítica";
-    case 4:
-      return "Alta";
-    case 3:
-      return "Media";
-    case 2:
-      return "Baja";
-    case 1:
-      return "Muy baja";
-    default:
-      return "Sin prioridad";
-  }
-}
+//   switch (urgency) {
+//     case 5:
+//       return "Crítica";
+//     case 4:
+//       return "Alta";
+//     case 3:
+//       return "Media";
+//     case 2:
+//       return "Baja";
+//     case 1:
+//       return "Muy baja";
+//     default:
+//       return "Sin prioridad";
+//   }
+// }
 
 function formatDate(date: Date): string {
   return new Intl.DateTimeFormat("es-ES", {
@@ -206,7 +206,7 @@ export function TaskCard({ task, onToggleCompleted, onClick }: TaskCardProps) {
               {/* Title */}
               <h4
                 className={cn(
-                  "text-sm font-medium leading-tight flex-1",
+                  "text-sm font-medium leading-tight flex-1 line-clamp-2",
                   (task.completed ?? false) && "text-gray-500 line-through",
                 )}
               >

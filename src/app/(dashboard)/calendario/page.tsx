@@ -520,8 +520,8 @@ export default function AppointmentsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-xl font-bold sm:text-2xl">Calendario</h1>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">Calendario</h1>
         <div className="flex items-center gap-2">
           <Button
             onClick={handleCreateAppointment}
@@ -534,14 +534,15 @@ export default function AppointmentsPage() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="space-y-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 items-center gap-2">
-          <div className="relative flex-1 lg:max-w-sm">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <div className="relative flex-1 md:max-w-sm">
+            <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Buscar citas..."
-              className="w-full pl-8"
+              className="h-8 w-full border-0 pl-8 text-sm shadow-md"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -1592,6 +1593,7 @@ export default function AppointmentsPage() {
         onDirectionChange={updateSyncDirection}
         loading={integration.loading}
       />
+      </div>
     </div>
   );
 }

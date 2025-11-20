@@ -381,7 +381,7 @@ export async function getContactTasksWithAuth(contactId: bigint) {
 
 export async function getContactTasks(contactId: bigint, accountId: number) {
   try {
-    const { tasks, listingContacts } = await import("../db/schema");
+    const { tasks, listingContacts, listings, properties } = await import("../db/schema");
 
     const contactTasks = await db
       .select({
@@ -410,6 +410,8 @@ export async function getContactTasks(contactId: bigint, accountId: number) {
         userName: users.name,
         userFirstName: users.firstName,
         userLastName: users.lastName,
+        // Property information for badge display
+        propertyTitle: properties.title,
       })
       .from(tasks)
       .leftJoin(
@@ -417,6 +419,8 @@ export async function getContactTasks(contactId: bigint, accountId: number) {
         eq(tasks.listingContactId, listingContacts.listingContactId),
       )
       .leftJoin(contacts, eq(contacts.contactId, contactId))
+      .leftJoin(listings, eq(tasks.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .innerJoin(users, eq(tasks.userId, users.id))
       .where(
         and(

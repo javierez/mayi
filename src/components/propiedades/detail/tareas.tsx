@@ -1,6 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import Image from "next/image";
-import Link from "next/link";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
@@ -22,22 +20,18 @@ import { Badge } from "~/components/ui/badge";
 import { Separator } from "~/components/ui/separator";
 import {
   Plus,
-  Trash2,
-  Check,
   AlertCircle,
-  CheckCircle2,
   Loader2,
-  User,
-  Calendar,
-  ChevronDown,
-  ChevronUp,
-  Edit,
   Filter,
   X,
+  Check,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
-import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { TareasSkeleton } from "~/components/ui/skeletons";
 import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
+import { TaskCard } from "~/components/tasks/task-card";
+import { TaskViewModal } from "~/components/tasks/task-view-modal";
 import { createTaskWithAuth, updateTaskWithAuth } from "~/server/queries/task";
 import {
   getAllPotentialOwnersWithAuth,
@@ -153,11 +147,13 @@ export function Tareas({
   const [taskStates, setTaskStates] = useState<
     Record<string, "saving" | "saved" | "error">
   >({});
-  const [expandedDescriptions, setExpandedDescriptions] = useState<
-    Record<string, boolean>
-  >({});
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedTaskForView, setSelectedTaskForView] = useState<{
+    taskId: string;
+    task: Task;
+  } | null>(null);
+  const [optimisticTasks, setOptimisticTasks] = useState<Task[]>([]);
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [contacts, setContacts] = useState<ContactOption[]>([]);
@@ -182,6 +178,11 @@ export function Tareas({
     useState<boolean>(false);
   const [hasDeleteAllPermission, setHasDeleteAllPermission] =
     useState<boolean>(false);
+
+  // Update optimistic tasks when tasks prop changes
+  useEffect(() => {
+    setOptimisticTasks(tasks);
+  }, [tasks]);
 
   // Fetch all contacts when user starts creating a task
   useEffect(() => {
@@ -358,10 +359,10 @@ export function Tareas({
     return task.createdBy === session?.user?.id || hasDeleteAllPermission;
   };
 
-  const canUserCompleteTask = (task: Task): boolean => {
-    // User can complete if they created the task OR have editAll permission
-    return task.createdBy === session?.user?.id || hasEditAllPermission;
-  };
+  // const canUserCompleteTask = (task: Task): boolean => {
+  //   // User can complete if they created the task OR have editAll permission
+  //   return task.createdBy === session?.user?.id || hasEditAllPermission;
+  // };
 
   const handleAddTask = async () => {
     if (!newTask.title.trim() || !newTask.description.trim()) return;
@@ -649,28 +650,6 @@ export function Tareas({
     }
   };
 
-  const handleEditTask = (task: Task) => {
-    setEditingTask(task);
-    setIsAdding(true);
-
-    // Pre-fill form with task data
-    const dueDateString: string =
-      task.dueDate?.toISOString().split("T")[0] ?? "";
-    const dueTimeString: string =
-      task.dueDate?.toTimeString().slice(0, 5) ?? "";
-
-    setNewTask({
-      title: task.title,
-      description: task.description,
-      dueDate: dueDateString,
-      dueTime: dueTimeString,
-      contactId: task.relatedContact?.contactId.toString() ?? "",
-      appointmentId: task.appointmentId?.toString() ?? "",
-      agentId: task.userId,
-      urgency: task.urgency?.toString() ?? "",
-    });
-  };
-
   const handleUpdateTask = async () => {
     if (!editingTask || !newTask.title.trim() || !newTask.description.trim())
       return;
@@ -844,19 +823,118 @@ export function Tareas({
   };
 
   const handleToggleCompleted = async (id: string) => {
-    await onToggleCompleted(id);
+    // Find the task to get current completed state
+    const task = optimisticTasks.find((t) => t.id === id);
+    if (!task) {
+      console.log("Task not found:", id);
+      return;
+    }
+
+    const newCompleted = !task.completed;
+    console.log("Toggling task:", id, "from", task.completed, "to", newCompleted);
+
+    // OPTIMISTIC UPDATE: Immediately update the UI
+    setOptimisticTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, completed: newCompleted } : t)),
+    );
+
+    // Set saving state for visual feedback
+    setTaskStates((prev) => ({ ...prev, [id]: "saving" }));
+
+    try {
+      await onToggleCompleted(id);
+
+      // Set saved state
+      setTaskStates((prev) => ({ ...prev, [id]: "saved" }));
+
+      // Clear the saved state after 2 seconds
+      setTimeout(() => {
+        setTaskStates((prev) => {
+          const newStates = { ...prev };
+          delete newStates[id];
+          return newStates;
+        });
+      }, 2000);
+    } catch (error) {
+      console.error("Error toggling task completion:", error);
+
+      // REVERT: Restore original completed state on error
+      setOptimisticTasks((prev) =>
+        prev.map((t) =>
+          t.id === id ? { ...t, completed: task.completed } : t,
+        ),
+      );
+
+      // Set error state
+      setTaskStates((prev) => ({ ...prev, [id]: "error" }));
+
+      // Clear error state after 5 seconds
+      setTimeout(() => {
+        setTaskStates((prev) => {
+          const newStates = { ...prev };
+          delete newStates[id];
+          return newStates;
+        });
+      }, 5000);
+    }
   };
 
   const handleDeleteTask = async (id: string) => {
-    await onDeleteTask(id);
-  };
+    // Store the task for potential reversion
+    const taskToDelete = optimisticTasks.find((t) => t.id === id);
+    if (!taskToDelete) return;
 
-  const toggleDescriptionExpansion = (taskId: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent task toggle
-    setExpandedDescriptions((prev) => ({
-      ...prev,
-      [taskId]: !prev[taskId],
-    }));
+    // OPTIMISTIC UPDATE: Immediately remove from UI
+    setOptimisticTasks((prev) => prev.filter((t) => t.id !== id));
+
+    // Set saving state for visual feedback
+    setTaskStates((prev) => ({ ...prev, [id]: "saving" }));
+
+    try {
+      await onDeleteTask(id);
+
+      // Set saved state briefly before the task is removed
+      setTaskStates((prev) => ({ ...prev, [id]: "saved" }));
+
+      // Clear state after 1 second
+      setTimeout(() => {
+        setTaskStates((prev) => {
+          const newStates = { ...prev };
+          delete newStates[id];
+          return newStates;
+        });
+      }, 1000);
+    } catch (error) {
+      console.error("Error deleting task:", error);
+
+      // REVERT: Restore the task on error
+      setOptimisticTasks((prev) =>
+        [...prev, taskToDelete].sort((a, b) => {
+          // Re-sort to maintain proper order
+          if (a.completed !== b.completed) {
+            return a.completed ? 1 : -1;
+          }
+          if (a.dueDate && b.dueDate) {
+            return a.dueDate.getTime() - b.dueDate.getTime();
+          }
+          if (a.dueDate && !b.dueDate) return -1;
+          if (!a.dueDate && b.dueDate) return 1;
+          return 0;
+        }),
+      );
+
+      // Set error state
+      setTaskStates((prev) => ({ ...prev, [id]: "error" }));
+
+      // Clear error state after 5 seconds
+      setTimeout(() => {
+        setTaskStates((prev) => {
+          const newStates = { ...prev };
+          delete newStates[id];
+          return newStates;
+        });
+      }, 5000);
+    }
   };
 
   // Filter contacts based on search
@@ -882,7 +960,7 @@ export function Tareas({
 
   // Sort and filter tasks: filter by category, incomplete first, then by due date
   const sortedTasks = useMemo(() => {
-    let filteredTasks = [...tasks];
+    let filteredTasks = [...optimisticTasks];
 
     // Filter by category
     if (categoryFilter === "contact") {
@@ -911,7 +989,7 @@ export function Tareas({
       // If no due dates, maintain creation order
       return 0;
     });
-  }, [tasks, categoryFilter]);
+  }, [optimisticTasks, categoryFilter]);
 
   if (externalLoading) {
     return <TareasSkeleton />;
@@ -1392,309 +1470,66 @@ export function Tareas({
             </p>
           </div>
         ) : (
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             {sortedTasks.map((task) => {
-              const getInitials = (
-                firstName?: string,
-                lastName?: string,
-                name?: string,
-              ) => {
-                if (firstName && lastName) {
-                  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-                }
-                if (name) {
-                  const parts = name.split(" ").filter((p) => p.length > 0);
-                  if (parts.length >= 2 && parts[0] && parts[1]) {
-                    return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
-                  } else if (parts[0]) {
-                    return parts[0].charAt(0).toUpperCase();
-                  }
-                }
-                return "U";
-              };
+              const canEdit = canUserEditTask(task);
+              const canDelete = canUserDeleteTask(task);
 
-              const getRemainingTime = (dueDate?: Date) => {
-                if (!dueDate) return null;
-
-                const now = new Date();
-                const today = new Date(
-                  now.getFullYear(),
-                  now.getMonth(),
-                  now.getDate(),
-                );
-                const taskDate = new Date(
-                  dueDate.getFullYear(),
-                  dueDate.getMonth(),
-                  dueDate.getDate(),
-                );
-
-                // Create full datetime - defaulting to end of day
-                const fullDueDateTime = new Date(
-                  dueDate.getFullYear(),
-                  dueDate.getMonth(),
-                  dueDate.getDate(),
-                  23,
-                  59,
-                );
-
-                const diffMs = fullDueDateTime.getTime() - now.getTime();
-                const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-                const diffMinutes = Math.floor(diffMs / (1000 * 60));
-
-                if (diffMs < 0) {
-                  const overdueDays = Math.abs(diffDays);
-                  const overdueHours = Math.abs(diffHours);
-                  if (overdueDays > 0) {
-                    return `${overdueDays} día${overdueDays !== 1 ? "s" : ""} vencido`;
-                  } else if (overdueHours > 0) {
-                    return `${overdueHours} hora${overdueHours !== 1 ? "s" : ""} vencido`;
-                  } else {
-                    return "Vencido";
-                  }
-                }
-
-                if (taskDate.getTime() === today.getTime()) {
-                  // Same day
-                  if (diffHours > 0) {
-                    return `${diffHours} hora${diffHours !== 1 ? "s" : ""} restantes`;
-                  } else if (diffMinutes > 0) {
-                    return `${diffMinutes} minuto${diffMinutes !== 1 ? "s" : ""} restantes`;
-                  } else {
-                    return "Vence ahora";
-                  }
-                } else {
-                  // Different day
-                  return `${diffDays} día${diffDays !== 1 ? "s" : ""} restantes`;
-                }
-              };
-
-              const canComplete = canUserCompleteTask(task);
+              // Debug logging
+              if (sortedTasks.indexOf(task) === 0) {
+                console.log("First task permissions:", {
+                  taskId: task.id,
+                  canEdit,
+                  canDelete,
+                  createdBy: task.createdBy,
+                  sessionUserId: session?.user?.id,
+                  hasEditAllPermission,
+                });
+              }
 
               return (
-                <div key={task.id}>
-                  <div
-                    className={`group relative rounded-xl p-3 shadow-md transition-all duration-200 sm:p-4 ${
-                      task.completed ? "bg-gray-50/50 opacity-75" : "bg-white"
-                    } ${taskStates[task.id] === "saving" ? "opacity-70" : ""} ${
-                      canComplete ? "cursor-pointer hover:shadow-lg" : "cursor-not-allowed"
-                    }`}
-                    onClick={() => canComplete && handleToggleCompleted(task.id)}
-                  >
-                    {/* User avatar - top right */}
-                    <div className="absolute right-2 top-2 flex flex-col items-center gap-1 sm:right-3 sm:top-3">
-                      <div
-                        title={
-                          task.userName ??
-                          (`${task.userFirstName ?? ""} ${task.userLastName ?? ""}`.trim() ||
-                            "Usuario")
-                        }
-                      >
-                        <Avatar className="h-6 w-6 ring-2 ring-gray-100 sm:h-7 sm:w-7">
-                          <AvatarFallback className="text-xs font-medium">
-                            {getInitials(
-                              task.userFirstName,
-                              task.userLastName,
-                              task.userName,
-                            )}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
-                      {/* System task indicator - under avatar */}
-                      {task.createdBy === "0" && (
-                        <div
-                          className="flex h-5 w-5 items-center justify-center sm:h-6 sm:w-6"
-                          title="Tarea del sistema"
-                        >
-                          <Image
-                            src="/favicon.ico"
-                            alt="Sistema"
-                            width={20}
-                            height={20}
-                            className="h-4 w-4 object-contain opacity-60 sm:h-5 sm:w-5"
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Task content */}
-                    <div className="pr-8 sm:pr-10">
-                      <div className="mb-2 flex items-center gap-2 sm:gap-3">
-                        {/* Checkbox */}
-                        <div
-                          className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-md border-2 transition-all duration-200 ${
-                            task.completed
-                              ? "border-emerald-500 bg-emerald-500 text-white shadow-sm"
-                              : canComplete
-                                ? "border-gray-300 hover:border-gray-400"
-                                : "border-gray-200 bg-gray-100 cursor-not-allowed"
-                          }`}
-                        >
-                          {task.completed && <Check className="h-2.5 w-2.5" />}
-                        </div>
-
-                        <h3
-                          className={`text-sm font-semibold leading-tight ${task.completed ? "text-gray-500 line-through" : "text-gray-900"}`}
-                        >
-                          {task.title}
-                        </h3>
-
-                        {taskStates[task.id] === "saving" && (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />
-                        )}
-                        {taskStates[task.id] === "saved" && (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                        )}
-                      </div>
-
-                      <div className="mb-3 ml-6 sm:ml-8">
-                        {(() => {
-                          const isExpanded = expandedDescriptions[task.id];
-                          const isLongDescription =
-                            task.description.length > 120;
-                          const displayText =
-                            isExpanded || !isLongDescription
-                              ? task.description
-                              : task.description.substring(0, 120) + "...";
-
-                          return (
-                            <div className="group">
-                              <p
-                                className={`text-[13px] leading-relaxed ${task.completed ? "text-gray-400 line-through" : "text-gray-500"}`}
-                              >
-                                {displayText}
-                              </p>
-                              {isLongDescription && (
-                                <button
-                                  onClick={(e) =>
-                                    toggleDescriptionExpansion(task.id, e)
-                                  }
-                                  className={`mt-1 transition-colors ${
-                                    task.completed
-                                      ? "text-gray-400 hover:text-gray-500"
-                                      : "text-gray-500 hover:text-gray-700"
-                                  }`}
-                                >
-                                  {isExpanded ? (
-                                    <ChevronUp className="h-3 w-3" />
-                                  ) : (
-                                    <ChevronDown className="h-3 w-3" />
-                                  )}
-                                </button>
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </div>
-
-                      {/* Related items with time */}
-                      {(task.relatedContact ??
-                        task.relatedAppointment ??
-                        task.dueDate) && (
-                        <div className="mb-1 ml-6 flex flex-wrap items-center gap-2 sm:ml-8">
-                          {task.dueDate && (() => {
-                            const now = new Date();
-                            const fullDueDateTime = new Date(
-                              task.dueDate.getFullYear(),
-                              task.dueDate.getMonth(),
-                              task.dueDate.getDate(),
-                              23,
-                              59,
-                            );
-                            const diffMs = fullDueDateTime.getTime() - now.getTime();
-                            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-
-                            // Determine color based on time remaining
-                            let colorClasses = "";
-                            if (diffMs < 0) {
-                              // Overdue - rose
-                              colorClasses = "bg-rose-100 text-rose-800";
-                            } else if (diffHours < 24) {
-                              // Less than 1 day - orange
-                              colorClasses = "bg-orange-100 text-orange-800";
-                            } else {
-                              // More than 1 day - yellow
-                              colorClasses = "bg-yellow-100 text-yellow-800";
-                            }
-
-                            return (
-                              <span className={`inline-block whitespace-nowrap rounded-full px-1.5 py-0.5 text-[9px] font-normal sm:text-[10px] sm:px-2 ${colorClasses}`}>
-                                {getRemainingTime(task.dueDate)}
-                              </span>
-                            );
-                          })()}
-                          {task.relatedContact && (
-                            <Link
-                              href={`/contactos/${task.relatedContact.contactId}`}
-                              className="flex items-center gap-1 break-words text-xs font-normal text-gray-500 transition-colors hover:text-gray-700"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <User className="h-3 w-3 flex-shrink-0 opacity-60" />
-                              <span className="max-w-32 truncate sm:max-w-none">
-                                {task.relatedContact.name}
-                              </span>
-                            </Link>
-                          )}
-                          {task.relatedAppointment && (
-                            <Badge
-                              variant="outline"
-                              className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium sm:px-2.5"
-                            >
-                              <Calendar className="h-3 w-3 flex-shrink-0" />
-                              <span className="truncate">
-                                {task.relatedAppointment.type}
-                              </span>
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Action buttons - bottom right */}
-                    <div className="absolute bottom-1 right-1 flex items-center gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 sm:bottom-2 sm:right-2">
-                      {canUserEditTask(task) && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditTask(task);
-                          }}
-                          className="h-6 w-6 rounded-lg p-0 text-gray-400 transition-colors duration-200 hover:bg-blue-50 hover:text-blue-500 sm:h-7 sm:w-7"
-                          title="Editar tarea"
-                        >
-                          <Edit className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                        </Button>
-                      )}
-                      {canUserDeleteTask(task) && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            void handleDeleteTask(
-                              task.taskId?.toString() ?? task.id,
-                            );
-                          }}
-                          className="h-6 w-6 rounded-lg p-0 text-gray-400 transition-colors duration-200 hover:bg-red-50 hover:text-red-500 sm:h-7 sm:w-7"
-                          title="Eliminar tarea"
-                        >
-                          <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Show edit form inline after this task if it's being edited */}
-                  {editingTask?.id === task.id && (
-                    <div className="mt-2">{taskForm}</div>
-                  )}
-                </div>
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  showPropertyBadge={false}
+                  onToggleCompleted={async (taskId, _currentCompleted) => {
+                    console.log("onToggleCompleted callback called with:", taskId);
+                    await handleToggleCompleted(taskId.toString());
+                  }}
+                  onDeleteClick={(taskId, _title) => {
+                    void handleDeleteTask(taskId.toString());
+                  }}
+                  onTaskClick={(taskId, task) => {
+                    setSelectedTaskForView({
+                      taskId: taskId.toString(),
+                      task,
+                    });
+                  }}
+                  taskState={taskStates[task.id]}
+                  canEdit={canEdit}
+                  canDelete={canDelete}
+                />
               );
             })}
           </div>
         )}
       </div>
+
+      {/* Task View Modal */}
+      <TaskViewModal
+        open={selectedTaskForView !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedTaskForView(null);
+          }
+        }}
+        taskId={selectedTaskForView?.taskId ? Number(selectedTaskForView.taskId) : null}
+        initialTask={null}
+        onSuccess={() => {
+          // Close modal and refresh if needed
+          setSelectedTaskForView(null);
+        }}
+      />
     </div>
   );
 }

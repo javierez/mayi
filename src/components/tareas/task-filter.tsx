@@ -15,7 +15,7 @@ import {
   Check,
   ChevronDown,
   User,
-  Tag,
+  UserPlus,
   AlertCircle,
   FilterX,
   X,
@@ -30,7 +30,6 @@ interface TaskFilterProps {
 
 export function TaskFilter({
   users = [],
-  categories = [],
   searchBar,
 }: TaskFilterProps) {
   const router = useRouter();
@@ -38,7 +37,6 @@ export function TaskFilter({
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [taskFilters, setTaskFilters] = useState({
     createdBy: [] as string[],
-    category: [] as string[],
     urgency: [] as string[],
     assignedTo: [] as string[],
   });
@@ -47,20 +45,17 @@ export function TaskFilter({
     Record<string, boolean>
   >({
     createdBy: false,
-    category: false,
     urgency: false,
   });
 
   // Initialize filters from URL on mount
   useEffect(() => {
     const createdBy = searchParams.get("createdBy");
-    const category = searchParams.get("category");
     const urgency = searchParams.get("urgency");
     const assignedTo = searchParams.get("assignedTo");
 
     setTaskFilters({
       createdBy: createdBy ? createdBy.split(",") : [],
-      category: category ? category.split(",") : [],
       urgency: urgency ? urgency.split(",") : [],
       assignedTo: assignedTo ? assignedTo.split(",") : [],
     });
@@ -75,13 +70,6 @@ export function TaskFilter({
       params.set("createdBy", newTaskFilters.createdBy.join(","));
     } else {
       params.delete("createdBy");
-    }
-
-    // Update category
-    if (newTaskFilters.category.length > 0) {
-      params.set("category", newTaskFilters.category.join(","));
-    } else {
-      params.delete("category");
     }
 
     // Update urgency
@@ -102,7 +90,7 @@ export function TaskFilter({
   };
 
   const toggleFilter = (
-    filterType: "createdBy" | "category" | "urgency",
+    filterType: "createdBy" | "urgency",
     value: string,
   ) => {
     const currentValues = taskFilters[filterType];
@@ -150,7 +138,6 @@ export function TaskFilter({
   const clearFilters = () => {
     const newFilters = {
       createdBy: [],
-      category: [],
       urgency: [],
       assignedTo: [],
     };
@@ -161,8 +148,8 @@ export function TaskFilter({
 
   const activeFiltersCount =
     taskFilters.createdBy.length +
-    taskFilters.category.length +
-    taskFilters.urgency.length;
+    taskFilters.urgency.length +
+    taskFilters.assignedTo.length;
 
   const AssignedToFilterOption = ({
     value,
@@ -199,7 +186,7 @@ export function TaskFilter({
   }: {
     value: string;
     label: string;
-    filterType: "createdBy" | "category" | "urgency";
+    filterType: "createdBy" | "urgency";
   }) => {
     const isSelected = taskFilters[filterType].includes(value);
 
@@ -263,7 +250,7 @@ export function TaskFilter({
   ];
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="mb-4 flex flex-col gap-2">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 items-center gap-2">
           {searchBar}
@@ -357,7 +344,7 @@ export function TaskFilter({
                   <FilterCategory
                     title="Creado Por"
                     category="createdBy"
-                    icon={User}
+                    icon={UserPlus}
                   >
                     <ScrollArea className="max-h-[200px]">
                       <div className="space-y-0.5">
@@ -367,28 +354,6 @@ export function TaskFilter({
                             value={user.id}
                             label={user.name}
                             filterType="createdBy"
-                          />
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </FilterCategory>
-                )}
-
-                {/* Category Filter */}
-                {categories.length > 0 && (
-                  <FilterCategory
-                    title="Categoría"
-                    category="category"
-                    icon={Tag}
-                  >
-                    <ScrollArea className="max-h-[200px]">
-                      <div className="space-y-0.5">
-                        {categories.map((cat) => (
-                          <FilterOption
-                            key={cat}
-                            value={cat}
-                            label={cat}
-                            filterType="category"
                           />
                         ))}
                       </div>

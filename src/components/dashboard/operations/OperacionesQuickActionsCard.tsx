@@ -14,6 +14,8 @@ import { motion } from "framer-motion";
 import { GlobalTaskModalTrigger } from "~/components/tasks/global-task-modal";
 import { createQuickPropertyAction } from "~/app/actions/quick-property";
 import { QuickActionModal } from "~/components/contactos/quick-action-modal";
+import { QuickContactModal } from "~/components/contactos/quick-contact-modal";
+import AppointmentModal from "~/components/appointments/appointment-modal";
 
 interface OperacionesQuickActionsCardProps {
   onTaskCreated?: () => void;
@@ -25,6 +27,8 @@ export default function OperacionesQuickActionsCard({
   const router = useRouter();
   const [isCreatingProperty, setIsCreatingProperty] = useState(false);
   const [isQuickActionModalOpen, setIsQuickActionModalOpen] = useState(false);
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+  const [isQuickContactModalOpen, setIsQuickContactModalOpen] = useState(false);
 
   const handleAddProperty = async () => {
     try {
@@ -54,7 +58,7 @@ export default function OperacionesQuickActionsCard({
     {
       icon: Users,
       label: "Añadir Contacto",
-      href: "/contactos/crear",
+      onClick: () => setIsQuickContactModalOpen(true),
     },
     {
       icon: CheckSquare,
@@ -64,7 +68,7 @@ export default function OperacionesQuickActionsCard({
     {
       icon: Calendar,
       label: "Programar Cita",
-      href: "/calendario?new=true",
+      onClick: () => setIsAppointmentModalOpen(true),
     },
     {
       icon: Phone,
@@ -156,6 +160,26 @@ export default function OperacionesQuickActionsCard({
           // Optionally refresh or update UI after success
           setIsQuickActionModalOpen(false);
           // Refresh tasks if callback is provided
+          if (onTaskCreated) {
+            onTaskCreated();
+          }
+        }}
+      />
+      <AppointmentModal
+        open={isAppointmentModalOpen}
+        onOpenChange={setIsAppointmentModalOpen}
+        mode="create"
+        onSuccess={() => {
+          setIsAppointmentModalOpen(false);
+        }}
+      />
+      <QuickContactModal
+        open={isQuickContactModalOpen}
+        onOpenChange={setIsQuickContactModalOpen}
+        onSuccess={(_contact) => {
+          // Refresh the page to show the new contact
+          router.refresh();
+          // Trigger onTaskCreated callback if provided
           if (onTaskCreated) {
             onTaskCreated();
           }

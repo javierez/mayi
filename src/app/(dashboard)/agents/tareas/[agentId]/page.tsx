@@ -53,6 +53,12 @@ export default async function AgentTareasPage({
     category: result.tasks.category,
     status: result.tasks.status ?? "backlog",
     completed: result.tasks.completed,
+    createdAt: result.tasks.createdAt,
+    listingId: result.tasks.listingId?.toString() ?? null,
+    contactId: result.contacts?.contactId?.toString() ?? result.tasks.contactId?.toString() ?? null,
+    propertyTitle: result.properties?.title ?? null,
+    contactFirstName: result.contacts?.firstName ?? null,
+    contactLastName: result.contacts?.lastName ?? null,
   }));
 
   // Fetch users for filter

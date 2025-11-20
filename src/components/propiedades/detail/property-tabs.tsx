@@ -94,6 +94,7 @@ interface PropertyTabsProps {
     publishToWebsite?: boolean | null;
     hasCartel?: boolean | null;
     enEscaparate?: boolean | null;
+    hasKeys?: boolean | null;
     fotocasaProps?: unknown;
     idealistaProps?: unknown;
     habitacliaProps?: unknown;
@@ -116,7 +117,7 @@ interface PropertyTabsProps {
 }
 
 export function PropertyTabs({
-  listing,
+  listing: initialListing,
   convertedListing,
   images,
   videos,
@@ -133,6 +134,8 @@ export function PropertyTabs({
   const [activeTab, setActiveTab] = useState(tabParam ?? "general");
   const [selectedMediaType, setSelectedMediaType] =
     useState<MediaType>("images");
+  // Local state for listing to track portal updates
+  const [listing, setListing] = useState(initialListing);
   const [tabData, setTabData] = useState<{
     images: PropertyImage[] | null;
     videos: PropertyImage[] | null;
@@ -499,6 +502,36 @@ export function PropertyTabs({
     }));
   };
 
+  const handlePortalsSaved = (updatedPortalValues: {
+    fotocasa?: boolean;
+    idealista?: boolean;
+    habitaclia?: boolean;
+    milanuncios?: boolean;
+    pisoscom?: boolean;
+    yaencontre?: boolean;
+    enalquiler?: boolean;
+    kyero?: boolean;
+    publishToWebsite?: boolean;
+    hasCartel?: boolean;
+    enEscaparate?: boolean;
+    hasKeys?: boolean;
+    fotocasaProps?: unknown;
+  }) => {
+    // Update listing state with new portal values (only fields that exist in listing type)
+    setListing((prev) => ({
+      ...prev,
+      fotocasa: updatedPortalValues.fotocasa ?? prev.fotocasa,
+      idealista: updatedPortalValues.idealista ?? prev.idealista,
+      habitaclia: updatedPortalValues.habitaclia ?? prev.habitaclia,
+      milanuncios: updatedPortalValues.milanuncios ?? prev.milanuncios,
+      publishToWebsite: updatedPortalValues.publishToWebsite ?? prev.publishToWebsite,
+      hasCartel: updatedPortalValues.hasCartel ?? prev.hasCartel,
+      enEscaparate: updatedPortalValues.enEscaparate ?? prev.enEscaparate,
+      hasKeys: updatedPortalValues.hasKeys ?? prev.hasKeys,
+      fotocasaProps: updatedPortalValues.fotocasaProps ?? prev.fotocasaProps,
+    }));
+  };
+
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     // Update URL with tab parameter
@@ -540,6 +573,11 @@ export function PropertyTabs({
       void fetchTasksData();
     }
   }, [tasksRefreshTrigger, fetchTasksData]);
+
+  // Sync local listing state with initial listing prop changes
+  useEffect(() => {
+    setListing(initialListing);
+  }, [initialListing]);
 
   return (
     <Tabs
@@ -772,6 +810,7 @@ export function PropertyTabs({
             publishToWebsite={listing.publishToWebsite ?? undefined}
             hasCartel={listing.hasCartel ?? undefined}
             enEscaparate={listing.enEscaparate ?? undefined}
+            hasKeys={listing.hasKeys ?? undefined}
             fotocasaProps={listing.fotocasaProps ?? undefined}
             idealistaProps={listing.idealistaProps ?? undefined}
             habitacliaProps={listing.habitacliaProps ?? undefined}
@@ -780,6 +819,7 @@ export function PropertyTabs({
             initialVisibilityModes={tabData.portals?.visibilityModes}
             initialHidePriceModes={tabData.portals?.hidePriceModes}
             onPortalStateChange={handlePortalStateChange}
+            onPortalsSaved={handlePortalsSaved}
           />
         </div>
       </TabsContent>

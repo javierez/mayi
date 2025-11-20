@@ -34,10 +34,10 @@ export function PropertySearch({
   return (
     <div className="relative flex-1 md:max-w-sm">
       <div className="relative flex-1">
-        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-muted-foreground" />
         <Input
           placeholder={placeholder}
-          className="w-full border-0 pl-8 shadow-md"
+          className="h-8 w-full border-0 pl-8 text-sm shadow-md"
           value={value}
           onChange={handleChange}
           onKeyPress={handleKeyPress}

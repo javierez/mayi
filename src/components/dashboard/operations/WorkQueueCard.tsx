@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -16,17 +14,10 @@ import {
 import {
   CheckCircle2,
   Calendar,
-  User,
   MapPin,
-  CheckSquare,
-  Check,
-  Trash2,
-  Loader2,
-  Home,
   Phone,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "~/lib/auth-client";
 import type {
@@ -44,6 +35,7 @@ import {
 import { TaskFilter, type TaskFilters } from "./TaskFilter";
 import { AppointmentFilter } from "./AppointmentFilter";
 import { TaskViewModal } from "~/components/tasks/task-view-modal";
+import { TaskCard } from "~/components/tasks/task-card";
 
 type DetailedTask = Awaited<ReturnType<typeof getMostUrgentTasksWithAuth>>[0];
 
@@ -75,8 +67,15 @@ export default function WorkQueueCard({
   const [taskStates, setTaskStates] = useState<
     Record<string, "saving" | "saved" | "error">
   >({});
+
+  // Helper function to normalize taskId for comparison (handles BigInt, Number, and String)
+  const normalizeTaskId = (taskId: bigint | number | string | undefined): number => {
+    if (taskId === undefined) return 0;
+    if (typeof taskId === 'string') return Number(taskId);
+    if (typeof taskId === 'bigint') return Number(taskId);
+    return taskId;
+  };
   const [optimisticTasks, setOptimisticTasks] = useState<DetailedTask[]>([]);
-  const [draggingTask, setDraggingTask] = useState<string | null>(null);
   const [taskToDelete, setTaskToDelete] = useState<{
     id: number;
     title: string;
@@ -244,31 +243,31 @@ export default function WorkQueueCard({
     }).format(dateObj);
   };
 
-  const formatDate = (date: Date | string) => {
-    const today = new Date();
-    const taskDate = new Date(date);
+  // const formatDate = (date: Date | string) => {
+  //   const today = new Date();
+  //   const taskDate = new Date(date);
 
-    // Check if date is valid
-    if (isNaN(taskDate.getTime())) {
-      return "Fecha inválida";
-    }
+  //   // Check if date is valid
+  //   if (isNaN(taskDate.getTime())) {
+  //     return "Fecha inválida";
+  //   }
 
-    if (taskDate.toDateString() === today.toDateString()) {
-      return "Hoy";
-    }
+  //   if (taskDate.toDateString() === today.toDateString()) {
+  //     return "Hoy";
+  //   }
 
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
+  //   const tomorrow = new Date(today);
+  //   tomorrow.setDate(today.getDate() + 1);
 
-    if (taskDate.toDateString() === tomorrow.toDateString()) {
-      return "Mañana";
-    }
+  //   if (taskDate.toDateString() === tomorrow.toDateString()) {
+  //     return "Mañana";
+  //   }
 
-    return new Intl.DateTimeFormat("es-ES", {
-      month: "short",
-      day: "numeric",
-    }).format(taskDate);
-  };
+  //   return new Intl.DateTimeFormat("es-ES", {
+  //     month: "short",
+  //     day: "numeric",
+  //   }).format(taskDate);
+  // };
 
 
   const formatAppointmentDate = (date: Date | string) => {
@@ -320,105 +319,118 @@ export default function WorkQueueCard({
     return typeMap[appointmentType] ?? appointmentType?.toLowerCase() ?? "cita";
   };
 
-  const getInitials = (
-    firstName?: string,
-    lastName?: string,
-    name?: string,
-  ) => {
-    if (firstName && lastName) {
-      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-    }
-    if (name) {
-      const parts = name.split(" ").filter((p) => p.length > 0);
-      if (parts.length >= 2 && parts[0] && parts[1]) {
-        return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
-      } else if (parts[0]) {
-        return parts[0].charAt(0).toUpperCase();
-      }
-    }
-    return "U";
-  };
-
-  const getRemainingTime = (dueDate?: Date | string | null) => {
-    if (!dueDate) return null;
-
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const dueDateObj = new Date(dueDate);
-    const taskDate = new Date(
-      dueDateObj.getFullYear(),
-      dueDateObj.getMonth(),
-      dueDateObj.getDate(),
-    );
-
-    const fullDueDateTime = new Date(
-      dueDateObj.getFullYear(),
-      dueDateObj.getMonth(),
-      dueDateObj.getDate(),
-      23,
-      59,
-    );
-
-    const diffMs = fullDueDateTime.getTime() - now.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
-
-    if (diffMs < 0) {
-      const overdueDays = Math.abs(diffDays);
-      const overdueHours = Math.abs(diffHours);
-      if (overdueDays > 0) {
-        return `${overdueDays} día${overdueDays !== 1 ? "s" : ""} vencido`;
-      } else if (overdueHours > 0) {
-        return `${overdueHours} hora${overdueHours !== 1 ? "s" : ""} vencido`;
-      } else {
-        return "Vencido";
-      }
-    }
-
-    if (taskDate.getTime() === today.getTime()) {
-      if (diffHours > 0) {
-        return `${diffHours} hora${diffHours !== 1 ? "s" : ""} restantes`;
-      } else if (diffMinutes > 0) {
-        return `${diffMinutes} minuto${diffMinutes !== 1 ? "s" : ""} restantes`;
-      } else {
-        return "Vence ahora";
-      }
-    } else {
-      return `${diffDays} día${diffDays !== 1 ? "s" : ""} restantes`;
-    }
-  };
-
   const handleToggleCompleted = async (
-    taskId: number,
-    currentCompleted: boolean,
+    taskId: number | string,
+    _currentCompleted: boolean,
   ) => {
-    // Find the task to check permissions
-    const task = optimisticTasks.find((t) => t.taskId === taskId);
-    if (!task) return;
+    // Normalize taskId to number for comparison with database values
+    const taskIdNum = typeof taskId === 'string' ? Number(taskId) : taskId;
+
+    console.log("🔍 handleToggleCompleted called with:", {
+      taskId,
+      taskIdType: typeof taskId,
+      taskIdNum,
+      taskIdNumType: typeof taskIdNum,
+    });
+
+    // Find the task in the correct array (same logic as tasksToDisplay)
+    const sourceArray = optimisticTasks.length > 0 ? optimisticTasks : detailedTasks;
+
+    console.log("📦 Source array info:", {
+      arrayUsed: optimisticTasks.length > 0 ? 'optimisticTasks' : 'detailedTasks',
+      arrayLength: sourceArray.length,
+      optimisticTasksLength: optimisticTasks.length,
+      detailedTasksLength: detailedTasks.length,
+    });
+
+    console.log("📋 All taskIds in source array:", sourceArray.map(t => ({
+      taskId: t.taskId,
+      taskIdType: typeof t.taskId,
+      normalized: normalizeTaskId(t.taskId),
+      title: t.title?.substring(0, 30),
+    })));
+
+    // Find task - handle both BigInt and Number comparison
+    const task = sourceArray.find((t) => normalizeTaskId(t.taskId) === taskIdNum);
+
+    if (!task) {
+      console.error("❌ Task not found for toggle!", {
+        lookingFor: taskIdNum,
+        lookingForType: typeof taskIdNum,
+        availableIds: sourceArray.map(t => normalizeTaskId(t.taskId)),
+        comparison: sourceArray.map(t => ({
+          taskId: t.taskId,
+          normalized: normalizeTaskId(t.taskId),
+          matches: normalizeTaskId(t.taskId) === taskIdNum,
+        })),
+      });
+      return;
+    }
+
+    console.log("✅ Task found:", {
+      taskId: task.taskId,
+      taskIdType: typeof task.taskId,
+      title: task.title,
+      completed: task.completed,
+    });
 
     // Check permission
     if (!canUserEditTask(task)) {
-      console.warn("User does not have permission to edit this task");
+      console.warn("User does not have permission to edit this task", {
+        taskId: taskIdNum,
+        userId: session?.user?.id,
+        createdBy: task.createdBy,
+        hasEditAllPermission,
+      });
       // Optionally show toast notification here
       return;
     }
 
-    const taskIdStr = taskId.toString();
-    const newCompleted = !currentCompleted;
+    const taskIdStr = taskIdNum.toString();
+    const newCompleted = !task.completed;
+
+    console.log("🔄 Starting optimistic update:", {
+      taskIdNum,
+      currentCompleted: task.completed,
+      newCompleted,
+    });
 
     // Optimistic update - immediately update the UI
-    setOptimisticTasks((prev) =>
-      prev.map((task) =>
-        task.taskId === taskId ? { ...task, completed: newCompleted } : task,
-      ),
-    );
+    // If optimisticTasks is empty, populate it from detailedTasks first
+    setOptimisticTasks((prev) => {
+      const arrayToUpdate = prev.length > 0 ? prev : detailedTasks;
+      console.log("⚙️ Optimistic update - array to update:", {
+        source: prev.length > 0 ? 'prev (optimisticTasks)' : 'detailedTasks',
+        length: arrayToUpdate.length,
+      });
+
+      const updated = arrayToUpdate.map((task) => {
+        const matches = normalizeTaskId(task.taskId) === taskIdNum;
+        if (matches) {
+          console.log("✏️ Updating task:", {
+            taskId: task.taskId,
+            from: task.completed,
+            to: newCompleted,
+          });
+        }
+        return matches ? { ...task, completed: newCompleted } : task;
+      });
+
+      console.log("✅ Optimistic update complete. Updated tasks:",
+        updated.filter(t => normalizeTaskId(t.taskId) === taskIdNum).map(t => ({
+          taskId: t.taskId,
+          completed: t.completed,
+        }))
+      );
+
+      return updated;
+    });
 
     setTaskStates((prev) => ({ ...prev, [taskIdStr]: "saving" }));
 
     try {
       // Use the general task update function
-      await updateTaskWithAuth(taskId, {
+      await updateTaskWithAuth(taskIdNum, {
         completed: newCompleted,
       });
 
@@ -436,13 +448,12 @@ export default function WorkQueueCard({
       console.error("Error updating task:", error);
 
       // Revert optimistic update on error
-      setOptimisticTasks((prev) =>
-        prev.map((task) =>
-          task.taskId === taskId
-            ? { ...task, completed: currentCompleted }
-            : task,
-        ),
-      );
+      setOptimisticTasks((prev) => {
+        const arrayToUpdate = prev.length > 0 ? prev : detailedTasks;
+        return arrayToUpdate.map((t) =>
+          normalizeTaskId(t.taskId) === taskIdNum ? { ...t, completed: task.completed } : t
+        );
+      });
 
       setTaskStates((prev) => ({ ...prev, [taskIdStr]: "error" }));
 
@@ -464,8 +475,8 @@ export default function WorkQueueCard({
   const handleDeleteTask = async (taskId: number) => {
     const taskIdStr = taskId.toString();
 
-    // Store the task for potential reversion
-    const taskToDeleteData = optimisticTasks.find((t) => t.taskId === taskId);
+    // Store the task for potential reversion - handle BigInt comparison
+    const taskToDeleteData = optimisticTasks.find((t) => normalizeTaskId(t.taskId) === taskId);
     if (!taskToDeleteData) return;
 
     // Check permission
@@ -480,7 +491,7 @@ export default function WorkQueueCard({
     setTaskToDelete(null);
 
     // Optimistic update - immediately remove from UI
-    setOptimisticTasks((prev) => prev.filter((task) => task.taskId !== taskId));
+    setOptimisticTasks((prev) => prev.filter((task) => normalizeTaskId(task.taskId) !== taskId));
     setTaskStates((prev) => ({ ...prev, [taskIdStr]: "saving" }));
 
     try {
@@ -590,216 +601,30 @@ export default function WorkQueueCard({
                   const canEdit = canUserEditTask(task);
                   const canDelete = canUserDeleteTask(task);
 
+                  // Ensure task has an id field for TaskCard compatibility
+                  const taskWithId = {
+                    ...task,
+                    id: taskIdStr,
+                  };
+
                   return (
-                    <div key={taskIdStr} className="relative rounded-lg">
-                      {/* Red delete background - only shown when BOTH dragging AND has permission */}
-                      {draggingTask === taskIdStr && canDelete && (
-                        <div className="absolute inset-0 flex items-center justify-end rounded-lg bg-gradient-to-r from-red-500 to-red-600 px-4">
-                          <Trash2 className="h-5 w-5 text-white" />
-                        </div>
-                      )}
-
-                      {/* Swipeable task card */}
-                      <motion.div
-                        drag={canDelete ? "x" : false}
-                        dragConstraints={{ left: 0, right: 0 }}
-                        dragElastic={canDelete ? 0.2 : 0}
-                        onDragStart={() => {
-                          // Only enable swipe-to-delete on mobile AND if user has permission
-                          if (window.innerWidth < 640 && canDelete) {
-                            setDraggingTask(taskIdStr);
-                          }
-                        }}
-                        onDragEnd={(_e, info) => {
-                          setDraggingTask(null);
-
-                          // Only enable swipe-to-delete on mobile AND if user has permission
-                          if (window.innerWidth >= 640 || !canDelete) return;
-
-                          // If swiped more than 100px to the right, show delete confirmation
-                          if (info.offset.x > 100) {
-                            confirmDeleteTask(task.taskId, task.title);
-                          }
-                        }}
-                        onClick={(e) => {
-                          // Don't open modal if clicking on interactive elements
-                          const target = e.target as HTMLElement;
-                          if (
-                            target.closest("a") ||
-                            target.closest("button") ||
-                            target.closest('[role="button"]')
-                          ) {
-                            return;
-                          }
-                          setSelectedTaskForView({ taskId: task.taskId, task });
-                        }}
-                        className={`relative z-10 rounded-lg p-2 shadow-md transition-shadow duration-200 sm:p-3 ${
-                          (task.completed ?? false)
-                            ? "bg-gray-50 opacity-75"
-                            : "bg-white"
-                        } ${taskStates[taskIdStr] === "saving" ? "opacity-70" : ""} cursor-pointer hover:shadow-lg`}
-                      >
-                        {/* Days remaining badge and Avatar - top right, side by side */}
-                        <div className="absolute right-2 top-2 mt-1.5 flex items-center gap-1">
-                          {task.dueDate && (() => {
-                            const now = new Date();
-                            const dueDate = new Date(task.dueDate);
-                            const fullDueDateTime = new Date(
-                              dueDate.getFullYear(),
-                              dueDate.getMonth(),
-                              dueDate.getDate(),
-                              23,
-                              59,
-                            );
-                            const diffMs = fullDueDateTime.getTime() - now.getTime();
-                            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-                            const remainingTimeText = getRemainingTime(task.dueDate);
-
-                            // Determine color based on time remaining
-                            // If text contains "vencido" or diffMs is negative, use rose
-                            let colorClasses = "";
-                            if (diffMs < 0 || (remainingTimeText && remainingTimeText.includes("vencido"))) {
-                              // Overdue - rose
-                              colorClasses = "bg-rose-100 text-rose-800";
-                            } else if (diffHours < 24) {
-                              // Less than 1 day - orange
-                              colorClasses = "bg-orange-100 text-orange-800";
-                            } else {
-                              // More than 1 day - yellow
-                              colorClasses = "bg-yellow-100 text-yellow-800";
-                            }
-
-                            return (
-                              <span
-                                className={`whitespace-nowrap rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none ${colorClasses}`}
-                              >
-                                {remainingTimeText}
-                              </span>
-                            );
-                          })()}
-
-                          <Avatar
-                            className="h-4 w-4 ring-1 ring-gray-100"
-                            title={
-                              task.userName ??
-                              (`${task.userFirstName ?? ""} ${task.userLastName ?? ""}`.trim() ||
-                                "Usuario")
-                            }
-                          >
-                            <AvatarFallback className="text-[10px] font-medium">
-                              {getInitials(
-                                task.userFirstName,
-                                task.userLastName ?? undefined,
-                                task.userName,
-                              )}
-                            </AvatarFallback>
-                          </Avatar>
-                        </div>
-
-                        {/* Mobile: Compact layout, Desktop: Original layout */}
-                        <div className="flex flex-col gap-1.5">
-                          {/* Header row: Checkbox and Title */}
-                          <div className="flex items-start gap-1.5 sm:gap-2">
-                            {/* Checkbox */}
-                            <div
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (canEdit) {
-                                  void handleToggleCompleted(
-                                    task.taskId,
-                                    task.completed ?? false,
-                                  );
-                                }
-                              }}
-                              className={`mt-1 flex h-3 w-3 flex-shrink-0 items-center justify-center rounded border-2 transition-all duration-200 ${
-                                (task.completed ?? false)
-                                  ? "border-emerald-500 bg-emerald-500 text-white shadow-sm"
-                                  : "border-gray-300 hover:border-gray-400"
-                              } ${canEdit ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`}
-                            >
-                              {(task.completed ?? false) && (
-                                <Check className="h-2 w-2" />
-                              )}
-                            </div>
-
-                            {/* Title */}
-                            <div className="min-w-0 flex-1 pr-20 sm:pr-24">
-                              <h3
-                                className={`min-w-0 flex-1 break-words text-xs font-semibold leading-tight sm:text-sm ${(task.completed ?? false) ? "text-gray-500 line-through" : "text-gray-900"}`}
-                              >
-                                {task.title.length > 45
-                                  ? `${task.title.substring(0, 45)}...`
-                                  : task.title}
-                              </h3>
-                            </div>
-                          </div>
-
-                          {/* Property and Contact links - more compact on mobile */}
-                          {(Boolean(task.listingId && task.propertyTitle) ||
-                            Boolean(
-                              task.contactId &&
-                                (task.contactFirstName ?? task.contactLastName),
-                            )) && (
-                            <div className="ml-5 flex flex-wrap items-center gap-1.5 sm:ml-6">
-                              {/* Property Link */}
-                              {task.listingId && task.propertyTitle && (
-                                <Link
-                                  href={`/propiedades/${task.listingId}`}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-all duration-300 sm:px-2.5 sm:py-1 sm:text-xs ${
-                                    (task.completed ?? false)
-                                      ? "bg-gray-50/50 text-gray-400 shadow-sm hover:bg-gray-100/60 hover:shadow-md"
-                                      : "bg-white text-gray-700 shadow-sm hover:-translate-y-0.5 hover:shadow-md"
-                                  }`}
-                                >
-                                  <Home className="h-2.5 w-2.5 flex-shrink-0 opacity-60 sm:h-3 sm:w-3" />
-                                  <span className="break-words">
-                                    {task.propertyTitle.length > 30
-                                      ? `${task.propertyTitle.substring(0, 30)}...`
-                                      : task.propertyTitle}
-                                  </span>
-                                </Link>
-                              )}
-
-                              {/* Contact Link */}
-                              {task.contactId &&
-                                (task.contactFirstName ??
-                                  task.contactLastName) && (
-                                  <Link
-                                    href={`/contactos/${task.contactId}`}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-all duration-300 sm:px-2.5 sm:py-1 sm:text-xs ${
-                                      (task.completed ?? false)
-                                        ? "bg-gray-50/50 text-gray-400 shadow-sm hover:bg-gray-100/60 hover:shadow-md"
-                                        : "bg-white text-gray-700 shadow-sm hover:-translate-y-0.5 hover:shadow-md"
-                                    }`}
-                                  >
-                                    <User className="h-2.5 w-2.5 flex-shrink-0 opacity-60 sm:h-3 sm:w-3" />
-                                    <span className="break-words">
-                                      {(() => {
-                                        const fullName = `${task.contactFirstName ?? ""} ${task.contactLastName ?? ""}`.trim();
-                                        return fullName.length > 20
-                                          ? `${fullName.substring(0, 20)}...`
-                                          : fullName;
-                                      })()}
-                                    </span>
-                                  </Link>
-                                )}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Status icons - bottom right */}
-                        <div className="absolute bottom-2 right-2 flex items-center gap-1">
-                          {taskStates[taskIdStr] === "saving" && (
-                            <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
-                          )}
-                          {taskStates[taskIdStr] === "saved" && (
-                            <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                          )}
-                        </div>
-                      </motion.div>
-                    </div>
+                    <TaskCard
+                      key={taskIdStr}
+                      task={taskWithId}
+                      showPropertyBadge={true}
+                      onToggleCompleted={async (taskId, currentCompleted) => {
+                        await handleToggleCompleted(taskId, currentCompleted);
+                      }}
+                      onDeleteClick={(taskId, title) => {
+                        confirmDeleteTask(Number(taskId), title);
+                      }}
+                      onTaskClick={(taskId, task) => {
+                        setSelectedTaskForView({ taskId: Number(taskId), task });
+                      }}
+                      taskState={taskStates[taskIdStr]}
+                      canEdit={canEdit}
+                      canDelete={canDelete}
+                    />
                   );
                 })}
 
@@ -1087,6 +912,16 @@ export default function WorkQueueCard({
         }}
         taskId={selectedTaskForView?.taskId ?? null}
         initialTask={selectedTaskForView?.task ?? null}
+        onSuccess={() => {
+          // Refresh the page to get updated task data
+          router.refresh();
+          // Also remove from optimistic tasks if it was deleted
+          if (selectedTaskForView?.taskId) {
+            setOptimisticTasks((prev) =>
+              prev.filter((t) => normalizeTaskId(t.taskId) !== selectedTaskForView.taskId)
+            );
+          }
+        }}
       />
     </Card>
   );

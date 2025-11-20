@@ -29,12 +29,11 @@ export function transformUrgentActions(
       const task: DetailedTask = {
         taskId,
         userId: action.userId ?? "",
+        createdBy: null,
         title: action.title,
-        description: action.description ?? "",
         dueDate: action.dueDate
           ? new Date(action.dueDate)
           : null,
-        dueTime: null,
         completed: action.completed ?? false,
         urgency: action.urgency ?? 0,
         status: (action.status as DetailedTask["status"]) ?? "backlog",
@@ -47,10 +46,6 @@ export function transformUrgentActions(
                 ? parseInt(action.listingId, 10)
                 : action.listingId ?? 0
             : 0,
-        listingContactId: 0,
-        dealId: 0,
-        appointmentId: 0,
-        prospectId: 0,
         contactId:
           action.contactId !== undefined
             ? typeof action.contactId === "bigint"
@@ -59,9 +54,6 @@ export function transformUrgentActions(
                 ? parseInt(action.contactId, 10)
                 : action.contactId ?? 0
             : 0,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
         userName: action.userName ?? "",
         userFirstName: action.userFirstName ?? "",
         userLastName: action.userLastName ?? "",

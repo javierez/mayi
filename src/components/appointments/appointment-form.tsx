@@ -1507,7 +1507,7 @@ export default function AppointmentForm({
 
       {/* Form Content */}
       <div className="flex flex-1 flex-col space-y-6 overflow-hidden">
-        <div className="flex-1 overflow-auto">
+        <ScrollArea className="flex-1">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
@@ -1519,7 +1519,7 @@ export default function AppointmentForm({
               {renderStepContent()}
             </motion.div>
           </AnimatePresence>
-        </div>
+        </ScrollArea>
 
         {/* Validation Error */}
         {validationError && (

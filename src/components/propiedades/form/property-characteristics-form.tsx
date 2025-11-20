@@ -5,7 +5,6 @@ import { Button } from "~/components/ui/button";
 import { getAllAgentsWithAuth } from "~/server/queries/listing";
 import {
   getAllPotentialOwnersWithAuth,
-  getCurrentListingOwnersWithAuth,
   updateListingOwnersWithAuth,
 } from "~/server/queries/contact";
 import { findOrCreateLocation } from "~/server/queries/locations";
@@ -13,9 +12,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { updateProperty } from "~/server/queries/properties";
 import {
   updateListingWithAuth,
-  toggleListingKeysWithAuth,
-  toggleListingPublishToWebsiteWithAuth,
-  getListingDetailsWithAuth,
 } from "~/server/queries/listing";
 import { toast } from "sonner";
 import { PropertySummaryCard } from "./cards/property-summary-card";
@@ -973,10 +969,10 @@ export function PropertyCharacteristicsForm({
   const [rentalPrice, setRentalPrice] = useState(0);
 
   // Toggle button states
-  const [hasKeys, setHasKeys] = useState<boolean>(false);
-  const [keysLoading, setKeysLoading] = useState(false);
-  const [publishToWebsite, setPublishToWebsite] = useState<boolean>(false);
-  const [websiteLoading, setWebsiteLoading] = useState(false);
+  const [, setHasKeys] = useState<boolean>(false);
+  // const [keysLoading, setKeysLoading] = useState(false);
+  const [, setPublishToWebsite] = useState<boolean>(false);
+  // const [websiteLoading, setWebsiteLoading] = useState(false);
 
   // First property image URL
   const [firstImageUrl, setFirstImageUrl] = useState<string | null>(null);
@@ -1077,65 +1073,65 @@ export function PropertyCharacteristicsForm({
   }, [listing.propertyId]); // Removed serverAgents, serverOwners, serverCurrentOwners - no longer needed
 
   // Toggle handlers
-  const handleToggleKeys = async () => {
-    if (keysLoading) return;
+  // const handleToggleKeys = async () => {
+  //   if (keysLoading) return;
 
-    setKeysLoading(true);
-    const previousValue = hasKeys;
+  //   setKeysLoading(true);
+  //   const previousValue = hasKeys;
 
-    // Optimistic update
-    setHasKeys(!hasKeys);
+  //   // Optimistic update
+  //   setHasKeys(!hasKeys);
 
-    try {
-      const result = await toggleListingKeysWithAuth(Number(listing.listingId));
-      setHasKeys(result.hasKeys);
+  //   try {
+  //     const result = await toggleListingKeysWithAuth(Number(listing.listingId));
+  //     setHasKeys(result.hasKeys);
 
-      // Show success toast
-      if (result.hasKeys) {
-        toast.success("Marcado: Tenemos las llaves");
-      } else {
-        toast.success("Desmarcado: No tenemos las llaves");
-      }
-    } catch (error) {
-      console.error("Error toggling keys:", error);
-      // Revert optimistic update on error
-      setHasKeys(previousValue);
-      toast.error("Error al actualizar el estado de las llaves");
-    } finally {
-      setKeysLoading(false);
-    }
-  };
+  //     // Show success toast
+  //     if (result.hasKeys) {
+  //       toast.success("Marcado: Tenemos las llaves");
+  //     } else {
+  //       toast.success("Desmarcado: No tenemos las llaves");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error toggling keys:", error);
+  //     // Revert optimistic update on error
+  //     setHasKeys(previousValue);
+  //     toast.error("Error al actualizar el estado de las llaves");
+  //   } finally {
+  //     setKeysLoading(false);
+  //   }
+  // };
 
-  const handleToggleWebsite = async () => {
-    if (websiteLoading) return;
+  // const handleToggleWebsite = async () => {
+  //   if (websiteLoading) return;
 
-    setWebsiteLoading(true);
-    const previousValue = publishToWebsite;
+  //   setWebsiteLoading(true);
+  //   const previousValue = publishToWebsite;
 
-    // Optimistic update
-    setPublishToWebsite(!publishToWebsite);
+  //   // Optimistic update
+  //   setPublishToWebsite(!publishToWebsite);
 
-    try {
-      const result = await toggleListingPublishToWebsiteWithAuth(
-        Number(listing.listingId),
-      );
-      setPublishToWebsite(result.publishToWebsite);
+  //   try {
+  //     const result = await toggleListingPublishToWebsiteWithAuth(
+  //       Number(listing.listingId),
+  //     );
+  //     setPublishToWebsite(result.publishToWebsite);
 
-      // Show success toast
-      if (result.publishToWebsite) {
-        toast.success("Publicado en la web");
-      } else {
-        toast.success("Retirado de la web");
-      }
-    } catch (error) {
-      console.error("Error toggling publishToWebsite:", error);
-      // Revert optimistic update on error
-      setPublishToWebsite(previousValue);
-      toast.error("Error al actualizar el estado de publicación");
-    } finally {
-      setWebsiteLoading(false);
-    }
-  };
+  //     // Show success toast
+  //     if (result.publishToWebsite) {
+  //       toast.success("Publicado en la web");
+  //     } else {
+  //       toast.success("Retirado de la web");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error toggling publishToWebsite:", error);
+  //     // Revert optimistic update on error
+  //     setPublishToWebsite(previousValue);
+  //     toast.error("Error al actualizar el estado de publicación");
+  //   } finally {
+  //     setWebsiteLoading(false);
+  //   }
+  // };
 
   const toggleListingType = (type: string) => {
     setListingTypes([type]); // Replace the current type with the new one

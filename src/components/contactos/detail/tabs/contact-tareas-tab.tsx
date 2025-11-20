@@ -318,6 +318,7 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
           userName: task.userName ?? undefined,
           userFirstName: task.userFirstName ?? undefined,
           userLastName: task.userLastName ?? undefined,
+          propertyTitle: task.propertyTitle ?? undefined,
         }));
 
         setContactTasks(formattedTasks);

@@ -42,19 +42,22 @@ export function TaskColumn({ id, title, tasks, onToggleCompleted, onTaskClick }:
     <div
       ref={setNodeRef}
       className={cn(
-        "flex w-64 shrink-0 flex-col rounded-lg border bg-muted/30 transition-colors",
-        isOver && "bg-muted/60 ring-2 ring-primary/20",
+        "flex w-64 shrink-0 flex-col transition-colors",
+        isOver && "opacity-60",
       )}
     >
-      <div className="flex items-center justify-between border-b px-4 py-3">
-        <h3 className="text-sm font-medium tracking-wide text-foreground">
-          {title}
-        </h3>
-        <span className="text-xs text-muted-foreground">{tasks.length}</span>
+      <div className="mb-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium font-mono tracking-wider uppercase text-foreground">
+            {title}
+          </h3>
+          <span className="text-xs text-muted-foreground">{tasks.length}</span>
+        </div>
+        <div className="mt-1 h-px w-full bg-border" />
       </div>
-      <div className="custom-scrollbar flex-1 space-y-2 overflow-y-auto p-3">
+      <div className="custom-scrollbar flex-1 space-y-2 overflow-y-auto px-1">
         {tasks.length === 0 ? (
-          <div className="flex h-32 items-center justify-center rounded-md border border-dashed border-muted-foreground/25">
+          <div className="flex h-32 items-center justify-center">
             <p className="text-xs text-muted-foreground">
               Arrastra tareas aquí
             </p>
