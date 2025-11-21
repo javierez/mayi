@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sparkles, EyeOff, Trash2 } from "lucide-react";
+import { Sparkles, EyeOff, Trash2, Lightbulb } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { ToolConfirmationModal } from "./tool-confirmation-modal";
 import type { EnhancementStatus, PropertyImage } from "~/types/freepik";
@@ -24,6 +24,9 @@ interface ImageStudioToolsProps {
   // Remove clutter functionality
   onRemoveClutter?: () => Promise<void>;
   _removeClutterStatus?: RenovationStatus;
+  // Enhance lighting functionality
+  onEnhanceLighting?: () => Promise<void>;
+  _enhanceLightingStatus?: RenovationStatus;
 }
 
 export function ImageStudioTools({
@@ -39,6 +42,8 @@ export function ImageStudioTools({
   _blurFacesStatus = "idle",
   onRemoveClutter,
   _removeClutterStatus = "idle",
+  onEnhanceLighting,
+  _enhanceLightingStatus = "idle",
 }: ImageStudioToolsProps) {
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -155,6 +160,23 @@ export function ImageStudioTools({
         } catch (error) {
           console.error("Remove clutter failed:", error);
         }
+      } else if (currentTool.id === "enhance-lighting") {
+        // Handle lighting enhancement with Gemini
+        if (!selectedImage) {
+          console.error("No image selected for lighting enhancement");
+          return;
+        }
+
+        if (!onEnhanceLighting) {
+          console.error("Lighting enhancement handler not provided");
+          return;
+        }
+
+        try {
+          await onEnhanceLighting();
+        } catch (error) {
+          console.error("Lighting enhancement failed:", error);
+        }
       }
     } else {
       console.warn("No tool selected in modal");
@@ -201,8 +223,15 @@ export function ImageStudioTools({
       id: "remove-clutter",
       title: "Eliminar Desorden",
       description: "Elimina objetos y desorden no esencial",
-      tokens: GEMINI_TOKEN_COSTS.REMOVE_CLUTTER, // Fixed 100 tokens
+      tokens: GEMINI_TOKEN_COSTS.REMOVE_CLUTTER, // Fixed 170 tokens
       icon: <Trash2 className="h-3 w-3 text-white" />,
+    },
+    {
+      id: "enhance-lighting",
+      title: "Mejorar Iluminación",
+      description: "Optimiza la iluminación de forma natural",
+      tokens: GEMINI_TOKEN_COSTS.ENHANCE_LIGHTING, // Fixed 170 tokens
+      icon: <Lightbulb className="h-3 w-3 text-white" />,
     },
   ];
 

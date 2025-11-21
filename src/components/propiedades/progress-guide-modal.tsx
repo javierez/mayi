@@ -1,15 +1,20 @@
 "use client";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
-import { Info } from "lucide-react";
-import { cn } from "~/lib/utils";
+import { Info, X } from "lucide-react";
+import { Button } from "~/components/ui/button";
+import type { ProcessStage } from "~/lib/constants/process-stages";
+import { ProgressBarDisplay } from "./progress-bar-display";
 
 interface ProgressGuideModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  processStages: ProcessStage[];
+  progressPercent: number;
+  substagePercentages: Record<string, number>;
 }
 
-interface ProgressStage {
+interface StageGuide {
   id: string;
   label: string;
   percentage: number;
@@ -17,209 +22,183 @@ interface ProgressStage {
   requirements: string[];
 }
 
-const progressStages: ProgressStage[] = [
+const stageGuides: StageGuide[] = [
   {
     id: "alta",
     label: "Alta",
     percentage: 10,
-    description: "Property has been created in the system",
+    description: "La propiedad ha sido creada en el sistema",
     requirements: [
-      "The property exists in the system",
-      "Basic property registration is complete",
+      "La propiedad existe en el sistema",
+      "El registro básico de la propiedad está completo",
     ],
   },
   {
     id: "completar-info",
     label: "Ficha Completa",
     percentage: 24,
-    description: "Property information is complete and ready for marketing",
+    description: "La información de la propiedad está completa y lista para comercializar",
     requirements: [
-      "All mandatory fields are filled in",
-      "At least one property image has been uploaded",
-      "Property can be published to external portals",
+      "Todos los campos obligatorios están completados",
+      "Se ha subido al menos una imagen de la propiedad",
+      "La propiedad puede publicarse en portales externos",
     ],
   },
   {
     id: "firma-encargo",
     label: "Encargo",
     percentage: 43,
-    description: "Listing agreement signed with the property owner",
+    description: "Contrato de encargo firmado con el propietario",
     requirements: [
-      "Property information must be complete (Ficha Completa)",
-      "Encargo contract has been signed",
-      "Property is officially under your agency's representation",
+      "La información de la propiedad debe estar completa (Ficha Completa)",
+      "El contrato de encargo ha sido firmado",
+      "La propiedad está oficialmente bajo representación de tu agencia",
     ],
   },
   {
     id: "visitas",
     label: "Visitas",
     percentage: 56,
-    description: "Property showings are being scheduled and conducted",
+    description: "Se están programando y realizando visitas a la propiedad",
     requirements: [
-      "Encargo must be signed",
-      "At least one property showing has been scheduled",
-      "Active efforts to show the property to potential buyers",
+      "El encargo debe estar firmado",
+      "Se ha programado al menos una visita a la propiedad",
+      "Hay esfuerzos activos para mostrar la propiedad a potenciales compradores",
     ],
   },
   {
     id: "oferta-aceptada",
     label: "Oferta",
     percentage: 60,
-    description: "A purchase offer has been accepted by the owner",
+    description: "Una oferta de compra ha sido aceptada por el propietario",
     requirements: [
-      "Property showings have been conducted",
-      "A buyer has made an offer",
-      "The property owner has accepted the offer",
+      "Se han realizado visitas a la propiedad",
+      "Un comprador ha hecho una oferta",
+      "El propietario ha aceptado la oferta",
     ],
   },
   {
     id: "arras",
     label: "Arras",
     percentage: 73,
-    description: "Deposit contract signed and earnest money paid",
+    description: "Contrato de arras firmado y señal pagada",
     requirements: [
-      "Offer has been accepted",
-      "Arras contract has been signed by both parties",
-      "Buyer has paid the deposit (earnest money)",
+      "La oferta ha sido aceptada",
+      "El contrato de arras ha sido firmado por ambas partes",
+      "El comprador ha pagado la señal (arras)",
     ],
   },
   {
     id: "contrato",
     label: "Escritura",
     percentage: 93,
-    description: "Public deed signed at the notary",
+    description: "Escritura pública firmada ante notario",
     requirements: [
-      "Arras contract has been completed",
-      "Public deed (escritura) has been signed at the notary",
-      "Property ownership transfer is formalized",
+      "El contrato de arras ha sido completado",
+      "La escritura pública ha sido firmada ante notario",
+      "La transferencia de propiedad está formalizada",
     ],
   },
   {
     id: "cierre-final",
     label: "Cierre",
     percentage: 100,
-    description: "Deal completed successfully",
+    description: "Operación completada exitosamente",
     requirements: [
-      "Public deed has been signed",
-      "Final payment has been completed",
-      "Keys have been handed over to the buyer",
-      "Deal status is marked as 'Closed' in the system",
+      "La escritura pública ha sido firmada",
+      "El pago final ha sido completado",
+      "Las llaves han sido entregadas al comprador",
+      "El estado de la operación está marcado como 'Cerrado' en el sistema",
     ],
   },
 ];
 
-export function ProgressGuideModal({ open, onOpenChange }: ProgressGuideModalProps) {
+export function ProgressGuideModal({
+  open,
+  onOpenChange,
+  processStages,
+  progressPercent,
+  substagePercentages,
+}: ProgressGuideModalProps) {
+  const handleClose = () => {
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-4xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <Info className="h-5 w-5 text-amber-600" />
-            Property Progress Guide
-          </DialogTitle>
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="custom-scrollbar max-h-[90vh] overflow-y-auto sm:max-w-[700px] [&>button]:hidden">
+        <DialogHeader className="space-y-0 -mb-4">
+          <div className="flex items-start justify-between gap-4">
+            <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-gray-900 flex-1">
+              <Info className="h-5 w-5 text-amber-600" />
+              Guía de Progreso
+            </DialogTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClose}
+              className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              title="Cerrar"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-5 py-4">
           {/* Introduction */}
-          <div className="rounded-lg bg-amber-50 p-4">
-            <p className="text-sm text-gray-700">
-              This guide explains each stage of the property sales process and what needs to be
-              completed to reach each milestone. The progress bar fills automatically as you
-              complete each stage.
+          <div className="rounded-lg bg-amber-50 p-3">
+            <p className="text-xs text-gray-600">
+              La barra de progreso se actualiza automáticamente al completar cada etapa del proceso de venta.
             </p>
           </div>
 
-          {/* Visual Progress Bar Overview */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-600">
-              Complete Progress Timeline
-            </h3>
-            <div className="relative h-12 overflow-hidden rounded-full border border-gray-200 bg-gradient-to-br from-gray-100 to-gray-50 shadow-inner">
-              {/* Full progress gradient */}
-              <div className="absolute left-0 top-0 h-full w-full bg-gradient-to-r from-amber-400 via-amber-500 to-rose-400" />
-
-              {/* Milestone markers */}
-              <div className="absolute inset-0 flex">
-                {progressStages.slice(0, -1).map((stage, index) => {
-                  const isLast = index === progressStages.length - 2;
-                  return (
-                    <div
-                      key={stage.id}
-                      className="relative flex-1"
-                    >
-                      {!isLast && (
-                        <div className="absolute right-0 top-1/2 h-[70%] w-[2px] -translate-y-1/2 bg-white/60" />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+          {/* Current Progress Bar */}
+          <div>
+            <div className="px-2">
+              <ProgressBarDisplay
+                processStages={processStages}
+                progressPercent={progressPercent}
+                substagePercentages={substagePercentages}
+                compact={false}
+              />
             </div>
-
-            {/* Percentage labels */}
-            <div className="flex justify-between px-1 text-[10px] font-semibold text-gray-600">
-              {progressStages.map((stage) => (
-                <div key={stage.id} className="text-center">
-                  {stage.percentage}%
-                </div>
-              ))}
+            <div className="text-center mt-2">
+              <p className="text-xs font-medium text-gray-600">
+                {progressPercent}%
+              </p>
             </div>
           </div>
 
           {/* Detailed Stage Information */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-600">
-              Stage Details
-            </h3>
-
-            <div className="space-y-4">
-              {progressStages.map((stage, index) => (
+          <div className="space-y-2.5">
+              {stageGuides.map((stage) => (
                 <div
                   key={stage.id}
-                  className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md"
+                  className="rounded-lg border border-gray-100 bg-gray-50/50 p-3"
                 >
-                  {/* Stage Header */}
-                  <div className="mb-3 flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-rose-400 text-sm font-bold text-white shadow-sm">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <h4 className="text-base font-bold text-gray-800">{stage.label}</h4>
-                        <p className="text-xs text-gray-500">Progress: {stage.percentage}%</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Progress Bar for this stage */}
-                  <div className="mb-3">
-                    <div className="relative h-3 overflow-hidden rounded-full border border-gray-200 bg-gray-100">
-                      <div
-                        className="h-full bg-gradient-to-r from-amber-400 to-amber-500 transition-all"
-                        style={{ width: `${stage.percentage}%` }}
-                      />
-                    </div>
+                  {/* Actual Progress Bar at this stage - Compact version */}
+                  <div className="px-2 mb-5">
+                    <ProgressBarDisplay
+                      processStages={processStages}
+                      progressPercent={stage.percentage}
+                      substagePercentages={substagePercentages}
+                      compact={true}
+                    />
                   </div>
 
                   {/* Description */}
-                  <p className="mb-3 text-sm text-gray-700">{stage.description}</p>
+                  <p className="mb-2 text-xs text-gray-600">{stage.description}</p>
 
                   {/* Requirements */}
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">
-                      Requirements to reach this stage:
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
+                      Requisitos:
                     </p>
-                    <ul className="space-y-1.5">
+                    <ul className="space-y-1">
                       {stage.requirements.map((requirement, reqIndex) => (
-                        <li key={reqIndex} className="flex items-start gap-2 text-sm text-gray-700">
-                          <span
-                            className={cn(
-                              "mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-xs",
-                              "bg-amber-100 text-amber-700",
-                            )}
-                          >
-                            ✓
-                          </span>
+                        <li key={reqIndex} className="flex items-start gap-1.5 text-xs text-gray-600">
+                          <span className="mt-0.5 text-amber-500">•</span>
                           <span>{requirement}</span>
                         </li>
                       ))}
@@ -227,16 +206,6 @@ export function ProgressGuideModal({ open, onOpenChange }: ProgressGuideModalPro
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* Footer Note */}
-          <div className="rounded-lg bg-blue-50 p-4">
-            <p className="text-sm text-gray-700">
-              <strong>Note:</strong> The progress bar updates automatically as you complete each
-              stage. If you need to update a specific stage, click on the stage label in the main
-              progress bar to open the stage details modal.
-            </p>
           </div>
         </div>
       </DialogContent>

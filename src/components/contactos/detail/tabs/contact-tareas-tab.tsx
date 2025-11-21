@@ -279,58 +279,69 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
     }
   };
 
+  // Function to fetch tasks (can be called independently)
+  const fetchTasks = async () => {
+    setIsLoadingTasks(true);
+    try {
+      const tasks = await getContactTasksWithAuth(contactId);
+
+      // Transform tasks to expected format
+      const formattedTasks = tasks.map((task) => ({
+        id: task.taskId?.toString() ?? Date.now().toString(),
+        taskId: task.taskId ? BigInt(task.taskId) : undefined,
+        userId: task.userId,
+        title: task.title,
+        description: task.description,
+        dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+        completed: task.completed ?? false,
+        listingId: task.listingId ? BigInt(task.listingId) : undefined,
+        leadId: task.listingContactId
+          ? BigInt(task.listingContactId)
+          : undefined,
+        dealId: task.dealId ? BigInt(task.dealId) : undefined,
+        appointmentId: task.appointmentId
+          ? BigInt(task.appointmentId)
+          : undefined,
+        prospectId: task.prospectId ? BigInt(task.prospectId) : undefined,
+        contactId: contactId,
+        isActive: task.isActive ?? true,
+        createdAt: new Date(task.createdAt),
+        updatedAt: task.updatedAt ? new Date(task.updatedAt) : undefined,
+        createdBy: task.createdBy ?? undefined,
+        userName: task.userName ?? undefined,
+        userFirstName: task.userFirstName ?? undefined,
+        userLastName: task.userLastName ?? undefined,
+        propertyTitle: task.propertyTitle ?? undefined,
+      }));
+
+      setContactTasks(formattedTasks);
+    } catch (error) {
+      console.error("Error loading tasks:", error);
+      toast.error("Error al cargar las tareas");
+    } finally {
+      setIsLoadingTasks(false);
+    }
+  };
+
   // Load comments and tasks for the contact
   useEffect(() => {
     const loadCommentsAndTasks = async () => {
       setIsLoadingComments(true);
-      setIsLoadingTasks(true);
       try {
-        const [comments, tasks] = await Promise.all([
-          getUserCommentsByContactIdWithAuth(contactId),
-          getContactTasksWithAuth(contactId),
-        ]);
-
+        const comments = await getUserCommentsByContactIdWithAuth(contactId);
         setContactComments(comments);
-
-        // Transform tasks to expected format
-        const formattedTasks = tasks.map((task) => ({
-          id: task.taskId?.toString() ?? Date.now().toString(),
-          taskId: task.taskId ? BigInt(task.taskId) : undefined,
-          userId: task.userId,
-          title: task.title,
-          description: task.description,
-          dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
-          completed: task.completed ?? false,
-          listingId: task.listingId ? BigInt(task.listingId) : undefined,
-          leadId: task.listingContactId
-            ? BigInt(task.listingContactId)
-            : undefined,
-          dealId: task.dealId ? BigInt(task.dealId) : undefined,
-          appointmentId: task.appointmentId
-            ? BigInt(task.appointmentId)
-            : undefined,
-          prospectId: task.prospectId ? BigInt(task.prospectId) : undefined,
-          contactId: contactId,
-          isActive: task.isActive ?? true,
-          createdAt: new Date(task.createdAt),
-          updatedAt: task.updatedAt ? new Date(task.updatedAt) : undefined,
-          createdBy: task.createdBy ?? undefined,
-          userName: task.userName ?? undefined,
-          userFirstName: task.userFirstName ?? undefined,
-          userLastName: task.userLastName ?? undefined,
-          propertyTitle: task.propertyTitle ?? undefined,
-        }));
-
-        setContactTasks(formattedTasks);
       } catch (error) {
-        console.error("Error loading contact data:", error);
-        toast.error("Error al cargar los datos del contacto");
+        console.error("Error loading comments:", error);
+        toast.error("Error al cargar los comentarios");
       } finally {
         setIsLoadingComments(false);
-        setIsLoadingTasks(false);
       }
+
+      // Fetch tasks separately
+      await fetchTasks();
     };
     void loadCommentsAndTasks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contactId]);
 
   return (
@@ -347,6 +358,7 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
             onAddTask={handleAddTask}
             onUpdateTaskAfterSave={handleUpdateTaskAfterSave}
             onRemoveOptimisticTask={handleRemoveOptimisticTask}
+            onTaskCreated={fetchTasks}
           />
         </div>
 

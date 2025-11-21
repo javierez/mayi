@@ -680,7 +680,7 @@ export const appointments = pgTable("appointments", {
   appointmentId: bigserial("appointment_id", { mode: "bigint" })
     .primaryKey(),
   userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id (BetterAuth compatible)
-  contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
+  contactId: bigint("contact_id", { mode: "bigint" }), // FK → contacts.contact_id (nullable - for internal appointments)
   listingId: bigint("listing_id", { mode: "bigint" }), // FK → listings.listing_id (nullable)
   listingContactId: bigint("listing_contact_id", { mode: "bigint" }), // FK → listing_contacts.listing_contact_id (nullable)
   dealId: bigint("deal_id", { mode: "bigint" }), // FK → deals.deal_id (nullable)

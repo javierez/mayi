@@ -38,7 +38,6 @@ import AppointmentModal, {
 import { AppointmentDetailSheet } from "~/components/appointments/appointment-detail-sheet";
 import { ContactDetailSheet } from "~/components/contactos/contact-detail-sheet";
 import { updateOfferStatusAction } from "~/server/actions/listing-contacts";
-import { navigateToPage } from "~/lib/navigation";
 import { toast } from "sonner";
 import {
   Loader,
@@ -106,10 +105,20 @@ function AcceptedOfferCard({
   onUpdate,
   permissions,
 }: AcceptedOfferCardProps) {
-  const router = useRouter();
   const [isUpdatingOffer, setIsUpdatingOffer] = useState(false);
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
 
   const contactName = `${contact.firstName} ${contact.lastName ?? ""}`.trim();
+
+  // Handle opening appointment modal for "Programar Firma"
+  const handleScheduleFirma = () => {
+    setIsAppointmentModalOpen(true);
+  };
+
+  // Handle appointment success
+  const handleAppointmentSuccess = async () => {
+    await onUpdate();
+  };
 
   // Handle accepting or rejecting an offer
   const handleUpdateOfferStatus = async (accepted: boolean | null) => {
@@ -225,10 +234,7 @@ function AcceptedOfferCard({
             variant="ghost"
             size="sm"
             className="h-9 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            onClick={() => {
-              const calendarUrl = `/calendario?new=true&listingId=${listingId}&contactId=${contact.contactId}&type=Firma`;
-              navigateToPage(calendarUrl, router);
-            }}
+            onClick={handleScheduleFirma}
           >
             <CalendarPlus className="mr-2 h-4 w-4" />
             Programar Firma
@@ -326,6 +332,19 @@ function AcceptedOfferCard({
           )}
         </div>
       )}
+
+      {/* Appointment Modal for Firma */}
+      <AppointmentModal
+        open={isAppointmentModalOpen}
+        onOpenChange={setIsAppointmentModalOpen}
+        initialData={{
+          listingId,
+          contactId: contact.contactId,
+          appointmentType: "Firma",
+        }}
+        mode="create"
+        onSuccess={handleAppointmentSuccess}
+      />
     </div>
   );
 }
@@ -382,6 +401,13 @@ export function ActivityTabContent({
   const [editingAppointmentId, setEditingAppointmentId] = useState<
     bigint | null
   >(null);
+
+  // Modal state for creating new appointments
+  const [isCreateAppointmentModalOpen, setIsCreateAppointmentModalOpen] = useState(false);
+  const [createAppointmentInitialData, setCreateAppointmentInitialData] = useState<{
+    listingId?: bigint;
+    appointmentType?: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje";
+  }>({});
 
   // Contact filters - using badge flags instead of status
   const [selectedContactFlags, setSelectedContactFlags] = useState<Set<string>>(
@@ -763,6 +789,24 @@ export function ActivityTabContent({
     openModal(initialData);
   };
 
+  // Handle opening modal for creating new appointments
+  const handleScheduleVisit = () => {
+    setCreateAppointmentInitialData({
+      listingId,
+      appointmentType: "Visita",
+    });
+    setIsCreateAppointmentModalOpen(true);
+  };
+
+  // Handle appointment creation success
+  const handleAppointmentCreateSuccess = async () => {
+    // Refresh the page data
+    router.refresh();
+    if (onRefresh) {
+      await onRefresh();
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* KPI Navigation Cards */}
@@ -775,6 +819,7 @@ export function ActivityTabContent({
           isActive={activeView === "visits"}
           onClick={handleVisitsClick}
           listingId={listingId}
+          onScheduleVisit={handleScheduleVisit}
         />
         <ContactsKPICard
           contactsWithVisitsCount={contactsWithVisits.length}
@@ -784,6 +829,7 @@ export function ActivityTabContent({
           isActive={activeView === "contacts"}
           onClick={handleContactsClick}
           listingId={listingId}
+          onContactCreated={handleContactUpdate}
         />
       </div>
 
@@ -1435,6 +1481,15 @@ export function ActivityTabContent({
         addOptimisticEvent={undefined}
         removeOptimisticEvent={undefined}
         updateOptimisticEvent={undefined}
+      />
+
+      {/* Appointment Modal for creating new appointments */}
+      <AppointmentModal
+        open={isCreateAppointmentModalOpen}
+        onOpenChange={setIsCreateAppointmentModalOpen}
+        initialData={createAppointmentInitialData}
+        mode="create"
+        onSuccess={handleAppointmentCreateSuccess}
       />
     </div>
   );

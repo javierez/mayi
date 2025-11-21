@@ -42,6 +42,7 @@ export interface DeductTokensParams {
     | "gemini_review"
     | "gemini_blur_faces"
     | "gemini_remove_clutter"
+    | "gemini_enhance_lighting"
     | "admin_debit";
   metadata?: TokenOperationMetadata;
   propertyImageId?: bigint;
@@ -158,9 +159,9 @@ export async function deductTokens(
     beforeBalance,
     afterBalance,
     metadata: metadata ?? {},
-    propertyImageId,
-    propertyId,
-    userId,
+    propertyImageId: propertyImageId ?? null,
+    propertyId: propertyId ?? null,
+    userId: userId ?? null,
   });
 
   // Revalidate token balance cache to update UI
@@ -384,6 +385,35 @@ export async function deductGeminiRemoveClutterTokens(
     operation: "gemini_remove_clutter",
     metadata: {
       reason: "Remove clutter and non-furniture items",
+    },
+    propertyImageId,
+    propertyId,
+    userId,
+  });
+}
+
+/**
+ * Deduct tokens for Gemini lighting enhancement
+ * @param accountId - Account ID
+ * @param tokens - Number of tokens to deduct
+ * @param propertyImageId - Optional property image ID
+ * @param propertyId - Optional property ID
+ * @param userId - Optional user ID
+ * @returns Remaining token balance
+ */
+export async function deductGeminiEnhanceLightingTokens(
+  accountId: bigint,
+  tokens: number,
+  propertyImageId?: bigint,
+  propertyId?: bigint,
+  userId?: string,
+): Promise<number> {
+  return await deductTokens({
+    accountId,
+    tokens,
+    operation: "gemini_enhance_lighting",
+    metadata: {
+      reason: "Enhance lighting in real estate photos",
     },
     propertyImageId,
     propertyId,

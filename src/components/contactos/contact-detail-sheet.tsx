@@ -55,6 +55,7 @@ import type { ListingContactActivityWithUser } from "~/server/queries/listing-co
 import { deleteListingContactActivityAction } from "~/server/actions/listing-contact-activity";
 import { canDeleteAllTasks } from "~/app/actions/permissions/check-permissions";
 import { Plus } from "lucide-react";
+import AppointmentModal from "~/components/appointments/appointment-modal";
 
 interface ContactDetailSheetProps {
   contact: ContactSheetData | null;
@@ -173,6 +174,12 @@ export function ContactDetailSheet({
   const [isLoadingActivities, setIsLoadingActivities] = useState(false);
   const [isAddActivityModalOpen, setIsAddActivityModalOpen] = useState(false);
   const [hasDeleteAllPermission, setHasDeleteAllPermission] = useState(false);
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
+  const [appointmentInitialData, setAppointmentInitialData] = useState<{
+    contactId?: bigint;
+    listingId?: bigint;
+    appointmentType?: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje";
+  }>({});
 
   // Fetch comments when sheet opens
   useEffect(() => {
@@ -460,6 +467,25 @@ export function ContactDetailSheet({
     }
   };
 
+  // Handle opening appointment modal
+  const handleOpenAppointmentModal = (type?: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje") => {
+    setAppointmentInitialData({
+      contactId: contact?.contact.contactId,
+      listingId,
+      appointmentType: type ?? "Visita",
+    });
+    setIsAppointmentModalOpen(true);
+  };
+
+  // Handle appointment modal success
+  const handleAppointmentSuccess = async () => {
+    // Refresh activities and contact data
+    await handleRefreshActivities();
+    if (onUpdate) {
+      await onUpdate();
+    }
+  };
+
   // Handle adding an offer
   const handleAddOffer = async (amount: number) => {
     setIsSubmittingOffer(true);
@@ -601,7 +627,16 @@ export function ContactDetailSheet({
       <SheetContent className="flex flex-col w-full max-w-full sm:max-w-md md:max-w-2xl p-0">
         <SheetHeader className="px-4 pt-4 sm:px-6 sm:pt-6">
           <SheetTitle className="flex items-center gap-2 text-base sm:text-lg break-words">
-            <span>{contactName}</span>
+            <button
+              onClick={() => {
+                navigateToPage(`/contactos/${contact.contact.contactId}`, router);
+                onClose();
+              }}
+              className="text-left hover:text-gray-600 transition-colors underline decoration-dotted underline-offset-2 hover:decoration-solid"
+              title="Ver perfil completo"
+            >
+              {contactName}
+            </button>
           </SheetTitle>
         </SheetHeader>
 
@@ -709,11 +744,7 @@ export function ContactDetailSheet({
                       variant="ghost"
                       size="sm"
                       className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
-                      onClick={() => {
-                        const calendarUrl = `/calendario?new=true&listingId=${listingId}&contactId=${contact.contact.contactId}&type=Firma`;
-                        navigateToPage(calendarUrl, router);
-                        onClose();
-                      }}
+                      onClick={() => handleOpenAppointmentModal("Firma")}
                     >
                       <CalendarPlus className="mr-2 h-4 w-4 shrink-0" />
                       <span className="truncate">Programar Firma</span>
@@ -776,11 +807,7 @@ export function ContactDetailSheet({
                         variant="ghost"
                         size="sm"
                         className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
-                        onClick={() => {
-                          const calendarUrl = `/calendario?new=true&listingId=${listingId}&contactId=${contact.contact.contactId}&type=Visita`;
-                          navigateToPage(calendarUrl, router);
-                          onClose();
-                        }}
+                        onClick={() => handleOpenAppointmentModal("Visita")}
                       >
                         <CalendarPlus className="mr-2 h-4 w-4 shrink-0" />
                         <span className="truncate">Añadir Nueva Visita</span>
@@ -835,11 +862,7 @@ export function ContactDetailSheet({
                   variant="ghost"
                   size="sm"
                   className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
-                  onClick={() => {
-                    const calendarUrl = `/calendario?new=true&listingId=${listingId}&contactId=${contact.contact.contactId}`;
-                    navigateToPage(calendarUrl, router);
-                    onClose();
-                  }}
+                  onClick={() => handleOpenAppointmentModal("Visita")}
                 >
                   <CalendarPlus className="mr-2 h-4 w-4 shrink-0" />
                   <span className="truncate">Añadir visita</span>
@@ -871,11 +894,7 @@ export function ContactDetailSheet({
                   variant="ghost"
                   size="sm"
                   className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
-                  onClick={() => {
-                    const calendarUrl = `/calendario?new=true&listingId=${listingId}&contactId=${contact.contact.contactId}`;
-                    navigateToPage(calendarUrl, router);
-                    onClose();
-                  }}
+                  onClick={() => handleOpenAppointmentModal("Visita")}
                 >
                   <CalendarPlus className="mr-2 h-4 w-4 shrink-0" />
                   <span className="truncate">Añadir visita</span>
@@ -940,11 +959,7 @@ export function ContactDetailSheet({
                   variant="ghost"
                   size="sm"
                   className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
-                  onClick={() => {
-                    const calendarUrl = `/calendario?new=true&listingId=${listingId}&contactId=${contact.contact.contactId}`;
-                    navigateToPage(calendarUrl, router);
-                    onClose();
-                  }}
+                  onClick={() => handleOpenAppointmentModal("Visita")}
                 >
                   <CalendarPlus className="mr-2 h-4 w-4 shrink-0" />
                   <span className="truncate">Añadir visita</span>
@@ -1126,6 +1141,15 @@ export function ContactDetailSheet({
               onOpenChange={setIsAddActivityModalOpen}
               listingContactId={contact.listingContactId}
               onSuccess={handleRefreshActivities}
+            />
+
+            {/* Appointment Modal */}
+            <AppointmentModal
+              open={isAppointmentModalOpen}
+              onOpenChange={setIsAppointmentModalOpen}
+              initialData={appointmentInitialData}
+              onSuccess={handleAppointmentSuccess}
+              mode="create"
             />
             </div>
           </div>

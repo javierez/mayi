@@ -23,8 +23,9 @@ import { Label } from "~/components/ui/label";
 import { AlertCircle, Loader2, Search, X, Mail, Phone } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { getInitials } from "~/lib/operations/task-utils";
-import { createTaskWithAuth } from "~/server/queries/task";
+import { createTaskWithAuth, updateTaskWithAuth } from "~/server/queries/task";
 import { searchContactsWithAuth, getContactByIdWithAuth } from "~/server/queries/contact";
+import { createAppointmentAction } from "~/server/actions/appointments";
 import { listListingsForContactWithAuth, listContactsForListingWithAuth, listListingsCompactWithAuth, getListingCompactByIdWithAuth } from "~/server/queries/listing";
 import { findListingContactIdAction } from "~/server/actions/contact-activity";
 import { useSession } from "~/lib/auth-client";
@@ -476,6 +477,39 @@ export function GlobalTaskModal({
         throw new Error("Failed to save task");
       }
 
+      // Create appointment if requested
+      if (formData.createInCalendar && formData.dueDate && formData.dueTime) {
+        try {
+          const startDateTime = new Date(`${formData.dueDate}T${formData.dueTime}`);
+          const endDateTime = new Date(startDateTime.getTime() + 30 * 60 * 1000); // Add 30 minutes
+
+          const appointmentResult = await createAppointmentAction({
+            startDate: formData.dueDate,
+            startTime: formData.dueTime,
+            endDate: endDateTime.toISOString().split('T')[0] ?? formData.dueDate,
+            endTime: endDateTime.toTimeString().slice(0, 5),
+            title: formData.title,
+            notes: formData.description,
+            appointmentType: "Tarea",
+            assignedTo: selectedUserId,
+            contactId: formData.contactId ? BigInt(formData.contactId) : undefined,
+            listingId: formData.listingId ? BigInt(formData.listingId) : undefined,
+            listingContactId,
+          });
+
+          // Link appointment back to task
+          if (appointmentResult.success && appointmentResult.appointmentId) {
+            await updateTaskWithAuth(Number(savedTask.taskId), {
+              appointmentId: BigInt(appointmentResult.appointmentId),
+            });
+          }
+        } catch (appointmentError) {
+          console.error("Error creating appointment:", appointmentError);
+          // Don't fail the whole operation if appointment creation fails
+          // The task was already created successfully
+        }
+      }
+
       // Success - close modal and call success callback
       onOpenChange(false);
       onSuccess?.();
@@ -539,6 +573,39 @@ export function GlobalTaskModal({
 
       if (!savedTask) {
         throw new Error("Failed to save task");
+      }
+
+      // Create appointment if requested
+      if (formData.createInCalendar && formData.dueDate && formData.dueTime) {
+        try {
+          const startDateTime = new Date(`${formData.dueDate}T${formData.dueTime}`);
+          const endDateTime = new Date(startDateTime.getTime() + 30 * 60 * 1000); // Add 30 minutes
+
+          const appointmentResult = await createAppointmentAction({
+            startDate: formData.dueDate,
+            startTime: formData.dueTime,
+            endDate: endDateTime.toISOString().split('T')[0] ?? formData.dueDate,
+            endTime: endDateTime.toTimeString().slice(0, 5),
+            title: formData.title,
+            notes: formData.description,
+            appointmentType: "Tarea",
+            assignedTo: selectedUserId,
+            contactId: BigInt(formData.contactId),
+            listingId: BigInt(formData.listingId),
+            listingContactId: createResult.listingContactId,
+          });
+
+          // Link appointment back to task
+          if (appointmentResult.success && appointmentResult.appointmentId) {
+            await updateTaskWithAuth(Number(savedTask.taskId), {
+              appointmentId: BigInt(appointmentResult.appointmentId),
+            });
+          }
+        } catch (appointmentError) {
+          console.error("Error creating appointment:", appointmentError);
+          // Don't fail the whole operation if appointment creation fails
+          // The task was already created successfully
+        }
       }
 
       // Success - close modal and call success callback

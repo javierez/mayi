@@ -29,23 +29,40 @@ export const EUR_TO_TOKEN = 1000;
 
 /**
  * Fixed token costs for Google Gemini operations
- * Prices include 30-40% buffer over actual API costs
+ * Updated for Gemini 3 Pro Image Preview pricing (2025-11-21)
+ * Source: https://ai.google.dev/gemini-api/docs/pricing
+ * Prices include 30-50% buffer over actual API costs
+ *
+ * Gemini 3 Pro Image Preview Pricing:
+ * - Text input: $2.00/M tokens
+ * - Text output: $12.00/M tokens
+ * - Image input: $0.0011/image
+ * - Image output (1K/2K): $0.134/image
  */
 export const GEMINI_TOKEN_COSTS = {
-  // Room detection: Actual ~€0.002, charge 5 tokens (€0.005) = 150% buffer
-  ROOM_DETECTION: 5,
+  // Room detection: Text analysis with image input
+  // Actual: ~€0.007 (image input + text output), charge 10 tokens (€0.01) = 43% buffer
+  ROOM_DETECTION: 10,
 
-  // Image renovation: Actual ~€0.09-0.15, charge 150 tokens (€0.15) = 30% buffer
-  RENOVATION: 150,
+  // Image renovation: Image generation with text prompt
+  // Actual: ~€0.131 (image input + text input + image output), charge 170 tokens (€0.17) = 30% buffer
+  RENOVATION: 170,
 
-  // Renovation review: Charge 100 tokens (€0.10) for generating improved image based on feedback
-  REVIEW: 100,
+  // Renovation review: Image generation with 2 image inputs + feedback
+  // Actual: ~€0.132 (2× image input + text input + image output), charge 170 tokens (€0.17) = 29% buffer
+  REVIEW: 170,
 
-  // Blur faces: Charge 100 tokens (€0.10) for blurring all faces in image
-  BLUR_FACES: 100,
+  // Blur faces: Image generation for privacy protection
+  // Actual: ~€0.131, charge 170 tokens (€0.17) = 30% buffer
+  BLUR_FACES: 170,
 
-  // Remove clutter: Charge 100 tokens (€0.10) for removing all non-furniture items
-  REMOVE_CLUTTER: 100,
+  // Remove clutter: Image generation for decluttering
+  // Actual: ~€0.131, charge 170 tokens (€0.17) = 30% buffer
+  REMOVE_CLUTTER: 170,
+
+  // Enhance lighting: Image generation for professional lighting enhancement
+  // Actual: ~€0.131, charge 170 tokens (€0.17) = 30% buffer
+  ENHANCE_LIGHTING: 170,
 } as const;
 
 /**
@@ -151,7 +168,7 @@ export function getFreepikUpscaleOptions(
  * Calculate token cost for Google Gemini operations
  */
 export function calculateGeminiTokens(
-  operation: "room_detection" | "renovation" | "review" | "blur_faces" | "remove_clutter",
+  operation: "room_detection" | "renovation" | "review" | "blur_faces" | "remove_clutter" | "enhance_lighting",
 ): TokenCost {
   const tokens =
     operation === "room_detection"
@@ -162,7 +179,9 @@ export function calculateGeminiTokens(
           ? GEMINI_TOKEN_COSTS.REVIEW
           : operation === "blur_faces"
             ? GEMINI_TOKEN_COSTS.BLUR_FACES
-            : GEMINI_TOKEN_COSTS.REMOVE_CLUTTER;
+            : operation === "remove_clutter"
+              ? GEMINI_TOKEN_COSTS.REMOVE_CLUTTER
+              : GEMINI_TOKEN_COSTS.ENHANCE_LIGHTING;
 
   return {
     tokens,

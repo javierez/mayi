@@ -99,7 +99,7 @@ interface Appointment {
   type?: string;
   status: string;
   contact: {
-    contactId: bigint;
+    contactId: bigint | null;
     firstName: string;
     lastName: string;
     email?: string;
@@ -117,6 +117,7 @@ interface TareasProps {
   onAddTask: (task: Task) => Promise<Task>;
   onUpdateTaskAfterSave: (optimisticId: string, savedTask: Task) => void;
   onRemoveOptimisticTask: (optimisticId: string) => void;
+  onTaskCreated?: () => void; // Callback to refresh tasks after modal creation
 }
 
 export function Tareas({
@@ -130,6 +131,7 @@ export function Tareas({
   onAddTask,
   onUpdateTaskAfterSave,
   onRemoveOptimisticTask,
+  onTaskCreated,
 }: TareasProps) {
   const { data: session } = useSession();
   const [isAdding, setIsAdding] = useState(false);
@@ -263,7 +265,7 @@ export function Tareas({
               appointmentId: apt.appointmentId,
               listingId: apt.listingId ?? undefined,
               datetimeStart: new Date(apt.datetimeStart),
-              datetimeEnd: new Date(apt.datetimeEnd),
+              datetimeEnd: apt.datetimeEnd ? new Date(apt.datetimeEnd) : new Date(apt.datetimeStart),
               type: apt.type ?? undefined,
               status: apt.status,
               contact: {
@@ -1003,7 +1005,7 @@ export function Tareas({
     // Filter appointments that match the selected contact
     return appointments.filter(
       (appointment) =>
-        appointment.contact.contactId.toString() === newTask.contactId,
+        appointment.contact.contactId?.toString() === newTask.contactId,
     );
   }, [appointments, newTask.contactId]);
 
@@ -1522,10 +1524,11 @@ export function Tareas({
                 setShowGlobalTaskModal(true);
               }}
               variant="outline"
-              className="flex h-8 items-center gap-2 text-sm text-gray-600 shadow"
+              size="sm"
+              className="h-7 px-2 text-xs"
             >
-              <Plus className="h-4 w-4" />
-              Nueva Tarea
+              <Plus className="mr-1.5 h-3 w-3" />
+              <span>Nueva Tarea</span>
             </Button>
             {(newTask.title || newTask.description) && !isAdding && (
               <div
@@ -1715,8 +1718,9 @@ export function Tareas({
         taskId={selectedTaskForView?.taskId ? Number(selectedTaskForView.taskId) : null}
         initialTask={null}
         onSuccess={() => {
-          // Close modal and refresh if needed
+          // Close modal and trigger refresh after edit/delete
           setSelectedTaskForView(null);
+          onTaskCreated?.();
         }}
       />
 
@@ -1726,8 +1730,8 @@ export function Tareas({
         onOpenChange={setShowGlobalTaskModal}
         initialListingId={listingId}
         onSuccess={() => {
-          // Close modal - parent component will handle refresh
-          setShowGlobalTaskModal(false);
+          // Trigger refresh - modal will close itself via onOpenChange
+          onTaskCreated?.();
         }}
       />
     </div>

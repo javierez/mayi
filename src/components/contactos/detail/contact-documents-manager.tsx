@@ -111,13 +111,6 @@ export function ContactDocumentsManager({
   // Show folders view
   return (
     <div className={cn("space-y-8", className)}>
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900">Documentos</h3>
-        <p className="text-sm text-gray-500">
-          Gestiona los documentos del contacto
-        </p>
-      </div>
-
       {/* Personal Documents Section - Separate from property documents */}
       <div className="space-y-4">
         <div>

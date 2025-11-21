@@ -78,7 +78,7 @@ export function CityAutocomplete({
     const timeoutId = setTimeout(() => {
       setIsSearching(true);
 
-      autocompleteServiceRef.current?.getPlacePredictions(
+      void autocompleteServiceRef.current?.getPlacePredictions(
         {
           input: inputValue,
           types: ["(cities)"],

@@ -2,14 +2,13 @@
 
 import { Plus } from "lucide-react";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
 import type { VisitsKPIProps } from "~/types/activity";
-import { navigateToPage } from "~/lib/navigation";
 
 interface VisitsKPICardProps extends VisitsKPIProps {
   isActive: boolean;
   onClick: () => void;
   listingId: bigint;
+  onScheduleVisit: () => void;
 }
 
 export function VisitsKPICard({
@@ -19,13 +18,12 @@ export function VisitsKPICard({
   totalCount,
   isActive,
   onClick,
-  listingId,
+  listingId: _listingId,
+  onScheduleVisit,
 }: VisitsKPICardProps) {
-  const router = useRouter();
-
   const handleScheduleVisit = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigateToPage(`/calendario?new=true&listingId=${listingId}`, router);
+    onScheduleVisit();
   };
 
   return (

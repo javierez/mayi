@@ -14,7 +14,7 @@ import {
 } from "~/components/ui/select";
 import { useFormContext } from "../form-context";
 // import FormSkeleton from "./form-skeleton"; // Removed - using single loading state
-import ContactPopup from "./contact-popup";
+import { QuickContactModal } from "~/components/contactos/quick-contact-modal";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Separator } from "~/components/ui/separator";
 import { searchContactsForFormWithAuth } from "~/server/queries/contact";
@@ -960,10 +960,10 @@ export default function FirstPage({
       </motion.div>
 
       {/* Contact Creation Popup */}
-      <ContactPopup
-        isOpen={showContactPopup}
-        onClose={() => setShowContactPopup(false)}
-        onContactCreated={handleContactCreated}
+      <QuickContactModal
+        open={showContactPopup}
+        onOpenChange={setShowContactPopup}
+        onSuccess={handleContactCreated}
       />
     </div>
   );

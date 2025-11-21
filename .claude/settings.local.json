@@ -55,7 +55,8 @@
       "Bash(rm:*)",
       "Bash(SKIP_ENV_VALIDATION=true NODE_OPTIONS=--max_old_space_size=4096 tsc:*)",
       "Bash(git checkout:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(pnpm --silent typecheck:*)"
     ],
     "deny": [],
     "ask": []

@@ -108,7 +108,7 @@ export function ProcessStageModal({
   };
 
   // Handle select all
-  const handleSelectAll = () => {
+  const _handleSelectAll = () => {
     const requiredItems = incompleteItems.filter((item) => item.isRequired);
     const allSelected = requiredItems.every((item) => selectedItems.has(item.id));
 
@@ -185,12 +185,12 @@ export function ProcessStageModal({
   const hasIncompleteItems = incompleteItems.length > 0;
   const hasSelectedItems = selectedItems.size > 0;
   const requiredItems = incompleteItems.filter((item) => item.isRequired);
-  const allRequiredSelected = requiredItems.every((item) => selectedItems.has(item.id));
+  const _allRequiredSelected = requiredItems.every((item) => selectedItems.has(item.id));
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="custom-scrollbar max-h-[90vh] overflow-y-auto sm:max-w-[600px] [&>button]:hidden">
-        <DialogHeader className="space-y-0 -mb-6">
+        <DialogHeader className="space-y-0 -mb-2">
           <div className="flex items-start justify-between gap-4">
             <DialogTitle className="text-xl font-semibold text-gray-900 flex-1">
               Completar hasta: {targetStageLabel}
@@ -211,27 +211,9 @@ export function ProcessStageModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-6">
           {hasIncompleteItems ? (
             <>
-              {/* Select All Button */}
-              {requiredItems.length > 1 && (
-                <div className="flex items-center justify-between pb-3">
-                  <span className="text-sm font-medium text-gray-700">
-                    {selectedItems.size} de {requiredItems.length} seleccionadas
-                  </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSelectAll}
-                    className="h-8"
-                  >
-                    {allRequiredSelected ? "Deseleccionar todas" : "Seleccionar todas"}
-                  </Button>
-                </div>
-              )}
-
               {/* Checklist Items */}
               <div className="space-y-3">
                 {incompleteItems.map((item) => (
@@ -319,37 +301,36 @@ function ChecklistItemRow({ item, isSelected, onToggle }: ChecklistItemRowProps)
 
   return (
     <div
-      className={`rounded-lg p-4 transition-all ${
+      className={`rounded-lg p-3 transition-all ${
         isSelected
           ? "bg-primary/5 shadow-sm"
           : "bg-white shadow-sm hover:shadow-md"
       } ${isDisabled ? "opacity-50" : ""}`}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-2.5">
         <Checkbox
           id={item.id}
           checked={isSelected}
           onCheckedChange={onToggle}
           disabled={isDisabled}
-          className="mt-1"
         />
         <div className="flex-1">
           <label
             htmlFor={item.id}
-            className={`block font-medium text-gray-900 ${
+            className={`block text-sm font-medium text-gray-900 ${
               isDisabled ? "cursor-not-allowed" : "cursor-pointer"
             }`}
           >
             {item.label}
           </label>
-          <p className="mt-1 text-sm text-gray-600">{item.description}</p>
+          <p className="mt-0.5 text-xs text-gray-600">{item.description}</p>
 
           {/* Warning Message */}
           {item.warningMessage && (
-            <div className="mt-2 rounded-md bg-amber-50 p-3 shadow-sm">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
-                <p className="text-sm text-amber-800">
+            <div className="mt-2 rounded-md bg-amber-50 p-2 shadow-sm">
+              <div className="flex items-start gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-600 mt-0.5" />
+                <p className="text-xs text-amber-800">
                   {item.warningMessage}
                 </p>
               </div>

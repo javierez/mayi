@@ -97,7 +97,7 @@ export const STAGE_LABELS: Record<string, { title: string; description: string }
     description: "Se han firmado las arras con el comprador",
   },
   contrato: {
-    title: "Escritura pública",
+    title: "Escritura",
     description: "Se ha firmado la escritura ante notario",
   },
   "cierre-final": {

@@ -80,6 +80,7 @@ interface ContactTareasProps {
   onAddTask: (task: Task) => Promise<Task>;
   onUpdateTaskAfterSave: (optimisticId: string, savedTask: Task) => void;
   onRemoveOptimisticTask: (optimisticId: string) => void;
+  onTaskCreated?: () => void; // Callback to refresh tasks after modal creation
 }
 
 export function ContactTareas({
@@ -91,6 +92,7 @@ export function ContactTareas({
   onAddTask: _onAddTask,
   onUpdateTaskAfterSave: _onUpdateTaskAfterSave,
   onRemoveOptimisticTask: _onRemoveOptimisticTask,
+  onTaskCreated,
 }: ContactTareasProps) {
   const { data: session } = useSession();
   const [categoryFilter, setCategoryFilter] = useState<
@@ -409,8 +411,9 @@ export function ContactTareas({
         taskId={selectedTaskForView?.taskId ? Number(selectedTaskForView.taskId) : null}
         initialTask={null}
         onSuccess={() => {
-          // Close modal and refresh if needed
+          // Close modal and trigger refresh after edit/delete
           setSelectedTaskForView(null);
+          onTaskCreated?.();
         }}
       />
 
@@ -420,8 +423,8 @@ export function ContactTareas({
         onOpenChange={setShowGlobalTaskModal}
         initialContactId={contactId}
         onSuccess={() => {
-          setShowGlobalTaskModal(false);
-          // Parent component should handle refreshing tasks
+          // Trigger refresh - modal will close itself via onOpenChange
+          onTaskCreated?.();
         }}
       />
     </div>

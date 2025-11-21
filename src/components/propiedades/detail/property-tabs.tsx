@@ -670,6 +670,7 @@ export function PropertyTabs({
                 onAddTask={handleAddTask}
                 onUpdateTaskAfterSave={handleUpdateTaskAfterSave}
                 onRemoveOptimisticTask={handleRemoveOptimisticTask}
+                onTaskCreated={fetchTasksData}
               />
             </div>
 

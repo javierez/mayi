@@ -1,14 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
 import type { ContactsKPIProps } from "~/types/activity";
+import { CreateContactModal } from "~/components/contactos/create-contact-modal";
+import type { Contact } from "~/lib/data";
 
 interface ContactsKPICardProps extends ContactsKPIProps {
   isActive: boolean;
   onClick: () => void;
   listingId: bigint;
+  onContactCreated?: () => void | Promise<void>;
 }
 
 export function ContactsKPICard({
@@ -19,12 +22,21 @@ export function ContactsKPICard({
   isActive,
   onClick,
   listingId,
+  onContactCreated,
 }: ContactsKPICardProps) {
-  const router = useRouter();
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const handleAddContact = (e: React.MouseEvent) => {
     e.stopPropagation();
-    router.push(`/contactos/crear?listingId=${listingId}`);
+    setIsCreateModalOpen(true);
+  };
+
+  const handleContactSuccess = async (contact: Contact) => {
+    console.log("Contact created:", contact);
+    setIsCreateModalOpen(false);
+    if (onContactCreated) {
+      await onContactCreated();
+    }
   };
 
   return (
@@ -86,6 +98,17 @@ export function ContactsKPICard({
           Añadir Contacto
         </span>
       </motion.button>
+
+      {/* Create Contact Modal */}
+      <CreateContactModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        onSuccess={handleContactSuccess}
+        initialData={{
+          listingId,
+          contactType: "buyer",
+        }}
+      />
     </div>
   );
 }

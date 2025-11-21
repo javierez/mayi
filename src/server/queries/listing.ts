@@ -13,7 +13,6 @@ import {
   websiteProperties,
   documents,
   deals,
-  appointments,
 } from "../db/schema";
 import { eq, and, ne, sql } from "drizzle-orm";
 import type { Listing } from "../../lib/data";

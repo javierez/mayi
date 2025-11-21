@@ -420,7 +420,26 @@ export function PropertyStatusRow({
       <style dangerouslySetInnerHTML={{ __html: scrollbarStyles }} />
       <div className="col-span-full -mt-2 grid grid-cols-1 gap-3 sm:gap-4 md:-mt-3 lg:grid-cols-4">
         {/* Process Timeline - 75% (3 columns) */}
-        <div className="overflow-hidden lg:col-span-3">
+        <div className="relative overflow-hidden lg:col-span-3">
+          {/* Progress Guide Info Button - Subtle, top right */}
+          <div className="absolute right-2 top-0 z-20 sm:right-3 md:right-4">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => setProgressGuideOpen(true)}
+                  className="flex items-center justify-center rounded-full p-1.5 text-gray-400 transition-all duration-200 hover:bg-gray-100 hover:text-gray-600"
+                  aria-label="Progress guide"
+                >
+                  <Info className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-[10px]">Ver guía de progreso</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+
           <div
             ref={scrollContainerRef}
             className={cn(
@@ -428,25 +447,6 @@ export function PropertyStatusRow({
               isScrolling && "scrolling",
             )}
           >
-            {/* Progress Guide Info Button */}
-            <div className="absolute right-4 top-2 z-10 sm:right-6 sm:top-3 md:right-8 md:top-4">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={() => setProgressGuideOpen(true)}
-                    className="flex items-center justify-center rounded-full bg-white p-2 shadow-md transition-all duration-200 hover:scale-110 hover:bg-amber-50 hover:shadow-lg"
-                    aria-label="Progress guide"
-                  >
-                    <Info className="h-4 w-4 text-amber-600" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="text-[10px]">View progress guide</p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-
             {/* Progress bar with milestone labels */}
             <div className="relative">
               {/* Progress bar */}
@@ -993,6 +993,9 @@ export function PropertyStatusRow({
         <ProgressGuideModal
           open={progressGuideOpen}
           onOpenChange={setProgressGuideOpen}
+          processStages={processStages}
+          progressPercent={progressPercent}
+          substagePercentages={substagePercentages}
         />
       </div>
     </TooltipProvider>

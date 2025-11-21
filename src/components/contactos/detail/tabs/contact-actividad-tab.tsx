@@ -165,6 +165,10 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
     bigint | null
   >(null);
 
+  // Modal state for creating new appointments from KPI cards
+  const [isCreateAppointmentModalOpen, setIsCreateAppointmentModalOpen] = useState(false);
+  const [createAppointmentListingId, setCreateAppointmentListingId] = useState<bigint | null>(null);
+
   // Fetch permissions
   useEffect(() => {
     const fetchPermissions = async () => {
@@ -359,6 +363,19 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
     setEditMode("edit");
     setEditingAppointmentId(appointmentId);
     openModal(initialData);
+  };
+
+  // Handle opening modal for creating new appointments
+  const handleScheduleVisitForListing = (listingId: bigint) => {
+    setCreateAppointmentListingId(listingId);
+    setIsCreateAppointmentModalOpen(true);
+  };
+
+  // Handle appointment creation success
+  const handleAppointmentCreateSuccess = async () => {
+    // Refresh the data
+    router.refresh();
+    await fetchActivityData();
   };
 
   // Handle listing card toggle
@@ -640,6 +657,7 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
                             handleViewToggle(listing.listingId, "visits")
                           }
                           listingId={listing.listingId}
+                          onScheduleVisit={() => handleScheduleVisitForListing(listing.listingId)}
                         />
                         <ContactsKPICard
                           contactsWithVisitsCount={contactsWithVisits.length}
@@ -655,6 +673,7 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
                             handleViewToggle(listing.listingId, "contacts")
                           }
                           listingId={listing.listingId}
+                          onContactCreated={fetchActivityData}
                         />
                       </div>
 
@@ -1455,6 +1474,18 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
         addOptimisticEvent={undefined}
         removeOptimisticEvent={undefined}
         updateOptimisticEvent={undefined}
+      />
+
+      {/* Appointment Modal for creating new appointments */}
+      <AppointmentModal
+        open={isCreateAppointmentModalOpen}
+        onOpenChange={setIsCreateAppointmentModalOpen}
+        initialData={{
+          listingId: createAppointmentListingId ?? undefined,
+          appointmentType: "Visita",
+        }}
+        mode="create"
+        onSuccess={handleAppointmentCreateSuccess}
       />
     </div>
   );

@@ -16,7 +16,7 @@ export interface AppointmentWithDetails {
   appointmentId: bigint;
   listingId?: bigint | null;
   listingContactId?: bigint | null; // For lead status progression
-  contactId: bigint;
+  contactId: bigint | null;
   userId: string;
   datetimeStart: Date;
   datetimeEnd: Date;

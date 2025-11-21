@@ -8,6 +8,7 @@ import { useImageEnhancement } from "~/hooks/use-image-enhancement";
 import { useImageRenovation } from "~/hooks/use-image-renovation";
 import { useImageBlurFaces } from "~/hooks/use-image-blur-faces";
 import { useImageRemoveClutter } from "~/hooks/use-image-remove-clutter";
+import { useImageEnhanceLighting } from "~/hooks/use-image-enhance-lighting";
 import type { PropertyImage } from "~/lib/data";
 import { toast } from "sonner";
 import { ProcessingOverlay } from "./processing-overlay";
@@ -30,7 +31,12 @@ export function ImageStudioClientWrapper({
   const [allImages, setAllImages] = useState<PropertyImage[]>(images);
   const [isComparisonVisible, setIsComparisonVisible] = useState(false);
   const [comparisonType, setComparisonType] = useState<
-    "enhancement" | "renovation" | "blur-faces" | "remove-clutter" | null
+    | "enhancement"
+    | "renovation"
+    | "blur-faces"
+    | "remove-clutter"
+    | "enhance-lighting"
+    | null
   >(null);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
@@ -264,6 +270,60 @@ export function ImageStudioClientWrapper({
     },
   });
 
+  // Image enhance lighting hook
+  const {
+    status: enhanceLightingStatus,
+    enhancedImageUrl: lightingEnhancedImageUrl,
+    enhanceMetadata: lightingMetadata,
+    enhanceLighting,
+    saveEnhanced: saveLightingEnhanced,
+    reset: resetEnhanceLighting,
+  } = useImageEnhanceLighting({
+    propertyId,
+    onSuccess: (newImage) => {
+      console.log("🎉 Lighting enhancement success - adding new image to gallery:", {
+        newImageId: newImage.propertyImageId.toString(),
+        imageOrder: newImage.imageOrder,
+        currentImagesCount: allImages.length,
+      });
+
+      // Add the new lighting-enhanced image to the gallery
+      setAllImages((currentImages) => {
+        const newImages = [...currentImages, newImage];
+        const sortedImages = newImages.sort(
+          (a, b) => a.imageOrder - b.imageOrder,
+        );
+        console.log(
+          "📸 Updated gallery images:",
+          sortedImages.map((img) => ({
+            id: img.propertyImageId.toString(),
+            order: img.imageOrder,
+            tag: img.imageTag,
+          })),
+        );
+        return sortedImages;
+      });
+
+      // Hide comparison slider and reset
+      setIsComparisonVisible(false);
+      setComparisonType(null);
+      resetEnhanceLighting();
+
+      console.log(
+        "✅ Lighting enhancement complete - mini gallery should now be visible",
+      );
+    },
+    onComparisonReady: () => {
+      // Show comparison slider when lighting enhancement completes
+      setIsComparisonVisible(true);
+      setComparisonType("enhance-lighting");
+    },
+    onError: (error) => {
+      console.error("Lighting enhancement failed:", error);
+      toast.error("Error al mejorar la iluminación");
+    },
+  });
+
   // Handle review request
   const handleReviewRenovation = useCallback(
     async (reviewText: string) => {
@@ -380,6 +440,30 @@ export function ImageStudioClientWrapper({
     }
   }, [selectedImage, removeClutterStatus, removeClutter]);
 
+  // Handle lighting enhancement request from tools
+  const handleEnhanceLighting = useCallback(async () => {
+    if (!selectedImage) {
+      toast.error("No hay imagen seleccionada");
+      return;
+    }
+
+    if (enhanceLightingStatus === "processing") {
+      toast.warning("Ya hay una mejora de iluminación en progreso");
+      return;
+    }
+
+    try {
+      await enhanceLighting(
+        selectedImage.imageUrl,
+        selectedImage.referenceNumber,
+        selectedImage.imageOrder,
+      );
+    } catch (error) {
+      console.error("Failed to start lighting enhancement:", error);
+      toast.error("Error al iniciar la mejora de iluminación");
+    }
+  }, [selectedImage, enhanceLightingStatus, enhanceLighting]);
+
   // Handle saving the enhanced image
   const handleSaveEnhanced = useCallback(async () => {
     if (!enhancedImageUrl || !enhancementMetadata) {
@@ -484,12 +568,38 @@ export function ImageStudioClientWrapper({
     toast.success("Imagen sin desorden descartada");
   }, [resetRemoveClutter]);
 
+  // Handle saving the lighting-enhanced image
+  const handleSaveLightingEnhanced = useCallback(async () => {
+    if (!lightingEnhancedImageUrl || !lightingMetadata) {
+      toast.error("No hay imagen con iluminación mejorada para guardar");
+      return;
+    }
+
+    try {
+      await saveLightingEnhanced();
+    } catch (error) {
+      console.error("Save lighting-enhanced image failed:", error);
+    }
+  }, [lightingEnhancedImageUrl, lightingMetadata, saveLightingEnhanced]);
+
+  // Handle discarding the lighting-enhanced image
+  const handleDiscardLightingEnhanced = useCallback(() => {
+    // Hide comparison and reset all lighting enhancement state
+    setIsComparisonVisible(false);
+    setComparisonType(null);
+    resetEnhanceLighting();
+
+    // Discarding simply clears the temporary state
+    toast.success("Imagen con iluminación mejorada descartada");
+  }, [resetEnhanceLighting]);
+
   // Determine if AI is processing
   const isProcessing =
     enhancementStatus === "processing" ||
     renovationStatus === "processing" ||
     blurFacesStatus === "processing" ||
-    removeClutterStatus === "processing";
+    removeClutterStatus === "processing" ||
+    enhanceLightingStatus === "processing";
   const processingType =
     renovationStatus === "processing"
       ? "renovación"
@@ -497,7 +607,9 @@ export function ImageStudioClientWrapper({
         ? "desenfoque de caras"
         : removeClutterStatus === "processing"
           ? "eliminación de desorden"
-          : "mejora";
+          : enhanceLightingStatus === "processing"
+            ? "mejora de iluminación"
+            : "mejora";
 
   // Debug mini gallery visibility
   const shouldShowMiniGallery =
@@ -505,6 +617,7 @@ export function ImageStudioClientWrapper({
     renovationStatus !== "processing" &&
     blurFacesStatus !== "processing" &&
     removeClutterStatus !== "processing" &&
+    enhanceLightingStatus !== "processing" &&
     !isComparisonVisible;
   console.log("🔍 Mini gallery visibility check:", {
     enhancementStatus,
@@ -563,6 +676,8 @@ export function ImageStudioClientWrapper({
           _blurFacesStatus={blurFacesStatus}
           onRemoveClutter={handleRemoveClutter}
           _removeClutterStatus={removeClutterStatus}
+          onEnhanceLighting={handleEnhanceLighting}
+          _enhanceLightingStatus={enhanceLightingStatus}
         />
 
         {/* Results Section (big image) */}
@@ -584,7 +699,9 @@ export function ImageStudioClientWrapper({
                   ? (blurredImageUrl ?? "")
                   : comparisonType === "remove-clutter"
                     ? (declutteredImageUrl ?? "")
-                    : (enhancedImageUrl ?? "")
+                    : comparisonType === "enhance-lighting"
+                      ? (lightingEnhancedImageUrl ?? "")
+                      : (enhancedImageUrl ?? "")
             }
             enhancementStatus={
               comparisonType === "renovation"
@@ -593,7 +710,9 @@ export function ImageStudioClientWrapper({
                   ? blurFacesStatus
                   : comparisonType === "remove-clutter"
                     ? removeClutterStatus
-                    : enhancementStatus
+                    : comparisonType === "enhance-lighting"
+                      ? enhanceLightingStatus
+                      : enhancementStatus
             }
             onSave={
               comparisonType === "renovation"
@@ -602,7 +721,9 @@ export function ImageStudioClientWrapper({
                   ? handleSaveBlurred
                   : comparisonType === "remove-clutter"
                     ? handleSaveDecluttered
-                    : handleSaveEnhanced
+                    : comparisonType === "enhance-lighting"
+                      ? handleSaveLightingEnhanced
+                      : handleSaveEnhanced
             }
             onDiscard={
               comparisonType === "renovation"
@@ -611,7 +732,9 @@ export function ImageStudioClientWrapper({
                   ? handleDiscardBlurred
                   : comparisonType === "remove-clutter"
                     ? handleDiscardDecluttered
-                    : handleDiscardEnhanced
+                    : comparisonType === "enhance-lighting"
+                      ? handleDiscardLightingEnhanced
+                      : handleDiscardEnhanced
             }
             isRenovationComparison={comparisonType === "renovation"}
             onReview={comparisonType === "renovation" ? handleReviewRenovation : undefined}

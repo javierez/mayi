@@ -22,7 +22,7 @@ import type {
 } from "~/types/textract-enhanced";
 import { saveVoiceProperty } from "~/server/queries/forms/voice/save-voice-property";
 import { searchContactsForFormWithAuth } from "~/server/queries/contact";
-import ContactPopup from "~/components/crear/pages/contact-popup";
+import { QuickContactModal } from "~/components/contactos/quick-contact-modal";
 
 // Type definitions for contact selection
 interface Contact {
@@ -542,10 +542,10 @@ export function VoiceFieldValidationModal({
       </DialogContent>
 
       {/* Contact Creation Popup */}
-      <ContactPopup
-        isOpen={showContactPopup}
-        onClose={() => setShowContactPopup(false)}
-        onContactCreated={handleContactCreated}
+      <QuickContactModal
+        open={showContactPopup}
+        onOpenChange={setShowContactPopup}
+        onSuccess={handleContactCreated}
       />
     </Dialog>
   );

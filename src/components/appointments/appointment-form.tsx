@@ -23,7 +23,6 @@ import {
   Plus,
   ListTodo,
   Pencil,
-  FileText,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -51,11 +50,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import ContactPopup from "~/components/crear/pages/contact-popup";
+import { QuickContactModal } from "~/components/contactos/quick-contact-modal";
 
 // Appointment form data interface from PRP
 interface AppointmentFormData {
-  contactId: bigint;
+  contactId?: bigint;
   listingId?: bigint;
   leadId?: bigint;
   dealId?: bigint;
@@ -180,7 +179,7 @@ interface Step {
 const steps: Step[] = [
   {
     id: "contact",
-    title: "Seleccionar Contacto",
+    title: "Contacto y Agente",
     icon: <User className="h-5 w-5" />,
   },
   {
@@ -818,19 +817,16 @@ export default function AppointmentForm({
   const validateCurrentStep = async () => {
     switch (currentStep) {
       case 0: // Contact selection
-        if (!formData.contactId) {
-          setValidationError("Debe seleccionar un contacto");
-          return false;
-        }
+        // Contact is now optional - only validate agent assignment
         if (!formData.assignedTo) {
           setValidationError("Debe seleccionar un agente");
           return false;
         }
         return true;
       case 1: // Details
-        // Check if listing is required for "Visita" appointments
-        if (formData.appointmentType === "Visita" && !formData.listingId) {
-          setValidationError("Debe seleccionar una propiedad para las visitas");
+        // Check if listing is required for "Visita" appointments with contacts
+        if (formData.appointmentType === "Visita" && formData.contactId && !formData.listingId) {
+          setValidationError("Debe seleccionar una propiedad para las visitas con contactos");
           return false;
         }
 
@@ -1126,17 +1122,17 @@ export default function AppointmentForm({
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <label
                   htmlFor="contact-search"
                   className="text-sm font-medium text-gray-700"
                 >
-                  Buscar contacto
+                  Contacto
                 </label>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex h-8 items-center space-x-2"
+                  className="flex h-8 items-center space-x-1.5 px-2.5"
                   onClick={() => setShowContactPopup(true)}
                 >
                   <Plus className="h-3 w-3" />
@@ -1596,17 +1592,19 @@ export default function AppointmentForm({
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center gap-3 rounded-lg border p-3">
-                <User className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <div className="font-medium">
-                    {selectedContact?.firstName} {selectedContact?.lastName}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {selectedContact?.email}
+              {selectedContact && (
+                <div className="flex items-center gap-3 rounded-lg border p-3">
+                  <User className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <div className="font-medium">
+                      {selectedContact.firstName} {selectedContact.lastName}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {selectedContact.email}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <div className="flex items-center gap-3 rounded-lg border p-3">
                 <Calendar className="h-5 w-5 text-muted-foreground" />
@@ -1694,7 +1692,7 @@ export default function AppointmentForm({
   };
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-1">
+    <div className="mx-auto flex h-full w-full flex-col px-6">
       {/* Progress Steps */}
       <div className="mb-8">
         <div className="flex items-center justify-center space-x-8">
@@ -1731,22 +1729,24 @@ export default function AppointmentForm({
         </div>
       </div>
 
-      {/* Form Content */}
-      <div className="flex flex-1 flex-col space-y-6 overflow-hidden">
-        <ScrollArea className="flex-1">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentStep}
-              initial={{ opacity: 0, x: direction === "forward" ? 20 : -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: direction === "forward" ? -20 : 20 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-            >
-              {renderStepContent()}
-            </motion.div>
-          </AnimatePresence>
-        </ScrollArea>
+      {/* Form Content - Scrollable */}
+      <ScrollArea className="flex-1 overflow-y-auto px-1.5">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, x: direction === "forward" ? 20 : -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: direction === "forward" ? -20 : 20 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="pb-4"
+          >
+            {renderStepContent()}
+          </motion.div>
+        </AnimatePresence>
+      </ScrollArea>
 
+      {/* Footer - Fixed at bottom */}
+      <div className="mt-4 flex shrink-0 flex-col space-y-3 border-t bg-background pt-4">
         {/* Validation Error */}
         {validationError && (
           <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
@@ -1754,8 +1754,8 @@ export default function AppointmentForm({
           </div>
         )}
 
-        {/* Navigation Buttons - Fixed at bottom */}
-        <div className="flex items-center justify-between border-t bg-background pt-6">
+        {/* Navigation Buttons */}
+        <div className="flex items-center justify-between">
           <div>
             {currentStep > initialStep ? (
               <Button variant="outline" onClick={prevStep}>
@@ -1795,10 +1795,10 @@ export default function AppointmentForm({
       </div>
 
       {/* Contact Creation Popup */}
-      <ContactPopup
-        isOpen={showContactPopup}
-        onClose={() => setShowContactPopup(false)}
-        onContactCreated={handleContactCreated}
+      <QuickContactModal
+        open={showContactPopup}
+        onOpenChange={setShowContactPopup}
+        onSuccess={handleContactCreated}
       />
     </div>
   );

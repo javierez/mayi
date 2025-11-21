@@ -18,7 +18,7 @@ interface CalendarEvent {
   tripTimeMinutes?: number;
   notes?: string;
   // Additional fields needed for editing
-  contactId: bigint;
+  contactId: bigint | null;
   listingId?: bigint | null;
   listingContactId?: bigint | null;
   dealId?: bigint | null;
@@ -33,7 +33,7 @@ interface CalendarEvent {
 interface RawAppointment {
   appointmentId: bigint;
   userId: string;
-  contactId: bigint;
+  contactId: bigint | null;
   listingId: bigint | null;
   listingContactId: bigint | null;
   dealId: bigint | null;

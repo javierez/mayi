@@ -1144,15 +1144,19 @@ export type DealParticipant = {
 export type Appointment = {
   appointmentId: bigint;
   userId: string; // Changed to string to match User type
-  contactId: bigint;
+  contactId: bigint | null;
   listingId?: bigint;
   listingContactId?: bigint;
   dealId?: bigint;
+  prospectId?: bigint;
   datetimeStart: Date;
   datetimeEnd: Date;
+  tripTimeMinutes?: number;
   status: "Scheduled" | "Completed" | "Cancelled" | "Rescheduled" | "NoShow";
+  title: string;
   notes?: string;
   type?: string;
+  assignedTo?: string;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -1680,10 +1684,15 @@ export const appointments: Appointment[] = [
     listingId: BigInt(1),
     listingContactId: BigInt(1),
     dealId: BigInt(1),
+    prospectId: BigInt(1),
     datetimeStart: new Date("2024-03-20T10:00:00"),
     datetimeEnd: new Date("2024-03-20T11:00:00"),
+    tripTimeMinutes: 15,
     status: "Scheduled",
+    title: "Property Viewing",
     notes: "Property viewing for potential buyer",
+    type: "Visita",
+    assignedTo: "1",
     isActive: true,
     createdAt: new Date("2024-03-15"),
     updatedAt: new Date("2024-03-15"),
@@ -1694,10 +1703,15 @@ export const appointments: Appointment[] = [
     contactId: BigInt(2),
     listingId: BigInt(2),
     listingContactId: BigInt(2),
+    prospectId: BigInt(2),
     datetimeStart: new Date("2024-03-21T15:00:00"),
     datetimeEnd: new Date("2024-03-21T16:00:00"),
+    tripTimeMinutes: 20,
     status: "Scheduled",
+    title: "Initial Consultation",
     notes: "Initial consultation for rental property",
+    type: "Reunión",
+    assignedTo: "2",
     isActive: true,
     createdAt: new Date("2024-03-16"),
     updatedAt: new Date("2024-03-16"),

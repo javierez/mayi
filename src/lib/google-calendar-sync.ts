@@ -207,6 +207,7 @@ async function handleGoogleEventUpdate(
         contactId: defaultContact.contactId,
         datetimeStart: appointmentData.datetimeStart!,
         datetimeEnd: appointmentData.datetimeEnd!,
+        title: googleEvent.summary ?? "Untitled Event",
         notes: appointmentData.notes,
         type: appointmentData.type,
         status: appointmentData.status || "Scheduled",

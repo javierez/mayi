@@ -1375,13 +1375,24 @@ export default function AppointmentsPage() {
                   {formatMonthYear(weekStart)}
                 </h3>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => setWeekStart(getWeekStart(new Date()))}
-                className="w-full sm:ml-4 sm:w-auto"
-              >
-                Hoy
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setWeekStart(getWeekStart(new Date()))}
+                  className="w-full sm:w-auto"
+                >
+                  Hoy
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => void refetch()}
+                  disabled={loading}
+                  title="Refrescar eventos"
+                >
+                  <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+                </Button>
+              </div>
             </div>
           </CardHeader>
 

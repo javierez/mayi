@@ -14,7 +14,7 @@ import AppointmentForm from "./appointment-form";
 
 // Appointment form data interface
 interface AppointmentFormData {
-  contactId: bigint;
+  contactId?: bigint;
   listingId?: bigint;
   leadId?: bigint;
   dealId?: bigint;

@@ -105,8 +105,8 @@ export async function createVisitAction(formData: VisitFormData) {
         referenceNumber,
         1, // documentOrder
         "firma-visita", // documentTag to identify visit signatures
-        appointment.contactId,
-        appointment.listingId,
+        appointment.contactId ?? undefined,
+        appointment.listingId ?? undefined,
         undefined, // listingContactId
         undefined, // dealId
         formData.appointmentId,
@@ -142,8 +142,8 @@ export async function createVisitAction(formData: VisitFormData) {
         referenceNumber,
         2, // documentOrder
         "firma-visita", // documentTag to identify visit signatures
-        appointment.contactId,
-        appointment.listingId,
+        appointment.contactId ?? undefined,
+        appointment.listingId ?? undefined,
         undefined, // listingContactId
         undefined, // dealId
         formData.appointmentId,

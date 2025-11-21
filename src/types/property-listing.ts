@@ -376,8 +376,8 @@ export function convertDbListingToPropertyListing(
     deal:
       dbListing.deal && typeof dbListing.deal === "object" && dbListing.deal !== null
         ? {
-            dealId: (dbListing.deal as Record<string, unknown>).dealId ?? undefined,
-            listingId: (dbListing.deal as Record<string, unknown>).listingId ?? undefined,
+            dealId: (dbListing.deal as Record<string, unknown>).dealId as number | bigint,
+            listingId: (dbListing.deal as Record<string, unknown>).listingId as number | bigint,
             status: ((dbListing.deal as Record<string, unknown>).status as string) ?? "",
             arrasDate:
               (dbListing.deal as Record<string, unknown>).arrasDate instanceof Date

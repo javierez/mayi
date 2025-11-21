@@ -6,16 +6,21 @@ import { Textarea } from "~/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { Loader2, X } from "lucide-react";
+import { Loader2, X, Info } from "lucide-react";
 import { toast } from "sonner";
 import type { CommentWithUser } from "~/types/comments";
 import { CommentItem, type CommentWithStatus } from "~/components/propiedades/detail/comments";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 
 interface KeysModalProps {
   open: boolean;
@@ -374,27 +379,41 @@ export function KeysModal({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto [&>button]:hidden">
-          <DialogHeader>
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <DialogTitle>Llaves</DialogTitle>
-                <DialogDescription className="mt-2">
-                  ¿Has recogido las llaves? ¿Quién las tiene? ¿Cuándo están disponibles?
-                </DialogDescription>
+      <TooltipProvider>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto [&>button]:hidden">
+            <DialogHeader>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <DialogTitle>Llaves</DialogTitle>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="flex items-center justify-center rounded-full p-1 text-gray-400 transition-all duration-200 hover:bg-gray-100 hover:text-gray-600"
+                          aria-label="Información sobre llaves"
+                        >
+                          <Info className="h-4 w-4" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs">
+                        <p className="text-xs">¿Has recogido las llaves? ¿Quién las tiene? ¿Cuándo están disponibles?</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onOpenChange(false)}
+                  className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                  title="Cerrar"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onOpenChange(false)}
-                className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                title="Cerrar"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </DialogHeader>
+            </DialogHeader>
 
           <div className="space-y-4">
             {/* Add New Comment */}
@@ -462,8 +481,9 @@ export function KeysModal({
               </div>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      </TooltipProvider>
 
       <ConfirmDialog
         open={deleteConfirmOpen}

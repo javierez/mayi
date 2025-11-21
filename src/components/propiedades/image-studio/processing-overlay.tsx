@@ -5,7 +5,12 @@ import { useState, useEffect } from "react";
 
 interface ProcessingOverlayProps {
   isVisible: boolean;
-  processingType: "mejora" | "renovación" | "desenfoque de caras" | "eliminación de desorden";
+  processingType:
+    | "mejora"
+    | "renovación"
+    | "desenfoque de caras"
+    | "eliminación de desorden"
+    | "mejora de iluminación";
 }
 
 const processingSteps = [

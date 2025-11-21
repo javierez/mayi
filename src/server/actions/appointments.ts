@@ -20,7 +20,7 @@ import { getAppointmentTasksWithAuth } from "~/server/queries/task";
 
 // Form data structure from PRP
 interface AppointmentFormData {
-  contactId: bigint;
+  contactId?: bigint;
   listingId?: bigint;
   listingContactId?: bigint;
   dealId?: bigint;
@@ -49,7 +49,7 @@ export async function updateAppointmentAction(
     // CRITICAL: Convert form data to database format
     const appointmentData = {
       userId: currentUser.id, // String for BetterAuth
-      contactId: BigInt(formData.contactId),
+      contactId: formData.contactId ? BigInt(formData.contactId) : undefined,
       listingId: formData.listingId ? BigInt(formData.listingId) : undefined,
       listingContactId: formData.listingContactId
         ? BigInt(formData.listingContactId)
@@ -136,7 +136,7 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
     // CRITICAL: Convert form data to database format
     const appointmentData = {
       userId: currentUser.id, // String for BetterAuth
-      contactId: BigInt(formData.contactId),
+      contactId: formData.contactId ? BigInt(formData.contactId) : null,
       listingId: formData.listingId ? BigInt(formData.listingId) : undefined,
       listingContactId: formData.listingContactId
         ? BigInt(formData.listingContactId)
@@ -299,9 +299,7 @@ export async function validateAppointmentForm(
 }> {
   const errors: string[] = [];
 
-  if (!formData.contactId) {
-    errors.push("Debe seleccionar un contacto");
-  }
+  // contactId is now optional - appointments can be internal/personal without a contact
 
   if (!formData.startDate) {
     errors.push("Debe seleccionar una fecha de inicio");
