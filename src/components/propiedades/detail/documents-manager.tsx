@@ -75,13 +75,6 @@ export function DocumentsManager({
   // Show folders view
   return (
     <div className={cn("space-y-6", className)}>
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900">Documentos</h3>
-        <p className="text-sm text-gray-500">
-          Gestiona los documentos de la propiedad
-        </p>
-      </div>
-
       {/* Folders grid */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {folders.map((folder) => {

@@ -27,6 +27,7 @@ import {
   PenTool,
   Handshake,
   Train,
+  ListTodo,
   CircleDot,
   CheckCircle,
   Ban,
@@ -65,6 +66,10 @@ const appointmentTypes = {
     color: "bg-emerald-100 text-emerald-800",
     icon: <Train className="h-4 w-4" />,
   },
+  Tarea: {
+    color: "bg-rose-100 text-rose-800",
+    icon: <ListTodo className="h-4 w-4" />,
+  },
 };
 
 // Status labels mapping
@@ -94,8 +99,9 @@ interface AppointmentFormData {
   endDate?: string;
   endTime?: string;
   tripTimeMinutes?: number;
+  title?: string;
   notes?: string;
-  appointmentType?: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje";
+  appointmentType?: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje" | "Tarea";
 }
 
 export interface AppointmentDetailSheetProps {
@@ -260,13 +266,15 @@ export function AppointmentDetailSheet({
       endDate: appointment.datetimeEnd.toISOString().split("T")[0],
       endTime: appointment.datetimeEnd.toTimeString().slice(0, 5),
       tripTimeMinutes: appointment.tripTimeMinutes,
+      title: appointment.title,
       notes: appointment.notes,
       appointmentType: appointment.type as
         | "Visita"
         | "Reunión"
         | "Firma"
         | "Cierre"
-        | "Viaje",
+        | "Viaje"
+        | "Tarea",
     };
 
     // Add listingId from appointment itself first, then override with context if provided
@@ -317,7 +325,7 @@ export function AppointmentDetailSheet({
           <SheetTitle className="flex items-center gap-2 text-base sm:text-lg">
             <span className="shrink-0">{typeConfig.icon}</span>
             <span className="min-w-0 break-words">
-              {appointment.type} - {appointment.contactName}
+              {appointment.title ?? `${appointment.type} - ${appointment.contactName}`}
             </span>
           </SheetTitle>
         </SheetHeader>
@@ -406,6 +414,11 @@ export function AppointmentDetailSheet({
 
           {/* Appointment Details */}
           <div className="space-y-2">
+            {appointment.title && (
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <span>{appointment.title}</span>
+              </div>
+            )}
             <div className="flex items-center gap-2 text-sm">
               <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
               <span>{formatDate(appointment.datetimeStart)}</span>

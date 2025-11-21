@@ -226,7 +226,13 @@ export default function WorkQueueCard({
     // Same priority level - sort by due date (earlier dates first, null dates treated as 0)
     const aDate = a.dueDate ? new Date(a.dueDate).getTime() : 0;
     const bDate = b.dueDate ? new Date(b.dueDate).getTime() : 0;
-    return aDate - bDate;
+
+    if (aDate !== bDate) {
+      return aDate - bDate;
+    }
+
+    // Same priority and due date - sort by urgency (higher urgency first)
+    return (b.urgency ?? 0) - (a.urgency ?? 0);
   });
 
   const formatTime = (date: Date | string) => {

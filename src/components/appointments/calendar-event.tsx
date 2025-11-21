@@ -9,6 +9,7 @@ import {
   PenTool,
   Handshake,
   Train,
+  ListTodo,
   CalendarIcon,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
@@ -23,6 +24,7 @@ interface CalendarEvent {
   endTime: Date;
   status: "Scheduled" | "Completed" | "Cancelled" | "Rescheduled" | "NoShow";
   type: string;
+  title?: string;
   tripTimeMinutes?: number;
   notes?: string;
   // Optimistic update flag
@@ -65,6 +67,11 @@ const appointmentTypes = {
   Viaje: {
     color: "bg-emerald-500",
     icon: <Train className="h-3 w-3" />,
+    textColor: "text-white",
+  },
+  Tarea: {
+    color: "bg-rose-500",
+    icon: <ListTodo className="h-3 w-3" />,
     textColor: "text-white",
   },
 };
@@ -145,6 +152,8 @@ export default function CalendarEvent({
         return "234, 179, 8"; // yellow-500 RGB
       case "Viaje":
         return "16, 185, 129"; // emerald-500 RGB
+      case "Tarea":
+        return "244, 63, 94"; // rose-500 RGB
       default:
         return "107, 114, 128"; // gray-500 RGB
     }
@@ -193,11 +202,19 @@ export default function CalendarEvent({
         style={style}
         onClick={handleClick}
       >
-        {/* Always show: Event type and contact name */}
+        {/* Always show: Event type and title/contact name */}
         <div className="flex items-center gap-1 truncate text-xs font-medium leading-tight">
           {typeConfig.icon}
           <span>
-            {event.type} {event.contactName}
+            {event.title ? (
+              <>
+                {event.type}: {event.title}
+              </>
+            ) : (
+              <>
+                {event.type} {event.contactName}
+              </>
+            )}
           </span>
         </div>
 
@@ -207,6 +224,7 @@ export default function CalendarEvent({
             <Clock className="h-3 w-3 flex-shrink-0" />
             <span className="truncate">
               {formatTime(event.startTime)} - {formatTime(event.endTime)}
+              {event.title && ` • ${event.contactName}`}
             </span>
           </div>
         )}
@@ -323,6 +341,7 @@ export function ListCalendarEvent({
     datetimeStart: event.startTime,
     datetimeEnd: event.endTime,
     tripTimeMinutes: event.tripTimeMinutes,
+    title: event.title,
     notes: event.notes,
     contactName: event.contactName,
     propertyAddress: event.propertyAddress,

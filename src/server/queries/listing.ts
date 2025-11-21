@@ -12,6 +12,8 @@ import {
   accounts,
   websiteProperties,
   documents,
+  deals,
+  appointments,
 } from "../db/schema";
 import { eq, and, ne, sql } from "drizzle-orm";
 import type { Listing } from "../../lib/data";
@@ -1282,8 +1284,15 @@ export async function getAccountWebsite(accountId: number) {
 // Get detailed listing information including all related data
 // This query is optimized for the property characteristics form
 export async function getListingDetails(listingId: number, accountId: number) {
+  console.log("🔍 getListingDetails called with:", {
+    listingId,
+    listingIdType: typeof listingId,
+    listingIdBigInt: BigInt(listingId),
+    accountId,
+  });
+
   try {
-    const [listingDetails] = await db
+    const query = db
       .select({
         // Listing fields - All needed for form
         listingId: listings.listingId,
@@ -1512,6 +1521,19 @@ export async function getListingDetails(listingId: number, accountId: number) {
             AND listing_contacts.is_active = true
         )`,
 
+        // Has visits (scheduled or completed) - check if there are any visit appointments
+        // This indicates the property is actively being shown (either has upcoming visits or has been shown)
+        hasScheduledVisits: sql<boolean>`EXISTS(
+          SELECT 1 FROM appointments
+          WHERE appointments.listing_id = ${listings.listingId}
+            AND (
+              (appointments.status = 'Scheduled' AND appointments.datetime_start > NOW())
+              OR appointments.status = 'Completed'
+            )
+            AND (appointments.type = 'Visita' OR appointments.type IS NULL)
+            AND appointments.is_active = true
+        )`,
+
         // Image count - count active property images (excluding videos, youtube, tours)
         imageCount: sql<number>`(
           SELECT COUNT(*)
@@ -1521,24 +1543,15 @@ export async function getListingDetails(listingId: number, accountId: number) {
             AND (property_images.image_tag IS NULL OR property_images.image_tag NOT IN ('video', 'youtube', 'tour'))
         )`,
 
-        // Active deal data for progress tracking
-        deal: sql<Record<string, unknown> | null>`(
-          SELECT json_build_object(
-            'dealId', d.deal_id,
-            'listingId', d.listing_id,
-            'status', d.stage,
-            'arrasDate', d.arras_date,
-            'arrasSigningDate', d.arras_signing_date,
-            'expectedDeedDate', d.expected_deed_date,
-            'actualDeedDate', d.actual_deed_date,
-            'closeDate', d.close_date,
-            'keyHandoverDate', d.key_handover_date
-          )
-          FROM deals d
-          WHERE d.listing_id = ${listings.listingId}
-          ORDER BY d.created_at DESC
-          LIMIT 1
-        )`,
+        // Deal fields for progress tracking - fetched from leftJoin below
+        dealId: deals.dealId,
+        dealStatus: deals.status,
+        dealArrasDate: deals.arrasDate,
+        dealArrasSigningDate: deals.arrasSigningDate,
+        dealExpectedDeedDate: deals.expectedDeedDate,
+        dealActualDeedDate: deals.actualDeedDate,
+        dealCloseDate: deals.closeDate,
+        dealKeyHandoverDate: deals.keyHandoverDate,
       })
       .from(listings)
       .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
@@ -1547,6 +1560,7 @@ export async function getListingDetails(listingId: number, accountId: number) {
         eq(properties.neighborhoodId, locations.neighborhoodId),
       )
       .leftJoin(users, eq(listings.agentId, users.id))
+      .leftJoin(deals, eq(deals.listingId, listings.listingId))
       .where(
         and(
           eq(listings.listingId, BigInt(listingId)),
@@ -1555,17 +1569,72 @@ export async function getListingDetails(listingId: number, accountId: number) {
         ),
       );
 
+    // Log the SQL query for debugging
+    console.log("📝 SQL Query:", query.toSQL());
+
+    const [listingDetails] = await query;
+
     if (!listingDetails) {
       throw new Error("Listing not found");
     }
 
+    console.log("📊 Raw query result - deal fields:", {
+      dealId: listingDetails.dealId,
+      dealIdType: typeof listingDetails.dealId,
+      dealStatus: listingDetails.dealStatus,
+      dealArrasDate: listingDetails.dealArrasDate,
+      dealActualDeedDate: listingDetails.dealActualDeedDate,
+      dealCloseDate: listingDetails.dealCloseDate,
+      listingIdFromResult: listingDetails.listingId,
+      listingIdFromResultType: typeof listingDetails.listingId,
+      allDealFields: {
+        dealId: listingDetails.dealId,
+        dealStatus: listingDetails.dealStatus,
+        dealArrasDate: listingDetails.dealArrasDate,
+        dealArrasSigningDate: listingDetails.dealArrasSigningDate,
+        dealExpectedDeedDate: listingDetails.dealExpectedDeedDate,
+        dealActualDeedDate: listingDetails.dealActualDeedDate,
+        dealCloseDate: listingDetails.dealCloseDate,
+        dealKeyHandoverDate: listingDetails.dealKeyHandoverDate,
+      },
+    });
+
     // Fetch owners for this listing
     const owners = await getCurrentListingOwners(listingId, accountId);
 
-    // Return listing details with owners array
+    // Transform deal fields into a deal object (or null if no deal exists)
+    const deal = listingDetails.dealId
+      ? {
+          dealId: listingDetails.dealId,
+          listingId: listingDetails.listingId,
+          status: listingDetails.dealStatus,
+          arrasDate: listingDetails.dealArrasDate,
+          arrasSigningDate: listingDetails.dealArrasSigningDate,
+          expectedDeedDate: listingDetails.dealExpectedDeedDate,
+          actualDeedDate: listingDetails.dealActualDeedDate,
+          closeDate: listingDetails.dealCloseDate,
+          keyHandoverDate: listingDetails.dealKeyHandoverDate,
+        }
+      : null;
+
+    // Remove the individual deal fields from listingDetails
+    const {
+      dealId: _dealId,
+      dealStatus: _dealStatus,
+      dealArrasDate: _dealArrasDate,
+      dealArrasSigningDate: _dealArrasSigningDate,
+      dealExpectedDeedDate: _dealExpectedDeedDate,
+      dealActualDeedDate: _dealActualDeedDate,
+      dealCloseDate: _dealCloseDate,
+      dealKeyHandoverDate: _dealKeyHandoverDate,
+      ...restListingDetails
+    } = listingDetails;
+
+    // Return listing details with owners array and deal object
     return {
-      ...listingDetails,
+      ...restListingDetails,
       owners,
+      deal,
     };
   } catch (error) {
     console.error("Error fetching listing details:", error);

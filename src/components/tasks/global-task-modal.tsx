@@ -24,7 +24,7 @@ import { AlertCircle, Loader2, Search, X, Mail, Phone } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { getInitials } from "~/lib/operations/task-utils";
 import { createTaskWithAuth } from "~/server/queries/task";
-import { searchContactsWithAuth } from "~/server/queries/contact";
+import { searchContactsWithAuth, getContactByIdWithAuth } from "~/server/queries/contact";
 import { listListingsForContactWithAuth, listContactsForListingWithAuth, listListingsCompactWithAuth, getListingCompactByIdWithAuth } from "~/server/queries/listing";
 import { findListingContactIdAction } from "~/server/actions/contact-activity";
 import { useSession } from "~/lib/auth-client";
@@ -66,6 +66,7 @@ interface GlobalTaskModalProps {
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
   initialListingId?: bigint;
+  initialContactId?: bigint;
 }
 
 // Debounce hook for search optimization
@@ -83,6 +84,7 @@ export function GlobalTaskModal({
   onOpenChange,
   onSuccess,
   initialListingId,
+  initialContactId,
 }: GlobalTaskModalProps) {
   const { data: session } = useSession();
   const [loading, setLoading] = useState({
@@ -100,6 +102,7 @@ export function GlobalTaskModal({
     listingId: "",
     agentId: "",
     urgency: "" as "" | "1" | "2" | "3" | "4" | "5",
+    createInCalendar: false,
   });
 
   const [contactSearchQuery, setContactSearchQuery] = useState("");
@@ -159,10 +162,11 @@ export function GlobalTaskModal({
         description: "",
         dueDate: "",
         dueTime: "",
-        contactId: "",
+        contactId: initialContactId ? initialContactId.toString() : "",
         listingId: initialListingId ? initialListingId.toString() : "",
         agentId: session?.user?.id ?? "",
         urgency: "",
+        createInCalendar: false,
       });
       setSelectedContact(null);
       setSelectedListing(null);
@@ -174,7 +178,7 @@ export function GlobalTaskModal({
       setShowConfirmDialog(false);
       setPendingSubmit(false);
     }
-  }, [open, session?.user?.id, initialListingId]);
+  }, [open, session?.user?.id, initialListingId, initialContactId]);
 
   // Fetch and set initial listing when provided
   useEffect(() => {
@@ -228,6 +232,52 @@ export function GlobalTaskModal({
 
     void fetchInitialListingAndContacts();
   }, [open, initialListingId]);
+
+  // Fetch and set initial contact when provided
+  useEffect(() => {
+    if (!open || !initialContactId) return;
+
+    const fetchInitialContactAndListings = async () => {
+      setLoading((prev) => ({ ...prev, searching: true, listings: true }));
+      try {
+        // Fetch contact data
+        const contactData = await getContactByIdWithAuth(Number(initialContactId));
+
+        if (contactData) {
+          const contact: Contact = {
+            contactId: contactData.contactId,
+            firstName: contactData.firstName,
+            lastName: contactData.lastName ?? "",
+            email: contactData.email,
+            phone: contactData.phone,
+          };
+          setSelectedContact(contact);
+          setFormData((prev) => ({
+            ...prev,
+            contactId: initialContactId.toString()
+          }));
+
+          // Also fetch listings for this contact
+          try {
+            const listingsData = await listListingsForContactWithAuth(
+              initialContactId,
+              undefined,
+            );
+            setListings(listingsData);
+          } catch (error) {
+            console.error("Error loading listings for contact:", error);
+            setListings([]);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching initial contact:", error);
+      } finally {
+        setLoading((prev) => ({ ...prev, searching: false, listings: false }));
+      }
+    };
+
+    void fetchInitialContactAndListings();
+  }, [open, initialContactId]);
 
   // Search contacts when debounced query changes
   useEffect(() => {
@@ -580,7 +630,12 @@ export function GlobalTaskModal({
           <div className="space-y-2">
             <Label>Contacto</Label>
 
-            {selectedContact ? (
+            {loading.searching && initialContactId ? (
+              <div className="flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 p-6">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">Cargando contacto...</span>
+              </div>
+            ) : selectedContact ? (
               <div className="rounded-lg border border-primary/40 bg-primary/5 p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-3 flex-1">
@@ -623,18 +678,20 @@ export function GlobalTaskModal({
                       )}
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClearContact}
-                    className="h-6 w-6 shrink-0 p-0"
-                    title="Quitar contacto"
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
+                  {!initialContactId && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClearContact}
+                      className="h-6 w-6 shrink-0 p-0"
+                      title="Quitar contacto"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
               </div>
-            ) : (
+            ) : !initialContactId ? (
               <div className="space-y-2">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -710,6 +767,10 @@ export function GlobalTaskModal({
                     )}
                   </ScrollArea>
                 )}
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                Contacto pre-seleccionado
               </div>
             )}
           </div>
@@ -942,6 +1003,27 @@ export function GlobalTaskModal({
               />
             </div>
           </div>
+
+          {/* Create in Calendar Option (shows when both date and time are set) */}
+          {formData.dueDate && formData.dueTime && (
+            <div className="space-y-2">
+              <Label htmlFor="create-calendar">Crear en calendario</Label>
+              <Select
+                value={formData.createInCalendar ? "yes" : "no"}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, createInCalendar: value === "yes" }))
+                }
+              >
+                <SelectTrigger className="h-8 text-gray-500">
+                  <SelectValue placeholder="Seleccionar opción" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="no">No</SelectItem>
+                  <SelectItem value="yes">Sí</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Error Message */}
           {saveError && (

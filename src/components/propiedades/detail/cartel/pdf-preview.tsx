@@ -11,9 +11,10 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 interface PdfPreviewProps {
   fileUrl: string;
   className?: string;
+  scale?: number;
 }
 
-export function PdfPreview({ fileUrl, className = "" }: PdfPreviewProps) {
+export function PdfPreview({ fileUrl, className = "", scale = 1.0 }: PdfPreviewProps) {
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -49,6 +50,7 @@ export function PdfPreview({ fileUrl, className = "" }: PdfPreviewProps) {
           renderTextLayer={false}
           renderAnnotationLayer={false}
           width={containerWidth || 300}
+          scale={scale}
           loading={
             <div className="flex h-full w-full items-center justify-center">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-gray-600"></div>

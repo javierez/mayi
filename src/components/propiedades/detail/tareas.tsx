@@ -10,23 +10,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
 import { Label } from "~/components/ui/label";
 import { Badge } from "~/components/ui/badge";
 import { Separator } from "~/components/ui/separator";
+import { ScrollArea } from "~/components/ui/scroll-area";
+import { Collapsible, CollapsibleContent } from "~/components/ui/collapsible";
 import {
   Plus,
   AlertCircle,
   Loader2,
   Filter,
-  X,
   Check,
   ChevronUp,
   ChevronDown,
+  User,
+  UserPlus,
+  FilterX,
 } from "lucide-react";
 import { TareasSkeleton } from "~/components/ui/skeletons";
 import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
@@ -167,9 +166,21 @@ export function Tareas({
   const [loadingAgents, setLoadingAgents] = useState(false);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState<
-    "all" | "contact" | "property"
-  >("all");
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [taskFilters, setTaskFilters] = useState({
+    assignedTo: [] as string[],
+    createdBy: [] as string[],
+    urgency: [] as string[],
+    contactId: [] as string[],
+  });
+  const [expandedCategories, setExpandedCategories] = useState<
+    Record<string, boolean>
+  >({
+    assignedTo: false,
+    createdBy: false,
+    urgency: false,
+    contactId: false,
+  });
   const [ownerInfo, setOwnerInfo] = useState<{
     listingContactId: bigint;
     contactId: bigint;
@@ -939,6 +950,42 @@ export function Tareas({
     }
   };
 
+  // Filter helper functions
+  const toggleFilter = (
+    filterType: "assignedTo" | "createdBy" | "urgency" | "contactId",
+    value: string,
+  ) => {
+    const currentValues = taskFilters[filterType];
+    setTaskFilters({
+      ...taskFilters,
+      [filterType]: currentValues.includes(value)
+        ? currentValues.filter((v) => v !== value)
+        : [...currentValues, value],
+    });
+  };
+
+  const toggleCategory = (category: string) => {
+    setExpandedCategories((prev) => ({
+      ...prev,
+      [category]: !prev[category],
+    }));
+  };
+
+  const clearFilters = () => {
+    setTaskFilters({
+      assignedTo: [],
+      createdBy: [],
+      urgency: [],
+      contactId: [],
+    });
+  };
+
+  const activeFiltersCount =
+    taskFilters.assignedTo.length +
+    taskFilters.createdBy.length +
+    taskFilters.urgency.length +
+    taskFilters.contactId.length;
+
   // Filter contacts based on search
   const filteredContacts = useMemo(() => {
     return contacts.filter((contact) =>
@@ -960,38 +1007,85 @@ export function Tareas({
     );
   }, [appointments, newTask.contactId]);
 
-  // Sort and filter tasks: filter by category, incomplete first, then by due date
+  // Sort and filter tasks: apply filters, incomplete first, then by due date
   const sortedTasks = useMemo(() => {
     let filteredTasks = [...optimisticTasks];
 
-    // Filter by category
-    if (categoryFilter === "contact") {
-      filteredTasks = filteredTasks.filter(
-        (task) => task.category === "contact",
+    // Filter by assigned to
+    if (taskFilters.assignedTo.length > 0) {
+      filteredTasks = filteredTasks.filter((task) =>
+        taskFilters.assignedTo.includes(task.userId),
       );
-    } else if (categoryFilter === "property") {
+    }
+
+    // Filter by created by
+    if (taskFilters.createdBy.length > 0) {
       filteredTasks = filteredTasks.filter(
-        (task) => task.category === "property",
+        (task) => task.createdBy && taskFilters.createdBy.includes(task.createdBy),
+      );
+    }
+
+    // Filter by urgency
+    if (taskFilters.urgency.length > 0) {
+      filteredTasks = filteredTasks.filter(
+        (task) =>
+          task.urgency && taskFilters.urgency.includes(task.urgency.toString()),
+      );
+    }
+
+    // Filter by contact
+    if (taskFilters.contactId.length > 0) {
+      filteredTasks = filteredTasks.filter(
+        (task) =>
+          task.relatedContact &&
+          taskFilters.contactId.includes(task.relatedContact.contactId.toString()),
       );
     }
 
     return filteredTasks.sort((a, b) => {
-      // First: Incomplete tasks come before completed tasks
+      // First: Completed tasks go to the bottom
       if (a.completed !== b.completed) {
         return a.completed ? 1 : -1;
       }
 
-      // Second: Sort by due date (tasks with due dates first, then by date)
-      if (a.dueDate && b.dueDate) {
-        return a.dueDate.getTime() - b.dueDate.getTime();
-      }
-      if (a.dueDate && !b.dueDate) return -1;
-      if (!a.dueDate && b.dueDate) return 1;
+      // Second: Priority order based on criticality and due date presence
+      // 1. Critical tasks (urgency = 5) with NO due date (highest priority)
+      // 2. Critical tasks (urgency = 5) with due date
+      // 3. Non-critical tasks with NO due date
+      // 4. Non-critical tasks with due date (lowest priority)
 
-      // If no due dates, maintain creation order
-      return 0;
+      const aIsCritical = (a.urgency ?? 0) === 5;
+      const bIsCritical = (b.urgency ?? 0) === 5;
+      const aHasDate = a.dueDate != null;
+      const bHasDate = b.dueDate != null;
+
+      // Calculate priority score: critical + no date = highest priority
+      const getPriorityScore = (isCritical: boolean, hasDate: boolean) => {
+        if (isCritical && !hasDate) return 0; // Highest priority
+        if (isCritical && hasDate) return 1;
+        if (!isCritical && !hasDate) return 2;
+        return 3; // Lowest priority
+      };
+
+      const aPriority = getPriorityScore(aIsCritical, aHasDate);
+      const bPriority = getPriorityScore(bIsCritical, bHasDate);
+
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority; // Lower priority score = higher priority
+      }
+
+      // Third: Same priority level - sort by due date (earlier dates first, null dates treated as 0)
+      const aDate = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+      const bDate = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+
+      if (aDate !== bDate) {
+        return aDate - bDate;
+      }
+
+      // Fourth: Same priority and due date - sort by urgency (higher urgency first)
+      return (b.urgency ?? 0) - (a.urgency ?? 0);
     });
-  }, [optimisticTasks, categoryFilter]);
+  }, [optimisticTasks, taskFilters]);
 
   if (externalLoading) {
     return <TareasSkeleton />;
@@ -1324,138 +1418,232 @@ export function Tareas({
     </Card>
   ) : null;
 
+  // Filter UI helper components
+  const FilterOption = ({
+    value,
+    label,
+    filterType,
+  }: {
+    value: string;
+    label: string;
+    filterType: "assignedTo" | "createdBy" | "urgency" | "contactId";
+  }) => {
+    const isSelected = taskFilters[filterType].includes(value);
+
+    return (
+      <div
+        className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 transition-colors hover:bg-accent"
+        onClick={() => toggleFilter(filterType, value)}
+      >
+        <div
+          className={`flex h-3 w-3 items-center justify-center rounded border ${
+            isSelected ? "border-primary bg-primary" : "border-input"
+          }`}
+        >
+          {isSelected && <Check className="h-2 w-2 text-primary-foreground" />}
+        </div>
+        <span className={`text-[12px] ${isSelected ? "font-medium" : ""}`}>
+          {label}
+        </span>
+      </div>
+    );
+  };
+
+  const FilterCategory = ({
+    title,
+    category,
+    icon: Icon,
+    children,
+  }: {
+    title: string;
+    category: string;
+    icon: React.ComponentType<{ className?: string }>;
+    children: React.ReactNode;
+  }) => (
+    <div className="space-y-1">
+      <div
+        className="group flex cursor-pointer items-center gap-1"
+        onClick={() => toggleCategory(category)}
+      >
+        <Icon className="h-3 w-3 text-muted-foreground transition-colors group-hover:text-foreground" />
+        <h5 className="text-[12px] font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+          {title}
+        </h5>
+        <ChevronDown
+          className={`h-3 w-3 text-muted-foreground transition-transform ${
+            expandedCategories[category] ? "rotate-180" : ""
+          }`}
+        />
+      </div>
+      {expandedCategories[category] && (
+        <div className="space-y-0.5">{children}</div>
+      )}
+    </div>
+  );
+
+  const urgencyOptions = [
+    { value: "1", label: "1 - Muy Baja" },
+    { value: "2", label: "2 - Baja" },
+    { value: "3", label: "3 - Media" },
+    { value: "4", label: "4 - Alta" },
+    { value: "5", label: "5 - Crítica" },
+  ];
+
   return (
     <div className="space-y-4 md:space-y-6">
-      <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-lg font-semibold sm:text-xl">Tareas</h3>
-        <div className="flex items-center gap-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="relative h-8 w-8 p-0 text-gray-600 shadow"
-              >
-                <Filter className="h-3.5 w-3.5" />
-                {categoryFilter !== "all" && (
-                  <Badge
-                    variant="secondary"
-                    className="absolute -right-1 -top-1 h-4 min-w-4 rounded-full px-1 text-[10px] font-normal"
-                  >
-                    1
-                  </Badge>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-48 p-2" align="end">
-              <div className="space-y-1">
-                <div
-                  className={`flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent ${
-                    categoryFilter === "all" ? "bg-accent" : ""
-                  }`}
-                  onClick={() => setCategoryFilter("all")}
+      <div className="mb-2 flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold sm:text-xl">Tareas</h3>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="relative h-7 px-2 text-xs"
+              onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+            >
+              <Filter className="mr-1.5 h-3 w-3" />
+              <span>Filtros</span>
+              {activeFiltersCount > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="ml-1.5 h-4 min-w-4 rounded-full px-1 text-[12px] font-normal"
                 >
-                  <div
-                    className={`flex h-3 w-3 items-center justify-center rounded border ${
-                      categoryFilter === "all"
-                        ? "border-primary bg-primary"
-                        : "border-input"
-                    }`}
+                  {activeFiltersCount}
+                </Badge>
+              )}
+              <ChevronDown
+                className={`ml-1 h-3 w-3 transition-transform ${
+                  isFiltersOpen ? "rotate-180 transform" : ""
+                }`}
+              />
+            </Button>
+            <Button
+              onClick={() => {
+                setShowGlobalTaskModal(true);
+              }}
+              variant="outline"
+              className="flex h-8 items-center gap-2 text-sm text-gray-600 shadow"
+            >
+              <Plus className="h-4 w-4" />
+              Nueva Tarea
+            </Button>
+            {(newTask.title || newTask.description) && !isAdding && (
+              <div
+                className="h-3 w-3 animate-pulse cursor-help rounded-full bg-amber-400"
+                title="Borrador guardado"
+              />
+            )}
+          </div>
+        </div>
+
+        <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
+          <CollapsibleContent className="space-y-2">
+            <div className="rounded-lg bg-card p-2 shadow-md">
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Assigned To Filter */}
+                  <FilterCategory
+                    title="Asignado a"
+                    category="assignedTo"
+                    icon={User}
                   >
-                    {categoryFilter === "all" && (
-                      <Check className="h-2 w-2 text-primary-foreground" />
-                    )}
-                  </div>
-                  <span
-                    className={categoryFilter === "all" ? "font-medium" : ""}
+                    <ScrollArea className="max-h-[200px]">
+                      <div className="space-y-0.5">
+                        {agents.map((agent) => (
+                          <FilterOption
+                            key={agent.id}
+                            value={agent.id}
+                            label={
+                              agent.name ??
+                              `${agent.firstName ?? ""} ${agent.lastName ?? ""}`.trim()
+                            }
+                            filterType="assignedTo"
+                          />
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </FilterCategory>
+
+                  {/* Created By Filter */}
+                  <FilterCategory
+                    title="Creado por"
+                    category="createdBy"
+                    icon={UserPlus}
                   >
-                    Todas
-                  </span>
-                </div>
-                <div
-                  className={`flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent ${
-                    categoryFilter === "contact" ? "bg-accent" : ""
-                  }`}
-                  onClick={() => setCategoryFilter("contact")}
-                >
-                  <div
-                    className={`flex h-3 w-3 items-center justify-center rounded border ${
-                      categoryFilter === "contact"
-                        ? "border-primary bg-primary"
-                        : "border-input"
-                    }`}
+                    <ScrollArea className="max-h-[200px]">
+                      <div className="space-y-0.5">
+                        {agents.map((agent) => (
+                          <FilterOption
+                            key={agent.id}
+                            value={agent.id}
+                            label={
+                              agent.name ??
+                              `${agent.firstName ?? ""} ${agent.lastName ?? ""}`.trim()
+                            }
+                            filterType="createdBy"
+                          />
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </FilterCategory>
+
+                  {/* Urgency Filter */}
+                  <FilterCategory
+                    title="Urgencia"
+                    category="urgency"
+                    icon={AlertCircle}
                   >
-                    {categoryFilter === "contact" && (
-                      <Check className="h-2 w-2 text-primary-foreground" />
-                    )}
-                  </div>
-                  <span
-                    className={
-                      categoryFilter === "contact" ? "font-medium" : ""
-                    }
+                    <div className="space-y-0.5">
+                      {urgencyOptions.map((option) => (
+                        <FilterOption
+                          key={option.value}
+                          value={option.value}
+                          label={option.label}
+                          filterType="urgency"
+                        />
+                      ))}
+                    </div>
+                  </FilterCategory>
+
+                  {/* Contact Filter */}
+                  <FilterCategory
+                    title="Contacto"
+                    category="contactId"
+                    icon={User}
                   >
-                    Contacto
-                  </span>
-                </div>
-                <div
-                  className={`flex cursor-pointer items-center space-x-2 rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent ${
-                    categoryFilter === "property" ? "bg-accent" : ""
-                  }`}
-                  onClick={() => setCategoryFilter("property")}
-                >
-                  <div
-                    className={`flex h-3 w-3 items-center justify-center rounded border ${
-                      categoryFilter === "property"
-                        ? "border-primary bg-primary"
-                        : "border-input"
-                    }`}
-                  >
-                    {categoryFilter === "property" && (
-                      <Check className="h-2 w-2 text-primary-foreground" />
-                    )}
-                  </div>
-                  <span
-                    className={
-                      categoryFilter === "property" ? "font-medium" : ""
-                    }
-                  >
-                    Propiedad
-                  </span>
+                    <ScrollArea className="max-h-[200px]">
+                      <div className="space-y-0.5">
+                        {contacts.map((contact) => (
+                          <FilterOption
+                            key={contact.id.toString()}
+                            value={contact.id.toString()}
+                            label={contact.name}
+                            filterType="contactId"
+                          />
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </FilterCategory>
                 </div>
               </div>
-              {categoryFilter !== "all" && (
-                <>
-                  <Separator className="my-1" />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCategoryFilter("all")}
-                    className="h-7 w-full text-xs"
-                  >
-                    <X className="mr-1 h-3 w-3" />
-                    Borrar filtro
-                  </Button>
-                </>
-              )}
-            </PopoverContent>
-          </Popover>
-          <Button
-            onClick={() => {
-              setShowGlobalTaskModal(true);
-            }}
-            variant="outline"
-            className="flex h-8 items-center gap-2 text-sm text-gray-600 shadow"
-          >
-            <Plus className="h-4 w-4" />
-            Nueva Tarea
-          </Button>
-          {(newTask.title || newTask.description) && !isAdding && (
-            <div
-              className="h-3 w-3 animate-pulse cursor-help rounded-full bg-amber-400"
-              title="Borrador guardado"
-            />
-          )}
-        </div>
+            </div>
+
+            {/* Clear Filters Button */}
+            {activeFiltersCount > 0 && (
+              <div className="flex items-center justify-end px-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="h-auto px-2 py-1 text-[12px]"
+                >
+                  <FilterX className="mr-1 h-3 w-3" />
+                  Borrar filtros
+                </Button>
+              </div>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
       </div>
 
       {/* Show form at top only when creating a new task (not editing) */}
@@ -1465,8 +1653,8 @@ export function Tareas({
         {sortedTasks.length === 0 ? (
           <div className="py-6 text-center text-gray-500 sm:py-8">
             <p className="text-sm sm:text-base">
-              {categoryFilter !== "all"
-                ? `No hay tareas de ${categoryFilter === "contact" ? "contacto" : "propiedad"}`
+              {activeFiltersCount > 0
+                ? "No hay tareas que coincidan con los filtros seleccionados"
                 : "No hay tareas registradas para esta propiedad"}
             </p>
           </div>

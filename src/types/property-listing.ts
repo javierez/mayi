@@ -23,6 +23,7 @@ export interface PropertyListing {
   enEscaparate?: boolean;
   encargo?: boolean;
   offerAccepted?: boolean;
+  hasScheduledVisits?: boolean;
   
   // Portal publication flags
   fotocasa?: boolean;
@@ -184,6 +185,17 @@ export interface PropertyListing {
     id: number;
     name: string;
   }>;
+  deal?: {
+    dealId: number | bigint;
+    listingId: number | bigint;
+    status: string;
+    arrasDate: Date | null;
+    arrasSigningDate: Date | null;
+    expectedDeedDate: Date | null;
+    actualDeedDate: Date | null;
+    closeDate: Date | null;
+    keyHandoverDate: Date | null;
+  } | null;
 
   // Timestamps
   createdAt?: Date | null;
@@ -228,6 +240,7 @@ export function convertDbListingToPropertyListing(
     enEscaparate: getBoolean(dbListing.enEscaparate),
     encargo: (dbListing.encargo as boolean) ?? undefined,
     offerAccepted: (dbListing.offerAccepted as boolean) ?? undefined,
+    hasScheduledVisits: (dbListing.hasScheduledVisits as boolean) ?? undefined,
     fotocasa: getBoolean(dbListing.fotocasa),
     idealista: getBoolean(dbListing.idealista),
     habitaclia: getBoolean(dbListing.habitaclia),
@@ -360,6 +373,50 @@ export function convertDbListingToPropertyListing(
             }),
           )
         : undefined,
+    deal:
+      dbListing.deal && typeof dbListing.deal === "object" && dbListing.deal !== null
+        ? {
+            dealId: (dbListing.deal as Record<string, unknown>).dealId ?? undefined,
+            listingId: (dbListing.deal as Record<string, unknown>).listingId ?? undefined,
+            status: ((dbListing.deal as Record<string, unknown>).status as string) ?? "",
+            arrasDate:
+              (dbListing.deal as Record<string, unknown>).arrasDate instanceof Date
+                ? (dbListing.deal as Record<string, unknown>).arrasDate as Date
+                : (dbListing.deal as Record<string, unknown>).arrasDate
+                  ? new Date((dbListing.deal as Record<string, unknown>).arrasDate as string | number | Date)
+                  : null,
+            arrasSigningDate:
+              (dbListing.deal as Record<string, unknown>).arrasSigningDate instanceof Date
+                ? (dbListing.deal as Record<string, unknown>).arrasSigningDate as Date
+                : (dbListing.deal as Record<string, unknown>).arrasSigningDate
+                  ? new Date((dbListing.deal as Record<string, unknown>).arrasSigningDate as string | number | Date)
+                  : null,
+            expectedDeedDate:
+              (dbListing.deal as Record<string, unknown>).expectedDeedDate instanceof Date
+                ? (dbListing.deal as Record<string, unknown>).expectedDeedDate as Date
+                : (dbListing.deal as Record<string, unknown>).expectedDeedDate
+                  ? new Date((dbListing.deal as Record<string, unknown>).expectedDeedDate as string | number | Date)
+                  : null,
+            actualDeedDate:
+              (dbListing.deal as Record<string, unknown>).actualDeedDate instanceof Date
+                ? (dbListing.deal as Record<string, unknown>).actualDeedDate as Date
+                : (dbListing.deal as Record<string, unknown>).actualDeedDate
+                  ? new Date((dbListing.deal as Record<string, unknown>).actualDeedDate as string | number | Date)
+                  : null,
+            closeDate:
+              (dbListing.deal as Record<string, unknown>).closeDate instanceof Date
+                ? (dbListing.deal as Record<string, unknown>).closeDate as Date
+                : (dbListing.deal as Record<string, unknown>).closeDate
+                  ? new Date((dbListing.deal as Record<string, unknown>).closeDate as string | number | Date)
+                  : null,
+            keyHandoverDate:
+              (dbListing.deal as Record<string, unknown>).keyHandoverDate instanceof Date
+                ? (dbListing.deal as Record<string, unknown>).keyHandoverDate as Date
+                : (dbListing.deal as Record<string, unknown>).keyHandoverDate
+                  ? new Date((dbListing.deal as Record<string, unknown>).keyHandoverDate as string | number | Date)
+                  : null,
+          }
+        : null,
     createdAt: dbListing.createdAt instanceof Date ? dbListing.createdAt : null,
     updatedAt: dbListing.updatedAt instanceof Date ? dbListing.updatedAt : null,
   };

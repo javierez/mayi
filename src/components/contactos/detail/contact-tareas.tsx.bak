@@ -16,11 +16,27 @@ import {
 import { TaskCard } from "~/components/tasks/task-card";
 import { TaskViewModal } from "~/components/tasks/task-view-modal";
 import { GlobalTaskModal } from "~/components/tasks/global-task-modal";
+import { createTaskWithAuth, updateTaskWithAuth } from "~/server/queries/task";
+import { getContactListingsForTasksWithAuth } from "~/server/queries/user-comments";
 import { useSession } from "~/lib/auth-client";
 import {
   canEditAllTasks,
   canDeleteAllTasks,
 } from "~/app/actions/permissions/check-permissions";
+import { getAgentsForSelectionWithAuth } from "~/server/queries/users";
+
+interface ContactListing {
+  listingContactId: number;
+  listingId: number;
+  contactType: string;
+  street: string | null;
+  city: string | null;
+  province: string | null;
+  propertyType: string | null;
+  listingType: string | null;
+  price: string | null;
+  status: string | null;
+}
 
 interface Task {
   taskId?: bigint;
@@ -41,7 +57,6 @@ interface Task {
   createdAt: Date;
   updatedAt?: Date;
   createdBy?: string;
-  urgency?: number;
   // User info for "Asignado a"
   userName?: string;
   userFirstName?: string;
@@ -88,11 +103,14 @@ export function ContactTareas({
   loading: externalLoading,
   onToggleCompleted,
   onDeleteTask,
-  onAddTask: _onAddTask,
-  onUpdateTaskAfterSave: _onUpdateTaskAfterSave,
-  onRemoveOptimisticTask: _onRemoveOptimisticTask,
+  onAddTask,
+  onUpdateTaskAfterSave,
+  onRemoveOptimisticTask,
 }: ContactTareasProps) {
   const { data: session } = useSession();
+  const [taskStates, setTaskStates] = useState<
+    Record<string, "saving" | "saved" | "error">
+  >({});
   const [categoryFilter, setCategoryFilter] = useState<
     "all" | "contact" | "property"
   >("all");
@@ -141,6 +159,272 @@ export function ContactTareas({
 
   const handleToggleCompleted = async (id: string) => {
     await onToggleCompleted(id);
+    if (isSaving) return; // Prevent double submission
+
+    setSaveError(null);
+    setIsSaving(true);
+
+    // Create optimistic task
+    const optimisticId = Date.now().toString();
+    const selectedUserId =
+      newTask.agentId ?? session?.user?.id ?? "current-user-id";
+
+    // Get the selected agent's info for display
+    const selectedAgent = agents.find((a) => a.id === selectedUserId);
+
+    // Fallback to session user if agent not found (e.g., during race condition)
+    const agentName =
+      selectedAgent?.name ??
+      (selectedUserId === session?.user?.id ? session.user.name : undefined);
+    const agentFirstName =
+      selectedAgent?.firstName ??
+      (selectedUserId === session?.user?.id
+        ? session.user.name?.split(" ")[0]
+        : undefined);
+    const agentLastName =
+      selectedAgent?.lastName ??
+      (selectedUserId === session?.user?.id
+        ? session.user.name?.split(" ").slice(1).join(" ")
+        : undefined);
+
+    const optimisticTask: Task = {
+      id: optimisticId,
+      userId: selectedUserId,
+      userName: agentName,
+      userFirstName: agentFirstName,
+      userLastName: agentLastName,
+      title: newTask.title,
+      description: newTask.description,
+      completed: false,
+      createdAt: new Date(),
+      dueDate: newTask.dueDate ? new Date(newTask.dueDate) : undefined,
+      isActive: true,
+    };
+
+    // OPTIMISTIC UPDATE: Add task to UI immediately via parent
+    await onAddTask(optimisticTask);
+    setTaskStates((prev) => ({ ...prev, [optimisticId]: "saving" }));
+
+    // Clear form
+    const formData = { ...newTask };
+    setNewTask({
+      title: "",
+      description: "",
+      dueDate: "",
+      dueTime: "",
+      agentId: "",
+    });
+    setSelectedListingId("");
+    setIsAdding(false);
+
+    // SERVER ACTION CALL in background
+    try {
+      // Prepare task data based on listing selection
+      const taskData = {
+        userId: selectedUserId,
+        title: formData.title,
+        description: formData.description,
+        category: "contact",
+        completed: false,
+        isActive: true,
+        dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
+        dueTime: formData.dueDate ? formData.dueTime || "00:00" : undefined,
+        createdBy: session?.user?.id,
+        // Entity associations
+        contactId,
+        listingId: selectedListingId ? BigInt(selectedListingId) : undefined,
+        listingContactId: selectedListingId
+          ? BigInt(
+              contactListings.find(
+                (l) => l.listingId.toString() === selectedListingId,
+              )?.listingContactId ?? 0,
+            )
+          : undefined,
+        dealId: undefined,
+        appointmentId: undefined,
+        prospectId: undefined,
+      };
+
+      const savedTask = await createTaskWithAuth(taskData);
+
+      if (!savedTask) {
+        throw new Error("Failed to save task");
+      }
+
+      // SUCCESS: Update with server response via parent
+      const updatedTask: Task = {
+        ...optimisticTask,
+        taskId: savedTask.taskId ? BigInt(savedTask.taskId) : undefined,
+        createdAt: new Date(savedTask.createdAt),
+        updatedAt: savedTask.updatedAt
+          ? new Date(savedTask.updatedAt)
+          : undefined,
+      };
+
+      onUpdateTaskAfterSave(optimisticId, updatedTask);
+      setTaskStates((prev) => ({ ...prev, [optimisticId]: "saved" }));
+
+      // Clear draft after successful save
+      const draftKey = `contact-task-draft-${contactId}`;
+      localStorage.removeItem(draftKey);
+
+      // Clear success state after 2 seconds
+      setTimeout(() => {
+        setTaskStates((prev) => {
+          const newStates = { ...prev };
+          delete newStates[optimisticId];
+          return newStates;
+        });
+      }, 2000);
+    } catch (error) {
+      console.error("Error saving task:", error);
+
+      // ERROR: Revert optimistic update via parent
+      onRemoveOptimisticTask(optimisticId);
+      setTaskStates((prev) => ({ ...prev, [optimisticId]: "error" }));
+      setSaveError(
+        error instanceof Error ? error.message : "Failed to save task",
+      );
+
+      // Restore form data
+      setNewTask(formData);
+      setIsAdding(true);
+
+      // Clear error after 5 seconds
+      setTimeout(() => {
+        setSaveError(null);
+        setTaskStates((prev) => {
+          const newStates = { ...prev };
+          delete newStates[optimisticId];
+          return newStates;
+        });
+      }, 5000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // const handleEditTask = (task: Task) => {
+  //   setEditingTask(task);
+  //   setIsAdding(true);
+
+  //   // Pre-fill form with task data
+  //   const dueDateString: string =
+  //     task.dueDate?.toISOString().split("T")[0] ?? "";
+  //   const dueTimeString: string =
+  //     task.dueDate?.toTimeString().slice(0, 5) ?? "";
+
+  //   setNewTask({
+  //     title: task.title,
+  //     description: task.description,
+  //     dueDate: dueDateString,
+  //     dueTime: dueTimeString,
+  //     agentId: task.userId,
+  //   });
+
+  //   // Set the selected listing if the task has one
+  //   if (task.listingId) {
+  //     setSelectedListingId(task.listingId.toString());
+  //   } else {
+  //     setSelectedListingId("");
+  //   }
+  // };
+
+  const handleUpdateTask = async () => {
+    if (!editingTask || !newTask.title.trim() || !newTask.description.trim())
+      return;
+    if (isSaving) return;
+
+    setSaveError(null);
+    setIsSaving(true);
+
+    // Create updated task object
+    const updatedTask: Task = {
+      ...editingTask,
+      title: newTask.title,
+      description: newTask.description,
+      dueDate: newTask.dueDate ? new Date(newTask.dueDate) : undefined,
+      userId: newTask.agentId,
+      listingId: selectedListingId ? BigInt(selectedListingId) : undefined,
+      updatedAt: new Date(),
+    };
+
+    // Set saving state
+    setTaskStates((prev) => ({ ...prev, [editingTask.id]: "saving" }));
+
+    try {
+      const savedTask = await updateTaskWithAuth(
+        Number(editingTask.taskId ?? editingTask.id),
+        {
+          title: newTask.title,
+          description: newTask.description,
+          category: "contact",
+          dueDate: newTask.dueDate ? new Date(newTask.dueDate) : undefined,
+          dueTime: newTask.dueDate ? newTask.dueTime || "00:00" : undefined,
+          userId: newTask.agentId,
+          contactId,
+          listingId: selectedListingId ? BigInt(selectedListingId) : undefined,
+          listingContactId: selectedListingId
+            ? BigInt(
+                contactListings.find(
+                  (l) => l.listingId.toString() === selectedListingId,
+                )?.listingContactId ?? 0,
+              )
+            : undefined,
+        },
+      );
+
+      if (!savedTask) {
+        throw new Error("Failed to update task");
+      }
+
+      // Update the task in the parent component
+      onUpdateTaskAfterSave(editingTask.id, updatedTask);
+      setTaskStates((prev) => ({ ...prev, [editingTask.id]: "saved" }));
+
+      // Clear form and editing state
+      setNewTask({
+        title: "",
+        description: "",
+        dueDate: "",
+        dueTime: "",
+        agentId: "",
+      });
+      setSelectedListingId("");
+      setEditingTask(null);
+      setIsAdding(false);
+
+      // Clear success state after 2 seconds
+      setTimeout(() => {
+        setTaskStates((prev) => {
+          const newStates = { ...prev };
+          delete newStates[editingTask.id];
+          return newStates;
+        });
+      }, 2000);
+    } catch (error) {
+      console.error("Error updating task:", error);
+      setTaskStates((prev) => ({ ...prev, [editingTask.id]: "error" }));
+      setSaveError(
+        error instanceof Error ? error.message : "Failed to update task",
+      );
+
+      // Clear error after 5 seconds
+      setTimeout(() => {
+        setSaveError(null);
+        setTaskStates((prev) => {
+          const newStates = { ...prev };
+          delete newStates[editingTask.id];
+          return newStates;
+        });
+      }, 5000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleToggleCompleted = async (id: string) => {
+    await onToggleCompleted(id);
   };
 
   const handleDeleteTask = async (id: string) => {
@@ -166,49 +450,17 @@ export function ContactTareas({
       filtered = filtered.filter((task) => task.category === "property");
     }
 
-    // Sort tasks using comprehensive sorting hierarchy
+    // Sort: incomplete first, then by due date
     return filtered.sort((a, b) => {
-      // First: Completed tasks go to the bottom
       if (a.completed !== b.completed) {
         return a.completed ? 1 : -1;
       }
-
-      // Second: Priority order based on criticality and due date presence
-      // 1. Critical tasks (urgency = 5) with NO due date (highest priority)
-      // 2. Critical tasks (urgency = 5) with due date
-      // 3. Non-critical tasks with NO due date
-      // 4. Non-critical tasks with due date (lowest priority)
-
-      const aIsCritical = (a.urgency ?? 0) === 5;
-      const bIsCritical = (b.urgency ?? 0) === 5;
-      const aHasDate = a.dueDate != null;
-      const bHasDate = b.dueDate != null;
-
-      // Calculate priority score: critical + no date = highest priority
-      const getPriorityScore = (isCritical: boolean, hasDate: boolean) => {
-        if (isCritical && !hasDate) return 0; // Highest priority
-        if (isCritical && hasDate) return 1;
-        if (!isCritical && !hasDate) return 2;
-        return 3; // Lowest priority
-      };
-
-      const aPriority = getPriorityScore(aIsCritical, aHasDate);
-      const bPriority = getPriorityScore(bIsCritical, bHasDate);
-
-      if (aPriority !== bPriority) {
-        return aPriority - bPriority; // Lower priority score = higher priority
+      if (a.dueDate && b.dueDate) {
+        return a.dueDate.getTime() - b.dueDate.getTime();
       }
-
-      // Third: Same priority level - sort by due date (earlier dates first, null dates treated as 0)
-      const aDate = a.dueDate ? new Date(a.dueDate).getTime() : 0;
-      const bDate = b.dueDate ? new Date(b.dueDate).getTime() : 0;
-
-      if (aDate !== bDate) {
-        return aDate - bDate;
-      }
-
-      // Fourth: Same priority and due date - sort by urgency (higher urgency first)
-      return (b.urgency ?? 0) - (a.urgency ?? 0);
+      if (a.dueDate && !b.dueDate) return -1;
+      if (!a.dueDate && b.dueDate) return 1;
+      return 0;
     });
   }, [tasks, categoryFilter]);
 
@@ -335,6 +587,12 @@ export function ContactTareas({
             <Plus className="h-4 w-4" />
             Nueva Tarea
           </Button>
+          {(newTask.title || newTask.description) && !isAdding && (
+            <div
+              className="h-3 w-3 animate-pulse cursor-help rounded-full bg-amber-400"
+              title="Borrador guardado"
+            />
+          )}
         </div>
       </div>
 
@@ -389,6 +647,7 @@ export function ContactTareas({
                       task,
                     });
                   }}
+                  taskState={taskStates[task.id]}
                   canEdit={canEdit}
                   canDelete={canDelete}
                 />

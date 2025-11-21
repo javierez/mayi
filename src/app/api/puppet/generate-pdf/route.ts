@@ -176,12 +176,10 @@ export async function POST(request: NextRequest) {
         throw new Error("User session not found");
       }
 
-      // Generate filename
-      const timestamp = new Date()
-        .toISOString()
-        .slice(0, 19)
-        .replace(/:/g, "-");
-      const filename = `cartel_${referenceNumber}_${timestamp}.pdf`;
+      // Generate filename with orientation and date
+      const orientation = templateConfig.orientation ?? "vertical";
+      const dateStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+      const filename = `cartel_${orientation}_${dateStr}.pdf`;
 
       // Convert PDF buffer to File object for upload
       const pdfFile = new File([new Uint8Array(pdfBuffer)], filename, {

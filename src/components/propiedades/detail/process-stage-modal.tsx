@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, AlertCircle, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle2, AlertTriangle, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -68,6 +68,7 @@ export function ProcessStageModal({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   // Generate checklist items
   const allItems = getChecklistItemsForStage(
@@ -78,6 +79,20 @@ export function ProcessStageModal({
 
   // Filter out completed items
   const incompleteItems = filterIncompleteItems(allItems);
+
+  // Auto-select all required items when modal opens
+  if (isOpen && !hasInitialized && incompleteItems.length > 0) {
+    const requiredItemIds = incompleteItems
+      .filter((item) => item.isRequired)
+      .map((item) => item.id);
+    setSelectedItems(new Set(requiredItemIds));
+    setHasInitialized(true);
+  }
+
+  // Reset initialization flag when modal closes
+  if (!isOpen && hasInitialized) {
+    setHasInitialized(false);
+  }
 
   // Handle checkbox toggle
   const handleToggle = (itemId: string) => {
@@ -162,6 +177,7 @@ export function ProcessStageModal({
       setSelectedItems(new Set());
       setError(null);
       setSuccess(false);
+      setHasInitialized(false);
       onClose();
     }
   };
@@ -173,27 +189,34 @@ export function ProcessStageModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
-            Completar hasta: {targetStageLabel}
-          </DialogTitle>
-          <DialogDescription>
+      <DialogContent className="custom-scrollbar max-h-[90vh] overflow-y-auto sm:max-w-[600px] [&>button]:hidden">
+        <DialogHeader className="space-y-0 -mb-6">
+          <div className="flex items-start justify-between gap-4">
+            <DialogTitle className="text-xl font-semibold text-gray-900 flex-1">
+              Completar hasta: {targetStageLabel}
+            </DialogTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClose}
+              className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+              title="Cerrar"
+              disabled={isSubmitting}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <DialogDescription className="sr-only">
             Marca las tareas completadas para actualizar el progreso de la propiedad.
-            {!hasIncompleteItems && (
-              <span className="mt-2 block text-green-600">
-                ✓ Todas las etapas hasta este punto están completadas
-              </span>
-            )}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="max-h-[60vh] space-y-4 overflow-y-auto py-4">
+        <div className="space-y-4 py-4">
           {hasIncompleteItems ? (
             <>
               {/* Select All Button */}
               {requiredItems.length > 1 && (
-                <div className="flex items-center justify-between border-b pb-3">
+                <div className="flex items-center justify-between pb-3">
                   <span className="text-sm font-medium text-gray-700">
                     {selectedItems.size} de {requiredItems.length} seleccionadas
                   </span>
@@ -202,6 +225,7 @@ export function ProcessStageModal({
                     variant="outline"
                     size="sm"
                     onClick={handleSelectAll}
+                    className="h-8"
                   >
                     {allRequiredSelected ? "Deseleccionar todas" : "Seleccionar todas"}
                   </Button>
@@ -249,33 +273,35 @@ export function ProcessStageModal({
         </div>
 
         <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleClose}
-            disabled={isSubmitting}
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!hasSelectedItems || isSubmitting || success}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Actualizando...
-              </>
-            ) : success ? (
-              <>
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                Completado
-              </>
-            ) : (
-              "Confirmar"
-            )}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!hasSelectedItems || isSubmitting || success}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Actualizando...
+                </>
+              ) : success ? (
+                <>
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Completado
+                </>
+              ) : (
+                "Confirmar"
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -293,10 +319,10 @@ function ChecklistItemRow({ item, isSelected, onToggle }: ChecklistItemRowProps)
 
   return (
     <div
-      className={`rounded-lg border p-4 transition-colors ${
+      className={`rounded-lg p-4 transition-all ${
         isSelected
-          ? "border-amber-400 bg-amber-50"
-          : "border-gray-200 bg-white hover:border-gray-300"
+          ? "bg-primary/5 shadow-sm"
+          : "bg-white shadow-sm hover:shadow-md"
       } ${isDisabled ? "opacity-50" : ""}`}
     >
       <div className="flex items-start gap-3">
@@ -310,7 +336,7 @@ function ChecklistItemRow({ item, isSelected, onToggle }: ChecklistItemRowProps)
         <div className="flex-1">
           <label
             htmlFor={item.id}
-            className={`block font-medium ${
+            className={`block font-medium text-gray-900 ${
               isDisabled ? "cursor-not-allowed" : "cursor-pointer"
             }`}
           >
@@ -320,12 +346,14 @@ function ChecklistItemRow({ item, isSelected, onToggle }: ChecklistItemRowProps)
 
           {/* Warning Message */}
           {item.warningMessage && (
-            <Alert className="mt-2 border-amber-300 bg-amber-50">
-              <AlertTriangle className="h-4 w-4 text-amber-600" />
-              <AlertDescription className="text-sm text-amber-800">
-                {item.warningMessage}
-              </AlertDescription>
-            </Alert>
+            <div className="mt-2 rounded-md bg-amber-50 p-3 shadow-sm">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
+                <p className="text-sm text-amber-800">
+                  {item.warningMessage}
+                </p>
+              </div>
+            </div>
           )}
         </div>
       </div>

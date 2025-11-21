@@ -685,10 +685,12 @@ export const appointments = pgTable("appointments", {
   listingContactId: bigint("listing_contact_id", { mode: "bigint" }), // FK → listing_contacts.listing_contact_id (nullable)
   dealId: bigint("deal_id", { mode: "bigint" }), // FK → deals.deal_id (nullable)
   prospectId: bigint("prospect_id", { mode: "bigint" }), // FK → prospects.prospect_id (nullable)
+  taskId: bigint("task_id", { mode: "bigint" }), // FK → tasks.task_id (nullable)
   datetimeStart: timestamp("datetime_start").notNull(),
   datetimeEnd: timestamp("datetime_end").notNull(),
   tripTimeMinutes: smallint("trip_time_minutes"), // Travel time in minutes
   status: varchar("status", { length: 20 }).notNull().default("Scheduled"),
+  title: varchar("title", { length: 255 }).notNull(), // Appointment title
   notes: text("notes"),
   type: varchar("type", { length: 50 }),
   assignedTo: varchar("assigned_to", { length: 36 }), // FK → users.id (who is assigned to the appointment)

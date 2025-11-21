@@ -614,7 +614,7 @@ export function PropertyTabs({
           value="portales"
           className="h-8 rounded-md text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm"
         >
-          Portales
+          Publicaciones
         </TabsTrigger>
         <TabsTrigger
           value="documentos"
@@ -826,9 +826,9 @@ export function PropertyTabs({
 
       <TabsContent value="documentos" className="mt-8 sm:mt-6">
         <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col gap-6 lg:flex-row">
-            {/* Left side - Documents */}
-            <div className="flex-1 lg:w-1/2">
+          <div className="flex flex-col gap-8">
+            {/* Documents */}
+            <div>
               <DocumentsManager
                 propertyId={listing.propertyId}
                 listingId={listing.listingId}
@@ -836,8 +836,8 @@ export function PropertyTabs({
               />
             </div>
 
-            {/* Right side - Carteles */}
-            <div className="flex-1 lg:w-1/2">
+            {/* Carteles */}
+            <div>
               <CartelesManager
                 propertyId={listing.propertyId}
                 listingId={listing.listingId}

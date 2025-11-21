@@ -113,6 +113,60 @@ export function TaskBoard({ initialTasks, searchQuery = "" }: TaskBoardProps) {
       });
     }
 
+    // Sort all other columns using comprehensive sorting hierarchy
+    const sortTasks = (a: Task, b: Task) => {
+      // First: Completed tasks go to the bottom
+      const aCompleted = a.completed ?? false;
+      const bCompleted = b.completed ?? false;
+      if (aCompleted !== bCompleted) {
+        return aCompleted ? 1 : -1;
+      }
+
+      // Second: Priority order based on criticality and due date presence
+      // 1. Critical tasks (urgency = 5) with NO due date (highest priority)
+      // 2. Critical tasks (urgency = 5) with due date
+      // 3. Non-critical tasks with NO due date
+      // 4. Non-critical tasks with due date (lowest priority)
+
+      const aIsCritical = (a.urgency ?? 0) === 5;
+      const bIsCritical = (b.urgency ?? 0) === 5;
+      const aHasDate = a.dueDate != null;
+      const bHasDate = b.dueDate != null;
+
+      // Calculate priority score: critical + no date = highest priority
+      const getPriorityScore = (isCritical: boolean, hasDate: boolean) => {
+        if (isCritical && !hasDate) return 0; // Highest priority
+        if (isCritical && hasDate) return 1;
+        if (!isCritical && !hasDate) return 2;
+        return 3; // Lowest priority
+      };
+
+      const aPriority = getPriorityScore(aIsCritical, aHasDate);
+      const bPriority = getPriorityScore(bIsCritical, bHasDate);
+
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority; // Lower priority score = higher priority
+      }
+
+      // Third: Same priority level - sort by due date (earlier dates first, null dates treated as 0)
+      const aDate = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+      const bDate = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+
+      if (aDate !== bDate) {
+        return aDate - bDate;
+      }
+
+      // Fourth: Same priority and due date - sort by urgency (higher urgency first)
+      return (b.urgency ?? 0) - (a.urgency ?? 0);
+    };
+
+    // Apply sorting to all columns except backlog
+    Object.keys(grouped).forEach((status) => {
+      if (status !== "backlog" && grouped[status]) {
+        grouped[status]?.sort(sortTasks);
+      }
+    });
+
     return grouped;
   }, [filteredTasks]);
 

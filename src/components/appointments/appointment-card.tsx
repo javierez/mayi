@@ -8,6 +8,7 @@ import {
   PenTool,
   Handshake,
   Train,
+  ListTodo,
   CalendarIcon,
   ChevronDown,
   ChevronUp,
@@ -41,6 +42,10 @@ const appointmentTypes = {
     color: "bg-yellow-200 text-yellow-900",
     icon: <Train className="h-4 w-4" />,
   },
+  Tarea: {
+    color: "bg-rose-100 text-rose-800",
+    icon: <ListTodo className="h-4 w-4" />,
+  },
 };
 
 // Task interface for appointment tasks
@@ -60,6 +65,7 @@ export interface AppointmentData {
   datetimeStart: Date;
   datetimeEnd: Date;
   tripTimeMinutes?: number;
+  title?: string;
   notes?: string;
   contactId?: bigint;
   contactName: string;
@@ -201,6 +207,12 @@ export function AppointmentCard({
         <div className="pr-28">
           {" "}
           {/* Add right padding to avoid overlap with badges */}
+          {/* Title */}
+          {appointment.title && (
+            <div className="mb-1 text-sm font-semibold text-gray-900">
+              {appointment.title}
+            </div>
+          )}
           {/* Contact name */}
           <div className="mb-1 text-sm font-medium">
             {appointment.contactId ? (

@@ -16,12 +16,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
-import { Calendar } from "lucide-react";
+import { Calendar, Info } from "lucide-react";
 import { KeysModal } from "./keys-modal";
 import { PublishToWebsiteModal } from "./publish-to-website-modal";
 import { CartelModal } from "./cartel-modal";
 import { PortalsModal } from "./portals-modal";
 import { EnEscaparateModal } from "./en-escaparate-modal";
+import { ProgressGuideModal } from "~/components/propiedades/progress-guide-modal";
 import type { CommentWithUser } from "~/types/comments";
 
 const scrollbarStyles = `
@@ -156,6 +157,7 @@ export function PropertyStatusRow({
   const [cartelModalOpen, setCartelModalOpen] = useState(false);
   const [portalsModalOpen, setPortalsModalOpen] = useState(false);
   const [enEscaparateModalOpen, setEnEscaparateModalOpen] = useState(false);
+  const [progressGuideOpen, setProgressGuideOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -282,6 +284,105 @@ export function PropertyStatusRow({
     hasActiveContacts: true, // TODO: Get from listing contacts
   };
 
+  // Custom percentage mapping for each substage
+  // These percentages are based on the business requirements:
+  // Alta (10%), Ficha (24%), Encargo (43%), Visitas (56%), Oferta (60%), Arras (73%), Escritura (93%), Cierre (100%)
+  const substagePercentages: Record<string, number> = {
+    "alta": 10,
+    "completar-info": 24,
+    "firma-encargo": 43,
+    "visitas": 56,
+    "oferta-aceptada": 60,
+    "arras": 73,
+    "contrato": 93, // Escritura
+    "cierre-final": 100,
+  };
+
+  // Calculate progress percentage before logging
+  // Find the current progress position based on substage status
+  let progressPercent = 0;
+  let currentStageId = "";
+
+  // Flatten all substages with their IDs
+  const allSubstages: Array<{ id: string; status: string }> = [];
+  processStages.forEach((stage) => {
+    stage.subStages.forEach((substage) => {
+      allSubstages.push({ id: substage.id, status: substage.status });
+    });
+  });
+
+  // Find the last accomplished or ongoing substage
+  for (let i = allSubstages.length - 1; i >= 0; i--) {
+    const substage = allSubstages[i];
+    if (substage && (substage.status === "accomplished" || substage.status === "ongoing")) {
+      currentStageId = substage.id;
+      const percentage = substagePercentages[substage.id];
+      progressPercent = percentage ?? 0;
+      
+      // Debug log to see what's happening
+      console.log("🎯 Progress Calculation:", {
+        foundSubstage: substage.id,
+        status: substage.status,
+        index: i,
+        percentage,
+        progressPercent,
+        availablePercentages: Object.keys(substagePercentages),
+      });
+      
+      break;
+    }
+  }
+  
+  // If no progress found, log why
+  if (progressPercent === 0 && currentStageId === "") {
+    console.warn("⚠️ No progress found! All substages:", allSubstages);
+  }
+
+  // Log all fetched information for debugging
+  console.log("📦 PropertyStatusRow - All Fetched Data:", {
+    propertyId,
+    listingId,
+    listingIdFromProp: listing?.listingId,
+    createdAt,
+    imageCount,
+    listing: {
+      encargo: listing?.encargo,
+      hasKeys: listing?.hasKeys,
+      hasCartel: listing?.hasCartel,
+      publishToWebsite: listing?.publishToWebsite,
+      fotocasa: listing?.fotocasa,
+      idealista: listing?.idealista,
+      enEscaparate: listing?.enEscaparate,
+      offerAccepted: listing?.offerAccepted,
+      price: listing?.price,
+      listingType: listing?.listingType,
+      description: listing?.description,
+    },
+    deal: deal ? {
+      dealId: deal.dealId,
+      status: deal.status,
+      arrasDate: deal.arrasDate,
+      arrasSigningDate: deal.arrasSigningDate,
+      expectedDeedDate: deal.expectedDeedDate,
+      actualDeedDate: deal.actualDeedDate,
+      closeDate: deal.closeDate,
+      keyHandoverDate: deal.keyHandoverDate,
+    } : null,
+    completion: completion ? {
+      canPublishToPortals: completion.canPublishToPortals,
+      overallPercentage: completion.overallPercentage,
+      mandatoryCompleted: completion.mandatory.completedCount,
+      mandatoryTotal: completion.mandatory.total,
+      mandatoryPending: completion.mandatory.pending.map(f => f.label),
+    } : null,
+    currentProgress,
+    progressBar: {
+      progressPercent: `${progressPercent}%`,
+      currentStageId,
+      currentStageStatus: allSubstages.find(s => s.id === currentStageId)?.status,
+    },
+  });
+
   // Calculate total substages for proportional width (excluding the last one)
   const totalSubstages = processStages.reduce(
     (acc, stage) => acc + stage.subStages.length,
@@ -289,37 +390,12 @@ export function PropertyStatusRow({
   );
   const totalSubstagesForBar = totalSubstages - 1; // Exclude last cell from bar rendering
 
-  const completedSubstages = processStages.reduce((acc, stage) => {
-    return (
-      acc +
-      stage.subStages.filter((sub) => sub.status === "accomplished").length
-    );
-  }, 0);
-
-  const ongoingSubstages = processStages.reduce((acc, stage) => {
-    return (
-      acc + stage.subStages.filter((sub) => sub.status === "ongoing").length
-    );
-  }, 0);
-
-  // Progress fills to the middle of the current ongoing task
-  // When a task is completed, the next task becomes ongoing
-  // Bar should always stop at the middle between two milestones (except at 0% or 100%)
-  const progressPercent =
-    ongoingSubstages > 0
-      ? ((completedSubstages + 0.5) / totalSubstagesForBar) * 100
-      : (completedSubstages / totalSubstagesForBar) * 100;
-
   console.log("📊 Progress Bar Debug:", {
     totalSubstages,
     totalSubstagesForBar,
-    completedSubstages,
-    ongoingSubstages,
-    progressPercent,
-    formula:
-      ongoingSubstages > 0
-        ? "completedSubstages + 0.5"
-        : "completedSubstages",
+    currentStageId,
+    progressPercent: `${progressPercent}%`,
+    allSubstages: allSubstages.map(s => `${s.id}: ${s.status}`),
   });
 
   // Format created date for tooltip
@@ -352,6 +428,25 @@ export function PropertyStatusRow({
               isScrolling && "scrolling",
             )}
           >
+            {/* Progress Guide Info Button */}
+            <div className="absolute right-4 top-2 z-10 sm:right-6 sm:top-3 md:right-8 md:top-4">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setProgressGuideOpen(true)}
+                    className="flex items-center justify-center rounded-full bg-white p-2 shadow-md transition-all duration-200 hover:scale-110 hover:bg-amber-50 hover:shadow-lg"
+                    aria-label="Progress guide"
+                  >
+                    <Info className="h-4 w-4 text-amber-600" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-[10px]">View progress guide</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+
             {/* Progress bar with milestone labels */}
             <div className="relative">
               {/* Progress bar */}
@@ -429,9 +524,9 @@ export function PropertyStatusRow({
                           ? `Creado: ${createdAtText}`
                           : undefined;
 
-                      // Check if this milestone is reached (accounting for partial progress)
+                      // Check if this milestone is reached based on status
                       const isReached =
-                        globalIndex < completedSubstages + ongoingSubstages;
+                        substage.status === "accomplished" || substage.status === "ongoing";
 
                       // Don't render the last label here (will be rendered at the right edge)
                       if (isLast) return null;
@@ -533,7 +628,7 @@ export function PropertyStatusRow({
                   const labelPosition =
                     lastGlobalIndex % 2 === 0 ? "above" : "below";
                   const isReached =
-                    lastGlobalIndex < completedSubstages + ongoingSubstages;
+                    lastSubstage.status === "accomplished" || lastSubstage.status === "ongoing";
 
                   return (
                     <div
@@ -893,6 +988,12 @@ export function PropertyStatusRow({
               enEscaparateComments={enEscaparateComments}
             />
           )}
+
+        {/* Progress Guide Modal */}
+        <ProgressGuideModal
+          open={progressGuideOpen}
+          onOpenChange={setProgressGuideOpen}
+        />
       </div>
     </TooltipProvider>
   );

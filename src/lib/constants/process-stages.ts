@@ -35,7 +35,8 @@ function validateSubstageProgression(subStages: SubStage[]): SubStage[] {
     }
 
     // If we found a completed substage, all subsequent ones should be future
-    if (foundCompleted && substage.status !== "accomplished") {
+    // BUT: allow "ongoing" status to remain (it's the current step being worked on)
+    if (foundCompleted && substage.status !== "accomplished" && substage.status !== "ongoing") {
       return { ...substage, status: "future" as StageStatus };
     }
 
@@ -104,7 +105,10 @@ const rawProcessStages: ProcessStage[] = [
     id: "busqueda",
     label: "Búsqueda",
     status: "ongoing",
-    subStages: [{ id: "visitas", label: "Visitas", status: "accomplished" }],
+    subStages: [
+      { id: "visitas", label: "Visitas", status: "accomplished" },
+      { id: "oferta-aceptada", label: "Oferta", status: "future" },
+    ],
   },
   {
     id: "cierre",
@@ -252,12 +256,14 @@ export function getProcessStages(
         );
         console.log("   Missing fields:", completion.mandatory.pending.map((f) => f.label).join(", "));
       }
-      // Step 2: If ficha is complete but encargo is false, block at "Encargo"
+      // Step 2: If ficha is complete but encargo is false, stay at "Ficha completa" (24%)
+      // Encargo is a boolean - it's either done (true) or not done (false)
+      // If false, keep encargo as "future" and stay at Ficha (24%)
       else if (!hasEncargo && encargoSubstage) {
-        // Encargo is pending - mark as ongoing
-        encargoSubstage.status = "ongoing";
+        // Keep encargo as future (not started yet)
+        encargoSubstage.status = "future";
 
-        // Set all stages after Encargo to future
+        // Set all stages after Oportunidad to future
         const oportunidadIndex = dynamicStages.findIndex(
           (stage) => stage.id === "oportunidad",
         );
@@ -271,8 +277,13 @@ export function getProcessStages(
           }
         }
 
-        console.log("✋ Step 2: Blocking at 'Encargo' - contract not signed");
+        console.log("✋ Step 2: Staying at 'Ficha completa' (24%) - encargo not signed yet");
         console.log("   Need to complete: Encargo (firma de contrato)");
+        console.log("   Debug - encargo value:", {
+          hasEncargo,
+          encargoValue: listing.encargo,
+          encargoType: typeof listing.encargo,
+        });
       }
       // Step 3: If encargo is true but offerAccepted is false, block at "Visitas"
       else if (hasEncargo && encargoSubstage) {
@@ -282,23 +293,44 @@ export function getProcessStages(
         // Check offerAccepted status
         const hasOfferAccepted = Boolean(listing.offerAccepted);
 
-        console.log("📋 Offer accepted status check:", {
+        console.log("📋 Step 3: Encargo is true, checking offer status:", {
+          hasEncargo,
           hasOfferAccepted,
           offerAcceptedValue: listing.offerAccepted,
+          hasScheduledVisits: listing.hasScheduledVisits,
         });
 
         if (!hasOfferAccepted) {
-          // Find the "Busqueda" stage and "visitas" substage
+          // Check if there are scheduled visits
+          const hasScheduledVisits = Boolean(listing.hasScheduledVisits);
+
+          console.log("🔍 Visits check (scheduled or completed):", {
+            hasScheduledVisits,
+            hasScheduledVisitsValue: listing.hasScheduledVisits,
+            hasScheduledVisitsType: typeof listing.hasScheduledVisits,
+            encargo: listing.encargo,
+            offerAccepted: listing.offerAccepted,
+          });
+
+          // Find the "Busqueda" stage and "visitas" & "oferta-aceptada" substages
           const busquedaStage = dynamicStages.find(
             (stage) => stage.id === "busqueda",
           );
           const visitasSubstage = busquedaStage?.subStages.find(
             (sub) => sub.id === "visitas",
           );
+          const ofertaSubstage = busquedaStage?.subStages.find(
+            (sub) => sub.id === "oferta-aceptada",
+          );
 
-          if (visitasSubstage) {
-            // Mark visitas as ongoing
+          if (hasScheduledVisits && visitasSubstage) {
+            // Has scheduled visits - mark visitas as ongoing (56%)
             visitasSubstage.status = "ongoing";
+
+            // Mark oferta-aceptada as future
+            if (ofertaSubstage) {
+              ofertaSubstage.status = "future";
+            }
 
             // Set all stages after Busqueda to future
             const busquedaIndex = dynamicStages.findIndex(
@@ -315,21 +347,57 @@ export function getProcessStages(
             }
 
             console.log(
-              "🔍 Step 3: Blocking at 'Visitas' - no offer accepted yet",
+              "🔍 Step 3: Has scheduled visits - 'Visitas' ongoing (56%)",
             );
             console.log("   Need to complete: Accept an offer from a contact");
+          } else {
+            // No scheduled visits - stay at Encargo (43%)
+            // Keep visitas as future (not started yet)
+            if (visitasSubstage) {
+              visitasSubstage.status = "future";
+            }
+            if (ofertaSubstage) {
+              ofertaSubstage.status = "future";
+            }
+
+            // Set all stages after Oportunidad to future
+            const oportunidadIndex = dynamicStages.findIndex(
+              (stage) => stage.id === "oportunidad",
+            );
+            for (let i = oportunidadIndex + 1; i < dynamicStages.length; i++) {
+              const stage = dynamicStages[i];
+              if (stage) {
+                stage.status = "future";
+                stage.subStages.forEach((sub) => {
+                  sub.status = "future";
+                });
+              }
+            }
+
+            console.log(
+              "📋 Step 3: No scheduled visits - staying at 'Encargo' (43%)",
+            );
+            console.log("   Need to complete: Schedule visits to show the property");
           }
         } else {
-          // Step 4: offerAccepted is true, mark visitas as accomplished and continue
+          // Step 4: offerAccepted is true, mark visitas as accomplished and oferta-aceptada as ongoing
           const busquedaStage = dynamicStages.find(
             (stage) => stage.id === "busqueda",
           );
           const visitasSubstage = busquedaStage?.subStages.find(
             (sub) => sub.id === "visitas",
           );
+          const ofertaSubstage = busquedaStage?.subStages.find(
+            (sub) => sub.id === "oferta-aceptada",
+          );
 
           if (visitasSubstage) {
             visitasSubstage.status = "accomplished";
+
+            // Mark oferta-aceptada as ongoing until arras is signed
+            if (ofertaSubstage) {
+              ofertaSubstage.status = "ongoing";
+            }
 
             // Check deal data for closing stages (arras, escritura, cierre)
             // If no deal exists, mark arras as ongoing (waiting for deal to be created)
@@ -363,9 +431,11 @@ export function getProcessStages(
             );
 
             if (!hasArrasCompleted) {
-              // Step 4a: Arras not completed, mark as ongoing
+              // Step 4a: Arras not completed, oferta-aceptada ongoing (60%), mark arras as future
+              // Keep oferta-aceptada as ongoing (current step)
+              // Arras is future because it hasn't been started yet
               if (arrasSubstage) {
-                arrasSubstage.status = "ongoing";
+                arrasSubstage.status = "future";
               }
 
               // Set all stages after Arras to future
@@ -373,11 +443,16 @@ export function getProcessStages(
               if (cierreSubstage) cierreSubstage.status = "future";
 
               console.log(
-                "✅ Step 4a: Offer accepted - progressing to 'Arras' (ongoing)",
+                "✅ Step 4a: Offer accepted - 'Oferta Aceptada' ongoing (60%), 'Arras' is future (not started)",
               );
-              console.log("   Need to complete: Sign arras (deposit contract)");
+              console.log("   Current step: Oferta Aceptada (60%)");
+              console.log("   Next step: Sign arras (deposit contract)");
             } else if (!hasEscrituraCompleted) {
               // Step 4b: Arras completed, Escritura not completed
+              // Mark oferta-aceptada as accomplished
+              if (ofertaSubstage) {
+                ofertaSubstage.status = "accomplished";
+              }
               if (arrasSubstage) {
                 arrasSubstage.status = "accomplished";
               }
@@ -394,6 +469,10 @@ export function getProcessStages(
               console.log("   Need to complete: Sign escritura (public deed)");
             } else if (!hasDealClosed) {
               // Step 6: Escritura completed, deal not closed
+              // Mark oferta-aceptada as accomplished
+              if (ofertaSubstage) {
+                ofertaSubstage.status = "accomplished";
+              }
               if (arrasSubstage) {
                 arrasSubstage.status = "accomplished";
               }
@@ -410,6 +489,10 @@ export function getProcessStages(
               console.log("   Need to complete: Close the deal (set close date and status)");
             } else {
               // Step 7: Deal fully closed
+              // Mark oferta-aceptada as accomplished
+              if (ofertaSubstage) {
+                ofertaSubstage.status = "accomplished";
+              }
               if (arrasSubstage) {
                 arrasSubstage.status = "accomplished";
               }

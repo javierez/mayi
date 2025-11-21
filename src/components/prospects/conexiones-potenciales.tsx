@@ -6,12 +6,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Skeleton } from "~/components/ui/skeleton";
-import { RefreshCw, Search, AlertCircle, Users, Info } from "lucide-react";
+import { RefreshCw, Search, AlertCircle, Users, Info, Plus, Loader2 } from "lucide-react";
+import { Input } from "~/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { ExternalAccountCard } from "./external-account-card";
 import { ContactMatchGroup } from "./contact-match-group";
 import { ProspectMatchGroup } from "./prospect-match-group";
 import { ShareListingModal } from "./share-listing-modal";
 import { CrucesInfoModal } from "./cruces-info-modal";
+import { ContactSolicitudModal } from "../contactos/detail/solicitudes/contact-solicitud-modal";
+import { searchContactsWithAuth } from "~/server/queries/contact";
+import { getInitials } from "~/lib/operations/task-utils";
 import {
   getMatchesForProspectsWithAuth,
   saveMatchWithAuth,
@@ -65,6 +77,14 @@ export function ConexionesPotenciales({
   );
   const [accountWebsite, setAccountWebsite] = useState<string | null>(null);
   const [infoModalOpen, setInfoModalOpen] = useState(false);
+  const [solicitudModalOpen, setSolicitudModalOpen] = useState(false);
+  const [selectedContactId, setSelectedContactId] = useState<bigint | null>(null);
+  const [contactSelectorOpen, setContactSelectorOpen] = useState(false);
+  const [contactSearchQuery, setContactSearchQuery] = useState("");
+  const [contactSearchResults, setContactSearchResults] = useState<
+    Array<{ id: bigint; name: string; email?: string | null; phone?: string | null }>
+  >([]);
+  const [contactSearchLoading, setContactSearchLoading] = useState(false);
 
   // Statistics state
   const [stats, setStats] = useState({
@@ -174,6 +194,35 @@ export function ConexionesPotenciales({
       externalMatches: externalMatchesCount,
     });
   }, [matches, externalMatches]);
+
+  // Search contacts when query changes
+  useEffect(() => {
+    if (!contactSelectorOpen) return;
+
+    const searchContacts = async () => {
+      if (contactSearchQuery.length < 2) {
+        setContactSearchResults([]);
+        return;
+      }
+
+      setContactSearchLoading(true);
+      try {
+        const results = await searchContactsWithAuth(contactSearchQuery);
+        setContactSearchResults(results);
+      } catch (error) {
+        console.error("Error searching contacts:", error);
+        setContactSearchResults([]);
+      } finally {
+        setContactSearchLoading(false);
+      }
+    };
+
+    const timeoutId = setTimeout(() => {
+      void searchContacts();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [contactSearchQuery, contactSelectorOpen]);
 
   // Handle match actions
   const handleMatchAction = async (
@@ -314,6 +363,29 @@ export function ConexionesPotenciales({
     void fetchExternalMatches();
   };
 
+  // Handle opening solicitud modal
+  const handleOpenSolicitudModal = () => {
+    setContactSelectorOpen(true);
+    setContactSearchQuery("");
+    setContactSearchResults([]);
+  };
+
+  // Handle contact selection
+  const handleContactSelect = (contactId: bigint) => {
+    setSelectedContactId(contactId);
+    setContactSelectorOpen(false);
+    setSolicitudModalOpen(true);
+  };
+
+  // Handle solicitud modal success
+  const handleSolicitudSuccess = () => {
+    setSolicitudModalOpen(false);
+    setSelectedContactId(null);
+    // Refresh matches after creating new solicitud
+    void fetchMatches();
+    void fetchExternalMatches();
+  };
+
   // Render loading skeleton
   const renderLoadingSkeleton = () => (
     <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -414,8 +486,17 @@ export function ConexionesPotenciales({
           <Button
             variant="outline"
             size="sm"
+            onClick={handleOpenSolicitudModal}
+            title="Añadir nueva solicitud"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleRefresh}
             disabled={isLoading}
+            title="Refrescar"
           >
             <RefreshCw
               className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
@@ -609,6 +690,84 @@ export function ConexionesPotenciales({
           open={infoModalOpen}
           onOpenChange={setInfoModalOpen}
         />
+
+        {/* Contact Selector Modal */}
+        <Dialog open={contactSelectorOpen} onOpenChange={setContactSelectorOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Seleccionar Contacto</DialogTitle>
+              <DialogDescription>
+                Busca y selecciona un contacto para crear una nueva solicitud de búsqueda
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar contacto por nombre..."
+                  value={contactSearchQuery}
+                  onChange={(e) => setContactSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {contactSearchLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : contactSearchQuery.length < 2 ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  Escribe al menos 2 caracteres para buscar
+                </div>
+              ) : contactSearchResults.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  No se encontraron contactos
+                </div>
+              ) : (
+                <div className="max-h-[300px] space-y-2 overflow-y-auto">
+                  {contactSearchResults.map((contact) => (
+                    <button
+                      key={contact.id.toString()}
+                      onClick={() => handleContactSelect(contact.id)}
+                      className="flex w-full items-center gap-3 rounded-lg border border-gray-100 bg-gray-50/30 p-3 text-left transition-all hover:border-gray-200 hover:bg-gray-100/60 hover:shadow-sm"
+                    >
+                      <Avatar className="h-10 w-10 shrink-0">
+                        <AvatarFallback className="bg-primary/20 text-primary text-xs font-medium">
+                          {getInitials(contact.name.split(" ")[0], contact.name.split(" ")[1])}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium text-gray-900">
+                          {contact.name}
+                        </div>
+                        {contact.email && (
+                          <div className="truncate text-xs text-gray-500">
+                            {contact.email}
+                          </div>
+                        )}
+                        {contact.phone && (
+                          <div className="text-xs text-gray-500">
+                            {contact.phone}
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Solicitud Modal */}
+        {selectedContactId && (
+          <ContactSolicitudModal
+            open={solicitudModalOpen}
+            onOpenChange={setSolicitudModalOpen}
+            contactId={selectedContactId}
+            onSuccess={handleSolicitudSuccess}
+          />
+        )}
       </CardContent>
     </Card>
   );

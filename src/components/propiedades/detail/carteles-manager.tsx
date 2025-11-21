@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import dynamic from "next/dynamic";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import {
@@ -14,7 +15,19 @@ import {
 import { FileText, Upload, Trash2, Eye, Plus, X } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { toast } from "sonner";
-import { PdfPreview } from "./cartel/pdf-preview";
+
+// Dynamically import PdfPreview to avoid SSR issues with react-pdf
+const PdfPreview = dynamic(
+  () => import("./cartel/pdf-preview").then((mod) => ({ default: mod.PdfPreview })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full w-full items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-gray-600"></div>
+      </div>
+    ),
+  }
+);
 
 interface Cartel {
   docId: bigint;
@@ -189,10 +202,7 @@ export function CartelesManager({
   return (
     <div className={cn("space-y-6", className)}>
       <div>
-        <h3 className="text-lg font-semibold text-gray-900">Carteles</h3>
-        <p className="text-sm text-gray-500">
-          Gestiona los carteles de la propiedad
-        </p>
+        <h3 className="text-xl font-semibold text-gray-900">Carteles</h3>
       </div>
 
       {/* Carteles Grid */}
@@ -222,7 +232,7 @@ export function CartelesManager({
                   <div className="absolute inset-0 p-4">
                     {/* PDF Preview using react-pdf - No scrollbars! */}
                     <div className="relative h-full w-full transition-all duration-300 group-hover:opacity-30">
-                      <PdfPreview fileUrl={cartel.fileUrl} className="h-full w-full" />
+                      <PdfPreview fileUrl={cartel.fileUrl} className="h-full w-full" scale={1.0} />
                     </div>
                     {/* Subtle overlay for better visual integration */}
                     <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white/20 transition-all duration-300 group-hover:to-white/10" />

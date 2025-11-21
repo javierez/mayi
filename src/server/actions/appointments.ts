@@ -30,8 +30,9 @@ interface AppointmentFormData {
   endDate: string; // YYYY-MM-DD format
   endTime: string; // HH:mm format
   tripTimeMinutes?: number;
+  title: string;
   notes?: string;
-  appointmentType: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje";
+  appointmentType: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje" | "Tarea";
   assignedTo?: string; // FK → users.id (who is assigned to the appointment)
 }
 
@@ -59,6 +60,7 @@ export async function updateAppointmentAction(
       datetimeEnd: new Date(`${formData.endDate}T${formData.endTime}`),
       tripTimeMinutes: formData.tripTimeMinutes,
       status: "Scheduled" as const,
+      title: formData.title,
       notes: formData.notes,
       type: formData.appointmentType,
       assignedTo: formData.assignedTo,
@@ -145,6 +147,7 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
       datetimeEnd: new Date(`${formData.endDate}T${formData.endTime}`),
       tripTimeMinutes: formData.tripTimeMinutes,
       status: "Scheduled" as const,
+      title: formData.title,
       notes: formData.notes,
       type: formData.appointmentType,
       assignedTo: formData.assignedTo,
@@ -315,6 +318,9 @@ export async function validateAppointmentForm(
   if (!formData.appointmentType) {
     errors.push("Debe seleccionar un tipo de cita");
   }
+
+  // Title is auto-generated, so we don't need to validate it
+  // If it's missing, we'll generate it on the client side before submission
 
   // Validate time logic
   if (

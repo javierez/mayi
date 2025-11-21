@@ -21,6 +21,9 @@ import {
   Train,
   X,
   Plus,
+  ListTodo,
+  Pencil,
+  FileText,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -62,8 +65,9 @@ interface AppointmentFormData {
   endDate: string; // YYYY-MM-DD format
   endTime: string; // HH:mm format
   tripTimeMinutes?: number;
+  title: string; // Appointment title
   notes?: string;
-  appointmentType: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje";
+  appointmentType: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje" | "Tarea";
   assignedTo?: string; // FK → users.id (who is assigned to the appointment)
 }
 
@@ -144,12 +148,24 @@ const addMinutesToTime = (timeStr: string, minutesToAdd: number): string => {
   return date.toTimeString().slice(0, 5);
 };
 
+// Helper function to generate appointment title
+const generateAppointmentTitle = (
+  appointmentType: string,
+  contactName?: string,
+): string => {
+  if (!contactName) {
+    return appointmentType;
+  }
+  return `${appointmentType} - ${contactName}`;
+};
+
 const initialFormData: Omit<AppointmentFormData, "contactId"> = {
   startDate: getTomorrowDate(),
   startTime: getCurrentTime(),
   endDate: getTomorrowDate(),
   endTime: addMinutesToTime(getCurrentTime(), 30),
   tripTimeMinutes: 15,
+  title: "",
   notes: "",
   appointmentType: "Visita",
 };
@@ -210,6 +226,12 @@ const appointmentTypes = [
     color: "bg-emerald-100 text-emerald-800",
     icon: <Train className="h-4 w-4" />,
   },
+  {
+    value: "Tarea",
+    label: "Tarea",
+    color: "bg-rose-100 text-rose-800",
+    icon: <ListTodo className="h-4 w-4" />,
+  },
 ];
 
 export default function AppointmentForm({
@@ -252,6 +274,8 @@ export default function AppointmentForm({
   >([]);
   const [isLoadingAgents, setIsLoadingAgents] = useState(false);
   const [showContactPopup, setShowContactPopup] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [titleEditValue, setTitleEditValue] = useState("");
   const { data: session } = useSession();
 
   // Calculate endTime based on startTime and duration
@@ -386,6 +410,22 @@ export default function AppointmentForm({
             );
             return exists ? prev : [formContact, ...prev];
           });
+          
+          // Auto-generate title when contact is loaded from initialData
+          const contactName = `${formContact.firstName} ${formContact.lastName}`;
+          setFormData((prev) => {
+            const generatedTitle = generateAppointmentTitle(
+              prev.appointmentType ?? initialData.appointmentType ?? "Visita",
+              contactName,
+            );
+            // Only auto-generate if title is empty or matches the old pattern
+            const shouldAutoGenerate = !prev.title || prev.title === prev.appointmentType || prev.title === `${prev.appointmentType} - ${prev.contactId}`;
+            return {
+              ...prev,
+              contactId: formContact.contactId,
+              title: shouldAutoGenerate ? generatedTitle : prev.title,
+            };
+          });
         }
       } catch (error) {
         console.error("Error fetching contact by ID:", error);
@@ -428,6 +468,13 @@ export default function AppointmentForm({
       setFormData((prev) => ({ ...prev, assignedTo: session.user.id }));
     }
   }, [currentStep, session?.user?.id, formData.assignedTo]);
+
+  // Initialize title edit value when entering confirmation step
+  useEffect(() => {
+    if (currentStep === 2 && formData.title && !isEditingTitle) {
+      setTitleEditValue(formData.title);
+    }
+  }, [currentStep, formData.title, isEditingTitle]);
 
   // Fetch last 10 listings on mount when on step 2, then fetch when user searches
   useEffect(() => {
@@ -623,6 +670,28 @@ export default function AppointmentForm({
           updates.endDate = value;
         }
 
+        // Auto-generate title when appointment type changes (only if title is empty or matches previous type pattern)
+        if (field === "appointmentType" && typeof value === "string") {
+          const currentTitle = prev.title ?? "";
+          const previousType = prev.appointmentType ?? "";
+          const previousPattern = previousType ? `${previousType} -` : "";
+          
+          // Only auto-generate if title is empty, matches previous type, or matches previous pattern
+          const shouldAutoGenerate = 
+            !currentTitle || 
+            currentTitle === previousType || 
+            currentTitle.startsWith(previousPattern);
+          
+          if (shouldAutoGenerate) {
+            if (selectedContact) {
+              const contactName = `${selectedContact.firstName} ${selectedContact.lastName}`;
+              updates.title = generateAppointmentTitle(value, contactName);
+            } else {
+              updates.title = generateAppointmentTitle(value);
+            }
+          }
+        }
+
         return { ...prev, ...updates };
       });
       setValidationError(null);
@@ -636,7 +705,23 @@ export default function AppointmentForm({
   // Handle contact selection
   const handleContactSelect = (contact: Contact) => {
     setSelectedContact(contact);
-    setFormData((prev) => ({ ...prev, contactId: contact.contactId }));
+    const contactName = `${contact.firstName} ${contact.lastName}`;
+    setFormData((prev) => {
+      // Auto-generate title when contact is selected (only if title is empty or matches previous type)
+      const currentTitle = prev.title ?? "";
+      const appointmentType = prev.appointmentType ?? "Visita";
+      const shouldAutoGenerate = !currentTitle || currentTitle === appointmentType;
+      
+      const generatedTitle = shouldAutoGenerate
+        ? generateAppointmentTitle(appointmentType, contactName)
+        : currentTitle;
+      
+      return {
+        ...prev,
+        contactId: contact.contactId,
+        title: generatedTitle,
+      };
+    });
     // Don't modify search query - keep it as is for future searches
     setValidationError(null);
   };
@@ -690,7 +775,23 @@ export default function AppointmentForm({
 
       // Auto-select the new contact
       setSelectedContact(newContactForList);
-      setFormData((prev) => ({ ...prev, contactId: newContactForList.contactId }));
+      const contactName = `${newContactForList.firstName} ${newContactForList.lastName}`;
+      setFormData((prev) => {
+        // Auto-generate title when contact is created and selected (only if title is empty or matches previous type)
+        const currentTitle = prev.title ?? "";
+        const appointmentType = prev.appointmentType ?? "Visita";
+        const shouldAutoGenerate = !currentTitle || currentTitle === appointmentType;
+        
+        const generatedTitle = shouldAutoGenerate
+          ? generateAppointmentTitle(appointmentType, contactName)
+          : currentTitle;
+        
+        return {
+          ...prev,
+          contactId: newContactForList.contactId,
+          title: generatedTitle,
+        };
+      });
 
       // Clear validation error
       setValidationError(null);
@@ -742,6 +843,21 @@ export default function AppointmentForm({
         }
         return true;
       case 2: // Confirmation
+        // Ensure title is auto-generated if not set (always succeeds)
+        if (!formData.title || formData.title.trim() === "") {
+          // Auto-generate title if missing
+          if (selectedContact && formData.appointmentType) {
+            const contactName = `${selectedContact.firstName} ${selectedContact.lastName}`;
+            const generatedTitle = generateAppointmentTitle(
+              formData.appointmentType,
+              contactName,
+            );
+            setFormData((prev) => ({ ...prev, title: generatedTitle }));
+          } else if (formData.appointmentType) {
+            const generatedTitle = generateAppointmentTitle(formData.appointmentType);
+            setFormData((prev) => ({ ...prev, title: generatedTitle }));
+          }
+        }
         return true;
       default:
         return true;
@@ -752,8 +868,38 @@ export default function AppointmentForm({
   const nextStep = async () => {
     const isValid = await validateCurrentStep();
     if (isValid && currentStep < steps.length - 1) {
+      const nextStepIndex = currentStep + 1;
+      
+      // Auto-generate title when moving to confirmation step (step 2)
+      if (nextStepIndex === 2) {
+        setFormData((prev) => {
+          // Only auto-generate if title is empty or just the appointment type
+          if (!prev.title || prev.title.trim() === "" || prev.title === prev.appointmentType) {
+            let newTitle = "";
+            if (selectedContact && prev.appointmentType) {
+              const contactName = `${selectedContact.firstName} ${selectedContact.lastName}`;
+              newTitle = generateAppointmentTitle(prev.appointmentType, contactName);
+            } else if (prev.appointmentType) {
+              newTitle = generateAppointmentTitle(prev.appointmentType);
+            }
+            if (newTitle) {
+              // Initialize title edit value
+              setTitleEditValue(newTitle);
+              return {
+                ...prev,
+                title: newTitle,
+              };
+            }
+          } else {
+            // Initialize title edit value with existing title
+            setTitleEditValue(prev.title);
+          }
+          return prev;
+        });
+      }
+      
       setDirection("forward");
-      setCurrentStep((prev) => prev + 1);
+      setCurrentStep(nextStepIndex);
     }
   };
 
@@ -789,6 +935,7 @@ export default function AppointmentForm({
       endTime: endDateTime,
       status: "Scheduled" as const,
       type: data.appointmentType ?? "Visita",
+      title: data.title ?? "",
       tripTimeMinutes: data.tripTimeMinutes,
       notes: data.notes,
       listingId: data.listingId,
@@ -813,6 +960,7 @@ export default function AppointmentForm({
       ),
       status: "Scheduled" as const,
       type: formData.appointmentType ?? "Visita",
+      title: formData.title ?? "",
       tripTimeMinutes: formData.tripTimeMinutes,
       notes: formData.notes,
       listingId: formData.listingId,
@@ -826,6 +974,26 @@ export default function AppointmentForm({
 
   // Form submission
   const handleSubmit = async () => {
+    // Ensure title is set before submission (auto-generate if missing)
+    let finalFormData = formData;
+    if (!formData.title || formData.title.trim() === "") {
+      let generatedTitle = "";
+      if (selectedContact && formData.appointmentType) {
+        const contactName = `${selectedContact.firstName} ${selectedContact.lastName}`;
+        generatedTitle = generateAppointmentTitle(
+          formData.appointmentType,
+          contactName,
+        );
+      } else if (formData.appointmentType) {
+        generatedTitle = generateAppointmentTitle(formData.appointmentType);
+      }
+      if (generatedTitle) {
+        finalFormData = { ...formData, title: generatedTitle };
+        setFormData(finalFormData);
+      }
+    }
+
+    // Use finalFormData for validation and submission
     const isValid = await validateCurrentStep();
     if (!isValid) return;
 
@@ -1362,11 +1530,69 @@ export default function AppointmentForm({
       case 2: // Confirmation
         return (
           <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold">Confirmar Cita</h3>
-              <p className="text-muted-foreground">
-                Revise los detalles antes de crear la cita
-              </p>
+
+
+            {/* Title - editable, styled as heading */}
+            <div className="flex items-center gap-3">
+              {isEditingTitle ? (
+                <div className="flex w-full items-center gap-2">
+                  <input
+                    type="text"
+                    value={titleEditValue}
+                    onChange={(e) => setTitleEditValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleInputChange("title")(titleEditValue);
+                        setIsEditingTitle(false);
+                      } else if (e.key === "Escape") {
+                        setTitleEditValue(formData.title ?? "");
+                        setIsEditingTitle(false);
+                      }
+                    }}
+                    className="flex-1 rounded-md border border-gray-200 bg-background px-3 py-2 text-xl font-semibold shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                    autoFocus
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => {
+                      handleInputChange("title")(titleEditValue);
+                      setIsEditingTitle(false);
+                    }}
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => {
+                      setTitleEditValue(formData.title ?? "");
+                      setIsEditingTitle(false);
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <h2 className="flex-1 text-2xl font-semibold text-gray-900">
+                    {formData.title ?? "Sin título"}
+                  </h2>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 shrink-0 p-0"
+                    onClick={() => {
+                      setTitleEditValue(formData.title ?? "");
+                      setIsEditingTitle(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
             </div>
 
             <div className="space-y-4">
@@ -1385,7 +1611,7 @@ export default function AppointmentForm({
               <div className="flex items-center gap-3 rounded-lg border p-3">
                 <Calendar className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <div className="font-medium">
+                  <div className="text-sm text-muted-foreground">
                     {formData.startDate} • {formData.startTime} -{" "}
                     {formData.endTime}
                     {showEndDate && formData.endDate !== formData.startDate && (
