@@ -20,6 +20,7 @@ import {
   type LocationData,
 } from "../address-autocomplete";
 import { CadastralSelectionModal } from "../cadastral-selection-modal";
+import { CadastralActionModal } from "../cadastral-action-modal";
 import type { PropertyListing } from "~/types/property-listing";
 import type { SaveState } from "~/types/save-state";
 import { getNeighborhoodFromCoordinates } from "~/server/googlemaps/retrieve_geo";
@@ -46,7 +47,6 @@ interface LocationCardProps {
   setProvince: (value: string) => void;
   setMunicipality: (value: string) => void;
   setIsMapsPopupOpen: (value: boolean) => void;
-  setIsCatastroPopupOpen: (value: boolean) => void;
   getCardStyles: (moduleName: string) => string;
 }
 
@@ -65,7 +65,6 @@ export function LocationCard({
   setProvince,
   setMunicipality,
   setIsMapsPopupOpen,
-  setIsCatastroPopupOpen: _setIsCatastroPopupOpen,
   getCardStyles,
 }: LocationCardProps) {
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
@@ -107,6 +106,9 @@ export function LocationCard({
   const [isSearching, setIsSearching] = useState(false);
   const [isCadastralLoading, setIsCadastralLoading] = useState(false);
 
+  // Cadastral action modal state
+  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+
   // Controlled state for cadastral reference input
   const [cadastralReferenceValue, setCadastralReferenceValue] = useState(
     listing.cadastralReference ?? "",
@@ -123,6 +125,25 @@ export function LocationCard({
     province: province,
     municipality: municipality,
   });
+
+  // Handle opening cadastral map
+  const handleOpenCadastralMap = async () => {
+    const cadastralRef = cadastralReferenceValue.trim();
+    if (cadastralRef) {
+      try {
+        await navigator.clipboard.writeText(cadastralRef);
+        toast.success("Referencia catastral copiada al portapapeles");
+      } catch (error) {
+        console.error("Failed to copy to clipboard:", error);
+        toast.error("Error al copiar la referencia");
+      }
+
+      const catastroMapUrl =
+        "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?buscar=S";
+      window.open(catastroMapUrl, "_blank", "noopener,noreferrer");
+      console.log("🌐 Opening Catastro map:", catastroMapUrl);
+    }
+  };
 
   // Handle cadastral reference button click (copied from third.tsx)
   const handleCadastralLookup = async () => {
@@ -708,6 +729,26 @@ export function LocationCard({
                 className="object-contain"
               />
             </div>
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(
+                  "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?buscar=S",
+                  "_blank",
+                  "noopener,noreferrer",
+                );
+              }}
+              className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground"
+              title="Abrir mapa de Catastro"
+            >
+              <Image
+                src="https://vesta-configuration-files.s3.amazonaws.com/logos/logo-catastro.png"
+                alt="Catastro"
+                width={14}
+                height={14}
+                className="object-contain"
+              />
+            </div>
           </div>
           <ChevronDown
             className={cn(
@@ -1045,68 +1086,22 @@ export function LocationCard({
                 )}
               </button>
             ) : cadastralReferenceValue.trim() ? (
-              /* Catastro buttons (when field has content) */
-              <>
-                {/* Catastro icon button for validation/fill */}
-                <button
-                  type="button"
-                  onClick={handleCadastralLookup}
-                  disabled={!canEdit || isCadastralLoading}
-                  className="absolute right-10 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded bg-background hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                  title="Conectar con Catastro"
-                >
-                  <Image
-                    src="https://vesta-configuration-files.s3.amazonaws.com/logos/logo-catastro.png"
-                    alt="Catastro"
-                    width={16}
-                    height={16}
-                    className={`object-contain transition-opacity duration-200 ${isCadastralLoading ? "animate-pulse opacity-50" : "opacity-100"}`}
-                  />
-                </button>
-                {/* Open external page button (only shown when we have all key info) */}
-                {streetValue.trim() && city.trim() && postalCodeValue.trim() && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      const cadastralRef = cadastralReferenceValue.trim();
-                      if (cadastralRef) {
-                        // Copy cadastral reference to clipboard
-                        try {
-                          await navigator.clipboard.writeText(cadastralRef);
-                          toast.success("Referencia catastral copiada al portapapeles");
-                        } catch (error) {
-                          console.error("Failed to copy to clipboard:", error);
-                          toast.error("Error al copiar la referencia");
-                        }
-
-                        // Open Catastro map
-                        const catastroMapUrl = "https://www1.sedecatastro.gob.es/Cartografia/mapa.aspx?buscar=S";
-                        window.open(catastroMapUrl, "_blank", "noopener,noreferrer");
-                        console.log("🌐 Opening Catastro map:", catastroMapUrl);
-                      }
-                    }}
-                    disabled={!canEdit}
-                    className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-30"
-                    title="Copiar referencia y abrir mapa de Catastro"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                      <polyline points="15 3 21 3 21 9" />
-                      <line x1="10" y1="14" x2="21" y2="3" />
-                    </svg>
-                  </button>
-                )}
-              </>
+              /* Single Catastro button that opens action modal */
+              <button
+                type="button"
+                onClick={() => setIsActionModalOpen(true)}
+                disabled={!canEdit || isCadastralLoading}
+                className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded bg-background hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                title="Opciones de Catastro"
+              >
+                <Image
+                  src="https://vesta-configuration-files.s3.amazonaws.com/logos/logo-catastro.png"
+                  alt="Catastro"
+                  width={16}
+                  height={16}
+                  className={`object-contain transition-opacity duration-200 ${isCadastralLoading ? "animate-pulse opacity-50" : "opacity-100"}`}
+                />
+              </button>
             ) : null}
           </div>
         </div>
@@ -1123,6 +1118,15 @@ export function LocationCard({
         searchResults={potentialReferences}
         isLoading={isSearching}
         onSelect={handleCadastralReferenceSelect}
+      />
+
+      {/* Cadastral Action Modal */}
+      <CadastralActionModal
+        isOpen={isActionModalOpen}
+        onClose={() => setIsActionModalOpen(false)}
+        onValidateData={handleCadastralLookup}
+        onOpenCadastralMap={handleOpenCadastralMap}
+        cadastralReference={cadastralReferenceValue}
       />
     </Card>
   );

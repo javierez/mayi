@@ -869,7 +869,6 @@ export function PropertyCharacteristicsForm({
   const [shortDescription, setShortDescription] = useState(
     listing.shortDescription ?? "",
   );
-  const [isCatastroPopupOpen, setIsCatastroPopupOpen] = useState(false);
   const [isMapsPopupOpen, setIsMapsPopupOpen] = useState(false);
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
   const [signature, setSignature] = useState("");
@@ -1719,7 +1718,6 @@ export function PropertyCharacteristicsForm({
             setProvince={setProvince}
             setMunicipality={setMunicipality}
             setIsMapsPopupOpen={setIsMapsPopupOpen}
-            setIsCatastroPopupOpen={setIsCatastroPopupOpen}
             getCardStyles={getCardStyles}
           />
 
@@ -1930,12 +1928,6 @@ export function PropertyCharacteristicsForm({
           </div>
         </div>
       )}
-      <ExternalLinkPopup
-        isOpen={isCatastroPopupOpen}
-        onClose={() => setIsCatastroPopupOpen(false)}
-        url={`https://www1.sedecatastro.gob.es/CYCBienInmueble/OVCConCiud.aspx?UrbRus=U&RefC=${listing.cadastralReference}&esBice=&RCBice1=&RCBice2=&DenoBice=&from=OVCBusqueda&pest=rc&RCCompleta=${listing.cadastralReference}&final=&del=24&mun=900`}
-        title="Catastro Reference"
-      />
       <ExternalLinkPopup
         isOpen={isMapsPopupOpen}
         onClose={() => setIsMapsPopupOpen(false)}

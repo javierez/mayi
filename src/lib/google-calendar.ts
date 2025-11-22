@@ -41,7 +41,7 @@ export interface GoogleEvent {
 export interface AppointmentData {
   appointmentId: bigint;
   userId: string;
-  contactId: bigint | null;
+  contactId: bigint | null | undefined;
   datetimeStart: Date;
   datetimeEnd: Date;
   notes: string | null;

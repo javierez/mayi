@@ -1551,7 +1551,7 @@ export default function AppointmentsPage() {
                   datetimeEnd: event.endTime,
                   tripTimeMinutes: event.tripTimeMinutes ?? undefined,
                   notes: event.notes ?? undefined,
-                  contactId: event.contactId,
+                  contactId: event.contactId ?? undefined,
                   contactName: event.contactName,
                   propertyAddress: event.propertyAddress ?? undefined,
                   propertyTitle: event.propertyTitle ?? undefined,

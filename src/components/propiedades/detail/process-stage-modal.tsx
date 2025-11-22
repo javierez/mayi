@@ -107,19 +107,19 @@ export function ProcessStageModal({
     });
   };
 
-  // Handle select all
-  const _handleSelectAll = () => {
-    const requiredItems = incompleteItems.filter((item) => item.isRequired);
-    const allSelected = requiredItems.every((item) => selectedItems.has(item.id));
+  // Handle select all (currently unused but kept for potential future use)
+  // const handleSelectAll = () => {
+  //   const requiredItems = incompleteItems.filter((item) => item.isRequired);
+  //   const allSelected = requiredItems.every((item) => selectedItems.has(item.id));
 
-    if (allSelected) {
-      // Deselect all
-      setSelectedItems(new Set());
-    } else {
-      // Select all required items
-      setSelectedItems(new Set(requiredItems.map((item) => item.id)));
-    }
-  };
+  //   if (allSelected) {
+  //     // Deselect all
+  //     setSelectedItems(new Set());
+  //   } else {
+  //     // Select all required items
+  //     setSelectedItems(new Set(requiredItems.map((item) => item.id)));
+  //   }
+  // };
 
   // Handle form submission
   const handleSubmit = async () => {
@@ -184,8 +184,6 @@ export function ProcessStageModal({
 
   const hasIncompleteItems = incompleteItems.length > 0;
   const hasSelectedItems = selectedItems.size > 0;
-  const requiredItems = incompleteItems.filter((item) => item.isRequired);
-  const _allRequiredSelected = requiredItems.every((item) => selectedItems.has(item.id));
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>

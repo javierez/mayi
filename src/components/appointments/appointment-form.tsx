@@ -434,7 +434,7 @@ export default function AppointmentForm({
     };
 
     void fetchSingleContact();
-  }, [initialData.contactId, selectedContact]);
+  }, [initialData.contactId, initialData.appointmentType, selectedContact]);
 
   // Fetch all agents when user is on step 0 (contact selection)
   useEffect(() => {

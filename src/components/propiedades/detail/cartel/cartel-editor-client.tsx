@@ -147,7 +147,7 @@ export function CartelEditorClient({
       descriptionFont: "default",
       descriptionAlignment: "left",
       descriptionSize: 16,
-      descriptionColor: "#ffffff",
+      descriptionColor: "#000000",
       descriptionPositionX: 0,
       descriptionPositionY: 0,
       // Bullet styling defaults

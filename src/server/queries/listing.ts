@@ -1616,18 +1616,28 @@ export async function getListingDetails(listingId: number, accountId: number) {
         }
       : null;
 
-    // Remove the individual deal fields from listingDetails
+    // Create a clean listing object without deal fields (deal fields are now in the deal object)
     const {
-      dealId: _dealId,
-      dealStatus: _dealStatus,
-      dealArrasDate: _dealArrasDate,
-      dealArrasSigningDate: _dealArrasSigningDate,
-      dealExpectedDeedDate: _dealExpectedDeedDate,
-      dealActualDeedDate: _dealActualDeedDate,
-      dealCloseDate: _dealCloseDate,
-      dealKeyHandoverDate: _dealKeyHandoverDate,
+      dealId: omitDealId,
+      dealStatus: omitDealStatus,
+      dealArrasDate: omitDealArrasDate,
+      dealArrasSigningDate: omitDealArrasSigningDate,
+      dealExpectedDeedDate: omitDealExpectedDeedDate,
+      dealActualDeedDate: omitDealActualDeedDate,
+      dealCloseDate: omitDealCloseDate,
+      dealKeyHandoverDate: omitDealKeyHandoverDate,
       ...restListingDetails
     } = listingDetails;
+
+    // Explicitly void the omitted variables to satisfy linter
+    void omitDealId;
+    void omitDealStatus;
+    void omitDealArrasDate;
+    void omitDealArrasSigningDate;
+    void omitDealExpectedDeedDate;
+    void omitDealActualDeedDate;
+    void omitDealCloseDate;
+    void omitDealKeyHandoverDate;
 
     // Return listing details with owners array and deal object
     return {
