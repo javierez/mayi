@@ -52,7 +52,7 @@ export function ContactDocumentsManager({
         },
         {
           id: "certificado-energetico",
-          name: "Cert. Energético",
+          name: "Certificado Energético",
           description: "Certificado y consumos",
         },
         {

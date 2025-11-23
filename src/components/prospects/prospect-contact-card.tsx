@@ -14,7 +14,7 @@ interface ProspectContactCardProps {
 }
 
 export function ProspectContactCard({
-  contactId,
+  contactId: _contactId,
   firstName,
   lastName,
   email,

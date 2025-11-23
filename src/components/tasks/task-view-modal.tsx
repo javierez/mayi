@@ -502,12 +502,12 @@ export function TaskViewModal({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
                     {task.urgency && (
-                      <Badge className={getUrgencyColor(task.urgency)}>
+                      <Badge className={`${getUrgencyColor(task.urgency)} pointer-events-none`}>
                         {getUrgencyLabel(task.urgency)}
                       </Badge>
                     )}
                     {task.status && (
-                      <Badge className={getStatusColor(task.status, task.completed)}>
+                      <Badge className={`${getStatusColor(task.status, task.completed)} pointer-events-none`}>
                         {getStatusLabel(task.status)}
                       </Badge>
                     )}

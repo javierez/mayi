@@ -28,10 +28,15 @@ export function PdfPreview({ fileUrl, className = "", scale = 1.0 }: PdfPreviewP
     }
   }, []);
 
+  // Use proxy for S3 URLs to avoid CORS issues
+  const proxyUrl = fileUrl.startsWith("https://inmobiliariaacropolis.s3.")
+    ? `/api/pdf-proxy?url=${encodeURIComponent(fileUrl)}`
+    : fileUrl;
+
   return (
     <div ref={containerRef} className={className}>
       <Document
-        file={fileUrl}
+        file={proxyUrl}
         onLoadSuccess={onDocumentLoadSuccess}
         loading={
           <div className="flex h-full w-full items-center justify-center">

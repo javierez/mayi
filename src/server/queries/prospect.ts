@@ -1,6 +1,6 @@
 "use server";
 import { db } from "~/server/db";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import {
   prospects,
   contacts,
@@ -8,6 +8,7 @@ import {
   listings,
   properties,
   locations,
+  propertyImages,
 } from "~/server/db/schema";
 import { createProspectHistory } from "~/server/queries/prospect-history";
 import { getCurrentUserAccountId } from "~/lib/dal";
@@ -534,6 +535,9 @@ export async function getProspectWithMatchesWithAuth(prospectId: bigint) {
 
       // Location data (can be null due to leftJoin)
       locationData: locations,
+
+      // Image data (can be null due to leftJoin)
+      imageUrl: propertyImages.imageUrl,
     })
     .from(prospectListingMatches)
     .innerJoin(
@@ -544,6 +548,15 @@ export async function getProspectWithMatchesWithAuth(prospectId: bigint) {
     .leftJoin(
       locations,
       eq(properties.neighborhoodId, locations.neighborhoodId),
+    )
+    .leftJoin(
+      propertyImages,
+      and(
+        eq(propertyImages.propertyId, properties.propertyId),
+        eq(propertyImages.isActive, true),
+        eq(propertyImages.imageOrder, 1),
+        sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`,
+      ),
     )
     .where(
       and(
@@ -560,7 +573,7 @@ export async function getProspectWithMatchesWithAuth(prospectId: bigint) {
   const transformedMatches = matchesData.map((match) => ({
     matchId: match.matchData.id,
     matchType: match.matchData.matchType,
-    priceMatch: match.matchData.priceMatch,
+    priceMatch: match.matchData.priceMatchScore ?? null,
     isCrossAccount: match.matchData.isCrossAccount,
     toleranceReasons: match.matchData.toleranceReasons,
     listingId: match.listingData.listingId,
@@ -573,14 +586,19 @@ export async function getProspectWithMatchesWithAuth(prospectId: bigint) {
     bathrooms: match.propertyData.bathrooms,
     squareMeter: match.propertyData.squareMeter,
     street: match.propertyData.street,
-    imageUrl: match.propertyData.imageUrl,
+    imageUrl: match.imageUrl ?? null,
     city: match.locationData?.city ?? null,
     neighborhood: match.locationData?.neighborhood ?? null,
   }));
 
+  const firstProspect = prospectData[0];
+  if (!firstProspect) {
+    throw new Error("Prospect data not found");
+  }
+
   const result = {
-    prospect: prospectData[0].prospect,
-    contact: prospectData[0].contact,
+    prospect: firstProspect.prospect,
+    contact: firstProspect.contact,
     matches: transformedMatches,
   };
 

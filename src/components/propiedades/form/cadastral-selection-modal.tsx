@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
-import { Loader, MapPin, Calendar, Square, Search } from "lucide-react";
+import { Loader, MapPin, Calendar, Square, Search, X } from "lucide-react";
 
 interface CadastralSearchResult {
   cadastralReference: string;
@@ -65,17 +65,33 @@ export function CadastralSelectionModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] w-[95vw] max-w-4xl overflow-y-auto p-4 sm:max-h-[80vh] sm:w-full sm:p-6">
-        <DialogHeader className="space-y-2 sm:space-y-3">
-          <DialogTitle className="text-lg sm:text-xl">
-            Seleccionar Propiedad en Catastro
-          </DialogTitle>
-          <DialogDescription className="text-sm">
-            Se encontraron {searchResults.length}{" "}
-            {searchResults.length === 1 ? "unidad" : "unidades"} en esta
-            dirección. Selecciona la unidad específica de tu propiedad.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-h-[90vh] w-[95vw] max-w-4xl p-0 sm:max-h-[80vh] sm:w-full [&>button]:hidden">
+        <div className="flex max-h-[90vh] flex-col sm:max-h-[80vh]">
+          <DialogHeader className="space-y-2 border-b p-4 sm:space-y-3 sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2 sm:space-y-3">
+                <DialogTitle className="text-lg sm:text-xl">
+                  Seleccionar Propiedad en Catastro
+                </DialogTitle>
+                <DialogDescription className="text-sm">
+                  Se encontraron {searchResults.length}{" "}
+                  {searchResults.length === 1 ? "unidad" : "unidades"} en esta
+                  dirección. Selecciona la unidad específica de tu propiedad.
+                </DialogDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="h-8 w-8 p-0 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                title="Cerrar"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">{/* Content container with custom scroll */}
 
         {/* Search input */}
         {searchResults.length > 0 && !isLoading && (
@@ -217,15 +233,20 @@ export function CadastralSelectionModal({
           )}
         </div>
 
-        <div className="mt-3 flex justify-end border-t pt-3 sm:mt-4 sm:pt-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onClose}
-            className="text-xs sm:text-sm"
-          >
-            Cancelar
-          </Button>
+          </div>
+
+          <div className="border-t p-4 sm:p-6">
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onClose}
+                className="text-xs sm:text-sm"
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

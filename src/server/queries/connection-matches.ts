@@ -675,7 +675,7 @@ export async function getMatchesForProspects(
           // ACCOUNT SCOPE: Current account or cross-account based on filters
           filters.accountScope === "current"
             ? eq(listings.accountId, accountId)
-            : ne(listings.status, "Draft"), // Active listings only for cross-account
+            : ne(listings.accountId, accountId), // Cross-account: exclude current account
 
           // STATUS: Only active listings
           eq(listings.isActive, true),

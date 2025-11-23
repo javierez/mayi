@@ -156,7 +156,7 @@ const platformConfig = [
   },
   {
     id: "hasCartel",
-    name: "Tiene Cartel",
+    name: "Cartel Colocado",
     logo: "", // Will use FileImage icon instead
     description: "Propiedad con cartel físico",
     isDefault: false,
@@ -506,7 +506,7 @@ export function PortalSelection({
             enalquiler: "EnAlquiler",
             kyero: "Kyero",
             publishToWebsite: "Publicar en Web",
-            hasCartel: "Tiene Cartel",
+            hasCartel: "Cartel Colocado",
             enEscaparate: "En Escaparate",
             hasKeys: "Tiene Llaves",
           };
@@ -744,7 +744,7 @@ export function PortalSelection({
       return (
         <div className="flex h-full w-full items-center justify-center px-2 text-center">
           <span className="whitespace-nowrap text-xs font-semibold uppercase tracking-widest text-gray-700">
-            Tiene Cartel
+            Cartel Colocado
           </span>
         </div>
       );

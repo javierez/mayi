@@ -38,9 +38,9 @@ const MATCH_QUALITY_CONFIG = {
 };
 
 export function ProspectPropertyCard({
-  listingId,
+  listingId: _listingId,
   price,
-  propertyType,
+  propertyType: _propertyType,
   bedrooms,
   bathrooms,
   squareMeter,

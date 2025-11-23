@@ -770,9 +770,40 @@ export default function ThirdPage({
   // Main form already handles loading state with spinner
   // No skeleton needed here
 
+  // Check if form is mostly empty (missing key fields)
+  const isFormEmpty =
+    !addressValue.trim() && !formData.city.trim() && !formData.postalCode.trim();
+
+  // Determine which hint to show
+  const showCatastroHint =
+    formData.cadastralReference.trim() && isFormEmpty;
+  const showSearchHint =
+    !formData.cadastralReference.trim() &&
+    latitude !== null &&
+    longitude !== null;
+
   return (
     <div className="space-y-4">
       <h2 className="text-md mb-4 font-medium text-gray-900">Dirección</h2>
+
+      {/* Catastro hint banner - shown at top */}
+      {showCatastroHint && (
+        <div className="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-900">
+          <div className="flex items-center gap-2">
+            <Image
+              src="https://vesta-configuration-files.s3.amazonaws.com/logos/logo-catastro.png"
+              alt="Catastro"
+              width={14}
+              height={14}
+              className="object-contain"
+            />
+            <span>
+              Haz clic en el logo del catastro para completar el formulario con
+              los datos del catastro
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="relative -mt-6">
         <FloatingLabelInput
@@ -807,7 +838,7 @@ export default function ThirdPage({
 
         {/* Success indicator */}
         {cadastralValidationStatus === "valid" && (
-          <div className="absolute right-8 top-1/2 -translate-y-1/2">
+          <div className="absolute right-10 top-1/2 -translate-y-1/2">
             <CheckCircle className="h-4 w-4 text-green-500" />
           </div>
         )}
@@ -1055,6 +1086,19 @@ export default function ThirdPage({
       {/* Hidden input fields for coordinates */}
       <input type="hidden" id="latitude" value={latitude ?? ""} readOnly />
       <input type="hidden" id="longitude" value={longitude ?? ""} readOnly />
+
+      {/* Search hint banner - shown at bottom before navigation */}
+      {showSearchHint && (
+        <div className="mb-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-900">
+          <div className="flex items-center gap-2">
+            <Search className="h-3.5 w-3.5" />
+            <span>
+              Sube y haz clic en la lupa del campo de referencia catastral para
+              buscar la referencia catastral de tu propiedad.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Navigation Buttons */}
       <motion.div
