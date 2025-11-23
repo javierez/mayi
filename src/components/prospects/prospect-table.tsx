@@ -24,47 +24,44 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { PROSPECT_STATUSES } from "~/types/operations";
 import { updateProspectWithAuth } from "~/server/queries/prospect";
-import { updateListingWithAuth } from "~/server/queries/operations-listings";
 import { PaginationControls } from "~/components/ui/pagination-controls";
 import { cn } from "~/lib/utils";
-import type { ListingWithDetails } from "~/server/queries/operations-listings";
 import { useSearchParams } from "next/navigation";
+import { ProspectDetailSheet } from "~/components/prospects/prospect-detail-sheet";
 
-// Unified type for operations (prospects and listings)
-type OperationItem = {
+// Type for prospect items
+type ProspectItem = {
   id: string;
-  type: "prospect" | "listing";
-  operationType: string; // "Búsqueda de Alquiler de Piso" or "Venta de Casa" etc
+  operationType: string; // "Búsqueda de Alquiler de Piso" or "Demanda de Venta de Casa" etc
   contact: {
     id: bigint;
     name: string;
     email?: string;
-  } | null;
+  };
   status: string;
   location: string;
-  summary: string; // Formatted summary like "€1,200 • 3 hab • 2 baños • 85m²"
   createdAt: Date;
-  rawData: ProspectWithContact | ListingWithDetails;
+  rawData: ProspectWithContact;
 };
 
 // Default column widths (in pixels)
 const DEFAULT_COLUMN_WIDTHS = {
-  operacion: 180,
+  operacion: 100,
   contacto: 140,
-  estado: 130,
-  ubicacion: 120,
-  resumen: 160,
-  creado: 70,
+  estado: 100,
+  ubicacion: 100,
+  resumen: 130,
+  conexiones: 150,
 } as const;
 
 // Minimum column widths
 const MIN_COLUMN_WIDTHS = {
-  operacion: 120,
+  operacion: 80,
   contacto: 100,
-  estado: 100,
-  ubicacion: 100,
-  resumen: 120,
-  creado: 60,
+  estado: 80,
+  ubicacion: 80,
+  resumen: 100,
+  conexiones: 120,
 } as const;
 
 // Simple type for prospect with contact data (matching ACTUAL database structure)
@@ -77,6 +74,7 @@ type ProspectWithContact = {
     propertyType: string | null;
     minPrice: string | null;
     maxPrice: string | null;
+    preferredCities: unknown;
     preferredAreas: unknown;
     minBedrooms: number | null;
     minBathrooms: number | null;
@@ -103,11 +101,16 @@ type ProspectWithContact = {
     createdAt: Date;
     updatedAt: Date;
   };
+  matchCounts: {
+    high: number;
+    medium: number;
+    low: number;
+    total: number;
+  } | null;
 };
 
 interface ProspectTableProps {
   prospects: ProspectWithContact[];
-  listings?: ListingWithDetails[];
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
@@ -117,7 +120,6 @@ interface ProspectTableProps {
 
 export function ProspectTable({
   prospects,
-  listings = [],
   currentPage,
   totalPages,
   onPageChange,
@@ -133,6 +135,8 @@ export function ProspectTable({
   const tableRef = useRef<HTMLTableElement>(null);
   const [visibleRows, setVisibleRows] = useState<Set<string>>(new Set());
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const [selectedProspectId, setSelectedProspectId] = useState<bigint | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   // Helper functions for parsing and display
   const parsePreferredAreas = (preferredAreas: unknown): string[] => {
@@ -164,6 +168,33 @@ export function ProspectTable({
     return [];
   };
 
+  const parsePreferredCities = (preferredCities: unknown): string[] => {
+    if (!preferredCities) return [];
+
+    try {
+      // Handle if it's already an array of strings
+      if (Array.isArray(preferredCities)) {
+        return (preferredCities as string[]).filter(
+          (city) => typeof city === "string" && city.length > 0,
+        );
+      }
+
+      // Handle if it's a string that needs parsing
+      if (typeof preferredCities === "string") {
+        const parsed = JSON.parse(preferredCities) as unknown;
+        if (Array.isArray(parsed)) {
+          return (parsed as string[]).filter(
+            (city) => typeof city === "string" && city.length > 0,
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error parsing preferred cities:", error);
+    }
+
+    return [];
+  };
+
   const getStatusDisplay = (status: string) => {
     switch (status.toLowerCase()) {
       case "new":
@@ -172,18 +203,17 @@ export function ProspectTable({
       case "working":
       case "en proceso":
       case "en seguimiento":
-        return "En preparación";
+      case "en preparación":
+        return "En búsqueda"; // Map old "En preparación" to "En búsqueda"
       case "qualified":
       case "calificado":
         return "Finalizado";
       case "archived":
       case "archivado":
         return "Archivado";
-      // If it's already one of our 4 final statuses, keep it
+      // If it's already one of our 3 final statuses, keep it
       case "en búsqueda":
         return "En búsqueda";
-      case "en preparación":
-        return "En preparación";
       case "finalizado":
         return "Finalizado";
       case "archivado":
@@ -193,84 +223,71 @@ export function ProspectTable({
     }
   };
 
-  // Transform prospects and listings into unified format
-  const transformToOperations = useCallback(
-    (
-      prospects: ProspectWithContact[],
-      listings: ListingWithDetails[],
-    ): OperationItem[] => {
-      // Deduplicate prospects and listings by ID to prevent duplicate keys
+  // Transform prospects into display format
+  const transformToProspectItems = useCallback(
+    (prospects: ProspectWithContact[]): ProspectItem[] => {
+      // Deduplicate prospects by ID to prevent duplicate keys
       const uniqueProspects = Array.from(
-        new Map(prospects.map((prospect) => [prospect.prospects.id.toString(), prospect])).values()
+        new Map(
+          prospects.map((prospect) => [
+            prospect.prospects.id.toString(),
+            prospect,
+          ]),
+        ).values(),
       );
-      const uniqueListings = Array.from(
-        new Map(listings.map((listing) => [listing.listings.id.toString(), listing])).values()
-      );
 
-      const prospectOperations: OperationItem[] = uniqueProspects.map((prospect) => {
-        const operationId = `prospect-${prospect.prospects.id}`;
-        const optimisticStatus = optimisticStatuses[operationId];
+      return uniqueProspects
+        .map((prospect) => {
+          const prospectId = `prospect-${prospect.prospects.id}`;
+          const optimisticStatus = optimisticStatuses[prospectId];
 
-        return {
-          id: operationId,
-          type: "prospect" as const,
-          operationType: getOperationTypeDisplay(
-            prospect.prospects.listingType,
-            prospect.prospects.propertyType,
-          ),
-          contact: {
-            id: prospect.contacts.contactId,
-            name: `${prospect.contacts.firstName} ${prospect.contacts.lastName}`,
-            email: prospect.contacts.email ?? undefined,
-          },
-          status: optimisticStatus
-            ? getStatusDisplay(optimisticStatus)
-            : getStatusDisplay(prospect.prospects.status),
-          location:
-            parsePreferredAreas(prospect.prospects.preferredAreas).join(", ") ||
-            "Sin especificar",
-          summary: createProspectSummary(prospect),
-          createdAt: prospect.prospects.createdAt,
-          rawData: prospect,
-        };
-      });
+          const areas = parsePreferredAreas(prospect.prospects.preferredAreas);
+          const cities = parsePreferredCities(prospect.prospects.preferredCities);
+          const location = areas.length > 0
+            ? areas.join(", ")
+            : cities.length > 0
+              ? cities.join(", ")
+              : "Sin especificar";
 
-      const listingOperations: OperationItem[] = uniqueListings.map((listing) => {
-        const operationId = `listing-${listing.listings.id}`;
-        const optimisticStatus = optimisticStatuses[operationId];
+          return {
+            id: prospectId,
+            operationType: getOperationTypeDisplay(
+              prospect.prospects.listingType,
+              prospect.prospects.propertyType,
+            ),
+            contact: {
+              id: prospect.contacts.contactId,
+              name: `${prospect.contacts.firstName} ${prospect.contacts.lastName}`,
+              email: prospect.contacts.email ?? undefined,
+            },
+            status: optimisticStatus
+              ? getStatusDisplay(optimisticStatus)
+              : getStatusDisplay(prospect.prospects.status),
+            location,
+            createdAt: prospect.prospects.createdAt,
+            rawData: prospect,
+          };
+        })
+        .sort((a, b) => {
+          // Primary sort: by quality-weighted score (descending - best matches first)
+          // Formula: (Excelente × 3) + (Buena × 2) + (Aceptable × 1)
+          const aMatches = a.rawData.matchCounts;
+          const bMatches = b.rawData.matchCounts;
 
-        return {
-          id: operationId,
-          type: "listing" as const,
-          operationType: getListingOperationType(
-            listing.listings.listingType,
-            listing.properties.propertyType,
-          ),
-          contact: listing.ownerContact
-            ? {
-                id: listing.ownerContact.contactId,
-                name: `${listing.ownerContact.firstName} ${listing.ownerContact.lastName}`,
-                email: listing.ownerContact.email ?? undefined,
-              }
-            : null,
-          status: optimisticStatus
-            ? getListingStatus(optimisticStatus)
-            : getListingStatus(
-                listing.listings.prospectStatus,
-                listing.listings.status,
-              ),
-          location: listing.locations.neighborhood || "Sin especificar",
-          summary: createListingSummary(listing),
-          createdAt: listing.listings.createdAt,
-          rawData: listing,
-        };
-      });
+          const aScore = aMatches
+            ? (aMatches.high * 3) + (aMatches.medium * 2) + (aMatches.low * 1)
+            : 0;
+          const bScore = bMatches
+            ? (bMatches.high * 3) + (bMatches.medium * 2) + (bMatches.low * 1)
+            : 0;
 
-      // Combine and sort by creation date (newest first)
-      return [...prospectOperations, ...listingOperations].sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      );
+          if (bScore !== aScore) {
+            return bScore - aScore;
+          }
+
+          // Secondary sort: by creation date (newest first)
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
     },
     [optimisticStatuses],
   );
@@ -302,375 +319,222 @@ export function ProspectTable({
     return baseType;
   };
 
-  const getListingOperationType = (
-    listingType: string,
-    propertyType: string | null,
-  ) => {
-    const baseType = listingType === "Sale" ? "Venta" : "Alquiler";
 
-    if (propertyType) {
-      const capitalizedPropertyType =
-        propertyType.charAt(0).toUpperCase() +
-        propertyType.slice(1).toLowerCase();
-      return `${baseType} de ${capitalizedPropertyType}`;
+  // Match badges component
+  const MatchBadges = ({ matchCounts }: { matchCounts: { high: number; medium: number; low: number; total: number } | null }) => {
+    if (!matchCounts || matchCounts.total === 0) {
+      return (
+        <div className="text-xs text-gray-400">Sin conexiones</div>
+      );
     }
 
-    return baseType;
-  };
+    const badges = [];
 
-  const getListingStatus = (
-    prospectStatus: string | null | undefined,
-    fallbackStatus?: string,
-  ) => {
-    // If we have a prospect status, use it directly (it's already in Spanish)
-    if (prospectStatus) {
-      return prospectStatus;
+    if (matchCounts.high > 0) {
+      badges.push(
+        <span key="high" className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
+          {matchCounts.high} - Excelentes
+        </span>
+      );
     }
 
-    // Fall back to the original status mapping
-    if (!fallbackStatus) return "En búsqueda";
-
-    switch (fallbackStatus) {
-      case "Preparation":
-        return "En preparación";
-      case "Valuation":
-        return "En valoración";
-      case "Presign":
-        return "Listo para firma";
-      case "Active":
-        return "En búsqueda";
-      default:
-        return fallbackStatus;
+    if (matchCounts.medium > 0) {
+      badges.push(
+        <span key="medium" className="inline-flex items-center gap-0.5 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
+          {matchCounts.medium} - Buenas
+        </span>
+      );
     }
+
+    if (matchCounts.low > 0) {
+      badges.push(
+        <span key="low" className="inline-flex items-center gap-0.5 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-700">
+          {matchCounts.low} - Aceptables
+        </span>
+      );
+    }
+
+    return (
+      <div className="flex flex-wrap gap-1">
+        {badges}
+      </div>
+    );
   };
 
   // Grid 2x2 summary component with icons
-  const SummaryComponent = ({ operation }: { operation: OperationItem }) => {
-    if (operation.type === "prospect") {
-      const prospect = operation.rawData as ProspectWithContact;
-      const hasData =
-        prospect.prospects.maxPrice ??
-        prospect.prospects.minBedrooms ??
-        prospect.prospects.minBathrooms ??
-        prospect.prospects.minSquareMeters;
+  const SummaryComponent = ({ prospect }: { prospect: ProspectItem }) => {
+    const prospectData = prospect.rawData;
+    const hasData =
+      prospectData.prospects.maxPrice ??
+      prospectData.prospects.minBedrooms ??
+      prospectData.prospects.minBathrooms ??
+      prospectData.prospects.minSquareMeters;
 
-      if (!hasData) {
-        return (
-          <div className="rounded-lg bg-gray-50 p-2 text-center">
-            <span className="text-xs text-gray-400">-</span>
-          </div>
-        );
-      }
-
-      // Default bathroom to 1 if 0
-      const minBathrooms =
-        prospect.prospects.minBathrooms === 0
-          ? 1
-          : prospect.prospects.minBathrooms;
-
+    if (!hasData) {
       return (
-        <div className="rounded-lg bg-gradient-to-br from-slate-50 to-gray-100 p-3 shadow-sm">
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            {/* Price */}
-            {prospect.prospects.maxPrice ? (
-              <div className="flex items-center gap-1 text-gray-700">
-                <span className="text-xs">&lt;</span>
-                <Euro className="h-3 w-3" />
-                <span>
-                  {prospect.prospects.listingType === "Sale"
-                    ? `${Math.round(parseFloat(prospect.prospects.maxPrice) / 1000)}k`
-                    : parseFloat(prospect.prospects.maxPrice).toLocaleString()}
-                </span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1 text-gray-400">
-                <Euro className="h-3 w-3" />
-                <span>-</span>
-              </div>
-            )}
-
-            {/* Bedrooms */}
-            {prospect.prospects.minBedrooms ? (
-              <div className="flex items-center gap-1 text-gray-700">
-                <span className="text-xs">&gt;</span>
-                <Bed className="h-3 w-3" />
-                <span>{prospect.prospects.minBedrooms}</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1 text-gray-400">
-                <Bed className="h-3 w-3" />
-                <span>-</span>
-              </div>
-            )}
-
-            {/* Bathrooms */}
-            {minBathrooms ? (
-              <div className="flex items-center gap-1 text-gray-700">
-                <span className="text-xs">&gt;</span>
-                <Bath className="h-3 w-3" />
-                <span>{Math.floor(minBathrooms)}</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1 text-gray-400">
-                <Bath className="h-3 w-3" />
-                <span>-</span>
-              </div>
-            )}
-
-            {/* Square meters */}
-            {prospect.prospects.minSquareMeters ? (
-              <div className="flex items-center gap-1 text-gray-700">
-                <span className="text-xs">&gt;</span>
-                <Square className="h-3 w-3" />
-                <span>{prospect.prospects.minSquareMeters}m²</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1 text-gray-400">
-                <Square className="h-3 w-3" />
-                <span>-</span>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    } else {
-      const listing = operation.rawData as ListingWithDetails;
-      const hasData =
-        listing.listings.price ??
-        listing.properties.bedrooms ??
-        listing.properties.bathrooms ??
-        listing.properties.squareMeter;
-
-      if (!hasData) {
-        return (
-          <div className="rounded-lg bg-gray-50 p-2 text-center">
-            <span className="text-xs text-gray-400">-</span>
-          </div>
-        );
-      }
-
-      return (
-        <div className="rounded-lg bg-gradient-to-br from-slate-50 to-gray-100 p-3 shadow-sm">
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            {/* Price */}
-            {listing.listings.price ? (
-              <div className="flex items-center gap-1 text-gray-700">
-                <Euro className="h-3 w-3" />
-                <span>
-                  {listing.listings.listingType === "Sale"
-                    ? `${Math.round(parseFloat(listing.listings.price) / 1000)}k`
-                    : parseFloat(listing.listings.price).toLocaleString()}
-                </span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1 text-gray-400">
-                <Euro className="h-3 w-3" />
-                <span>-</span>
-              </div>
-            )}
-
-            {/* Bedrooms */}
-            {listing.properties.bedrooms ? (
-              <div className="flex items-center gap-1 text-gray-700">
-                <Bed className="h-3 w-3" />
-                <span>{listing.properties.bedrooms}</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1 text-gray-400">
-                <Bed className="h-3 w-3" />
-                <span>-</span>
-              </div>
-            )}
-
-            {/* Bathrooms */}
-            {listing.properties.bathrooms ? (
-              <div className="flex items-center gap-1 text-gray-700">
-                <Bath className="h-3 w-3" />
-                <span>{Math.floor(listing.properties.bathrooms)}</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1 text-gray-400">
-                <Bath className="h-3 w-3" />
-                <span>-</span>
-              </div>
-            )}
-
-            {/* Square meters */}
-            {(listing.properties.squareMeter ?? listing.properties.builtSurfaceArea) ? (
-              <div className="flex items-center gap-1 text-gray-700">
-                <Square className="h-3 w-3" />
-                <span>{(listing.properties.squareMeter ?? listing.properties.builtSurfaceArea)}m²</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1 text-gray-400">
-                <Square className="h-3 w-3" />
-                <span>-</span>
-              </div>
-            )}
-          </div>
+        <div className="rounded-lg bg-gray-50 p-2 text-center">
+          <span className="text-xs text-gray-400">-</span>
         </div>
       );
     }
+
+    // Default bathroom to 1 if 0
+    const minBathrooms =
+      prospectData.prospects.minBathrooms === 0
+        ? 1
+        : prospectData.prospects.minBathrooms;
+
+    return (
+      <div className="rounded-lg bg-gradient-to-br from-slate-50 to-gray-100 p-3 shadow-sm">
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          {/* Price */}
+          {prospectData.prospects.maxPrice ? (
+            <div className="flex items-center gap-1 text-gray-700">
+              <span className="text-xs">&lt;</span>
+              <Euro className="h-3 w-3" />
+              <span>
+                {prospectData.prospects.listingType === "Sale"
+                  ? `${Math.round(parseFloat(prospectData.prospects.maxPrice) / 1000)}k`
+                  : parseFloat(prospectData.prospects.maxPrice).toLocaleString()}
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 text-gray-400">
+              <Euro className="h-3 w-3" />
+              <span>-</span>
+            </div>
+          )}
+
+          {/* Bedrooms */}
+          {prospectData.prospects.minBedrooms ? (
+            <div className="flex items-center gap-1 text-gray-700">
+              <span className="text-xs">&gt;</span>
+              <Bed className="h-3 w-3" />
+              <span>{prospectData.prospects.minBedrooms}</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 text-gray-400">
+              <Bed className="h-3 w-3" />
+              <span>-</span>
+            </div>
+          )}
+
+          {/* Bathrooms */}
+          {minBathrooms ? (
+            <div className="flex items-center gap-1 text-gray-700">
+              <span className="text-xs">&gt;</span>
+              <Bath className="h-3 w-3" />
+              <span>{Math.floor(minBathrooms)}</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 text-gray-400">
+              <Bath className="h-3 w-3" />
+              <span>-</span>
+            </div>
+          )}
+
+          {/* Square meters */}
+          {prospectData.prospects.minSquareMeters ? (
+            <div className="flex items-center gap-1 text-gray-700">
+              <span className="text-xs">&gt;</span>
+              <Square className="h-3 w-3" />
+              <span>{prospectData.prospects.minSquareMeters}m²</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 text-gray-400">
+              <Square className="h-3 w-3" />
+              <span>-</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
-  // Helper function to create summary for prospects (showing requirements)
-  const createProspectSummary = (_prospect: ProspectWithContact): string => {
-    return "compact"; // This will be replaced by the component
-  };
-
-  // Helper function to create summary for listings (showing actual property)
-  const createListingSummary = (_listing: ListingWithDetails): string => {
-    return "compact"; // This will be replaced by the component
-  };
-
-  // Get combined operations (memoized)
-  const allOperations = useMemo(
-    () => transformToOperations(prospects, listings),
-    [prospects, listings, transformToOperations],
+  // Get transformed prospect items (memoized)
+  const allProspects = useMemo(
+    () => transformToProspectItems(prospects),
+    [prospects, transformToProspectItems],
   );
 
-  // Filter operations based on URL filters
+  // Filter prospects based on URL filters
   const searchParams = useSearchParams();
-  const prospectTypeFilter = searchParams.get("prospectType");
   const listingTypeFilter = searchParams.get("listingType");
   const statusFilter = searchParams.get("status");
   const urgencyLevelFilter = searchParams.get("urgencyLevel");
 
-  const filteredOperations = useMemo(
+  const filteredProspects = useMemo(
     () =>
-      allOperations.filter((operation) => {
-        // Filter by prospectType (search/listing)
-        if (prospectTypeFilter && prospectTypeFilter !== "all") {
-          const filterValues = prospectTypeFilter.split(",");
-          const showProspects = filterValues.includes("search");
-          const showListings = filterValues.includes("listing");
-
-          if (operation.type === "prospect" && !showProspects) return false;
-          if (operation.type === "listing" && !showListings) return false;
-        }
-
+      allProspects.filter((prospect) => {
         // Filter by listingType (Sale/Rent)
         if (listingTypeFilter && listingTypeFilter !== "all") {
           const filterValues = listingTypeFilter.split(",");
-
-          if (operation.type === "prospect") {
-            const prospect = operation.rawData as ProspectWithContact;
-            if (!filterValues.includes(prospect.prospects.listingType ?? ""))
-              return false;
-          } else {
-            const listing = operation.rawData as ListingWithDetails;
-            if (!filterValues.includes(listing.listings.listingType))
-              return false;
-          }
+          if (!filterValues.includes(prospect.rawData.prospects.listingType ?? ""))
+            return false;
         }
 
         // Filter by status
         if (statusFilter && statusFilter !== "all") {
           const filterValues = statusFilter.split(",");
-
-          if (operation.type === "prospect") {
-            const prospect = operation.rawData as ProspectWithContact;
-            // Map the filter status values to database status values
-            const mappedStatuses = filterValues.map((status) => {
-              switch (status) {
-                case "En búsqueda":
-                  return "new";
-                case "En preparación":
-                  return "working";
-                case "Finalizado":
-                  return "qualified";
-                case "Archivado":
-                  return "archived";
-                default:
-                  return status.toLowerCase();
-              }
-            });
-            if (
-              !mappedStatuses.includes(prospect.prospects.status.toLowerCase())
-            )
-              return false;
-          } else {
-            const listing = operation.rawData as ListingWithDetails;
-            // Check prospect status first, fall back to mapped regular status
-            if (listing.listings.prospectStatus) {
-              // If we have a prospect status, check against it directly
-              if (!filterValues.includes(listing.listings.prospectStatus))
-                return false;
-            } else {
-              // Fall back to mapping regular status to display status for comparison
-              const displayStatus = getListingStatus(
-                listing.listings.prospectStatus,
-                listing.listings.status,
-              );
-              if (!filterValues.includes(displayStatus)) return false;
+          // Map the filter status values to database status values
+          const mappedStatuses = filterValues.map((status) => {
+            switch (status) {
+              case "En búsqueda":
+                return "new";
+              case "Finalizado":
+                return "qualified";
+              case "Archivado":
+                return "archived";
+              default:
+                return status.toLowerCase();
             }
-          }
+          });
+          if (
+            !mappedStatuses.includes(prospect.rawData.prospects.status.toLowerCase())
+          )
+            return false;
         }
 
-        // Filter by urgency level (prospects only)
-        if (
-          urgencyLevelFilter &&
-          urgencyLevelFilter !== "all" &&
-          operation.type === "prospect"
-        ) {
+        // Filter by urgency level
+        if (urgencyLevelFilter && urgencyLevelFilter !== "all") {
           const filterValues = urgencyLevelFilter
             .split(",")
             .map((v) => parseInt(v, 10));
-          const prospect = operation.rawData as ProspectWithContact;
-          if (prospect.prospects.urgencyLevel === null) return false;
-          if (!filterValues.includes(prospect.prospects.urgencyLevel))
+          if (prospect.rawData.prospects.urgencyLevel === null) return false;
+          if (!filterValues.includes(prospect.rawData.prospects.urgencyLevel))
             return false;
         }
 
         return true;
       }),
-    [
-      allOperations,
-      prospectTypeFilter,
-      listingTypeFilter,
-      statusFilter,
-      urgencyLevelFilter,
-    ],
+    [allProspects, listingTypeFilter, statusFilter, urgencyLevelFilter],
   );
 
   const resizeStartRef = useRef<{ x: number; width: number } | null>(null);
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("es-ES", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    }).format(date);
-  };
 
   const handleStatusUpdate = async (
-    operationId: string,
-    operationType: "prospect" | "listing",
+    prospectId: string,
     newStatus: string,
   ) => {
     // Optimistic update - show change immediately
     setOptimisticStatuses((prev) => ({
       ...prev,
-      [operationId]: newStatus,
+      [prospectId]: newStatus,
     }));
 
-    setUpdatingStatus(operationId);
+    setUpdatingStatus(prospectId);
 
     try {
-      const [, id] = operationId.split("-");
+      const [, id] = prospectId.split("-");
       if (!id) return;
 
       const numericId = BigInt(id);
-
-      if (operationType === "prospect") {
-        await updateProspectWithAuth(numericId, { status: newStatus });
-      } else if (operationType === "listing") {
-        await updateListingWithAuth(numericId, { prospectStatus: newStatus });
-      }
+      await updateProspectWithAuth(numericId, { status: newStatus });
 
       // Clear optimistic status after successful update
       setOptimisticStatuses((prev) => {
         const newStatuses = { ...prev };
-        delete newStatuses[operationId];
+        delete newStatuses[prospectId];
         return newStatuses;
       });
 
@@ -683,7 +547,7 @@ export function ProspectTable({
       // Revert optimistic update on error
       setOptimisticStatuses((prev) => {
         const newStatuses = { ...prev };
-        delete newStatuses[operationId];
+        delete newStatuses[prospectId];
         return newStatuses;
       });
     } finally {
@@ -754,6 +618,18 @@ export function ProspectTable({
     />
   );
 
+  // Handle row click to open detail sheet
+  const handleRowClick = (prospectId: bigint) => {
+    setSelectedProspectId(prospectId);
+    setIsSheetOpen(true);
+  };
+
+  // Handle sheet close
+  const handleSheetClose = () => {
+    setIsSheetOpen(false);
+    setSelectedProspectId(null);
+  };
+
   // Intersection Observer for lazy loading
   const observeRow = useCallback(
     (element: HTMLElement | null, operationId: string) => {
@@ -796,9 +672,9 @@ export function ProspectTable({
 
   // Initialize visible rows for first few items (above fold)
   useEffect(() => {
-    const initialVisibleIds = allOperations.slice(0, 5).map((op) => op.id);
+    const initialVisibleIds = allProspects.slice(0, 5).map((p) => p.id);
     setVisibleRows(new Set(initialVisibleIds));
-  }, [allOperations]);
+  }, [allProspects]);
 
   // Smart prefetching - preload next page when user is near the end
   useEffect(() => {
@@ -870,7 +746,7 @@ export function ProspectTable({
                   className="relative"
                   style={getColumnStyle("operacion")}
                 >
-                  <div className="truncate">Operación</div>
+                  <div className="truncate">Demanda</div>
                   <ResizeHandle column="operacion" />
                 </TableHead>
                 <TableHead
@@ -903,52 +779,42 @@ export function ProspectTable({
                 </TableHead>
                 <TableHead
                   className="relative"
-                  style={getColumnStyle("creado")}
+                  style={getColumnStyle("conexiones")}
                 >
-                  <div className="truncate">Creado</div>
-                  <ResizeHandle column="creado" />
+                  <div className="truncate">Conexiones</div>
+                  <ResizeHandle column="conexiones" />
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredOperations.length === 0 ? (
+              {filteredProspects.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={6}
                     className="h-24 text-center text-muted-foreground"
                   >
-                    No se encontraron operaciones
+                    No se encontraron prospectos
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredOperations.map((operation) => {
-                  const isVisible = visibleRows.has(operation.id);
+                filteredProspects.map((prospect) => {
+                  const isVisible = visibleRows.has(prospect.id);
 
                   return (
                     <TableRow
-                      key={operation.id}
-                      ref={(el) => observeRow(el, operation.id)}
-                      className={
-                        operation.type === "listing"
-                          ? "cursor-pointer hover:bg-gray-50"
-                          : ""
-                      }
-                      onClick={() => {
-                        if (operation.type === "listing") {
-                          const listing =
-                            operation.rawData as ListingWithDetails;
-                          window.location.href = `/propiedades/${listing.listings.id}`;
-                        }
-                      }}
+                      key={prospect.id}
+                      ref={(el) => observeRow(el, prospect.id)}
+                      className="cursor-pointer transition-colors hover:bg-gray-50"
+                      onClick={() => handleRowClick(prospect.rawData.prospects.id)}
                     >
                       {/* Operación Column */}
                       <TableCell
                         className="overflow-hidden"
                         style={getColumnStyle("operacion")}
                       >
-                        <div className="truncate">
-                          <span className="text-sm font-medium text-gray-900">
-                            {operation.operationType}
+                        <div className="line-clamp-2">
+                          <span className="text-sm font-medium leading-tight text-gray-900">
+                            {prospect.operationType}
                           </span>
                         </div>
                       </TableCell>
@@ -959,27 +825,21 @@ export function ProspectTable({
                         style={getColumnStyle("contacto")}
                       >
                         <div className="truncate">
-                          {operation.contact ? (
-                            <div
-                              className="-m-2 cursor-pointer rounded-lg p-2 transition-all duration-200 hover:scale-[1.01] hover:bg-gray-100 hover:shadow-md"
-                              onClick={() =>
-                                (window.location.href = `/contactos/${operation.contact?.id}`)
-                              }
-                            >
-                              <div className="truncate font-medium text-gray-900">
-                                {operation.contact.name}
-                              </div>
-                              {operation.contact.email && (
-                                <div className="truncate text-sm text-gray-500">
-                                  {operation.contact.email}
-                                </div>
-                              )}
+                          <div
+                            className="-m-2 cursor-pointer rounded-lg p-2 transition-all duration-200 hover:scale-[1.01] hover:bg-gray-100 hover:shadow-md"
+                            onClick={() =>
+                              (window.location.href = `/contactos/${prospect.contact.id}`)
+                            }
+                          >
+                            <div className="truncate font-medium text-gray-900">
+                              {prospect.contact.name}
                             </div>
-                          ) : (
-                            <span className="text-sm text-gray-500">
-                              Sin contacto
-                            </span>
-                          )}
+                            {prospect.contact.email && (
+                              <div className="truncate text-sm text-gray-500">
+                                {prospect.contact.email}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </TableCell>
 
@@ -996,11 +856,11 @@ export function ProspectTable({
                                 variant="ghost"
                                 size="sm"
                                 className="group h-8 px-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
-                                disabled={updatingStatus === operation.id}
+                                disabled={updatingStatus === prospect.id}
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <span className="truncate">
-                                  {operation.status}
+                                  {prospect.status}
                                 </span>
                                 <ChevronDown className="ml-1 h-3 w-3 opacity-40 transition-opacity group-hover:opacity-70" />
                               </Button>
@@ -1009,44 +869,17 @@ export function ProspectTable({
                               align="center"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              {operation.type === "prospect"
-                                ? // Prospect status options
-                                  PROSPECT_STATUSES.map((status) => (
-                                    <DropdownMenuItem
-                                      key={status}
-                                      onClick={() =>
-                                        handleStatusUpdate(
-                                          operation.id,
-                                          operation.type,
-                                          status,
-                                        )
-                                      }
-                                      disabled={updatingStatus === operation.id}
-                                    >
-                                      {getStatusDisplay(status)}
-                                    </DropdownMenuItem>
-                                  ))
-                                : // Listing status options (custom for listings)
-                                  [
-                                    "Completar datos",
-                                    "Visita o llaves pendiente",
-                                    "Valoración pendiente",
-                                    "Firma encargo pendiente",
-                                  ].map((status) => (
-                                    <DropdownMenuItem
-                                      key={status}
-                                      onClick={() =>
-                                        handleStatusUpdate(
-                                          operation.id,
-                                          operation.type,
-                                          status,
-                                        )
-                                      }
-                                      disabled={updatingStatus === operation.id}
-                                    >
-                                      {status}
-                                    </DropdownMenuItem>
-                                  ))}
+                              {PROSPECT_STATUSES.map((status) => (
+                                <DropdownMenuItem
+                                  key={status}
+                                  onClick={() =>
+                                    handleStatusUpdate(prospect.id, status)
+                                  }
+                                  disabled={updatingStatus === prospect.id}
+                                >
+                                  {getStatusDisplay(status)}
+                                </DropdownMenuItem>
+                              ))}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -1058,30 +891,27 @@ export function ProspectTable({
                         style={getColumnStyle("ubicacion")}
                       >
                         <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                          <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-gray-400" />
                           <div className="min-w-0 flex-1">
-                            {operation.type === "prospect" ? (
-                              (() => {
-                                const areas = parsePreferredAreas(
-                                  (operation.rawData as ProspectWithContact)
-                                    .prospects.preferredAreas,
-                                );
+                            {(() => {
+                              const areas = parsePreferredAreas(
+                                prospect.rawData.prospects.preferredAreas,
+                              );
+                              const cities = parsePreferredCities(
+                                prospect.rawData.prospects.preferredCities,
+                              );
 
-                                if (areas.length === 0) {
-                                  return (
-                                    <span className="text-xs text-muted-foreground">
-                                      Sin especificar
-                                    </span>
-                                  );
-                                }
-
+                              // Show areas if available
+                              if (areas.length > 0) {
                                 if (areas.length === 1) {
                                   return (
-                                    <div
-                                      className="truncate text-xs"
-                                      title={areas[0]}
-                                    >
-                                      {areas[0]}
+                                    <div className="flex items-center gap-1">
+                                      <MapPin className="h-3 w-3 flex-shrink-0 text-gray-400" />
+                                      <div
+                                        className="truncate text-xs"
+                                        title={areas[0]}
+                                      >
+                                        {areas[0]}
+                                      </div>
                                     </div>
                                   );
                                 }
@@ -1091,28 +921,79 @@ export function ProspectTable({
                                     {areas.slice(0, 2).map((area, index) => (
                                       <div
                                         key={index}
-                                        className="truncate text-xs"
-                                        title={area}
+                                        className="flex items-center gap-1"
                                       >
-                                        • {area}
+                                        <MapPin className="h-3 w-3 flex-shrink-0 text-gray-400" />
+                                        <div
+                                          className="truncate text-xs"
+                                          title={area}
+                                        >
+                                          {area}
+                                        </div>
                                       </div>
                                     ))}
                                     {areas.length > 2 && (
-                                      <div className="text-xs text-muted-foreground">
-                                        +{areas.length - 2} más
+                                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                        <MapPin className="h-3 w-3 flex-shrink-0 opacity-50" />
+                                        <span>+{areas.length - 2} más</span>
                                       </div>
                                     )}
                                   </div>
                                 );
-                              })()
-                            ) : (
-                              <div
-                                className="truncate text-xs"
-                                title={operation.location}
-                              >
-                                {operation.location}
-                              </div>
-                            )}
+                              }
+
+                              // Fallback to cities if no areas
+                              if (cities.length > 0) {
+                                if (cities.length === 1) {
+                                  return (
+                                    <div className="flex items-center gap-1">
+                                      <MapPin className="h-3 w-3 flex-shrink-0 text-gray-400" />
+                                      <div
+                                        className="truncate text-xs"
+                                        title={cities[0]}
+                                      >
+                                        {cities[0]}
+                                      </div>
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <div className="space-y-0.5">
+                                    {cities.slice(0, 2).map((city, index) => (
+                                      <div
+                                        key={index}
+                                        className="flex items-center gap-1"
+                                      >
+                                        <MapPin className="h-3 w-3 flex-shrink-0 text-gray-400" />
+                                        <div
+                                          className="truncate text-xs"
+                                          title={city}
+                                        >
+                                          {city}
+                                        </div>
+                                      </div>
+                                    ))}
+                                    {cities.length > 2 && (
+                                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                        <MapPin className="h-3 w-3 flex-shrink-0 opacity-50" />
+                                        <span>+{cities.length - 2} más</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              }
+
+                              // No areas or cities
+                              return (
+                                <div className="flex items-center gap-1">
+                                  <MapPin className="h-3 w-3 flex-shrink-0 text-gray-400" />
+                                  <span className="text-xs text-muted-foreground">
+                                    Sin especificar
+                                  </span>
+                                </div>
+                              );
+                            })()}
                           </div>
                         </div>
                       </TableCell>
@@ -1123,20 +1004,22 @@ export function ProspectTable({
                         style={getColumnStyle("resumen")}
                       >
                         {isVisible ? (
-                          <SummaryComponent operation={operation} />
+                          <SummaryComponent prospect={prospect} />
                         ) : (
                           <Skeleton className="h-16 w-full rounded-lg" />
                         )}
                       </TableCell>
 
-                      {/* Creado Column */}
+                      {/* Conexiones Column */}
                       <TableCell
-                        className="overflow-hidden text-xs text-muted-foreground"
-                        style={getColumnStyle("creado")}
+                        className="overflow-hidden"
+                        style={getColumnStyle("conexiones")}
                       >
-                        <div className="truncate">
-                          {formatDate(operation.createdAt)}
-                        </div>
+                        {isVisible ? (
+                          <MatchBadges matchCounts={prospect.rawData.matchCounts} />
+                        ) : (
+                          <Skeleton className="h-8 w-full rounded-lg" />
+                        )}
                       </TableCell>
                     </TableRow>
                   );
@@ -1155,6 +1038,14 @@ export function ProspectTable({
           className="mt-4"
         />
       )}
+
+      {/* Prospect Detail Sheet */}
+      <ProspectDetailSheet
+        prospectId={selectedProspectId}
+        isOpen={isSheetOpen}
+        onClose={handleSheetClose}
+        onUpdate={onProspectUpdate}
+      />
     </div>
   );
 }

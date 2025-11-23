@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "~/components/ui/button";
-import { TrendingUp, Plus } from "lucide-react";
+import { TrendingUp, Plus, Info } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { LeadFilter } from "~/components/leads/lead-filter";
 import { LeadTable } from "~/components/leads/lead-table";
@@ -11,6 +11,7 @@ import {
   LeadPageSkeleton,
   EmptyLeadsState,
 } from "~/components/leads/lead-skeletons";
+import { LeadsInfoModal } from "~/components/leads/leads-info-modal";
 import { listLeadsWithAuth } from "~/server/queries/lead";
 import { getAllAgentsWithAuth } from "~/server/queries/listing";
 import { toast } from "~/components/hooks/use-toast";
@@ -28,6 +29,7 @@ export default function LeadsPage() {
   const [error, setError] = useState<string | null>(null);
   const [agents, setAgents] = useState<Array<{ id: string; name: string }>>([]);
   const prefetchCacheRef = useRef<Map<number, LeadWithDetails[]>>(new Map());
+  const [infoModalOpen, setInfoModalOpen] = useState(false);
 
   // Get view mode from URL (default to list since Kanban is disabled)
   const view = (searchParams.get("view") ?? "list") as "kanban" | "list";
@@ -275,7 +277,18 @@ export default function LeadsPage() {
       <div className="space-y-4 sm:space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 space-y-1">
-            <h1 className="truncate text-xl font-bold sm:text-2xl">Conexiones</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="truncate text-xl font-bold sm:text-2xl">Conexiones</h1>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setInfoModalOpen(true)}
+                className="h-8 w-8 p-0"
+                title="¿Qué son las conexiones?"
+              >
+                <Info className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+              </Button>
+            </div>
             <p className="text-xs text-muted-foreground sm:text-sm">
               Gestiona las conexiones entre demandantes y propietarios
             </p>
@@ -288,6 +301,12 @@ export default function LeadsPage() {
             <p className="mt-1 break-words text-xs sm:text-sm">{error}</p>
           </div>
         </div>
+
+        {/* Info Modal */}
+        <LeadsInfoModal
+          open={infoModalOpen}
+          onOpenChange={setInfoModalOpen}
+        />
       </div>
     );
   }
@@ -302,7 +321,18 @@ export default function LeadsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 space-y-1">
-          <h1 className="truncate text-xl font-bold sm:text-2xl">Conexiones</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="truncate text-xl font-bold sm:text-2xl">Conexiones</h1>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setInfoModalOpen(true)}
+              className="h-8 w-8 p-0"
+              title="¿Qué son las conexiones?"
+            >
+              <Info className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+            </Button>
+          </div>
           <p className="text-xs text-muted-foreground sm:text-sm">
             Gestiona las conexiones entre demandantes y propietarios
           </p>
@@ -341,6 +371,12 @@ export default function LeadsPage() {
           </p>
         </div>
       )}
+
+      {/* Info Modal */}
+      <LeadsInfoModal
+        open={infoModalOpen}
+        onOpenChange={setInfoModalOpen}
+      />
     </div>
   );
 }

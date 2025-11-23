@@ -1,7 +1,14 @@
 "use server";
 import { db } from "~/server/db";
-import { eq, and } from "drizzle-orm";
-import { prospects, contacts } from "~/server/db/schema";
+import { eq, and, sql, desc } from "drizzle-orm";
+import {
+  prospects,
+  contacts,
+  prospectListingMatches,
+  listings,
+  properties,
+  locations,
+} from "~/server/db/schema";
 import { createProspectHistory } from "~/server/queries/prospect-history";
 import { getCurrentUserAccountId } from "~/lib/dal";
 
@@ -239,6 +246,23 @@ export async function getAllProspects(accountId: number) {
         createdAt: contacts.createdAt,
         updatedAt: contacts.updatedAt,
       },
+      matchCounts: sql<{
+        high: number;
+        medium: number;
+        low: number;
+        total: number;
+      } | null>`
+        (SELECT json_build_object(
+          'high', COALESCE(COUNT(CASE WHEN ${prospectListingMatches.confidenceLevel} = 'high' THEN 1 END), 0)::int,
+          'medium', COALESCE(COUNT(CASE WHEN ${prospectListingMatches.confidenceLevel} = 'medium' THEN 1 END), 0)::int,
+          'low', COALESCE(COUNT(CASE WHEN ${prospectListingMatches.confidenceLevel} = 'low' THEN 1 END), 0)::int,
+          'total', COALESCE(COUNT(*), 0)::int
+        )
+        FROM ${prospectListingMatches}
+        WHERE ${prospectListingMatches.prospectId} = ${prospects.id}
+          AND ${prospectListingMatches.isStale} = false
+          AND ${prospectListingMatches.accountId} = ${BigInt(accountId)})
+      `,
     })
     .from(prospects)
     .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
@@ -465,4 +489,106 @@ export async function getProspectsByContact(
         eq(contacts.accountId, BigInt(accountId)),
       ),
     );
+}
+
+// Get prospect with all its matches (internal and external)
+export async function getProspectWithMatchesWithAuth(prospectId: bigint) {
+  console.log("🔍 [getProspectWithMatchesWithAuth] Starting query for prospectId:", prospectId.toString());
+  const accountId = await getCurrentUserAccountId();
+  console.log("👤 [getProspectWithMatchesWithAuth] AccountId:", accountId);
+
+  // Get prospect details with contact
+  const prospectData = await db
+    .select({
+      prospect: prospects,
+      contact: contacts,
+    })
+    .from(prospects)
+    .innerJoin(contacts, eq(prospects.contactId, contacts.contactId))
+    .where(
+      and(
+        eq(prospects.id, prospectId),
+        eq(contacts.accountId, BigInt(accountId)),
+      ),
+    )
+    .limit(1);
+
+  console.log("📋 [getProspectWithMatchesWithAuth] Prospect data found:", prospectData.length);
+
+  if (prospectData.length === 0) {
+    console.error("❌ [getProspectWithMatchesWithAuth] Prospect not found or unauthorized");
+    throw new Error("Prospect not found or unauthorized");
+  }
+
+  // Get all matches for this prospect
+  const matchesData = await db
+    .select({
+      // Match metadata
+      matchData: prospectListingMatches,
+
+      // Listing data
+      listingData: listings,
+
+      // Property data
+      propertyData: properties,
+
+      // Location data (can be null due to leftJoin)
+      locationData: locations,
+    })
+    .from(prospectListingMatches)
+    .innerJoin(
+      listings,
+      eq(prospectListingMatches.listingId, listings.listingId),
+    )
+    .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+    .leftJoin(
+      locations,
+      eq(properties.neighborhoodId, locations.neighborhoodId),
+    )
+    .where(
+      and(
+        eq(prospectListingMatches.prospectId, prospectId),
+        eq(prospectListingMatches.accountId, BigInt(accountId)),
+        eq(prospectListingMatches.isStale, false),
+      ),
+    );
+
+  console.log("🎯 [getProspectWithMatchesWithAuth] Matches found:", matchesData.length);
+  console.log("📊 [getProspectWithMatchesWithAuth] Sample match:", matchesData[0]);
+
+  // Transform matches data to expected format
+  const transformedMatches = matchesData.map((match) => ({
+    matchId: match.matchData.id,
+    matchType: match.matchData.matchType,
+    priceMatch: match.matchData.priceMatch,
+    isCrossAccount: match.matchData.isCrossAccount,
+    toleranceReasons: match.matchData.toleranceReasons,
+    listingId: match.listingData.listingId,
+    listingAccountId: match.listingData.accountId,
+    price: match.listingData.price,
+    listingType: match.listingData.listingType,
+    propertyId: match.propertyData.propertyId,
+    propertyType: match.propertyData.propertyType,
+    bedrooms: match.propertyData.bedrooms,
+    bathrooms: match.propertyData.bathrooms,
+    squareMeter: match.propertyData.squareMeter,
+    street: match.propertyData.street,
+    imageUrl: match.propertyData.imageUrl,
+    city: match.locationData?.city ?? null,
+    neighborhood: match.locationData?.neighborhood ?? null,
+  }));
+
+  const result = {
+    prospect: prospectData[0].prospect,
+    contact: prospectData[0].contact,
+    matches: transformedMatches,
+  };
+
+  console.log("✅ [getProspectWithMatchesWithAuth] Returning result:", {
+    prospectId: result.prospect.id.toString(),
+    contactId: result.contact.contactId.toString(),
+    matchesCount: result.matches.length,
+  });
+
+  return result;
 }

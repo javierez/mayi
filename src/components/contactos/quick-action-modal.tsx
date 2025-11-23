@@ -28,12 +28,14 @@ import {
   Search,
   X,
   User,
+  FileText,
 } from "lucide-react";
 import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 import { NotesAiButtons, type TransformationType } from "~/components/shared/notes-ai-buttons";
 import { NotesTransformationPreviewModal } from "~/components/shared/notes-transformation-preview-modal";
 import { TaskSelectionModal } from "~/components/shared/task-selection-modal";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
+import { ContactSolicitudModal } from "~/components/contactos/detail/solicitudes/contact-solicitud-modal";
 import { createListingContactActivityAction } from "~/server/actions/listing-contact-activity";
 import { createContactActivityAction, findListingContactIdAction, createListingContactRelationshipAction } from "~/server/actions/contact-activity";
 import { listListingsCompactWithAuth, listListingsForContactWithAuth } from "~/server/queries/listing";
@@ -50,7 +52,7 @@ interface QuickActionModalProps {
   onSuccess?: () => void;
 }
 
-type ActivityType = "mail" | "whatsapp" | "call" | "visit" | "otros";
+type ActivityType = "mail" | "whatsapp" | "call" | "visit" | "demanda" | "otros";
 
 interface Contact {
   contactId: bigint;
@@ -86,6 +88,7 @@ const ACTIVITY_TYPES: Array<{
   { type: "whatsapp", label: "WhatsApp", action: "whatsapp_sent", icon: MessageSquare },
   { type: "call", label: "Llamada", action: "call_logged", icon: Phone },
   { type: "visit", label: "Visita en Persona", action: "viewing_completed", icon: UserCheck },
+  { type: "demanda", label: "Añadir demanda", action: "notes_added", icon: FileText },
   { type: "otros", label: "Otros", action: "notes_added", icon: MoreHorizontal },
 ];
 
@@ -122,6 +125,9 @@ export function QuickActionModal({
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingListingId, setPendingListingId] = useState<bigint | null>(null);
 
+  // Solicitud modal state
+  const [showSolicitudModal, setShowSolicitudModal] = useState(false);
+
   // Reset form when modal closes
   React.useEffect(() => {
     if (!open) {
@@ -147,6 +153,8 @@ export function QuickActionModal({
       // Reset confirmation dialog state
       setShowConfirmDialog(false);
       setPendingListingId(null);
+      // Reset solicitud modal state
+      setShowSolicitudModal(false);
     }
   }, [open]);
 
@@ -292,6 +300,13 @@ export function QuickActionModal({
   };
 
   const handleActivityTypeSelect = (type: ActivityType) => {
+    // Special handling for demanda - open ContactSolicitudModal on top
+    if (type === "demanda") {
+      setShowSolicitudModal(true);
+      // Keep the quick action modal open in the background
+      return;
+    }
+
     const activityConfig = ACTIVITY_TYPES.find((a) => a.type === type);
     if (activityConfig) {
       setSelectedType(type);
@@ -726,14 +741,17 @@ export function QuickActionModal({
           </div>
         ) : step === "activity" ? (
           /* Step 2: Activity Type Selection */
-          <div className="grid grid-cols-2 gap-3 py-4">
+          <div className="grid grid-cols-3 gap-3 py-4">
             {ACTIVITY_TYPES.map((activityType) => {
               const Icon = activityType.icon;
+              const isOtros = activityType.type === "otros";
               return (
                 <Button
                   key={activityType.type}
                   variant="outline"
-                  className="flex h-24 flex-col items-center justify-center gap-2"
+                  className={`flex h-24 flex-col items-center justify-center gap-2 ${
+                    isOtros ? "col-start-3" : ""
+                  }`}
                   onClick={() => handleActivityTypeSelect(activityType.type)}
                 >
                   <Icon className="h-6 w-6" />
@@ -1030,6 +1048,22 @@ export function QuickActionModal({
         onConfirm={handleConfirmCreateRelationship}
         onCancel={handleCancelCreateRelationship}
       />
+
+      {/* Contact Solicitud Modal - opened when "Añadir demanda" is clicked */}
+      {selectedContact && (
+        <ContactSolicitudModal
+          open={showSolicitudModal}
+          onOpenChange={setShowSolicitudModal}
+          contactId={selectedContact.contactId}
+          onSuccess={() => {
+            setShowSolicitudModal(false);
+            onOpenChange(false); // Close the quick action modal too
+            if (onSuccess) {
+              onSuccess();
+            }
+          }}
+        />
+      )}
     </Dialog>
   );
 }

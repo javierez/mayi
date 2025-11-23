@@ -319,6 +319,11 @@ export function ConexionesPotenciales({
   const groupMatchesByContact = (matches: ProspectMatch[]) => {
     const grouped = matches.reduce(
       (acc, match) => {
+        // Add null check for prospect.contacts
+        if (!match.prospect?.contacts?.contactId) {
+          console.warn("Match missing contact data:", match);
+          return acc;
+        }
         const contactId = match.prospect.contacts.contactId.toString();
         acc[contactId] ??= [];
         acc[contactId].push(match);
@@ -333,6 +338,10 @@ export function ConexionesPotenciales({
   const groupMatchesByProspect = (matches: ProspectMatch[]) => {
     const grouped = matches.reduce(
       (acc, match) => {
+        if (!match.prospectId) {
+          console.warn("Match missing prospectId:", match);
+          return acc;
+        }
         const prospectId = match.prospectId.toString();
         acc[prospectId] ??= [];
         acc[prospectId].push(match);
@@ -357,10 +366,38 @@ export function ConexionesPotenciales({
     );
   };
 
-  // Handle refresh
-  const handleRefresh = () => {
-    void fetchMatches();
-    void fetchExternalMatches();
+  // Handle refresh - triggers match recalculation
+  const handleRefresh = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      console.log("🔄 Triggering match recalculation...");
+
+      // Call API to recalculate and store matches
+      const response = await fetch("/api/matches/calculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clearStale: true }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to recalculate matches");
+      }
+
+      const result = (await response.json()) as { success: boolean; message?: string };
+      console.log("✅ Match recalculation completed:", result);
+
+      // Refresh the displayed matches after recalculation
+      await Promise.all([fetchMatches(), fetchExternalMatches()]);
+    } catch (error) {
+      console.error("❌ Error during match recalculation:", error);
+      setError(
+        "Error al recalcular las coincidencias. Inténtalo de nuevo."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Handle opening solicitud modal

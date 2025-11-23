@@ -261,7 +261,7 @@ export function LeadFilter({ view, onViewChange, agents }: LeadFilterProps) {
               placeholder="Buscar por contacto, propietario o propiedad..."
               value={searchQuery}
               onChange={handleSearchChange}
-              className="pl-9"
+              className="h-8 pl-9"
             />
           </div>
         </form>

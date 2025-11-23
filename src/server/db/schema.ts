@@ -839,6 +839,126 @@ export const prospectHistory = pgTable("prospect_history", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Prospect-Listing Matches table (pre-calculated matches for performance)
+// Indexes will be created in migration file for better control
+export const prospectListingMatches = pgTable("prospect_listing_matches", {
+  // Primary Key
+  id: bigserial("id", { mode: "bigint" }).primaryKey(),
+
+  // Foreign Keys
+  prospectId: bigint("prospect_id", { mode: "bigint" }).notNull(), // FK → prospects.prospect_id
+  listingId: bigint("listing_id", { mode: "bigint" }).notNull(), // FK → listings.listing_id
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id (for multi-tenant queries)
+
+  // Match Quality Score (0-100)
+  matchQualityScore: smallint("match_quality_score"), // Overall quality score: considers all factors weighted
+  confidenceLevel: varchar("confidence_level", { length: 20 }), // 'high' | 'medium' | 'low' based on match quality
+
+  // Match Metadata
+  matchType: varchar("match_type", { length: 20 }).notNull(), // 'strict' | 'near-strict'
+  toleranceReasons: jsonb("tolerance_reasons"), // Array of strings: ["Price +3.2%", "Area -4.1%"]
+  priceMatch: varchar("price_match", { length: 20 }).notNull(), // 'exact' | 'tolerance' | 'out-of-range'
+
+  // Cross-Account Flag
+  isCrossAccount: boolean("is_cross_account").notNull().default(false),
+  crossAccountId: bigint("cross_account_id", { mode: "bigint" }), // Account ID of the listing if cross-account
+
+  // Detailed Match Scores (for sorting and filtering)
+  priceMatchScore: smallint("price_match_score"), // 0-100: How well price matches (100 = exact, lower = more deviation)
+  locationMatchScore: smallint("location_match_score"), // 0-100: How well location matches
+  featureMatchScore: smallint("feature_match_score"), // 0-100: How many required features are met
+  sizeMatchScore: smallint("size_match_score"), // 0-100: How well bedrooms/bathrooms/area match
+  urgencyScore: smallint("urgency_score"), // 0-100: Based on prospect's urgency level and moveInBy date
+
+  // Tolerance Details (for debugging/filtering)
+  priceDeviation: decimal("price_deviation", { precision: 5, scale: 2 }), // Percentage deviation from prospect's range
+  areaDeviation: decimal("area_deviation", { precision: 5, scale: 2 }), // Percentage deviation from prospect's range
+  bedroomDifference: smallint("bedroom_difference"), // Difference: listing.bedrooms - prospect.minBedrooms (positive = extra bedrooms)
+  bathroomDifference: smallint("bathroom_difference"), // Difference: listing.bathrooms - prospect.minBathrooms
+
+  // Location Match Details
+  locationMatchType: varchar("location_match_type", { length: 20 }), // 'string-similarity' | 'geolocation' | 'both' | 'exact'
+  distanceKm: decimal("distance_km", { precision: 5, scale: 2 }), // Distance in kilometers if geolocation match
+  neighborhoodMatch: boolean("neighborhood_match"), // True if neighborhood name matches exactly
+
+  // Feature Matching Details
+  missingFeatures: jsonb("missing_features"), // Array of features prospect wants but listing doesn't have: ["elevator", "garage"]
+  extraFeatures: jsonb("extra_features"), // Array of bonus features listing has that prospect didn't require: ["pool", "garden"]
+  featureMatchPercentage: smallint("feature_match_percentage"), // 0-100: Percentage of required features that are present
+
+  // Business Logic Flags
+  isAutoMatched: boolean("is_auto_matched").default(true), // True if auto-calculated, false if manually created by agent
+  requiresManualReview: boolean("requires_manual_review").default(false), // Flag for matches that need agent review
+  reviewedBy: varchar("reviewed_by", { length: 36 }), // FK → users.id (agent who reviewed this match)
+  reviewedAt: timestamp("reviewed_at"), // When the match was manually reviewed
+  reviewNotes: text("review_notes"), // Agent notes about this match
+
+  // Match Status Tracking
+  matchStatus: varchar("match_status", { length: 30 }).default("new"), // 'new' | 'viewed' | 'shared' | 'contacted' | 'dismissed' | 'lead_created'
+  viewedAt: timestamp("viewed_at"), // When agent first viewed this match
+  viewCount: integer("view_count").default(0), // How many times this match was viewed
+  sharedAt: timestamp("shared_at"), // When match was shared with prospect
+  sharedBy: varchar("shared_by", { length: 36 }), // FK → users.id (agent who shared)
+
+  // Lead Conversion Tracking
+  leadCreatedAt: timestamp("lead_created_at"), // When a lead was created from this match
+  leadId: bigint("lead_id", { mode: "bigint" }), // FK → listing_contacts.id if lead created
+  leadStatus: varchar("lead_status", { length: 50 }), // Current status of the lead (if created)
+
+  // Dismissal Tracking
+  dismissedAt: timestamp("dismissed_at"), // When match was dismissed
+  dismissedBy: varchar("dismissed_by", { length: 36 }), // FK → users.id (who dismissed it)
+  dismissalReason: varchar("dismissal_reason", { length: 50 }), // 'not_interested' | 'already_seen' | 'wrong_criteria' | 'other'
+  dismissalNotes: text("dismissal_notes"), // Optional notes about why dismissed
+
+  // Analytics & ML Features
+  prospectEngagementScore: smallint("prospect_engagement_score"), // 0-100: How engaged this prospect typically is
+  historicalConversionRate: decimal("historical_conversion_rate", {
+    precision: 5,
+    scale: 2,
+  }), // Percentage: Similar matches that converted to deals
+  similarMatchesCount: integer("similar_matches_count"), // How many similar matches exist for this prospect
+  competitionLevel: varchar("competition_level", { length: 20 }), // 'high' | 'medium' | 'low' (how many other prospects match this listing)
+
+  // Time-sensitive Factors
+  prospectUrgency: smallint("prospect_urgency"), // 1-5: Copy of prospect's urgency level at time of match
+  daysUntilMoveIn: integer("days_until_move_in"), // Days between calculatedAt and prospect's moveInBy date
+  listingAgeInDays: integer("listing_age_in_days"), // How old the listing was when match was calculated
+  isNewListing: boolean("is_new_listing"), // True if listing was created within last 7 days
+
+  // Notification & Communication Tracking
+  notificationSent: boolean("notification_sent").default(false), // Whether agent was notified about this match
+  notificationSentAt: timestamp("notification_sent_at"),
+  prospectNotified: boolean("prospect_notified").default(false), // Whether prospect was notified
+  prospectNotifiedAt: timestamp("prospect_notified_at"),
+  emailSent: boolean("email_sent").default(false),
+  emailSentAt: timestamp("email_sent_at"),
+
+  // Pricing Intelligence
+  pricePerSqMeter: decimal("price_per_sq_meter", { precision: 10, scale: 2 }), // Calculated at match time
+  isGoodDeal: boolean("is_good_deal"), // True if price is below market average for area
+  marketPriceDeviation: decimal("market_price_deviation", {
+    precision: 5,
+    scale: 2,
+  }), // Percentage above/below market price
+
+  // Timestamps
+  calculatedAt: timestamp("calculated_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at"), // For TTL-based invalidation (optional)
+  firstCalculatedAt: timestamp("first_calculated_at"), // When this match was first created (doesn't change on recalc)
+
+  // Soft Delete / Stale Flag
+  isStale: boolean("is_stale").default(false), // Mark as stale instead of deleting
+  staleReason: varchar("stale_reason", { length: 100 }), // 'recalculated' | 'prospect_updated' | 'listing_updated' | 'listing_sold'
+
+  // System Fields
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+
+  // Version tracking (for schema evolution)
+  schemaVersion: smallint("schema_version").default(1), // Track which version of matching algorithm was used
+});
+
 // Testimonials table
 export const testimonials = pgTable("testimonials", {
   testimonialId: bigserial("testimonial_id", { mode: "bigint" })

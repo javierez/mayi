@@ -40,6 +40,7 @@ import type { LeadStatus } from "~/lib/constants/lead-statuses";
 import { useRouter } from "next/navigation";
 import { ContactDetailSheet } from "~/components/contactos/contact-detail-sheet";
 import type { ContactSheetData, OwnerContact } from "~/types/activity";
+import Image from "next/image";
 
 // Lead type with joined data (based on what we expect from queries)
 export type LeadWithDetails = {
@@ -104,6 +105,18 @@ interface LeadTableProps {
   onLeadUpdate?: () => void;
   onPrefetchPage?: (page: number) => Promise<void>;
 }
+
+// Portal logo configuration
+const PORTAL_LOGOS: Record<string, string> = {
+  idealista: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-idealista.png",
+  fotocasa: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-fotocasa-min.png",
+  habitaclia: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-habitaclia.png",
+  milanuncios: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-milanuncios.png",
+  "pisos.com": "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-pisos.png",
+  yaencontre: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-yaencontre.png",
+  enalquiler: "https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/logo-ena.svg",
+  kyero: "https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/kyerologo.webp",
+};
 
 export function LeadTable({
   leads,
@@ -175,6 +188,42 @@ export function LeadTable({
       isActive: lead.isActive ?? true,
     };
     setSelectedContact(contactSheet);
+  };
+
+  // Helper function to render source logo or text
+  const renderSource = (source: string | null | undefined) => {
+    if (!source) {
+      return (
+        <Badge variant="outline" className="text-xs">
+          N/A
+        </Badge>
+      );
+    }
+
+    const sourceLower = source.toLowerCase();
+    const logoUrl = PORTAL_LOGOS[sourceLower];
+
+    if (logoUrl) {
+      return (
+        <div className="flex items-center justify-center">
+          <Image
+            src={logoUrl}
+            alt={source}
+            width={80}
+            height={24}
+            className="h-6 w-auto object-contain"
+            unoptimized={logoUrl.endsWith(".svg")}
+          />
+        </div>
+      );
+    }
+
+    // Fallback to text badge if no logo found
+    return (
+      <Badge variant="outline" className="text-xs">
+        {source}
+      </Badge>
+    );
   };
 
   const getBadgeConfig = (lead: LeadWithDetails) => {
@@ -409,7 +458,7 @@ export function LeadTable({
                 <TableHead className="min-w-[200px] md:min-w-[280px]">Propiedad</TableHead>
                 <TableHead className="hidden min-w-[120px] lg:table-cell">Propietario</TableHead>
                 <TableHead className="min-w-[120px]">Estado</TableHead>
-                <TableHead className="hidden min-w-[80px] sm:table-cell">Origen</TableHead>
+                <TableHead className="hidden min-w-[90px] sm:table-cell">Origen</TableHead>
                 <TableHead className="min-w-[90px]">Creado</TableHead>
               </TableRow>
             </TableHeader>
@@ -571,9 +620,7 @@ export function LeadTable({
                     {/* Source */}
                     <TableCell className="hidden sm:table-cell">
                       {isVisible ? (
-                        <Badge variant="outline" className="text-xs">
-                          {lead.source}
-                        </Badge>
+                        renderSource(lead.source)
                       ) : (
                         <Skeleton className="h-6 w-20" />
                       )}

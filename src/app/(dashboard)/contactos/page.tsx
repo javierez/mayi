@@ -13,6 +13,7 @@ import {
   listContactsBuyerDataWithAuth,
 } from "~/server/queries/contact";
 import type { Contact } from "~/lib/data";
+import { CreateContactModal } from "~/components/contactos/create-contact-modal";
 
 // Extended Contact type to include contactType for the UI
 interface ExtendedContact extends Omit<Contact, "contactType"> {
@@ -91,6 +92,7 @@ export default function ContactsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Get filter parameters from URL
   const getFiltersFromUrl = useCallback(() => {
@@ -340,23 +342,22 @@ export default function ContactsPage() {
   }, [getFiltersFromUrl, processContactsData]);
 
   return (
-    <div className="space-y-4">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Contactos</h1>
-        <div className="flex gap-2">
-          <Button asChild>
-            <Link href="/contactos/crear">
+    <>
+      <div className="space-y-4">
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-3xl font-bold tracking-tight">Contactos</h1>
+          <div className="flex gap-2">
+            <Button onClick={() => setIsCreateModalOpen(true)}>
               <Plus className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Agregar Contacto</span>
-            </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/contactos/borradores">
-              <FileText className="h-4 w-4" />
-            </Link>
-          </Button>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/contactos/borradores">
+                <FileText className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
         </div>
-      </div>
 
       <div className="space-y-2">
         <ContactFilter onFilterChange={handleFilterChange} />
@@ -384,5 +385,16 @@ export default function ContactsPage() {
         )}
       </div>
     </div>
+
+      <CreateContactModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+        sourceContext="operaciones"
+        onSuccess={() => {
+          setIsCreateModalOpen(false);
+          router.refresh();
+        }}
+      />
+    </>
   );
 }

@@ -14,7 +14,7 @@ import { motion } from "framer-motion";
 import { GlobalTaskModalTrigger } from "~/components/tasks/global-task-modal";
 import { createQuickPropertyAction } from "~/app/actions/quick-property";
 import { QuickActionModal } from "~/components/contactos/quick-action-modal";
-import { QuickContactModal } from "~/components/contactos/quick-contact-modal";
+import { CreateContactModal } from "~/components/contactos/create-contact-modal";
 import AppointmentModal from "~/components/appointments/appointment-modal";
 
 interface OperacionesQuickActionsCardProps {
@@ -28,7 +28,7 @@ export default function OperacionesQuickActionsCard({
   const [isCreatingProperty, setIsCreatingProperty] = useState(false);
   const [isQuickActionModalOpen, setIsQuickActionModalOpen] = useState(false);
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
-  const [isQuickContactModalOpen, setIsQuickContactModalOpen] = useState(false);
+  const [isCreateContactModalOpen, setIsCreateContactModalOpen] = useState(false);
 
   const handleAddProperty = async () => {
     try {
@@ -58,7 +58,7 @@ export default function OperacionesQuickActionsCard({
     {
       icon: Users,
       label: "Añadir Contacto",
-      onClick: () => setIsQuickContactModalOpen(true),
+      onClick: () => setIsCreateContactModalOpen(true),
     },
     {
       icon: CheckSquare,
@@ -173,9 +173,10 @@ export default function OperacionesQuickActionsCard({
           setIsAppointmentModalOpen(false);
         }}
       />
-      <QuickContactModal
-        open={isQuickContactModalOpen}
-        onOpenChange={setIsQuickContactModalOpen}
+      <CreateContactModal
+        open={isCreateContactModalOpen}
+        onOpenChange={setIsCreateContactModalOpen}
+        sourceContext="operaciones"
         onSuccess={(_contact) => {
           // Refresh the page to show the new contact
           router.refresh();

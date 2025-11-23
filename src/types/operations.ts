@@ -53,10 +53,9 @@ export type BulkActionType =
   | "createTasks"
   | "export";
 
-// Status workflows for different operation types (4 final statuses)
+// Status workflows for different operation types (3 final statuses)
 export const PROSPECT_STATUSES = [
   "En búsqueda",
-  "En preparación",
   "Archivado",
   "Finalizado",
 ] as const;
