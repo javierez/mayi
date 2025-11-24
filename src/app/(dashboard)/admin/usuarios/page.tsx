@@ -14,8 +14,8 @@ export default async function AdminUsuariosPage() {
     redirect("/auth/signin");
   }
 
-  // Check if user has role ID 2 (superadmin)
-  const hasRequiredRole = await userHasRole(session.user.id, 2);
+  // Check if user has role ID 1 (superadmin)
+  const hasRequiredRole = await userHasRole(session.user.id, 1);
 
   if (!hasRequiredRole) {
     redirect("/operaciones");

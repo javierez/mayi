@@ -10,14 +10,11 @@ import {
   DropdownMenuSeparator,
 } from "~/components/ui/dropdown-menu";
 import { Input } from "~/components/ui/input";
-import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import {
   Plus,
   Search,
   CalendarIcon,
   Clock,
-  ChevronLeft,
-  ChevronRight,
   ChevronDown,
   Check,
   Filter,
@@ -49,10 +46,9 @@ import {
 import { Collapsible, CollapsibleContent } from "~/components/ui/collapsible";
 import Image from "next/image"; // Add Image import for optimized images
 import { useWeeklyAppointments } from "~/hooks/use-cached-calendar";
-import CalendarEvent, {
-  ListCalendarEvent,
-  CompactCalendarEvent,
-} from "~/components/appointments/calendar-event";
+import { CalendarListView } from "~/components/appointments/calendar-list-view";
+import { CalendarWeeklyView } from "~/components/appointments/calendar-weekly-view";
+import { MonthlyCalendarView } from "~/components/appointments/monthly-calendar-view";
 import AppointmentModal, {
   useAppointmentModal,
 } from "~/components/appointments/appointment-modal";
@@ -69,7 +65,6 @@ import {
   canDeleteCalendar,
 } from "~/app/actions/permissions/check-permissions";
 import { useSession } from "~/lib/auth-client";
-import { ExpandableSection } from "~/components/propiedades/detail/activity/expandable-section";
 
 // Appointment types configuration
 const appointmentTypes = {
@@ -106,83 +101,83 @@ const getWeekStart = (date: Date) => {
 // Helper to get date string in YYYY-MM-DD
 const getDateString = (date: Date) => date.toISOString().split("T")[0];
 
-// Helper to format date for display in separators
-const formatDateSeparator = (date: Date) => {
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  const isToday = getDateString(date) === getDateString(today);
-  const isTomorrow = getDateString(date) === getDateString(tomorrow);
-  const isYesterday = getDateString(date) === getDateString(yesterday);
-
-  if (isToday) return "Hoy";
-  if (isTomorrow) return "Mañana";
-  if (isYesterday) return "Ayer";
-
-  return new Intl.DateTimeFormat("es-ES", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(date);
-};
-
-// Helper to parse time string to hours and minutes
-const parseTime = (timeStr: string): { hours: number; minutes: number } => {
-  const [hours = 0, minutes = 0] = timeStr.split(":").map(Number);
-  return { hours, minutes };
-};
-
-// Helper to calculate event position and height
-const calculateEventStyle = (startTime: string, endTime: string) => {
-  const start = parseTime(startTime);
-  const end = parseTime(endTime || startTime);
-
-  // Calculate position from top (each hour is 60px height)
-  const startMinutes = start.hours * 60 + start.minutes;
-  const endMinutes = end.hours * 60 + end.minutes;
-
-  // Calendar starts at 6:00 AM (360 minutes), so subtract that from position
+// Helper to calculate event position and height for a specific day
+const _calculateEventStyle = (
+  startDateTime: Date,
+  endDateTime: Date,
+  currentDay: Date,
+) => {
   const calendarStartMinutes = 6 * 60; // 6:00 AM = 360 minutes
-  const topPosition = ((startMinutes - calendarStartMinutes) / 60) * 60;
+  const calendarEndMinutes = 24 * 60; // 11:59 PM = 1440 minutes
+  const calendarDurationMinutes = calendarEndMinutes - calendarStartMinutes;
 
-  // Height based on duration
-  const durationMinutes = endMinutes - startMinutes;
-  const height = (durationMinutes / 60) * 60;
+  // Get date strings for comparison (YYYY-MM-DD)
+  const currentDayStr = currentDay.toISOString().split("T")[0];
+  const startDayStr = startDateTime.toISOString().split("T")[0];
+  const endDayStr = endDateTime.toISOString().split("T")[0];
 
-  // Only show events that start at 6:00 AM or later
-  if (startMinutes < calendarStartMinutes) {
-    return {
-      top: "0px",
-      height: "0px",
-      display: "none",
-    };
+  // Determine if this is the start day, end day, middle day, or single day
+  const isStartDay = currentDayStr === startDayStr;
+  const isEndDay = currentDayStr === endDayStr;
+  const isSingleDay = isStartDay && isEndDay;
+
+  let topPosition = 0;
+  let height = 0;
+
+  if (isSingleDay) {
+    // Single day event - use actual start and end times
+    const startMinutes = startDateTime.getHours() * 60 + startDateTime.getMinutes();
+    const endMinutes = endDateTime.getHours() * 60 + endDateTime.getMinutes();
+
+    topPosition = ((startMinutes - calendarStartMinutes) / 60) * 60;
+    const durationMinutes = endMinutes - startMinutes;
+    height = (durationMinutes / 60) * 60;
+
+    // Hide if starts before calendar view
+    if (startMinutes < calendarStartMinutes) {
+      return { top: "0px", height: "0px", display: "none" };
+    }
+  } else if (isStartDay) {
+    // First day of multi-day event - from start time to midnight
+    const startMinutes = startDateTime.getHours() * 60 + startDateTime.getMinutes();
+    topPosition = ((startMinutes - calendarStartMinutes) / 60) * 60;
+    const remainingMinutes = calendarEndMinutes - startMinutes;
+    height = (remainingMinutes / 60) * 60;
+
+    if (startMinutes < calendarStartMinutes) {
+      topPosition = 0;
+      height = ((calendarEndMinutes - calendarStartMinutes) / 60) * 60;
+    }
+  } else if (isEndDay) {
+    // Last day of multi-day event - from calendar start to end time
+    const endMinutes = endDateTime.getHours() * 60 + endDateTime.getMinutes();
+    topPosition = 0;
+    height = ((endMinutes - calendarStartMinutes) / 60) * 60;
+
+    if (endMinutes < calendarStartMinutes) {
+      return { top: "0px", height: "0px", display: "none" };
+    }
+  } else {
+    // Middle day of multi-day event - full day from calendar start to end
+    topPosition = 0;
+    height = (calendarDurationMinutes / 60) * 60;
   }
 
   return {
     top: `${Math.max(0, topPosition)}px`,
-    height: `${height}px`,
+    height: `${Math.max(0, height)}px`,
   };
 };
 
 export default function AppointmentsPage() {
   const { data: session } = useSession();
 
-  // Log session data for debugging
-  useEffect(() => {
-    console.log("👤 [Calendar] Current session:", {
-      userId: session?.user?.id,
-      userName: session?.user?.name,
-      hasSession: !!session,
-    });
-  }, [session]);
-
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
+  const [selectedAgents, setSelectedAgents] = useState<string[]>(() =>
+    session?.user?.id ? [session.user.id] : [],
+  );
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [expandedFilterSections, setExpandedFilterSections] = useState<{
     type: boolean;
@@ -203,14 +198,13 @@ export default function AppointmentsPage() {
   const [editingAppointmentId, setEditingAppointmentId] = useState<
     bigint | null
   >(null);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   // Prefetch state management
   const hasTriggeredPrefetchRef = useRef(false);
   const lastPrefetchTimeRef = useRef<number>(0);
 
-  // Use real appointments data
+  // Use real appointments data - pass selectedAgents as filter
   const {
     appointments: realAppointments,
     loading,
@@ -219,7 +213,10 @@ export default function AppointmentsPage() {
     addOptimisticEvent,
     removeOptimisticEvent,
     updateOptimisticEvent,
-  } = useWeeklyAppointments(weekStart);
+  } = useWeeklyAppointments(
+    weekStart,
+    selectedAgents.length > 0 ? selectedAgents : undefined,
+  );
 
   // Use appointment modal
   const {
@@ -245,6 +242,20 @@ export default function AppointmentsPage() {
   const [appointmentTasksMap, setAppointmentTasksMap] = useState<
     Record<number, unknown[]>
   >({});
+
+  // Initialize selectedAgents with current user when session loads
+  useEffect(() => {
+    console.log("👤 [Calendar] Current session:", {
+      userId: session?.user?.id,
+      userName: session?.user?.name,
+      hasSession: !!session,
+    });
+
+    // Set current user as default filter when session loads
+    if (session?.user?.id && selectedAgents.length === 0) {
+      setSelectedAgents([session.user.id]);
+    }
+  }, [session, selectedAgents.length]);
 
   // Fetch user permissions on component mount
   useEffect(() => {
@@ -408,46 +419,6 @@ export default function AppointmentsPage() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [view, weekStart, loading, refetch]);
 
-  // Scroll to 10:00 AM on mount for weekly view
-  useEffect(() => {
-    if (view === "weekly" && scrollAreaRef.current) {
-      // Calendar starts at 6:00 AM, so 10:00 AM is 4 hours down
-      const scrollPosition = 4 * 60; // 4 hours from 6:00 AM = 240px (4 hours * 60px per hour)
-      scrollAreaRef.current.scrollTop = scrollPosition;
-    }
-  }, [view, weekStart]);
-
-  const getWeekDays = () => {
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-      const day = new Date(weekStart);
-      day.setDate(day.getDate() + i);
-      days.push(day);
-    }
-    return days;
-  };
-
-  const formatShortDate = (date: Date) => {
-    return new Intl.DateTimeFormat("es-ES", {
-      day: "numeric",
-    }).format(date);
-  };
-
-  const formatWeekday = (date: Date) => {
-    return new Intl.DateTimeFormat("es-ES", {
-      weekday: "short",
-    })
-      .format(date)
-      .toUpperCase();
-  };
-
-  const formatMonthYear = (date: Date) => {
-    return new Intl.DateTimeFormat("es-ES", {
-      month: "long",
-      year: "numeric",
-    }).format(date);
-  };
-
   const navigateWeek = (direction: "prev" | "next") => {
     const newWeekStart = new Date(weekStart);
     newWeekStart.setDate(
@@ -486,15 +457,6 @@ export default function AppointmentsPage() {
     params.set("endTime", endTime);
 
     router.push(`/calendario?${params.toString()}`, { scroll: false });
-  };
-
-  const isToday = (date: Date) => {
-    const today = new Date();
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    );
   };
 
   // Permission helper function for ownership check
@@ -570,16 +532,34 @@ export default function AppointmentsPage() {
             </PopoverTrigger>
             <PopoverContent className="w-64 p-0" align="end">
               <div className="flex flex-col">
+                {/* Header with count */}
+                <div className="border-b px-3 py-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12px] font-medium text-muted-foreground">
+                      Filtrar por agente
+                    </span>
+                    <span className="text-[12px] text-muted-foreground">
+                      {selectedAgents.length}/5
+                    </span>
+                  </div>
+                </div>
                 <ScrollArea className="h-[200px]">
                   <div className="space-y-3 p-3">
                     <div className="space-y-0.5">
                       {agents.map((agent) => {
                         const isSelected = selectedAgents.includes(agent.id);
+                        const isDisabled = !isSelected && selectedAgents.length >= 5;
                         return (
                           <div
                             key={agent.id}
-                            className="flex cursor-pointer items-center space-x-1.5 rounded-sm px-1.5 py-0.5 transition-colors hover:bg-accent"
+                            className={`flex items-center space-x-1.5 rounded-sm px-1.5 py-0.5 transition-colors ${
+                              isDisabled
+                                ? "cursor-not-allowed opacity-50"
+                                : "cursor-pointer hover:bg-accent"
+                            }`}
                             onClick={() => {
+                              if (isDisabled) return;
+
                               if (isSelected) {
                                 setSelectedAgents((prev) =>
                                   prev.filter((id) => id !== agent.id),
@@ -596,7 +576,9 @@ export default function AppointmentsPage() {
                               className={`flex h-3 w-3 items-center justify-center rounded border ${
                                 isSelected
                                   ? "border-primary bg-primary"
-                                  : "border-input"
+                                  : isDisabled
+                                    ? "border-muted bg-muted"
+                                    : "border-input"
                               }`}
                             >
                               {isSelected && (
@@ -620,11 +602,18 @@ export default function AppointmentsPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setSelectedAgents([])}
+                      onClick={() => {
+                        // Reset to current user only if available, otherwise empty
+                        if (session?.user?.id) {
+                          setSelectedAgents([session.user.id]);
+                        } else {
+                          setSelectedAgents([]);
+                        }
+                      }}
                       className="h-6 w-full text-[12px]"
                     >
                       <X className="mr-1 h-3 w-3" />
-                      Borrar
+                      Restablecer
                     </Button>
                   </div>
                 )}
@@ -817,7 +806,7 @@ export default function AppointmentsPage() {
       </div>
 
       <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
-        <CollapsibleContent className="space-y-2">
+        <CollapsibleContent className="mb-4 space-y-2">
           <div className="rounded-lg bg-card p-2 shadow-md">
             <div className="space-y-2">
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -947,589 +936,74 @@ export default function AppointmentsPage() {
       </Collapsible>
 
       {view === "list" && (
-        <div className="space-y-6">
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader className="h-6 w-6 animate-spin" />
-              <span className="ml-2">Cargando citas...</span>
-            </div>
-          ) : error ? (
-            <div className="py-8 text-center text-red-600">{error}</div>
-          ) : filteredAppointments.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground">
-              No se encontraron citas
-            </div>
-          ) : (
-            <>
-              {/* 🔴 Urgent/Action Required Section */}
-              {(() => {
-                const now = new Date();
-                const urgentAppointments = filteredAppointments
-                  .filter((a) => {
-                    // Include NoShow and Rescheduled
-                    if (a.status === "NoShow" || a.status === "Rescheduled")
-                      return true;
-                    // Include Scheduled appointments that are in the past
-                    if (a.status === "Scheduled" && a.endTime < now)
-                      return true;
-                    return false;
-                  })
-                  .sort(
-                    (a, b) => b.startTime.getTime() - a.startTime.getTime(),
-                  );
-
-                return urgentAppointments.length > 0 ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 px-1">
-                      <div className="h-2 w-2 rounded-full bg-rose-500" />
-                      <h3 className="text-sm font-semibold uppercase tracking-wide text-rose-700">
-                        Requieren Atención ({urgentAppointments.length})
-                      </h3>
-                    </div>
-                    <div className="space-y-0">
-                      {urgentAppointments.map((appointment, index) => {
-                        const currentDate = getDateString(
-                          appointment.startTime,
-                        );
-                        const previousDate =
-                          index > 0
-                            ? getDateString(
-                                urgentAppointments[index - 1]!.startTime,
-                              )
-                            : null;
-                        const showDateLabel =
-                          index === 0 ||
-                          (previousDate && currentDate !== previousDate);
-                        const isToday =
-                          currentDate === getDateString(new Date());
-
-                        return (
-                          <div
-                            key={`urgent-${appointment.appointmentId.toString()}`}
-                          >
-                            {showDateLabel && (
-                              <div className={isToday ? "my-4" : "my-3"}>
-                                {isToday ? (
-                                  <div className="mb-2 flex items-center gap-2">
-                                    <div className="h-px flex-1 bg-blue-200" />
-                                    <span className="text-sm font-semibold uppercase tracking-wide text-blue-600">
-                                      Hoy -{" "}
-                                      {formatDateSeparator(
-                                        appointment.startTime,
-                                      )}
-                                    </span>
-                                    <div className="h-px flex-1 bg-blue-200" />
-                                  </div>
-                                ) : (
-                                  <div className="mb-2 flex items-center gap-2">
-                                    <span className="text-xs text-muted-foreground">
-                                      {formatDateSeparator(
-                                        appointment.startTime,
-                                      )}
-                                    </span>
-                                    <div className="h-px flex-1 bg-gray-100" />
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                            <div className="mb-3">
-                              <ListCalendarEvent
-                                event={appointment}
-                                isSelected={
-                                  selectedEvent === appointment.appointmentId
-                                }
-                                onClick={() =>
-                                  setSelectedEvent(appointment.appointmentId)
-                                }
-                                tasks={
-                                  appointmentTasksMap[
-                                    Number(appointment.appointmentId)
-                                  ] ?? []
-                                }
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : null;
-              })()}
-
-              {/* 🟢 Active/Upcoming Appointments Section */}
-              {(() => {
-                const now = new Date();
-                const activeAppointments = filteredAppointments
-                  .filter((a) => a.status === "Scheduled" && a.endTime >= now)
-                  .sort(
-                    (a, b) => a.startTime.getTime() - b.startTime.getTime(),
-                  );
-
-                return activeAppointments.length > 0 ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 px-1">
-                      <h3 className="text-sm font-semibold uppercase tracking-wide text-emerald-700">
-                        Próximas Citas ({activeAppointments.length})
-                      </h3>
-                    </div>
-                    <div className="space-y-0">
-                      {activeAppointments.map((appointment, index) => {
-                        const currentDate = getDateString(
-                          appointment.startTime,
-                        );
-                        const previousDate =
-                          index > 0
-                            ? getDateString(
-                                activeAppointments[index - 1]!.startTime,
-                              )
-                            : null;
-                        const showDateLabel =
-                          index === 0 ||
-                          (previousDate && currentDate !== previousDate);
-                        const isToday =
-                          currentDate === getDateString(new Date());
-
-                        return (
-                          <div
-                            key={`active-${appointment.appointmentId.toString()}`}
-                          >
-                            {showDateLabel && (
-                              <div className={isToday ? "my-4" : "my-3"}>
-                                {isToday ? (
-                                  <div className="mb-2 flex items-center gap-2">
-                                    <div className="h-px flex-1 bg-blue-200" />
-                                    <span className="text-sm font-semibold uppercase tracking-wide text-blue-600">
-                                      Hoy -{" "}
-                                      {formatDateSeparator(
-                                        appointment.startTime,
-                                      )}
-                                    </span>
-                                    <div className="h-px flex-1 bg-blue-200" />
-                                  </div>
-                                ) : (
-                                  <div className="mb-2 flex items-center gap-2">
-                                    <span className="text-xs text-muted-foreground">
-                                      {formatDateSeparator(
-                                        appointment.startTime,
-                                      )}
-                                    </span>
-                                    <div className="h-px flex-1 bg-gray-100" />
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                            <div className="mb-3">
-                              <ListCalendarEvent
-                                event={appointment}
-                                isSelected={
-                                  selectedEvent === appointment.appointmentId
-                                }
-                                onClick={() =>
-                                  setSelectedEvent(appointment.appointmentId)
-                                }
-                                tasks={
-                                  appointmentTasksMap[
-                                    Number(appointment.appointmentId)
-                                  ] ?? []
-                                }
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : null;
-              })()}
-
-              {/* ✓ Completed Appointments Section - Collapsible */}
-              {(() => {
-                const completedAppointments = filteredAppointments
-                  .filter((a) => a.status === "Completed")
-                  .sort(
-                    (a, b) => b.startTime.getTime() - a.startTime.getTime(),
-                  );
-
-                return completedAppointments.length > 0 ? (
-                  <ExpandableSection
-                    title="Completadas"
-                    count={completedAppointments.length}
-                    defaultExpanded={false}
-                    storageKey="calendar-completed-appointments"
-                  >
-                    <div className="space-y-0">
-                      {completedAppointments.map((appointment, index) => {
-                        const currentDate = getDateString(
-                          appointment.startTime,
-                        );
-                        const previousDate =
-                          index > 0
-                            ? getDateString(
-                                completedAppointments[index - 1]!.startTime,
-                              )
-                            : null;
-                        const showDateLabel =
-                          index === 0 ||
-                          (previousDate && currentDate !== previousDate);
-                        const isToday =
-                          currentDate === getDateString(new Date());
-
-                        return (
-                          <div
-                            key={`completed-${appointment.appointmentId.toString()}`}
-                          >
-                            {showDateLabel && (
-                              <div className={isToday ? "my-4" : "my-3"}>
-                                {isToday ? (
-                                  <div className="mb-2 flex items-center gap-2">
-                                    <div className="h-px flex-1 bg-blue-200" />
-                                    <span className="text-sm font-semibold uppercase tracking-wide text-blue-600">
-                                      Hoy -{" "}
-                                      {formatDateSeparator(
-                                        appointment.startTime,
-                                      )}
-                                    </span>
-                                    <div className="h-px flex-1 bg-blue-200" />
-                                  </div>
-                                ) : (
-                                  <div className="mb-2 flex items-center gap-2">
-                                    <span className="text-xs text-muted-foreground">
-                                      {formatDateSeparator(
-                                        appointment.startTime,
-                                      )}
-                                    </span>
-                                    <div className="h-px flex-1 bg-gray-100" />
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                            <div className="mb-3">
-                              <ListCalendarEvent
-                                event={appointment}
-                                isSelected={
-                                  selectedEvent === appointment.appointmentId
-                                }
-                                onClick={() =>
-                                  setSelectedEvent(appointment.appointmentId)
-                                }
-                                tasks={
-                                  appointmentTasksMap[
-                                    Number(appointment.appointmentId)
-                                  ] ?? []
-                                }
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </ExpandableSection>
-                ) : null;
-              })()}
-
-              {/* ✕ Cancelled Appointments Section - Collapsible */}
-              {(() => {
-                const now = new Date();
-                const fourteenDaysAgo = new Date(now);
-                fourteenDaysAgo.setDate(now.getDate() - 14);
-
-                const cancelledAppointments = filteredAppointments
-                  .filter(
-                    (a) =>
-                      a.status === "Cancelled" &&
-                      a.startTime >= fourteenDaysAgo,
-                  )
-                  .sort(
-                    (a, b) => b.startTime.getTime() - a.startTime.getTime(),
-                  );
-
-                return cancelledAppointments.length > 0 ? (
-                  <ExpandableSection
-                    title="Canceladas"
-                    count={cancelledAppointments.length}
-                    defaultExpanded={false}
-                    storageKey="calendar-cancelled-appointments"
-                  >
-                    <div className="space-y-0">
-                      {cancelledAppointments.map((appointment, index) => {
-                        const currentDate = getDateString(
-                          appointment.startTime,
-                        );
-                        const previousDate =
-                          index > 0
-                            ? getDateString(
-                                cancelledAppointments[index - 1]!.startTime,
-                              )
-                            : null;
-                        const showDateLabel =
-                          index === 0 ||
-                          (previousDate && currentDate !== previousDate);
-                        const isToday =
-                          currentDate === getDateString(new Date());
-
-                        return (
-                          <div
-                            key={`cancelled-${appointment.appointmentId.toString()}`}
-                          >
-                            {showDateLabel && (
-                              <div className={isToday ? "my-4" : "my-3"}>
-                                {isToday ? (
-                                  <div className="mb-2 flex items-center gap-2">
-                                    <div className="h-px flex-1 bg-blue-200" />
-                                    <span className="text-sm font-semibold uppercase tracking-wide text-blue-600">
-                                      Hoy -{" "}
-                                      {formatDateSeparator(
-                                        appointment.startTime,
-                                      )}
-                                    </span>
-                                    <div className="h-px flex-1 bg-blue-200" />
-                                  </div>
-                                ) : (
-                                  <div className="mb-2 flex items-center gap-2">
-                                    <span className="text-xs text-muted-foreground">
-                                      {formatDateSeparator(
-                                        appointment.startTime,
-                                      )}
-                                    </span>
-                                    <div className="h-px flex-1 bg-gray-100" />
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                            <div className="mb-3">
-                              <ListCalendarEvent
-                                event={appointment}
-                                isSelected={
-                                  selectedEvent === appointment.appointmentId
-                                }
-                                onClick={() =>
-                                  setSelectedEvent(appointment.appointmentId)
-                                }
-                                tasks={
-                                  appointmentTasksMap[
-                                    Number(appointment.appointmentId)
-                                  ] ?? []
-                                }
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </ExpandableSection>
-                ) : null;
-              })()}
-            </>
-          )}
-        </div>
+        <CalendarListView
+          appointments={filteredAppointments.map((app) => ({
+            appointmentId: app.appointmentId,
+            type: app.type,
+            status: app.status,
+            datetimeStart: app.startTime,
+            datetimeEnd: app.endTime,
+            tripTimeMinutes: app.tripTimeMinutes,
+            notes: app.notes,
+            contactName: app.contactName,
+            propertyAddress: app.propertyAddress,
+          }))}
+          loading={loading}
+          error={error}
+          selectedEvent={selectedEvent}
+          onEventSelect={setSelectedEvent}
+          appointmentTasksMap={appointmentTasksMap}
+        />
       )}
 
       {view === "calendar" && (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {loading ? (
-            <div className="col-span-full flex items-center justify-center py-8">
-              <Loader className="h-6 w-6 animate-spin" />
-              <span className="ml-2">Cargando citas...</span>
-            </div>
-          ) : error ? (
-            <div className="col-span-full py-8 text-center text-red-600">
-              {error}
-            </div>
-          ) : filteredAppointments.length === 0 ? (
-            <div className="col-span-full py-8 text-center text-muted-foreground">
-              No se encontraron citas
-            </div>
-          ) : (
-            filteredAppointments.map((appointment) => (
-              <CompactCalendarEvent
-                key={appointment.appointmentId.toString()}
-                event={appointment}
-                isSelected={selectedEvent === appointment.appointmentId}
-                onClick={() => setSelectedEvent(appointment.appointmentId)}
-              />
-            ))
-          )}
-        </div>
+        <MonthlyCalendarView
+          appointments={filteredAppointments}
+          loading={loading}
+          error={error}
+          onRefetch={() => void refetch()}
+          onEventClick={(appointmentId) => setSelectedEvent(appointmentId)}
+          onDateClick={(date) => {
+            const dateString = date.toISOString().split("T")[0];
+            if (!dateString) return;
+
+            setEditMode("create");
+            setEditingAppointmentId(null);
+
+            const params = new URLSearchParams();
+            params.set("new", "true");
+            params.set("date", dateString);
+            params.set("time", "10:00");
+            params.set("endTime", "11:00");
+
+            router.push(`/calendario?${params.toString()}`, { scroll: false });
+          }}
+          selectedEventId={selectedEvent}
+        />
       )}
 
       {view === "weekly" && (
-        <Card className="border-none shadow-none">
-          <CardHeader className="px-0 pt-0">
-            <div className="mb-4 mt-4 flex flex-col gap-3 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => navigateWeek("prev")}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => navigateWeek("next")}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <h3 className="text-base font-semibold sm:text-lg">
-                  {formatMonthYear(weekStart)}
-                </h3>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setWeekStart(getWeekStart(new Date()))}
-                  className="w-full sm:w-auto"
-                >
-                  Hoy
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => void refetch()}
-                  disabled={loading}
-                  title="Refrescar eventos"
-                >
-                  <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-
-          <CardContent className="overflow-x-auto p-0">
-            <div className="min-w-[640px]">
-              {/* Day headers */}
-              <div className="sticky top-0 z-10 grid grid-cols-8 border-b bg-white">
-                {/* Time column header */}
-                <div className="flex h-14 min-w-[60px] items-center justify-center border-r text-xs text-muted-foreground sm:text-sm">
-                  GMT+02
-                </div>
-
-                {/* Day columns headers */}
-                {getWeekDays().map((day, dayIdx) => (
-                  <div
-                    key={dayIdx}
-                    className={cn(
-                      "relative flex h-14 min-w-[80px] flex-col items-center justify-center sm:min-w-[100px]",
-                      isToday(day) && "bg-blue-50",
-                    )}
-                  >
-                    <div className="text-xs text-muted-foreground">
-                      {formatWeekday(day)}
-                    </div>
-                    <div
-                      className={cn(
-                        "flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium sm:h-10 sm:w-10 sm:text-xl",
-                        isToday(day) && "bg-blue-600 text-white",
-                      )}
-                    >
-                      {formatShortDate(day)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <ScrollArea
-                className="h-[400px] sm:h-[500px] lg:h-[600px]"
-                ref={scrollAreaRef}
-              >
-                <div className="grid grid-cols-8">
-                  {/* Hours column */}
-                  <div className="flex flex-col border-r">
-                    {Array.from({ length: 18 }, (_, i) => i + 6).map((hour) => (
-                      <div
-                        key={hour}
-                        className="flex h-[60px] items-start justify-end border-b pr-1 pt-1 text-xs text-muted-foreground sm:pr-2"
-                      >
-                        {hour.toString().padStart(2, "0")}:00
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Days columns */}
-                  {getWeekDays().map((day, dayIdx) => (
-                    <div
-                      key={dayIdx}
-                      className={cn(
-                        "relative flex min-w-[80px] flex-col border-r sm:min-w-[100px]",
-                        isToday(day) && "bg-blue-50/30",
-                      )}
-                    >
-                      {/* Hour slots */}
-                      {Array.from({ length: 18 }, (_, i) => i + 6).map(
-                        (hour) => (
-                          <div
-                            key={hour}
-                            className="relative h-[60px] border-b"
-                          >
-                            {/* First half-hour slot */}
-                            <div
-                              className="absolute left-0 right-0 top-0 h-1/2 cursor-pointer transition-colors hover:bg-blue-50/50"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleTimeSlotClick(day, hour, 0);
-                              }}
-                              title={`Crear cita - ${hour.toString().padStart(2, "0")}:00`}
-                            />
-
-                            {/* Half-hour divider */}
-                            <div className="absolute left-0 right-0 top-1/2 border-t border-dashed border-gray-200"></div>
-
-                            {/* Second half-hour slot */}
-                            <div
-                              className="absolute bottom-0 left-0 right-0 h-1/2 cursor-pointer transition-colors hover:bg-blue-50/50"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleTimeSlotClick(day, hour, 30);
-                              }}
-                              title={`Crear cita - ${hour.toString().padStart(2, "0")}:30`}
-                            />
-                          </div>
-                        ),
-                      )}
-
-                      {/* Appointments for this day */}
-                      {!loading &&
-                        !error &&
-                        filteredAppointments
-                          .filter((app) => {
-                            const appDate = new Date(app.startTime)
-                              .toISOString()
-                              .split("T")[0];
-                            const dayDate = getDateString(day);
-                            return appDate === dayDate;
-                          })
-                          .map((app) => {
-                            const startTime = new Date(app.startTime)
-                              .toTimeString()
-                              .slice(0, 5);
-                            const endTime = new Date(app.endTime)
-                              .toTimeString()
-                              .slice(0, 5);
-                            const eventStyle = calculateEventStyle(
-                              startTime,
-                              endTime,
-                            );
-
-                            return (
-                              <CalendarEvent
-                                key={app.appointmentId.toString()}
-                                event={app}
-                                style={eventStyle}
-                                isSelected={selectedEvent === app.appointmentId}
-                                onClick={() =>
-                                  setSelectedEvent(app.appointmentId)
-                                }
-                              />
-                            );
-                          })}
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
-          </CardContent>
-        </Card>
+        <CalendarWeeklyView
+          appointments={filteredAppointments.map((app) => ({
+            appointmentId: app.appointmentId,
+            type: app.type,
+            status: app.status,
+            datetimeStart: app.startTime,
+            datetimeEnd: app.endTime,
+            tripTimeMinutes: app.tripTimeMinutes,
+            notes: app.notes,
+            contactName: app.contactName,
+            propertyAddress: app.propertyAddress,
+          }))}
+          loading={loading}
+          error={error}
+          selectedEvent={selectedEvent}
+          onEventSelect={setSelectedEvent}
+          weekStart={weekStart}
+          onNavigateWeek={navigateWeek}
+          onRefresh={() => void refetch()}
+          onTimeSlotClick={handleTimeSlotClick}
+        />
       )}
 
       {/* Event Detail Sheet (shows when an event is selected) */}
@@ -1563,12 +1037,16 @@ export default function AppointmentsPage() {
                   listingContactId: event.listingContactId,
                   dealId: event.dealId,
                   prospectId: event.prospectId,
+                  title: event.title ?? undefined,
                 };
               })()
             : null
         }
         isOpen={selectedEvent !== null}
-        onClose={() => setSelectedEvent(null)}
+        onClose={() => {
+          setSelectedEvent(null);
+          // Don't refetch on close - only refetch when onUpdate is called (status changes, deletes)
+        }}
         onUpdate={async () => await refetch()}
         onEdit={handleEditAppointment}
         permissions={{
@@ -1584,7 +1062,10 @@ export default function AppointmentsPage() {
       {/* Appointment Modal */}
       <AppointmentModal
         open={isModalOpen}
-        onOpenChange={closeModal}
+        onOpenChange={(_open) => {
+          closeModal();
+          // No refetch needed - optimistic updates already handle UI changes instantly
+        }}
         initialData={initialData}
         mode={editMode}
         appointmentId={editingAppointmentId ?? undefined}

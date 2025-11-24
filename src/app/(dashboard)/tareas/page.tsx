@@ -140,6 +140,42 @@ export default function TareasPage() {
     setSearchQuery(value);
   };
 
+  const handleTaskCreated = () => {
+    // Refetch tasks when a new task is created
+    if (session?.user?.id) {
+      setIsLoading(true);
+      void getUserTasksWithAuth(session.user.id, {})
+        .then((tasksResult) => {
+          const transformedTasks = tasksResult.map((result) => ({
+            taskId: result.tasks.taskId.toString(),
+            title: result.tasks.title,
+            description: result.tasks.description,
+            dueDate: result.tasks.dueDate,
+            urgency: result.tasks.urgency,
+            category: result.tasks.category,
+            status: result.tasks.status ?? "backlog",
+            completed: result.tasks.completed,
+            createdAt: result.tasks.createdAt,
+            listingId: result.tasks.listingId?.toString() ?? null,
+            contactId:
+              result.contacts?.contactId?.toString() ??
+              result.tasks.contactId?.toString() ??
+              null,
+            propertyTitle: result.properties?.title ?? null,
+            contactFirstName: result.contacts?.firstName ?? null,
+            contactLastName: result.contacts?.lastName ?? null,
+          }));
+          setTasks(transformedTasks);
+        })
+        .catch((error) => {
+          console.error("Error refreshing tasks:", error);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -155,6 +191,7 @@ export default function TareasPage() {
           users={users}
           categories={categories}
           searchBar={<TaskSearch onSearchChange={handleSearchChange} />}
+          onTaskCreated={handleTaskCreated}
         />
 
         {/* Task Board */}

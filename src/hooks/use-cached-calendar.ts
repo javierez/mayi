@@ -15,6 +15,7 @@ interface CalendarEvent {
   endTime: Date;
   status: "Scheduled" | "Completed" | "Cancelled" | "Rescheduled" | "NoShow";
   type: string;
+  title?: string;
   tripTimeMinutes?: number;
   notes?: string;
   contactId: bigint | null;
@@ -39,6 +40,7 @@ interface RawAppointment {
   datetimeEnd: Date;
   tripTimeMinutes: number | null;
   status: string;
+  title: string | null;
   notes: string | null;
   type: string | null;
   isActive: boolean | null;
@@ -121,6 +123,7 @@ function transformToOptimisticEvent(
     endTime: eventData.endTime ?? new Date(now.getTime() + 60 * 60 * 1000),
     status: eventData.status ?? "Scheduled",
     type: eventData.type ?? "Visita",
+    title: eventData.title,
     tripTimeMinutes: eventData.tripTimeMinutes,
     notes: eventData.notes,
     contactId: eventData.contactId ?? BigInt(0),
@@ -164,6 +167,7 @@ function transformToCalendarEvent(
         | "Rescheduled"
         | "NoShow") ?? "Scheduled",
     type: rawAppointment.type ?? "Visita",
+    title: rawAppointment.title ?? undefined,
     tripTimeMinutes: rawAppointment.tripTimeMinutes ?? undefined,
     notes: rawAppointment.notes ?? undefined,
     contactId: rawAppointment.contactId,
@@ -189,6 +193,7 @@ function mergeAndSortEvents(
 // Main simplified hook
 export function useSimpleCalendar(
   currentWeekStart: Date,
+  filterByUserIds?: string[],
 ): UseSimpleCalendarReturn {
   // State
   const [appointments, setAppointments] = useState<CalendarEvent[]>([]);
@@ -199,6 +204,9 @@ export function useSimpleCalendar(
     startDate: Date;
     endDate: Date;
   } | null>(null);
+  const [lastFilterIds, setLastFilterIds] = useState<string[] | undefined>(
+    filterByUserIds,
+  );
 
   // Calculate 4-week range
   const currentRange = useMemo(
@@ -206,14 +214,22 @@ export function useSimpleCalendar(
     [currentWeekStart],
   );
 
-  // Check if current week is within loaded range
+  // Check if current week is within loaded range AND filter hasn't changed
   const isWithinLoadedRange = useMemo(() => {
     if (!loadedRange) return false;
+
+    // Check if filter has changed
+    const filterChanged =
+      JSON.stringify(lastFilterIds?.sort()) !==
+      JSON.stringify(filterByUserIds?.sort());
+
+    if (filterChanged) return false;
+
     return (
       currentRange.startDate >= loadedRange.startDate &&
       currentRange.endDate <= loadedRange.endDate
     );
-  }, [currentRange, loadedRange]);
+  }, [currentRange, loadedRange, lastFilterIds, filterByUserIds]);
 
   // Fetch 4 weeks of data
   const fetch4Weeks = useCallback(async () => {
@@ -224,6 +240,7 @@ export function useSimpleCalendar(
       const result = await getAppointmentsByDateRangeAction(
         currentRange.startDate,
         currentRange.endDate,
+        filterByUserIds,
       );
 
       if (result.success) {
@@ -232,6 +249,7 @@ export function useSimpleCalendar(
         );
         setAppointments(calendarEvents);
         setLoadedRange(currentRange);
+        setLastFilterIds(filterByUserIds);
       } else {
         setError(result.error ?? "Error desconocido");
         setAppointments([]);
@@ -243,7 +261,7 @@ export function useSimpleCalendar(
     } finally {
       setLoading(false);
     }
-  }, [currentRange]);
+  }, [currentRange, filterByUserIds]);
 
   // Optimistic event management
   const addOptimisticEvent = useCallback(
@@ -312,6 +330,7 @@ export function useSimpleCalendar(
         const result = await getAppointmentsByDateRangeAction(
           startDate,
           endDate,
+          filterByUserIds,
         );
 
         if (result.success) {
@@ -320,6 +339,7 @@ export function useSimpleCalendar(
           );
           setAppointments(calendarEvents);
           setLoadedRange({ startDate, endDate });
+          setLastFilterIds(filterByUserIds);
         } else {
           setError(result.error ?? "Error desconocido");
           setAppointments([]);
@@ -332,7 +352,7 @@ export function useSimpleCalendar(
         setLoading(false);
       }
     },
-    [],
+    [filterByUserIds],
   );
 
   return {
@@ -350,8 +370,9 @@ export function useSimpleCalendar(
 // Convenience hooks for backwards compatibility
 export function useWeeklyAppointments(
   weekStart: Date,
+  filterByUserIds?: string[],
 ): UseSimpleCalendarReturn {
-  return useSimpleCalendar(weekStart);
+  return useSimpleCalendar(weekStart, filterByUserIds);
 }
 
 // Additional hooks for full compatibility with use-appointments.ts

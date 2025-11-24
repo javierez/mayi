@@ -17,11 +17,92 @@ import {
 import { eq, and, or, sql, isNotNull, asc, lte, gte } from "drizzle-orm";
 import type { Task } from "../../lib/data";
 import { getCurrentUserAccountId, getSecureSession } from "../../lib/dal";
+import { updateAppointment } from "./appointment";
 
 // Extend globalThis to include debug properties
 declare global {
   // eslint-disable-next-line no-var
   var __criticalTaskIds: string[] | undefined;
+}
+
+/**
+ * Helper function to sync task changes to linked appointment
+ * Called automatically when a task with appointmentId is updated
+ */
+async function syncTaskToAppointment(
+  taskId: bigint,
+  appointmentId: bigint,
+  taskData: {
+    title?: string;
+    description?: string;
+    dueDate?: Date;
+    dueTime?: string;
+    contactId?: bigint;
+    listingId?: bigint;
+    listingContactId?: bigint;
+    userId?: string;
+    completed?: boolean;
+  },
+) {
+  try {
+    const appointmentUpdate: Record<string, unknown> = {};
+
+    // Sync title
+    if (taskData.title !== undefined) {
+      appointmentUpdate.title = taskData.title;
+    }
+
+    // Sync description to notes
+    if (taskData.description !== undefined) {
+      appointmentUpdate.notes = taskData.description;
+    }
+
+    // Sync date/time to datetimeStart (keep 30-minute duration)
+    if (taskData.dueDate !== undefined && taskData.dueTime !== undefined) {
+      const dueDateStr = taskData.dueDate.toISOString().split("T")[0];
+      const startDateTime = new Date(`${dueDateStr}T${taskData.dueTime}`);
+      appointmentUpdate.datetimeStart = startDateTime;
+      // Keep 30-minute duration
+      appointmentUpdate.datetimeEnd = new Date(
+        startDateTime.getTime() + 30 * 60 * 1000,
+      );
+    }
+
+    // Sync relationships
+    if (taskData.contactId !== undefined) {
+      appointmentUpdate.contactId = taskData.contactId;
+    }
+    if (taskData.listingId !== undefined) {
+      appointmentUpdate.listingId = taskData.listingId;
+    }
+    if (taskData.listingContactId !== undefined) {
+      appointmentUpdate.listingContactId = taskData.listingContactId;
+    }
+
+    // Sync assigned user
+    if (taskData.userId !== undefined) {
+      appointmentUpdate.assignedTo = taskData.userId;
+    }
+
+    // Sync completion status
+    if (taskData.completed !== undefined) {
+      appointmentUpdate.status = taskData.completed ? "Completed" : "Scheduled";
+    }
+
+    // Only update if we have changes
+    if (Object.keys(appointmentUpdate).length > 0) {
+      await updateAppointment(Number(appointmentId), appointmentUpdate);
+      console.log(
+        `✅ Synced task ${taskId} changes to appointment ${appointmentId}`,
+      );
+    }
+  } catch (error) {
+    console.error(
+      `❌ Failed to sync task ${taskId} to appointment ${appointmentId}:`,
+      error,
+    );
+    // Don't fail the task update if appointment sync fails
+  }
 }
 
 // Wrapper functions that automatically get accountId from current session
@@ -344,6 +425,13 @@ export async function getTaskById(taskId: number, accountId: number) {
         locations: {
           city: locations.city,
         },
+        // User fields (assigned to)
+        users: {
+          id: users.id,
+          name: users.name,
+          firstName: users.firstName,
+          lastName: users.lastName,
+        },
       })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
@@ -659,6 +747,7 @@ export async function updateTask(
         createdBy: tasks.createdBy,
         activityId: tasks.activityId,
         activityType: tasks.activityType,
+        appointmentId: tasks.appointmentId,
       })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
@@ -818,6 +907,16 @@ export async function updateTask(
       })
       .from(tasks)
       .where(eq(tasks.taskId, BigInt(taskId)));
+
+    // If task has linked appointment, sync changes
+    if (existingTask.appointmentId && Object.keys(data).length > 0) {
+      await syncTaskToAppointment(
+        existingTask.taskId,
+        existingTask.appointmentId,
+        data,
+      );
+    }
+
     return updatedTask;
   } catch (error) {
     console.error("Error updating task:", error);
@@ -840,6 +939,7 @@ export async function updateContactTask(
         completed: tasks.completed,
         activityId: tasks.activityId,
         activityType: tasks.activityType,
+        appointmentId: tasks.appointmentId,
       })
       .from(tasks)
       .innerJoin(contacts, eq(tasks.contactId, contacts.contactId))
@@ -995,6 +1095,16 @@ export async function updateContactTask(
       })
       .from(tasks)
       .where(eq(tasks.taskId, BigInt(taskId)));
+
+    // If task has linked appointment, sync changes
+    if (existingTask.appointmentId && Object.keys(data).length > 0) {
+      await syncTaskToAppointment(
+        existingTask.taskId,
+        existingTask.appointmentId,
+        data,
+      );
+    }
+
     return updatedTask;
   } catch (error) {
     console.error("Error updating contact task:", error);
@@ -1020,6 +1130,7 @@ export async function updateListingTask(
         completed: tasks.completed,
         activityId: tasks.activityId,
         activityType: tasks.activityType,
+        appointmentId: tasks.appointmentId,
       })
       .from(tasks)
       .innerJoin(listings, eq(tasks.listingId, listings.listingId))
@@ -1169,6 +1280,16 @@ export async function updateListingTask(
       })
       .from(tasks)
       .where(eq(tasks.taskId, BigInt(taskId)));
+
+    // If task has linked appointment, sync changes
+    if (existingTask.appointmentId && Object.keys(data).length > 0) {
+      await syncTaskToAppointment(
+        existingTask.taskId,
+        existingTask.appointmentId,
+        data,
+      );
+    }
+
     return updatedTask;
   } catch (error) {
     console.error("Error updating listing task:", error);
@@ -1191,6 +1312,7 @@ export async function completeTask(
         completed: tasks.completed,
         activityId: tasks.activityId,
         activityType: tasks.activityType,
+        appointmentId: tasks.appointmentId,
       })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
@@ -1455,6 +1577,16 @@ export async function completeTask(
       })
       .from(tasks)
       .where(eq(tasks.taskId, BigInt(taskId)));
+
+    // If task has linked appointment, mark appointment as completed
+    if (existingTask.appointmentId) {
+      await syncTaskToAppointment(
+        existingTask.taskId,
+        existingTask.appointmentId,
+        { completed: true },
+      );
+    }
+
     return updatedTask;
   } catch (error) {
     console.error("Error completing task:", error);

@@ -30,7 +30,7 @@ async function checkSuperAdminAccess() {
     redirect("/auth/signin");
   }
 
-  const isSuperAdmin = await userHasRole(session.user.id, 2);
+  const isSuperAdmin = await userHasRole(session.user.id, 1);
 
   if (!isSuperAdmin) {
     throw new Error("Access denied: Superadmin role required");

@@ -575,6 +575,7 @@ export async function getAgentsForFilter() {
 export async function getAppointmentsByDateRangeSecure(
   startDate: Date,
   endDate: Date,
+  filterByUserIds?: string[],
 ) {
   try {
     const accountId = await getCurrentUserAccountId();
@@ -589,6 +590,21 @@ export async function getAppointmentsByDateRangeSecure(
 
     if (userIds.length === 0) {
       return [];
+    }
+
+    // Build the where conditions array
+    const whereConditions = [
+      inArray(appointments.userId, userIds), // Only appointments from users in this account
+      or(
+        between(appointments.datetimeStart, startDate, endDate),
+        between(appointments.datetimeEnd, startDate, endDate),
+      ),
+      eq(appointments.isActive, true),
+    ];
+
+    // Add assignedTo filter if provided
+    if (filterByUserIds && filterByUserIds.length > 0) {
+      whereConditions.push(inArray(appointments.assignedTo, filterByUserIds));
     }
 
     const dateRangeAppointments = await db
@@ -640,16 +656,7 @@ export async function getAppointmentsByDateRangeSecure(
         sql`users AS assigned_user`,
         sql`${appointments.assignedTo} = assigned_user.id`,
       )
-      .where(
-        and(
-          inArray(appointments.userId, userIds), // Only appointments from users in this account
-          or(
-            between(appointments.datetimeStart, startDate, endDate),
-            between(appointments.datetimeEnd, startDate, endDate),
-          ),
-          eq(appointments.isActive, true),
-        ),
-      );
+      .where(and(...whereConditions));
     return dateRangeAppointments;
   } catch (error) {
     console.error("Error fetching appointments by date range:", error);

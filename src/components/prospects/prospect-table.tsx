@@ -301,7 +301,7 @@ export function ProspectTable({
     if (listingType) {
       switch (listingType) {
         case "Sale":
-          baseType = "Demanda de Venta";
+          baseType = "Demanda de Compra";
           break;
         case "Rent":
           baseType = "Búsqueda de Alquiler";

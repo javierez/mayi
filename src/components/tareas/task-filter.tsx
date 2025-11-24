@@ -19,18 +19,22 @@ import {
   AlertCircle,
   FilterX,
   X,
+  Plus,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { GlobalTaskModal } from "~/components/tasks/global-task-modal";
 
 interface TaskFilterProps {
   users?: Array<{ id: string; name: string }>;
   categories?: string[];
   searchBar?: React.ReactNode;
+  onTaskCreated?: () => void;
 }
 
 export function TaskFilter({
   users = [],
   searchBar,
+  onTaskCreated,
 }: TaskFilterProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -47,6 +51,7 @@ export function TaskFilter({
     createdBy: false,
     urgency: false,
   });
+  const [showCreateTaskModal, setShowCreateTaskModal] = useState(false);
 
   // Initialize filters from URL on mount
   useEffect(() => {
@@ -256,6 +261,16 @@ export function TaskFilter({
           {searchBar}
         </div>
         <div className="flex items-center gap-1.5">
+          {/* Create Task Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 w-7 p-0"
+            onClick={() => setShowCreateTaskModal(true)}
+          >
+            <Plus className="h-3 w-3" />
+          </Button>
+
           {/* Assigned To Button */}
           {users.length > 0 && (
             <Popover>
@@ -398,6 +413,18 @@ export function TaskFilter({
           )}
         </CollapsibleContent>
       </Collapsible>
+
+      {/* Global Task Modal */}
+      <GlobalTaskModal
+        open={showCreateTaskModal}
+        onOpenChange={setShowCreateTaskModal}
+        onSuccess={() => {
+          setShowCreateTaskModal(false);
+          if (onTaskCreated) {
+            onTaskCreated();
+          }
+        }}
+      />
     </div>
   );
 }

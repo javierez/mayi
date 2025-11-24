@@ -266,6 +266,7 @@ export async function getUserAppointmentsAction() {
 export async function getAppointmentsByDateRangeAction(
   startDate: Date,
   endDate: Date,
+  filterByUserIds?: string[],
 ) {
   try {
     // PATTERN: Always get account ID for security
@@ -274,6 +275,7 @@ export async function getAppointmentsByDateRangeAction(
     const appointments = await getAppointmentsByDateRangeSecure(
       startDate,
       endDate,
+      filterByUserIds,
     );
 
     return {

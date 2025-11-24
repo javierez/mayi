@@ -991,6 +991,8 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
                                       | "viewer",
                                   }}
                                   hasUpcomingVisit={contact.hasUpcomingVisit}
+                                  upcomingAppointmentId={contact.upcomingAppointmentId}
+                                  missedAppointmentId={contact.missedAppointmentId}
                                   hasMissedVisit={contact.hasMissedVisit}
                                   hasCompletedVisit={contact.hasCompletedVisit}
                                   hasCancelledVisit={contact.hasCancelledVisit}

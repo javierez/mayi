@@ -324,8 +324,9 @@ export function getProcessStages(
           );
 
           if (hasScheduledVisits && visitasSubstage) {
-            // Has scheduled visits - mark visitas as ongoing (56%)
-            visitasSubstage.status = "ongoing";
+            // Has scheduled visits - mark visitas as accomplished (56%)
+            // NO "ongoing" for milestones - use accomplished/future only
+            visitasSubstage.status = "accomplished";
 
             // Mark oferta-aceptada as future
             if (ofertaSubstage) {
@@ -347,9 +348,9 @@ export function getProcessStages(
             }
 
             console.log(
-              "🔍 Step 3: Has scheduled visits - 'Visitas' ongoing (56%)",
+              "🔍 Step 3: Has scheduled visits - 'Visitas' accomplished (56%)",
             );
-            console.log("   Need to complete: Accept an offer from a contact");
+            console.log("   Next step: Accept an offer from a contact");
           } else {
             // No scheduled visits - stay at Encargo (43%)
             // Keep visitas as future (not started yet)
@@ -394,13 +395,13 @@ export function getProcessStages(
           if (visitasSubstage) {
             visitasSubstage.status = "accomplished";
 
-            // Mark oferta-aceptada as ongoing until arras is signed
+            // Mark oferta-aceptada as accomplished (offer has been accepted)
+            // NO "ongoing" for milestones - use accomplished/future only
             if (ofertaSubstage) {
-              ofertaSubstage.status = "ongoing";
+              ofertaSubstage.status = "accomplished";
             }
 
             // Check deal data for closing stages (arras, escritura, cierre)
-            // If no deal exists, mark arras as ongoing (waiting for deal to be created)
             const hasArrasCompleted = deal?.arrasDate != null;
             const hasEscrituraCompleted = deal?.actualDeedDate != null;
             const hasDealClosed =
@@ -449,7 +450,9 @@ export function getProcessStages(
               console.log("   Next step: Sign arras (deposit contract)");
             } else if (!hasEscrituraCompleted) {
               // Step 4b: Arras completed, Escritura not completed
-              // Mark oferta-aceptada as accomplished
+              // Mark oferta-aceptada as accomplished (offer was accepted)
+              // Mark arras as accomplished (arras has been signed)
+              // Mark escritura as FUTURE (not started yet) - NO "ongoing" for milestones
               if (ofertaSubstage) {
                 ofertaSubstage.status = "accomplished";
               }
@@ -457,19 +460,20 @@ export function getProcessStages(
                 arrasSubstage.status = "accomplished";
               }
               if (escrituraSubstage) {
-                escrituraSubstage.status = "ongoing";
+                escrituraSubstage.status = "future";
               }
 
               // Set Cierre to future
               if (cierreSubstage) cierreSubstage.status = "future";
 
               console.log(
-                "📝 Step 5: Arras completed - progressing to 'Escritura' (ongoing)",
+                "📝 Step 5: Arras completed (73%) - Escritura is next (future)",
               );
               console.log("   Need to complete: Sign escritura (public deed)");
             } else if (!hasDealClosed) {
               // Step 6: Escritura completed, deal not closed
-              // Mark oferta-aceptada as accomplished
+              // Mark all previous stages as accomplished
+              // Mark cierre as FUTURE (not started yet) - NO "ongoing" for milestones
               if (ofertaSubstage) {
                 ofertaSubstage.status = "accomplished";
               }
@@ -480,16 +484,16 @@ export function getProcessStages(
                 escrituraSubstage.status = "accomplished";
               }
               if (cierreSubstage) {
-                cierreSubstage.status = "ongoing";
+                cierreSubstage.status = "future";
               }
 
               console.log(
-                "🏁 Step 7: Escritura completed - progressing to 'Cierre' (ongoing)",
+                "🏁 Step 7: Escritura completed (93%) - Cierre is next (future)",
               );
               console.log("   Need to complete: Close the deal (set close date and status)");
             } else {
               // Step 7: Deal fully closed
-              // Mark oferta-aceptada as accomplished
+              // Mark all stages as accomplished
               if (ofertaSubstage) {
                 ofertaSubstage.status = "accomplished";
               }
@@ -504,7 +508,7 @@ export function getProcessStages(
               }
 
               console.log(
-                "🎉 Step 8: Deal fully closed - all stages completed!",
+                "🎉 Step 8: Deal fully closed (100%) - all stages completed!",
               );
             }
           }

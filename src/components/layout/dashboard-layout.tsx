@@ -37,6 +37,7 @@ import {
   MessageCircle,
   UserCog,
   CheckSquare,
+  Settings,
 } from "lucide-react";
 import type { FC, ReactNode } from "react";
 
@@ -86,7 +87,7 @@ const operacionesItems: NavigationItem[] = [
 ];
 
 const adminNavigation: NavigationItem[] = [
-  { name: "Administración", href: "/admin", icon: Shield },
+  { name: "Maestro", href: "/admin", icon: Settings },
 ];
 
 const accountAdminNavigation: NavigationItem[] = [
@@ -108,43 +109,25 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
-  const { hasRoleId, userRoles, roles, loading: roleLoading } = useUserRole();
+  const { hasRoleId } = useUserRole();
 
   // Check if current page is image-studio
   const isImageStudioPage = pathname.includes("image-studio");
-
-  // Debug: Log pathname and image-studio detection
-  useEffect(() => {
-    console.log("Current pathname:", pathname);
-    console.log("Is image-studio page:", isImageStudioPage);
-  }, [pathname, isImageStudioPage]);
 
   // Set mounted state after hydration
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Debug logging
-  useEffect(() => {
-    console.log("=== Role Debug Info ===");
-    console.log("Session user ID:", session?.user?.id);
-    console.log("Roles (string array):", roles);
-    console.log("User roles (legacy number array):", userRoles);
-    console.log("Has role ID 2:", hasRoleId(2));
-    console.log("Has role ID 3:", hasRoleId(3));
-    console.log("Role loading state:", roleLoading);
-    console.log("=======================");
-  }, [session, roles, userRoles, roleLoading, hasRoleId]);
 
   // Build navigation based on user role
   const navigation = [...baseNavigation];
-  if (hasRoleId(2)) {
-    console.log("Adding admin navigation for role ID 2");
+  if (hasRoleId(1)) {
     navigation.push(...adminNavigation);
+    navigation.push(...accountAdminNavigation);
   }
   // Add account admin navigation for role ID 3
   if (hasRoleId(3)) {
-    console.log("Adding account-admin navigation for role ID 3");
     navigation.push(...accountAdminNavigation);
   }
 

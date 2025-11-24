@@ -8,6 +8,7 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetClose,
 } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -191,6 +192,7 @@ export function ContactDetailSheet({
         hasUpcomingVisit: contact.hasUpcomingVisit,
         upcomingAppointmentId: contact.upcomingAppointmentId?.toString(),
         hasMissedVisit: contact.hasMissedVisit,
+        missedAppointmentId: contact.missedAppointmentId?.toString(),
         hasCompletedVisit: contact.hasCompletedVisit,
         hasCancelledVisit: contact.hasCancelledVisit,
         hasOffer: contact.hasOffer,
@@ -624,23 +626,37 @@ export function ContactDetailSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="flex flex-col w-full max-w-full sm:max-w-md md:max-w-2xl p-0">
+      <SheetContent className="flex flex-col w-full max-w-full sm:max-w-md md:max-w-2xl p-0 [&>button]:hidden">
         <SheetHeader className="px-4 pt-4 sm:px-6 sm:pt-6">
-          <SheetTitle className="flex items-center gap-2 text-base sm:text-lg break-words">
-            <button
-              onClick={() => {
-                navigateToPage(`/contactos/${contact.contact.contactId}`, router);
-                onClose();
-              }}
-              className="text-left hover:text-gray-600 transition-colors underline decoration-dotted underline-offset-2 hover:decoration-solid"
-              title="Ver perfil completo"
-            >
-              {contactName}
-            </button>
-          </SheetTitle>
+          <div className="flex items-center justify-between gap-2">
+            <SheetTitle className="flex items-center gap-2 text-base sm:text-lg break-words min-w-0 flex-1">
+              <button
+                onClick={() => {
+                  navigateToPage(`/contactos/${contact.contact.contactId}`, router);
+                  onClose();
+                }}
+                className="text-left hover:text-gray-600 transition-colors underline decoration-dotted underline-offset-2 hover:decoration-solid"
+                title="Ver perfil completo"
+              >
+                {contactName}
+              </button>
+            </SheetTitle>
+
+            {/* Custom Close Button */}
+            <SheetClose asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 shrink-0 p-0 opacity-70 transition-opacity hover:opacity-100"
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+              </Button>
+            </SheetClose>
+          </div>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 mt-3 sm:mt-4">
+        <ScrollArea className="flex-1 mt-1 sm:mt-2">
           <div className="space-y-3 px-4 pb-4 sm:space-y-4 sm:px-6 sm:pb-6">
             {/* Badge Status - Only show if not "none" */}
             {badgeType !== "none" && (
@@ -688,7 +704,7 @@ export function ContactDetailSheet({
 
             {/* Offer Input for Visita Pendiente (upcoming visit) */}
             {badgeType === "upcoming" && (
-              <div className="space-y-3">
+              <div className="space-y-1">
                 {(() => {
                   console.log("🔍 [Registrar Visita Button] Checking conditions:", {
                     badgeType,
@@ -716,11 +732,13 @@ export function ContactDetailSheet({
                   </Button>
                 )}
                 {!contact.hasOffer && permissions.canEditContacts && (
-                  <OfferInputCard
-                    label="Registrar Oferta"
-                    onSubmit={handleAddOffer}
-                    isSubmitting={isSubmittingOffer}
-                  />
+                  <div className="mt-2">
+                    <OfferInputCard
+                      label="Registrar Oferta"
+                      onSubmit={handleAddOffer}
+                      isSubmitting={isSubmittingOffer}
+                    />
+                  </div>
                 )}
               </div>
             )}
@@ -857,7 +875,7 @@ export function ContactDetailSheet({
             )}
 
             {badgeType === "cancelled" && (
-              <div className="space-y-2 pt-2">
+              <div className="space-y-1 pt-2">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -889,7 +907,33 @@ export function ContactDetailSheet({
             )}
 
             {badgeType === "missed" && (
-              <div className="space-y-2 pt-2">
+              <div className="space-y-1">
+                {(() => {
+                  console.log("🔍 [Registrar Visita Button - Missed] Checking conditions:", {
+                    badgeType,
+                    hasMissedAppointmentId: !!contact.missedAppointmentId,
+                    missedAppointmentId: contact.missedAppointmentId?.toString(),
+                  });
+                  return null;
+                })()}
+                {contact.missedAppointmentId && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
+                    onClick={() => {
+                      console.log("🔘 [Registrar Visita - Missed] Button clicked, navigating to:", `/calendario/visita/${contact.missedAppointmentId}`);
+                      navigateToPage(
+                        `/calendario/visita/${contact.missedAppointmentId}`,
+                        router,
+                      );
+                      onClose();
+                    }}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                    <span className="truncate">Registrar Visita</span>
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -921,14 +965,16 @@ export function ContactDetailSheet({
             )}
 
             {badgeType === "completed" && (
-              <div className="space-y-3">
+              <div className="space-y-1">
                 {/* Offer Input for Visita Completada */}
                 {!contact.hasOffer && permissions.canEditContacts && (
-                  <OfferInputCard
-                    label="Registrar Oferta"
-                    onSubmit={handleAddOffer}
-                    isSubmitting={isSubmittingOffer}
-                  />
+                  <div className="mt-2">
+                    <OfferInputCard
+                      label="Registrar Oferta"
+                      onSubmit={handleAddOffer}
+                      isSubmitting={isSubmittingOffer}
+                    />
+                  </div>
                 )}
                 {permissions.canEditContacts && (
                   <div className="space-y-2 pt-2">
@@ -954,7 +1000,7 @@ export function ContactDetailSheet({
             )}
 
             {badgeType === "none" && (
-              <div className="space-y-2 pt-2">
+              <div className="space-y-1 pt-2">
                 <Button
                   variant="ghost"
                   size="sm"

@@ -16,11 +16,12 @@ export default async function AccountAdminLayout({
     redirect("/auth/signin");
   }
 
-  // Check if user has role ID 3 (Account Admin) and is NOT inactive (role 5)
-  const hasRequiredRole = await userHasRole(session.user.id, 3);
+  // Check if user has role ID 1 (Admin) or role ID 3 (Account Admin) and is NOT inactive (role 5)
+  const isAdmin = await userHasRole(session.user.id, 1);
+  const isAccountAdmin = await userHasRole(session.user.id, 3);
   const isInactive = await userHasRole(session.user.id, 5);
 
-  if (!hasRequiredRole || isInactive) {
+  if ((!isAdmin && !isAccountAdmin) || isInactive) {
     redirect("/operaciones");
   }
 

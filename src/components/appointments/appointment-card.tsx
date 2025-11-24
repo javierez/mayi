@@ -281,7 +281,7 @@ export function AppointmentCard({
           </div>
           {/* Tasks Display - Inside card, super subtle */}
           {showTasks && tasks.length > 0 && (
-            <div className="mt-2 space-y-1 border-t border-gray-100 pt-2">
+            <div className=" space-y-1 border-t border-gray-100 pt-2">
               {tasks.map((task) => (
                 <div
                   key={task.taskId.toString()}

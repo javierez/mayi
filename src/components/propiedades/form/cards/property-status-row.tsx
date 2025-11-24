@@ -655,11 +655,8 @@ export function PropertyStatusRow({
 
             {/* Status Indicators with Text-based Chips */}
             <div className="mt-14 px-4 sm:px-6 md:px-8">
-              <div className="mb-3 flex items-center gap-2">
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 sm:text-xs">
-                  Notas
-                </span>
-                <div className="h-px flex-1 bg-gray-200" />
+              <div className="mb-3">
+                <div className="h-px w-full bg-gray-200" />
               </div>
 
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">

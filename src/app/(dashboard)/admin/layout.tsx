@@ -16,8 +16,8 @@ export default async function AdminLayout({
     redirect("/auth/signin");
   }
 
-  // Check if user has role ID 2 (Super Admin)
-  const hasRequiredRole = await userHasRole(session.user.id, 2);
+  // Check if user has role ID 1 (Admin)
+  const hasRequiredRole = await userHasRole(session.user.id, 1);
 
   if (!hasRequiredRole) {
     redirect("/operaciones");

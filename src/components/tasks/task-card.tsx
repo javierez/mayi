@@ -12,6 +12,7 @@ import {
   Trash2,
   User,
 } from "lucide-react";
+import { cn } from "~/lib/utils";
 
 // Generic task interface that works with both tareas.tsx and WorkQueueCard
 interface BaseTask {
@@ -28,6 +29,7 @@ interface BaseTask {
   userName?: string | null;
   userFirstName?: string | null;
   userLastName?: string | null;
+  urgency?: number | null;
 }
 
 interface TaskCardProps<T extends BaseTask> {
@@ -59,6 +61,25 @@ const getInitials = (
   }
   return "U";
 };
+
+function getUrgencyBgColor(urgency: number | null): string {
+  if (!urgency) return "bg-gray-300/60";
+
+  switch (urgency) {
+    case 5:
+      return "bg-red-500/60";
+    case 4:
+      return "bg-orange-500/60";
+    case 3:
+      return "bg-yellow-500/60";
+    case 2:
+      return "bg-blue-500/60";
+    case 1:
+      return "bg-gray-400/60";
+    default:
+      return "bg-gray-300/60";
+  }
+}
 
 const getRemainingTime = (dueDate?: Date | string | null) => {
   if (!dueDate) return null;
@@ -322,13 +343,23 @@ export function TaskCard<T extends BaseTask>({
           )}
         </div>
 
-        {/* Status icons - bottom right */}
-        <div className="absolute bottom-2 right-2 flex items-center gap-1">
-          {taskState === "saving" && (
-            <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
-          )}
-          {taskState === "saved" && (
-            <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+        {/* Status icons and urgency indicator - bottom right */}
+        <div className="absolute bottom-2 right-2 flex flex-col items-end gap-1">
+          {/* Status icons */}
+          <div className="flex items-center gap-1">
+            {taskState === "saving" && (
+              <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
+            )}
+            {taskState === "saved" && (
+              <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+            )}
+          </div>
+
+          {/* Urgency indicator */}
+          {task.urgency && (
+            <div
+              className={cn("h-1 w-16 rounded-full", getUrgencyBgColor(task.urgency))}
+            />
           )}
         </div>
       </motion.div>

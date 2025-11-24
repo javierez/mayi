@@ -116,7 +116,7 @@ export default function CalendarEvent({
   };
 
   const formatTripTime = (minutes?: number) => {
-    if (!minutes) return null;
+    if (!minutes || minutes === 0) return null;
     if (minutes < 60) return `${minutes}min`;
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
@@ -163,7 +163,7 @@ export default function CalendarEvent({
   return (
     <>
       {/* Travel Time Block - positioned above appointment */}
-      {travelTimeHeight > 0 && event.status !== "Cancelled" && (
+      {travelTimeHeight > 0 && event.tripTimeMinutes != null && event.tripTimeMinutes > 0 && event.status !== "Cancelled" && (
         <div
           className="pointer-events-none absolute left-0.5 right-0.5 rounded-t-lg backdrop-blur-sm"
           style={{
@@ -238,7 +238,7 @@ export default function CalendarEvent({
         )}
 
         {/* Show trip time if height > 80px and trip time exists */}
-        {showExtended && event.tripTimeMinutes && (
+        {showExtended && event.tripTimeMinutes != null && event.tripTimeMinutes > 0 && (
           <div className="mt-0.5 flex items-center gap-1 truncate text-xs opacity-90">
             <Car className="h-3 w-3 flex-shrink-0" />
             <span className="truncate">
@@ -268,7 +268,7 @@ export default function CalendarEvent({
       </div>
 
       {/* Return Travel Time Block - positioned below appointment */}
-      {travelTimeHeight > 0 && event.status !== "Cancelled" && (
+      {travelTimeHeight > 0 && event.tripTimeMinutes != null && event.tripTimeMinutes > 0 && event.status !== "Cancelled" && (
         <div
           className="pointer-events-none absolute left-0.5 right-0.5 rounded-b-lg backdrop-blur-sm"
           style={{
@@ -296,28 +296,96 @@ export default function CalendarEvent({
 }
 
 // Compact version for mobile or small spaces
-// TODO: Work in progress - New compact view design coming soon
 export function CompactCalendarEvent({
-  event: _event,
-  isSelected: _isSelected = false,
-  onClick: _onClick,
+  event,
+  isSelected = false,
+  onClick,
   className = "",
 }: Omit<CalendarEventProps, "style">) {
+  const typeConfig = appointmentTypes[
+    event.type as keyof typeof appointmentTypes
+  ] ?? {
+    color: "bg-gray-500",
+    icon: <CalendarIcon className="h-3 w-3" />,
+    textColor: "text-white",
+  };
+
+  const statusConfig = statusColors[event.status] ?? statusColors.Scheduled;
+
+  // Apply visual indicators for optimistic events
+  const isOptimisticEvent = event.isOptimistic ?? false;
+  const optimisticStyles = isOptimisticEvent
+    ? "opacity-75 ring-1 ring-blue-400 ring-opacity-50 animate-pulse"
+    : "";
+
+  const formatTime = (date: Date) => {
+    return new Intl.DateTimeFormat("es-ES", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date);
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClick?.(event);
+  };
+
   return (
     <div
       className={cn(
-        "calendar-event flex items-center justify-center rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 p-6",
+        "calendar-event relative cursor-pointer overflow-hidden rounded-lg px-3 py-2 shadow-sm transition-all duration-200 hover:ring-2 hover:ring-black hover:ring-offset-1",
+        typeConfig.color,
+        typeConfig.textColor,
+        statusConfig,
+        isSelected && "ring-2 ring-black ring-offset-1",
+        optimisticStyles,
         className,
       )}
+      onClick={handleClick}
     >
-      <div className="text-center">
-        <p className="text-sm font-medium text-muted-foreground">
-          Vista Compacta en Desarrollo
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground/70">
-          Próximamente: Nueva experiencia de visualización
-        </p>
+      {/* Event type and title/contact name */}
+      <div className="flex items-center gap-1.5 truncate text-sm font-medium leading-tight">
+        {typeConfig.icon}
+        <span className="truncate">
+          {event.title ? (
+            <>
+              {event.type}: {event.title}
+            </>
+          ) : (
+            <>
+              {event.type} {event.contactName}
+            </>
+          )}
+        </span>
       </div>
+
+      {/* Time */}
+      <div className="mt-1 flex items-center gap-1 truncate text-xs opacity-90">
+        <Clock className="h-3 w-3 flex-shrink-0" />
+        <span className="truncate">
+          {formatTime(event.startTime)} - {formatTime(event.endTime)}
+        </span>
+      </div>
+
+      {/* Address if available */}
+      {event.propertyAddress && (
+        <div className="mt-1 flex items-center gap-1 truncate text-xs opacity-90">
+          <MapPin className="h-3 w-3 flex-shrink-0" />
+          <span className="truncate">{event.propertyAddress}</span>
+        </div>
+      )}
+
+      {/* Status indicator for non-scheduled appointments */}
+      {event.status !== "Scheduled" && (
+        <div className="absolute right-2 top-2">
+          <div
+            className={cn(
+              "h-2 w-2 rounded-full bg-white",
+              event.status === "Completed" ? "bg-opacity-0" : "bg-opacity-80",
+            )}
+          />
+        </div>
+      )}
     </div>
   );
 }

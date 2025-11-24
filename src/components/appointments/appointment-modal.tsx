@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { ScrollArea } from "~/components/ui/scroll-area";
 import AppointmentForm from "./appointment-form";
 
 // Appointment form data interface
@@ -93,13 +92,15 @@ export default function AppointmentModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[90vh] max-h-[90vh] max-w-4xl flex-col overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>{modalTitle}</DialogTitle>
-          <DialogDescription>{modalDescription}</DialogDescription>
-        </DialogHeader>
+      <DialogContent className="flex h-[95vh] max-h-[95vh] w-full max-w-[95vw] flex-col overflow-hidden p-0 sm:h-[90vh] sm:max-h-[90vh] sm:max-w-4xl">
+        <div className="px-4 pt-4 sm:px-6 sm:pt-6">
+          <DialogHeader>
+            <DialogTitle>{modalTitle}</DialogTitle>
+            <DialogDescription>{modalDescription}</DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <ScrollArea className="flex-1 py-4">
+        <div className="flex flex-1 flex-col overflow-hidden">
           <AppointmentForm
             initialData={initialData}
             onSubmit={handleSubmit}
@@ -110,7 +111,7 @@ export default function AppointmentModal({
             removeOptimisticEvent={removeOptimisticEvent}
             updateOptimisticEvent={updateOptimisticEvent}
           />
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -21,11 +21,12 @@ import {
   Pencil,
   Trash2,
   X,
+  CalendarPlus,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
 import Link from "next/link";
-import { getTaskByIdWithAuth, deleteTaskWithAuth } from "~/server/queries/task";
+import { getTaskByIdWithAuth, deleteTaskWithAuth, updateTaskWithAuth } from "~/server/queries/task";
 import type { DetailedTask } from "~/lib/operations/task-utils";
 import { getInitials, getRemainingTime } from "~/lib/operations/task-utils";
 import { TaskEditModal } from "./task-edit-modal";
@@ -35,6 +36,8 @@ import {
   canDeleteAllTasks,
 } from "~/app/actions/permissions/check-permissions";
 import { useRouter } from "next/navigation";
+import { createAppointmentAction } from "~/server/actions/appointments";
+import { toast } from "sonner";
 
 interface TaskViewModalProps {
   open: boolean;
@@ -61,13 +64,14 @@ export function TaskViewModal({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isCreatingAppointment, setIsCreatingAppointment] = useState(false);
   // Store raw task data to pass to edit modal
   const [rawTaskData, setRawTaskData] = useState<Awaited<ReturnType<typeof getTaskByIdWithAuth>> | null>(null);
-  
+
   // Permission states
   const [hasEditAllPermission, setHasEditAllPermission] = useState<boolean>(false);
   const [hasDeleteAllPermission, setHasDeleteAllPermission] = useState<boolean>(false);
-  
+
   const { data: session } = useSession();
   const router = useRouter();
 
@@ -121,12 +125,19 @@ export function TaskViewModal({
     setLoading(true);
     try {
       const taskData = await getTaskByIdWithAuth(taskId);
+      console.log('🔍 Raw task data fetched:', {
+        taskId,
+        dueDate: taskData?.tasks?.dueDate,
+        dueTime: taskData?.tasks?.dueTime,
+        appointmentId: taskData?.tasks?.appointmentId,
+        fullTaskData: taskData?.tasks,
+      });
+
       // Store raw task data for passing to edit modal
       setRawTaskData(taskData);
-      
+
       if (taskData?.tasks) {
         // Transform the task data to match DetailedTask format
-        // Note: getTaskById doesn't include user info, so those fields will be null
         // Using type assertion since the query structure matches DetailedTask but types differ slightly
         const transformedTask = {
           taskId: Number(taskData.tasks.taskId),
@@ -159,10 +170,10 @@ export function TaskViewModal({
           isActive: taskData.tasks.isActive ?? true,
           createdAt: taskData.tasks.createdAt ?? null,
           updatedAt: taskData.tasks.updatedAt ?? null,
-          // User info not available from getTaskById
-          userName: null,
-          userFirstName: null,
-          userLastName: null,
+          // User info from getTaskById join with users table
+          userName: taskData.users?.name ?? null,
+          userFirstName: taskData.users?.firstName ?? null,
+          userLastName: taskData.users?.lastName ?? null,
           contactFirstName: taskData.contacts?.firstName ?? null,
           contactLastName: taskData.contacts?.lastName ?? null,
           propertyTitle: taskData.properties?.title ?? null,
@@ -297,7 +308,7 @@ export function TaskViewModal({
       // Close both modals
       setIsDeleteModalOpen(false);
       onOpenChange(false);
-      
+
       // Trigger refresh: use callback if provided, otherwise use router.refresh()
       if (onSuccess) {
         onSuccess();
@@ -312,9 +323,97 @@ export function TaskViewModal({
     }
   };
 
+  const handleCreateAppointment = async () => {
+    if (!task || !taskId) return;
+
+    // Ensure we have both date and time
+    if (!task.dueDate || !rawTaskData?.tasks.dueTime) {
+      toast.error("Error", {
+        description: "La tarea debe tener fecha y hora para crear una cita",
+      });
+      return;
+    }
+
+    setIsCreatingAppointment(true);
+    try {
+      // Format dates
+      const dueDate = new Date(task.dueDate);
+      const startDate = dueDate.toISOString().split("T")[0];
+      const startTime = rawTaskData.tasks.dueTime;
+
+      if (!startDate) {
+        throw new Error("Invalid start date");
+      }
+
+      // Calculate end time (30 minutes after start)
+      const startDateTime = new Date(`${startDate}T${startTime}`);
+      const endDateTime = new Date(startDateTime.getTime() + 30 * 60 * 1000);
+
+      // Extract endDate and endTime - use local time components consistently
+      const endDate = `${endDateTime.getFullYear()}-${String(endDateTime.getMonth() + 1).padStart(2, "0")}-${String(endDateTime.getDate()).padStart(2, "0")}`;
+      const endTime = `${String(endDateTime.getHours()).padStart(2, "0")}:${String(endDateTime.getMinutes()).padStart(2, "0")}`;
+
+      console.log("📅 Creating appointment:", {
+        startDate,
+        startTime,
+        startDateTime: startDateTime.toISOString(),
+        endDate,
+        endTime,
+        endDateTime: endDateTime.toISOString(),
+      });
+
+      // Create appointment
+      const appointmentResult = await createAppointmentAction({
+        startDate,
+        startTime,
+        endDate,
+        endTime,
+        title: task.title,
+        notes: rawTaskData.tasks.description ?? undefined,
+        appointmentType: "Tarea",
+        assignedTo: task.userId ?? undefined,
+        contactId: task.contactId ? BigInt(task.contactId) : undefined,
+        listingId: task.listingId ? BigInt(task.listingId) : undefined,
+        listingContactId: rawTaskData?.tasks.listingContactId ? BigInt(rawTaskData.tasks.listingContactId) : undefined,
+      });
+
+      if (appointmentResult.success && appointmentResult.appointmentId) {
+        // Link appointment back to task
+        await updateTaskWithAuth(taskId, {
+          appointmentId: BigInt(appointmentResult.appointmentId),
+        });
+
+        toast.success("Cita creada", {
+          description: "La tarea se ha añadido al calendario correctamente",
+        });
+
+        // Refresh task data
+        await fetchTask();
+
+        // Trigger refresh callback
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.refresh();
+        }
+      } else {
+        toast.error("Error al crear la cita", {
+          description: appointmentResult.error ?? "No se pudo crear la cita",
+        });
+      }
+    } catch (error) {
+      console.error("Error creating appointment from task:", error);
+      toast.error("Error inesperado", {
+        description: "Ocurrió un error al crear la cita",
+      });
+    } finally {
+      setIsCreatingAppointment(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px] [&>button]:hidden">
+      <DialogContent className="custom-scrollbar max-h-[90vh] overflow-y-auto sm:max-w-[600px] [&>button]:hidden">
         <DialogHeader className="space-y-0 -mb-6">
           <div className="flex items-start justify-between gap-4">
             <DialogTitle className="text-xl font-semibold text-gray-900 flex-1">
@@ -529,24 +628,64 @@ export function TaskViewModal({
                 </div>
               )}
 
-              {/* Footer with Assigned User */}
-              {(task.userName || task.userFirstName || task.userLastName) && (
+              {/* Footer with Assigned User and Calendar Button */}
+              {(task.userName ?? task.userFirstName ?? task.userLastName) && (
                 <div className="pt-4 border-t border-gray-200">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarFallback className="bg-gray-100 text-gray-700 text-[10px] font-medium">
-                        {getInitials(
-                          task.userFirstName ?? undefined,
-                          task.userLastName ?? undefined,
-                          task.userName ?? undefined,
-                        )}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-xs text-gray-600">
-                      {task.userName ??
-                        ((`${task.userFirstName ?? ""} ${task.userLastName ?? ""}`.trim() ||
-                          "Usuario"))}
-                    </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="bg-gray-100 text-gray-700 text-[10px] font-medium">
+                          {getInitials(
+                            task.userFirstName ?? undefined,
+                            task.userLastName ?? undefined,
+                            task.userName ?? undefined,
+                          )}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-xs text-gray-600">
+                        {task.userName ??
+                          ((`${task.userFirstName ?? ""} ${task.userLastName ?? ""}`.trim() ||
+                            "Usuario"))}
+                      </span>
+                    </div>
+                    {/* Create appointment button - only show if task has date+time and no appointment linked */}
+                    {(() => {
+                      const hasDueTime = !!rawTaskData?.tasks.dueTime;
+                      const hasAppointment = !!rawTaskData?.tasks.appointmentId;
+                      const shouldShow = hasDueTime && !hasAppointment;
+
+                      console.log('📅 Calendar button visibility check:', {
+                        hasDueTime,
+                        dueTime: rawTaskData?.tasks.dueTime,
+                        hasAppointment,
+                        appointmentId: rawTaskData?.tasks.appointmentId,
+                        shouldShow,
+                        taskId: task.taskId,
+                      });
+
+                      return shouldShow ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => void handleCreateAppointment()}
+                          disabled={isCreatingAppointment}
+                          className="h-7 px-2 text-xs text-gray-500 hover:text-primary hover:bg-gray-100"
+                          title="Añadir al calendario"
+                        >
+                          {isCreatingAppointment ? (
+                            <>
+                              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                              Añadiendo...
+                            </>
+                          ) : (
+                            <>
+                              <CalendarPlus className="mr-1.5 h-3.5 w-3.5" />
+                              Añadir al calendario
+                            </>
+                          )}
+                        </Button>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
               )}

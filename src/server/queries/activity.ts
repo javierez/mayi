@@ -181,6 +181,7 @@ export async function getListingContactsSummary(listingId: bigint) {
             inArray(appointments.contactId, contactIds),
             eq(appointments.listingId, listingId),
             eq(appointments.isActive, true),
+            or(eq(appointments.type, "Visita"), isNull(appointments.type)),
           ),
         )
         .groupBy(appointments.contactId);
@@ -215,6 +216,7 @@ export async function getListingContactsSummary(listingId: bigint) {
     // Get the latest past visit status for each contact (excluding upcoming visits)
     let latestPastVisits: Array<{
       contactId: bigint;
+      appointmentId: bigint;
       status: string | null;
       datetimeStart: Date;
     }> = [];
@@ -223,6 +225,7 @@ export async function getListingContactsSummary(listingId: bigint) {
       const latestPastVisitResults = await db
         .select({
           contactId: appointments.contactId,
+          appointmentId: appointments.appointmentId,
           status: appointments.status,
           datetimeStart: appointments.datetimeStart,
         })
@@ -233,17 +236,19 @@ export async function getListingContactsSummary(listingId: bigint) {
             eq(appointments.listingId, listingId),
             sql`${appointments.datetimeStart} <= NOW()`,
             eq(appointments.isActive, true),
+            or(eq(appointments.type, "Visita"), isNull(appointments.type)),
           ),
         )
         .orderBy(desc(appointments.datetimeStart));
 
       // Group by contactId and take the first (most recent) past visit
-      const latestByContact = new Map<string, { status: string | null; datetimeStart: Date }>();
+      const latestByContact = new Map<string, { appointmentId: bigint; status: string | null; datetimeStart: Date }>();
       for (const visit of latestPastVisitResults) {
         if (visit.contactId) {
           const contactIdStr = visit.contactId.toString();
           if (!latestByContact.has(contactIdStr)) {
             latestByContact.set(contactIdStr, {
+              appointmentId: visit.appointmentId,
               status: visit.status,
               datetimeStart: visit.datetimeStart,
             });
@@ -254,6 +259,7 @@ export async function getListingContactsSummary(listingId: bigint) {
       latestPastVisits = Array.from(latestByContact.entries()).map(
         ([contactIdStr, visitData]) => ({
           contactId: BigInt(contactIdStr),
+          appointmentId: visitData.appointmentId,
           status: visitData.status,
           datetimeStart: visitData.datetimeStart,
         }),
@@ -262,6 +268,11 @@ export async function getListingContactsSummary(listingId: bigint) {
 
     const latestPastVisitMap = new Map(
       latestPastVisits.map((v) => [v.contactId.toString(), v.status]),
+    );
+    const missedAppointmentMap = new Map(
+      latestPastVisits
+        .filter((v) => v.status === "NoShow" || v.status === "Scheduled")
+        .map((v) => [v.contactId.toString(), v.appointmentId]),
     );
 
     // Get the earliest upcoming appointment for each contact
@@ -285,6 +296,7 @@ export async function getListingContactsSummary(listingId: bigint) {
             sql`${appointments.datetimeStart} > NOW()`,
             eq(appointments.status, "Scheduled"),
             eq(appointments.isActive, true),
+            or(eq(appointments.type, "Visita"), isNull(appointments.type)),
           ),
         )
         .orderBy(appointments.datetimeStart);
@@ -326,6 +338,9 @@ export async function getListingContactsSummary(listingId: bigint) {
       const hasUpcomingVisit = (visitStats?.upcomingVisits ?? 0) > 0;
       const hasOffer = contact.offer !== null && contact.offer !== undefined;
       const upcomingAppointmentId = upcomingAppointmentMap.get(
+        contact.contactId.toString(),
+      );
+      const missedAppointmentId = missedAppointmentMap.get(
         contact.contactId.toString(),
       );
 
@@ -378,6 +393,7 @@ export async function getListingContactsSummary(listingId: bigint) {
         visitCount: visitStats?.totalVisits ?? 0,
         hasUpcomingVisit,
         upcomingAppointmentId,
+        missedAppointmentId,
         hasMissedVisit,
         hasCompletedVisit,
         hasCancelledVisit,
@@ -639,6 +655,7 @@ export async function getContactRelatedContactsForBuyerListings(
             inArray(appointments.contactId, contactIds),
             inArray(appointments.listingId, listingIds),
             eq(appointments.isActive, true),
+            or(eq(appointments.type, "Visita"), isNull(appointments.type)),
           ),
         )
         .groupBy(appointments.contactId);
@@ -673,6 +690,7 @@ export async function getContactRelatedContactsForBuyerListings(
     // Get the latest past visit status for each contact (excluding upcoming visits)
     let latestPastVisits: Array<{
       contactId: bigint;
+      appointmentId: bigint;
       status: string | null;
     }> = [];
 
@@ -680,6 +698,7 @@ export async function getContactRelatedContactsForBuyerListings(
       const latestPastVisitResults = await db
         .select({
           contactId: appointments.contactId,
+          appointmentId: appointments.appointmentId,
           status: appointments.status,
           datetimeStart: appointments.datetimeStart,
         })
@@ -690,25 +709,30 @@ export async function getContactRelatedContactsForBuyerListings(
             inArray(appointments.listingId, listingIds),
             sql`${appointments.datetimeStart} <= NOW()`,
             eq(appointments.isActive, true),
+            or(eq(appointments.type, "Visita"), isNull(appointments.type)),
           ),
         )
         .orderBy(desc(appointments.datetimeStart));
 
       // Group by contactId and take the first (most recent) past visit
-      const latestByContact = new Map<string, string | null>();
+      const latestByContact = new Map<string, { appointmentId: bigint; status: string | null }>();
       for (const visit of latestPastVisitResults) {
         if (visit.contactId) {
           const contactIdStr = visit.contactId.toString();
           if (!latestByContact.has(contactIdStr)) {
-            latestByContact.set(contactIdStr, visit.status);
+            latestByContact.set(contactIdStr, {
+              appointmentId: visit.appointmentId,
+              status: visit.status,
+            });
           }
         }
       }
 
       latestPastVisits = Array.from(latestByContact.entries()).map(
-        ([contactIdStr, status]) => ({
+        ([contactIdStr, visitData]) => ({
           contactId: BigInt(contactIdStr),
-          status,
+          appointmentId: visitData.appointmentId,
+          status: visitData.status,
         }),
       );
     }
@@ -716,11 +740,19 @@ export async function getContactRelatedContactsForBuyerListings(
     const latestPastVisitMap = new Map(
       latestPastVisits.map((v) => [v.contactId.toString(), v.status]),
     );
+    const missedAppointmentMap = new Map(
+      latestPastVisits
+        .filter((v) => v.status === "NoShow" || v.status === "Scheduled")
+        .map((v) => [v.contactId.toString(), v.appointmentId]),
+    );
 
     const contactsWithVisitStatus = allContacts.map((contact) => {
       const visitStats = visitMap.get(contact.contactId.toString());
       const hasUpcomingVisit = (visitStats?.upcomingVisits ?? 0) > 0;
       const hasOffer = contact.offer !== null && contact.offer !== undefined;
+      const missedAppointmentId = missedAppointmentMap.get(
+        contact.contactId.toString(),
+      );
 
       // Get the latest past visit status (if any)
       const latestPastVisitStatus = latestPastVisitMap.get(
@@ -763,6 +795,7 @@ export async function getContactRelatedContactsForBuyerListings(
         ...contact,
         visitCount: visitStats?.totalVisits ?? 0,
         hasUpcomingVisit,
+        missedAppointmentId,
         hasMissedVisit,
         hasCompletedVisit,
         hasCancelledVisit,
@@ -1376,6 +1409,7 @@ export async function getContactRelatedContactsAsOwner(contactId: bigint) {
             inArray(appointments.contactId, contactIds),
             inArray(appointments.listingId, ownedListingIds),
             eq(appointments.isActive, true),
+            or(eq(appointments.type, "Visita"), isNull(appointments.type)),
           ),
         )
         .groupBy(appointments.contactId);
@@ -1410,6 +1444,7 @@ export async function getContactRelatedContactsAsOwner(contactId: bigint) {
     // Get the latest past visit status for each contact (excluding upcoming visits)
     let latestPastVisits: Array<{
       contactId: bigint;
+      appointmentId: bigint;
       status: string | null;
     }> = [];
 
@@ -1417,6 +1452,7 @@ export async function getContactRelatedContactsAsOwner(contactId: bigint) {
       const latestPastVisitResults = await db
         .select({
           contactId: appointments.contactId,
+          appointmentId: appointments.appointmentId,
           status: appointments.status,
           datetimeStart: appointments.datetimeStart,
         })
@@ -1427,25 +1463,30 @@ export async function getContactRelatedContactsAsOwner(contactId: bigint) {
             inArray(appointments.listingId, ownedListingIds),
             sql`${appointments.datetimeStart} <= NOW()`,
             eq(appointments.isActive, true),
+            or(eq(appointments.type, "Visita"), isNull(appointments.type)),
           ),
         )
         .orderBy(desc(appointments.datetimeStart));
 
       // Group by contactId and take the first (most recent) past visit
-      const latestByContact = new Map<string, string | null>();
+      const latestByContact = new Map<string, { appointmentId: bigint; status: string | null }>();
       for (const visit of latestPastVisitResults) {
         if (visit.contactId) {
           const contactIdStr = visit.contactId.toString();
           if (!latestByContact.has(contactIdStr)) {
-            latestByContact.set(contactIdStr, visit.status);
+            latestByContact.set(contactIdStr, {
+              appointmentId: visit.appointmentId,
+              status: visit.status,
+            });
           }
         }
       }
 
       latestPastVisits = Array.from(latestByContact.entries()).map(
-        ([contactIdStr, status]) => ({
+        ([contactIdStr, visitData]) => ({
           contactId: BigInt(contactIdStr),
-          status,
+          appointmentId: visitData.appointmentId,
+          status: visitData.status,
         }),
       );
     }
@@ -1453,11 +1494,71 @@ export async function getContactRelatedContactsAsOwner(contactId: bigint) {
     const latestPastVisitMap = new Map(
       latestPastVisits.map((v) => [v.contactId.toString(), v.status]),
     );
+    const missedAppointmentMap = new Map(
+      latestPastVisits
+        .filter((v) => v.status === "NoShow" || v.status === "Scheduled")
+        .map((v) => [v.contactId.toString(), v.appointmentId]),
+    );
+
+    // Get the earliest upcoming appointment for each contact
+    let upcomingAppointments: Array<{
+      contactId: bigint;
+      appointmentId: bigint;
+    }> = [];
+
+    if (contactIds.length > 0) {
+      const upcomingAppointmentResults = await db
+        .select({
+          contactId: appointments.contactId,
+          appointmentId: appointments.appointmentId,
+          datetimeStart: appointments.datetimeStart,
+        })
+        .from(appointments)
+        .where(
+          and(
+            inArray(appointments.contactId, contactIds),
+            inArray(appointments.listingId, ownedListingIds),
+            sql`${appointments.datetimeStart} > NOW()`,
+            eq(appointments.status, "Scheduled"),
+            eq(appointments.isActive, true),
+            or(eq(appointments.type, "Visita"), isNull(appointments.type)),
+          ),
+        )
+        .orderBy(appointments.datetimeStart);
+
+      // Group by contactId and take the first (earliest) appointment
+      const appointmentsByContact = new Map<string, bigint>();
+      for (const apt of upcomingAppointmentResults) {
+        if (apt.contactId) {
+          const contactIdStr = apt.contactId.toString();
+          if (!appointmentsByContact.has(contactIdStr)) {
+            appointmentsByContact.set(contactIdStr, apt.appointmentId);
+          }
+        }
+      }
+
+      upcomingAppointments = Array.from(appointmentsByContact.entries()).map(
+        ([contactIdStr, appointmentId]) => ({
+          contactId: BigInt(contactIdStr),
+          appointmentId,
+        }),
+      );
+    }
+
+    const upcomingAppointmentMap = new Map(
+      upcomingAppointments.map((a) => [a.contactId.toString(), a.appointmentId]),
+    );
 
     const contactsWithVisitStatus = allContacts.map((contact) => {
       const visitStats = visitMap.get(contact.contactId.toString());
       const hasUpcomingVisit = (visitStats?.upcomingVisits ?? 0) > 0;
       const hasOffer = contact.offer !== null && contact.offer !== undefined;
+      const upcomingAppointmentId = upcomingAppointmentMap.get(
+        contact.contactId.toString(),
+      );
+      const missedAppointmentId = missedAppointmentMap.get(
+        contact.contactId.toString(),
+      );
 
       // Get the latest past visit status (if any)
       const latestPastVisitStatus = latestPastVisitMap.get(
@@ -1500,6 +1601,8 @@ export async function getContactRelatedContactsAsOwner(contactId: bigint) {
         ...contact,
         visitCount: visitStats?.totalVisits ?? 0,
         hasUpcomingVisit,
+        upcomingAppointmentId,
+        missedAppointmentId,
         hasMissedVisit,
         hasCompletedVisit,
         hasCancelledVisit,

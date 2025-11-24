@@ -1041,6 +1041,32 @@ export const listingContactComments = pgTable("listing_contact_comments", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Appointment Comments table (Comments on appointments)
+export const appointmentComments = pgTable("appointment_comments", {
+  commentId: bigserial("comment_id", { mode: "bigint" })
+    .primaryKey(),
+  appointmentId: bigint("appointment_id", { mode: "bigint" }).notNull(), // FK → appointments.appointment_id
+  userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
+  content: text("content").notNull(),
+  parentId: bigint("parent_id", { mode: "bigint" }), // Self-reference for replies
+  isDeleted: boolean("is_deleted").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Task Comments table (Comments on tasks)
+export const taskComments = pgTable("task_comments", {
+  commentId: bigserial("comment_id", { mode: "bigint" })
+    .primaryKey(),
+  taskId: bigint("task_id", { mode: "bigint" }).notNull(), // FK → tasks.task_id
+  userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
+  content: text("content").notNull(),
+  parentId: bigint("parent_id", { mode: "bigint" }), // Self-reference for replies
+  isDeleted: boolean("is_deleted").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Cartel Configurations table
 export const cartelConfigurations = pgTable("cartel_configurations", {
   id: bigserial("id", { mode: "bigint" }).primaryKey(),
@@ -1067,7 +1093,8 @@ export const feedback = pgTable("feedback", {
   feedbackComment: text("feedback_comment").notNull(),
   scale: smallint("scale").notNull(), // 1-4 scale rating
   url: varchar("url", { length: 2048 }), // URL where feedback was submitted
-  resolved: boolean("resolved").default(false).notNull(), // 1=resolved, 0=unresolved
+  status: varchar("status", { length: 50 }).default("submitted").notNull(), // submitted, backlog, resolved, evaluating, testing, ongoing
+  resolved: boolean("resolved").default(false).notNull(), // 1=resolved, 0=unresolved (kept for backward compatibility)
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

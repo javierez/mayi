@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useSession } from "~/lib/auth-client";
 import Link from "next/link";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
+  SheetClose,
 } from "~/components/ui/sheet";
 import {
   DropdownMenu,
@@ -37,12 +39,21 @@ import {
   Loader,
   Pencil,
   ExternalLink,
+  X,
 } from "lucide-react";
 import {
   updateAppointmentStatusAction,
   deleteAppointmentAction,
 } from "~/server/actions/appointments";
 import type { AppointmentData } from "./appointment-card";
+import { AppointmentComments } from "./appointment-comments";
+import {
+  createAppointmentCommentAction,
+  updateAppointmentCommentAction,
+  deleteAppointmentCommentAction,
+} from "~/server/actions/appointment-comments";
+import { getAppointmentCommentsByIdWithAuth } from "~/server/queries/appointment-comments";
+import type { AppointmentCommentWithUser } from "~/types/appointment-comments";
 
 // Appointment types configuration
 const appointmentTypes = {
@@ -135,9 +146,26 @@ export function AppointmentDetailSheet({
   context,
 }: AppointmentDetailSheetProps) {
   const router = useRouter();
+  const { data: session } = useSession();
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isDeletingAppointment, setIsDeletingAppointment] = useState(false);
   const [optimisticStatus, setOptimisticStatus] = useState<string | null>(null);
+  const [comments, setComments] = useState<AppointmentCommentWithUser[]>([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+
+  // Fetch comments when sheet opens
+  useEffect(() => {
+    if (isOpen && appointment) {
+      setIsLoadingComments(true);
+      getAppointmentCommentsByIdWithAuth(appointment.appointmentId)
+        .then((data) => setComments(data))
+        .catch((error) => {
+          console.error("Error loading comments:", error);
+          toast.error("Error al cargar los comentarios");
+        })
+        .finally(() => setIsLoadingComments(false));
+    }
+  }, [isOpen, appointment]);
 
   if (!appointment) return null;
 
@@ -318,16 +346,95 @@ export function AppointmentDetailSheet({
     onClose();
   };
 
+  // Comment handlers
+  const handleAddComment = async (tempComment: AppointmentCommentWithUser) => {
+    try {
+      const result = await createAppointmentCommentAction({
+        appointmentId: tempComment.appointmentId,
+        content: tempComment.content,
+        parentId: tempComment.parentId,
+      });
+
+      if (result.success) {
+        // Refresh comments
+        const freshComments = await getAppointmentCommentsByIdWithAuth(
+          tempComment.appointmentId,
+        );
+        setComments(freshComments);
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error adding comment:", error);
+      return { success: false, error: "Error al añadir el comentario" };
+    }
+  };
+
+  const handleEditComment = async (commentId: bigint, content: string) => {
+    try {
+      const result = await updateAppointmentCommentAction({
+        commentId,
+        content,
+      });
+
+      if (result.success && appointment) {
+        // Refresh comments
+        const freshComments = await getAppointmentCommentsByIdWithAuth(
+          appointment.appointmentId,
+        );
+        setComments(freshComments);
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error editing comment:", error);
+      return { success: false, error: "Error al editar el comentario" };
+    }
+  };
+
+  const handleDeleteComment = async (commentId: bigint) => {
+    try {
+      const result = await deleteAppointmentCommentAction(commentId);
+
+      if (result.success && appointment) {
+        // Refresh comments
+        const freshComments = await getAppointmentCommentsByIdWithAuth(
+          appointment.appointmentId,
+        );
+        setComments(freshComments);
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      return { success: false, error: "Error al eliminar el comentario" };
+    }
+  };
+
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-full max-w-full sm:max-w-md">
+      <SheetContent className="w-full max-w-full sm:max-w-md [&>button]:hidden">
         <SheetHeader>
-          <SheetTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <span className="shrink-0">{typeConfig.icon}</span>
-            <span className="min-w-0 break-words">
-              {appointment.title ?? `${appointment.type} - ${appointment.contactName}`}
-            </span>
-          </SheetTitle>
+          <div className="flex items-center justify-between gap-2">
+            <SheetTitle className="flex items-center gap-2 text-base sm:text-lg min-w-0 flex-1">
+              <span className="shrink-0">{typeConfig.icon}</span>
+              <span className="min-w-0 break-words">
+                {appointment.title ?? `${appointment.type} - ${appointment.contactName}`}
+              </span>
+            </SheetTitle>
+
+            {/* Custom Close Button */}
+            <SheetClose asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 shrink-0 p-0 opacity-70 transition-opacity hover:opacity-100"
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+              </Button>
+            </SheetClose>
+          </div>
         </SheetHeader>
 
         <div className="mt-3 space-y-3 sm:mt-4 sm:space-y-4">
@@ -445,6 +552,18 @@ export function AppointmentDetailSheet({
                 </Link>
               </div>
             )}
+            {appointment.contactId && (
+              <div className="flex items-center gap-2 text-sm">
+                <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <Link
+                  href={`/contactos/${appointment.contactId}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="min-w-0 break-words underline decoration-dotted underline-offset-2 transition-all hover:decoration-solid"
+                >
+                  {appointment.contactName ?? "Contacto"}
+                </Link>
+              </div>
+            )}
             {appointment.propertyAddress && (
               <div className="flex items-start gap-2 text-sm">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
@@ -459,7 +578,7 @@ export function AppointmentDetailSheet({
                 </a>
               </div>
             )}
-            {appointment.tripTimeMinutes && (
+            {appointment.tripTimeMinutes != null && appointment.tripTimeMinutes > 0 && (
               <div className="flex items-center gap-2 text-sm">
                 <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span>Tiempo de viaje: {appointment.tripTimeMinutes} min</span>
@@ -554,6 +673,31 @@ export function AppointmentDetailSheet({
                   </Button>
                 )}
               </>
+            )}
+          </div>
+
+          {/* Comments Section */}
+          <div className="mt-6 border-t pt-6">
+            {isLoadingComments ? (
+              <div className="flex justify-center py-8">
+                <Loader className="h-6 w-6 animate-spin text-gray-400" />
+              </div>
+            ) : (
+              session?.user && (
+                <AppointmentComments
+                  appointmentId={appointment.appointmentId}
+                  initialComments={comments}
+                  currentUserId={session.user.id}
+                  currentUser={{
+                    id: session.user.id,
+                    name: session.user.name ?? undefined,
+                    image: session.user.image ?? undefined,
+                  }}
+                  onAddComment={handleAddComment}
+                  onEditComment={handleEditComment}
+                  onDeleteComment={handleDeleteComment}
+                />
+              )
             )}
           </div>
         </div>

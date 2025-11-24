@@ -66,6 +66,7 @@ export interface ContactWithDetails {
   visitCount: number;
   hasUpcomingVisit: boolean;
   upcomingAppointmentId?: bigint;
+  missedAppointmentId?: bigint;
   hasMissedVisit: boolean;
   hasCompletedVisit: boolean;
   hasCancelledVisit: boolean;
@@ -94,6 +95,7 @@ export interface ContactSheetData {
   };
   hasUpcomingVisit: boolean;
   upcomingAppointmentId?: bigint;
+  missedAppointmentId?: bigint;
   hasMissedVisit: boolean;
   hasCompletedVisit: boolean;
   hasCancelledVisit: boolean;
@@ -120,6 +122,7 @@ export interface CompactContactCardProps {
   };
   hasUpcomingVisit: boolean;
   upcomingAppointmentId?: bigint;
+  missedAppointmentId?: bigint;
   hasMissedVisit: boolean;
   hasCompletedVisit: boolean;
   hasCancelledVisit: boolean;
@@ -139,6 +142,9 @@ export interface ExpandableSectionProps {
   defaultExpanded?: boolean;
   children: React.ReactNode;
   storageKey?: string;
+  titleClassName?: string;
+  dotColor?: string;
+  infoButton?: React.ReactNode;
 }
 
 // Main activity tab props
@@ -186,6 +192,8 @@ export interface ContactRelatedContact {
   listingId: bigint | null;
   visitCount: number;
   hasUpcomingVisit: boolean;
+  upcomingAppointmentId?: bigint;
+  missedAppointmentId?: bigint;
   hasMissedVisit: boolean;
   hasCompletedVisit: boolean;
   hasCancelledVisit: boolean;

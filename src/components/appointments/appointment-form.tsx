@@ -135,7 +135,7 @@ const getCurrentTime = () => {
   return now.toTimeString().slice(0, 5);
 };
 
-// Helper function to add 30 minutes to a time string
+// Helper function to add minutes to a time string
 const addMinutesToTime = (timeStr: string, minutesToAdd: number): string => {
   if (!timeStr) return "";
 
@@ -145,6 +145,29 @@ const addMinutesToTime = (timeStr: string, minutesToAdd: number): string => {
   date.setMinutes((minutes ?? 0) + minutesToAdd);
 
   return date.toTimeString().slice(0, 5);
+};
+
+// Helper function to calculate end date and time from start date, start time, and duration
+const calculateEndDateTime = (
+  startDate: string,
+  startTime: string,
+  durationMinutes: number,
+): { endDate: string; endTime: string } => {
+  if (!startDate || !startTime) {
+    return { endDate: startDate, endTime: startTime };
+  }
+
+  // Create a proper Date object with the start date and time
+  const startDateTime = new Date(`${startDate}T${startTime}`);
+
+  // Add the duration in minutes
+  startDateTime.setMinutes(startDateTime.getMinutes() + durationMinutes);
+
+  // Extract the new date and time
+  const endDate = startDateTime.toISOString().split("T")[0] ?? startDate;
+  const endTime = startDateTime.toTimeString().slice(0, 5);
+
+  return { endDate, endTime };
 };
 
 // Helper function to generate appointment title
@@ -163,7 +186,7 @@ const initialFormData: Omit<AppointmentFormData, "contactId"> = {
   startTime: getCurrentTime(),
   endDate: getTomorrowDate(),
   endTime: addMinutesToTime(getCurrentTime(), 30),
-  tripTimeMinutes: 15,
+  tripTimeMinutes: 0,
   title: "",
   notes: "",
   appointmentType: "Visita",
@@ -277,14 +300,18 @@ export default function AppointmentForm({
   const [titleEditValue, setTitleEditValue] = useState("");
   const { data: session } = useSession();
 
-  // Calculate endTime based on startTime and duration
+  // Calculate endTime and endDate based on startTime, startDate, and duration
   useEffect(() => {
-    if (formData.startTime) {
+    if (formData.startTime && formData.startDate) {
       const totalMinutes = durationHours * 60 + durationMinutes;
-      const newEndTime = addMinutesToTime(formData.startTime, totalMinutes);
-      setFormData((prev) => ({ ...prev, endTime: newEndTime }));
+      const { endDate, endTime } = calculateEndDateTime(
+        formData.startDate,
+        formData.startTime,
+        totalMinutes,
+      );
+      setFormData((prev) => ({ ...prev, endDate, endTime }));
     }
-  }, [formData.startTime, durationHours, durationMinutes]);
+  }, [formData.startTime, formData.startDate, durationHours, durationMinutes]);
 
   // Cleanup effect to handle component unmounting
   useEffect(() => {
@@ -1296,36 +1323,107 @@ export default function AppointmentForm({
               <label className="absolute -top-5 left-0 z-10 px-2 text-xs font-medium text-gray-600">
                 Duración
               </label>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <input
-                    type="number"
-                    min="0"
-                    max="23"
-                    value={durationHours}
-                    onChange={(e) =>
-                      setDurationHours(parseInt(e.target.value) || 0)
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const totalMinutes = durationHours * 60 + durationMinutes;
+                    let newTotal;
+
+                    if (totalMinutes > 8 * 60) {
+                      // If more than 8 hours, decrease by 1 day
+                      newTotal = Math.max(8 * 60, totalMinutes - 24 * 60);
+                    } else {
+                      // If 8 hours or less, decrease by 15 minutes
+                      newTotal = Math.max(0, totalMinutes - 15);
                     }
-                    placeholder="0"
-                    className="h-9 w-full rounded-md border border-gray-200 bg-background px-3 py-2 text-sm shadow-md ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  />
-                  <span className="text-xs text-muted-foreground">horas</span>
-                </div>
-                <div className="space-y-1">
-                  <input
-                    type="number"
-                    min="0"
-                    max="59"
-                    step="15"
-                    value={durationMinutes}
-                    onChange={(e) =>
-                      setDurationMinutes(parseInt(e.target.value) || 0)
+
+                    setDurationHours(Math.floor(newTotal / 60));
+                    setDurationMinutes(newTotal % 60);
+                  }}
+                  className="h-9 w-9 p-0 text-lg"
+                  title="Restar 15 minutos o 1 día"
+                >
+                  −
+                </Button>
+                <Select
+                  value={`${durationHours}:${durationMinutes}`}
+                  onValueChange={(value) => {
+                    const [h, m] = value.split(":").map(Number);
+                    setDurationHours(h ?? 0);
+                    setDurationMinutes(m ?? 0);
+                  }}
+                >
+                  <SelectTrigger className="h-9 flex-1 border border-gray-200 shadow-md">
+                    <SelectValue>
+                      {(() => {
+                        const totalMinutes = durationHours * 60 + durationMinutes;
+                        const totalDays = Math.floor(totalMinutes / (24 * 60));
+
+                        if (totalDays >= 1 && totalMinutes % (24 * 60) === 0) {
+                          // Show as days if it's a whole number of days
+                          return totalDays === 1 ? "1 día" : `${totalDays} días`;
+                        }
+
+                        // Show as HH:mm for durations under 1 day or partial days
+                        return `${durationHours.toString().padStart(2, "0")}:${durationMinutes.toString().padStart(2, "0")}`;
+                      })()}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <ScrollArea className="h-[200px]">
+                      {/* Generate duration options from 0 to 8 hours in 5-minute increments */}
+                      {Array.from({ length: 97 }, (_, i) => i * 5).map((totalMinutes) => {
+                        const h = Math.floor(totalMinutes / 60);
+                        const m = totalMinutes % 60;
+                        const displayText = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+                        return (
+                          <SelectItem key={totalMinutes} value={`${h}:${m}`}>
+                            {displayText}
+                          </SelectItem>
+                        );
+                      })}
+                      {/* Add day options from 1 to 14 days */}
+                      {Array.from({ length: 14 }, (_, i) => i + 1).map((days) => {
+                        const totalMinutes = days * 24 * 60;
+                        const h = Math.floor(totalMinutes / 60);
+                        const m = totalMinutes % 60;
+                        const displayText = days === 1 ? "1 día" : `${days} días`;
+                        return (
+                          <SelectItem key={`day-${days}`} value={`${h}:${m}`}>
+                            {displayText}
+                          </SelectItem>
+                        );
+                      })}
+                    </ScrollArea>
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const totalMinutes = durationHours * 60 + durationMinutes;
+                    let newTotal;
+
+                    if (totalMinutes >= 8 * 60) {
+                      // If 8 hours or more, increase by 1 day
+                      newTotal = Math.min(14 * 24 * 60, totalMinutes + 24 * 60); // Max 14 days
+                    } else {
+                      // If less than 8 hours, increase by 15 minutes (up to 8 hours)
+                      newTotal = Math.min(8 * 60, totalMinutes + 15);
                     }
-                    placeholder="30"
-                    className="h-9 w-full rounded-md border border-gray-200 bg-background px-3 py-2 text-sm shadow-md ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  />
-                  <span className="text-xs text-muted-foreground">minutos</span>
-                </div>
+
+                    setDurationHours(Math.floor(newTotal / 60));
+                    setDurationMinutes(newTotal % 60);
+                  }}
+                  className="h-9 w-9 p-0 text-lg"
+                  title="Añadir 15 minutos o 1 día"
+                >
+                  +
+                </Button>
               </div>
             </div>
 
@@ -1473,28 +1571,58 @@ export default function AppointmentForm({
               <label className="absolute -top-5 left-0 z-10 px-2 text-xs font-medium text-gray-600">
                 Tiempo de viaje (minutos)
               </label>
-              <input
-                id="tripTimeMinutes"
-                value={
-                  formData.tripTimeMinutes === 0 ||
-                  formData.tripTimeMinutes === undefined
-                    ? ""
-                    : formData.tripTimeMinutes
-                }
-                onChange={(e) => {
-                  const value = e.target.value;
-                  // If empty, set to 0
-                  if (value === "") {
-                    handleInputChange("tripTimeMinutes")(0);
-                  } else {
-                    handleInputChange("tripTimeMinutes")(parseInt(value) || 0);
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const currentValue = formData.tripTimeMinutes ?? 0;
+                    const newValue = Math.max(0, currentValue - 15);
+                    handleInputChange("tripTimeMinutes")(newValue);
+                  }}
+                  className="h-9 w-9 p-0 text-lg"
+                  title="Restar 15 minutos"
+                >
+                  −
+                </Button>
+                <input
+                  id="tripTimeMinutes"
+                  value={
+                    formData.tripTimeMinutes === 0 ||
+                    formData.tripTimeMinutes === undefined
+                      ? ""
+                      : formData.tripTimeMinutes
                   }
-                }}
-                placeholder="-"
-                type="number"
-                min="0"
-                className="h-9 w-full rounded-md border border-gray-200 bg-background px-3 py-2 text-sm shadow-md ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              />
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // If empty, set to 0
+                    if (value === "") {
+                      handleInputChange("tripTimeMinutes")(0);
+                    } else {
+                      handleInputChange("tripTimeMinutes")(parseInt(value) || 0);
+                    }
+                  }}
+                  placeholder="-"
+                  type="number"
+                  min="0"
+                  className="h-9 flex-1 rounded-md border border-gray-200 bg-background px-3 py-2 text-sm shadow-md ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const currentValue = formData.tripTimeMinutes ?? 0;
+                    const newValue = currentValue + 15;
+                    handleInputChange("tripTimeMinutes")(newValue);
+                  }}
+                  className="h-9 w-9 p-0 text-lg"
+                  title="Añadir 15 minutos"
+                >
+                  +
+                </Button>
+              </div>
             </div>
 
             <div className="relative">
@@ -1623,8 +1751,19 @@ export default function AppointmentForm({
                       )?.label
                     }
                     {" • "}
-                    Duración: {durationHours > 0 && `${durationHours}h `}
-                    {durationMinutes}min
+                    Duración:{" "}
+                    {(() => {
+                      const totalMinutes = durationHours * 60 + durationMinutes;
+                      const totalDays = Math.floor(totalMinutes / (24 * 60));
+
+                      if (totalDays >= 1 && totalMinutes % (24 * 60) === 0) {
+                        // Show as days if it's a whole number of days
+                        return totalDays === 1 ? "1 día" : `${totalDays} días`;
+                      }
+
+                      // Show as hours and minutes
+                      return `${durationHours > 0 ? `${durationHours}h ` : ""}${durationMinutes}min`;
+                    })()}
                   </div>
                 </div>
               </div>
@@ -1659,7 +1798,7 @@ export default function AppointmentForm({
                 </div>
               )}
 
-              {formData.tripTimeMinutes && (
+              {formData.tripTimeMinutes != null && formData.tripTimeMinutes > 0 && (
                 <div className="flex items-center gap-3 rounded-lg border p-3">
                   <Car className="h-5 w-5 text-muted-foreground" />
                   <div>
@@ -1692,9 +1831,9 @@ export default function AppointmentForm({
   };
 
   return (
-    <div className="mx-auto flex h-full w-full flex-col px-6">
+    <div className="flex h-full w-full flex-col">
       {/* Progress Steps */}
-      <div className="mb-8">
+      <div className="mb-6 px-6 pt-4">
         <div className="flex items-center justify-center space-x-8">
           {steps.map((step, index) => {
             const isActive = index === currentStep;
@@ -1730,7 +1869,7 @@ export default function AppointmentForm({
       </div>
 
       {/* Form Content - Scrollable */}
-      <ScrollArea className="flex-1 overflow-y-auto px-1.5">
+      <div className="flex-1 overflow-y-auto px-6">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
@@ -1743,10 +1882,10 @@ export default function AppointmentForm({
             {renderStepContent()}
           </motion.div>
         </AnimatePresence>
-      </ScrollArea>
+      </div>
 
       {/* Footer - Fixed at bottom */}
-      <div className="mt-4 flex shrink-0 flex-col space-y-3 border-t bg-background pt-4">
+      <div className="flex shrink-0 flex-col space-y-3 border-t bg-background px-6 py-4">
         {/* Validation Error */}
         {validationError && (
           <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
@@ -1756,26 +1895,26 @@ export default function AppointmentForm({
 
         {/* Navigation Buttons */}
         <div className="flex items-center justify-between">
-          <div>
-            {currentStep > initialStep ? (
+          <div className="flex items-center gap-2">
+            {currentStep > initialStep && (
               <Button variant="outline" onClick={prevStep}>
                 <ChevronLeft className="mr-2 h-4 w-4" />
                 Anterior
               </Button>
-            ) : (
-              <Button variant="outline" onClick={onCancel}>
-                Cancelar
-              </Button>
             )}
+            <Button variant="outline" onClick={onCancel}>
+              Cancelar
+            </Button>
           </div>
 
           <div className="flex items-center gap-2">
-            {currentStep < steps.length - 1 ? (
+            {currentStep < steps.length - 1 && (
               <Button onClick={nextStep}>
                 Siguiente
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Button>
-            ) : (
+            )}
+            {currentStep === steps.length - 1 && (
               <Button
                 onClick={handleSubmit}
                 disabled={isCreating}
