@@ -828,129 +828,116 @@ export const BasicHorizontalTemplate: FC<ConfigurableTemplateProps> = ({
               );
             })}
           </div>
-        ) : (
-          /* Bullets Layout (with optional description) - Only when icons are NOT clicked */
+        ) : config.showShortDescription ? (
+          /* Description Only Layout - When description mode is selected */
           <div
             style={{
               flex: 1,
               display: "flex",
               alignItems: "center",
-              gap: "40px", // Space between bullets and description
               maxWidth: "60%",
             }}
           >
-            {/* Bullet List - Always shown when icons are not clicked */}
             <div
+              className={cn(
+                getFontClass(config.descriptionFont || "default"),
+              )}
               style={{
-                flex:
-                  config.showShortDescription && data.shortDescription
-                    ? "0 0 auto"
-                    : "1",
+                fontSize: `${config.descriptionSize || 16}px`,
+                lineHeight: "1.4",
+                color: config.descriptionColor || "#000000",
+                textAlign: config.descriptionAlignment || "left",
+                transform:
+                  config.descriptionPositionX || config.descriptionPositionY
+                    ? `translate(${config.descriptionPositionX || 0}px, ${config.descriptionPositionY || 0}px)`
+                    : undefined,
+                whiteSpace: "pre-wrap",
               }}
             >
-              {data.iconListText ? (
-                /* Custom text list from user input */
-                <div
-                  className={cn(getFontClass(config.bulletFont || "default"))}
-                  style={{
-                    fontSize: `${config.bulletSize || 16}px`,
-                    lineHeight: "1.5",
-                    whiteSpace: "pre-wrap",
-                    textAlign: config.bulletAlignment || "left",
-                    color: config.bulletColor || "#000000",
-                    transform:
-                      config.bulletPositionX || config.bulletPositionY
-                        ? `translate(${config.bulletPositionX || 0}px, ${config.bulletPositionY || 0}px)`
-                        : undefined,
-                  }}
-                >
-                  {data.iconListText}
-                </div>
-              ) : (
-                /* Default bullet list */
-                <ul
-                  className={cn(getFontClass(config.bulletFont || "default"))}
-                  style={{
-                    listStyle: "none",
-                    padding: 0,
-                    margin: 0,
-                    display: "flex",
-                    gap: "20px",
-                    fontSize: `${config.bulletSize || 16}px`,
-                    lineHeight: "1.3",
-                    color: config.bulletColor || "#000000",
-                    transform:
-                      config.bulletPositionX || config.bulletPositionY
-                        ? `translate(${config.bulletPositionX || 0}px, ${config.bulletPositionY || 0}px)`
-                        : undefined,
-                  }}
-                >
-                  {safeData.specs.bathrooms && (
-                    <li style={{ display: "flex", alignItems: "center" }}>
-                      <span style={{ marginRight: "8px" }}>•</span>
-                      <span>{safeData.specs.bathrooms} baños</span>
-                    </li>
-                  )}
-                  {safeData.specs.bedrooms && (
-                    <li style={{ display: "flex", alignItems: "center" }}>
-                      <span style={{ marginRight: "8px" }}>•</span>
-                      <span>{safeData.specs.bedrooms} dormitorios</span>
-                    </li>
-                  )}
-                  <li style={{ display: "flex", alignItems: "center" }}>
-                    <span style={{ marginRight: "8px" }}>•</span>
-                    <span>{safeData.specs.squareMeters} m²</span>
-                  </li>
-                  {/* Additional fields */}
-                  {config.additionalFields?.slice(0, 2).map((fieldValue) => {
-                    const value = getFieldValue(fieldValue, data);
-                    if (value === "N/A") return null;
-
-                    return (
-                      <li
-                        key={fieldValue}
-                        style={{ display: "flex", alignItems: "center" }}
-                      >
-                        <span style={{ marginRight: "8px" }}>•</span>
-                        <span>
-                          {getFieldLabel(fieldValue)}: {value}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
+              {data.shortDescription ?? "Añade una descripción..."}
             </div>
-
-            {/* Description - Only shown when description is clicked AND icons are NOT clicked */}
-            {config.showShortDescription && data.shortDescription && (
+          </div>
+        ) : (
+          /* Bullets Layout - Only when bullets mode is selected */
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              maxWidth: "60%",
+            }}
+          >
+            {data.iconListText ? (
+              /* Custom text list from user input */
               <div
+                className={cn(getFontClass(config.bulletFont || "default"))}
                 style={{
-                  flex: "1",
-                  paddingLeft: "40px",
-                  borderLeft: "2px solid #e2e8f0",
-                  position: "relative",
+                  fontSize: `${config.bulletSize || 16}px`,
+                  lineHeight: "1.5",
+                  whiteSpace: "pre-wrap",
+                  textAlign: config.bulletAlignment || "left",
+                  color: config.bulletColor || "#000000",
+                  transform:
+                    config.bulletPositionX || config.bulletPositionY
+                      ? `translate(${config.bulletPositionX || 0}px, ${config.bulletPositionY || 0}px)`
+                      : undefined,
                 }}
               >
-                <div
-                  className={cn(
-                    getFontClass(config.descriptionFont || "default"),
-                  )}
-                  style={{
-                    fontSize: `${config.descriptionSize || 16}px`,
-                    lineHeight: "1.4",
-                    color: config.descriptionColor || "#000000",
-                    textAlign: config.descriptionAlignment || "left",
-                    transform:
-                      config.descriptionPositionX || config.descriptionPositionY
-                        ? `translate(${config.descriptionPositionX || 0}px, ${config.descriptionPositionY || 0}px)`
-                        : undefined,
-                    whiteSpace: "pre-wrap",
-                  }}
-                >
-                  {data.shortDescription}
-                </div>
+                {data.iconListText}
               </div>
+            ) : (
+              /* Default bullet list */
+              <ul
+                className={cn(getFontClass(config.bulletFont || "default"))}
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  margin: 0,
+                  display: "flex",
+                  gap: "20px",
+                  fontSize: `${config.bulletSize || 16}px`,
+                  lineHeight: "1.3",
+                  color: config.bulletColor || "#000000",
+                  transform:
+                    config.bulletPositionX || config.bulletPositionY
+                      ? `translate(${config.bulletPositionX || 0}px, ${config.bulletPositionY || 0}px)`
+                      : undefined,
+                }}
+              >
+                {safeData.specs.bathrooms && (
+                  <li style={{ display: "flex", alignItems: "center" }}>
+                    <span style={{ marginRight: "8px" }}>•</span>
+                    <span>{safeData.specs.bathrooms} baños</span>
+                  </li>
+                )}
+                {safeData.specs.bedrooms && (
+                  <li style={{ display: "flex", alignItems: "center" }}>
+                    <span style={{ marginRight: "8px" }}>•</span>
+                    <span>{safeData.specs.bedrooms} dormitorios</span>
+                  </li>
+                )}
+                <li style={{ display: "flex", alignItems: "center" }}>
+                  <span style={{ marginRight: "8px" }}>•</span>
+                  <span>{safeData.specs.squareMeters} m²</span>
+                </li>
+                {/* Additional fields */}
+                {config.additionalFields?.slice(0, 2).map((fieldValue) => {
+                  const value = getFieldValue(fieldValue, data);
+                  if (value === "N/A") return null;
+
+                  return (
+                    <li
+                      key={fieldValue}
+                      style={{ display: "flex", alignItems: "center" }}
+                    >
+                      <span style={{ marginRight: "8px" }}>•</span>
+                      <span>
+                        {getFieldLabel(fieldValue)}: {value}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </div>
         )}

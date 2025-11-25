@@ -45,6 +45,7 @@ interface CartelesManagerProps {
   carteles?: Cartel[];
   loading?: boolean;
   onRefreshCarteles?: () => void;
+  hasImages?: boolean;
 }
 
 export function CartelesManager({
@@ -55,6 +56,7 @@ export function CartelesManager({
   carteles = [],
   loading = false,
   onRefreshCarteles,
+  hasImages = true,
 }: CartelesManagerProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -294,12 +296,21 @@ export function CartelesManager({
         <button
           type="button"
           onClick={() =>
-            (window.location.href = `/propiedades/${listingId}/cartel-editor`)
+            hasImages && (window.location.href = `/propiedades/${listingId}/cartel-editor`)
           }
-          className="group relative overflow-hidden rounded-lg bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-2.5 font-medium text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-amber-500 hover:to-rose-500 hover:shadow-xl active:scale-95"
+          disabled={!hasImages}
+          className={cn(
+            "group relative overflow-hidden rounded-lg px-6 py-2.5 font-medium shadow-lg transition-all duration-300",
+            hasImages
+              ? "bg-gradient-to-r from-amber-400 to-rose-400 text-white hover:scale-105 hover:from-amber-500 hover:to-rose-500 hover:shadow-xl active:scale-95"
+              : "cursor-not-allowed bg-gradient-to-r from-gray-300 to-gray-400 text-gray-100 opacity-50"
+          )}
+          title={!hasImages ? "Sube imágenes primero para crear un cartel" : undefined}
         >
           Editor de Carteles
-          <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+          {hasImages && (
+            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+          )}
         </button>
         <Button
           variant="outline"

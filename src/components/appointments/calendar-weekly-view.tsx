@@ -208,13 +208,13 @@ export function CalendarWeeklyView({
         </div>
       </CardHeader>
 
-      <CardContent className="-mx-3 overflow-x-auto p-0 sm:-mx-0">
-        <div className="min-w-[580px] sm:min-w-[640px] md:min-w-[720px]">
+      <CardContent className="overflow-hidden p-0">
+        <div className="w-full">
           {/* Day headers */}
-          <div className="sticky top-0 z-10 grid grid-cols-8 border-b bg-white">
+          <div className="sticky top-0 z-10 grid grid-cols-[32px_repeat(7,1fr)] border-b bg-white sm:grid-cols-[48px_repeat(7,1fr)] md:grid-cols-[60px_repeat(7,1fr)]">
             {/* Time column header */}
-            <div className="flex h-12 min-w-[48px] items-center justify-center border-r text-[10px] text-muted-foreground sm:h-14 sm:min-w-[60px] sm:text-xs md:text-sm">
-              GMT+02
+            <div className="flex h-10 items-center justify-center border-r text-[8px] text-muted-foreground sm:h-12 sm:text-[10px] md:h-14 md:text-xs">
+              GMT+2
             </div>
 
             {/* Day columns headers */}
@@ -222,16 +222,16 @@ export function CalendarWeeklyView({
               <div
                 key={dayIdx}
                 className={cn(
-                  "relative flex h-12 min-w-[68px] flex-col items-center justify-center sm:h-14 sm:min-w-[80px] md:min-w-[100px]",
+                  "relative flex h-10 flex-col items-center justify-center sm:h-12 md:h-14",
                   isToday(day) && "bg-blue-50",
                 )}
               >
-                <div className="text-[10px] text-muted-foreground sm:text-xs">
+                <div className="text-[8px] text-muted-foreground sm:text-[10px] md:text-xs">
                   {formatWeekday(day)}
                 </div>
                 <div
                   className={cn(
-                    "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium sm:h-8 sm:w-8 sm:text-sm md:h-10 md:w-10 md:text-xl",
+                    "flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-medium sm:h-6 sm:w-6 sm:text-xs md:h-8 md:w-8 md:text-sm",
                     isToday(day) && "bg-blue-600 text-white",
                   )}
                 >
@@ -245,15 +245,15 @@ export function CalendarWeeklyView({
             className="h-[350px] sm:h-[450px] md:h-[500px] lg:h-[600px]"
             ref={scrollAreaRef}
           >
-            <div className="grid grid-cols-8">
+            <div className="grid grid-cols-[32px_repeat(7,1fr)] sm:grid-cols-[48px_repeat(7,1fr)] md:grid-cols-[60px_repeat(7,1fr)]">
               {/* Hours column */}
-              <div className="flex min-w-[48px] flex-col border-r sm:min-w-[60px]">
+              <div className="flex flex-col border-r">
                 {Array.from({ length: 18 }, (_, i) => i + 6).map((hour) => (
                   <div
                     key={hour}
-                    className="flex h-[60px] items-start justify-end border-b pr-1 pt-1 text-[10px] text-muted-foreground sm:pr-2 sm:text-xs"
+                    className="flex h-[60px] items-start justify-end border-b pr-0.5 pt-0.5 text-[8px] text-muted-foreground sm:pr-1 sm:pt-1 sm:text-[10px] md:pr-2 md:text-xs"
                   >
-                    {hour.toString().padStart(2, "0")}:00
+                    {hour}:00
                   </div>
                 ))}
               </div>
@@ -263,7 +263,7 @@ export function CalendarWeeklyView({
                 <div
                   key={dayIdx}
                   className={cn(
-                    "relative flex min-w-[68px] flex-col border-r sm:min-w-[80px] md:min-w-[100px]",
+                    "relative flex flex-col border-r",
                     isToday(day) && "bg-blue-50/30",
                   )}
                 >

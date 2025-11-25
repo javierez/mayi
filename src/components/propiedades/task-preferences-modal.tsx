@@ -10,21 +10,21 @@ import {
 } from "~/components/ui/dialog";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Button } from "~/components/ui/button";
-import { Loader2, ChevronDown, ChevronUp, Plus, Minus } from "lucide-react";
+import { Loader2, ChevronDown, ChevronUp, Plus, Minus, CalendarOff } from "lucide-react";
 import { updatePreferencesAndCreateTasksAction } from "~/server/actions/task-preferences";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 interface TaskPreferences {
   property: {
-    uploadPhotos: { enabled: boolean; dueDays: number };
-    completeInfo: { enabled: boolean; dueDays: number };
-    scheduleVisit: { enabled: boolean; dueDays: number };
-    pickupKeys: { enabled: boolean; dueDays: number };
-    valuation: { enabled: boolean; dueDays: number };
-    createHojaEncargo: { enabled: boolean; dueDays: number };
-    signHojaEncargo: { enabled: boolean; dueDays: number };
-    generateCartel: { enabled: boolean; dueDays: number };
+    uploadPhotos: { enabled: boolean; dueDays: number | null };
+    completeInfo: { enabled: boolean; dueDays: number | null };
+    scheduleVisit: { enabled: boolean; dueDays: number | null };
+    pickupKeys: { enabled: boolean; dueDays: number | null };
+    valuation: { enabled: boolean; dueDays: number | null };
+    createHojaEncargo: { enabled: boolean; dueDays: number | null };
+    signHojaEncargo: { enabled: boolean; dueDays: number | null };
+    generateCartel: { enabled: boolean; dueDays: number | null };
   };
 }
 
@@ -118,7 +118,7 @@ export function TaskPreferencesModal({
     delta: number,
   ) => {
     setPreferences((prev) => {
-      const currentDays = prev.property[taskId].dueDays;
+      const currentDays = prev.property[taskId].dueDays ?? 7; // Default to 7 if null
       const newDays = Math.max(1, Math.min(90, currentDays + delta));
       return {
         property: {
@@ -126,6 +126,25 @@ export function TaskPreferencesModal({
           [taskId]: {
             ...prev.property[taskId],
             dueDays: newDays,
+          },
+        },
+      };
+    });
+  };
+
+  const hasNoDeadline = (dueDays: number | null): boolean => {
+    return dueDays === null || dueDays === 0;
+  };
+
+  const handleToggleNoDeadline = (taskId: keyof TaskPreferences["property"]) => {
+    setPreferences((prev) => {
+      const currentDays = prev.property[taskId].dueDays;
+      return {
+        property: {
+          ...prev.property,
+          [taskId]: {
+            ...prev.property[taskId],
+            dueDays: hasNoDeadline(currentDays) ? 7 : null, // Toggle between null and default 7 days
           },
         },
       };
@@ -303,24 +322,41 @@ export function TaskPreferencesModal({
                   {isExpanded && (
                     <div className="border-t border-gray-100 px-3 pb-3 pt-2">
                       <div className="flex items-center justify-center gap-2">
+                        {hasNoDeadline(taskPreference.dueDays) ? (
+                          <span className="min-w-[80px] text-center text-sm font-medium text-gray-500">
+                            Sin fecha límite
+                          </span>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleDueDaysChange(task.id, -1)}
+                              disabled={isPending || taskPreference.dueDays! <= 1}
+                              className="rounded-full p-1.5 transition-colors hover:bg-gray-100 disabled:opacity-40"
+                            >
+                              <Minus className="h-4 w-4 text-gray-600" />
+                            </button>
+                            <span className="min-w-[80px] text-center text-sm font-medium text-gray-700">
+                              {taskPreference.dueDays} {taskPreference.dueDays === 1 ? "día" : "días"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleDueDaysChange(task.id, 1)}
+                              disabled={isPending || taskPreference.dueDays! >= 90}
+                              className="rounded-full p-1.5 transition-colors hover:bg-gray-100 disabled:opacity-40"
+                            >
+                              <Plus className="h-4 w-4 text-gray-600" />
+                            </button>
+                          </>
+                        )}
                         <button
                           type="button"
-                          onClick={() => handleDueDaysChange(task.id, -1)}
-                          disabled={isPending || taskPreference.dueDays <= 1}
-                          className="rounded-full p-1.5 transition-colors hover:bg-gray-100 disabled:opacity-40"
+                          onClick={() => handleToggleNoDeadline(task.id)}
+                          disabled={isPending}
+                          className="ml-2 rounded p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                          title={hasNoDeadline(taskPreference.dueDays) ? "Establecer fecha límite" : "Sin fecha límite"}
                         >
-                          <Minus className="h-4 w-4 text-gray-600" />
-                        </button>
-                        <span className="min-w-[80px] text-center text-sm font-medium text-gray-700">
-                          {taskPreference.dueDays} {taskPreference.dueDays === 1 ? "día" : "días"}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleDueDaysChange(task.id, 1)}
-                          disabled={isPending || taskPreference.dueDays >= 90}
-                          className="rounded-full p-1.5 transition-colors hover:bg-gray-100 disabled:opacity-40"
-                        >
-                          <Plus className="h-4 w-4 text-gray-600" />
+                          <CalendarOff className="h-4 w-4" />
                         </button>
                       </div>
                     </div>

@@ -9,14 +9,14 @@ import { eq, and } from "drizzle-orm";
 
 interface TaskPreferences {
   property: {
-    uploadPhotos: { enabled: boolean; dueDays: number };
-    completeInfo: { enabled: boolean; dueDays: number };
-    scheduleVisit: { enabled: boolean; dueDays: number };
-    pickupKeys: { enabled: boolean; dueDays: number };
-    valuation: { enabled: boolean; dueDays: number };
-    createHojaEncargo: { enabled: boolean; dueDays: number };
-    signHojaEncargo: { enabled: boolean; dueDays: number };
-    generateCartel: { enabled: boolean; dueDays: number };
+    uploadPhotos: { enabled: boolean; dueDays: number | null };
+    completeInfo: { enabled: boolean; dueDays: number | null };
+    scheduleVisit: { enabled: boolean; dueDays: number | null };
+    pickupKeys: { enabled: boolean; dueDays: number | null };
+    valuation: { enabled: boolean; dueDays: number | null };
+    createHojaEncargo: { enabled: boolean; dueDays: number | null };
+    signHojaEncargo: { enabled: boolean; dueDays: number | null };
+    generateCartel: { enabled: boolean; dueDays: number | null };
   };
 }
 
@@ -113,8 +113,9 @@ export async function createTasksFromPreferencesAction(
 
     let tasksCreated = 0;
 
-    // Helper function to calculate due date
-    const calculateDueDate = (days: number): Date => {
+    // Helper function to calculate due date (returns undefined if days is null or 0)
+    const calculateDueDate = (days: number | null): Date | undefined => {
+      if (days === null || days === 0) return undefined;
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + days);
       return dueDate;

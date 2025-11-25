@@ -181,63 +181,70 @@ export function CalendarListView({
                   <Info className="h-4 w-4 text-rose-600" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-[95vw] sm:max-w-lg md:max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>¿Qué incluye &quot;Requieren Atención&quot;?</DialogTitle>
-                  <DialogDescription>
-                    Esta sección agrupa todas las citas que necesitan acción
-                    inmediata o seguimiento urgente. Incluye tres tipos de
-                    situaciones:
+              <DialogContent className="max-w-[95vw] sm:max-w-md">
+                <DialogHeader className="space-y-3">
+                  <DialogTitle className="text-lg font-semibold">
+                    Citas que requieren atención
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-muted-foreground">
+                    Agrupa citas con acción pendiente o seguimiento urgente.
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-4 sm:space-y-6">
-                  <div>
-                    <h5 className="mb-1 text-xs font-medium text-gray-900 sm:text-sm">
-                      Citas No Presentadas (NoShow)
-                    </h5>
-                    <p className="mb-2 text-xs text-gray-600 sm:text-sm">
-                      El cliente no asistió a la cita programada sin avisar.
-                    </p>
-                    <p className="text-xs text-gray-500 sm:text-sm">
-                      Acción recomendada: Contactar al cliente para entender el
-                      motivo, reprogramar si sigue interesado, o marcar como
-                      cancelada.
-                    </p>
+                <div className="mt-2 space-y-4">
+                  {/* Item 1 */}
+                  <div className="flex gap-3">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-600">
+                      <span className="text-xs font-medium">1</span>
+                    </div>
+                    <div className="space-y-1">
+                      <h5 className="text-sm font-medium text-foreground">
+                        No presentadas
+                      </h5>
+                      <p className="text-xs leading-relaxed text-muted-foreground">
+                        Cliente no asistió sin avisar. Contactar para reprogramar o cancelar.
+                      </p>
+                    </div>
                   </div>
 
-                  <div>
-                    <h5 className="mb-1 text-xs font-medium text-gray-900 sm:text-sm">
-                      Citas Reprogramadas (Rescheduled)
-                    </h5>
-                    <p className="mb-2 text-xs text-gray-600 sm:text-sm">
-                      La cita fue reprogramada pero aún no tiene una nueva fecha
-                      confirmada.
-                    </p>
-                    <p className="text-xs text-gray-500 sm:text-sm">
-                      Acción recomendada: Coordinar nueva fecha con el cliente y
-                      crear una nueva cita programada.
-                    </p>
+                  <div className="ml-3 border-l-2 border-muted" />
+
+                  {/* Item 2 */}
+                  <div className="flex gap-3">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                      <span className="text-xs font-medium">2</span>
+                    </div>
+                    <div className="space-y-1">
+                      <h5 className="text-sm font-medium text-foreground">
+                        Reprogramadas
+                      </h5>
+                      <p className="text-xs leading-relaxed text-muted-foreground">
+                        Cita pospuesta sin nueva fecha. Coordinar y confirmar nueva fecha.
+                      </p>
+                    </div>
                   </div>
 
-                  <div>
-                    <h5 className="mb-1 text-xs font-medium text-gray-900 sm:text-sm">
-                      Citas Pasadas Sin Actualizar
-                    </h5>
-                    <p className="mb-2 text-xs text-gray-600 sm:text-sm">
-                      Citas que tenían estado &quot;Programada&quot; pero ya pasó su
-                      fecha/hora de finalización.
-                    </p>
-                    <p className="text-xs text-gray-500 sm:text-sm">
-                      Acción recomendada: Actualizar el estado a &quot;Completada&quot; si
-                      se realizó, o a &quot;NoShow&quot;/&quot;Cancelada&quot; según corresponda.
-                    </p>
+                  <div className="ml-3 border-l-2 border-muted" />
+
+                  {/* Item 3 */}
+                  <div className="flex gap-3">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600">
+                      <span className="text-xs font-medium">3</span>
+                    </div>
+                    <div className="space-y-1">
+                      <h5 className="text-sm font-medium text-foreground">
+                        Pendientes de actualizar
+                      </h5>
+                      <p className="text-xs leading-relaxed text-muted-foreground">
+                        Citas pasadas aún marcadas como programadas. Actualizar estado.
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="border-t pt-3 sm:pt-4">
-                    <p className="text-xs text-gray-500 sm:text-sm">
-                      Mantener esta sección vacía indica que todas tus citas
-                      están correctamente gestionadas y actualizadas.
+                  {/* Footer note */}
+                  <div className="mt-4 rounded-md bg-muted/50 px-3 py-2">
+                    <p className="text-xs text-muted-foreground">
+                      Sección vacía = citas al día
                     </p>
                   </div>
                 </div>

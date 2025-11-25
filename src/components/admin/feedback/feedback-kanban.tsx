@@ -10,10 +10,9 @@ import {
   useSensor,
   useSensors,
   closestCenter,
-  DragOverlay,
 } from "@dnd-kit/core";
 import { FeedbackColumn } from "./feedback-column";
-import { FeedbackCard } from "./feedback-card";
+import { FeedbackDragOverlay } from "./feedback-drag-overlay";
 import { FeedbackDetailSheet } from "./feedback-detail-sheet";
 import { useToast } from "~/components/hooks/use-toast";
 import { updateFeedbackStatusWithAuth } from "~/server/queries/feedback";
@@ -199,7 +198,8 @@ export function FeedbackKanban({
     }
 
     const activeId = active.id;
-    const feedback = filteredFeedbacks.find(
+    // Get the feedback from current state (which has the updated status from handleDragOver)
+    const feedback = feedbacks.find(
       (f) => f.feedbackId.toString() === activeId
     );
 
@@ -222,8 +222,6 @@ export function FeedbackKanban({
           feedback.status
         }"`,
       });
-
-      router.refresh();
     } catch (error) {
       console.error("Error updating feedback:", error);
       setFeedbacks(previousFeedbacks.current);
@@ -257,17 +255,7 @@ export function FeedbackKanban({
             />
           ))}
         </div>
-        <DragOverlay>
-          {activeFeedback ? (
-            <div className="opacity-80">
-              <FeedbackCard
-                feedback={activeFeedback}
-                onToggleResolved={handleToggleResolved}
-                onClick={handleFeedbackClick}
-              />
-            </div>
-          ) : null}
-        </DragOverlay>
+        <FeedbackDragOverlay activeFeedback={activeFeedback} />
       </DndContext>
 
       <FeedbackDetailSheet

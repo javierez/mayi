@@ -25,58 +25,51 @@ export function ProspectContactCard({
   const fullName = `${firstName} ${lastName}`.trim();
 
   return (
-    <div className={cn("rounded-lg border bg-gray-50/50 p-4", className)}>
+    <div className={cn("rounded-md px-3 py-2 shadow-md", className)}>
       {/* Contact Name - Clickable */}
       <button
         onClick={onNameClick}
-        className="mb-3 text-left text-base font-semibold text-gray-900 underline decoration-dotted underline-offset-2 transition-colors hover:text-gray-600 hover:decoration-solid"
+        className="mb-1.5 text-left text-sm font-medium text-gray-800 underline decoration-dotted underline-offset-2 transition-colors hover:decoration-solid"
       >
         {fullName}
       </button>
 
       {/* Contact Methods */}
-      <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         {/* Email */}
         {email && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => window.open(`mailto:${email}`, "_blank")}
-              className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gray-900"
-              title="Enviar email"
-            >
-              <Mail className="h-4 w-4 flex-shrink-0" />
-              <span className="truncate underline decoration-dotted underline-offset-2 hover:decoration-solid">
-                {email}
-              </span>
-            </button>
-          </div>
+          <button
+            onClick={() => window.open(`mailto:${email}`, "_blank")}
+            className="flex items-center gap-1.5 text-xs text-gray-500 transition-opacity hover:opacity-70"
+            title="Enviar email"
+          >
+            <Mail className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">{email}</span>
+          </button>
         )}
 
         {/* Phone */}
         {phone && (
-          <div className="flex items-center gap-3">
+          <>
             <button
               onClick={() => window.open(`tel:${phone}`, "_blank")}
-              className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gray-900"
+              className="flex items-center gap-1.5 text-xs text-gray-500 transition-opacity hover:opacity-70"
               title="Llamar"
             >
-              <Phone className="h-4 w-4 flex-shrink-0" />
-              <span className="truncate underline decoration-dotted underline-offset-2 hover:decoration-solid">
-                {phone}
-              </span>
+              <Phone className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">{phone}</span>
             </button>
             <button
               onClick={() => {
                 const cleanPhone = phone.replace(/\D/g, "");
                 window.open(`https://wa.me/${cleanPhone}`, "_blank");
               }}
-              className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-green-600"
+              className="flex items-center gap-1 text-xs text-gray-500 transition-opacity hover:opacity-70"
               title="Enviar WhatsApp"
             >
-              <MessageCircle className="h-4 w-4 flex-shrink-0" />
-              <span className="text-xs">WhatsApp</span>
+              <MessageCircle className="h-3 w-3 flex-shrink-0" />
             </button>
-          </div>
+          </>
         )}
       </div>
     </div>

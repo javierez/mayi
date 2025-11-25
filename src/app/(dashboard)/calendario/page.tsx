@@ -101,74 +101,6 @@ const getWeekStart = (date: Date) => {
 // Helper to get date string in YYYY-MM-DD
 const getDateString = (date: Date) => date.toISOString().split("T")[0];
 
-// Helper to calculate event position and height for a specific day
-const _calculateEventStyle = (
-  startDateTime: Date,
-  endDateTime: Date,
-  currentDay: Date,
-) => {
-  const calendarStartMinutes = 6 * 60; // 6:00 AM = 360 minutes
-  const calendarEndMinutes = 24 * 60; // 11:59 PM = 1440 minutes
-  const calendarDurationMinutes = calendarEndMinutes - calendarStartMinutes;
-
-  // Get date strings for comparison (YYYY-MM-DD)
-  const currentDayStr = currentDay.toISOString().split("T")[0];
-  const startDayStr = startDateTime.toISOString().split("T")[0];
-  const endDayStr = endDateTime.toISOString().split("T")[0];
-
-  // Determine if this is the start day, end day, middle day, or single day
-  const isStartDay = currentDayStr === startDayStr;
-  const isEndDay = currentDayStr === endDayStr;
-  const isSingleDay = isStartDay && isEndDay;
-
-  let topPosition = 0;
-  let height = 0;
-
-  if (isSingleDay) {
-    // Single day event - use actual start and end times
-    const startMinutes = startDateTime.getHours() * 60 + startDateTime.getMinutes();
-    const endMinutes = endDateTime.getHours() * 60 + endDateTime.getMinutes();
-
-    topPosition = ((startMinutes - calendarStartMinutes) / 60) * 60;
-    const durationMinutes = endMinutes - startMinutes;
-    height = (durationMinutes / 60) * 60;
-
-    // Hide if starts before calendar view
-    if (startMinutes < calendarStartMinutes) {
-      return { top: "0px", height: "0px", display: "none" };
-    }
-  } else if (isStartDay) {
-    // First day of multi-day event - from start time to midnight
-    const startMinutes = startDateTime.getHours() * 60 + startDateTime.getMinutes();
-    topPosition = ((startMinutes - calendarStartMinutes) / 60) * 60;
-    const remainingMinutes = calendarEndMinutes - startMinutes;
-    height = (remainingMinutes / 60) * 60;
-
-    if (startMinutes < calendarStartMinutes) {
-      topPosition = 0;
-      height = ((calendarEndMinutes - calendarStartMinutes) / 60) * 60;
-    }
-  } else if (isEndDay) {
-    // Last day of multi-day event - from calendar start to end time
-    const endMinutes = endDateTime.getHours() * 60 + endDateTime.getMinutes();
-    topPosition = 0;
-    height = ((endMinutes - calendarStartMinutes) / 60) * 60;
-
-    if (endMinutes < calendarStartMinutes) {
-      return { top: "0px", height: "0px", display: "none" };
-    }
-  } else {
-    // Middle day of multi-day event - full day from calendar start to end
-    topPosition = 0;
-    height = (calendarDurationMinutes / 60) * 60;
-  }
-
-  return {
-    top: `${Math.max(0, topPosition)}px`,
-    height: `${Math.max(0, height)}px`,
-  };
-};
-
 export default function AppointmentsPage() {
   const { data: session } = useSession();
 
@@ -191,7 +123,7 @@ export default function AppointmentsPage() {
       lastName: string | null;
     }>
   >([]);
-  const [view, setView] = useState<"list" | "calendar" | "weekly">("weekly");
+  const [view, setView] = useState<"list" | "calendar" | "weekly">("calendar");
   const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()));
   const [selectedEvent, setSelectedEvent] = useState<bigint | null>(null);
   const [editMode, setEditMode] = useState<"create" | "edit">("create");
@@ -621,35 +553,51 @@ export default function AppointmentsPage() {
             </PopoverContent>
           </Popover>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={() =>
-              setView(
-                view === "list"
-                  ? "calendar"
-                  : view === "calendar"
-                    ? "weekly"
-                    : "list",
-              )
-            }
-            title={
-              view === "list"
-                ? "Ver como calendario"
-                : view === "calendar"
-                  ? "Ver como semanal"
-                  : "Ver como lista"
-            }
-          >
-            {view === "list" ? (
+          {/* View Toggle Button Group */}
+          <div className="flex h-8 items-center rounded-md bg-muted/30 p-0.5 shadow-md">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-7 w-7 p-0 rounded-sm",
+                view === "calendar"
+                  ? "bg-background shadow-sm"
+                  : "hover:bg-background/50"
+              )}
+              onClick={() => setView("calendar")}
+              title="Calendario compacto"
+            >
               <CalendarIcon className="h-3.5 w-3.5" />
-            ) : view === "calendar" ? (
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-7 w-7 p-0 rounded-sm",
+                view === "weekly"
+                  ? "bg-background shadow-sm"
+                  : "hover:bg-background/50"
+              )}
+              onClick={() => setView("weekly")}
+              title="Vista semanal"
+            >
               <Clock className="h-3.5 w-3.5" />
-            ) : (
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-7 w-7 p-0 rounded-sm",
+                view === "list"
+                  ? "bg-background shadow-sm"
+                  : "hover:bg-background/50"
+              )}
+              onClick={() => setView("list")}
+              title="Vista de lista"
+            >
               <TableIcon className="h-3.5 w-3.5" />
-            )}
-          </Button>
+            </Button>
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button

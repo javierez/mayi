@@ -32,6 +32,7 @@ export async function createAccount(data: {
   isActive?: boolean | null;
 }) {
   try {
+    const now = new Date();
     const [result] = await db
       .insert(accounts)
       .values({
@@ -60,6 +61,8 @@ export async function createAccount(data: {
         subscriptionEndDate: data.subscriptionEndDate ?? null,
         status: data.status ?? "active",
         isActive: data.isActive ?? true,
+        createdAt: now,
+        updatedAt: now,
       })
       .returning();
 

@@ -25,15 +25,15 @@ interface ProspectPropertyCardProps {
 const MATCH_QUALITY_CONFIG = {
   high: {
     label: "Excelente",
-    className: "bg-emerald-100 text-emerald-700",
+    className: "border-emerald-300 bg-transparent text-emerald-600",
   },
   medium: {
     label: "Buena",
-    className: "bg-blue-100 text-blue-700",
+    className: "border-blue-300 bg-transparent text-blue-600",
   },
   low: {
     label: "Aceptable",
-    className: "bg-gray-100 text-gray-700",
+    className: "border-gray-300 bg-transparent text-gray-500",
   },
 };
 
@@ -101,7 +101,7 @@ export function ProspectPropertyCard({
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           {/* Match Quality Badge */}
           <div className="flex items-center justify-between gap-2">
-            <Badge className={cn("text-[10px]", matchConfig.className)}>
+            <Badge variant="outline" className={cn("text-[10px]", matchConfig.className)}>
               {matchConfig.label}
             </Badge>
           </div>

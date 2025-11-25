@@ -12,7 +12,6 @@ import {
   Train,
   ListTodo,
   CalendarIcon,
-  Plus,
 } from "lucide-react";
 import {
   Popover,
@@ -311,7 +310,7 @@ export function MonthlyCalendarView({
                         )}
                       >
                         {/* Date number */}
-                        <div className="group/day mb-1 flex items-center justify-between">
+                        <div className="mb-1 flex items-center justify-between">
                           <div
                             className={cn(
                               "flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium sm:h-7 sm:w-7 sm:text-sm",
@@ -324,17 +323,6 @@ export function MonthlyCalendarView({
                             {day.getDate()}
                           </div>
                           <div className="flex items-center gap-0.5">
-                            {/* Plus icon for creating appointment - visible on hover */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDateClick(day);
-                              }}
-                              className="relative z-10 flex h-4 w-4 items-center justify-center rounded opacity-0 transition-all hover:bg-blue-100 group-hover/day:opacity-100"
-                              title={`Crear cita - ${day.toLocaleDateString("es-ES")}`}
-                            >
-                              <Plus className="h-3 w-3 text-muted-foreground hover:text-blue-600" />
-                            </button>
                             {dayAppointments.length > 3 && (
                             <Popover>
                               <PopoverTrigger asChild>
@@ -451,9 +439,9 @@ export function MonthlyCalendarView({
                           })}
                         </div>
 
-                        {/* Click area for creating new appointment - placed behind appointments */}
+                        {/* Click area for creating new appointment - fills empty space */}
                         <div
-                          className="absolute inset-0 -z-10 cursor-pointer transition-colors hover:bg-blue-50/30"
+                          className="absolute inset-0 cursor-pointer"
                           onClick={() => onDateClick(day)}
                           title={`Crear cita - ${day.toLocaleDateString("es-ES")}`}
                         />

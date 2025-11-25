@@ -1,11 +1,12 @@
 "use client";
 
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { useDraggable, useDndMonitor } from "@dnd-kit/core";
 import { Check } from "lucide-react";
+import { useRef } from "react";
 import type { FeedbackWithAccount } from "~/types/feedback";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { cn } from "~/lib/utils";
 
 interface FeedbackCardProps {
   feedback: FeedbackWithAccount;
@@ -32,30 +33,74 @@ export function FeedbackCard({
   onToggleResolved,
   onClick,
 }: FeedbackCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id: feedback.feedbackId.toString(),
-  });
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id: feedback.feedbackId.toString(),
+      data: {
+        type: "feedback",
+        feedback,
+      },
+    });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
+  const style = transform
+    ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+      }
+    : undefined;
 
-  const scaleLabel = SCALE_LABELS[feedback.scale as keyof typeof SCALE_LABELS] ?? "N/A";
-  const scaleColor = SCALE_COLORS[feedback.scale as keyof typeof SCALE_COLORS] ?? "bg-gray-100 text-gray-800";
+  const scaleLabel =
+    SCALE_LABELS[feedback.scale as keyof typeof SCALE_LABELS] ?? "N/A";
+  const scaleColor =
+    SCALE_COLORS[feedback.scale as keyof typeof SCALE_COLORS] ??
+    "bg-gray-100 text-gray-800";
 
   const timeAgo = formatDistanceToNow(new Date(feedback.createdAt), {
     addSuffix: false,
     locale: es,
   });
+
+  // Track if a drag occurred to distinguish from clicks
+  const dragOccurredRef = useRef(false);
+  const lastDragEndTimeRef = useRef<number>(0);
+
+  // Monitor drag events to track when dragging starts and ends
+  useDndMonitor({
+    onDragStart(event) {
+      if (event.active.id === feedback.feedbackId.toString()) {
+        dragOccurredRef.current = true;
+      }
+    },
+    onDragEnd(event) {
+      if (event.active.id === feedback.feedbackId.toString()) {
+        lastDragEndTimeRef.current = Date.now();
+        // Reset after a delay to allow click detection
+        setTimeout(() => {
+          dragOccurredRef.current = false;
+        }, 150);
+      }
+    },
+  });
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Prevent click if we're currently dragging
+    if (isDragging) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
+    // Prevent click if a drag just occurred (within last 200ms)
+    // This prevents clicks from firing after drag ends
+    const timeSinceDragEnd = Date.now() - lastDragEndTimeRef.current;
+    if (dragOccurredRef.current || timeSinceDragEnd < 200) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
+    // If we get here, it's a genuine click (not a drag)
+    onClick(feedback.feedbackId.toString());
+  };
 
   const handleCheckboxClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -65,12 +110,17 @@ export function FeedbackCard({
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <div
-        className="relative cursor-pointer rounded-lg border border-gray-200 bg-white p-2 shadow-sm hover:shadow-md transition-shadow sm:p-3"
-        onClick={() => onClick(feedback.feedbackId.toString())}
+        className={cn(
+          "relative cursor-grab active:cursor-grabbing rounded-lg border border-gray-200 bg-white p-2 shadow-sm hover:shadow-md transition-shadow select-none sm:p-3",
+          isDragging && "opacity-0",
+        )}
+        onClick={handleCardClick}
       >
         {/* Rating badge - top right with subtle color */}
         <div className="absolute right-2 top-2 mt-1.5">
-          <span className={`whitespace-nowrap rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none ${scaleColor}`}>
+          <span
+            className={`whitespace-nowrap rounded-full px-1.5 py-0.5 text-[10px] font-medium leading-none ${scaleColor}`}
+          >
             {scaleLabel}
           </span>
         </div>
@@ -81,11 +131,12 @@ export function FeedbackCard({
             {/* Custom checkbox matching task card */}
             <div
               onClick={handleCheckboxClick}
-              className={`mt-1 flex h-3 w-3 flex-shrink-0 items-center justify-center rounded border-2 transition-all duration-200 ${
+              className={cn(
+                "mt-1 flex h-3 w-3 flex-shrink-0 items-center justify-center rounded border-2 transition-all duration-200 cursor-pointer",
                 feedback.resolved
                   ? "border-emerald-500 bg-emerald-500 text-white shadow-sm"
-                  : "border-gray-300 hover:border-gray-400 cursor-pointer"
-              }`}
+                  : "border-gray-300 hover:border-gray-400",
+              )}
             >
               {feedback.resolved && <Check className="h-2 w-2" />}
             </div>

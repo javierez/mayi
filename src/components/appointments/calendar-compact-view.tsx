@@ -21,7 +21,7 @@ export function CalendarCompactView({
 }: CalendarCompactViewProps) {
   if (loading) {
     return (
-      <div className="col-span-full flex min-h-[120px] w-full items-center justify-center px-4 py-8">
+      <div className="col-span-full flex min-h-[120px] w-full items-center justify-center px-2 py-6 sm:px-4 sm:py-8">
         <Loader className="h-5 w-5 flex-shrink-0 animate-spin sm:h-6 sm:w-6" />
         <span className="ml-2 text-sm sm:text-base">Cargando citas...</span>
       </div>
@@ -30,7 +30,7 @@ export function CalendarCompactView({
 
   if (error) {
     return (
-      <div className="col-span-full w-full break-words px-4 py-8 text-center text-sm text-red-600 sm:text-base">
+      <div className="col-span-full w-full break-words px-2 py-6 text-center text-sm text-red-600 sm:px-4 sm:py-8 sm:text-base">
         {error}
       </div>
     );
@@ -38,14 +38,14 @@ export function CalendarCompactView({
 
   if (appointments.length === 0) {
     return (
-      <div className="col-span-full w-full px-4 py-8 text-center text-sm text-muted-foreground sm:text-base">
+      <div className="col-span-full w-full px-2 py-6 text-center text-sm text-muted-foreground sm:px-4 sm:py-8 sm:text-base">
         No se encontraron citas
       </div>
     );
   }
 
   return (
-    <div className="grid w-full grid-cols-1 gap-2 sm:gap-3 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+    <div className="grid w-full grid-cols-1 gap-1.5 sm:gap-3 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
       {appointments.map((appointment) => (
         <CompactCalendarEvent
           key={appointment.appointmentId.toString()}

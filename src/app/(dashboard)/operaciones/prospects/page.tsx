@@ -261,7 +261,7 @@ export default function ProspectsPage() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="space-y-1">
-        <h1 className="text-xl font-bold sm:text-2xl">Ofertas y Demandas</h1>
+        <h1 className="text-xl font-bold sm:text-2xl">Demandas</h1>
       </div>
 
       {isCalculatingMatches && (

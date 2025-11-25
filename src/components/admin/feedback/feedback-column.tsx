@@ -1,10 +1,6 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
 import { FeedbackCard } from "./feedback-card";
 import type { FeedbackWithAccount } from "~/types/feedback";
 import { cn } from "~/lib/utils";
@@ -59,19 +55,14 @@ export function FeedbackColumn({
             </p>
           </div>
         ) : (
-          <SortableContext
-            items={feedbacks.map((f) => f.feedbackId.toString())}
-            strategy={verticalListSortingStrategy}
-          >
-            {feedbacks.map((feedback) => (
-              <FeedbackCard
-                key={feedback.feedbackId.toString()}
-                feedback={feedback}
-                onToggleResolved={onToggleResolved}
-                onClick={onFeedbackClick}
-              />
-            ))}
-          </SortableContext>
+          feedbacks.map((feedback) => (
+            <FeedbackCard
+              key={feedback.feedbackId.toString()}
+              feedback={feedback}
+              onToggleResolved={onToggleResolved}
+              onClick={onFeedbackClick}
+            />
+          ))
         )}
       </div>
     </div>

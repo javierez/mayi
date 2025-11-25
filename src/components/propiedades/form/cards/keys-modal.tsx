@@ -9,18 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { Loader2, X, Info } from "lucide-react";
+import { Loader2, X, Info, Send } from "lucide-react";
 import { toast } from "sonner";
 import type { CommentWithUser } from "~/types/comments";
 import { CommentItem, type CommentWithStatus } from "~/components/propiedades/detail/comments";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 
 interface KeysModalProps {
   open: boolean;
@@ -60,6 +55,7 @@ export function KeysModal({
 }: KeysModalProps) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState<bigint | null>(null);
+  const [infoModalOpen, setInfoModalOpen] = useState(false);
 
   // Generate initials from user name
   const getCurrentUserInitials = () => {
@@ -379,75 +375,73 @@ export function KeysModal({
 
   return (
     <>
-      <TooltipProvider>
-        <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto [&>button]:hidden">
-            <DialogHeader>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <DialogTitle>Llaves</DialogTitle>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          className="flex items-center justify-center rounded-full p-1 text-gray-400 transition-all duration-200 hover:bg-gray-100 hover:text-gray-600"
-                          aria-label="Información sobre llaves"
-                        >
-                          <Info className="h-4 w-4" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="right" className="max-w-xs">
-                        <p className="text-xs">¿Has recogido las llaves? ¿Quién las tiene? ¿Cuándo están disponibles?</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto [&>button]:hidden">
+          <DialogHeader>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <DialogTitle>Llaves</DialogTitle>
+                  <button
+                    type="button"
+                    onClick={() => setInfoModalOpen(true)}
+                    className="flex items-center justify-center rounded-full p-1 text-gray-400 transition-all duration-200 hover:bg-gray-100 hover:text-gray-600"
+                    aria-label="Información sobre llaves"
+                  >
+                    <Info className="h-4 w-4" />
+                  </button>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onOpenChange(false)}
-                  className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                  title="Cerrar"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
               </div>
-            </DialogHeader>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onOpenChange(false)}
+                className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                title="Cerrar"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogHeader>
 
           <div className="space-y-4">
             {/* Add New Comment */}
-            <div className="rounded-lg p-3">
-                <div className="relative">
-                  <Textarea
-                    placeholder="Escribe una nota sobre las llaves..."
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    className="min-h-[80px] resize-none border-gray-200 pr-24"
+            <div className="flex space-x-3 p-3">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={currentUser?.image ?? undefined} />
+                <AvatarFallback>{getCurrentUserInitials()}</AvatarFallback>
+              </Avatar>
+              <div className="relative flex-1">
+                <Textarea
+                  placeholder="Escribe una nota sobre las llaves..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  className="min-h-[80px] resize-none border-gray-200 pb-10 pr-10"
+                />
+                <div className="absolute right-2 top-2">
+                  <PushToTalkWhisperButton
+                    onTranscript={(text) => {
+                      setNewComment((prev) =>
+                        prev ? `${prev} ${text}`.trim() : text,
+                      );
+                    }}
+                    language="es"
+                    disabled={isPending}
                   />
-                  <div className="absolute right-1 top-1 flex items-center gap-2">
-                    <PushToTalkWhisperButton
-                      onTranscript={(text) => {
-                        setNewComment((prev) =>
-                          prev ? `${prev} ${text}`.trim() : text,
-                        );
-                      }}
-                      language="es"
-                      disabled={isPending}
-                    />
-                    <Button
-                      onClick={handleAddComment}
-                      disabled={!newComment.trim() || isPending}
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                    >
-                      {isPending && (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      )}
-                    </Button>
-                  </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={handleAddComment}
+                  disabled={!newComment.trim() || isPending}
+                  className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-md text-gray-400 shadow-md transition-all hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+                >
+                  {isPending ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Send className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Comments Section */}
@@ -483,7 +477,22 @@ export function KeysModal({
           </div>
           </DialogContent>
         </Dialog>
-      </TooltipProvider>
+
+      <Dialog open={infoModalOpen} onOpenChange={setInfoModalOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Información sobre llaves</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-600">
+            ¿Has recogido las llaves? ¿Quién las tiene? ¿Cuándo están disponibles?
+          </p>
+          <div className="flex justify-end">
+            <Button variant="outline" size="sm" onClick={() => setInfoModalOpen(false)}>
+              Cerrar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={deleteConfirmOpen}

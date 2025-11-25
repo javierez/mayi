@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the new account
+    const now = new Date();
     const [newAccount] = await db
       .insert(accounts)
       .values({
@@ -73,6 +74,8 @@ export async function POST(request: NextRequest) {
         website: body.website ?? null,
         address: body.address ?? null,
         plan: body.plan ?? "basic",
+        createdAt: now,
+        updatedAt: now,
       })
       .returning();
 

@@ -165,7 +165,7 @@ export default function CalendarEvent({
       {/* Travel Time Block - positioned above appointment */}
       {travelTimeHeight > 0 && event.tripTimeMinutes != null && event.tripTimeMinutes > 0 && event.status !== "Cancelled" && (
         <div
-          className="pointer-events-none absolute left-0.5 right-0.5 rounded-t-lg backdrop-blur-sm"
+          className="pointer-events-none absolute left-0 right-0 rounded-t-sm backdrop-blur-sm sm:left-0.5 sm:right-0.5 sm:rounded-t-lg"
           style={{
             top: `${parseInt(style.top) - travelTimeHeight}px`,
             height: `${travelTimeHeight}px`,
@@ -177,9 +177,9 @@ export default function CalendarEvent({
         >
           {/* Subtle travel indicator */}
           {travelTimeHeight >= 12 && (
-            <div className="absolute right-2 top-1">
+            <div className="absolute right-1 top-0.5 hidden sm:block sm:right-2 sm:top-1">
               <Car
-                className="h-2.5 w-2.5"
+                className="h-2 w-2 sm:h-2.5 sm:w-2.5"
                 style={{ color: `rgba(${baseColorRGB}, 0.5)` }}
               />
             </div>
@@ -190,12 +190,12 @@ export default function CalendarEvent({
       {/* Main Appointment Block */}
       <div
         className={cn(
-          "calendar-event absolute left-0.5 right-0.5 cursor-pointer overflow-hidden px-2 py-1 shadow-sm transition-all duration-200 hover:ring-2 hover:ring-black hover:ring-offset-1",
-          travelTimeHeight > 0 ? "" : "rounded-lg", // No rounding if travel blocks exist (they handle the rounding)
+          "calendar-event absolute left-0 right-0 cursor-pointer overflow-hidden px-0.5 py-0.5 shadow-sm transition-all duration-200 hover:ring-1 hover:ring-black sm:left-0.5 sm:right-0.5 sm:px-1 sm:py-1 sm:hover:ring-2 sm:hover:ring-offset-1 md:px-2",
+          travelTimeHeight > 0 ? "" : "rounded-sm sm:rounded-lg", // No rounding if travel blocks exist (they handle the rounding)
           typeConfig.color,
           typeConfig.textColor,
           statusConfig,
-          isSelected && "ring-2 ring-black ring-offset-1",
+          isSelected && "ring-1 ring-black sm:ring-2 sm:ring-offset-1",
           optimisticStyles,
           className,
         )}
@@ -203,16 +203,18 @@ export default function CalendarEvent({
         onClick={handleClick}
       >
         {/* Always show: Event type and title/contact name */}
-        <div className="flex items-center gap-1 truncate text-xs font-medium leading-tight">
-          {typeConfig.icon}
-          <span>
+        <div className="flex min-w-0 items-center gap-0.5 truncate text-[8px] font-medium leading-tight sm:gap-1 sm:text-[10px] md:text-xs">
+          <span className="hidden sm:inline">{typeConfig.icon}</span>
+          <span className="truncate">
             {event.title ? (
               <>
-                {event.type}: {event.title}
+                <span className="hidden sm:inline">{event.type}: </span>
+                {event.title}
               </>
             ) : (
               <>
-                {event.type} {event.contactName}
+                <span className="hidden sm:inline">{event.type} </span>
+                {event.contactName}
               </>
             )}
           </span>
@@ -220,27 +222,27 @@ export default function CalendarEvent({
 
         {/* Show time if height > 50px */}
         {showDetails && (
-          <div className="mt-0.5 flex items-center gap-1 truncate text-xs opacity-90">
-            <Clock className="h-3 w-3 flex-shrink-0" />
+          <div className="mt-0.5 hidden min-w-0 items-center gap-0.5 truncate text-[8px] opacity-90 sm:flex sm:gap-1 sm:text-[10px] md:text-xs">
+            <Clock className="h-2 w-2 flex-shrink-0 sm:h-3 sm:w-3" />
             <span className="truncate">
               {formatTime(event.startTime)} - {formatTime(event.endTime)}
-              {event.title && ` • ${event.contactName}`}
+              <span className="hidden md:inline">{event.title && ` • ${event.contactName}`}</span>
             </span>
           </div>
         )}
 
         {/* Show address if height > 80px and address exists */}
         {showExtended && event.propertyAddress && (
-          <div className="mt-0.5 flex items-center gap-1 truncate text-xs opacity-90">
-            <MapPin className="h-3 w-3 flex-shrink-0" />
+          <div className="mt-0.5 hidden min-w-0 items-center gap-0.5 truncate text-[8px] opacity-90 md:flex md:gap-1 md:text-xs">
+            <MapPin className="h-2 w-2 flex-shrink-0 sm:h-3 sm:w-3" />
             <span className="truncate">{event.propertyAddress}</span>
           </div>
         )}
 
         {/* Show trip time if height > 80px and trip time exists */}
         {showExtended && event.tripTimeMinutes != null && event.tripTimeMinutes > 0 && (
-          <div className="mt-0.5 flex items-center gap-1 truncate text-xs opacity-90">
-            <Car className="h-3 w-3 flex-shrink-0" />
+          <div className="mt-0.5 hidden min-w-0 items-center gap-0.5 truncate text-[8px] opacity-90 md:flex md:gap-1 md:text-xs">
+            <Car className="h-2 w-2 flex-shrink-0 sm:h-3 sm:w-3" />
             <span className="truncate">
               {formatTripTime(event.tripTimeMinutes)}
             </span>
@@ -249,17 +251,17 @@ export default function CalendarEvent({
 
         {/* Show notes if height > 120px and notes exist */}
         {showFull && event.notes && (
-          <div className="mt-1 line-clamp-2 text-xs opacity-75">
+          <div className="mt-1 hidden line-clamp-2 text-xs opacity-75 md:block">
             {event.notes}
           </div>
         )}
 
         {/* Status indicator for non-scheduled appointments */}
         {event.status !== "Scheduled" && (
-          <div className="absolute right-1 top-1">
+          <div className="absolute right-0.5 top-0.5 sm:right-1 sm:top-1">
             <div
               className={cn(
-                "h-2 w-2 rounded-full bg-white",
+                "h-1.5 w-1.5 rounded-full bg-white sm:h-2 sm:w-2",
                 event.status === "Completed" ? "bg-opacity-0" : "bg-opacity-80",
               )}
             />
@@ -270,7 +272,7 @@ export default function CalendarEvent({
       {/* Return Travel Time Block - positioned below appointment */}
       {travelTimeHeight > 0 && event.tripTimeMinutes != null && event.tripTimeMinutes > 0 && event.status !== "Cancelled" && (
         <div
-          className="pointer-events-none absolute left-0.5 right-0.5 rounded-b-lg backdrop-blur-sm"
+          className="pointer-events-none absolute left-0 right-0 rounded-b-sm backdrop-blur-sm sm:left-0.5 sm:right-0.5 sm:rounded-b-lg"
           style={{
             top: `${parseInt(style.top) + parseInt(style.height)}px`,
             height: `${travelTimeHeight}px`,
@@ -282,9 +284,9 @@ export default function CalendarEvent({
         >
           {/* Subtle travel indicator */}
           {travelTimeHeight >= 12 && (
-            <div className="absolute bottom-1 right-2">
+            <div className="absolute bottom-0.5 right-1 hidden sm:block sm:bottom-1 sm:right-2">
               <Car
-                className="h-2.5 w-2.5"
+                className="h-2 w-2 sm:h-2.5 sm:w-2.5"
                 style={{ color: `rgba(${baseColorRGB}, 0.5)` }}
               />
             </div>
@@ -333,7 +335,7 @@ export function CompactCalendarEvent({
   return (
     <div
       className={cn(
-        "calendar-event relative cursor-pointer overflow-hidden rounded-lg px-3 py-2 shadow-sm transition-all duration-200 hover:ring-2 hover:ring-black hover:ring-offset-1",
+        "calendar-event relative cursor-pointer overflow-hidden rounded-lg px-2 py-1.5 shadow-sm transition-all duration-200 hover:ring-2 hover:ring-black hover:ring-offset-1 sm:px-3 sm:py-2",
         typeConfig.color,
         typeConfig.textColor,
         statusConfig,
@@ -344,8 +346,8 @@ export function CompactCalendarEvent({
       onClick={handleClick}
     >
       {/* Event type and title/contact name */}
-      <div className="flex items-center gap-1.5 truncate text-sm font-medium leading-tight">
-        {typeConfig.icon}
+      <div className="flex min-w-0 items-center gap-1 text-xs font-medium leading-tight sm:gap-1.5 sm:text-sm">
+        <span className="flex-shrink-0">{typeConfig.icon}</span>
         <span className="truncate">
           {event.title ? (
             <>
@@ -360,7 +362,7 @@ export function CompactCalendarEvent({
       </div>
 
       {/* Time */}
-      <div className="mt-1 flex items-center gap-1 truncate text-xs opacity-90">
+      <div className="mt-0.5 flex min-w-0 items-center gap-1 text-xs opacity-90 sm:mt-1">
         <Clock className="h-3 w-3 flex-shrink-0" />
         <span className="truncate">
           {formatTime(event.startTime)} - {formatTime(event.endTime)}
@@ -369,7 +371,7 @@ export function CompactCalendarEvent({
 
       {/* Address if available */}
       {event.propertyAddress && (
-        <div className="mt-1 flex items-center gap-1 truncate text-xs opacity-90">
+        <div className="mt-0.5 flex min-w-0 items-center gap-1 text-xs opacity-90 sm:mt-1">
           <MapPin className="h-3 w-3 flex-shrink-0" />
           <span className="truncate">{event.propertyAddress}</span>
         </div>
@@ -377,7 +379,7 @@ export function CompactCalendarEvent({
 
       {/* Status indicator for non-scheduled appointments */}
       {event.status !== "Scheduled" && (
-        <div className="absolute right-2 top-2">
+        <div className="absolute right-1.5 top-1.5 sm:right-2 sm:top-2">
           <div
             className={cn(
               "h-2 w-2 rounded-full bg-white",

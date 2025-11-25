@@ -846,6 +846,7 @@ export function PropertyTabs({
                 carteles={tabData.carteles ?? []}
                 loading={loading.carteles}
                 onRefreshCarteles={fetchCartelesData}
+                hasImages={(tabData.images?.length ?? images.length) > 0}
               />
             </div>
           </div>

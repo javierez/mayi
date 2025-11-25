@@ -135,18 +135,6 @@ const getCurrentTime = () => {
   return now.toTimeString().slice(0, 5);
 };
 
-// Helper function to add minutes to a time string
-const addMinutesToTime = (timeStr: string, minutesToAdd: number): string => {
-  if (!timeStr) return "";
-
-  const [hours, minutes] = timeStr.split(":").map(Number);
-  const date = new Date();
-  date.setHours(hours ?? 0);
-  date.setMinutes((minutes ?? 0) + minutesToAdd);
-
-  return date.toTimeString().slice(0, 5);
-};
-
 // Helper function to calculate end date and time from start date, start time, and duration
 const calculateEndDateTime = (
   startDate: string,
@@ -170,6 +158,29 @@ const calculateEndDateTime = (
   return { endDate, endTime };
 };
 
+// Helper function to calculate duration from start and end date/time
+const calculateDurationFromEndDateTime = (
+  startDate: string,
+  startTime: string,
+  endDate: string,
+  endTime: string,
+): { hours: number; minutes: number } => {
+  if (!startDate || !startTime || !endDate || !endTime) {
+    return { hours: 0, minutes: 30 };
+  }
+
+  const startDateTime = new Date(`${startDate}T${startTime}`);
+  const endDateTime = new Date(`${endDate}T${endTime}`);
+
+  const diffMs = endDateTime.getTime() - startDateTime.getTime();
+  const diffMinutes = Math.max(0, Math.floor(diffMs / 60000));
+
+  return {
+    hours: Math.floor(diffMinutes / 60),
+    minutes: diffMinutes % 60,
+  };
+};
+
 // Helper function to generate appointment title
 const generateAppointmentTitle = (
   appointmentType: string,
@@ -181,15 +192,21 @@ const generateAppointmentTitle = (
   return `${appointmentType} - ${contactName}`;
 };
 
-const initialFormData: Omit<AppointmentFormData, "contactId"> = {
-  startDate: getTomorrowDate(),
-  startTime: getCurrentTime(),
-  endDate: getTomorrowDate(),
-  endTime: addMinutesToTime(getCurrentTime(), 30),
-  tripTimeMinutes: 0,
-  title: "",
-  notes: "",
-  appointmentType: "Visita",
+const getInitialFormData = (): Omit<AppointmentFormData, "contactId"> => {
+  const startDate = getTomorrowDate();
+  const startTime = getCurrentTime();
+  const { endDate, endTime } = calculateEndDateTime(startDate, startTime, 30);
+
+  return {
+    startDate,
+    startTime,
+    endDate,
+    endTime,
+    tripTimeMinutes: 0,
+    title: "",
+    notes: "",
+    appointmentType: "Visita",
+  };
 };
 
 // Step definitions
@@ -270,7 +287,7 @@ export default function AppointmentForm({
   const initialStep = initialData.contactId ? 1 : 0;
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [formData, setFormData] = useState<Partial<AppointmentFormData>>({
-    ...initialFormData,
+    ...getInitialFormData(),
     ...initialData,
   });
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
@@ -284,11 +301,12 @@ export default function AppointmentForm({
   );
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const isMountedRef = useRef(true);
+  // Track which field initiated the update to prevent circular recalculations
+  const updateSourceRef = useRef<"duration" | "end" | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [listingSearchQuery, setListingSearchQuery] = useState("");
-  const [showEndDate, setShowEndDate] = useState(false);
   const [durationHours, setDurationHours] = useState(0);
   const [durationMinutes, setDurationMinutes] = useState(30);
   const [agents, setAgents] = useState<
@@ -301,7 +319,14 @@ export default function AppointmentForm({
   const { data: session } = useSession();
 
   // Calculate endTime and endDate based on startTime, startDate, and duration
+  // Only run when duration changes or start changes (not when end is changed by user)
   useEffect(() => {
+    // Skip if the update was triggered by changing end date/time
+    if (updateSourceRef.current === "end") {
+      updateSourceRef.current = null;
+      return;
+    }
+
     if (formData.startTime && formData.startDate) {
       const totalMinutes = durationHours * 60 + durationMinutes;
       const { endDate, endTime } = calculateEndDateTime(
@@ -311,6 +336,9 @@ export default function AppointmentForm({
       );
       setFormData((prev) => ({ ...prev, endDate, endTime }));
     }
+
+    // Reset the update source after processing
+    updateSourceRef.current = null;
   }, [formData.startTime, formData.startDate, durationHours, durationMinutes]);
 
   // Cleanup effect to handle component unmounting
@@ -686,14 +714,20 @@ export default function AppointmentForm({
       setFormData((prev) => {
         const updates: Partial<AppointmentFormData> = { [field]: value };
 
-        // Auto-update endTime when startTime changes
+        // Auto-update endDate and endTime when startTime changes
         if (field === "startTime" && typeof value === "string") {
-          updates.endTime = addMinutesToTime(value, 30);
+          const startDate = prev.startDate ?? getTomorrowDate();
+          const { endDate, endTime } = calculateEndDateTime(startDate, value, 30);
+          updates.endDate = endDate;
+          updates.endTime = endTime;
         }
 
-        // Auto-update endDate when startDate changes
+        // Auto-update endDate and endTime when startDate changes
         if (field === "startDate" && typeof value === "string") {
-          updates.endDate = value;
+          const startTime = prev.startTime ?? getCurrentTime();
+          const { endDate, endTime } = calculateEndDateTime(value, startTime, 30);
+          updates.endDate = endDate;
+          updates.endTime = endTime;
         }
 
         // Auto-generate title when appointment type changes (only if title is empty or matches previous type pattern)
@@ -1252,8 +1286,7 @@ export default function AppointmentForm({
         return (
           <div className="space-y-8">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <FloatingLabelInput
+              <FloatingLabelInput
                   id="startDate"
                   value={formData.startDate ?? ""}
                   onChange={handleInputChange("startDate")}
@@ -1261,28 +1294,6 @@ export default function AppointmentForm({
                   type="date"
                   required
                 />
-                {!showEndDate ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowEndDate(true)}
-                    className="w-full text-xs"
-                  >
-                    + Añadir fecha de fin
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowEndDate(false)}
-                    className="w-full text-xs text-muted-foreground"
-                  >
-                    Ocultar fecha de fin
-                  </Button>
-                )}
-              </div>
 
               <div className="relative mt-8">
                 <label className="absolute -top-5 left-0 z-10 px-2 text-xs font-medium text-gray-600">
@@ -1308,122 +1319,234 @@ export default function AppointmentForm({
               </div>
             </div>
 
-            {showEndDate && (
-              <FloatingLabelInput
-                id="endDate"
-                value={formData.endDate ?? ""}
-                onChange={handleInputChange("endDate")}
-                placeholder="Fecha de fin"
-                type="date"
-                required
-              />
-            )}
+            {/* Duration and End Date/Time Row */}
+            <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+              {/* Duration */}
+              <div className="relative">
+                <label className="absolute -top-6 left-0 z-10 px-2 text-xs font-medium text-gray-600">
+                  Duración
+                </label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      updateSourceRef.current = "duration";
+                      const totalMinutes = durationHours * 60 + durationMinutes;
+                      let newTotal;
 
-            <div className="relative">
-              <label className="absolute -top-5 left-0 z-10 px-2 text-xs font-medium text-gray-600">
-                Duración
-              </label>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const totalMinutes = durationHours * 60 + durationMinutes;
-                    let newTotal;
+                      if (totalMinutes > 8 * 60) {
+                        // If more than 8 hours, decrease by 1 day
+                        newTotal = Math.max(8 * 60, totalMinutes - 24 * 60);
+                      } else {
+                        // If 8 hours or less, decrease by 15 minutes
+                        newTotal = Math.max(0, totalMinutes - 15);
+                      }
 
-                    if (totalMinutes > 8 * 60) {
-                      // If more than 8 hours, decrease by 1 day
-                      newTotal = Math.max(8 * 60, totalMinutes - 24 * 60);
-                    } else {
-                      // If 8 hours or less, decrease by 15 minutes
-                      newTotal = Math.max(0, totalMinutes - 15);
-                    }
+                      setDurationHours(Math.floor(newTotal / 60));
+                      setDurationMinutes(newTotal % 60);
+                    }}
+                    className="h-9 w-9 p-0 text-lg"
+                    title="Restar 15 minutos o 1 día"
+                  >
+                    −
+                  </Button>
+                  <Select
+                    value={`${durationHours}:${durationMinutes}`}
+                    onValueChange={(value) => {
+                      updateSourceRef.current = "duration";
+                      const [h, m] = value.split(":").map(Number);
+                      setDurationHours(h ?? 0);
+                      setDurationMinutes(m ?? 0);
+                    }}
+                  >
+                    <SelectTrigger className="h-9 flex-1 border border-gray-200 shadow-md">
+                      <SelectValue>
+                        {(() => {
+                          const totalMinutes = durationHours * 60 + durationMinutes;
+                          const totalDays = Math.floor(totalMinutes / (24 * 60));
 
-                    setDurationHours(Math.floor(newTotal / 60));
-                    setDurationMinutes(newTotal % 60);
-                  }}
-                  className="h-9 w-9 p-0 text-lg"
-                  title="Restar 15 minutos o 1 día"
-                >
-                  −
-                </Button>
-                <Select
-                  value={`${durationHours}:${durationMinutes}`}
-                  onValueChange={(value) => {
-                    const [h, m] = value.split(":").map(Number);
-                    setDurationHours(h ?? 0);
-                    setDurationMinutes(m ?? 0);
-                  }}
-                >
-                  <SelectTrigger className="h-9 flex-1 border border-gray-200 shadow-md">
-                    <SelectValue>
-                      {(() => {
-                        const totalMinutes = durationHours * 60 + durationMinutes;
-                        const totalDays = Math.floor(totalMinutes / (24 * 60));
+                          if (totalDays >= 1 && totalMinutes % (24 * 60) === 0) {
+                            // Show as days if it's a whole number of days
+                            return totalDays === 1 ? "1 día" : `${totalDays} días`;
+                          }
 
-                        if (totalDays >= 1 && totalMinutes % (24 * 60) === 0) {
-                          // Show as days if it's a whole number of days
-                          return totalDays === 1 ? "1 día" : `${totalDays} días`;
+                          // Show as HH:mm for durations under 1 day or partial days
+                          return `${durationHours.toString().padStart(2, "0")}:${durationMinutes.toString().padStart(2, "0")}`;
+                        })()}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <ScrollArea className="h-[200px]">
+                        {/* Generate duration options from 0 to 8 hours in 5-minute increments */}
+                        {Array.from({ length: 97 }, (_, i) => i * 5).map((totalMinutes) => {
+                          const h = Math.floor(totalMinutes / 60);
+                          const m = totalMinutes % 60;
+                          const displayText = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+                          return (
+                            <SelectItem key={totalMinutes} value={`${h}:${m}`}>
+                              {displayText}
+                            </SelectItem>
+                          );
+                        })}
+                        {/* Add day options from 1 to 14 days */}
+                        {Array.from({ length: 14 }, (_, i) => i + 1).map((days) => {
+                          const totalMinutes = days * 24 * 60;
+                          const h = Math.floor(totalMinutes / 60);
+                          const m = totalMinutes % 60;
+                          const displayText = days === 1 ? "1 día" : `${days} días`;
+                          return (
+                            <SelectItem key={`day-${days}`} value={`${h}:${m}`}>
+                              {displayText}
+                            </SelectItem>
+                          );
+                        })}
+                      </ScrollArea>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      updateSourceRef.current = "duration";
+                      const totalMinutes = durationHours * 60 + durationMinutes;
+                      let newTotal;
+
+                      if (totalMinutes >= 8 * 60) {
+                        // If 8 hours or more, increase by 1 day
+                        newTotal = Math.min(14 * 24 * 60, totalMinutes + 24 * 60); // Max 14 days
+                      } else {
+                        // If less than 8 hours, increase by 15 minutes (up to 8 hours)
+                        newTotal = Math.min(8 * 60, totalMinutes + 15);
+                      }
+
+                      setDurationHours(Math.floor(newTotal / 60));
+                      setDurationMinutes(newTotal % 60);
+                    }}
+                    className="h-9 w-9 p-0 text-lg"
+                    title="Añadir 15 minutos o 1 día"
+                  >
+                    +
+                  </Button>
+                </div>
+              </div>
+
+              {/* End Date */}
+              <div className="relative">
+                <label className="absolute -top-6 left-0 z-10 px-2 text-xs font-medium text-gray-600">
+                  Fecha de fin
+                </label>
+                <input
+                  id="endDate"
+                  type="date"
+                  value={formData.endDate ?? ""}
+                  onChange={(e) => {
+                    updateSourceRef.current = "end";
+                    const newEndDate = e.target.value;
+                    setFormData((prev) => ({ ...prev, endDate: newEndDate }));
+
+                    // Recalculate duration from new end date
+                    if (formData.startDate && formData.startTime && formData.endTime) {
+                      const { hours, minutes } = calculateDurationFromEndDateTime(
+                        formData.startDate,
+                        formData.startTime,
+                        newEndDate,
+                        formData.endTime,
+                      );
+
+                      // Validate: if end is before or equal to start, auto-correct to start + 30 min
+                      const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
+                      const endDateTime = new Date(`${newEndDate}T${formData.endTime}`);
+
+                      if (endDateTime <= startDateTime) {
+                        // Auto-correct to start + 30 minutes
+                        const corrected = calculateEndDateTime(formData.startDate, formData.startTime, 30);
+                        setFormData((prev) => ({ ...prev, endDate: corrected.endDate, endTime: corrected.endTime }));
+                        setDurationHours(0);
+                        setDurationMinutes(30);
+                      } else {
+                        // Cap duration at 14 days max
+                        const totalMinutes = hours * 60 + minutes;
+                        const maxMinutes = 14 * 24 * 60;
+                        if (totalMinutes > maxMinutes) {
+                          const corrected = calculateEndDateTime(formData.startDate, formData.startTime, maxMinutes);
+                          setFormData((prev) => ({ ...prev, endDate: corrected.endDate, endTime: corrected.endTime }));
+                          setDurationHours(Math.floor(maxMinutes / 60));
+                          setDurationMinutes(maxMinutes % 60);
+                        } else {
+                          setDurationHours(hours);
+                          setDurationMinutes(minutes);
                         }
+                      }
+                    }
+                  }}
+                  required
+                  className="h-9 w-full rounded-md border border-gray-200 px-3 text-sm shadow-md"
+                />
+              </div>
 
-                        // Show as HH:mm for durations under 1 day or partial days
-                        return `${durationHours.toString().padStart(2, "0")}:${durationMinutes.toString().padStart(2, "0")}`;
-                      })()}
-                    </SelectValue>
+              {/* End Time */}
+              <div className="relative">
+                <label className="absolute -top-6 left-0 z-10 px-2 text-xs font-medium text-gray-600">
+                  Hora de fin
+                </label>
+                <Select
+                  value={formData.endTime}
+                  onValueChange={(newEndTime) => {
+                    updateSourceRef.current = "end";
+                    setFormData((prev) => ({ ...prev, endTime: newEndTime }));
+
+                    // Recalculate duration from new end time
+                    if (formData.startDate && formData.startTime && formData.endDate) {
+                      const { hours, minutes } = calculateDurationFromEndDateTime(
+                        formData.startDate,
+                        formData.startTime,
+                        formData.endDate,
+                        newEndTime,
+                      );
+
+                      // Validate: if end is before or equal to start, auto-correct to start + 30 min
+                      const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
+                      const endDateTime = new Date(`${formData.endDate}T${newEndTime}`);
+
+                      if (endDateTime <= startDateTime) {
+                        // Auto-correct to start + 30 minutes
+                        const corrected = calculateEndDateTime(formData.startDate, formData.startTime, 30);
+                        setFormData((prev) => ({ ...prev, endDate: corrected.endDate, endTime: corrected.endTime }));
+                        setDurationHours(0);
+                        setDurationMinutes(30);
+                      } else {
+                        // Cap duration at 14 days max
+                        const totalMinutes = hours * 60 + minutes;
+                        const maxMinutes = 14 * 24 * 60;
+                        if (totalMinutes > maxMinutes) {
+                          const corrected = calculateEndDateTime(formData.startDate, formData.startTime, maxMinutes);
+                          setFormData((prev) => ({ ...prev, endDate: corrected.endDate, endTime: corrected.endTime }));
+                          setDurationHours(Math.floor(maxMinutes / 60));
+                          setDurationMinutes(maxMinutes % 60);
+                        } else {
+                          setDurationHours(hours);
+                          setDurationMinutes(minutes);
+                        }
+                      }
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-9 border border-gray-200 shadow-md">
+                    <SelectValue placeholder="Seleccionar hora" />
                   </SelectTrigger>
                   <SelectContent>
                     <ScrollArea className="h-[200px]">
-                      {/* Generate duration options from 0 to 8 hours in 5-minute increments */}
-                      {Array.from({ length: 97 }, (_, i) => i * 5).map((totalMinutes) => {
-                        const h = Math.floor(totalMinutes / 60);
-                        const m = totalMinutes % 60;
-                        const displayText = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
-                        return (
-                          <SelectItem key={totalMinutes} value={`${h}:${m}`}>
-                            {displayText}
-                          </SelectItem>
-                        );
-                      })}
-                      {/* Add day options from 1 to 14 days */}
-                      {Array.from({ length: 14 }, (_, i) => i + 1).map((days) => {
-                        const totalMinutes = days * 24 * 60;
-                        const h = Math.floor(totalMinutes / 60);
-                        const m = totalMinutes % 60;
-                        const displayText = days === 1 ? "1 día" : `${days} días`;
-                        return (
-                          <SelectItem key={`day-${days}`} value={`${h}:${m}`}>
-                            {displayText}
-                          </SelectItem>
-                        );
-                      })}
+                      {generateTimeOptions().map((time, index) => (
+                        <SelectItem key={`end-${time}-${index}`} value={time}>
+                          {time}
+                        </SelectItem>
+                      ))}
                     </ScrollArea>
                   </SelectContent>
                 </Select>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const totalMinutes = durationHours * 60 + durationMinutes;
-                    let newTotal;
-
-                    if (totalMinutes >= 8 * 60) {
-                      // If 8 hours or more, increase by 1 day
-                      newTotal = Math.min(14 * 24 * 60, totalMinutes + 24 * 60); // Max 14 days
-                    } else {
-                      // If less than 8 hours, increase by 15 minutes (up to 8 hours)
-                      newTotal = Math.min(8 * 60, totalMinutes + 15);
-                    }
-
-                    setDurationHours(Math.floor(newTotal / 60));
-                    setDurationMinutes(newTotal % 60);
-                  }}
-                  className="h-9 w-9 p-0 text-lg"
-                  title="Añadir 15 minutos o 1 día"
-                >
-                  +
-                </Button>
               </div>
             </div>
 
@@ -1740,7 +1863,7 @@ export default function AppointmentForm({
                   <div className="text-sm text-muted-foreground">
                     {formData.startDate} • {formData.startTime} -{" "}
                     {formData.endTime}
-                    {showEndDate && formData.endDate !== formData.startDate && (
+                    {formData.endDate !== formData.startDate && (
                       <> (hasta {formData.endDate})</>
                     )}
                   </div>
