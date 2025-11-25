@@ -204,21 +204,17 @@ export function CalendarFeatureCard() {
                               <>
                                 {/* 10:00 AM appointment with transport time */}
                                 <div
-                                  className="absolute left-0.5 sm:left-1 right-0.5 sm:right-1 rounded-t-md bg-slate-50 border-l-2 sm:border-l-3 md:border-l-4 border-slate-400 p-0.5 sm:p-1 md:p-1.5 text-xs z-10"
+                                  className="absolute left-0.5 sm:left-1 right-0.5 sm:right-1 rounded-t-md bg-slate-50 border-l-2 sm:border-l-3 md:border-l-4 border-slate-400 p-0.5 sm:p-1 md:p-1.5 z-10 overflow-hidden"
                                   style={{
                                     top: "90px", // 10:00 AM (2 hours * 45px mobile)
                                     height: "45px", // 1 hour mobile
                                   }}
                                 >
-                                  <div className="font-medium text-slate-700 text-[8px] sm:text-[10px] md:text-xs">
+                                  <div className="font-medium text-slate-700 text-[7px] sm:text-[8px] md:text-[10px]">
                                     10:00
                                   </div>
-                                  <div className="text-slate-600 truncate text-[8px] sm:text-[10px] md:text-xs leading-tight">
+                                  <div className="text-slate-600 truncate text-[7px] sm:text-[8px] md:text-[10px] leading-tight">
                                     Visita Villa
-                                  </div>
-                                  <div className="mt-0.5 hidden sm:flex items-center gap-0.5 md:gap-1 text-slate-500">
-                                    <Car className="h-2 w-2 md:h-2.5 md:w-2.5" />
-                                    <span className="text-[9px] md:text-xs">15min</span>
                                   </div>
                                 </div>
                                 {/* Transport time block */}
@@ -240,36 +236,32 @@ export function CalendarFeatureCard() {
                               <>
                                 {/* 10:00 AM appointment */}
                                 <div
-                                  className="absolute left-0.5 sm:left-1 right-0.5 sm:right-1 rounded-md bg-slate-50 border-l-2 sm:border-l-3 md:border-l-4 border-slate-400 p-0.5 sm:p-1 md:p-1.5 text-xs z-10"
+                                  className="absolute left-0.5 sm:left-1 right-0.5 sm:right-1 rounded-md bg-slate-50 border-l-2 sm:border-l-3 md:border-l-4 border-slate-400 p-0.5 sm:p-1 md:p-1.5 z-10 overflow-hidden"
                                   style={{
                                     top: "90px", // 10:00 AM
                                     height: "45px",
                                   }}
                                 >
-                                  <div className="font-medium text-slate-700 text-[8px] sm:text-[10px] md:text-xs">
+                                  <div className="font-medium text-slate-700 text-[7px] sm:text-[8px] md:text-[10px]">
                                     10:00
                                   </div>
-                                  <div className="text-slate-600 truncate text-[8px] sm:text-[10px] md:text-xs leading-tight">
+                                  <div className="text-slate-600 truncate text-[7px] sm:text-[8px] md:text-[10px] leading-tight">
                                     Visita Villa
                                   </div>
                                 </div>
                                 {/* 12:00 PM appointment with transport time */}
                                 <div
-                                  className="absolute left-0.5 sm:left-1 right-0.5 sm:right-1 rounded-t-md bg-neutral-50 border-l-2 sm:border-l-3 md:border-l-4 border-neutral-400 p-0.5 sm:p-1 md:p-1.5 text-xs z-10"
+                                  className="absolute left-0.5 sm:left-1 right-0.5 sm:right-1 rounded-t-md bg-neutral-50 border-l-2 sm:border-l-3 md:border-l-4 border-neutral-400 p-0.5 sm:p-1 md:p-1.5 z-10 overflow-hidden"
                                   style={{
                                     top: "180px", // 12:00 PM
                                     height: "45px",
                                   }}
                                 >
-                                  <div className="font-medium text-neutral-700 text-[8px] sm:text-[10px] md:text-xs">
+                                  <div className="font-medium text-neutral-700 text-[7px] sm:text-[8px] md:text-[10px]">
                                     12:00
                                   </div>
-                                  <div className="text-neutral-600 truncate text-[8px] sm:text-[10px] md:text-xs leading-tight">
-                                    Firma contrato
-                                  </div>
-                                  <div className="mt-0.5 hidden sm:flex items-center gap-0.5 md:gap-1 text-neutral-500">
-                                    <Car className="h-2 w-2 md:h-2.5 md:w-2.5" />
-                                    <span className="text-[9px] md:text-xs">25min</span>
+                                  <div className="text-neutral-600 truncate text-[7px] sm:text-[8px] md:text-[10px] leading-tight">
+                                    Firma contr...
                                   </div>
                                 </div>
                                 {/* Transport time block for 12:00 PM */}
@@ -287,17 +279,17 @@ export function CalendarFeatureCard() {
                                 </div>
                                 {/* 16:00 PM appointment */}
                                 <div
-                                  className="absolute left-0.5 sm:left-1 right-0.5 sm:right-1 rounded-md bg-stone-50 border-l-2 sm:border-l-3 md:border-l-4 border-stone-400 p-0.5 sm:p-1 md:p-1.5 text-xs z-10"
+                                  className="absolute left-0.5 sm:left-1 right-0.5 sm:right-1 rounded-md bg-stone-50 border-l-2 sm:border-l-3 md:border-l-4 border-stone-400 p-0.5 sm:p-1 md:p-1.5 z-10 overflow-hidden"
                                   style={{
                                     top: "360px", // 4:00 PM (8 hours * 45px)
                                     height: "67px", // 1.5 hours
                                   }}
                                 >
-                                  <div className="font-medium text-stone-700 text-[8px] sm:text-[10px] md:text-xs">
+                                  <div className="font-medium text-stone-700 text-[7px] sm:text-[8px] md:text-[10px]">
                                     16:00
                                   </div>
-                                  <div className="text-stone-600 truncate text-[8px] sm:text-[10px] md:text-xs leading-tight">
-                                    Reunión equipo
+                                  <div className="text-stone-600 truncate text-[7px] sm:text-[8px] md:text-[10px] leading-tight">
+                                    Reunión eq...
                                   </div>
                                 </div>
                               </>
@@ -306,21 +298,17 @@ export function CalendarFeatureCard() {
                               <>
                                 {/* 11:00 AM appointment with transport time */}
                                 <div
-                                  className="absolute left-0.5 sm:left-1 right-0.5 sm:right-1 rounded-t-md bg-gray-50 border-l-2 sm:border-l-3 md:border-l-4 border-gray-400 p-0.5 sm:p-1 md:p-1.5 text-xs z-10"
+                                  className="absolute left-0.5 sm:left-1 right-0.5 sm:right-1 rounded-t-md bg-gray-50 border-l-2 sm:border-l-3 md:border-l-4 border-gray-400 p-0.5 sm:p-1 md:p-1.5 z-10 overflow-hidden"
                                   style={{
                                     top: "135px", // 11:00 AM (3 hours * 45px)
                                     height: "67px", // 1.5 hours
                                   }}
                                 >
-                                  <div className="font-medium text-gray-700 text-[8px] sm:text-[10px] md:text-xs">
+                                  <div className="font-medium text-gray-700 text-[7px] sm:text-[8px] md:text-[10px]">
                                     11:00
                                   </div>
-                                  <div className="text-gray-600 truncate text-[8px] sm:text-[10px] md:text-xs leading-tight">
-                                    Presentación
-                                  </div>
-                                  <div className="mt-0.5 md:mt-1 hidden sm:flex items-center gap-0.5 md:gap-1 text-gray-500">
-                                    <Car className="h-2 w-2 md:h-2.5 md:w-2.5" />
-                                    <span className="text-[9px] md:text-xs">20min</span>
+                                  <div className="text-gray-600 truncate text-[7px] sm:text-[8px] md:text-[10px] leading-tight">
+                                    Presentac...
                                   </div>
                                 </div>
                                 {/* Transport time block for 11:00 AM */}

@@ -164,9 +164,14 @@ export function FeaturesGrid() {
   const [descriptionText, setDescriptionText] = useState("");
   const [isTypingDescription, setIsTypingDescription] = useState(false);
 
-  const generatedTitle = "Descripción Generada";
+  // AI sub-card state: "images" is default, auto-rotates every 10 seconds
+  const [aiSubCard, setAiSubCard] = useState<"descriptions" | "images">("images");
+  const [imageSliderPosition, setImageSliderPosition] = useState(50);
+  const [selectedImageFeature, setSelectedImageFeature] = useState<"reforma" | "planos">("reforma");
+
+  const generatedTitle = "Espectacular Piso en el Corazón de Madrid";
   const fullDescription =
-    "Espectacular villa mediterránea ubicada en la exclusiva zona de Marbella. Esta propiedad de 280m² ofrece 4 amplios dormitorios y 3 baños completos, perfecta para familias que buscan confort y elegancia.\n\nDestacan sus acabados de alta calidad, cocina totalmente equipada con electrodomésticos de última generación, y un luminoso salón con acceso directo a la terraza con vistas panorámicas al mar.";
+    "Fantástico piso de 120m² situado en el emblemático barrio de Salamanca, Madrid. Esta exclusiva propiedad cuenta con 3 dormitorios luminosos, 2 baños completos y un elegante salón con techos altos y suelos de parquet original restaurado.\n\nDisfruta de la ubicación privilegiada a pasos del Parque del Retiro, con vistas a la calle Serrano. Cocina equipada con electrodomésticos Bosch, aire acondicionado centralizado y plaza de garaje incluida. Una oportunidad única en la mejor zona de la capital.";
 
   const toggleFeature = (featureId: string) => {
     setActiveFeature(activeFeature === featureId ? null : featureId);
@@ -188,10 +193,39 @@ export function FeaturesGrid() {
 
   const descriptionIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const descriptionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const sliderAnimationRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-animate image slider when on images sub-card
+  useEffect(() => {
+    if (activeFeature === "ai" && aiSubCard === "images") {
+      let direction = 1; // 1 = moving right, -1 = moving left
+      let currentPosition = 0;
+      setImageSliderPosition(0);
+
+      sliderAnimationRef.current = setInterval(() => {
+        currentPosition += direction * 0.5; // Move 0.5% each step
+
+        if (currentPosition >= 100) {
+          direction = -1;
+        } else if (currentPosition <= 0) {
+          direction = 1;
+        }
+
+        setImageSliderPosition(currentPosition);
+      }, 50); // 20 second complete cycle (0→100→0)
+
+      return () => {
+        if (sliderAnimationRef.current) {
+          clearInterval(sliderAnimationRef.current);
+          sliderAnimationRef.current = null;
+        }
+      };
+    }
+  }, [activeFeature, aiSubCard]);
 
   // Typewriter effect for "Descripción Generada" title and description
   useEffect(() => {
-    if (activeFeature === "ai") {
+    if (activeFeature === "ai" && aiSubCard === "descriptions") {
       setGeneratedTitleText("");
       setDescriptionText("");
       setIsTypingGenerated(true);
@@ -247,7 +281,7 @@ export function FeaturesGrid() {
       setIsTypingGenerated(false);
       setIsTypingDescription(false);
     }
-  }, [activeFeature]);
+  }, [activeFeature, aiSubCard]);
 
   return (
     <section className="bg-white px-4 pt-8 pb-16 sm:px-6 sm:pt-12 sm:pb-24 lg:px-8">
@@ -364,6 +398,11 @@ export function FeaturesGrid() {
               isTypingGenerated={isTypingGenerated}
               descriptionText={descriptionText}
               isTypingDescription={isTypingDescription}
+              aiSubCard={aiSubCard}
+              setAiSubCard={setAiSubCard}
+              imageSliderPosition={imageSliderPosition}
+              selectedImageFeature={selectedImageFeature}
+              setSelectedImageFeature={setSelectedImageFeature}
             />
           )}
 
