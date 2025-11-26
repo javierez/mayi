@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import {
@@ -23,6 +23,7 @@ import {
   LayoutGrid,
   FileText,
   List,
+  Settings2,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import type {
@@ -66,6 +67,7 @@ export function CartelEditorPage2({
   };
 
   const currentSelection = getCurrentSelection();
+  const [showIconGapControl, setShowIconGapControl] = useState(false);
 
   const contentTypeOptions = [
     {
@@ -658,11 +660,62 @@ export function CartelEditorPage2({
 
       {/* Additional Fields Selector - Only show when icons are selected */}
       {currentSelection === "iconos" && (
-        <div>
+        <div className="space-y-4">
+          {/* Icon Size Control */}
+          <div className="space-y-2">
+            <Label className="text-xs">Tamaño de iconos y texto</Label>
+            <div className="flex items-center space-x-2">
+              <Slider
+                value={[config.iconSize]}
+                onValueChange={([value]) => updateConfig({ iconSize: value })}
+                max={1.5}
+                min={0.6}
+                step={0.1}
+                className="flex-1"
+              />
+              <span className="w-10 text-xs">{config.iconSize.toFixed(1)}x</span>
+            </div>
+          </div>
+
           <AdditionalFieldsSelector
             config={config}
             onChange={updateConfig}
           />
+
+          {/* Icon Pair Gap Control Toggle */}
+          <div className="space-y-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowIconGapControl(!showIconGapControl)}
+              className="flex w-full items-center justify-between text-xs"
+            >
+              <span className="flex items-center gap-2">
+                <Settings2 className="h-3 w-3" />
+                Espacio entre iconos
+              </span>
+              <ChevronDown
+                className={cn(
+                  "h-3 w-3 transition-transform",
+                  showIconGapControl && "rotate-180"
+                )}
+              />
+            </Button>
+            {showIconGapControl && (
+              <div className="flex items-center space-x-2 rounded-md border p-2">
+                <Slider
+                  value={[config.iconPairGap]}
+                  onValueChange={([value]) => updateConfig({ iconPairGap: value })}
+                  max={48}
+                  min={8}
+                  step={4}
+                  className="flex-1"
+                />
+                <span className="w-10 text-xs">{config.iconPairGap}px</span>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

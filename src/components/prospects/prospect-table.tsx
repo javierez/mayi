@@ -753,7 +753,7 @@ export function ProspectTable({
                   className="relative"
                   style={getColumnStyle("contacto")}
                 >
-                  <div className="truncate">Contacto</div>
+                  <div className="truncate">Demandante</div>
                   <ResizeHandle column="contacto" />
                 </TableHead>
                 <TableHead

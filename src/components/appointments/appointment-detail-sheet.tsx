@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useSession } from "~/lib/auth-client";
@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import { cn } from "~/lib/utils";
 import {
   CalendarIcon,
@@ -44,6 +45,7 @@ import {
 import {
   updateAppointmentStatusAction,
   deleteAppointmentAction,
+  updateAppointmentTitleAction,
 } from "~/server/actions/appointments";
 import type { AppointmentData } from "./appointment-card";
 import { AppointmentComments } from "./appointment-comments";
@@ -153,6 +155,12 @@ export function AppointmentDetailSheet({
   const [comments, setComments] = useState<AppointmentCommentWithUser[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
 
+  // Inline title editing state
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState("");
+  const [isSavingTitle, setIsSavingTitle] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
   // Fetch comments when sheet opens
   useEffect(() => {
     if (isOpen && appointment) {
@@ -166,6 +174,22 @@ export function AppointmentDetailSheet({
         .finally(() => setIsLoadingComments(false));
     }
   }, [isOpen, appointment]);
+
+  // Reset title editing state when sheet closes or appointment changes
+  useEffect(() => {
+    if (!isOpen) {
+      setIsEditingTitle(false);
+      setEditedTitle("");
+    }
+  }, [isOpen]);
+
+  // Focus input when entering edit mode
+  useEffect(() => {
+    if (isEditingTitle && titleInputRef.current) {
+      titleInputRef.current.focus();
+      titleInputRef.current.select();
+    }
+  }, [isEditingTitle]);
 
   if (!appointment) return null;
 
@@ -280,6 +304,55 @@ export function AppointmentDetailSheet({
       toast.error("Error al eliminar la cita");
     } finally {
       setIsDeletingAppointment(false);
+    }
+  };
+
+  // Handle inline title edit
+  const handleStartEditingTitle = () => {
+    setEditedTitle(appointment.title ?? "");
+    setIsEditingTitle(true);
+  };
+
+  const handleSaveTitle = async () => {
+    const trimmedTitle = editedTitle.trim();
+
+    // Don't save if unchanged
+    if (trimmedTitle === (appointment.title ?? "")) {
+      setIsEditingTitle(false);
+      return;
+    }
+
+    setIsSavingTitle(true);
+    try {
+      const result = await updateAppointmentTitleAction(
+        appointment.appointmentId,
+        trimmedTitle,
+      );
+
+      if (result.success) {
+        toast.success("Título actualizado");
+        if (onUpdate) {
+          await onUpdate();
+        }
+      } else {
+        toast.error(result.error ?? "Error al actualizar el título");
+      }
+    } catch (error) {
+      console.error("Error updating title:", error);
+      toast.error("Error al actualizar el título");
+    } finally {
+      setIsSavingTitle(false);
+      setIsEditingTitle(false);
+    }
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      void handleSaveTitle();
+    } else if (e.key === "Escape") {
+      setIsEditingTitle(false);
+      setEditedTitle("");
     }
   };
 
@@ -418,9 +491,29 @@ export function AppointmentDetailSheet({
           <div className="flex items-center justify-between gap-2">
             <SheetTitle className="flex items-center gap-2 text-base sm:text-lg min-w-0 flex-1">
               <span className="shrink-0">{typeConfig.icon}</span>
-              <span className="min-w-0 break-words">
-                {appointment.title ?? `${appointment.type} - ${appointment.contactName}`}
-              </span>
+              {isEditingTitle ? (
+                <Input
+                  ref={titleInputRef}
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                  onKeyDown={handleTitleKeyDown}
+                  onBlur={() => void handleSaveTitle()}
+                  disabled={isSavingTitle}
+                  className="h-7 min-w-0 flex-1 border-0 border-b border-gray-300 bg-transparent px-0 text-base font-semibold focus-visible:ring-0 focus-visible:border-blue-500 sm:text-lg"
+                  placeholder="Título de la cita..."
+                />
+              ) : (
+                <span
+                  className={cn(
+                    "min-w-0 break-words",
+                    canEditAppointment && "cursor-pointer hover:text-blue-600 transition-colors"
+                  )}
+                  onClick={canEditAppointment ? handleStartEditingTitle : undefined}
+                  title={canEditAppointment ? "Clic para editar título" : undefined}
+                >
+                  {appointment.title ?? `${appointment.type} - ${appointment.contactName}`}
+                </span>
+              )}
             </SheetTitle>
 
             {/* Custom Close Button */}
@@ -521,11 +614,6 @@ export function AppointmentDetailSheet({
 
           {/* Appointment Details */}
           <div className="space-y-2">
-            {appointment.title && (
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <span>{appointment.title}</span>
-              </div>
-            )}
             <div className="flex items-center gap-2 text-sm">
               <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
               <span>{formatDate(appointment.datetimeStart)}</span>

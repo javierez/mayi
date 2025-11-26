@@ -164,10 +164,9 @@ export function FeaturesGrid() {
   const [descriptionText, setDescriptionText] = useState("");
   const [isTypingDescription, setIsTypingDescription] = useState(false);
 
-  // AI sub-card state: "images" is default, auto-rotates every 10 seconds
+  // AI sub-card state: "images" is default
   const [aiSubCard, setAiSubCard] = useState<"descriptions" | "images">("images");
   const [imageSliderPosition, setImageSliderPosition] = useState(50);
-  const [selectedImageFeature, setSelectedImageFeature] = useState<"reforma" | "planos">("reforma");
 
   const generatedTitle = "Espectacular Piso en el Corazón de Madrid";
   const fullDescription =
@@ -401,8 +400,6 @@ export function FeaturesGrid() {
               aiSubCard={aiSubCard}
               setAiSubCard={setAiSubCard}
               imageSliderPosition={imageSliderPosition}
-              selectedImageFeature={selectedImageFeature}
-              setSelectedImageFeature={setSelectedImageFeature}
             />
           )}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { ScrollArea } from "~/components/ui/scroll-area";
@@ -144,14 +144,54 @@ export function CalendarWeeklyView({
   onTimeSlotClick,
 }: CalendarWeeklyViewProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Scroll to 10:00 AM on mount and when week changes
+  // Update current time every minute
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      // Calendar starts at 6:00 AM, so 10:00 AM is 4 hours down
-      const scrollPosition = 4 * 60; // 4 hours from 6:00 AM = 240px (4 hours * 60px per hour)
-      scrollAreaRef.current.scrollTop = scrollPosition;
-    }
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, []);
+
+  // Calculate current time position in pixels (uses state for live updates)
+  const currentTimePosition = (() => {
+    const minutes = currentTime.getHours() * 60 + currentTime.getMinutes();
+    const calendarStartMinutes = 6 * 60; // 6:00 AM
+
+    // If before 6 AM, return 0
+    if (minutes < calendarStartMinutes) return 0;
+
+    // Each hour = 60px, so each minute = 1px
+    return minutes - calendarStartMinutes;
+  })();
+
+  // Scroll to current time on mount and when week changes
+  useEffect(() => {
+    // Calculate position fresh for initial scroll (don't depend on state to avoid re-scrolling)
+    const calculateScrollPosition = () => {
+      const now = new Date();
+      const minutes = now.getHours() * 60 + now.getMinutes();
+      const calendarStartMinutes = 6 * 60;
+      return Math.max(0, minutes - calendarStartMinutes);
+    };
+
+    // Small delay to ensure ScrollArea viewport is rendered
+    const timer = setTimeout(() => {
+      if (scrollAreaRef.current) {
+        // Find the viewport element inside ScrollArea (it has the data-radix-scroll-area-viewport attribute)
+        const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+        if (viewport) {
+          const position = calculateScrollPosition();
+          // Position the line in the upper third of the visible area
+          const viewportHeight = viewport.clientHeight;
+          const scrollPosition = Math.max(0, position - viewportHeight / 3);
+          viewport.scrollTop = scrollPosition;
+        }
+      }
+    }, 50);
+
+    return () => clearTimeout(timer);
   }, [weekStart]);
 
   return (
@@ -330,6 +370,7 @@ export function CalendarWeeklyView({
                               endTime: app.datetimeEnd,
                               contactName: app.contactName,
                               propertyAddress: app.propertyAddress ?? undefined,
+                              title: app.title ?? undefined,
                               notes: app.notes ?? undefined,
                               tripTimeMinutes: app.tripTimeMinutes ?? undefined,
                               isOptimistic: false,
@@ -340,6 +381,19 @@ export function CalendarWeeklyView({
                           />
                         );
                       })}
+
+                  {/* Current time indicator - only on today's column */}
+                  {isToday(day) && (
+                    <div
+                      className="pointer-events-none absolute left-0 right-0 z-20 flex items-center"
+                      style={{ top: `${currentTimePosition}px` }}
+                    >
+                      {/* Small circle on the left */}
+                      <div className="h-2.5 w-2.5 -ml-1 rounded-full bg-red-500" />
+                      {/* Line across the column */}
+                      <div className="h-[2px] flex-1 bg-red-500" />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

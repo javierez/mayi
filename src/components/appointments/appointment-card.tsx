@@ -214,17 +214,18 @@ export function AppointmentCard({
             </div>
           )}
           {/* Contact name */}
-          <div className="mb-1 text-sm font-medium">
+          <div className="mb-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+            <Users className="h-3.5 w-3.5 flex-shrink-0" />
             {appointment.contactId ? (
               <Link
                 href={`/contactos/${appointment.contactId}`}
                 onClick={(e) => e.stopPropagation()}
-                className="text-gray-900 transition-colors hover:text-blue-600 hover:underline"
+                className="transition-colors hover:text-blue-600 hover:underline"
               >
                 {appointment.contactName}
               </Link>
             ) : (
-              <span className="text-gray-900">{appointment.contactName}</span>
+              <span>{appointment.contactName}</span>
             )}
           </div>
           {/* Details */}

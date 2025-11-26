@@ -57,6 +57,7 @@ export function CalendarCompactView({
             endTime: appointment.datetimeEnd,
             contactName: appointment.contactName,
             propertyAddress: appointment.propertyAddress ?? undefined,
+            title: appointment.title ?? undefined,
             notes: appointment.notes ?? undefined,
             tripTimeMinutes: appointment.tripTimeMinutes ?? undefined,
             isOptimistic: false,

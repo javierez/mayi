@@ -432,6 +432,47 @@ export async function updateAppointmentStatusAction(
   }
 }
 
+// Server action to update appointment title only
+export async function updateAppointmentTitleAction(
+  appointmentId: bigint,
+  title: string,
+) {
+  try {
+    // PATTERN: Always get account ID for security
+    await getCurrentUserAccountId();
+    const currentUser = await getCurrentUser();
+
+    const appointment = await updateAppointment(Number(appointmentId), {
+      title,
+      editedBy: currentUser.id,
+    } as Parameters<typeof updateAppointment>[1]);
+
+    if (!appointment) {
+      return {
+        success: false,
+        error: "Error al actualizar el título de la cita",
+      };
+    }
+
+    // Refresh calendar data
+    revalidatePath("/calendario");
+
+    return {
+      success: true,
+      appointmentId: appointment.appointmentId,
+    };
+  } catch (error) {
+    console.error("Failed to update appointment title:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error desconocido al actualizar el título",
+    };
+  }
+}
+
 // Server action to get appointments for a specific listing
 export async function getListingAppointmentsAction(listingId: number) {
   try {

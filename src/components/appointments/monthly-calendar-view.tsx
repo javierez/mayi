@@ -382,7 +382,7 @@ export function MonthlyCalendarView({
                                               {formatTime(apt.startTime)} - {formatTime(apt.endTime)}
                                             </div>
                                             <div className="truncate text-xs opacity-90">
-                                              {apt.contactName}
+                                              {apt.title ?? apt.contactName}
                                             </div>
                                           </div>
                                         </button>
@@ -431,7 +431,7 @@ export function MonthlyCalendarView({
                                 <Icon className="mt-0.5 h-2.5 w-2.5 flex-shrink-0 sm:h-3 sm:w-3" />
                                 <div className="min-w-0 flex-1">
                                   <div className="truncate text-[10px] font-medium leading-tight sm:text-xs">
-                                    {formatTime(apt.startTime)} {apt.contactName}
+                                    {formatTime(apt.startTime)} {apt.title ?? apt.contactName}
                                   </div>
                                 </div>
                               </button>

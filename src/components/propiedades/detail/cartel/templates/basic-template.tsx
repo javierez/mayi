@@ -139,7 +139,10 @@ const getFieldValue = (
     | null;
 
   if (value === undefined || value === null) return "N/A";
-  if (typeof value === "boolean") return value ? "Sí" : "No";
+  if (typeof value === "boolean") {
+    const label = getFieldLabel(fieldValue);
+    return value ? label : `Sin ${label.toLowerCase()}`;
+  }
   if (fieldValue === "conservationStatus" && typeof value === "number") {
     return getConservationStatusLabel(value);
   }
