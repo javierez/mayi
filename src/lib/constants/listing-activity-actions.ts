@@ -44,6 +44,20 @@ export const LISTING_ACTIVITY_ACTIONS = [
   // === Documents & Media ===
   "document_uploaded", // Important documents added
   "virtual_tour_added", // 360° tour or video link added
+
+  // === Fotocasa Portal Actions ===
+  "fotocasa_published", // POST success - listing published to Fotocasa
+  "fotocasa_updated", // PUT success - listing updated on Fotocasa
+  "fotocasa_deleted", // DELETE success - listing removed from Fotocasa
+
+  // === Portal Selection Toggles ===
+  "website_published", // publishToWebsite set to true
+  "website_unpublished", // publishToWebsite set to false
+  "keys_returned", // hasKeys set to false
+  "cartel_placed", // hasCartel set to true
+  "cartel_removed", // hasCartel set to false
+  "escaparate_added", // enEscaparate set to true
+  "escaparate_removed", // enEscaparate set to false
 ] as const;
 
 export type ListingActivityAction = (typeof LISTING_ACTIVITY_ACTIONS)[number];
@@ -82,6 +96,16 @@ export const LISTING_ACTIVITY_CATEGORIES = {
   PORTAL_SYNC: ["portal_sync_error", "portal_settings_updated"],
   ANALYTICS: ["views_milestone", "inquiry_received"],
   DOCUMENTS: ["document_uploaded", "virtual_tour_added"],
+  FOTOCASA: ["fotocasa_published", "fotocasa_updated", "fotocasa_deleted"],
+  PORTAL_TOGGLES: [
+    "website_published",
+    "website_unpublished",
+    "keys_returned",
+    "cartel_placed",
+    "cartel_removed",
+    "escaparate_added",
+    "escaparate_removed",
+  ],
 } as const;
 
 // ============================================================================
@@ -126,6 +150,20 @@ export const LISTING_ACTIVITY_LABELS: Record<ListingActivityAction, string> = {
   // Documents
   document_uploaded: "Documento subido",
   virtual_tour_added: "Tour virtual añadido",
+
+  // Fotocasa
+  fotocasa_published: "Publicado en Fotocasa",
+  fotocasa_updated: "Actualizado en Fotocasa",
+  fotocasa_deleted: "Eliminado de Fotocasa",
+
+  // Portal Toggles
+  website_published: "Publicado en web",
+  website_unpublished: "Despublicado de web",
+  keys_returned: "Llaves devueltas",
+  cartel_placed: "Cartel colocado",
+  cartel_removed: "Cartel retirado",
+  escaparate_added: "Añadido a escaparate",
+  escaparate_removed: "Retirado de escaparate",
 };
 
 /**
@@ -169,6 +207,20 @@ export const LISTING_ACTIVITY_PRIORITY: Record<
   // Documents
   document_uploaded: "normal",
   virtual_tour_added: "normal",
+
+  // Fotocasa
+  fotocasa_published: "high",
+  fotocasa_updated: "normal",
+  fotocasa_deleted: "high",
+
+  // Portal Toggles
+  website_published: "normal",
+  website_unpublished: "normal",
+  keys_returned: "high",
+  cartel_placed: "normal",
+  cartel_removed: "normal",
+  escaparate_added: "normal",
+  escaparate_removed: "normal",
 };
 
 // ============================================================================

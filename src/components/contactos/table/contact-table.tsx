@@ -15,7 +15,6 @@ import { Nombre } from "../table-components/list-elements/nombre";
 import { Contacto } from "../table-components/list-elements/contacto";
 import { Propiedades } from "../table-components/list-elements/propiedades";
 import { Recordatorios } from "../table-components/list-elements/recordatorios";
-import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
 import {
   ChevronLeft,
@@ -25,6 +24,7 @@ import {
   ChevronUp,
   ChevronsUpDown,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { CONTACT_SOURCES, CONTACT_SOURCE_LABELS } from "~/types/contact-source";
 import { updateContactWithAuth } from "~/server/queries/contact";
 
@@ -118,8 +118,6 @@ export function ContactSpreadsheetTable({
   const [isResizing, setIsResizing] = useState<string | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
   const resizeStartRef = useRef<{ x: number; width: number } | null>(null);
-  const [visibleRows, setVisibleRows] = useState<Set<string>>(new Set());
-  const observerRef = useRef<IntersectionObserver | null>(null);
   const [isHoveringTable, setIsHoveringTable] = useState(false);
   const [editingSourceId, setEditingSourceId] = useState<string | null>(null);
   const [optimisticSources, setOptimisticSources] = useState<
@@ -209,54 +207,6 @@ export function ContactSpreadsheetTable({
     />
   );
 
-  // Intersection Observer for lazy loading
-  const observeRow = useCallback(
-    (element: HTMLElement | null, contactId: string) => {
-      if (!element || !observerRef.current) return;
-
-      // Add dataset to track which contact this element represents
-      element.dataset.contactId = contactId;
-      observerRef.current.observe(element);
-    },
-    [],
-  );
-
-  // Initialize Intersection Observer
-  useEffect(() => {
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const contactId = entry.target.getAttribute("data-contact-id");
-          if (!contactId) return;
-
-          if (entry.isIntersecting) {
-            setVisibleRows((prev) => new Set(prev).add(contactId));
-          }
-        });
-      },
-      {
-        root: null,
-        rootMargin: "100px", // Start loading content 100px before they come into view
-        threshold: 0.1,
-      },
-    );
-
-    // Clean up observer on unmount
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, []);
-
-  // Initialize visible rows for first few items (above fold)
-  useEffect(() => {
-    const initialVisibleIds = contacts
-      .slice(0, 5)
-      .map((c) => c.contactId.toString());
-    setVisibleRows(new Set(initialVisibleIds));
-  }, [contacts]);
-
   // Close source editor on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -277,7 +227,7 @@ export function ContactSpreadsheetTable({
     };
   }, [editingSourceId]);
 
-  // Export contacts to CSV
+  // Export contacts to Excel
   const handleExport = useCallback(async () => {
     if (onExport) {
       // Use parent-provided export function (exports ALL filtered data)
@@ -305,29 +255,34 @@ export function ContactSpreadsheetTable({
           (contact.prospectCount ?? 0);
 
         return [
-          `"${contact.firstName} ${contact.lastName}"`,
+          `${contact.firstName} ${contact.lastName}`,
           contact.email ?? "",
           contact.phone ?? "",
           types.join(", "),
-          propertiesCount.toString(),
+          propertiesCount,
           contact.updatedAt.toLocaleDateString(),
-        ].join(",");
+        ];
       });
 
-      const csv = [headers.join(","), ...rows].join("\n");
+      const worksheetData = [headers, ...rows];
+      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Contactos");
 
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute(
-        "download",
-        `contactos-${new Date().toISOString().split("T")[0]}.csv`,
+      // Auto-size columns
+      const colWidths = headers.map((header, i) => {
+        const maxLength = Math.max(
+          header.length,
+          ...rows.map((row) => String(row[i] ?? "").length),
+        );
+        return { wch: Math.min(maxLength + 2, 50) };
+      });
+      worksheet["!cols"] = colWidths;
+
+      XLSX.writeFile(
+        workbook,
+        `contactos-${new Date().toISOString().split("T")[0]}.xlsx`,
       );
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
     }
   }, [contacts, onExport]);
 
@@ -473,7 +428,7 @@ export function ContactSpreadsheetTable({
           size="icon"
           onClick={handleExport}
           className="h-7 w-7 text-muted-foreground hover:text-foreground"
-          title="Exportar contactos a CSV"
+          title="Exportar contactos a Excel"
         >
           <Download className="h-3.5 w-3.5" />
         </Button>
@@ -537,7 +492,6 @@ export function ContactSpreadsheetTable({
           <TableBody>
             {contacts.map((contact) => {
               const contactId = contact.contactId.toString();
-              const isVisible = visibleRows.has(contactId);
               // Use optimistic source if available, otherwise use contact source
               const displaySource =
                 optimisticSources[contactId] ?? contact.source;
@@ -545,7 +499,6 @@ export function ContactSpreadsheetTable({
               return (
                 <TableRow
                   key={contactId}
-                  ref={(el) => observeRow(el, contactId)}
                   className={cn(
                     "cursor-pointer transition-colors",
                     contact.isActive
@@ -592,16 +545,12 @@ export function ContactSpreadsheetTable({
                     style={getColumnStyle("propiedades")}
                   >
                     <div className="truncate">
-                      {isVisible ? (
-                        <Propiedades
-                          isActive={contact.isActive}
-                          allListings={contact.allListings}
-                          currentFilter={currentFilter}
-                          prospectTitles={contact.prospectTitles}
-                        />
-                      ) : (
-                        <Skeleton className="h-8 w-full" />
-                      )}
+                      <Propiedades
+                        isActive={contact.isActive}
+                        allListings={contact.allListings}
+                        currentFilter={currentFilter}
+                        prospectTitles={contact.prospectTitles}
+                      />
                     </div>
                   </TableCell>
 
@@ -678,14 +627,10 @@ export function ContactSpreadsheetTable({
                     style={getColumnStyle("recordatorios")}
                   >
                     <div className="truncate">
-                      {isVisible ? (
-                        <Recordatorios
-                          isActive={contact.isActive}
-                          tasks={contact.tasks}
-                        />
-                      ) : (
-                        <Skeleton className="h-8 w-full" />
-                      )}
+                      <Recordatorios
+                        isActive={contact.isActive}
+                        tasks={contact.tasks}
+                      />
                     </div>
                   </TableCell>
                 </TableRow>

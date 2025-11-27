@@ -26,6 +26,12 @@ import {
   logDeleteRequest,
 } from "../utils/fotocasa-logger";
 import { env } from "~/env";
+import { getCurrentUser } from "~/lib/dal";
+import {
+  logFotocasaPublished,
+  logFotocasaUpdated,
+  logFotocasaDeleted,
+} from "../queries/log-activity";
 
 // Types
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1276,6 +1282,20 @@ export async function publishToFotocasa(
         }
       }
 
+      // Log activity for successful Fotocasa publication
+      try {
+        const currentUser = await getCurrentUser();
+        await logFotocasaPublished({
+          listingId: BigInt(listingId),
+          userId: currentUser.id,
+          visibilityMode: visibilityMode as 1 | 2 | 3,
+          hidePrice,
+        });
+      } catch (activityError) {
+        console.error("Error logging Fotocasa publish activity:", activityError);
+        // Don't fail the operation if activity logging fails
+      }
+
       return {
         success: true,
         payload,
@@ -1427,6 +1447,20 @@ export async function updateFotocasa(
         }
       }
 
+      // Log activity for successful Fotocasa update
+      try {
+        const currentUser = await getCurrentUser();
+        await logFotocasaUpdated({
+          listingId: BigInt(listingId),
+          userId: currentUser.id,
+          visibilityMode: visibilityMode as 1 | 2 | 3,
+          hidePrice,
+        });
+      } catch (activityError) {
+        console.error("Error logging Fotocasa update activity:", activityError);
+        // Don't fail the operation if activity logging fails
+      }
+
       return {
         success: true,
         payload,
@@ -1544,6 +1578,18 @@ export async function deleteFromFotocasa(
           dbError,
         );
         // Log but don't fail the operation - the ad is already deleted from Fotocasa
+      }
+
+      // Log activity for successful Fotocasa deletion
+      try {
+        const currentUser = await getCurrentUser();
+        await logFotocasaDeleted({
+          listingId: BigInt(listingId),
+          userId: currentUser.id,
+        });
+      } catch (activityError) {
+        console.error("Error logging Fotocasa delete activity:", activityError);
+        // Don't fail the operation if activity logging fails
       }
 
       return {

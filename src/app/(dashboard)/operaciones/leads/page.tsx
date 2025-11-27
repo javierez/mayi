@@ -358,7 +358,6 @@ export default function LeadsPage() {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
-          onPrefetchPage={handlePrefetchPage}
           onLeadUpdate={handleLeadUpdate}
         />
       ) : (

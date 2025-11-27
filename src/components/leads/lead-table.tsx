@@ -2,9 +2,6 @@
 
 import React, {
   useState,
-  useRef,
-  useCallback,
-  useEffect,
   useMemo,
 } from "react";
 import {
@@ -16,6 +13,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import {
   MapPin,
   CalendarIcon,
@@ -26,8 +24,9 @@ import {
   CalendarPlus,
   ThumbsUp,
   ThumbsDown,
+  Download,
 } from "lucide-react";
-import { Skeleton } from "~/components/ui/skeleton";
+import * as XLSX from "xlsx";
 import {
   Tooltip,
   TooltipContent,
@@ -103,7 +102,6 @@ interface LeadTableProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   onLeadUpdate?: () => void;
-  onPrefetchPage?: (page: number) => Promise<void>;
 }
 
 // Portal logo configuration
@@ -118,19 +116,17 @@ const PORTAL_LOGOS: Record<string, string> = {
   kyero: "https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/kyerologo.webp",
 };
 
-export function LeadTable({
+export const LeadTable = React.memo(function LeadTable({
   leads,
   currentPage,
   totalPages,
   onPageChange,
   onLeadUpdate,
-  onPrefetchPage,
 }: LeadTableProps) {
   const router = useRouter();
-  const [visibleRows, setVisibleRows] = useState<Set<string>>(new Set());
-  const observerRef = useRef<IntersectionObserver | null>(null);
   const [selectedContact, setSelectedContact] =
     useState<ContactSheetData | null>(null);
+  const [isHoveringTable, setIsHoveringTable] = useState(false);
 
   // Memoize unique leads to prevent infinite re-renders
   const uniqueLeads = useMemo(() => {
@@ -305,152 +301,85 @@ export function LeadTable({
     }
   };
 
-  // No need for double memoization - uniqueLeads is already memoized
+  // Export leads to Excel
+  const handleExport = React.useCallback(() => {
+    const headers = [
+      "Contacto",
+      "Email",
+      "Teléfono",
+      "Propiedad",
+      "Referencia",
+      "Precio",
+      "Propietario",
+      "Estado",
+      "Origen",
+      "Creado",
+    ];
 
-  // Track observed elements to prevent re-observing
-  const observedElements = useRef<Set<string>>(new Set());
-  const rowRefs = useRef<Map<string, HTMLTableRowElement>>(new Map());
+    const rows = uniqueLeads.map((lead) => {
+      const badgeConfig = getBadgeConfig(lead);
+      return [
+        `${lead.contact.firstName} ${lead.contact.lastName}`,
+        lead.contact.email ?? "",
+        lead.contact.phone ?? "",
+        lead.listing?.title ?? "Sin propiedad",
+        lead.listing?.referenceNumber ?? "",
+        lead.listing?.price ? parseFloat(lead.listing.price) : "",
+        lead.owner ? `${lead.owner.firstName} ${lead.owner.lastName}` : "",
+        badgeConfig.title,
+        lead.source ?? "",
+        formatDate(lead.createdAt),
+      ];
+    });
 
-  // Store ref callbacks to prevent recreation
-  const refCallbacks = useRef<
-    Map<string, (el: HTMLTableRowElement | null) => void>
-  >(new Map());
+    const worksheetData = [headers, ...rows];
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Leads");
 
-  const getRefCallback = useCallback((leadId: string) => {
-    if (!refCallbacks.current.has(leadId)) {
-      refCallbacks.current.set(leadId, (el: HTMLTableRowElement | null) => {
-        if (el) {
-          el.dataset.leadId = leadId;
-          rowRefs.current.set(leadId, el);
-        } else {
-          rowRefs.current.delete(leadId);
-        }
-      });
-    }
-    return refCallbacks.current.get(leadId)!;
-  }, []);
+    // Auto-size columns
+    const colWidths = headers.map((header, i) => {
+      const maxLength = Math.max(
+        header.length,
+        ...rows.map((row) => String(row[i] ?? "").length),
+      );
+      return { wch: Math.min(maxLength + 2, 50) };
+    });
+    worksheet["!cols"] = colWidths;
 
-  // Initialize Intersection Observer
-  useEffect(() => {
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const leadId = entry.target.getAttribute("data-lead-id");
-          if (!leadId) return;
-
-          if (entry.isIntersecting) {
-            setVisibleRows((prev) => {
-              const newSet = new Set(prev);
-              newSet.add(leadId);
-              return newSet;
-            });
-          }
-        });
-      },
-      {
-        root: null,
-        rootMargin: "100px", // Start loading content 100px before they come into view
-        threshold: 0.1,
-      },
+    XLSX.writeFile(
+      workbook,
+      `leads-${new Date().toISOString().split("T")[0]}.xlsx`,
     );
-
-    // Copy ref values to variables for cleanup
-    const observedElementsSet = observedElements.current;
-    const rowRefsMap = rowRefs.current;
-    const refCallbacksMap = refCallbacks.current;
-
-    // Clean up observer on unmount
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-      observedElementsSet.clear();
-      rowRefsMap.clear();
-      refCallbacksMap.clear();
-    };
-  }, []);
-
-  // Initialize visible rows for first few items (above fold) and observe all rows
-  useEffect(() => {
-    const initialVisibleIds = uniqueLeads
-      .slice(0, 5)
-      .map((lead) => lead.leadId?.toString() ?? "");
-    setVisibleRows(new Set(initialVisibleIds));
-
-    // Observe all rows
-    if (observerRef.current) {
-      rowRefs.current.forEach((element, leadId) => {
-        if (!observedElements.current.has(leadId)) {
-          observedElements.current.add(leadId);
-          observerRef.current?.observe(element);
-        }
-      });
-    }
-  }, [uniqueLeads]);
-
-  // Smart prefetching - preload next page when user is near the end
-  useEffect(() => {
-    if (!onPrefetchPage || currentPage >= totalPages) return;
-
-    let hasTriggeredPrefetch = false;
-
-    const prefetchNextPage = () => {
-      if (hasTriggeredPrefetch) return;
-
-      // Prefetch next page when user scrolls to 80% of current content
-      const scrollY = window.scrollY;
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-
-      if (scrollY + windowHeight >= documentHeight * 0.8) {
-        hasTriggeredPrefetch = true;
-        console.log(`Triggering prefetch for page ${currentPage + 1}`);
-        onPrefetchPage(currentPage + 1).catch(console.error);
-      }
-    };
-
-    const handleScroll = () => {
-      requestAnimationFrame(prefetchNextPage);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [currentPage, totalPages, onPrefetchPage]);
-
-  // Prefetch adjacent pages on component mount
-  useEffect(() => {
-    if (!onPrefetchPage) return;
-
-    const prefetchAdjacentPages = async () => {
-      const pagesToPrefetch = [];
-
-      // Prefetch next page
-      if (currentPage < totalPages) {
-        pagesToPrefetch.push(currentPage + 1);
-      }
-
-      // Prefetch previous page
-      if (currentPage > 1) {
-        pagesToPrefetch.push(currentPage - 1);
-      }
-
-      // Prefetch in background without blocking UI
-      pagesToPrefetch.forEach((page) => {
-        setTimeout(() => {
-          onPrefetchPage(page).catch(() => {
-            // Silently handle prefetch errors
-          });
-        }, 1000); // Wait 1 second after initial load
-      });
-    };
-
-    void prefetchAdjacentPages();
-  }, [currentPage, totalPages, onPrefetchPage]);
+  }, [uniqueLeads, getBadgeConfig, formatDate]);
 
   return (
     <TooltipProvider>
       <div className="space-y-4">
-        <div className="custom-scrollbar overflow-x-auto rounded-lg border">
+        <div
+          className="relative custom-scrollbar overflow-x-auto rounded-lg border"
+          onMouseEnter={() => setIsHoveringTable(true)}
+          onMouseLeave={() => setIsHoveringTable(false)}
+        >
+          {/* Export Button - Appears on hover */}
+          <div
+            className={cn(
+              "absolute right-2 top-2 z-10 transition-all duration-300",
+              isHoveringTable
+                ? "opacity-60 hover:opacity-100"
+                : "pointer-events-none opacity-0",
+            )}
+          >
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleExport}
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              title="Exportar leads a Excel"
+            >
+              <Download className="h-3.5 w-3.5" />
+            </Button>
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
@@ -465,28 +394,99 @@ export function LeadTable({
             <TableBody>
               {uniqueLeads.map((lead) => {
                 const leadId = lead.leadId?.toString() ?? "";
-                const isVisible = visibleRows.has(leadId);
-
                 const badgeConfig = getBadgeConfig(lead);
 
                 return (
                   <TableRow
                     key={leadId}
-                    ref={getRefCallback(leadId)}
                     className="cursor-pointer hover:bg-gray-50"
                     onClick={() => handleRowClick(lead)}
                   >
                     {/* Contact */}
                     <TableCell className="min-w-0">
-                      {isVisible ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="min-w-0 cursor-pointer">
+                            <div className="truncate text-sm font-medium md:text-base">
+                              {lead.contact.firstName} {lead.contact.lastName}
+                            </div>
+                            <div className="truncate text-xs text-muted-foreground">
+                              {lead.contact.email ?? "Sin email"}
+                            </div>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <div className="space-y-1">
+                            <p>
+                              <strong>Email:</strong>{" "}
+                              {lead.contact.email ?? "No disponible"}
+                            </p>
+                            <p>
+                              <strong>Teléfono:</strong>{" "}
+                              {lead.contact.phone ?? "No disponible"}
+                            </p>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TableCell>
+
+                    {/* Property */}
+                    <TableCell className="min-w-0">
+                      {lead.listing ? (
+                        <div
+                          className="cursor-pointer rounded-lg bg-gray-50 p-1.5 shadow-sm transition-all hover:bg-gray-100 hover:shadow-md md:p-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewListing(lead.listingId);
+                          }}
+                        >
+                          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-xs font-medium sm:text-sm">
+                                {lead.listing.title ?? "Sin título"}
+                              </div>
+                              <div className="flex items-center truncate text-xs text-muted-foreground">
+                                <MapPin className="mr-1 h-2.5 w-2.5 flex-shrink-0 text-gray-400 sm:h-3 sm:w-3" />
+                                <span className="truncate">{lead.listing.street ?? "Sin dirección"}</span>
+                              </div>
+                            </div>
+                            <div className="flex-shrink-0 text-left sm:ml-2 sm:text-right">
+                              <div className="text-xs font-medium text-gray-900">
+                                {lead.listing.price
+                                  ? new Intl.NumberFormat("es-ES").format(
+                                      Number(lead.listing.price),
+                                    ) + "€"
+                                  : "Sin precio"}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {lead.listing.bedrooms
+                                  ? `${lead.listing.bedrooms}hab`
+                                  : ""}
+                                {lead.listing.squareMeter
+                                  ? ` • ${lead.listing.squareMeter}m²`
+                                  : ""}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="rounded-md border border-dashed p-2 text-center text-xs text-muted-foreground">
+                          Sin propiedad
+                        </div>
+                      )}
+                    </TableCell>
+
+                    {/* Owner */}
+                    <TableCell className="hidden min-w-0 lg:table-cell">
+                      {lead.owner ? (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <div className="min-w-0 cursor-pointer">
-                              <div className="truncate text-sm font-medium md:text-base">
-                                {lead.contact.firstName} {lead.contact.lastName}
+                              <div className="truncate text-sm font-medium">
+                                {lead.owner.firstName} {lead.owner.lastName}
                               </div>
                               <div className="truncate text-xs text-muted-foreground">
-                                {lead.contact.email ?? "Sin email"}
+                                {lead.owner.email ?? "Sin email"}
                               </div>
                             </div>
                           </TooltipTrigger>
@@ -494,136 +494,42 @@ export function LeadTable({
                             <div className="space-y-1">
                               <p>
                                 <strong>Email:</strong>{" "}
-                                {lead.contact.email ?? "No disponible"}
+                                {lead.owner.email ?? "No disponible"}
                               </p>
                               <p>
                                 <strong>Teléfono:</strong>{" "}
-                                {lead.contact.phone ?? "No disponible"}
+                                {lead.owner.phone ?? "No disponible"}
                               </p>
                             </div>
                           </TooltipContent>
                         </Tooltip>
                       ) : (
-                        <Skeleton className="h-10 w-full" />
-                      )}
-                    </TableCell>
-
-                    {/* Property */}
-                    <TableCell className="min-w-0">
-                      {isVisible ? (
-                        lead.listing ? (
-                          <div
-                            className="cursor-pointer rounded-lg bg-gray-50 p-1.5 shadow-sm transition-all hover:bg-gray-100 hover:shadow-md md:p-2"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewListing(lead.listingId);
-                            }}
-                          >
-                            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-                              <div className="min-w-0 flex-1">
-                                <div className="truncate text-xs font-medium sm:text-sm">
-                                  {lead.listing.title ?? "Sin título"}
-                                </div>
-                                <div className="flex items-center truncate text-xs text-muted-foreground">
-                                  <MapPin className="mr-1 h-2.5 w-2.5 flex-shrink-0 text-gray-400 sm:h-3 sm:w-3" />
-                                  <span className="truncate">{lead.listing.street ?? "Sin dirección"}</span>
-                                </div>
-                              </div>
-                              <div className="flex-shrink-0 text-left sm:ml-2 sm:text-right">
-                                <div className="text-xs font-medium text-gray-900">
-                                  {lead.listing.price
-                                    ? new Intl.NumberFormat("es-ES").format(
-                                        Number(lead.listing.price),
-                                      ) + "€"
-                                    : "Sin precio"}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  {lead.listing.bedrooms
-                                    ? `${lead.listing.bedrooms}hab`
-                                    : ""}
-                                  {lead.listing.squareMeter
-                                    ? ` • ${lead.listing.squareMeter}m²`
-                                    : ""}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="rounded-md border border-dashed p-2 text-center text-xs text-muted-foreground">
-                            Sin propiedad
-                          </div>
-                        )
-                      ) : (
-                        <Skeleton className="h-16 w-full rounded-lg" />
-                      )}
-                    </TableCell>
-
-                    {/* Owner */}
-                    <TableCell className="hidden min-w-0 lg:table-cell">
-                      {isVisible ? (
-                        lead.owner ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="min-w-0 cursor-pointer">
-                                <div className="truncate text-sm font-medium">
-                                  {lead.owner.firstName} {lead.owner.lastName}
-                                </div>
-                                <div className="truncate text-xs text-muted-foreground">
-                                  {lead.owner.email ?? "Sin email"}
-                                </div>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <div className="space-y-1">
-                                <p>
-                                  <strong>Email:</strong>{" "}
-                                  {lead.owner.email ?? "No disponible"}
-                                </p>
-                                <p>
-                                  <strong>Teléfono:</strong>{" "}
-                                  {lead.owner.phone ?? "No disponible"}
-                                </p>
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                        ) : (
-                          <div className="text-sm text-muted-foreground">
-                            No disponible
-                          </div>
-                        )
-                      ) : (
-                        <Skeleton className="h-10 w-full" />
+                        <div className="text-sm text-muted-foreground">
+                          No disponible
+                        </div>
                       )}
                     </TableCell>
 
                     {/* Status */}
                     <TableCell className="min-w-0">
-                      {isVisible ? (
-                        <Badge
-                          className={cn(
-                            badgeConfig.color,
-                            "text-[10px] sm:text-xs",
-                          )}
-                        >
-                          <span className="flex items-center gap-0.5 sm:gap-1">
-                            {badgeConfig.icon}
-                            <span className="max-w-[12ch] truncate sm:max-w-[15ch]">
-                              {badgeConfig.title}
-                            </span>
+                      <Badge
+                        className={cn(
+                          badgeConfig.color,
+                          "text-[10px] sm:text-xs",
+                        )}
+                      >
+                        <span className="flex items-center gap-0.5 sm:gap-1">
+                          {badgeConfig.icon}
+                          <span className="max-w-[12ch] truncate sm:max-w-[15ch]">
+                            {badgeConfig.title}
                           </span>
-                        </Badge>
-                      ) : (
-                        <Skeleton className="h-6 w-20 sm:w-32" />
-                      )}
+                        </span>
+                      </Badge>
                     </TableCell>
 
                     {/* Source */}
                     <TableCell className="hidden sm:table-cell">
-                      {isVisible ? (
-                        renderSource(lead.source)
-                      ) : (
-                        <Skeleton className="h-6 w-20" />
-                      )}
+                      {renderSource(lead.source)}
                     </TableCell>
 
                     {/* Created */}
@@ -685,4 +591,4 @@ export function LeadTable({
       />
     </TooltipProvider>
   );
-}
+});

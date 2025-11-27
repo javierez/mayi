@@ -10,7 +10,8 @@ interface ProcessingOverlayProps {
     | "renovación"
     | "desenfoque de caras"
     | "eliminación de desorden"
-    | "mejora de iluminación";
+    | "mejora de iluminación"
+    | "render 3D";
 }
 
 const processingSteps = [

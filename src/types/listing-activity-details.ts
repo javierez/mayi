@@ -239,6 +239,58 @@ export interface VirtualTourAddedDetails {
 }
 
 // ============================================================================
+// FOTOCASA PORTAL ACTIONS
+// ============================================================================
+
+export interface FotocasaPublishedDetails {
+  visibilityMode: 1 | 2 | 3; // 1=Exact, 2=Street, 3=Zone
+  hidePrice: boolean;
+  publicationDate: string; // ISO timestamp
+}
+
+export interface FotocasaUpdatedDetails {
+  updateDate: string; // ISO timestamp
+  visibilityMode?: 1 | 2 | 3;
+  hidePrice?: boolean;
+}
+
+export interface FotocasaDeletedDetails {
+  deletedDate: string; // ISO timestamp
+}
+
+// ============================================================================
+// PORTAL SELECTION TOGGLES
+// ============================================================================
+
+export interface WebsitePublishedDetails {
+  publishedDate: string; // ISO timestamp
+}
+
+export interface WebsiteUnpublishedDetails {
+  unpublishedDate: string; // ISO timestamp
+}
+
+export interface KeysReturnedDetails {
+  returnedDate: string; // ISO timestamp
+}
+
+export interface CartelPlacedDetails {
+  placedDate: string; // ISO timestamp
+}
+
+export interface CartelRemovedDetails {
+  removedDate: string; // ISO timestamp
+}
+
+export interface EscaparateAddedDetails {
+  addedDate: string; // ISO timestamp
+}
+
+export interface EscaparateRemovedDetails {
+  removedDate: string; // ISO timestamp
+}
+
+// ============================================================================
 // UNION TYPE FOR ALL DETAILS
 // ============================================================================
 
@@ -273,7 +325,19 @@ export type ListingActivityDetails =
   | InquiryReceivedDetails
   // Documents
   | DocumentUploadedDetails
-  | VirtualTourAddedDetails;
+  | VirtualTourAddedDetails
+  // Fotocasa
+  | FotocasaPublishedDetails
+  | FotocasaUpdatedDetails
+  | FotocasaDeletedDetails
+  // Portal Toggles
+  | WebsitePublishedDetails
+  | WebsiteUnpublishedDetails
+  | KeysReturnedDetails
+  | CartelPlacedDetails
+  | CartelRemovedDetails
+  | EscaparateAddedDetails
+  | EscaparateRemovedDetails;
 
 // ============================================================================
 // MAPPING: ACTION → DETAILS TYPE
@@ -312,4 +376,16 @@ export interface ListingActivityDetailsMap {
   // Documents
   document_uploaded: DocumentUploadedDetails;
   virtual_tour_added: VirtualTourAddedDetails;
+  // Fotocasa
+  fotocasa_published: FotocasaPublishedDetails;
+  fotocasa_updated: FotocasaUpdatedDetails;
+  fotocasa_deleted: FotocasaDeletedDetails;
+  // Portal Toggles
+  website_published: WebsitePublishedDetails;
+  website_unpublished: WebsiteUnpublishedDetails;
+  keys_returned: KeysReturnedDetails;
+  cartel_placed: CartelPlacedDetails;
+  cartel_removed: CartelRemovedDetails;
+  escaparate_added: EscaparateAddedDetails;
+  escaparate_removed: EscaparateRemovedDetails;
 }

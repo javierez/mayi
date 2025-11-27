@@ -117,7 +117,7 @@ export function ProspectPropertyCard({
             {bathrooms && (
               <div className="flex items-center gap-1 text-gray-600">
                 <Bath className="h-3.5 w-3.5" />
-                <span className="text-xs">{bathrooms}</span>
+                <span className="text-xs">{Math.floor(parseFloat(bathrooms))}</span>
               </div>
             )}
             {squareMeter && (

@@ -262,6 +262,7 @@ export async function getAllProspects(accountId: number) {
         FROM ${prospectListingMatches}
         WHERE ${prospectListingMatches.prospectId} = ${prospects.id}
           AND ${prospectListingMatches.isStale} = false
+          AND ${prospectListingMatches.matchStatus} = 'new'
           AND ${prospectListingMatches.accountId} = ${BigInt(accountId)})
       `,
     })
@@ -563,6 +564,7 @@ export async function getProspectWithMatchesWithAuth(prospectId: bigint) {
         eq(prospectListingMatches.prospectId, prospectId),
         eq(prospectListingMatches.accountId, BigInt(accountId)),
         eq(prospectListingMatches.isStale, false),
+        eq(prospectListingMatches.matchStatus, "new"),
       ),
     );
 

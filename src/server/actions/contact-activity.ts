@@ -9,7 +9,7 @@ import {
 } from "../../lib/constants/contact-activity-actions";
 import { generateActivityTitle } from "../openai/activity-title-generator";
 import { db } from "../db";
-import { listingContacts, contacts, contactActivity } from "../db/schema";
+import { listingContacts, contacts, contactActivity, prospectListingMatches } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 
 export interface CreateContactActivityFormData {
@@ -87,10 +87,14 @@ export async function findListingContactIdAction(
 
 /**
  * Create a listing-contact relationship with 'buyer' contact type
+ * @param contactId - The contact ID to link
+ * @param listingId - The listing ID to link
+ * @param prospectId - Optional prospect ID when creating from a prospect context
  */
 export async function createListingContactRelationshipAction(
   contactId: bigint,
   listingId: bigint,
+  prospectId?: bigint,
 ): Promise<{ success: boolean; listingContactId?: bigint; error?: string }> {
   try {
     const accountId = await getCurrentUserAccountId();
@@ -124,6 +128,7 @@ export async function createListingContactRelationshipAction(
         contactType: "buyer",
         isActive: true,
         status: "active",
+        ...(prospectId ? { prospectId } : {}),
       })
       .returning({ listingContactId: listingContacts.listingContactId });
 
@@ -132,6 +137,20 @@ export async function createListingContactRelationshipAction(
         success: false,
         error: "Error al crear la relación",
       };
+    }
+
+    // Update matchStatus to 'sent' in prospect_listing_matches if prospectId is provided
+    if (prospectId) {
+      await db
+        .update(prospectListingMatches)
+        .set({ matchStatus: "sent" })
+        .where(
+          and(
+            eq(prospectListingMatches.prospectId, prospectId),
+            eq(prospectListingMatches.listingId, listingId),
+            eq(prospectListingMatches.accountId, BigInt(accountId)),
+          ),
+        );
     }
 
     return {

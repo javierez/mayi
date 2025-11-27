@@ -252,7 +252,7 @@ export function GlobalHistoryTimeline({
                 <div className="ml-6 space-y-3 mt-2">
                   {group.activities.map((activity) => (
                     <GlobalActivityCard
-                      key={activity.id.toString()}
+                      key={`${activity.activityType}-${activity.id.toString()}`}
                       activity={activity}
                       onClick={() => handleActivityClick(activity)}
                     />

@@ -12,6 +12,7 @@ import {
 } from "~/components/ui/select";
 import { Input } from "~/components/ui/input";
 import { Slider } from "~/components/ui/slider";
+import { ColorPickerPopover } from "~/components/ui/color-picker-popover";
 import {
   AlignLeft,
   AlignCenter,
@@ -144,58 +145,12 @@ export function CartelEditorPage3({
                 </div>
 
                 {/* Text Color */}
-                <div>
-                  <Label htmlFor="titleColor">Color del texto</Label>
-                  <div className="flex justify-end">
-                    <Select
-                      value={config.titleColor}
-                      onValueChange={(value) =>
-                        updateConfig({ titleColor: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {/* Default Colors */}
-                        <SelectItem value="white">
-                          <div className="flex items-center gap-2">
-                            <div className="h-3 w-3 rounded-full border border-gray-300 bg-white"></div>
-                            Blanco
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="black">
-                          <div className="flex items-center gap-2">
-                            <div className="h-3 w-3 rounded-full bg-black"></div>
-                            Negro
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="gray">
-                          <div className="flex items-center gap-2">
-                            <div className="h-3 w-3 rounded-full bg-gray-500"></div>
-                            Gris
-                          </div>
-                        </SelectItem>
-                        {/* Corporate Colors */}
-                        {accountColorPalette.length > 0 && (
-                          <>
-                            {accountColorPalette.map((color, index) => (
-                              <SelectItem key={color} value={color}>
-                                <div className="flex items-center gap-2">
-                                  <div
-                                    className="h-3 w-3 rounded-full border border-gray-300"
-                                    style={{ backgroundColor: color }}
-                                  ></div>
-                                  Corporativo {index + 1}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                <ColorPickerPopover
+                  label="Color del texto"
+                  value={config.titleColor === "white" ? "#ffffff" : config.titleColor === "black" ? "#000000" : config.titleColor === "gray" ? "#6b7280" : config.titleColor}
+                  onChange={(color) => updateConfig({ titleColor: color })}
+                  accountColorPalette={accountColorPalette}
+                />
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -440,58 +395,12 @@ export function CartelEditorPage3({
                 </div>
 
                 {/* Text Color */}
-                <div>
-                  <Label htmlFor="locationColor">Color del texto</Label>
-                  <div className="flex justify-end">
-                    <Select
-                      value={config.locationColor}
-                      onValueChange={(value) =>
-                        updateConfig({ locationColor: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {/* Default Colors */}
-                        <SelectItem value="white">
-                          <div className="flex items-center gap-2">
-                            <div className="h-3 w-3 rounded-full border border-gray-300 bg-white"></div>
-                            Blanco
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="black">
-                          <div className="flex items-center gap-2">
-                            <div className="h-3 w-3 rounded-full bg-black"></div>
-                            Negro
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="gray">
-                          <div className="flex items-center gap-2">
-                            <div className="h-3 w-3 rounded-full bg-gray-500"></div>
-                            Gris
-                          </div>
-                        </SelectItem>
-                        {/* Corporate Colors */}
-                        {accountColorPalette.length > 0 && (
-                          <>
-                            {accountColorPalette.map((color, index) => (
-                              <SelectItem key={color} value={color}>
-                                <div className="flex items-center gap-2">
-                                  <div
-                                    className="h-3 w-3 rounded-full border border-gray-300"
-                                    style={{ backgroundColor: color }}
-                                  ></div>
-                                  Corporativo {index + 1}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                <ColorPickerPopover
+                  label="Color del texto"
+                  value={config.locationColor === "white" ? "#ffffff" : config.locationColor === "black" ? "#000000" : config.locationColor === "gray" ? "#6b7280" : config.locationColor}
+                  onChange={(color) => updateConfig({ locationColor: color })}
+                  accountColorPalette={accountColorPalette}
+                />
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -761,58 +670,12 @@ export function CartelEditorPage3({
                 </div>
 
                 {/* Text Color */}
-                <div>
-                  <Label htmlFor="priceColor">Color del texto</Label>
-                  <div className="flex justify-end">
-                    <Select
-                      value={config.priceColor}
-                      onValueChange={(value) =>
-                        updateConfig({ priceColor: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {/* Default Colors */}
-                        <SelectItem value="white">
-                          <div className="flex items-center gap-2">
-                            <div className="h-3 w-3 rounded-full border border-gray-300 bg-white"></div>
-                            Blanco
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="black">
-                          <div className="flex items-center gap-2">
-                            <div className="h-3 w-3 rounded-full bg-black"></div>
-                            Negro
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="gray">
-                          <div className="flex items-center gap-2">
-                            <div className="h-3 w-3 rounded-full bg-gray-500"></div>
-                            Gris
-                          </div>
-                        </SelectItem>
-                        {/* Corporate Colors */}
-                        {accountColorPalette.length > 0 && (
-                          <>
-                            {accountColorPalette.map((color, index) => (
-                              <SelectItem key={color} value={color}>
-                                <div className="flex items-center gap-2">
-                                  <div
-                                    className="h-3 w-3 rounded-full border border-gray-300"
-                                    style={{ backgroundColor: color }}
-                                  ></div>
-                                  Corporativo {index + 1}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                <ColorPickerPopover
+                  label="Color del texto"
+                  value={config.priceColor === "white" ? "#ffffff" : config.priceColor === "black" ? "#000000" : config.priceColor === "gray" ? "#6b7280" : config.priceColor}
+                  onChange={(color) => updateConfig({ priceColor: color })}
+                  accountColorPalette={accountColorPalette}
+                />
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -1001,87 +864,20 @@ export function CartelEditorPage3({
           <div className="space-y-4 rounded-lg bg-gray-50 p-3">
             <div className="space-y-3">
               {/* Background Color */}
-              <div>
-                <Label>Color de Fondo</Label>
-                <Select
-                  value={config.contactBackgroundColor}
-                  onValueChange={(value) =>
-                    updateConfig({ contactBackgroundColor: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {/* Default Colors */}
-                    <SelectItem value="default">
-                      <div className="flex items-center gap-2">
-                        <div className="h-3 w-3 rounded-full bg-gray-600"></div>
-                        <span>Gris Oscuro</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="white">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="h-3 w-3 rounded-full border border-gray-300"
-                          style={{ backgroundColor: "white" }}
-                        />
-                        <span>Blanco</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="black">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="h-3 w-3 rounded-full border border-gray-300"
-                          style={{ backgroundColor: "black" }}
-                        />
-                        <span>Negro</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="gray">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="h-3 w-3 rounded-full border border-gray-300"
-                          style={{ backgroundColor: "#6B7280" }}
-                        />
-                        <span>Gris</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="light">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="h-3 w-3 rounded-full border border-gray-300"
-                          style={{ backgroundColor: "#E5E7EB" }}
-                        />
-                        <span>Claro</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="dark">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="h-3 w-3 rounded-full border border-gray-300"
-                          style={{ backgroundColor: "#1F2937" }}
-                        />
-                        <span>Oscuro</span>
-                      </div>
-                    </SelectItem>
-
-                    {/* Account color palette */}
-                    {accountColorPalette.length > 0 &&
-                      accountColorPalette.map((color, index) => (
-                        <SelectItem key={color} value={color}>
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="h-3 w-3 rounded-full border border-gray-300"
-                              style={{ backgroundColor: color }}
-                            />
-                            <span>Color {index + 1}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <ColorPickerPopover
+                label="Color de Fondo"
+                value={
+                  config.contactBackgroundColor === "default" ? "#4b5563" :
+                  config.contactBackgroundColor === "white" ? "#ffffff" :
+                  config.contactBackgroundColor === "black" ? "#000000" :
+                  config.contactBackgroundColor === "gray" ? "#6b7280" :
+                  config.contactBackgroundColor === "light" ? "#e5e7eb" :
+                  config.contactBackgroundColor === "dark" ? "#1f2937" :
+                  config.contactBackgroundColor
+                }
+                onChange={(color) => updateConfig({ contactBackgroundColor: color })}
+                accountColorPalette={accountColorPalette}
+              />
 
               {/* Border Radius */}
               <div>

@@ -1,8 +1,12 @@
+import { Suspense } from "react";
 import { getAllListingsHistory } from "~/server/queries/listing-history";
 import { getAllContactActivityHistory } from "~/server/queries/contact-activity";
 import { getAllListingContactActivityHistory } from "~/server/queries/listing-contact-activity";
 import { getAgentsForSelectionWithAuth } from "~/server/queries/users";
+import { getRecentlyUpdatedListingsWithAuth } from "~/server/queries/listing";
 import { GlobalHistoryTimeline } from "~/components/propiedades/detail/history/global-history-timeline";
+import { RecentPropertiesGallery } from "~/components/propiedades/recent-properties-gallery";
+import { Skeleton } from "~/components/ui/skeleton";
 
 interface HistorialPageProps {
   searchParams: Promise<{
@@ -11,6 +15,7 @@ interface HistorialPageProps {
     dateFrom?: string;
     dateTo?: string;
     actions?: string;
+    listingId?: string;
   }>;
 }
 
@@ -24,16 +29,18 @@ export default async function HistorialPage({ searchParams }: HistorialPageProps
   const dateFrom = unwrappedSearchParams.dateFrom;
   const dateTo = unwrappedSearchParams.dateTo;
   const actionFilters = unwrappedSearchParams.actions?.split(",") ?? [];
+  const listingIdFilter = unwrappedSearchParams.listingId;
 
   // Fetch agents for filter
   const agents = await getAgentsForSelectionWithAuth();
 
   // Fetch all activities - use a large limit to get all, then filter and paginate
   const largeLimit = 10000; // Large enough to get all activities
-  const [listingHistory, contactHistory, listingContactHistory] = await Promise.all([
+  const [listingHistory, contactHistory, listingContactHistory, recentlyUpdatedListings] = await Promise.all([
     getAllListingsHistory(1, largeLimit),
     getAllContactActivityHistory(1, largeLimit),
     getAllListingContactActivityHistory(1, largeLimit),
+    getRecentlyUpdatedListingsWithAuth(),
   ]);
 
   // Normalize and merge all activities
@@ -102,6 +109,22 @@ export default async function HistorialPage({ searchParams }: HistorialPageProps
     );
   }
 
+  // Filter by listingId if specified
+  if (listingIdFilter) {
+    allActivities = allActivities.filter((activity) => {
+      // Listing activities have listingId directly
+      if (activity.activityType === 'listing' && 'listingId' in activity) {
+        return activity.listingId?.toString() === listingIdFilter;
+      }
+      // Listing contact activities also have listingId
+      if (activity.activityType === 'listing_contact' && 'listingId' in activity) {
+        return activity.listingId?.toString() === listingIdFilter;
+      }
+      // Contact activities don't have listingId, exclude them when filtering
+      return false;
+    });
+  }
+
   // Sort by createdAt (most recent first)
   allActivities.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
@@ -123,6 +146,11 @@ export default async function HistorialPage({ searchParams }: HistorialPageProps
           Registro completo de todos los cambios y eventos de todas las propiedades y contactos.
         </p>
       </div>
+
+      {/* Recently updated properties gallery */}
+      <Suspense fallback={<Skeleton className="mb-6 h-48 w-full" />}>
+        <RecentPropertiesGallery listings={recentlyUpdatedListings} />
+      </Suspense>
 
       <GlobalHistoryTimeline
         activities={paginatedActivities}

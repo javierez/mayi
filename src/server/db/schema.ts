@@ -900,11 +900,6 @@ export const prospectListingMatches = pgTable("prospect_listing_matches", {
   sharedAt: timestamp("shared_at"), // When match was shared with prospect
   sharedBy: varchar("shared_by", { length: 36 }), // FK → users.id (agent who shared)
 
-  // Lead Conversion Tracking
-  leadCreatedAt: timestamp("lead_created_at"), // When a lead was created from this match
-  leadId: bigint("lead_id", { mode: "bigint" }), // FK → listing_contacts.id if lead created
-  leadStatus: varchar("lead_status", { length: 50 }), // Current status of the lead (if created)
-
   // Dismissal Tracking
   dismissedAt: timestamp("dismissed_at"), // When match was dismissed
   dismissedBy: varchar("dismissed_by", { length: 36 }), // FK → users.id (who dismissed it)

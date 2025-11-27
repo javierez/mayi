@@ -15,6 +15,7 @@ import {
   deleteFromFotocasa,
   updateFotocasa,
 } from "~/server/portals/fotocasa";
+import { savePortalChangesWithActivity } from "~/server/actions/portal-activity";
 
 interface Platform {
   id: string;
@@ -470,6 +471,40 @@ export function PortalSelection({
 
       // Update the listing with the new portal values (except fotocasa, handled by API)
       await updateListingWithAuth(Number(listingId), portalUpdates);
+
+      // Log activity for toggle changes (direction-aware)
+      // Only log if there were actual changes to the toggles
+      const toggleChanges = {
+        publishToWebsite:
+          portalUpdates.publishToWebsite !== publishToWebsite
+            ? { old: publishToWebsite, new: portalUpdates.publishToWebsite }
+            : undefined,
+        hasKeys:
+          portalUpdates.hasKeys !== hasKeys
+            ? { old: hasKeys, new: portalUpdates.hasKeys }
+            : undefined,
+        hasCartel:
+          portalUpdates.hasCartel !== hasCartel
+            ? { old: hasCartel, new: portalUpdates.hasCartel }
+            : undefined,
+        enEscaparate:
+          portalUpdates.enEscaparate !== enEscaparate
+            ? { old: enEscaparate, new: portalUpdates.enEscaparate }
+            : undefined,
+      };
+
+      // Only call activity logging if at least one toggle changed
+      const hasToggleChanges = Object.values(toggleChanges).some(
+        (change) => change !== undefined,
+      );
+      if (hasToggleChanges) {
+        try {
+          await savePortalChangesWithActivity(BigInt(listingId), toggleChanges);
+        } catch (activityError) {
+          // Log error but don't fail the operation - activity logging is secondary
+          console.error("Error logging portal activity:", activityError);
+        }
+      }
 
       // Show success toast for general portal updates (non-Fotocasa)
       const changedPortals = Object.entries(portalUpdates)

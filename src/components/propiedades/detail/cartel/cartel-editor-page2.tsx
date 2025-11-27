@@ -10,8 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Input } from "~/components/ui/input";
 import { Slider } from "~/components/ui/slider";
+import { ColorPickerPopover } from "~/components/ui/color-picker-popover";
 import {
   AlignLeft,
   AlignCenter,
@@ -260,19 +260,15 @@ export function CartelEditorPage2({
                       </div>
                     </div>
 
-                    <div>
-                      <Label className="text-xs">Color</Label>
-                      <Input
-                        type="color"
-                        value={config.bulletColor}
-                        onChange={(e) =>
-                          updateConfig({
-                            bulletColor: e.target.value,
-                          })
-                        }
-                        className="h-8"
-                      />
-                    </div>
+                    <ColorPickerPopover
+                      label="Color"
+                      value={config.bulletColor}
+                      onChange={(color) =>
+                        updateConfig({
+                          bulletColor: color,
+                        })
+                      }
+                    />
                   </div>
 
                   {/* Position Controls - Joystick Style */}
@@ -524,19 +520,15 @@ export function CartelEditorPage2({
                       </div>
                     </div>
 
-                    <div>
-                      <Label className="text-xs">Color</Label>
-                      <Input
-                        type="color"
-                        value={config.descriptionColor}
-                        onChange={(e) =>
-                          updateConfig({
-                            descriptionColor: e.target.value,
-                          })
-                        }
-                        className="h-8"
-                      />
-                    </div>
+                    <ColorPickerPopover
+                      label="Color"
+                      value={config.descriptionColor}
+                      onChange={(color) =>
+                        updateConfig({
+                          descriptionColor: color,
+                        })
+                      }
+                    />
                   </div>
 
                   {/* Position Controls */}

@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ColorPickerPopover } from "~/components/ui/color-picker-popover";
 import { ChevronRight } from "lucide-react";
 import type { TemplateConfiguration } from "~/types/template-data";
 
@@ -46,81 +47,12 @@ export function CartelEditorPage1({
           </Select>
         </div>
 
-        <div>
-          <Label htmlFor="overlayColor">Color de Fondo</Label>
-          <Select
-            value={config.overlayColor}
-            onValueChange={(value) => updateConfig({ overlayColor: value })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {/* Default color options */}
-              <SelectItem value="default">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="h-4 w-4 rounded-full border border-gray-300"
-                    style={{ backgroundColor: "#9CA3AF" }}
-                  />
-                  <span>Gris</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="light">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="h-4 w-4 rounded-full border border-gray-300"
-                    style={{ backgroundColor: "#E5E7EB" }}
-                  />
-                  <span>Claro</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="dark">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="h-4 w-4 rounded-full border border-gray-300"
-                    style={{ backgroundColor: "#1F2937" }}
-                  />
-                  <span>Oscuro</span>
-                </div>
-              </SelectItem>
-
-              {/* Standard color options */}
-              <SelectItem value="white">
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 rounded-full border border-gray-300 bg-white"></div>
-                  <span>Blanco</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="black">
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 rounded-full bg-black"></div>
-                  <span>Negro</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="gray">
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 rounded-full bg-gray-500"></div>
-                  <span>Gris Estándar</span>
-                </div>
-              </SelectItem>
-
-              {/* Account color palette */}
-              {accountColorPalette.length > 0 &&
-                accountColorPalette.map((color, index) => (
-                  <SelectItem key={color} value={color}>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="h-4 w-4 rounded-full border border-gray-300"
-                        style={{ backgroundColor: color }}
-                      />
-                      <span>Corporativo {index + 1}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <ColorPickerPopover
+          label="Color de Fondo"
+          value={config.overlayColor === "default" ? "#9CA3AF" : config.overlayColor}
+          onChange={(color) => updateConfig({ overlayColor: color })}
+          accountColorPalette={accountColorPalette}
+        />
       </div>
 
       <h4 className="font-medium">Opciones de Visualización</h4>

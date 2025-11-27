@@ -467,7 +467,6 @@ export default function PropertiesPage() {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
-          onPrefetchPage={prefetchPage}
           onExport={handleExport}
         />
         )}

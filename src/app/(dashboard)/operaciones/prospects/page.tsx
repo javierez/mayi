@@ -300,7 +300,6 @@ export default function ProspectsPage() {
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={handlePageChange}
-            onPrefetchPage={handlePrefetchPage}
             onProspectUpdate={() => {
               // Refresh data when prospects are updated
               const fetchData = async () => {

@@ -1084,3 +1084,189 @@ export async function logContactActivitiesBatch(
     })),
   );
 }
+
+// ============================================================================
+// FOTOCASA ACTIVITY LOGGING
+// ============================================================================
+
+/**
+ * Convenience function: Log Fotocasa publication (POST success)
+ */
+export async function logFotocasaPublished(params: {
+  listingId: bigint;
+  userId: string;
+  visibilityMode: 1 | 2 | 3;
+  hidePrice: boolean;
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "fotocasa_published",
+    details: {
+      visibilityMode: params.visibilityMode,
+      hidePrice: params.hidePrice,
+      publicationDate: new Date().toISOString(),
+    },
+  });
+}
+
+/**
+ * Convenience function: Log Fotocasa update (PUT success)
+ */
+export async function logFotocasaUpdated(params: {
+  listingId: bigint;
+  userId: string;
+  visibilityMode?: 1 | 2 | 3;
+  hidePrice?: boolean;
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "fotocasa_updated",
+    details: {
+      updateDate: new Date().toISOString(),
+      visibilityMode: params.visibilityMode,
+      hidePrice: params.hidePrice,
+    },
+  });
+}
+
+/**
+ * Convenience function: Log Fotocasa deletion (DELETE success)
+ */
+export async function logFotocasaDeleted(params: {
+  listingId: bigint;
+  userId: string;
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "fotocasa_deleted",
+    details: {
+      deletedDate: new Date().toISOString(),
+    },
+  });
+}
+
+// ============================================================================
+// PORTAL SELECTION TOGGLE LOGGING
+// ============================================================================
+
+/**
+ * Convenience function: Log website publication (publishToWebsite = true)
+ */
+export async function logWebsitePublished(params: {
+  listingId: bigint;
+  userId: string;
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "website_published",
+    details: {
+      publishedDate: new Date().toISOString(),
+    },
+  });
+}
+
+/**
+ * Convenience function: Log website unpublication (publishToWebsite = false)
+ */
+export async function logWebsiteUnpublished(params: {
+  listingId: bigint;
+  userId: string;
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "website_unpublished",
+    details: {
+      unpublishedDate: new Date().toISOString(),
+    },
+  });
+}
+
+/**
+ * Convenience function: Log keys returned (hasKeys = false)
+ */
+export async function logKeysReturned(params: {
+  listingId: bigint;
+  userId: string;
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "keys_returned",
+    details: {
+      returnedDate: new Date().toISOString(),
+    },
+  });
+}
+
+/**
+ * Convenience function: Log cartel placed (hasCartel = true)
+ */
+export async function logCartelPlaced(params: {
+  listingId: bigint;
+  userId: string;
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "cartel_placed",
+    details: {
+      placedDate: new Date().toISOString(),
+    },
+  });
+}
+
+/**
+ * Convenience function: Log cartel removed (hasCartel = false)
+ */
+export async function logCartelRemoved(params: {
+  listingId: bigint;
+  userId: string;
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "cartel_removed",
+    details: {
+      removedDate: new Date().toISOString(),
+    },
+  });
+}
+
+/**
+ * Convenience function: Log escaparate added (enEscaparate = true)
+ */
+export async function logEscaparateAdded(params: {
+  listingId: bigint;
+  userId: string;
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "escaparate_added",
+    details: {
+      addedDate: new Date().toISOString(),
+    },
+  });
+}
+
+/**
+ * Convenience function: Log escaparate removed (enEscaparate = false)
+ */
+export async function logEscaparateRemoved(params: {
+  listingId: bigint;
+  userId: string;
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "escaparate_removed",
+    details: {
+      removedDate: new Date().toISOString(),
+    },
+  });
+}

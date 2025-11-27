@@ -13,7 +13,7 @@
 
 import { db } from "~/server/db";
 import { prospectListingMatches } from "~/server/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 import { getMatchesForProspects } from "./connection-matches";
 
 // =====================================================
@@ -398,9 +398,9 @@ export async function calculateAndStoreMatches(
       throw new Error("accountId is required");
     }
 
-    // Step 1: Mark existing matches as stale if requested
+    // Step 1: Mark existing matches as stale if requested (except those with matchStatus = 'sent')
     if (options.clearStale) {
-      console.log("🗑️ Marking existing matches as stale...");
+      console.log("🗑️ Marking existing matches as stale (preserving sent matches)...");
 
       await db
         .update(prospectListingMatches)
@@ -409,7 +409,12 @@ export async function calculateAndStoreMatches(
           staleReason: "recalculated",
           updatedAt: new Date(),
         })
-        .where(eq(prospectListingMatches.accountId, options.accountId));
+        .where(
+          and(
+            eq(prospectListingMatches.accountId, options.accountId),
+            sql`(${prospectListingMatches.matchStatus} = 'new' OR ${prospectListingMatches.matchStatus} IS NULL)`,
+          )
+        );
 
       // Count how many were marked stale
       const countResult = await db
@@ -441,10 +446,38 @@ export async function calculateAndStoreMatches(
     const allMatches = [...internalMatches, ...crossAccountMatches];
     console.log(`📊 Total matches to insert: ${allMatches.length}`);
 
-    // Step 5: Bulk insert matches (in batches of 500)
+    // Step 5: Get existing matches with matchStatus = 'sent' to preserve them
+    console.log("🔒 Fetching existing 'sent' matches to preserve...");
+    const sentMatches = await db
+      .select({
+        prospectId: prospectListingMatches.prospectId,
+        listingId: prospectListingMatches.listingId,
+      })
+      .from(prospectListingMatches)
+      .where(
+        and(
+          eq(prospectListingMatches.accountId, options.accountId),
+          eq(prospectListingMatches.matchStatus, "sent"),
+        )
+      );
+
+    // Create a Set of "prospectId-listingId" keys for fast lookup
+    const sentMatchKeys = new Set(
+      sentMatches.map((m) => `${m.prospectId.toString()}-${m.listingId.toString()}`)
+    );
+    console.log(`🔒 Found ${sentMatchKeys.size} 'sent' matches to preserve`);
+
+    // Filter out matches that already have matchStatus = 'sent'
+    const matchesToInsert = allMatches.filter((match) => {
+      const key = `${match.prospectId.toString()}-${match.listingId.toString()}`;
+      return !sentMatchKeys.has(key);
+    });
+    console.log(`📊 Matches to insert after filtering: ${matchesToInsert.length} (skipped ${allMatches.length - matchesToInsert.length} sent matches)`);
+
+    // Step 6: Bulk insert matches (in batches of 500)
     const BATCH_SIZE = 500;
-    for (let i = 0; i < allMatches.length; i += BATCH_SIZE) {
-      const batch = allMatches.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < matchesToInsert.length; i += BATCH_SIZE) {
+      const batch = matchesToInsert.slice(i, i + BATCH_SIZE);
 
       try {
         const insertData = batch.map((match) => ({
@@ -512,6 +545,8 @@ export async function calculateAndStoreMatches(
                 prospectListingMatches.prospectId,
                 prospectListingMatches.listingId,
               ],
+              // Only update if matchStatus is 'new' (preserve 'sent' status)
+              where: sql`${prospectListingMatches.matchStatus} = 'new' OR ${prospectListingMatches.matchStatus} IS NULL`,
               set: {
                 matchType: sql`excluded.match_type`,
                 toleranceReasons: sql`excluded.tolerance_reasons`,
@@ -557,7 +592,7 @@ export async function calculateAndStoreMatches(
 
         matchesInserted += batch.length;
         console.log(
-          `✅ Inserted batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(allMatches.length / BATCH_SIZE)}`
+          `✅ Inserted batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(matchesToInsert.length / BATCH_SIZE)}`
         );
       } catch (batchError) {
         console.error(`❌ Error inserting batch:`, batchError);

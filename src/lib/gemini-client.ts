@@ -8,6 +8,7 @@ import {
   BLUR_FACES_PROMPT,
   REMOVE_CLUTTER_PROMPT,
   ENHANCE_LIGHTING_PROMPT,
+  RENDER_3D_PROMPT,
   type GeminiRenovationResponse,
   type RenovationType,
   type RenovationStyle,
@@ -1174,6 +1175,170 @@ Return only the improved renovated image based on the user's feedback.`;
   }
 
   /**
+   * Render a 2D image as a 3D visualization
+   */
+  async render3d(
+    imageBase64: string,
+  ): Promise<GeminiRenovationResponse> {
+    try {
+      console.log("🎲 RENDER 3D - Starting Gemini 3D rendering:", {
+        model: GEMINI_RENOVATION_SETTINGS.model,
+        imageDataLength: imageBase64.length,
+      });
+
+      // Clean base64 string
+      const cleanBase64 = imageBase64.replace(
+        /^data:image\/[a-zA-Z]+;base64,/,
+        "",
+      );
+
+      // Prepare content with render 3D prompt and image
+      const contents = [
+        { text: RENDER_3D_PROMPT },
+        {
+          inlineData: {
+            mimeType: "image/jpeg",
+            data: cleanBase64,
+          },
+        },
+      ];
+
+      // Call Gemini API with higher temperature for creative 3D rendering
+      const model = this.genAI.models.generateContent({
+        model: GEMINI_RENOVATION_SETTINGS.model,
+        contents,
+        config: {
+          temperature: 0.7, // Higher temperature for creative 3D rendering
+          maxOutputTokens: GEMINI_RENOVATION_SETTINGS.maxOutputTokens,
+        },
+      });
+
+      const response = await model;
+
+      // Extract token usage from response
+      const responseWithUsage = response as GeminiResponseWithUsage;
+      const usageMetadata = responseWithUsage.usageMetadata;
+      const tokenUsage = usageMetadata
+        ? {
+            promptTokenCount: usageMetadata.promptTokenCount ?? 0,
+            candidatesTokenCount: usageMetadata.candidatesTokenCount ?? 0,
+            totalTokenCount: usageMetadata.totalTokenCount ?? 0,
+          }
+        : null;
+
+      if (tokenUsage) {
+        console.log("📊 RENDER 3D - Token Usage:", {
+          promptTokens: tokenUsage.promptTokenCount,
+          candidatesTokens: tokenUsage.candidatesTokenCount,
+          totalTokens: tokenUsage.totalTokenCount,
+        });
+      }
+
+      // Check response structure
+      const firstCandidate = response.candidates?.[0];
+
+      console.log("🔍 RENDER 3D - Response structure:", {
+        hasCandidates: !!response.candidates,
+        candidatesLength: response.candidates?.length ?? 0,
+        hasFirstCandidate: !!firstCandidate,
+        hasContent: !!firstCandidate?.content,
+        hasParts: !!firstCandidate?.content?.parts,
+        partsLength: firstCandidate?.content?.parts?.length ?? 0,
+        finishReason: firstCandidate?.finishReason,
+        safetyRatings: firstCandidate?.safetyRatings,
+      });
+
+      // Extract image content
+      if (firstCandidate?.content?.parts) {
+        for (const part of firstCandidate.content.parts) {
+          if (part.inlineData) {
+            const imageData = part.inlineData.data;
+
+            // Check for warnings with non-STOP finishReason
+            if (firstCandidate?.finishReason && String(firstCandidate.finishReason) !== "STOP") {
+              console.warn("⚠️ RENDER 3D - Non-STOP finishReason but image found:", {
+                finishReason: firstCandidate.finishReason,
+                safetyRatings: firstCandidate.safetyRatings,
+                imageDataLength: imageData?.length ?? 0,
+              });
+
+              // Check for safety blocks
+              if (firstCandidate.safetyRatings) {
+                const hasBlockingSafety = firstCandidate.safetyRatings.some(
+                  (rating) => String(rating?.probability) === "HIGH" || String(rating?.probability) === "MEDIUM"
+                );
+                if (hasBlockingSafety) {
+                  console.error("❌ RENDER 3D - Safety block detected:", {
+                    finishReason: firstCandidate.finishReason,
+                    safetyRatings: firstCandidate.safetyRatings,
+                  });
+                  throw new Error(
+                    `Gemini API blocked the request due to safety concerns. Finish reason: ${firstCandidate.finishReason}`,
+                  );
+                }
+              }
+            }
+
+            console.log("✅ 3D rendering successful:", {
+              mimeType: part.inlineData.mimeType,
+              dataLength: imageData?.length ?? 0,
+              finishReason: firstCandidate?.finishReason,
+              tokenUsage,
+            });
+
+            return {
+              success: true,
+              renovatedImageBase64: imageData,
+              tokenUsage: tokenUsage ?? undefined,
+            };
+          }
+        }
+
+        // If no image found, check for text response
+        const textParts = firstCandidate.content.parts.filter(
+          (part) => part.text,
+        );
+        if (textParts.length > 0) {
+          console.log("Gemini 3D rendering text response:", textParts[0]?.text);
+          throw new Error(
+            "Gemini API returned text instead of image. Response: " +
+              textParts[0]?.text,
+          );
+        }
+      }
+
+      // Handle blocked/filtered requests
+      if (firstCandidate?.finishReason && String(firstCandidate.finishReason) !== "STOP") {
+        console.error("❌ RENDER 3D - Request blocked/filtered:", {
+          finishReason: firstCandidate.finishReason,
+          safetyRatings: firstCandidate.safetyRatings,
+        });
+
+        if (String(firstCandidate.finishReason) === "IMAGE_OTHER") {
+          throw new Error(
+            "Gemini API could not process the image. The image may be unsupported, corrupted, or too complex for 3D rendering.",
+          );
+        }
+
+        throw new Error(
+          `Gemini API request was blocked. Finish reason: ${firstCandidate.finishReason}`,
+        );
+      }
+
+      throw new Error("No image data found in Gemini API response");
+    } catch (error) {
+      console.error("3D rendering error:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      return {
+        success: false,
+        error: errorMessage,
+        tokenUsage: undefined,
+      };
+    }
+  }
+
+  /**
    * Get available elements for a specific room type and style
    */
   getRoomElements(
@@ -1276,6 +1441,9 @@ export const geminiClient = {
 
   enhanceLighting: (imageBase64: string) =>
     geminiClient.instance.enhanceLighting(imageBase64),
+
+  render3d: (imageBase64: string) =>
+    geminiClient.instance.render3d(imageBase64),
 };
 
 // Also export the class for testing purposes

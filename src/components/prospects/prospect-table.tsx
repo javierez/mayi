@@ -1,8 +1,9 @@
+"use client";
+
 import React, {
   useState,
   useRef,
   useCallback,
-  useEffect,
   useMemo,
 } from "react";
 import {
@@ -14,8 +15,9 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { Button } from "~/components/ui/button";
-import { Euro, Bed, Bath, Square, ChevronDown, MapPin } from "lucide-react";
-import { Skeleton } from "~/components/ui/skeleton";
+import { Euro, Bed, Bath, Square, ChevronDown, MapPin, Download } from "lucide-react";
+import * as XLSX from "xlsx";
+import { cn } from "~/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,7 +27,6 @@ import {
 import { PROSPECT_STATUSES } from "~/types/operations";
 import { updateProspectWithAuth } from "~/server/queries/prospect";
 import { PaginationControls } from "~/components/ui/pagination-controls";
-import { cn } from "~/lib/utils";
 import { useSearchParams } from "next/navigation";
 import { ProspectDetailSheet } from "~/components/prospects/prospect-detail-sheet";
 
@@ -115,16 +116,14 @@ interface ProspectTableProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   onProspectUpdate?: () => void;
-  onPrefetchPage?: (page: number) => Promise<void>;
 }
 
-export function ProspectTable({
+export const ProspectTable = React.memo(function ProspectTable({
   prospects,
   currentPage,
   totalPages,
   onPageChange,
   onProspectUpdate,
-  onPrefetchPage,
 }: ProspectTableProps) {
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [optimisticStatuses, setOptimisticStatuses] = useState<
@@ -133,10 +132,9 @@ export function ProspectTable({
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
   const [isResizing, setIsResizing] = useState<string | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
-  const [visibleRows, setVisibleRows] = useState<Set<string>>(new Set());
-  const observerRef = useRef<IntersectionObserver | null>(null);
   const [selectedProspectId, setSelectedProspectId] = useState<bigint | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isHoveringTable, setIsHoveringTable] = useState(false);
 
   // Helper functions for parsing and display
   const parsePreferredAreas = (preferredAreas: unknown): string[] => {
@@ -473,26 +471,10 @@ export function ProspectTable({
             return false;
         }
 
-        // Filter by status
+        // Filter by status - compare against normalized display status
         if (statusFilter && statusFilter !== "all") {
           const filterValues = statusFilter.split(",");
-          // Map the filter status values to database status values
-          const mappedStatuses = filterValues.map((status) => {
-            switch (status) {
-              case "En búsqueda":
-                return "new";
-              case "Finalizado":
-                return "qualified";
-              case "Archivado":
-                return "archived";
-              default:
-                return status.toLowerCase();
-            }
-          });
-          if (
-            !mappedStatuses.includes(prospect.rawData.prospects.status.toLowerCase())
-          )
-            return false;
+          if (!filterValues.includes(prospect.status)) return false;
         }
 
         // Filter by urgency level
@@ -630,114 +612,84 @@ export function ProspectTable({
     setSelectedProspectId(null);
   };
 
-  // Intersection Observer for lazy loading
-  const observeRow = useCallback(
-    (element: HTMLElement | null, operationId: string) => {
-      if (!element || !observerRef.current) return;
+  // Export prospects to Excel
+  const handleExport = React.useCallback(() => {
+    const headers = [
+      "Demanda",
+      "Demandante",
+      "Email",
+      "Estado",
+      "Ubicación",
+      "Precio Máximo",
+      "Habitaciones Mín",
+      "Baños Mín",
+      "M² Mín",
+      "Creado",
+    ];
 
-      // Add dataset to track which operation this element represents
-      element.dataset.operationId = operationId;
-      observerRef.current.observe(element);
-    },
-    [],
-  );
+    const rows = filteredProspects.map((prospect) => {
+      const prospectData = prospect.rawData.prospects;
+      return [
+        prospect.operationType,
+        prospect.contact.name,
+        prospect.contact.email ?? "",
+        prospect.status,
+        prospect.location,
+        prospectData.maxPrice ? parseFloat(prospectData.maxPrice) : "",
+        prospectData.minBedrooms ?? "",
+        prospectData.minBathrooms ?? "",
+        prospectData.minSquareMeters ?? "",
+        prospect.createdAt.toISOString().split("T")[0],
+      ];
+    });
 
-  // Initialize Intersection Observer
-  useEffect(() => {
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const operationId = entry.target.getAttribute("data-operation-id");
-          if (!operationId) return;
+    const worksheetData = [headers, ...rows];
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Prospectos");
 
-          if (entry.isIntersecting) {
-            setVisibleRows((prev) => new Set(prev).add(operationId));
-          }
-        });
-      },
-      {
-        root: null,
-        rootMargin: "100px", // Start loading content 100px before they come into view
-        threshold: 0.1,
-      },
+    // Auto-size columns
+    const colWidths = headers.map((header, i) => {
+      const maxLength = Math.max(
+        header.length,
+        ...rows.map((row) => String(row[i] ?? "").length),
+      );
+      return { wch: Math.min(maxLength + 2, 50) };
+    });
+    worksheet["!cols"] = colWidths;
+
+    XLSX.writeFile(
+      workbook,
+      `prospectos-${new Date().toISOString().split("T")[0]}.xlsx`,
     );
-
-    // Clean up observer on unmount
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, []);
-
-  // Initialize visible rows for first few items (above fold)
-  useEffect(() => {
-    const initialVisibleIds = allProspects.slice(0, 5).map((p) => p.id);
-    setVisibleRows(new Set(initialVisibleIds));
-  }, [allProspects]);
-
-  // Smart prefetching - preload next page when user is near the end
-  useEffect(() => {
-    if (!onPrefetchPage || currentPage >= totalPages) return;
-
-    let hasTriggeredPrefetch = false;
-
-    const prefetchNextPage = () => {
-      if (hasTriggeredPrefetch) return;
-
-      // Prefetch next page when user scrolls to 80% of current content
-      const scrollY = window.scrollY;
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-
-      if (scrollY + windowHeight >= documentHeight * 0.8) {
-        hasTriggeredPrefetch = true;
-        console.log(`Triggering prefetch for page ${currentPage + 1}`);
-        onPrefetchPage(currentPage + 1).catch(console.error);
-      }
-    };
-
-    const handleScroll = () => {
-      requestAnimationFrame(prefetchNextPage);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [currentPage, totalPages, onPrefetchPage]);
-
-  // Prefetch adjacent pages on component mount
-  useEffect(() => {
-    if (!onPrefetchPage) return;
-
-    const prefetchAdjacentPages = async () => {
-      const pagesToPrefetch = [];
-
-      // Prefetch next page
-      if (currentPage < totalPages) {
-        pagesToPrefetch.push(currentPage + 1);
-      }
-
-      // Prefetch previous page
-      if (currentPage > 1) {
-        pagesToPrefetch.push(currentPage - 1);
-      }
-
-      // Prefetch in background without blocking UI
-      pagesToPrefetch.forEach((page) => {
-        setTimeout(() => {
-          onPrefetchPage(page).catch(() => {
-            // Silently handle prefetch errors
-          });
-        }, 1000); // Wait 1 second after initial load
-      });
-    };
-
-    void prefetchAdjacentPages();
-  }, [currentPage, totalPages, onPrefetchPage]);
+  }, [filteredProspects]);
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border">
+      <div
+        className="relative rounded-md border"
+        onMouseEnter={() => setIsHoveringTable(true)}
+        onMouseLeave={() => setIsHoveringTable(false)}
+      >
+        {/* Export Button - Appears on hover */}
+        <div
+          className={cn(
+            "absolute right-2 top-2 z-10 transition-all duration-300",
+            isHoveringTable
+              ? "opacity-60 hover:opacity-100"
+              : "pointer-events-none opacity-0",
+          )}
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleExport}
+            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+            title="Exportar prospectos a Excel"
+          >
+            <Download className="h-3.5 w-3.5" />
+          </Button>
+        </div>
         <div className="custom-scrollbar max-h-[600px] overflow-x-auto overflow-y-auto">
           <Table ref={tableRef}>
             <TableHeader>
@@ -797,13 +749,9 @@ export function ProspectTable({
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredProspects.map((prospect) => {
-                  const isVisible = visibleRows.has(prospect.id);
-
-                  return (
+                filteredProspects.map((prospect) => (
                     <TableRow
                       key={prospect.id}
-                      ref={(el) => observeRow(el, prospect.id)}
                       className="cursor-pointer transition-colors hover:bg-gray-50"
                       onClick={() => handleRowClick(prospect.rawData.prospects.id)}
                     >
@@ -1003,11 +951,7 @@ export function ProspectTable({
                         className="overflow-hidden"
                         style={getColumnStyle("resumen")}
                       >
-                        {isVisible ? (
-                          <SummaryComponent prospect={prospect} />
-                        ) : (
-                          <Skeleton className="h-16 w-full rounded-lg" />
-                        )}
+                        <SummaryComponent prospect={prospect} />
                       </TableCell>
 
                       {/* Conexiones Column */}
@@ -1015,15 +959,10 @@ export function ProspectTable({
                         className="overflow-hidden"
                         style={getColumnStyle("conexiones")}
                       >
-                        {isVisible ? (
-                          <MatchBadges matchCounts={prospect.rawData.matchCounts} />
-                        ) : (
-                          <Skeleton className="h-8 w-full rounded-lg" />
-                        )}
+                        <MatchBadges matchCounts={prospect.rawData.matchCounts} />
                       </TableCell>
                     </TableRow>
-                  );
-                })
+                  ))
               )}
             </TableBody>
           </Table>
@@ -1048,4 +987,4 @@ export function ProspectTable({
       />
     </div>
   );
-}
+});

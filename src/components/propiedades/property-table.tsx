@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -22,6 +22,7 @@ import {
   ChevronRight,
   Download,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { useRouter } from "next/navigation";
@@ -39,7 +40,6 @@ interface PropertyTableProps {
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
-  onPrefetchPage?: (page: number) => Promise<void>;
   onExport?: () => Promise<void>;
   onPublishToggled?: () => void;
 }
@@ -82,7 +82,6 @@ export const PropertyTable = React.memo(function PropertyTable({
   currentPage = 1,
   totalPages = 1,
   onPageChange,
-  onPrefetchPage,
   onExport,
   onPublishToggled,
 }: PropertyTableProps) {
@@ -93,12 +92,10 @@ export const PropertyTable = React.memo(function PropertyTable({
   const [failedImages, setFailedImages] = React.useState<Set<string>>(
     new Set(),
   );
-  const [visibleRows, setVisibleRows] = React.useState<Set<string>>(new Set());
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS);
   const [isResizing, setIsResizing] = useState<string | null>(null);
   const tableRef = useRef<HTMLTableElement>(null);
   const resizeStartRef = useRef<{ x: number; width: number } | null>(null);
-  const observerRef = useRef<IntersectionObserver | null>(null);
   const [isHoveringTable, setIsHoveringTable] = React.useState(false);
   const [shareModalOpen, setShareModalOpen] = React.useState(false);
   const [selectedProperty, setSelectedProperty] =
@@ -161,113 +158,6 @@ export const PropertyTable = React.memo(function PropertyTable({
     setLoadedImages((prev) => new Set(prev).add(listingId));
   }, []);
 
-  // Intersection Observer for lazy loading
-  const observeRow = useCallback(
-    (element: HTMLElement | null, listingId: string) => {
-      if (!element || !observerRef.current) return;
-
-      // Add dataset to track which listing this element represents
-      element.dataset.listingId = listingId;
-      observerRef.current.observe(element);
-    },
-    [],
-  );
-
-  // Initialize Intersection Observer
-  useEffect(() => {
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const listingId = entry.target.getAttribute("data-listing-id");
-          if (!listingId) return;
-
-          if (entry.isIntersecting) {
-            setVisibleRows((prev) => new Set(prev).add(listingId));
-          }
-        });
-      },
-      {
-        root: null,
-        rootMargin: "100px", // Start loading images 100px before they come into view
-        threshold: 0.1,
-      },
-    );
-
-    // Clean up observer on unmount
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
-      }
-    };
-  }, []);
-
-  // Initialize visible rows for first few items (above fold)
-  useEffect(() => {
-    const initialVisibleIds = listings
-      .slice(0, 5)
-      .map((l) => l.listingId.toString());
-    setVisibleRows(new Set(initialVisibleIds));
-  }, [listings]);
-
-  // Smart prefetching - preload next page when user is near the end
-  useEffect(() => {
-    if (!onPrefetchPage || currentPage >= totalPages) return;
-
-    let hasTriggeredPrefetch = false;
-
-    const prefetchNextPage = () => {
-      if (hasTriggeredPrefetch) return;
-
-      // Prefetch next page when user scrolls to 80% of current content
-      const scrollY = window.scrollY;
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-
-      if (scrollY + windowHeight >= documentHeight * 0.8) {
-        hasTriggeredPrefetch = true;
-        console.log(`Triggering prefetch for page ${currentPage + 1}`);
-        onPrefetchPage(currentPage + 1).catch(console.error);
-      }
-    };
-
-    const handleScroll = () => {
-      requestAnimationFrame(prefetchNextPage);
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [currentPage, totalPages, onPrefetchPage]);
-
-  // Prefetch adjacent pages on component mount
-  useEffect(() => {
-    if (!onPrefetchPage) return;
-
-    const prefetchAdjacentPages = async () => {
-      const pagesToPrefetch = [];
-
-      // Prefetch next page
-      if (currentPage < totalPages) {
-        pagesToPrefetch.push(currentPage + 1);
-      }
-
-      // Prefetch previous page
-      if (currentPage > 1) {
-        pagesToPrefetch.push(currentPage - 1);
-      }
-
-      // Prefetch in background without blocking UI
-      pagesToPrefetch.forEach((page) => {
-        setTimeout(() => {
-          onPrefetchPage(page).catch(() => {
-            // Silently handle prefetch errors
-          });
-        }, 1000); // Wait 1 second after initial load
-      });
-    };
-
-    void prefetchAdjacentPages();
-  }, [currentPage, totalPages, onPrefetchPage]);
-
   const handleShareOpen = React.useCallback(
     (listing: ListingOverview, e: React.MouseEvent) => {
       e.preventDefault();
@@ -279,7 +169,7 @@ export const PropertyTable = React.memo(function PropertyTable({
     [],
   );
 
-  // Export properties to CSV
+  // Export properties to Excel
   const handleExport = React.useCallback(async () => {
     if (onExport) {
       // Use parent-provided export function (exports ALL filtered data)
@@ -300,38 +190,39 @@ export const PropertyTable = React.memo(function PropertyTable({
         "Agente",
       ];
 
-      const rows = listings.map((listing) => {
-        return [
-          listing.referenceNumber ?? "",
-          `"${listing.title ?? ""}"`,
-          listing.propertyType ?? "",
-          listing.status ?? "",
-          listing.price?.toString() ?? "",
-          listing.city ?? "",
-          listing.bedrooms?.toString() ?? "",
-          listing.bathrooms
-            ? Math.floor(Number(listing.bathrooms)).toString()
-            : "",
-          listing.squareMeter?.toString() ?? "",
-          listing.ownerName ?? "",
-          listing.agentName ?? "",
-        ].join(",");
+      const rows = listings.map((listing) => [
+        listing.referenceNumber ?? "",
+        listing.title ?? "",
+        listing.propertyType ?? "",
+        listing.status ?? "",
+        listing.price ?? "",
+        listing.city ?? "",
+        listing.bedrooms ?? "",
+        listing.bathrooms ? Math.floor(Number(listing.bathrooms)) : "",
+        listing.squareMeter ?? "",
+        listing.ownerName ?? "",
+        listing.agentName ?? "",
+      ]);
+
+      const worksheetData = [headers, ...rows];
+      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Propiedades");
+
+      // Auto-size columns
+      const colWidths = headers.map((header, i) => {
+        const maxLength = Math.max(
+          header.length,
+          ...rows.map((row) => String(row[i] ?? "").length),
+        );
+        return { wch: Math.min(maxLength + 2, 50) };
       });
+      worksheet["!cols"] = colWidths;
 
-      const csv = [headers.join(","), ...rows].join("\n");
-
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute(
-        "download",
-        `propiedades-${new Date().toISOString().split("T")[0]}.csv`,
+      XLSX.writeFile(
+        workbook,
+        `propiedades-${new Date().toISOString().split("T")[0]}.xlsx`,
       );
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
     }
   }, [listings, onExport]);
 
@@ -459,7 +350,7 @@ export const PropertyTable = React.memo(function PropertyTable({
           size="icon"
           onClick={handleExport}
           className="h-7 w-7 text-muted-foreground hover:text-foreground"
-          title="Exportar propiedades a CSV"
+          title="Exportar propiedades a Excel"
         >
           <Download className="h-3.5 w-3.5" />
         </Button>
@@ -507,12 +398,10 @@ export const PropertyTable = React.memo(function PropertyTable({
           <TableBody>
             {listings.map((listing) => {
               const listingId = listing.listingId.toString();
-              const isVisible = visibleRows.has(listingId);
 
               return (
                 <TableRow
                   key={listingId}
-                  ref={(el) => observeRow(el, listingId)}
                   className="cursor-pointer transition-colors hover:bg-muted/50"
                   onClick={() =>
                     router.push(`/propiedades/${listing.listingId}`)
@@ -524,8 +413,7 @@ export const PropertyTable = React.memo(function PropertyTable({
                   >
                     <div className="truncate">
                       <div className="group relative h-[48px] w-[72px] overflow-hidden rounded-md">
-                        {isVisible &&
-                        listing.imageUrl &&
+                        {listing.imageUrl &&
                         !listing.imageUrl.includes("youtube.com") &&
                         !listing.imageUrl.includes("youtu.be") &&
                         !failedImages.has(listingId) ? (
@@ -554,29 +442,25 @@ export const PropertyTable = React.memo(function PropertyTable({
                               }}
                             />
                           </>
-                        ) : isVisible ? (
+                        ) : (
                           <PropertyImagePlaceholder
                             propertyType={listing.propertyType}
                             className="h-full w-full rounded-md"
                           />
-                        ) : (
-                          <Skeleton className="h-full w-full rounded-md" />
                         )}
 
-                        {/* Hover overlay with share icon - only render when visible */}
-                        {isVisible && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-white hover:bg-white/20 hover:text-white"
-                              onClick={(e) => handleShareOpen(listing, e)}
-                              title="Compartir propiedad"
-                            >
-                              <Share2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        )}
+                        {/* Hover overlay with share icon */}
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-white hover:bg-white/20 hover:text-white"
+                            onClick={(e) => handleShareOpen(listing, e)}
+                            title="Compartir propiedad"
+                          >
+                            <Share2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </TableCell>

@@ -131,6 +131,9 @@ CRITICAL:
 - Do NOT change camera angle or room dimensions
 - Only remove clutter and fill spaces naturally`;
 
+// Prompt for rendering 2D images into 3D renders
+export const RENDER_3D_PROMPT = `render this picture in 3D`;
+
 // Prompt for enhancing lighting in real estate photos
 export const ENHANCE_LIGHTING_PROMPT = `You are a professional real estate photographer using advanced HDR and exposure blending techniques. Transform this image to create a DRAMATICALLY brighter, naturally lit space that looks like it was photographed at noon on a bright, sunny day.
 

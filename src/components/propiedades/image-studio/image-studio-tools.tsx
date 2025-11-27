@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sparkles, EyeOff, Trash2, Lightbulb } from "lucide-react";
+import { Sparkles, EyeOff, Trash2, Lightbulb, Box } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { ToolConfirmationModal } from "./tool-confirmation-modal";
 import type { EnhancementStatus, PropertyImage } from "~/types/freepik";
@@ -27,6 +27,9 @@ interface ImageStudioToolsProps {
   // Enhance lighting functionality
   onEnhanceLighting?: () => Promise<void>;
   _enhanceLightingStatus?: RenovationStatus;
+  // Render 3D functionality
+  onRender3d?: () => Promise<void>;
+  _render3dStatus?: RenovationStatus;
 }
 
 export function ImageStudioTools({
@@ -44,6 +47,8 @@ export function ImageStudioTools({
   _removeClutterStatus = "idle",
   onEnhanceLighting,
   _enhanceLightingStatus = "idle",
+  onRender3d,
+  _render3dStatus = "idle",
 }: ImageStudioToolsProps) {
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -177,6 +182,23 @@ export function ImageStudioTools({
         } catch (error) {
           console.error("Lighting enhancement failed:", error);
         }
+      } else if (currentTool.id === "render-3d") {
+        // Handle 3D rendering with Gemini
+        if (!selectedImage) {
+          console.error("No image selected for 3D render");
+          return;
+        }
+
+        if (!onRender3d) {
+          console.error("3D render handler not provided");
+          return;
+        }
+
+        try {
+          await onRender3d();
+        } catch (error) {
+          console.error("3D render failed:", error);
+        }
       }
     } else {
       console.warn("No tool selected in modal");
@@ -232,6 +254,13 @@ export function ImageStudioTools({
       description: "Optimiza la iluminación de forma natural",
       tokens: GEMINI_TOKEN_COSTS.ENHANCE_LIGHTING, // Fixed 170 tokens
       icon: <Lightbulb className="h-3 w-3 text-white" />,
+    },
+    {
+      id: "render-3d",
+      title: "Render 3D",
+      description: "Transforma tu plano en un render 3D realista",
+      tokens: GEMINI_TOKEN_COSTS.RENDER_3D, // Fixed 150 tokens
+      icon: <Box className="h-3 w-3 text-white" />,
     },
   ];
 

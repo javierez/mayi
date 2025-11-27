@@ -63,6 +63,10 @@ export const GEMINI_TOKEN_COSTS = {
   // Enhance lighting: Image generation for professional lighting enhancement
   // Actual: ~€0.131, charge 170 tokens (€0.17) = 30% buffer
   ENHANCE_LIGHTING: 170,
+
+  // Render 3D: Image generation for 3D rendering from 2D images
+  // Actual: ~€0.131, charge 150 tokens (€0.15) = 15% buffer
+  RENDER_3D: 150,
 } as const;
 
 /**
@@ -168,20 +172,18 @@ export function getFreepikUpscaleOptions(
  * Calculate token cost for Google Gemini operations
  */
 export function calculateGeminiTokens(
-  operation: "room_detection" | "renovation" | "review" | "blur_faces" | "remove_clutter" | "enhance_lighting",
+  operation: "room_detection" | "renovation" | "review" | "blur_faces" | "remove_clutter" | "enhance_lighting" | "render_3d",
 ): TokenCost {
-  const tokens =
-    operation === "room_detection"
-      ? GEMINI_TOKEN_COSTS.ROOM_DETECTION
-      : operation === "renovation"
-        ? GEMINI_TOKEN_COSTS.RENOVATION
-        : operation === "review"
-          ? GEMINI_TOKEN_COSTS.REVIEW
-          : operation === "blur_faces"
-            ? GEMINI_TOKEN_COSTS.BLUR_FACES
-            : operation === "remove_clutter"
-              ? GEMINI_TOKEN_COSTS.REMOVE_CLUTTER
-              : GEMINI_TOKEN_COSTS.ENHANCE_LIGHTING;
+  const tokenMap: Record<typeof operation, number> = {
+    room_detection: GEMINI_TOKEN_COSTS.ROOM_DETECTION,
+    renovation: GEMINI_TOKEN_COSTS.RENOVATION,
+    review: GEMINI_TOKEN_COSTS.REVIEW,
+    blur_faces: GEMINI_TOKEN_COSTS.BLUR_FACES,
+    remove_clutter: GEMINI_TOKEN_COSTS.REMOVE_CLUTTER,
+    enhance_lighting: GEMINI_TOKEN_COSTS.ENHANCE_LIGHTING,
+    render_3d: GEMINI_TOKEN_COSTS.RENDER_3D,
+  };
+  const tokens = tokenMap[operation];
 
   return {
     tokens,

@@ -14,7 +14,7 @@ import {
   documents,
   deals,
 } from "../db/schema";
-import { eq, and, ne, sql } from "drizzle-orm";
+import { eq, and, ne, sql, gte } from "drizzle-orm";
 import type { Listing } from "../../lib/data";
 import { getCurrentUserAccountId } from "../../lib/dal";
 import { getCurrentListingOwners } from "./contact";
@@ -67,6 +67,11 @@ export async function getAllAgentsWithAuth() {
 export async function getAccountWebsiteWithAuth() {
   const accountId = await getCurrentUserAccountId();
   return getAccountWebsite(accountId);
+}
+
+export async function getRecentlyUpdatedListingsWithAuth() {
+  const accountId = await getCurrentUserAccountId();
+  return getRecentlyUpdatedListings(accountId);
 }
 
 export async function updateListingWithAuth(
@@ -1003,6 +1008,76 @@ export async function listListingsCompact(
     return compactListings;
   } catch (error) {
     console.error("Error listing compact listings:", error);
+    return [];
+  }
+}
+
+// Get listings updated in the last 24 hours for the gallery in historial page
+export async function getRecentlyUpdatedListings(accountId: number) {
+  try {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const recentListings = await db
+      .select({
+        listingId: listings.listingId,
+        propertyId: listings.propertyId,
+        price: listings.price,
+        status: listings.status,
+        listingType: listings.listingType,
+        isBankOwned: listings.isBankOwned,
+        referenceNumber: properties.referenceNumber,
+        propertyType: properties.propertyType,
+        street: properties.street,
+        city: locations.city,
+        province: locations.province,
+        agentName: users.name,
+        imageUrl: sql<string>`img1.image_url`,
+        imageUrl2: sql<string>`img2.image_url`,
+      })
+      .from(listings)
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
+      .leftJoin(users, eq(listings.agentId, users.id))
+      .leftJoin(
+        sql`(
+          SELECT
+            property_id,
+            image_url,
+            ROW_NUMBER() OVER (PARTITION BY property_id ORDER BY image_order ASC) as rn
+          FROM property_images
+          WHERE is_active = true
+            AND (image_tag IS NULL OR image_tag NOT IN ('video', 'youtube', 'tour'))
+        ) img1`,
+        sql`img1.property_id = ${properties.propertyId} AND img1.rn = 1`,
+      )
+      .leftJoin(
+        sql`(
+          SELECT
+            property_id,
+            image_url,
+            ROW_NUMBER() OVER (PARTITION BY property_id ORDER BY image_order ASC) as rn
+          FROM property_images
+          WHERE is_active = true
+            AND (image_tag IS NULL OR image_tag NOT IN ('video', 'youtube', 'tour'))
+        ) img2`,
+        sql`img2.property_id = ${properties.propertyId} AND img2.rn = 2`,
+      )
+      .where(
+        and(
+          eq(listings.accountId, BigInt(accountId)),
+          eq(listings.isActive, true),
+          sql`${listings.status} NOT IN ('Draft')`,
+          gte(properties.updatedAt, twentyFourHoursAgo),
+        ),
+      )
+      .orderBy(sql`${properties.updatedAt} DESC`);
+
+    return recentListings;
+  } catch (error) {
+    console.error("Error getting recently updated listings:", error);
     return [];
   }
 }

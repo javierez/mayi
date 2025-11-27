@@ -9,6 +9,7 @@ import { useImageRenovation } from "~/hooks/use-image-renovation";
 import { useImageBlurFaces } from "~/hooks/use-image-blur-faces";
 import { useImageRemoveClutter } from "~/hooks/use-image-remove-clutter";
 import { useImageEnhanceLighting } from "~/hooks/use-image-enhance-lighting";
+import { useImageRender3d } from "~/hooks/use-image-render-3d";
 import type { PropertyImage } from "~/lib/data";
 import { toast } from "sonner";
 import { ProcessingOverlay } from "./processing-overlay";
@@ -36,6 +37,7 @@ export function ImageStudioClientWrapper({
     | "blur-faces"
     | "remove-clutter"
     | "enhance-lighting"
+    | "render-3d"
     | null
   >(null);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
@@ -324,6 +326,60 @@ export function ImageStudioClientWrapper({
     },
   });
 
+  // Image render 3D hook
+  const {
+    status: render3dStatus,
+    render3dImageUrl,
+    render3dMetadata,
+    render3d,
+    saveRender3d,
+    reset: resetRender3d,
+  } = useImageRender3d({
+    propertyId,
+    onSuccess: (newImage) => {
+      console.log("🎉 3D render success - adding new image to gallery:", {
+        newImageId: newImage.propertyImageId.toString(),
+        imageOrder: newImage.imageOrder,
+        currentImagesCount: allImages.length,
+      });
+
+      // Add the new 3D rendered image to the gallery
+      setAllImages((currentImages) => {
+        const newImages = [...currentImages, newImage];
+        const sortedImages = newImages.sort(
+          (a, b) => a.imageOrder - b.imageOrder,
+        );
+        console.log(
+          "📸 Updated gallery images:",
+          sortedImages.map((img) => ({
+            id: img.propertyImageId.toString(),
+            order: img.imageOrder,
+            tag: img.imageTag,
+          })),
+        );
+        return sortedImages;
+      });
+
+      // Hide comparison slider and reset
+      setIsComparisonVisible(false);
+      setComparisonType(null);
+      resetRender3d();
+
+      console.log(
+        "✅ 3D render complete - mini gallery should now be visible",
+      );
+    },
+    onComparisonReady: () => {
+      // Show comparison slider when 3D render completes
+      setIsComparisonVisible(true);
+      setComparisonType("render-3d");
+    },
+    onError: (error) => {
+      console.error("3D render failed:", error);
+      toast.error("Error al generar el render 3D");
+    },
+  });
+
   // Handle review request
   const handleReviewRenovation = useCallback(
     async (reviewText: string) => {
@@ -464,6 +520,30 @@ export function ImageStudioClientWrapper({
     }
   }, [selectedImage, enhanceLightingStatus, enhanceLighting]);
 
+  // Handle 3D render request from tools
+  const handleRender3d = useCallback(async () => {
+    if (!selectedImage) {
+      toast.error("No hay imagen seleccionada");
+      return;
+    }
+
+    if (render3dStatus === "processing") {
+      toast.warning("Ya hay un render 3D en progreso");
+      return;
+    }
+
+    try {
+      await render3d(
+        selectedImage.imageUrl,
+        selectedImage.referenceNumber,
+        selectedImage.imageOrder,
+      );
+    } catch (error) {
+      console.error("Failed to start 3D render:", error);
+      toast.error("Error al iniciar el render 3D");
+    }
+  }, [selectedImage, render3dStatus, render3d]);
+
   // Handle saving the enhanced image
   const handleSaveEnhanced = useCallback(async () => {
     if (!enhancedImageUrl || !enhancementMetadata) {
@@ -593,13 +673,39 @@ export function ImageStudioClientWrapper({
     toast.success("Imagen con iluminación mejorada descartada");
   }, [resetEnhanceLighting]);
 
+  // Handle saving the 3D rendered image
+  const handleSaveRender3d = useCallback(async () => {
+    if (!render3dImageUrl || !render3dMetadata) {
+      toast.error("No hay imagen 3D para guardar");
+      return;
+    }
+
+    try {
+      await saveRender3d();
+    } catch (error) {
+      console.error("Save 3D render image failed:", error);
+    }
+  }, [render3dImageUrl, render3dMetadata, saveRender3d]);
+
+  // Handle discarding the 3D rendered image
+  const handleDiscardRender3d = useCallback(() => {
+    // Hide comparison and reset all 3D render state
+    setIsComparisonVisible(false);
+    setComparisonType(null);
+    resetRender3d();
+
+    // Discarding simply clears the temporary state
+    toast.success("Imagen 3D descartada");
+  }, [resetRender3d]);
+
   // Determine if AI is processing
   const isProcessing =
     enhancementStatus === "processing" ||
     renovationStatus === "processing" ||
     blurFacesStatus === "processing" ||
     removeClutterStatus === "processing" ||
-    enhanceLightingStatus === "processing";
+    enhanceLightingStatus === "processing" ||
+    render3dStatus === "processing";
   const processingType =
     renovationStatus === "processing"
       ? "renovación"
@@ -609,7 +715,9 @@ export function ImageStudioClientWrapper({
           ? "eliminación de desorden"
           : enhanceLightingStatus === "processing"
             ? "mejora de iluminación"
-            : "mejora";
+            : render3dStatus === "processing"
+              ? "render 3D"
+              : "mejora";
 
   // Debug mini gallery visibility
   const shouldShowMiniGallery =
@@ -618,12 +726,14 @@ export function ImageStudioClientWrapper({
     blurFacesStatus !== "processing" &&
     removeClutterStatus !== "processing" &&
     enhanceLightingStatus !== "processing" &&
+    render3dStatus !== "processing" &&
     !isComparisonVisible;
   console.log("🔍 Mini gallery visibility check:", {
     enhancementStatus,
     renovationStatus,
     blurFacesStatus,
     removeClutterStatus,
+    render3dStatus,
     isComparisonVisible,
     shouldShow: shouldShowMiniGallery,
     imagesCount: allImages.length,
@@ -678,6 +788,8 @@ export function ImageStudioClientWrapper({
           _removeClutterStatus={removeClutterStatus}
           onEnhanceLighting={handleEnhanceLighting}
           _enhanceLightingStatus={enhanceLightingStatus}
+          onRender3d={handleRender3d}
+          _render3dStatus={render3dStatus}
         />
 
         {/* Results Section (big image) */}
@@ -701,7 +813,9 @@ export function ImageStudioClientWrapper({
                     ? (declutteredImageUrl ?? "")
                     : comparisonType === "enhance-lighting"
                       ? (lightingEnhancedImageUrl ?? "")
-                      : (enhancedImageUrl ?? "")
+                      : comparisonType === "render-3d"
+                        ? (render3dImageUrl ?? "")
+                        : (enhancedImageUrl ?? "")
             }
             enhancementStatus={
               comparisonType === "renovation"
@@ -712,7 +826,9 @@ export function ImageStudioClientWrapper({
                     ? removeClutterStatus
                     : comparisonType === "enhance-lighting"
                       ? enhanceLightingStatus
-                      : enhancementStatus
+                      : comparisonType === "render-3d"
+                        ? render3dStatus
+                        : enhancementStatus
             }
             onSave={
               comparisonType === "renovation"
@@ -723,7 +839,9 @@ export function ImageStudioClientWrapper({
                     ? handleSaveDecluttered
                     : comparisonType === "enhance-lighting"
                       ? handleSaveLightingEnhanced
-                      : handleSaveEnhanced
+                      : comparisonType === "render-3d"
+                        ? handleSaveRender3d
+                        : handleSaveEnhanced
             }
             onDiscard={
               comparisonType === "renovation"
@@ -734,7 +852,9 @@ export function ImageStudioClientWrapper({
                     ? handleDiscardDecluttered
                     : comparisonType === "enhance-lighting"
                       ? handleDiscardLightingEnhanced
-                      : handleDiscardEnhanced
+                      : comparisonType === "render-3d"
+                        ? handleDiscardRender3d
+                        : handleDiscardEnhanced
             }
             isRenovationComparison={comparisonType === "renovation"}
             onReview={comparisonType === "renovation" ? handleReviewRenovation : undefined}

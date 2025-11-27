@@ -67,6 +67,18 @@ export function getActivityActionLabel(action: AllActivityAction): string {
     inquiry_received: "Consulta recibida",
     document_uploaded: "Documento subido",
     virtual_tour_added: "Tour virtual añadido",
+    // Fotocasa portal actions
+    fotocasa_published: "Publicado en Fotocasa",
+    fotocasa_updated: "Actualizado en Fotocasa",
+    fotocasa_deleted: "Eliminado de Fotocasa",
+    // Portal selection toggles
+    website_published: "Publicado en web",
+    website_unpublished: "Despublicado de web",
+    keys_returned: "Llaves devueltas",
+    cartel_placed: "Cartel colocado",
+    cartel_removed: "Cartel retirado",
+    escaparate_added: "Añadido a escaparate",
+    escaparate_removed: "Retirado de escaparate",
   };
 
   return labels[action as ListingActivityAction] ?? action;
@@ -271,7 +283,9 @@ export function getAllActionTypesForFilter(): Array<{ value: string; label: stri
     "listing_type_changed", "specifications_updated", "keys_received", "visibility_changed",
     "website_publication_toggled", "activated", "deactivated", "portal_sync_error",
     "portal_settings_updated", "views_milestone", "inquiry_received", "document_uploaded",
-    "virtual_tour_added",
+    "virtual_tour_added", "fotocasa_published", "fotocasa_updated", "fotocasa_deleted",
+    "website_published", "website_unpublished", "keys_returned", "cartel_placed",
+    "cartel_removed", "escaparate_added", "escaparate_removed",
   ];
   listingActions.forEach((action) => {
     actions.push({

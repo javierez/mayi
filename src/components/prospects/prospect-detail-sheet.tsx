@@ -25,6 +25,8 @@ import { updateProspectWithAuth } from "~/server/queries/prospect";
 import { PROSPECT_STATUSES } from "~/types/operations";
 import { toast } from "sonner";
 import { cn } from "~/lib/utils";
+import { ConfirmDialog } from "~/components/ui/confirm-dialog";
+import { createListingContactRelationshipAction } from "~/server/actions/contact-activity";
 
 interface ProspectDetailSheetProps {
   prospectId: bigint | null;
@@ -104,6 +106,8 @@ export function ProspectDetailSheet({
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [optimisticStatus, setOptimisticStatus] = useState<string | null>(null);
+  const [showConexionModal, setShowConexionModal] = useState(false);
+  const [selectedListingForConexion, setSelectedListingForConexion] = useState<bigint | null>(null);
 
   // Fetch prospect data when sheet opens
   useEffect(() => {
@@ -155,6 +159,47 @@ export function ProspectDetailSheet({
       setOptimisticStatus(null);
     } finally {
       setIsUpdatingStatus(false);
+    }
+  };
+
+  // Handle creating a conexión between contact and listing
+  const handleCreateConexion = async () => {
+    if (!selectedListingForConexion || !data || !prospectId) return;
+
+    // Optimistically remove the match from the UI
+    const listingIdToRemove = selectedListingForConexion;
+    setData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        matches: prev.matches.filter(
+          (match) => match.listingId !== listingIdToRemove
+        ),
+      };
+    });
+    setShowConexionModal(false);
+    setSelectedListingForConexion(null);
+
+    try {
+      const result = await createListingContactRelationshipAction(
+        data.contact.contactId,
+        listingIdToRemove,
+        prospectId, // Include prospect ID when creating from prospect context
+      );
+
+      if (result.success) {
+        toast.success("Conexión creada correctamente");
+        if (onUpdate) await onUpdate();
+      } else {
+        // Revert optimistic update on error
+        setData(data);
+        toast.error(result.error ?? "Error al crear la conexión");
+      }
+    } catch (error) {
+      // Revert optimistic update on error
+      setData(data);
+      console.error("Error creating conexión:", error);
+      toast.error("Error al crear la conexión");
     }
   };
 
@@ -349,10 +394,8 @@ export function ProspectDetailSheet({
                             isExternal={false}
                             matchQuality={getMatchQuality(match.priceMatch)}
                             onClick={() => {
-                              console.log(
-                                "TODO: Open property action modal for listing:",
-                                match.listingId,
-                              );
+                              setSelectedListingForConexion(match.listingId);
+                              setShowConexionModal(true);
                             }}
                           />
                         ))}
@@ -406,6 +449,21 @@ export function ProspectDetailSheet({
             ) : null}
           </div>
         </ScrollArea>
+
+        {/* Conexión Confirmation Modal */}
+        <ConfirmDialog
+          open={showConexionModal}
+          onOpenChange={(open) => {
+            setShowConexionModal(open);
+            if (!open) setSelectedListingForConexion(null);
+          }}
+          title="Crear Conexión"
+          description="¿Deseas crear una conexión entre este demandante y la propiedad seleccionada?"
+          confirmText="Crear Conexión"
+          cancelText="Cancelar"
+          confirmVariant="default"
+          onConfirm={handleCreateConexion}
+        />
       </SheetContent>
     </Sheet>
   );

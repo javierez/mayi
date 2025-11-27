@@ -50,11 +50,20 @@ export function ProspectFilter({ onRefreshComplete }: ProspectFilterProps) {
     setProspectFilters({
       listingType:
         listingType && listingType !== "all" ? listingType.split(",") : [],
-      status: status ? status.split(",") : [],
+      // Default to "En búsqueda" if no status filter is set
+      status: status ? status.split(",") : ["En búsqueda"],
       urgencyLevel: urgencyLevel ? urgencyLevel.split(",") : [],
     });
     setSearchQuery(q ?? "");
-  }, [searchParams]);
+
+    // If no status in URL, set the default
+    if (!status) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("status", "En búsqueda");
+      params.set("page", "1");
+      router.replace(`/operaciones/prospects?${params.toString()}`);
+    }
+  }, [searchParams, router]);
 
   const updateUrlParams = (
     newFilters: typeof prospectFilters,

@@ -43,6 +43,7 @@ export interface DeductTokensParams {
     | "gemini_blur_faces"
     | "gemini_remove_clutter"
     | "gemini_enhance_lighting"
+    | "gemini_render_3d"
     | "admin_debit";
   metadata?: TokenOperationMetadata;
   propertyImageId?: bigint;
@@ -414,6 +415,29 @@ export async function deductGeminiEnhanceLightingTokens(
     operation: "gemini_enhance_lighting",
     metadata: {
       reason: "Enhance lighting in real estate photos",
+    },
+    propertyImageId,
+    propertyId,
+    userId,
+  });
+}
+
+/**
+ * Wrapper function for Gemini 3D rendering token deduction
+ */
+export async function deductGeminiRender3dTokens(
+  accountId: bigint,
+  tokens: number,
+  propertyImageId?: bigint,
+  propertyId?: bigint,
+  userId?: string,
+): Promise<number> {
+  return await deductTokens({
+    accountId,
+    tokens,
+    operation: "gemini_render_3d",
+    metadata: {
+      reason: "Render 2D image in 3D",
     },
     propertyImageId,
     propertyId,
