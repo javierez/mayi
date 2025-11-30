@@ -793,3 +793,374 @@ export type IdealistaGardenType = "private" | "community";
 
 export type IdealistaEnergyCertificateLaw = "law2007" | "law2013";
 export type IdealistaEnergyCertificateType = "project" | "completed" | "both";
+
+// ============================================
+// PROPERTY TYPE CATEGORIES
+// ============================================
+
+/**
+ * Property type categories for validation rules
+ * Each category has different required fields per Idealista schema
+ */
+export type IdealistaPropertyCategory =
+  | "housing" // flat, house, rustic - requires bathrooms, bedrooms/rooms
+  | "garage" // garage - only type + area
+  | "office" // office - only type + area
+  | "premises" // premises, premises_commercial, premises_industrial
+  | "land" // land types - requires PLOT area, NOT constructed
+  | "storage" // storage - only type + area
+  | "building" // building - only type + area
+  | "room"; // room_shared_flat, room_shared_chalet - MANY required fields
+
+/**
+ * Housing types (flat, house, rustic variants)
+ * Require: featuresType, featuresAreaConstructed, featuresBathroomNumber, (featuresRooms OR featuresBedroomNumber)
+ */
+const HOUSING_TYPES = new Set([
+  "flat",
+  "house",
+  "house_andar_moradia",
+  "house_independent",
+  "house_semidetached",
+  "house_terraced",
+  "house_villa",
+  "rustic",
+  "rustic_house",
+  "rustic_village",
+  "rustic_castle",
+  "rustic_palace",
+  "rustic_baita",
+  "rustic_rural",
+  "rustic_casalecascina",
+  "rustic_caseron",
+  "rustic_cortijo",
+  "rustic_masia",
+  "rustic_masseria",
+  "rustic_moinho",
+  "rustic_montealentejano",
+  "rustic_quinta",
+  "rustic_solar",
+  "rustic_terrera",
+  "rustic_torre",
+  "rustic_trullo",
+]);
+
+/**
+ * Land types - require PLOT area, not constructed area
+ * Require: featuresType, featuresAreaPlot
+ */
+const LAND_TYPES = new Set([
+  "land",
+  "land_urban",
+  "land_countrybuildable",
+  "land_countrynonbuildable",
+]);
+
+/**
+ * Room rental types - have MANY required fields
+ * Require: featuresType, featuresAreaConstructed, featuresTenantNumber, featuresRooms,
+ * featuresBathroomNumber, featuresSmokingAllowed, featuresAllowPets, featuresMinTenantAge,
+ * featuresMaxTenantAge, featuresCouplesAllowed, featuresLiftAvailable, featuresBedType,
+ * featuresMinimalStay, featuresWindowView, featuresOwnerLiving, featuresAvailableFrom
+ */
+const ROOM_TYPES = new Set(["room_shared_flat", "room_shared_chalet"]);
+
+/**
+ * Garage types
+ * Require: featuresType, featuresAreaConstructed
+ */
+const GARAGE_TYPES = new Set(["garage"]);
+
+/**
+ * Office types
+ * Require: featuresType, featuresAreaConstructed
+ */
+const OFFICE_TYPES = new Set(["office"]);
+
+/**
+ * Premises types (commercial/industrial)
+ * Require: featuresType, featuresAreaConstructed
+ */
+const PREMISES_TYPES = new Set([
+  "premises",
+  "premises_commercial",
+  "premises_industrial",
+]);
+
+/**
+ * Storage types
+ * Require: featuresType, featuresAreaConstructed
+ */
+const STORAGE_TYPES = new Set(["storage"]);
+
+/**
+ * Building types
+ * Require: featuresType, featuresAreaConstructed
+ */
+const BUILDING_TYPES = new Set(["building"]);
+
+/**
+ * Get the category of a property type for validation rules
+ */
+export function getPropertyCategory(
+  idealistaType: string | null | undefined,
+): IdealistaPropertyCategory {
+  if (!idealistaType) return "housing"; // Default to housing
+
+  if (HOUSING_TYPES.has(idealistaType)) return "housing";
+  if (LAND_TYPES.has(idealistaType)) return "land";
+  if (ROOM_TYPES.has(idealistaType)) return "room";
+  if (GARAGE_TYPES.has(idealistaType)) return "garage";
+  if (OFFICE_TYPES.has(idealistaType)) return "office";
+  if (PREMISES_TYPES.has(idealistaType)) return "premises";
+  if (STORAGE_TYPES.has(idealistaType)) return "storage";
+  if (BUILDING_TYPES.has(idealistaType)) return "building";
+
+  return "housing"; // Default fallback
+}
+
+/**
+ * Check if property type is a housing type (requires bathrooms/bedrooms)
+ */
+export function isHousingType(idealistaType: string | null | undefined): boolean {
+  return getPropertyCategory(idealistaType) === "housing";
+}
+
+/**
+ * Check if property type is a land type (requires plot area, NOT constructed)
+ */
+export function isLandType(idealistaType: string | null | undefined): boolean {
+  return getPropertyCategory(idealistaType) === "land";
+}
+
+/**
+ * Check if property type is a room rental (has many required fields)
+ */
+export function isRoomType(idealistaType: string | null | undefined): boolean {
+  return getPropertyCategory(idealistaType) === "room";
+}
+
+/**
+ * Fields that should NOT be sent for specific property categories
+ * per Idealista's additionalProperties: false in schemas
+ */
+export const EXCLUDED_FIELDS_BY_CATEGORY: Record<
+  IdealistaPropertyCategory,
+  Set<string>
+> = {
+  housing: new Set(), // Housing accepts most fields
+  garage: new Set([
+    "featuresBathroomNumber",
+    "featuresBedroomNumber",
+    "featuresRooms",
+    "featuresAreaUsable",
+    "featuresAreaPlot",
+    "featuresBalcony",
+    "featuresGarden",
+    "featuresPool",
+    "featuresTerrace",
+    "featuresWardrobes",
+    "featuresChimney",
+    "featuresConservation",
+    "featuresEnergyCertificateRating",
+    "featuresEnergyCertificatePerformance",
+    "featuresEnergyCertificateEmissionsRating",
+    "featuresEnergyCertificateEmissionsValue",
+    "featuresHeatingType",
+    "featuresOrientationNorth",
+    "featuresOrientationSouth",
+    "featuresOrientationEast",
+    "featuresOrientationWest",
+    "featuresBuiltYear",
+    "featuresEquippedKitchen",
+    "featuresEquippedWithFurniture",
+    "featuresWindowsLocation",
+    "featuresAllowPets",
+    "featuresPriceReferenceIndex",
+    "featuresResidential",
+    "featuresSeasonalRental",
+    "featuresShortTerm",
+    "featuresShortTermLicense",
+  ]),
+  office: new Set([
+    "featuresBedroomNumber",
+    "featuresRooms",
+    "featuresAreaPlot",
+    "featuresBalcony",
+    "featuresGarden",
+    "featuresPool",
+    "featuresTerrace",
+    "featuresWardrobes",
+    "featuresChimney",
+    "featuresAllowPets",
+    "featuresPriceReferenceIndex",
+    "featuresResidential",
+    "featuresSeasonalRental",
+    "featuresShortTerm",
+    "featuresShortTermLicense",
+  ]),
+  premises: new Set([
+    "featuresBedroomNumber",
+    "featuresAreaPlot",
+    "featuresBalcony",
+    "featuresPool",
+    "featuresTerrace",
+    "featuresWardrobes",
+    "featuresChimney",
+    "featuresLiftAvailable",
+    "featuresAllowPets",
+    "featuresOrientationNorth",
+    "featuresOrientationSouth",
+    "featuresOrientationEast",
+    "featuresOrientationWest",
+    "featuresPriceReferenceIndex",
+    "featuresResidential",
+    "featuresSeasonalRental",
+    "featuresShortTerm",
+    "featuresShortTermLicense",
+  ]),
+  land: new Set([
+    "featuresAreaConstructed", // Land uses featuresAreaPlot instead!
+    "featuresAreaUsable",
+    "featuresBathroomNumber",
+    "featuresBedroomNumber",
+    "featuresRooms",
+    "featuresBalcony",
+    "featuresGarden",
+    "featuresPool",
+    "featuresTerrace",
+    "featuresWardrobes",
+    "featuresChimney",
+    "featuresLiftAvailable",
+    "featuresParkingAvailable",
+    "featuresStorage",
+    "featuresConditionedAir",
+    "featuresAllowPets",
+    "featuresConservation",
+    "featuresEnergyCertificateRating",
+    "featuresEnergyCertificatePerformance",
+    "featuresEnergyCertificateEmissionsRating",
+    "featuresEnergyCertificateEmissionsValue",
+    "featuresHeatingType",
+    "featuresOrientationNorth",
+    "featuresOrientationSouth",
+    "featuresOrientationEast",
+    "featuresOrientationWest",
+    "featuresBuiltYear",
+    "featuresEquippedKitchen",
+    "featuresEquippedWithFurniture",
+    "featuresWindowsLocation",
+    "featuresPriceReferenceIndex",
+    "featuresResidential",
+    "featuresSeasonalRental",
+    "featuresShortTerm",
+    "featuresShortTermLicense",
+  ]),
+  storage: new Set([
+    "featuresAreaUsable",
+    "featuresAreaPlot",
+    "featuresBathroomNumber",
+    "featuresBedroomNumber",
+    "featuresRooms",
+    "featuresBalcony",
+    "featuresGarden",
+    "featuresPool",
+    "featuresTerrace",
+    "featuresWardrobes",
+    "featuresChimney",
+    "featuresLiftAvailable",
+    "featuresParkingAvailable",
+    "featuresConditionedAir",
+    "featuresAllowPets",
+    "featuresConservation",
+    "featuresEnergyCertificateRating",
+    "featuresEnergyCertificatePerformance",
+    "featuresEnergyCertificateEmissionsRating",
+    "featuresEnergyCertificateEmissionsValue",
+    "featuresHeatingType",
+    "featuresOrientationNorth",
+    "featuresOrientationSouth",
+    "featuresOrientationEast",
+    "featuresOrientationWest",
+    "featuresBuiltYear",
+    "featuresEquippedKitchen",
+    "featuresEquippedWithFurniture",
+    "featuresWindowsLocation",
+    "featuresPriceReferenceIndex",
+    "featuresResidential",
+    "featuresSeasonalRental",
+    "featuresShortTerm",
+    "featuresShortTermLicense",
+  ]),
+  building: new Set([
+    "featuresAreaUsable",
+    "featuresAreaPlot",
+    "featuresBathroomNumber",
+    "featuresBedroomNumber",
+    "featuresRooms",
+    "featuresBalcony",
+    "featuresPool",
+    "featuresTerrace",
+    "featuresWardrobes",
+    "featuresChimney",
+    "featuresLiftAvailable",
+    "featuresParkingAvailable",
+    "featuresConditionedAir",
+    "featuresAllowPets",
+    "featuresHeatingType",
+    "featuresOrientationNorth",
+    "featuresOrientationSouth",
+    "featuresOrientationEast",
+    "featuresOrientationWest",
+    "featuresEquippedKitchen",
+    "featuresEquippedWithFurniture",
+    "featuresWindowsLocation",
+    "featuresPriceReferenceIndex",
+    "featuresResidential",
+    "featuresSeasonalRental",
+    "featuresShortTerm",
+    "featuresShortTermLicense",
+  ]),
+  room: new Set([
+    "featuresAreaPlot",
+    "featuresBedroomNumber", // Rooms use featuresRooms
+    "featuresConservation",
+    "featuresEnergyCertificateRating",
+    "featuresEnergyCertificatePerformance",
+    "featuresEnergyCertificateEmissionsRating",
+    "featuresEnergyCertificateEmissionsValue",
+    "featuresBuiltYear",
+    "featuresWardrobes",
+    "featuresChimney",
+    "featuresParkingAvailable",
+    "featuresStorage",
+    "featuresBalcony",
+    "featuresHandicapAdaptedAccess",
+    "featuresHandicapAdaptedUse",
+    "featuresPriceReferenceIndex",
+    "featuresResidential",
+    "featuresSeasonalRental",
+    "featuresShortTerm",
+    "featuresShortTermLicense",
+    "featuresCurrentOccupation",
+  ]),
+};
+
+/**
+ * Filter out fields that are not allowed for a property category
+ */
+export function filterFeaturesByCategory(
+  features: Record<string, unknown>,
+  category: IdealistaPropertyCategory,
+): Record<string, unknown> {
+  const excludedFields = EXCLUDED_FIELDS_BY_CATEGORY[category];
+  const filtered: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(features)) {
+    if (!excludedFields.has(key) && value !== undefined) {
+      filtered[key] = value;
+    }
+  }
+
+  return filtered;
+}

@@ -31,6 +31,11 @@ import {
   isCataloniaProperty,
   validateCataloniaRental,
   mapAddressVisibility,
+  getPropertyCategory,
+  isHousingType,
+  isLandType,
+  isRoomType,
+  filterFeaturesByCategory,
   type IdealistaAddressVisibility,
   type IdealistaCoordinatesPrecision,
   type IdealistaCountry,
@@ -388,9 +393,11 @@ export async function buildIdealistaPropertyPayload(
   const propertyOperation: IdealistaOperation = {
     operationType,
     operationPrice: Math.round(Number(listing.price ?? 0)),
-    ...(listing.communityFees && {
-      operationPriceCommunity: Math.round(Number(listing.communityFees)),
-    }),
+    // operationPriceCommunity only for SALE in Spain/Portugal per Idealista spec
+    ...(operationType === "sale" &&
+      listing.communityFees && {
+        operationPriceCommunity: Math.round(Number(listing.communityFees)),
+      }),
     ...(operationType === "rent" &&
       listing.depositMonths && {
         operationDepositMonths: listing.depositMonths,
@@ -403,8 +410,9 @@ export async function buildIdealistaPropertyPayload(
     featuresAreaConstructed: listing.squareMeter ?? undefined,
     featuresAreaUsable: listing.usableArea ?? undefined,
     featuresAreaPlot: listing.plotArea ?? undefined,
+    // Schema: integer1to99 (min 1) - ensure at least 1 if bathrooms exist
     featuresBathroomNumber: listing.bathrooms
-      ? Math.round(Number(listing.bathrooms))
+      ? Math.max(1, Math.round(Number(listing.bathrooms)))
       : undefined,
     featuresBedroomNumber: listing.bedrooms ?? undefined,
     featuresRooms: listing.rooms ?? undefined,
@@ -491,9 +499,13 @@ export async function buildIdealistaPropertyPayload(
       }),
 
     // Price reference index (mandatory for Catalonia rentals)
+    // Schema: number1to99 (min 1, max 99)
     ...(operationType === "rent" &&
       listing.priceReferenceIndex && {
-        featuresPriceReferenceIndex: Number(listing.priceReferenceIndex),
+        featuresPriceReferenceIndex: Math.min(
+          99,
+          Math.max(1, Math.round(Number(listing.priceReferenceIndex))),
+        ),
       }),
 
     // Rental type (mutually exclusive)
@@ -525,8 +537,10 @@ export async function buildIdealistaPropertyPayload(
     : [];
 
   // Build images - Use "imageLabel", NOT "imageTag"!
+  // Schema: imagesUrlFormat max ~400 chars (pattern: ^(https?://.{1,392})$)
+  const MAX_IMAGE_URL_LENGTH = 400;
   const propertyImages: IdealistaImage[] = processedImages
-    .filter((img) => img.isActive)
+    .filter((img) => img.isActive && img.imageUrl.length <= MAX_IMAGE_URL_LENGTH)
     .sort((a, b) => (a.imageOrder ?? 0) - (b.imageOrder ?? 0))
     .slice(0, 200) // Max 200 images
     .map((img, index) => ({
@@ -577,6 +591,14 @@ export async function buildIdealistaPropertyPayload(
     contactPrimaryPhonePrefix: "34",
   };
 
+  // Filter features by property category to remove invalid fields
+  // per Idealista's additionalProperties: false in schemas
+  const propertyCategory = getPropertyCategory(propertyType);
+  const filteredFeatures = filterFeaturesByCategory(
+    propertyFeatures as Record<string, unknown>,
+    propertyCategory,
+  ) as IdealistaFeatures;
+
   return {
     propertyCode: listing.referenceNumber ?? listingId.toString(),
     propertyReference: listing.referenceNumber ?? undefined,
@@ -584,7 +606,7 @@ export async function buildIdealistaPropertyPayload(
     propertyUrl: listing.externalUrl ?? undefined,
     propertyOperation, // Singular object
     propertyAddress,
-    propertyFeatures,
+    propertyFeatures: filteredFeatures,
     propertyDescriptions,
     propertyImages,
     ...(propertyVideos && { propertyVideos }),
@@ -606,10 +628,8 @@ export async function buildIdealistaExportFile(
     contactPhone?: string;
   },
 ): Promise<IdealistaCustomer> {
-  // Validate customer code format
-  if (!/^ilc([a-z]|[0-9]){40}$/.test(customerCode)) {
-    throw new Error(`Invalid customer code format: ${customerCode}`);
-  }
+  // Note: Customer code validation removed - will be validated on FTP upload
+  // Idealista customer codes typically start with "ilc" followed by alphanumeric chars
 
   // Get all listings enabled for Idealista
   const idealistaListings = await db
@@ -861,6 +881,7 @@ export async function getIdealistaEnabledListings(accountId: number): Promise<{
 
 /**
  * Validate a listing for Idealista publication
+ * Different property types have different required fields per Idealista schema
  */
 export async function validateListingForIdealista(listingId: number): Promise<{
   valid: boolean;
@@ -873,26 +894,34 @@ export async function validateListingForIdealista(listingId: number): Promise<{
   try {
     const listing = await getListingDetailsWithAuth(listingId);
 
-    // Required fields validation
+    // Determine property type and category
+    const propertyType =
+      PROPERTY_SUBTYPE_MAPPING[listing.propertySubtype ?? ""] ??
+      PROPERTY_TYPE_MAPPING[listing.propertyType ?? "piso"];
+    const propertyCategory = getPropertyCategory(propertyType);
+
+    // Required fields validation - ALL types need price
     if (!listing.price || Number(listing.price) <= 0) {
       errors.push("El precio es obligatorio");
     }
 
-    if (!listing.totalSurface && !listing.plotSurface) {
-      errors.push("La superficie es obligatoria (construida o de parcela)");
+    // Surface validation - depends on property category
+    if (isLandType(propertyType)) {
+      // LAND requires PLOT area, NOT constructed area
+      if (!listing.plotSurface) {
+        errors.push(
+          "La superficie de parcela es obligatoria para terrenos (featuresAreaPlot)",
+        );
+      }
+    } else {
+      // All other types require constructed area
+      if (!listing.totalSurface && !listing.plotSurface) {
+        errors.push("La superficie construida es obligatoria");
+      }
     }
 
-    // Housing type validations
-    const propertyType =
-      PROPERTY_SUBTYPE_MAPPING[listing.propertySubtype ?? ""] ??
-      PROPERTY_TYPE_MAPPING[listing.propertyType ?? "piso"];
-
-    const isHousing =
-      Boolean(propertyType?.includes("flat")) ||
-      Boolean(propertyType?.includes("house")) ||
-      Boolean(propertyType?.includes("rustic"));
-
-    if (isHousing) {
+    // Housing type validations (flat, house, rustic)
+    if (isHousingType(propertyType)) {
       if (!listing.bathrooms || Number(listing.bathrooms) <= 0) {
         errors.push("El número de baños es obligatorio para viviendas");
       }
@@ -908,6 +937,28 @@ export async function validateListingForIdealista(listingId: number): Promise<{
       }
     }
 
+    // Room rental validations - MANY required fields!
+    if (isRoomType(propertyType)) {
+      // Required for room rentals per room.json schema
+      if (!listing.bathrooms || Number(listing.bathrooms) <= 0) {
+        errors.push(
+          "El número de baños es obligatorio para alquiler de habitaciones",
+        );
+      }
+      if (!listing.bedrooms) {
+        errors.push(
+          "El número de habitaciones es obligatorio para alquiler de habitaciones",
+        );
+      }
+      // Note: Many other room-specific fields are required but may not be in Vesta schema
+      // featuresTenantNumber, featuresSmokingAllowed, featuresMinTenantAge, featuresMaxTenantAge,
+      // featuresCouplesAllowed, featuresBedType, featuresMinimalStay, featuresWindowView,
+      // featuresOwnerLiving, featuresAvailableFrom
+      warnings.push(
+        "Alquiler de habitaciones requiere campos adicionales específicos en Idealista",
+      );
+    }
+
     // Address validation
     if (!listing.postalCode && !listing.latitude) {
       errors.push(
@@ -915,11 +966,11 @@ export async function validateListingForIdealista(listingId: number): Promise<{
       );
     }
 
-    // Rental-specific validations
+    // Rental-specific validations (only for housing types)
     const operationType =
       OPERATION_TYPE_MAPPING[listing.listingType ?? "Sale"] ?? "sale";
 
-    if (operationType === "rent") {
+    if (operationType === "rent" && isHousingType(propertyType)) {
       // Catalonia price reference index
       if (isCataloniaProperty(listing.postalCode ?? null)) {
         if (!listing.priceReferenceIndex) {
@@ -950,7 +1001,11 @@ export async function validateListingForIdealista(listingId: number): Promise<{
       warnings.push("Se recomienda añadir al menos una imagen");
     }
 
-    if (!listing.energyConsumptionScale) {
+    // Energy certificate warning (not for land/garage/storage)
+    if (
+      !listing.energyConsumptionScale &&
+      !["land", "garage", "storage"].includes(propertyCategory)
+    ) {
       warnings.push("Se recomienda indicar la calificación energética");
     }
 

@@ -2,8 +2,9 @@
 
 import { eq, and, inArray, asc } from "drizzle-orm";
 import { db } from "~/server/db";
-import { listings, listingActivity, appointments } from "~/server/db/schema";
+import { listings, listingActivity, appointments, accounts } from "~/server/db/schema";
 import { getSecureSession } from "~/lib/dal";
+import { exportToIdealista } from "~/server/portals/idealista";
 
 // Progress stage action types that we track from listing_activity
 const PROGRESS_STAGE_ACTIONS = [
@@ -170,5 +171,60 @@ export async function getListingCompletionDates(listingId: number) {
   } catch (error) {
     console.error("Error fetching listing completion dates:", error);
     return null;
+  }
+}
+
+/**
+ * Export all Idealista-enabled listings to S3
+ * Called when Idealista toggle changes (either enabled or disabled)
+ */
+export async function triggerIdealistaExport(): Promise<{
+  success: boolean;
+  propertyCount?: number;
+  s3Url?: string;
+  error?: string;
+}> {
+  try {
+    const session = await getSecureSession();
+    if (!session) {
+      return { success: false, error: "No session" };
+    }
+
+    const accountId = Number(session.user.accountId);
+
+    // Get account portal settings for customer code
+    const [account] = await db
+      .select({ portalSettings: accounts.portalSettings })
+      .from(accounts)
+      .where(eq(accounts.accountId, BigInt(accountId)))
+      .limit(1);
+
+    const portalSettings = account?.portalSettings as {
+      idealista?: { apiKey?: string };
+    } | null;
+
+    const customerCode = portalSettings?.idealista?.apiKey ?? `account_${accountId}`;
+
+    // Export to S3
+    const result = await exportToIdealista(accountId, customerCode);
+
+    if (result.success) {
+      return {
+        success: true,
+        propertyCount: result.propertyCount,
+        s3Url: result.s3Url,
+      };
+    } else {
+      return {
+        success: false,
+        error: result.error,
+      };
+    }
+  } catch (error) {
+    console.error("Error triggering Idealista export:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }

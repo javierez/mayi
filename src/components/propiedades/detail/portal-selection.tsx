@@ -16,6 +16,7 @@ import {
   updateFotocasa,
 } from "~/server/portals/fotocasa";
 import { savePortalChangesWithActivity } from "~/server/actions/portal-activity";
+import { triggerIdealistaExport } from "~/app/actions/listing-actions";
 
 interface Platform {
   id: string;
@@ -528,61 +529,76 @@ export function PortalSelection({
       }
 
       // Show success toast for general portal updates (non-Fotocasa)
+      // Only include user-facing portal toggles, not internal fields
+      const portalNameMap: Record<string, string> = {
+        idealista: "Idealista",
+        habitaclia: "Habitaclia",
+        milanuncios: "Milanuncios",
+        pisoscom: "Pisos.com",
+        yaencontre: "Yaencontre",
+        enalquiler: "EnAlquiler",
+        kyero: "Kyero",
+        publishToWebsite: "Publicar en Web",
+        hasCartel: "Cartel Colocado",
+        enEscaparate: "En Escaparate",
+        hasKeys: "Tiene Llaves",
+      };
+
+      const originalValueMap: Record<string, boolean> = {
+        idealista,
+        habitaclia,
+        milanuncios,
+        pisoscom,
+        yaencontre,
+        enalquiler,
+        kyero,
+        publishToWebsite,
+        hasCartel,
+        enEscaparate,
+        hasKeys,
+      };
+
       const changedPortals = Object.entries(portalUpdates)
         .filter(([key, value]) => {
-          // Skip props fields and fotocasa (handled separately)
-          if (key.includes("Props")) return false;
-
-          // Get the original value for comparison
-          const originalValueMap: Record<string, boolean> = {
-            idealista,
-            habitaclia,
-            milanuncios,
-            pisoscom,
-            yaencontre,
-            enalquiler,
-            kyero,
-            publishToWebsite,
-            hasCartel,
-            enEscaparate,
-            hasKeys,
-          };
-
+          // Only include known portal toggles (skip internal fields like fcLocationVisibility, idCoordinatesPrecision, etc.)
+          if (!(key in portalNameMap)) return false;
           const originalValue = originalValueMap[key] ?? false;
           return value !== originalValue;
         })
-        .map(([key]) => {
-          // Map to readable names
-          const nameMap: Record<string, string> = {
-            idealista: "Idealista",
-            habitaclia: "Habitaclia",
-            milanuncios: "Milanuncios",
-            pisoscom: "Pisos.com",
-            yaencontre: "Yaencontre",
-            enalquiler: "EnAlquiler",
-            kyero: "Kyero",
-            publishToWebsite: "Publicar en Web",
-            hasCartel: "Cartel Colocado",
-            enEscaparate: "En Escaparate",
-            hasKeys: "Tiene Llaves",
-          };
-          return nameMap[key] ?? key;
-        });
+        .map(([key]) => portalNameMap[key] ?? key);
 
       if (changedPortals.length > 0) {
-        // Check if Idealista was enabled - show specific message
+        // Check if Idealista changed
         const idealistaEnabled =
           portalUpdates.idealista === true && idealista === false;
         const idealistaDisabled =
           portalUpdates.idealista === false && idealista === true;
 
-        if (idealistaEnabled) {
-          toast.success(
-            "Anuncio publicado en Idealista. Espera 15 minutos para ver los resultados.",
-            { duration: 5000 },
-          );
-        } else if (idealistaDisabled) {
-          toast.success("Anuncio eliminado de Idealista.");
+        // Trigger Idealista export when toggle changes (either enabled or disabled)
+        if (idealistaEnabled || idealistaDisabled) {
+          // Export runs in background - don't await to avoid blocking UI
+          triggerIdealistaExport()
+            .then((result) => {
+              if (result.success) {
+                console.log(
+                  `Idealista export completed: ${result.propertyCount} properties`,
+                  result.s3Url,
+                );
+              } else {
+                console.error("Idealista export failed:", result.error);
+              }
+            })
+            .catch((err) => console.error("Idealista export error:", err));
+
+          // Show user-friendly toast
+          if (idealistaEnabled) {
+            toast.success(
+              "Anuncio publicado en Idealista. Espera 15 minutos para ver los resultados.",
+              { duration: 5000 },
+            );
+          } else {
+            toast.success("Anuncio eliminado de Idealista.");
+          }
         }
 
         // Show generic message for other portals (excluding Idealista)

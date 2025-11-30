@@ -549,7 +549,7 @@ export async function getAccountIdealistaApiKey(
       (account.portalSettings as Record<string, unknown>) ?? {};
     const idealista =
       (portalSettings.idealista as Record<string, unknown>) ?? {};
-    const apiKey = idealista.api_key as string | undefined;
+    const apiKey = idealista.apiKey as string | undefined;
 
     if (!apiKey) {
       console.warn(`No Idealista API key found for account: ${accountId}`);
