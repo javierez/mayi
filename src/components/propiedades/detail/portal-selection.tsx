@@ -1098,11 +1098,6 @@ export function PortalSelection({
                             onClick={(e) => e.stopPropagation()}
                           >
                             <div className="mt-4 space-y-3 border-t pb-6 pt-3">
-                              {/* Address Visibility Note */}
-                              <p className="text-xs text-gray-500">
-                                La visibilidad de dirección se gestiona desde la configuración de Fotocasa (compartida).
-                              </p>
-
                               {/* Coordinates Precision */}
                               <div className="space-y-2">
                                 <Label className="text-xs font-medium text-gray-700">
