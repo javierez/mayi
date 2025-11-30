@@ -71,6 +71,11 @@ export function getActivityActionLabel(action: AllActivityAction): string {
     fotocasa_published: "Publicado en Fotocasa",
     fotocasa_updated: "Actualizado en Fotocasa",
     fotocasa_deleted: "Eliminado de Fotocasa",
+    // Idealista portal actions
+    idealista_published: "Activado para Idealista",
+    idealista_updated: "Actualizado en Idealista",
+    idealista_deleted: "Desactivado de Idealista",
+    idealista_exported: "Exportado a Idealista",
     // Portal selection toggles
     website_published: "Publicado en web",
     website_unpublished: "Despublicado de web",
@@ -79,6 +84,14 @@ export function getActivityActionLabel(action: AllActivityAction): string {
     cartel_removed: "Cartel retirado",
     escaparate_added: "Añadido a escaparate",
     escaparate_removed: "Retirado de escaparate",
+    // Progress stages
+    listing_created: "Alta de propiedad",
+    ficha_completed: "Ficha completa",
+    encargo_signed: "Encargo firmado",
+    offer_accepted: "Oferta aceptada",
+    arras_signed: "Arras firmadas",
+    escritura_signed: "Escritura firmada",
+    deal_closed: "Cierre final",
   };
 
   return labels[action as ListingActivityAction] ?? action;
@@ -284,6 +297,7 @@ export function getAllActionTypesForFilter(): Array<{ value: string; label: stri
     "website_publication_toggled", "activated", "deactivated", "portal_sync_error",
     "portal_settings_updated", "views_milestone", "inquiry_received", "document_uploaded",
     "virtual_tour_added", "fotocasa_published", "fotocasa_updated", "fotocasa_deleted",
+    "idealista_published", "idealista_updated", "idealista_deleted", "idealista_exported",
     "website_published", "website_unpublished", "keys_returned", "cartel_placed",
     "cartel_removed", "escaparate_added", "escaparate_removed",
   ];

@@ -187,6 +187,8 @@ export async function compareCadastralData(
     postalCode?: string;
     city?: string;
     province?: string;
+    builtSurfaceArea?: number;
+    yearBuilt?: number;
   },
   cadastralData: FormattedCadastralData,
 ): Promise<CadastralComparisonResult> {
@@ -244,6 +246,32 @@ export async function compareCadastralData(
         fieldLabel: "Provincia",
         current: currentData.province,
         suggested: cadastralData.province,
+      });
+    }
+  }
+
+  // Compare built surface area
+  if (cadastralData.builtSurfaceArea > 0) {
+    const currentArea = currentData.builtSurfaceArea ?? 0;
+    if (currentArea !== cadastralData.builtSurfaceArea) {
+      differences.push({
+        field: "builtSurfaceArea",
+        fieldLabel: "Superficie Construida",
+        current: currentArea > 0 ? `${currentArea} m²` : "No especificado",
+        suggested: `${cadastralData.builtSurfaceArea} m²`,
+      });
+    }
+  }
+
+  // Compare year built
+  if (cadastralData.yearBuilt > 0) {
+    const currentYear = currentData.yearBuilt ?? 0;
+    if (currentYear !== cadastralData.yearBuilt) {
+      differences.push({
+        field: "yearBuilt",
+        fieldLabel: "Año de Construcción",
+        current: currentYear > 0 ? currentYear.toString() : "No especificado",
+        suggested: cadastralData.yearBuilt.toString(),
       });
     }
   }

@@ -50,6 +50,12 @@ export const LISTING_ACTIVITY_ACTIONS = [
   "fotocasa_updated", // PUT success - listing updated on Fotocasa
   "fotocasa_deleted", // DELETE success - listing removed from Fotocasa
 
+  // === Idealista Portal Actions ===
+  "idealista_published", // Listing enabled for Idealista export
+  "idealista_updated", // Listing settings updated for Idealista
+  "idealista_deleted", // Listing disabled from Idealista
+  "idealista_exported", // Listing included in FTP export
+
   // === Portal Selection Toggles ===
   "website_published", // publishToWebsite set to true
   "website_unpublished", // publishToWebsite set to false
@@ -58,6 +64,15 @@ export const LISTING_ACTIVITY_ACTIONS = [
   "cartel_removed", // hasCartel set to false
   "escaparate_added", // enEscaparate set to true
   "escaparate_removed", // enEscaparate set to false
+
+  // === Progress Stage Actions ===
+  "listing_created", // Alta - listing created (10%)
+  "ficha_completed", // Ficha Completa - all mandatory fields complete (24%)
+  "encargo_signed", // Encargo firmado - mandate signed (43%)
+  "offer_accepted", // Oferta aceptada - offer accepted (60%)
+  "arras_signed", // Arras firmadas - deposit contract signed (73%)
+  "escritura_signed", // Escritura firmada - deed signed (93%)
+  "deal_closed", // Cierre final - deal closed (100%)
 ] as const;
 
 export type ListingActivityAction = (typeof LISTING_ACTIVITY_ACTIONS)[number];
@@ -97,6 +112,12 @@ export const LISTING_ACTIVITY_CATEGORIES = {
   ANALYTICS: ["views_milestone", "inquiry_received"],
   DOCUMENTS: ["document_uploaded", "virtual_tour_added"],
   FOTOCASA: ["fotocasa_published", "fotocasa_updated", "fotocasa_deleted"],
+  IDEALISTA: [
+    "idealista_published",
+    "idealista_updated",
+    "idealista_deleted",
+    "idealista_exported",
+  ],
   PORTAL_TOGGLES: [
     "website_published",
     "website_unpublished",
@@ -105,6 +126,15 @@ export const LISTING_ACTIVITY_CATEGORIES = {
     "cartel_removed",
     "escaparate_added",
     "escaparate_removed",
+  ],
+  PROGRESS_STAGES: [
+    "listing_created",
+    "ficha_completed",
+    "encargo_signed",
+    "offer_accepted",
+    "arras_signed",
+    "escritura_signed",
+    "deal_closed",
   ],
 } as const;
 
@@ -156,6 +186,12 @@ export const LISTING_ACTIVITY_LABELS: Record<ListingActivityAction, string> = {
   fotocasa_updated: "Actualizado en Fotocasa",
   fotocasa_deleted: "Eliminado de Fotocasa",
 
+  // Idealista
+  idealista_published: "Activado para Idealista",
+  idealista_updated: "Actualizado en Idealista",
+  idealista_deleted: "Desactivado de Idealista",
+  idealista_exported: "Exportado a Idealista",
+
   // Portal Toggles
   website_published: "Publicado en web",
   website_unpublished: "Despublicado de web",
@@ -164,6 +200,15 @@ export const LISTING_ACTIVITY_LABELS: Record<ListingActivityAction, string> = {
   cartel_removed: "Cartel retirado",
   escaparate_added: "Añadido a escaparate",
   escaparate_removed: "Retirado de escaparate",
+
+  // Progress Stages
+  listing_created: "Alta de propiedad",
+  ficha_completed: "Ficha completa",
+  encargo_signed: "Encargo firmado",
+  offer_accepted: "Oferta aceptada",
+  arras_signed: "Arras firmadas",
+  escritura_signed: "Escritura firmada",
+  deal_closed: "Cierre final",
 };
 
 /**
@@ -213,6 +258,12 @@ export const LISTING_ACTIVITY_PRIORITY: Record<
   fotocasa_updated: "normal",
   fotocasa_deleted: "high",
 
+  // Idealista
+  idealista_published: "high",
+  idealista_updated: "normal",
+  idealista_deleted: "high",
+  idealista_exported: "normal",
+
   // Portal Toggles
   website_published: "normal",
   website_unpublished: "normal",
@@ -221,6 +272,15 @@ export const LISTING_ACTIVITY_PRIORITY: Record<
   cartel_removed: "normal",
   escaparate_added: "normal",
   escaparate_removed: "normal",
+
+  // Progress Stages
+  listing_created: "normal",
+  ficha_completed: "normal",
+  encargo_signed: "high",
+  offer_accepted: "critical",
+  arras_signed: "critical",
+  escritura_signed: "critical",
+  deal_closed: "critical",
 };
 
 // ============================================================================

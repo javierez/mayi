@@ -1,0 +1,23 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "https://feeds.idealista.com/v6/schemas/properties/videos.json",
+    "title": "Videos Object",
+    "description": "Formats allowed: AVI, MOV, WMV, MPEG, RM, MP4, FLV, M2T, 3GP. Max number of videos allowed: 6 per property. Max size of video allowed: 750MB",
+    "type": "object",
+    "required": [
+      "videoUrl"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "videoOrder": {
+        "title": "video order",
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 6
+      },
+      "videoUrl": {
+        "title": "video url",
+        "$ref": "../rules.json#/urlFormat"
+      }
+    }
+  }

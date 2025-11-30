@@ -26,9 +26,10 @@ import { format } from "date-fns";
 
 interface HistoryFilterProps {
   agents?: Array<{ id: string; name: string }>;
+  inline?: boolean;
 }
 
-export function HistoryFilter({ agents = [] }: HistoryFilterProps) {
+export function HistoryFilter({ agents = [], inline = false }: HistoryFilterProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [agentFilters, setAgentFilters] = useState<string[]>([]);
@@ -243,31 +244,194 @@ export function HistoryFilter({ agents = [] }: HistoryFilterProps) {
     </div>
   );
 
+  const filterButton = (
+    <Button
+      variant="outline"
+      size="sm"
+      className="relative h-8 text-xs"
+      onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+    >
+      <Filter className="mr-1.5 h-3.5 w-3.5" />
+      <span className="hidden sm:inline">Filtros</span>
+      {activeFiltersCount > 0 && (
+        <Badge
+          variant="secondary"
+          className="ml-1.5 h-4 min-w-4 rounded-full px-1 text-[12px] font-normal"
+        >
+          {activeFiltersCount}
+        </Badge>
+      )}
+      <ChevronDown
+        className={`ml-1 h-3 w-3 transition-transform ${
+          isFiltersOpen ? "rotate-180 transform" : ""
+        }`}
+      />
+    </Button>
+  );
+
+  // Inline mode: render button inline, collapsible content flows naturally below
+  if (inline) {
+    return (
+      <div className="contents">
+        {filterButton}
+        <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen} className="col-span-full">
+          <CollapsibleContent className="pt-3">
+            <div className="rounded-lg bg-card p-2 shadow-md">
+              <div className="space-y-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <FilterCategory
+                    title="Fecha"
+                    category="time"
+                    icon={Calendar}
+                  >
+                    <div className="space-y-2 pt-1">
+                      <div className="grid grid-cols-2 gap-1">
+                        <Button
+                          variant={datePreset === "today" ? "default" : "outline"}
+                          size="sm"
+                          className="h-7 text-[11px]"
+                          onClick={() => handleDatePreset("today")}
+                        >
+                          Hoy
+                        </Button>
+                        <Button
+                          variant={datePreset === "week" ? "default" : "outline"}
+                          size="sm"
+                          className="h-7 text-[11px]"
+                          onClick={() => handleDatePreset("week")}
+                        >
+                          Semana
+                        </Button>
+                        <Button
+                          variant={datePreset === "month" ? "default" : "outline"}
+                          size="sm"
+                          className="h-7 text-[11px]"
+                          onClick={() => handleDatePreset("month")}
+                        >
+                          Mes
+                        </Button>
+                        <Button
+                          variant={datePreset === "3months" ? "default" : "outline"}
+                          size="sm"
+                          className="h-7 text-[11px]"
+                          onClick={() => handleDatePreset("3months")}
+                        >
+                          3 Meses
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        <input
+                          type="date"
+                          value={dateFrom}
+                          onChange={(e) => handleDateChange("from", e.target.value)}
+                          className="h-8 rounded-md border border-input bg-background px-2 text-[11px] focus:outline-none focus:ring-1 focus:ring-ring"
+                          placeholder="Desde"
+                        />
+                        <input
+                          type="date"
+                          value={dateTo}
+                          onChange={(e) => handleDateChange("to", e.target.value)}
+                          className="h-8 rounded-md border border-input bg-background px-2 text-[11px] focus:outline-none focus:ring-1 focus:ring-ring"
+                          placeholder="Hasta"
+                        />
+                      </div>
+                      {(Boolean(dateFrom) || Boolean(dateTo)) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDatePreset("clear")}
+                          className="h-6 w-full text-[11px]"
+                        >
+                          <X className="mr-1 h-3 w-3" />
+                          Limpiar fecha
+                        </Button>
+                      )}
+                    </div>
+                  </FilterCategory>
+
+                  <FilterCategory
+                    title="Tipo de acción"
+                    category="action"
+                    icon={Tag}
+                  >
+                    <div className="pt-1">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full justify-start text-xs h-8"
+                          >
+                            {actionFilters.length > 0
+                              ? `${actionFilters.length} seleccionado${actionFilters.length > 1 ? "s" : ""}`
+                              : "Seleccionar acciones"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80 p-0" align="start">
+                          <div className="flex flex-col">
+                            <ScrollArea className="h-[300px]">
+                              <div className="space-y-3 p-3">
+                                <div className="space-y-0.5">
+                                  {actionTypes.map((action) => (
+                                    <FilterOption
+                                      key={action.value}
+                                      value={action.value}
+                                      label={action.label}
+                                      isSelected={actionFilters.includes(action.value)}
+                                      onClick={() => toggleActionFilter(action.value)}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </ScrollArea>
+                            {actionFilters.length > 0 && (
+                              <div className="border-t p-1.5">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setActionFilters([]);
+                                    updateUrlParams(agentFilters, [], dateFrom, dateTo);
+                                  }}
+                                  className="h-6 w-full text-[12px]"
+                                >
+                                  <X className="mr-1 h-3 w-3" />
+                                  Borrar
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </FilterCategory>
+                </div>
+              </div>
+
+              {activeFiltersCount > 0 && (
+                <div className="flex items-center justify-end px-2 mt-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="h-auto px-2 py-1 text-[12px]"
+                  >
+                    <FilterX className="mr-1 h-3 w-3" />
+                    Borrar filtros
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-end">
-        <Button
-          variant="outline"
-          size="sm"
-          className="relative h-8 text-xs"
-          onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-        >
-          <Filter className="mr-1.5 h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Filtros</span>
-          {activeFiltersCount > 0 && (
-            <Badge
-              variant="secondary"
-              className="ml-1.5 h-4 min-w-4 rounded-full px-1 text-[12px] font-normal"
-            >
-              {activeFiltersCount}
-            </Badge>
-          )}
-          <ChevronDown
-            className={`ml-1 h-3 w-3 transition-transform ${
-              isFiltersOpen ? "rotate-180 transform" : ""
-            }`}
-          />
-        </Button>
+        {filterButton}
       </div>
 
       <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>

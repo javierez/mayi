@@ -792,6 +792,13 @@ export function PropertyCharacteristicsForm({
   const [buildingFloors, setBuildingFloors] = useState(
     listing.buildingFloors ?? 0,
   );
+  // State for builtSurfaceArea and yearBuilt (used for cadastral corrections sync)
+  const [builtSurfaceArea, setBuiltSurfaceArea] = useState<number | undefined>(
+    listing.builtSurfaceArea ? Math.round(listing.builtSurfaceArea) : undefined,
+  );
+  const [yearBuilt, setYearBuilt] = useState<number | undefined>(
+    listing.yearBuilt ?? undefined,
+  );
   const [builtInWardrobes, setBuiltInWardrobes] = useState<boolean>(
     Boolean(listing.builtInWardrobes) ?? false,
   );
@@ -1529,6 +1536,8 @@ export function PropertyCharacteristicsForm({
             setLastRenovationYear={setLastRenovationYear}
             setBuildingFloors={setBuildingFloors}
             getCardStyles={getCardStyles}
+            builtSurfaceArea={builtSurfaceArea}
+            yearBuilt={yearBuilt}
           />
 
           {/* Features */}
@@ -1719,6 +1728,17 @@ export function PropertyCharacteristicsForm({
             setMunicipality={setMunicipality}
             setIsMapsPopupOpen={setIsMapsPopupOpen}
             getCardStyles={getCardStyles}
+            setBuiltSurfaceArea={(value) => {
+              setBuiltSurfaceArea(value);
+              listing.builtSurfaceArea = value;
+            }}
+            setYearBuilt={(value) => {
+              setYearBuilt(value);
+              listing.yearBuilt = value;
+            }}
+            onPropertyDetailsChange={() =>
+              updateModuleState("propertyDetails", true)
+            }
           />
 
           {/* Orientation and Exposure */}

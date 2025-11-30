@@ -259,6 +259,38 @@ export interface FotocasaDeletedDetails {
 }
 
 // ============================================================================
+// IDEALISTA PORTAL ACTIONS
+// ============================================================================
+
+export interface IdealistaPublishedDetails {
+  portal: "idealista";
+  addressVisibility: "full" | "street" | "hidden";
+  coordinatesPrecision?: "exact" | "moved";
+  publicationDate: string; // ISO timestamp
+}
+
+export interface IdealistaUpdatedDetails {
+  portal: "idealista";
+  addressVisibility: "full" | "street" | "hidden";
+  updateDate: string; // ISO timestamp
+  changes?: string[]; // List of changed fields
+}
+
+export interface IdealistaDeletedDetails {
+  portal: "idealista";
+  deletedDate: string; // ISO timestamp
+  reason?: string;
+}
+
+export interface IdealistaExportedDetails {
+  portal: "idealista";
+  propertyCount: number;
+  uploadedToFtp: boolean;
+  filename?: string;
+  exportDate: string; // ISO timestamp
+}
+
+// ============================================================================
 // PORTAL SELECTION TOGGLES
 // ============================================================================
 
@@ -288,6 +320,76 @@ export interface EscaparateAddedDetails {
 
 export interface EscaparateRemovedDetails {
   removedDate: string; // ISO timestamp
+}
+
+// ============================================================================
+// PROGRESS STAGE ACTIONS
+// ============================================================================
+
+export interface ListingCreatedDetails {
+  stageId: "alta";
+  stageName: "Alta";
+  progressPercent: 10;
+  propertyId: number;
+  propertyType?: string;
+  listingType: string; // Sale, Rent, Transfer, RentWithOption, RoomSharing, Sold, etc.
+  initialStatus: string;
+  createdBy: string;
+  source?: "manual" | "import" | "api" | "duplicate";
+}
+
+export interface FichaCompletedDetails {
+  stageId: "ficha_completa";
+  stageName: "Ficha Completa";
+  progressPercent: 24;
+  completedFields: string[]; // List of mandatory fields that were checked
+  completedBy: string; // User ID who triggered completion
+  triggerField?: string; // The field that was updated to trigger completion (optional)
+}
+
+export interface EncargoSignedDetails {
+  stageId: "firma_encargo";
+  stageName: "Encargo Firmado";
+  progressPercent: 43;
+  signedBy: string; // User ID who marked encargo as signed
+  signedAt: string; // ISO date string of when it was signed
+}
+
+export interface OfferAcceptedDetails {
+  stageId: "oferta_aceptada";
+  stageName: "Oferta Aceptada";
+  progressPercent: 60;
+  acceptedBy: string; // User ID who accepted the offer
+  acceptedAt: string; // ISO date string of when it was accepted
+  listingContactId: string; // Which contact's offer was accepted (serialized bigint)
+  offerAmount?: number; // Optional: the offer amount
+}
+
+export interface ArrasSignedDetails {
+  stageId: "arras";
+  stageName: "Arras Firmadas";
+  progressPercent: 73;
+  signedBy: string; // User ID who marked arras as signed
+  signedAt: string; // ISO date string of when it was signed
+  dealId: string; // The deal ID (serialized bigint)
+}
+
+export interface EscrituraSignedDetails {
+  stageId: "contrato";
+  stageName: "Escritura Firmada";
+  progressPercent: 93;
+  signedBy: string; // User ID who marked escritura as signed
+  signedAt: string; // ISO date string of when it was signed
+  dealId: string; // The deal ID (serialized bigint)
+}
+
+export interface DealClosedDetails {
+  stageId: "cierre_final";
+  stageName: "Cierre Final";
+  progressPercent: 100;
+  closedBy: string; // User ID who closed the deal
+  closedAt: string; // ISO date string of when it was closed
+  dealId: string; // The deal ID (serialized bigint)
 }
 
 // ============================================================================
@@ -330,6 +432,11 @@ export type ListingActivityDetails =
   | FotocasaPublishedDetails
   | FotocasaUpdatedDetails
   | FotocasaDeletedDetails
+  // Idealista
+  | IdealistaPublishedDetails
+  | IdealistaUpdatedDetails
+  | IdealistaDeletedDetails
+  | IdealistaExportedDetails
   // Portal Toggles
   | WebsitePublishedDetails
   | WebsiteUnpublishedDetails
@@ -337,7 +444,15 @@ export type ListingActivityDetails =
   | CartelPlacedDetails
   | CartelRemovedDetails
   | EscaparateAddedDetails
-  | EscaparateRemovedDetails;
+  | EscaparateRemovedDetails
+  // Progress Stages
+  | ListingCreatedDetails
+  | FichaCompletedDetails
+  | EncargoSignedDetails
+  | OfferAcceptedDetails
+  | ArrasSignedDetails
+  | EscrituraSignedDetails
+  | DealClosedDetails;
 
 // ============================================================================
 // MAPPING: ACTION → DETAILS TYPE
@@ -380,6 +495,11 @@ export interface ListingActivityDetailsMap {
   fotocasa_published: FotocasaPublishedDetails;
   fotocasa_updated: FotocasaUpdatedDetails;
   fotocasa_deleted: FotocasaDeletedDetails;
+  // Idealista
+  idealista_published: IdealistaPublishedDetails;
+  idealista_updated: IdealistaUpdatedDetails;
+  idealista_deleted: IdealistaDeletedDetails;
+  idealista_exported: IdealistaExportedDetails;
   // Portal Toggles
   website_published: WebsitePublishedDetails;
   website_unpublished: WebsiteUnpublishedDetails;
@@ -388,4 +508,12 @@ export interface ListingActivityDetailsMap {
   cartel_removed: CartelRemovedDetails;
   escaparate_added: EscaparateAddedDetails;
   escaparate_removed: EscaparateRemovedDetails;
+  // Progress Stages
+  listing_created: ListingCreatedDetails;
+  ficha_completed: FichaCompletedDetails;
+  encargo_signed: EncargoSignedDetails;
+  offer_accepted: OfferAcceptedDetails;
+  arras_signed: ArrasSignedDetails;
+  escritura_signed: EscrituraSignedDetails;
+  deal_closed: DealClosedDetails;
 }

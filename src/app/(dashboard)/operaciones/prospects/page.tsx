@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ProspectFilter } from "~/components/prospects/prospect-filter";
 import { ProspectTable } from "~/components/prospects/prospect-table";
@@ -64,9 +64,6 @@ export default function ProspectsPage() {
   const [currentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState<string | null>(null);
-  const prefetchCacheRef = useRef<
-    Map<number, { prospects: ProspectWithContact[] }>
-  >(new Map());
 
   const hasMatchesParam = searchParams.get("hasMatches");
   const typeParam = searchParams.get("type"); // "sale" or "rent"
@@ -169,27 +166,6 @@ export default function ProspectsPage() {
 
     void fetchData();
   }, [searchParams, hasMatchesParam, typeParam]);
-
-  // Prefetch handler
-  const handlePrefetchPage = useCallback(async (page: number) => {
-    // Check if already cached
-    if (prefetchCacheRef.current.has(page)) {
-      console.log(`Page ${page} already cached`);
-      return;
-    }
-
-    try {
-      console.log(`Prefetching page ${page}`);
-      const prospectsResult = await getAllProspectsWithAuth();
-
-      prefetchCacheRef.current.set(page, {
-        prospects: prospectsResult,
-      });
-      console.log(`Successfully prefetched page ${page}`);
-    } catch (error) {
-      console.error(`Failed to prefetch page ${page}:`, error);
-    }
-  }, []);
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());

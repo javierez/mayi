@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "~/lib/auth-client";
 import { useUserRole } from "~/hooks/use-user-role";
-import { AgentSelector } from "~/components/agents/agent-selector";
+import { AgentGallery, type GalleryAgent } from "~/components/agents/agent-gallery";
 import { AgentSummaryCards } from "~/components/agents/agent-summary-cards";
 import { AgentHierarchyView } from "~/components/agents/agent-hierarchy-view";
 import { Card, CardContent } from "~/components/ui/card";
@@ -92,12 +92,14 @@ interface Appointment {
   listingId: string | null;
 }
 
-interface Agent {
-  id: string;
-  firstName: string;
-  lastName: string;
+// API returns GalleryAgent format with string date
+interface GalleryAgentResponse {
+  userId: string;
   name: string;
-  email: string;
+  firstName: string;
+  lastName: string | null;
+  image: string | null;
+  updatedAt: string;
 }
 
 interface AgentData {
@@ -115,34 +117,35 @@ export default function AgentsPage() {
   const searchParams = useSearchParams();
   const { data: session, isPending: sessionLoading } = useSession();
   const { hasRoleId, loading: rolesLoading } = useUserRole();
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [selectedAgentId, setSelectedAgentId] = useState<string>("");
+  const [agents, setAgents] = useState<GalleryAgent[]>([]);
   const [agentData, setAgentData] = useState<AgentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isAccountAdmin = hasRoleId(3);
+  // Roles 1 (Superadmin) and 3 (AccountAdmin) can see all agents
+  const canViewAllAgents = hasRoleId(1) || hasRoleId(3);
   const currentUserId = session?.user?.id ?? "";
 
-  // Initialize selected agent to current user
-  useEffect(() => {
-    if (currentUserId && !selectedAgentId) {
-      setSelectedAgentId(currentUserId);
-    }
-  }, [currentUserId, selectedAgentId]);
+  // Get selected agent from URL params, default to current user
+  const selectedAgentId = searchParams.get("agentId") ?? currentUserId;
 
-  // Fetch agents list if user is Account Admin
+  // Fetch agents list if user can view all agents
   useEffect(() => {
     async function fetchAgents() {
-      if (!isAccountAdmin) return;
+      if (!canViewAllAgents) return;
 
       try {
         const response = await fetch("/api/agents/list");
         if (!response.ok) {
           throw new Error("Failed to fetch agents list");
         }
-        const data = (await response.json()) as Agent[];
-        setAgents(data);
+        const data = (await response.json()) as GalleryAgentResponse[];
+        // Convert string dates to Date objects
+        const galleryAgents: GalleryAgent[] = data.map((agent) => ({
+          ...agent,
+          updatedAt: new Date(agent.updatedAt),
+        }));
+        setAgents(galleryAgents);
       } catch (err) {
         console.error("Error fetching agents:", err);
         setError("No se pudo cargar la lista de agentes");
@@ -152,7 +155,7 @@ export default function AgentsPage() {
     if (!rolesLoading) {
       void fetchAgents();
     }
-  }, [isAccountAdmin, rolesLoading]);
+  }, [canViewAllAgents, rolesLoading]);
 
   // Fetch agent data when selected agent or URL parameters change
   useEffect(() => {
@@ -217,29 +220,17 @@ export default function AgentsPage() {
 
   return (
     <div className="space-y-4">
-      {/* Header with Agent Selector */}
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Información de Agentes
-          </h1>
-          <p className="text-muted-foreground">
-            Visualiza estadísticas, propiedades, contactos y tareas de los agentes
-          </p>
-        </div>
-
-        {/* Agent Selector for Account Admins */}
-        {isAccountAdmin && agents.length > 0 && (
-          <div className="mt-6">
-            <AgentSelector
-              agents={agents}
-              selectedAgentId={selectedAgentId}
-              onAgentChange={setSelectedAgentId}
-              currentUserId={currentUserId}
-            />
-          </div>
-        )}
+      {/* Header */}
+      <div className="mb-4 space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight mb-2">
+          Información de Agentes
+        </h1>
       </div>
+
+      {/* Agent Gallery for Admins */}
+      {canViewAllAgents && agents.length > 0 && (
+        <AgentGallery agents={agents} currentUserId={currentUserId} />
+      )}
 
       <div className="space-y-6">
         {/* Error State */}

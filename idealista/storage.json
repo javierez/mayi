@@ -1,0 +1,55 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "https://feeds.idealista.com/v6/schemas/properties/storage.json",
+    "title": "Storage Room Object",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "featuresType",
+      "featuresAreaConstructed"
+    ],
+    "properties": {
+      "featuresType": {
+        "title": "property types",
+        "enum": [
+          "storage"
+        ]
+      },
+      "featuresAccess24h": {
+        "$ref": "features.json#/featuresAccess24h"
+      },
+      "featuresAreaConstructed": {
+        "$ref": "features.json#/featuresAreaConstructed"
+      },
+      "featuresAreaHeight": {
+        "$ref": "features.json#/featuresAreaHeight"
+      },
+      "featuresLoadingDock": {
+        "$ref": "features.json#/featuresLoadingDock"
+      },
+      "featuresSecurity24h": {
+        "$ref": "features.json#/featuresSecurity24h"
+      },
+      "featuresAuction": {
+        "$ref": "features.json#/featuresAuction"
+      },
+      "featuresMinAuctionBidIncrement": {
+        "$ref": "features.json#/featuresMinAuctionBidIncrement"
+      },
+      "featuresAuctionDeposit": {
+        "$ref": "features.json#/featuresAuctionDeposit"
+      },
+      "featuresAuctionDate": {
+        "$ref": "features.json#/featuresAuctionDate"
+      },
+      "featuresAuctionTribunal": {
+        "$ref": "features.json#/featuresAuctionTribunal"
+      },
+      "featuresCurrentOccupation": {
+        "$ref": "features.json#/featuresCurrentOccupation"
+      },
+      "featuresHiddenPrice": {
+        "$ref": "features.json#/featuresHiddenPrice"
+      }
+    }
+  }

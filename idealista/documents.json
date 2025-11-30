@@ -1,0 +1,24 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "https://feeds.idealista.com/v6/schemas/properties/documents.json",
+    "title": "Documents Object",
+    "type": "object",
+    "required": [
+      "documentUrl",
+      "documentType"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "documentUrl": {
+        "title": "document url",
+        "$ref": "../rules.json#/urlFormat"
+      },
+      "documentType": {
+        "title": "document type",
+        "enum": [
+          "quality",
+          "information_dossier"
+        ]
+      }
+    }
+  }

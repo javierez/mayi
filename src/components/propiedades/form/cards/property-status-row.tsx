@@ -16,7 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
-import { Calendar, Info, Pencil } from "lucide-react";
+import { Info, Pencil } from "lucide-react";
 import Link from "next/link";
 import { KeysModal } from "./keys-modal";
 import { PublishToWebsiteModal } from "./publish-to-website-modal";
@@ -96,6 +96,7 @@ export interface PropertyStatusRowProps {
     enEscaparate?: boolean;
     imageCount?: number;
     deal?: Record<string, unknown> | null;
+    fichaCompletedAt?: Date | string | null;
   };
   // Modal props
   currentUserId?: string;
@@ -143,7 +144,6 @@ export function PropertyStatusRow({
   const [propertyImages, setPropertyImages] = useState<string[]>([]);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
-  const [isInfoTooltipOpen, setIsInfoTooltipOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedStage, setSelectedStage] = useState<{
     id: string;
@@ -399,15 +399,6 @@ export function PropertyStatusRow({
     allSubstages: allSubstages.map(s => `${s.id}: ${s.status}`),
   });
 
-  // Format created date for tooltip
-  const createdAtText = createdAt
-    ? new Date(createdAt).toLocaleDateString("es-ES", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      })
-    : undefined;
-
   // Extract listing status fields
   const hasKeys = listing?.hasKeys ?? false;
   const hasCartel = listing?.hasCartel ?? false;
@@ -518,13 +509,6 @@ export function PropertyStatusRow({
                       const labelPosition =
                         globalIndex % 2 === 0 ? "above" : "below";
 
-                      const showInfoButton =
-                        substage.id === "alta" && !!createdAtText;
-                      const infoContent =
-                        substage.id === "alta" && createdAtText
-                          ? `Creado: ${createdAtText}`
-                          : undefined;
-
                       // Check if this milestone is reached based on status
                       const isReached =
                         substage.status === "accomplished" || substage.status === "ongoing";
@@ -559,33 +543,6 @@ export function PropertyStatusRow({
                               >
                                 {substage.label}
                               </button>
-                              {showInfoButton && infoContent && (
-                                <Tooltip
-                                  open={isInfoTooltipOpen}
-                                  onOpenChange={setIsInfoTooltipOpen}
-                                >
-                                  <TooltipTrigger asChild>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        setIsInfoTooltipOpen(!isInfoTooltipOpen)
-                                      }
-                                      className={cn(
-                                        "inline-flex items-center justify-center rounded-full p-1 transition-all duration-200 hover:scale-110 hover:bg-gray-200",
-                                        isReached
-                                          ? "text-gray-600 hover:text-gray-900"
-                                          : "text-gray-300",
-                                      )}
-                                      aria-label="Fecha de creación"
-                                    >
-                                      <Calendar className="h-3.5 w-3.5" />
-                                    </button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className="text-[10px]">{infoContent}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
                             </div>
                           )}
 

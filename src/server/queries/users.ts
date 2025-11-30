@@ -54,6 +54,40 @@ export async function getAgentsForSelectionWithAuth() {
   }
 }
 
+// Get all agents for the gallery display - includes image and lastLogin for sorting
+export async function getAgentsForGalleryWithAuth() {
+  try {
+    const accountId = await getCurrentUserAccountId();
+    const agents = await db
+      .select({
+        userId: users.id,
+        name: users.name,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        image: users.image,
+        updatedAt: users.lastLogin, // Use lastLogin as activity indicator
+      })
+      .from(users)
+      .where(
+        and(eq(users.accountId, BigInt(accountId)), eq(users.isActive, true)),
+      )
+      .orderBy(desc(users.lastLogin));
+
+    // Map to gallery format with fallback for updatedAt
+    return agents.map((agent) => ({
+      userId: agent.userId,
+      name: agent.name,
+      firstName: agent.firstName,
+      lastName: agent.lastName,
+      image: agent.image,
+      updatedAt: agent.updatedAt ?? new Date(),
+    }));
+  } catch (error) {
+    console.error("Error fetching agents for gallery:", error);
+    throw error;
+  }
+}
+
 // Create a new user
 export async function createUser(data: {
   id: string;

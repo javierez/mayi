@@ -31,12 +31,14 @@ interface GalleryListing {
 interface GalleryPropertyCardProps {
   listing: GalleryListing;
   isSelected?: boolean;
-  onClick?: (listingId: string) => void;
+  isRelated?: boolean;
+  onClick?: (listingId: string, event: React.MouseEvent) => void;
 }
 
 export const GalleryPropertyCard = React.memo(function GalleryPropertyCard({
   listing,
   isSelected = false,
+  isRelated = false,
   onClick,
 }: GalleryPropertyCardProps) {
   const [isHovered, setIsHovered] = useState(false);
@@ -83,8 +85,8 @@ export const GalleryPropertyCard = React.memo(function GalleryPropertyCard({
     setImageSrc2(null);
   };
 
-  const handleClick = () => {
-    onClick?.(listing.listingId.toString());
+  const handleClick = (event: React.MouseEvent) => {
+    onClick?.(listing.listingId.toString(), event);
   };
 
   return (
@@ -96,6 +98,7 @@ export const GalleryPropertyCard = React.memo(function GalleryPropertyCard({
         className={cn(
           "group w-48 overflow-hidden transition-all hover:shadow-lg",
           isSelected && "ring-2 ring-primary ring-offset-2",
+          isRelated && !isSelected && "ring-1 ring-primary/30",
         )}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}

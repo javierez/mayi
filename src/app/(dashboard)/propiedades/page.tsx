@@ -34,9 +34,6 @@ export default function PropertiesPage() {
   const [agents, setAgents] = useState<Array<{ id: string; name: string }>>([]);
   const [accountWebsite, setAccountWebsite] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [prefetchedPages, setPrefetchedPages] = useState<Set<number>>(
-    new Set(),
-  );
   const [cities, setCities] = useState<string[]>([]);
   const [priceRange] = useState({ minPrice: 50000, maxPrice: 1000000 });
   const [areaRange] = useState({ minArea: 20, maxArea: 500 });
@@ -320,91 +317,6 @@ export default function PropertiesPage() {
     } catch (error) {
       console.error("Error exporting properties:", error);
       alert("Error al exportar propiedades");
-    }
-  };
-
-  const prefetchPage = async (pageNum: number) => {
-    if (prefetchedPages.has(pageNum) || pageNum < 1 || pageNum > totalPages) {
-      return;
-    }
-
-    try {
-      setPrefetchedPages((prev) => new Set(prev).add(pageNum));
-
-      // Get current filters
-      const filters: Record<string, unknown> = {};
-      let hasStatusParam = false;
-
-      for (const [key, value] of searchParams.entries()) {
-        if (key === "page") continue;
-        if (key === "q") {
-          filters.searchQuery = value;
-        } else if (key === "status") {
-          hasStatusParam = true;
-          const statusMap: Record<string, string> = {
-            "for-sale": "En Venta",
-            "for-rent": "En Alquiler",
-            sold: "Vendido",
-            rented: "Alquilado",
-            discarded: "Descartado",
-          };
-          filters.status = value.split(",").map((v) => statusMap[v] ?? v);
-        } else if (key === "type") {
-          filters.propertyType = value.split(",");
-        } else if (key === "agent") {
-          filters.agentId = value.split(",");
-        } else if (key === "ownerName") {
-          filters.ownerName = value;
-        } else if (
-          [
-            "minPrice",
-            "maxPrice",
-            "minBedrooms",
-            "minBathrooms",
-            "maxBathrooms",
-            "minSize",
-            "maxSize",
-          ].includes(key)
-        ) {
-          // Map minSize/maxSize to minSquareMeter/maxSquareMeter
-          if (key === "minSize") {
-            filters.minSquareMeter = Number(value);
-          } else if (key === "maxSize") {
-            filters.maxSquareMeter = Number(value);
-          } else {
-            filters[key] = Number(value);
-          }
-        } else if (
-          [
-            "hasGarage",
-            "hasElevator",
-            "hasStorageRoom",
-            "brandNew",
-            "needsRenovation",
-          ].includes(key)
-        ) {
-          filters[key] = value === "true";
-        } else {
-          filters[key] = value;
-        }
-      }
-
-      if (!hasStatusParam) {
-        // Apply default filter if no status param
-      }
-
-      // Prefetch in background
-      await listListingsWithAuth(pageNum, ITEMS_PER_PAGE, filters, view);
-
-      console.log(`Prefetched page ${pageNum}`);
-    } catch (error) {
-      console.error(`Error prefetching page ${pageNum}:`, error);
-      // Remove from prefetched set if failed
-      setPrefetchedPages((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(pageNum);
-        return newSet;
-      });
     }
   };
 

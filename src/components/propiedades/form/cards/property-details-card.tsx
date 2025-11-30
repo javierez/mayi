@@ -32,6 +32,9 @@ interface PropertyDetailsCardProps {
   setLastRenovationYear: (value: string) => void;
   setBuildingFloors: (value: number) => void;
   getCardStyles: (moduleName: ModuleName) => string;
+  // Optional controlled values from cadastral corrections
+  builtSurfaceArea?: number;
+  yearBuilt?: number;
 }
 
 export function PropertyDetailsCard({
@@ -48,6 +51,8 @@ export function PropertyDetailsCard({
   setLastRenovationYear,
   setBuildingFloors,
   getCardStyles,
+  builtSurfaceArea: controlledBuiltSurfaceArea,
+  yearBuilt: controlledYearBuilt,
 }: PropertyDetailsCardProps) {
   // Format area with thousand separators
   const formatArea = (value: number | null | undefined): string => {
@@ -73,16 +78,26 @@ export function PropertyDetailsCard({
       listing.builtSurfaceArea ? Math.round(listing.builtSurfaceArea) : null,
     ),
   );
+  // Local state for yearBuilt to make it controllable
+  const [yearBuiltDisplay, setYearBuiltDisplay] = useState<string>(
+    listing.yearBuilt?.toString() ?? "",
+  );
 
-  // Update display values when listing changes
+  // Update display values when listing or controlled values change
   useEffect(() => {
     setSquareMeterDisplay(formatArea(listing.squareMeter));
+    // Use controlled value if provided, otherwise use listing value
+    const surfaceValue = controlledBuiltSurfaceArea ?? listing.builtSurfaceArea;
     setBuiltSurfaceDisplay(
-      formatArea(
-        listing.builtSurfaceArea ? Math.round(listing.builtSurfaceArea) : null,
-      ),
+      formatArea(surfaceValue ? Math.round(surfaceValue) : null),
     );
-  }, [listing.squareMeter, listing.builtSurfaceArea]);
+  }, [listing.squareMeter, listing.builtSurfaceArea, controlledBuiltSurfaceArea]);
+
+  // Update yearBuilt when controlled value changes
+  useEffect(() => {
+    const yearValue = controlledYearBuilt ?? listing.yearBuilt;
+    setYearBuiltDisplay(yearValue?.toString() ?? "");
+  }, [listing.yearBuilt, controlledYearBuilt]);
 
   const handleSquareMeterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -227,9 +242,12 @@ export function PropertyDetailsCard({
             <Input
               id="yearBuilt"
               type="number"
-              defaultValue={listing.yearBuilt}
+              value={yearBuiltDisplay}
+              onChange={(e) => {
+                setYearBuiltDisplay(e.target.value);
+                onUpdateModule(true);
+              }}
               className="h-8 text-gray-500"
-              onChange={() => onUpdateModule(true)}
               disabled={!canEdit}
             />
           </div>

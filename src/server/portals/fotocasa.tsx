@@ -222,13 +222,17 @@ const ORIENTATION_MAPPING: Record<string, number> = {
 
 export async function buildFotocasaPayload(
   listingId: number,
-  visibilityMode = 1,
-  hidePrice = false,
+  visibilityMode?: number, // Optional - will read from database if not provided
+  hidePrice?: boolean, // Optional - will read from database if not provided
 ): Promise<{ payload: FotocasaProperty; watermarkedKeys: string[] }> {
   try {
     // Get listing details and property images
     const listing = await getListingDetailsWithAuth(listingId);
     const images = await getPropertyImages(BigInt(listing.propertyId));
+    
+    // Get visibility settings from database if not provided as parameters
+    const finalVisibilityMode = visibilityMode ?? listing.fcLocationVisibility ?? 1;
+    const finalHidePrice = hidePrice ?? listing.fcPriceVisibility ?? false;
 
     // NEW: Get account watermark configuration and process images if needed
     const accountId = await getAccountIdForListing(listingId);
@@ -442,7 +446,7 @@ export async function buildFotocasaPayload(
         FloorId: getFloorId(listing.addressDetails ?? null),
         x: listing.longitude ? parseFloat(listing.longitude.toString()) : 0,
         y: listing.latitude ? parseFloat(listing.latitude.toString()) : 0,
-        VisibilityModeId: visibilityMode, // 1=Exact, 2=Street, 3=Zone
+        VisibilityModeId: finalVisibilityMode, // 1=Exact, 2=Street, 3=Zone
         Street: getStreetName(listing.street ?? null),
         Number: getStreetNumber(
           listing.street ?? null,
@@ -1137,7 +1141,7 @@ export async function buildFotocasaPayload(
         TransactionTypeId:
           TRANSACTION_TYPE_MAPPING[listing.listingType ?? "Sale"] ?? 1,
         Price: parseFloat((listing.price ?? 0).toString()),
-        ShowPrice: !hidePrice, // ShowPrice is true when hidePrice is false
+        ShowPrice: !finalHidePrice, // ShowPrice is true when hidePrice is false
       },
     ];
 
@@ -1184,8 +1188,8 @@ export async function buildFotocasaPayload(
 // Server action to be called when confirming Fotocasa portal
 export async function publishToFotocasa(
   listingId: number,
-  visibilityMode = 1,
-  hidePrice = false,
+  visibilityMode?: number, // Optional - will read from database if not provided
+  hidePrice?: boolean, // Optional - will read from database if not provided
 ): Promise<{
   success: boolean;
   payload?: FotocasaProperty;
@@ -1208,11 +1212,26 @@ export async function publishToFotocasa(
     }
     const FOTOCASA_API_KEY = apiKey;
 
+    // Get visibility settings from database if not provided as parameters
+    let finalVisibilityMode = visibilityMode;
+    let finalHidePrice = hidePrice;
+    
+    if (finalVisibilityMode === undefined || finalHidePrice === undefined) {
+      const listing = await getListingDetailsWithAuth(listingId);
+      if (!listing) {
+        throw new Error(`Listing ${listingId} not found`);
+      }
+      
+      // Use explicit database fields with fallback to legacy JSON
+      finalVisibilityMode = finalVisibilityMode ?? listing.fcLocationVisibility ?? 1;
+      finalHidePrice = finalHidePrice ?? listing.fcPriceVisibility ?? false;
+    }
+
     // Build the payload
     const { payload, watermarkedKeys } = await buildFotocasaPayload(
       listingId,
-      visibilityMode,
-      hidePrice,
+      finalVisibilityMode,
+      finalHidePrice,
     );
 
     // Prepare request headers
@@ -1288,8 +1307,8 @@ export async function publishToFotocasa(
         await logFotocasaPublished({
           listingId: BigInt(listingId),
           userId: currentUser.id,
-          visibilityMode: visibilityMode as 1 | 2 | 3,
-          hidePrice,
+          visibilityMode: finalVisibilityMode as 1 | 2 | 3,
+          hidePrice: finalHidePrice,
         });
       } catch (activityError) {
         console.error("Error logging Fotocasa publish activity:", activityError);
@@ -1347,8 +1366,8 @@ export async function publishToFotocasa(
 // Server action to update existing listing on Fotocasa
 export async function updateFotocasa(
   listingId: number,
-  visibilityMode = 1,
-  hidePrice = false,
+  visibilityMode?: number, // Optional - will read from database if not provided
+  hidePrice?: boolean, // Optional - will read from database if not provided
 ): Promise<{
   success: boolean;
   payload?: FotocasaProperty;
@@ -1371,11 +1390,26 @@ export async function updateFotocasa(
     }
     const FOTOCASA_API_KEY = apiKey;
 
+    // Get visibility settings from database if not provided as parameters
+    let finalVisibilityMode = visibilityMode;
+    let finalHidePrice = hidePrice;
+    
+    if (finalVisibilityMode === undefined || finalHidePrice === undefined) {
+      const listing = await getListingDetailsWithAuth(listingId);
+      if (!listing) {
+        throw new Error(`Listing ${listingId} not found`);
+      }
+      
+      // Use explicit database fields with fallback to legacy JSON
+      finalVisibilityMode = finalVisibilityMode ?? listing.fcLocationVisibility ?? 1;
+      finalHidePrice = finalHidePrice ?? listing.fcPriceVisibility ?? false;
+    }
+
     // Build the payload (same as create operation)
     const { payload, watermarkedKeys } = await buildFotocasaPayload(
       listingId,
-      visibilityMode,
-      hidePrice,
+      finalVisibilityMode,
+      finalHidePrice,
     );
 
     // Prepare request headers
@@ -1453,8 +1487,8 @@ export async function updateFotocasa(
         await logFotocasaUpdated({
           listingId: BigInt(listingId),
           userId: currentUser.id,
-          visibilityMode: visibilityMode as 1 | 2 | 3,
-          hidePrice,
+          visibilityMode: finalVisibilityMode as 1 | 2 | 3,
+          hidePrice: finalHidePrice,
         });
       } catch (activityError) {
         console.error("Error logging Fotocasa update activity:", activityError);

@@ -1,0 +1,90 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "https://feeds.idealista.com/v6/schemas/properties/newDevelopment.json",
+    "title": "New Development Object",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "propertyCode",
+      "propertyAddress",
+      "propertyFeatures"
+    ],
+    "properties": {
+      "propertyCode": {
+        "title": "New Development identifier",
+        "description": "It must be unique for each property and unchanging over time",
+        "$ref": "../rules.json#/stringTo50"
+      },
+      "propertyReference": {
+        "title": "New Development reference",
+        "$ref": "../rules.json#/stringTo50"
+      },
+      "propertyVisibility": {
+        "title": "New Development visibility",
+        "$ref": "../rules.json#/enumPropertyVisibility"
+      },
+      "propertyUrl": {
+        "title": "New Development URL",
+        "$ref": "../rules.json#/urlFormat"
+      },
+      "propertyForSale": {
+        "title": "promo for sale",
+        "description": "indicates the operation of the promo as sale when no typologies are sent. If there are typologies under the promo those will define the operation.",
+        "type": "boolean"
+      },
+      "propertyForRent": {
+        "title": "promo for rent",
+        "description": "indicates the operation of the promo as rent when no typologies are sent. If there are typologies under the promo those will define the operation.",
+        "type": "boolean"
+      },
+      "propertyForRentToOwn": {
+        "title": "promo for rent to own",
+        "description": "indicates the operation of the promo as rent to own when no typologies are sent. If there are typologies under the promo those will define the operation.",
+        "type": "boolean"
+      },
+      "propertyAddress": {
+        "title": "New Development address",
+        "$ref": "address.json#"
+      },
+      "propertyFeatures": {
+        "title": "New Development promo features",
+        "$ref": "promo.json#"
+      },
+      "propertyContact": {
+        "title": "New Development contact",
+        "$ref": "contact.json#"
+      },
+      "propertyDescriptions": {
+        "title": "New Development descriptions",
+        "type": "array",
+        "uniqueItems": true,
+        "items": {
+          "$ref": "description.json#"
+        }
+      },
+      "propertyImages": {
+        "title": "New Development images",
+        "type": "array",
+        "uniqueItems": true,
+        "items": {
+          "$ref": "images.json#"
+        }
+      },
+      "propertyVideos": {
+        "title": "New Development videos",
+        "type": "array",
+        "uniqueItems": true,
+        "items": {
+          "$ref": "videos.json#"
+        }
+      },
+      "newDevelopmentTypologies": {
+        "title": "New Development typologies",
+        "type": "array",
+        "uniqueItems": true,
+        "items": {
+          "$ref": "typology.json#"
+        }
+      }
+    }
+  }

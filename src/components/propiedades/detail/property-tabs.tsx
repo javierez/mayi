@@ -95,6 +95,8 @@ interface PropertyTabsProps {
     hasCartel?: boolean | null;
     enEscaparate?: boolean | null;
     hasKeys?: boolean | null;
+    fcLocationVisibility?: number | null;
+    fcPriceVisibility?: boolean | null;
     fotocasaProps?: unknown;
     idealistaProps?: unknown;
     habitacliaProps?: unknown;
@@ -812,6 +814,8 @@ export function PropertyTabs({
             hasCartel={listing.hasCartel ?? undefined}
             enEscaparate={listing.enEscaparate ?? undefined}
             hasKeys={listing.hasKeys ?? undefined}
+            fcLocationVisibility={listing.fcLocationVisibility ?? undefined}
+            fcPriceVisibility={listing.fcPriceVisibility ?? undefined}
             fotocasaProps={listing.fotocasaProps ?? undefined}
             idealistaProps={listing.idealistaProps ?? undefined}
             habitacliaProps={listing.habitacliaProps ?? undefined}

@@ -1149,6 +1149,99 @@ export async function logFotocasaDeleted(params: {
 }
 
 // ============================================================================
+// IDEALISTA ACTIVITY LOGGING
+// ============================================================================
+
+/**
+ * Convenience function: Log Idealista publication (enabled for export)
+ */
+export async function logIdealistaPublished(params: {
+  listingId: bigint;
+  userId: string;
+  addressVisibility: "full" | "street" | "hidden";
+  coordinatesPrecision?: "exact" | "moved";
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "idealista_published",
+    details: {
+      portal: "idealista",
+      addressVisibility: params.addressVisibility,
+      coordinatesPrecision: params.coordinatesPrecision,
+      publicationDate: new Date().toISOString(),
+    },
+  });
+}
+
+/**
+ * Convenience function: Log Idealista update (settings changed)
+ */
+export async function logIdealistaUpdated(params: {
+  listingId: bigint;
+  userId: string;
+  addressVisibility: "full" | "street" | "hidden";
+  changes?: string[];
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "idealista_updated",
+    details: {
+      portal: "idealista",
+      addressVisibility: params.addressVisibility,
+      updateDate: new Date().toISOString(),
+      changes: params.changes,
+    },
+  });
+}
+
+/**
+ * Convenience function: Log Idealista deletion (disabled from export)
+ */
+export async function logIdealistaDeleted(params: {
+  listingId: bigint;
+  userId: string;
+  reason?: string;
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "idealista_deleted",
+    details: {
+      portal: "idealista",
+      deletedDate: new Date().toISOString(),
+      reason: params.reason,
+    },
+  });
+}
+
+/**
+ * Convenience function: Log Idealista export (batch export to FTP)
+ * Note: This is typically logged at account level, not individual listing
+ */
+export async function logIdealistaExported(params: {
+  listingId: bigint;
+  userId: string;
+  propertyCount: number;
+  uploadedToFtp: boolean;
+  filename?: string;
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "idealista_exported",
+    details: {
+      portal: "idealista",
+      propertyCount: params.propertyCount,
+      uploadedToFtp: params.uploadedToFtp,
+      filename: params.filename,
+      exportDate: new Date().toISOString(),
+    },
+  });
+}
+
+// ============================================================================
 // PORTAL SELECTION TOGGLE LOGGING
 // ============================================================================
 
@@ -1267,6 +1360,183 @@ export async function logEscaparateRemoved(params: {
     action: "escaparate_removed",
     details: {
       removedDate: new Date().toISOString(),
+    },
+  });
+}
+
+// ============================================================================
+// PROGRESS STAGE LOGGING
+// ============================================================================
+
+/**
+ * Convenience function: Log listing creation (Alta stage - 10%)
+ */
+export async function logListingCreated(params: {
+  listingId: bigint;
+  userId: string;
+  propertyId: number;
+  propertyType?: string;
+  listingType: string; // Sale, Rent, Transfer, RentWithOption, RoomSharing, Sold, etc.
+  initialStatus: string;
+  source?: "manual" | "import" | "api" | "duplicate";
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "listing_created",
+    details: {
+      stageId: "alta",
+      stageName: "Alta",
+      progressPercent: 10,
+      propertyId: params.propertyId,
+      propertyType: params.propertyType,
+      listingType: params.listingType,
+      initialStatus: params.initialStatus,
+      createdBy: params.userId,
+      source: params.source ?? "manual",
+    },
+  });
+}
+
+/**
+ * Convenience function: Log ficha completion (Ficha Completa stage - 24%)
+ */
+export async function logFichaCompleted(params: {
+  listingId: bigint;
+  userId: string;
+  completedFields: string[];
+  triggerField?: string;
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "ficha_completed",
+    details: {
+      stageId: "ficha_completa",
+      stageName: "Ficha Completa",
+      progressPercent: 24,
+      completedFields: params.completedFields,
+      completedBy: params.userId,
+      triggerField: params.triggerField,
+    },
+  });
+}
+
+/**
+ * Convenience function: Log encargo signing (Encargo Firmado stage - 43%)
+ */
+export async function logEncargoSigned(params: {
+  listingId: bigint;
+  userId: string;
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "encargo_signed",
+    details: {
+      stageId: "firma_encargo",
+      stageName: "Encargo Firmado",
+      progressPercent: 43,
+      signedBy: params.userId,
+      signedAt: new Date().toISOString(),
+    },
+  });
+}
+
+/**
+ * Convenience function: Log offer acceptance at listing level (Oferta Aceptada stage - 60%)
+ * Note: This is for listingActivity (listing-level progress tracking).
+ * For listingContactActivity (contact-level), use logOfferAccepted above.
+ */
+export async function logListingOfferAccepted(params: {
+  listingId: bigint;
+  userId: string;
+  listingContactId: bigint;
+  offerAmount?: number;
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "offer_accepted",
+    details: {
+      stageId: "oferta_aceptada",
+      stageName: "Oferta Aceptada",
+      progressPercent: 60,
+      acceptedBy: params.userId,
+      acceptedAt: new Date().toISOString(),
+      listingContactId: params.listingContactId.toString(),
+      offerAmount: params.offerAmount,
+    },
+  });
+}
+
+/**
+ * Convenience function: Log arras signing (Arras Firmadas stage - 73%)
+ */
+export async function logArrasSigned(params: {
+  listingId: bigint;
+  userId: string;
+  dealId: bigint;
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "arras_signed",
+    details: {
+      stageId: "arras",
+      stageName: "Arras Firmadas",
+      progressPercent: 73,
+      signedBy: params.userId,
+      signedAt: new Date().toISOString(),
+      dealId: params.dealId.toString(),
+    },
+  });
+}
+
+/**
+ * Convenience function: Log escritura signing (Escritura Firmada stage - 93%)
+ */
+export async function logEscrituraSigned(params: {
+  listingId: bigint;
+  userId: string;
+  dealId: bigint;
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "escritura_signed",
+    details: {
+      stageId: "contrato",
+      stageName: "Escritura Firmada",
+      progressPercent: 93,
+      signedBy: params.userId,
+      signedAt: new Date().toISOString(),
+      dealId: params.dealId.toString(),
+    },
+  });
+}
+
+/**
+ * Convenience function: Log deal closure at listing level (Cierre Final stage - 100%)
+ * Note: This is for listingActivity (listing-level progress tracking).
+ * For dealActivity (deal-level), use logDealClosed above.
+ */
+export async function logListingDealClosed(params: {
+  listingId: bigint;
+  userId: string;
+  dealId: bigint;
+}) {
+  return logListingActivity({
+    listingId: params.listingId,
+    userId: params.userId,
+    action: "deal_closed",
+    details: {
+      stageId: "cierre_final",
+      stageName: "Cierre Final",
+      progressPercent: 100,
+      closedBy: params.userId,
+      closedAt: new Date().toISOString(),
+      dealId: params.dealId.toString(),
     },
   });
 }

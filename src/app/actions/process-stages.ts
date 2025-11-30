@@ -4,11 +4,18 @@ import { revalidatePath } from "next/cache";
 import { db } from "~/server/db";
 import { listings, deals, listingContacts } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
-import { getCurrentUserAccountId } from "~/lib/dal";
+import { getCurrentUserAccountId, getCurrentUser } from "~/lib/dal";
 import {
   createDealWithAuth,
   getActiveDealForListingWithAuth,
 } from "~/server/queries/deal";
+import {
+  logEncargoSigned,
+  logListingOfferAccepted,
+  logArrasSigned,
+  logEscrituraSigned,
+  logListingDealClosed,
+} from "~/server/queries/log-activity";
 
 export interface CompleteStagesResult {
   success: boolean;
@@ -97,6 +104,19 @@ export async function completeStagesUpTo(
             .set({ encargo: true })
             .where(eq(listings.listingId, BigInt(listingId)));
           updatedFields.push("encargo");
+
+          // Log the encargo_signed activity
+          try {
+            const currentUser = await getCurrentUser();
+            await logEncargoSigned({
+              listingId: BigInt(listingId),
+              userId: currentUser.id,
+            });
+            console.log("  📝 Logged encargo_signed activity");
+          } catch (logError) {
+            console.error("  ⚠️ Failed to log encargo_signed activity:", logError);
+          }
+
           console.log("  ✅ Updated encargo");
           break;
 
@@ -136,6 +156,20 @@ export async function completeStagesUpTo(
               ),
             );
           updatedFields.push("offerAccepted");
+
+          // Log the offer_accepted activity
+          try {
+            const currentUser = await getCurrentUser();
+            await logListingOfferAccepted({
+              listingId: BigInt(listingId),
+              userId: currentUser.id,
+              listingContactId: firstContact.listingContactId,
+              offerAmount: firstContact.offer ?? undefined,
+            });
+            console.log("  📝 Logged offer_accepted activity");
+          } catch (logError) {
+            console.error("  ⚠️ Failed to log offer_accepted activity:", logError);
+          }
           break;
 
         case "arras":
@@ -228,6 +262,35 @@ export async function completeStagesUpTo(
               .update(deals)
               .set(dealUpdates)
               .where(eq(deals.dealId, existingDeal.dealId));
+
+            // Log activity based on stage
+            try {
+              const currentUser = await getCurrentUser();
+              if (stageId === "arras") {
+                await logArrasSigned({
+                  listingId: BigInt(listingId),
+                  userId: currentUser.id,
+                  dealId: existingDeal.dealId,
+                });
+                console.log("  📝 Logged arras_signed activity");
+              } else if (stageId === "contrato") {
+                await logEscrituraSigned({
+                  listingId: BigInt(listingId),
+                  userId: currentUser.id,
+                  dealId: existingDeal.dealId,
+                });
+                console.log("  📝 Logged escritura_signed activity");
+              } else if (stageId === "cierre-final") {
+                await logListingDealClosed({
+                  listingId: BigInt(listingId),
+                  userId: currentUser.id,
+                  dealId: existingDeal.dealId,
+                });
+                console.log("  📝 Logged deal_closed activity");
+              }
+            } catch (logError) {
+              console.error("  ⚠️ Failed to log deal activity:", logError);
+            }
           }
           break;
 

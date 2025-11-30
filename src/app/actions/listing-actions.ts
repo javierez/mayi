@@ -1,0 +1,174 @@
+"use server";
+
+import { eq, and, inArray, asc } from "drizzle-orm";
+import { db } from "~/server/db";
+import { listings, listingActivity, appointments } from "~/server/db/schema";
+import { getSecureSession } from "~/lib/dal";
+
+// Progress stage action types that we track from listing_activity
+const PROGRESS_STAGE_ACTIONS = [
+  "listing_created",
+  "ficha_completed",
+  "encargo_signed",
+  "offer_accepted",
+  "arras_signed",
+  "escritura_signed",
+  "deal_closed",
+] as const;
+
+export interface ProgressStageActivity {
+  action: string;
+  createdAt: Date;
+  details: Record<string, unknown>;
+}
+
+/**
+ * Get progress stage activities for a listing (for timeline display in modals)
+ * Returns completed stages from listing_activity table
+ */
+export async function getProgressStageActivities(
+  listingId: number,
+): Promise<ProgressStageActivity[]> {
+  console.log("📊 getProgressStageActivities called with listingId:", listingId);
+
+  try {
+    const session = await getSecureSession();
+    if (!session) {
+      console.log("❌ No session found");
+      return [];
+    }
+    console.log("✅ Session found, accountId:", session.user.accountId);
+
+    // First verify the listing belongs to this account
+    const [listing] = await db
+      .select({ accountId: listings.accountId })
+      .from(listings)
+      .where(eq(listings.listingId, BigInt(listingId)))
+      .limit(1);
+
+    console.log("📋 Listing lookup result:", listing);
+
+    if (!listing || listing.accountId !== BigInt(session.user.accountId)) {
+      console.log("❌ Listing not found or account mismatch");
+      return [];
+    }
+
+    // Fetch progress stage activities ordered by creation date
+    console.log("🔍 Fetching activities for actions:", PROGRESS_STAGE_ACTIONS);
+
+    const [activities, firstAppointment] = await Promise.all([
+      // Fetch from listing_activity
+      db
+        .select({
+          action: listingActivity.action,
+          createdAt: listingActivity.createdAt,
+          details: listingActivity.details,
+        })
+        .from(listingActivity)
+        .where(
+          and(
+            eq(listingActivity.listingId, BigInt(listingId)),
+            inArray(listingActivity.action, [...PROGRESS_STAGE_ACTIONS]),
+          ),
+        )
+        .orderBy(asc(listingActivity.createdAt)),
+
+      // Fetch first appointment for this listing (for visitas_started)
+      db
+        .select({
+          appointmentId: appointments.appointmentId,
+          datetimeStart: appointments.datetimeStart,
+          title: appointments.title,
+          type: appointments.type,
+        })
+        .from(appointments)
+        .where(
+          and(
+            eq(appointments.listingId, BigInt(listingId)),
+            eq(appointments.isActive, true),
+          ),
+        )
+        .orderBy(asc(appointments.datetimeStart))
+        .limit(1),
+    ]);
+
+    console.log("📊 Raw activities from DB:", activities);
+    console.log("📊 Activities count:", activities.length);
+    console.log("📅 First appointment:", firstAppointment[0] ?? "none");
+
+    // Build result array from listing_activity
+    const result: ProgressStageActivity[] = activities.map((a) => ({
+      action: a.action,
+      createdAt: a.createdAt,
+      details: a.details as Record<string, unknown>,
+    }));
+
+    // Add visitas_started from first appointment if exists
+    if (firstAppointment[0]) {
+      const appointment = firstAppointment[0];
+      result.push({
+        action: "visitas_started",
+        createdAt: appointment.datetimeStart,
+        details: {
+          stageId: "visitas",
+          stageName: "Visitas",
+          progressPercent: 56,
+          appointmentId: appointment.appointmentId.toString(),
+          appointmentTitle: appointment.title,
+          appointmentType: appointment.type,
+        },
+      });
+      console.log("✅ Added visitas_started from appointment:", appointment.datetimeStart);
+    }
+
+    // Sort all activities by createdAt
+    result.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+    console.log("✅ Returning activities:", result.map(r => ({
+      action: r.action,
+      createdAt: r.createdAt,
+      stageName: r.details?.stageName,
+    })));
+
+    return result;
+  } catch (error) {
+    console.error("💥 Error fetching progress stage activities:", error);
+    return [];
+  }
+}
+
+/**
+ * Get completion dates for a listing (for process stage modals)
+ */
+export async function getListingCompletionDates(listingId: number) {
+  try {
+    const session = await getSecureSession();
+    if (!session) {
+      return null;
+    }
+
+    const [listing] = await db
+      .select({
+        fichaCompletedAt: listings.fichaCompletedAt,
+      })
+      .from(listings)
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(session.user.accountId)),
+        ),
+      )
+      .limit(1);
+
+    if (!listing) {
+      return null;
+    }
+
+    return {
+      fichaCompletedAt: listing.fichaCompletedAt,
+    };
+  } catch (error) {
+    console.error("Error fetching listing completion dates:", error);
+    return null;
+  }
+}

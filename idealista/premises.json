@@ -1,0 +1,181 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "https://feeds.idealista.com/v6/schemas/properties/premises.json",
+    "title": "Premises Object",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "featuresType",
+      "featuresAreaConstructed"
+    ],
+    "dependencies": {
+      "featuresCommercialSecondaryActivity": [
+        "featuresCommercialMainActivity"
+      ],
+      "featuresRentedYieldPercentage": [
+        "featuresThirdPartiesRented"
+      ]
+    },
+    "properties": {
+      "featuresType": {
+        "title": "premise types",
+        "enum": [
+          "premises",
+          "premises_commercial",
+          "premises_industrial"
+        ]
+      },
+      "featuresAreaConstructed": {
+        "$ref": "features.json#/featuresAreaConstructed"
+      },
+      "featuresAreaUsable": {
+        "$ref": "features.json#/featuresAreaUsable"
+      },
+      "featuresBathroomAdapted": {
+        "$ref": "features.json#/featuresBathroomAdapted"
+      },
+      "featuresBathroomNumber": {
+        "$ref": "features.json#/featuresBathroomNumber"
+      },
+      "featuresConditionedAir": {
+        "$ref": "features.json#/featuresConditionedAir"
+      },
+      "featuresConservation": {
+        "$ref": "features.json#/featuresConservation"
+      },
+      "featuresEnergyCertificateRating": {
+        "$ref": "features.json#/featuresEnergyCertificateRating"
+      },
+      "featuresEnergyCertificatePerformance": {
+        "$ref": "features.json#/featuresEnergyCertificatePerformance"
+      },
+      "featuresEnergyCertificateType": {
+        "$ref": "features.json#/featuresEnergyCertificateType"
+      },
+      "featuresEnergyCertificateLaw": {
+        "$ref": "features.json#/featuresEnergyCertificateLaw"
+      },
+      "featuresEnergyCertificateEmissionsRating": {
+        "$ref": "features.json#/featuresEnergyCertificateEmissionsRating"
+      },
+      "featuresEnergyCertificateEmissionsValue": {
+        "$ref": "features.json#/featuresEnergyCertificateEmissionsValue"
+      },
+      "featuresEquippedKitchen": {
+        "$ref": "features.json#/featuresEquippedKitchen"
+      },
+      "featuresLoadingDock": {
+        "$ref": "features.json#/featuresLoadingDock"
+      },
+      "featuresBridgeCrane": {
+        "$ref": "features.json#/featuresBridgeCrane"
+      },
+      "featuresFacadeArea": {
+        "$ref": "features.json#/featuresFacadeArea"
+      },
+      "featuresFloorsProperty": {
+        "$ref": "features.json#/featuresFloorsProperty"
+      },
+      "featuresHeating": {
+        "$ref": "features.json#/featuresHeating"
+      },
+      "featuresLastActivity": {
+        "$ref": "features.json#/featuresLastActivity"
+      },
+      "featuresLocatedAtCorner": {
+        "$ref": "features.json#/featuresLocatedAtCorner"
+      },
+      "featuresRooms": {
+        "$ref": "features.json#/featuresRooms"
+      },
+      "featuresSecurityAlarm": {
+        "$ref": "features.json#/featuresSecurityAlarm"
+      },
+      "featuresSecurityDoor": {
+        "$ref": "features.json#/featuresSecurityDoor"
+      },
+      "featuresSecuritySystem": {
+        "$ref": "features.json#/featuresSecuritySystem"
+      },
+      "featuresStorage": {
+        "$ref": "features.json#/featuresStorage"
+      },
+      "featuresSmokeExtraction": {
+        "$ref": "features.json#/featuresSmokeExtraction"
+      },
+      "featuresUbication": {
+        "$ref": "features.json#/featuresUbication"
+      },
+      "featuresWindowsNumber": {
+        "$ref": "features.json#/featuresWindowsNumber"
+      },
+      "featuresBuiltYear": {
+        "$ref": "features.json#/featuresBuiltYear"
+      },
+      "featuresAuction": {
+        "$ref": "features.json#/featuresAuction"
+      },
+      "featuresMinAuctionBidIncrement": {
+        "$ref": "features.json#/featuresMinAuctionBidIncrement"
+      },
+      "featuresAuctionDeposit": {
+        "$ref": "features.json#/featuresAuctionDeposit"
+      },
+      "featuresAuctionDate": {
+        "$ref": "features.json#/featuresAuctionDate"
+      },
+      "featuresAuctionTribunal": {
+        "$ref": "features.json#/featuresAuctionTribunal"
+      },    
+      "featuresCurrentOccupation": {
+        "$ref": "features.json#/featuresCurrentOccupation"
+      },
+      "featuresGardenType": {
+        "$ref": "features.json#/featuresGardenType"
+      },
+      "featuresParkingAvailable": {
+        "$ref": "features.json#/featuresParkingAvailable"
+      },
+      "featuresParkingSpaceCapacity": {
+        "$ref": "features.json#/featuresParkingSpaceCapacity"
+      },
+      "featuresParkingSpaceArea": {
+        "$ref": "features.json#/featuresParkingSpaceArea"
+      },
+      "featuresOutdoorParkingSpace": {
+        "$ref": "features.json#/featuresOutdoorParkingSpace"
+      },
+      "featuresOutdoorParkingSpaceType": {
+        "$ref": "features.json#/featuresOutdoorParkingSpaceType"
+      },
+      "featuresOutdoorParkingSpaceNumber": {
+        "$ref": "features.json#/featuresOutdoorParkingSpaceNumber"
+      },
+      "featuresHiddenPrice": {
+        "$ref": "features.json#/featuresHiddenPrice"
+      },
+      "featuresThirdPartiesRented": {
+        "$ref": "features.json#/featuresThirdPartiesRented"
+      },
+      "featuresRentedYieldPercentage": {
+        "$ref": "features.json#/featuresRentedYieldPercentage"
+      },
+      "featuresCommercialMainActivity": {
+        "title": "Madatory if isATransfer is true. Main activity for commercial transfers",
+        "$ref": "features.json#/featuresCommercialActivity"
+      },
+      "featuresCommercialSecondaryActivity": {
+        "title": "Secondary commercial activity for commercial transfers",
+        "$ref": "features.json#/featuresCommercialActivity"
+      },
+      "featuresIsATransfer": {
+        "$ref": "features.json#/featuresIsATransfer"
+      },
+      "featuresPriceTransfer": {
+        "$ref": "operation.json#/properties/operationPriceTransfer"
+      },
+      "featuresTransferEndContract": {
+        "$ref": "features.json#/featuresTransferEndContractDate"
+      }
+    }
+  }

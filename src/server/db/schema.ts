@@ -472,13 +472,33 @@ export const listings = pgTable("listings", {
   yaencontre: boolean("yaencontre").default(false), // Yaencontre.com publication status
   milanuncios: boolean("milanuncios").default(false), // Milanuncios.com publication status
 
+  // Fotocasa-specific settings (explicit fields for better performance and type safety)
+  fcLocationVisibility: smallint("fc_location_visibility").default(1).notNull(), // 1=Exact, 2=Street, 3=Zone
+  fcPriceVisibility: boolean("fc_price_visibility").default(false).notNull(), // true=hidden, false=shown
+
+  // Idealista-specific settings (address visibility uses fcLocationVisibility - shared with Fotocasa)
+  idCoordinatesPrecision: varchar("id_coordinates_precision", { length: 10 }), // "exact" | "moved"
+
+  // Rental-specific fields (only for rent operations)
+  rentalType: varchar("rental_type", { length: 20 }), // "residential" | "seasonal" | "short_term" - MUTUALLY EXCLUSIVE
+  shortTermLicense: varchar("short_term_license", { length: 100 }), // Required if rentalType = "short_term"
+
+  // Sale-specific fields (only for sale operations)
+  occupationStatus: varchar("occupation_status", { length: 20 }), // "free" | "tenanted" | "bare_ownership" | "illegally_occupied"
+
+  // Catalonia-specific (mandatory for rentals in Catalonia)
+  priceReferenceIndex: decimal("price_reference_index", { precision: 10, scale: 2 }), // 0.01-10000, mandatory for Catalonia rentals
+
   // Portal-specific configuration (JSON objects containing portal settings)
-  fotocasaProps: jsonb("fotocasa_props").default({}), // { visibilityMode: 1|2|3, hidePrice: boolean }
+  fotocasaProps: jsonb("fotocasa_props").default({}), // Legacy JSON field (migrate to explicit fields above)
   idealistaProps: jsonb("idealista_props").default({}), // Portal-specific settings for Idealista
   habitacliaProps: jsonb("habitaclia_props").default({}), // Portal-specific settings for Habitaclia
   pisoscomProps: jsonb("pisoscom_props").default({}), // Portal-specific settings for Pisos.com
   yaencontreProps: jsonb("yaencontre_props").default({}), // Portal-specific settings for Yaencontre
   milanunciosProps: jsonb("milanuncios_props").default({}), // Portal-specific settings for Milanuncios
+
+  // Progress Stage Tracking
+  fichaCompletedAt: timestamp("ficha_completed_at"), // When all mandatory fields were first completed (24% stage)
 
   // System Fields
   createdAt: timestamp("created_at").defaultNow().notNull(),

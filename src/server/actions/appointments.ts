@@ -97,8 +97,10 @@ export async function updateAppointmentAction(
     }
 
     // NEW: Sync to Google Calendar after successful appointment update
+    // Sync to assignee's calendar (if assigned), otherwise creator's
+    const syncUserId = formData.assignedTo ?? currentUser.id;
     try {
-      await syncToGoogle(currentUser.id, appointmentId, "update");
+      await syncToGoogle(syncUserId, appointmentId, "update");
     } catch (error) {
       console.error(
         "Failed to sync appointment update to Google Calendar:",
@@ -213,8 +215,10 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
     // No need to update it again
 
     // NEW: Sync to Google Calendar after successful appointment creation
+    // Sync to assignee's calendar (if assigned), otherwise creator's
+    const syncUserId = formData.assignedTo ?? currentUser.id;
     try {
-      await syncToGoogle(currentUser.id, result.appointmentId, "create");
+      await syncToGoogle(syncUserId, result.appointmentId, "create");
     } catch (error) {
       console.error("Failed to sync appointment to Google Calendar:", error);
       // Don't fail the appointment creation if Google Calendar sync fails
@@ -583,8 +587,10 @@ export async function deleteAppointmentAction(
     await softDeleteAppointment(Number(appointmentId));
 
     // Sync deletion to Google Calendar
+    // Sync to assignee's calendar (if assigned), otherwise creator's
+    const syncUserId = appointment?.appointments.assignedTo ?? currentUser.id;
     try {
-      await syncToGoogle(currentUser.id, appointmentId, "delete");
+      await syncToGoogle(syncUserId, appointmentId, "delete");
     } catch (error) {
       console.error(
         "Failed to sync appointment deletion to Google Calendar:",

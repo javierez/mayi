@@ -1078,6 +1078,15 @@ export type Listing = {
   milanuncios?: boolean;
   description?: string;
   shortDescription?: string;
+  // Idealista-specific settings (address visibility uses shared fcLocationVisibility)
+  idCoordinatesPrecision?: string | null;
+  // Rental-specific fields
+  rentalType?: string | null;
+  shortTermLicense?: string | null;
+  // Sale-specific fields
+  occupationStatus?: string | null;
+  // Catalonia-specific
+  priceReferenceIndex?: string | null;
 };
 
 export type Contact = {

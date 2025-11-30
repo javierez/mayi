@@ -1013,6 +1013,8 @@ export async function getAccountAgents(accountId: bigint) {
         lastName: users.lastName,
         name: users.name,
         email: users.email,
+        image: users.image,
+        lastLogin: users.lastLogin,
       })
       .from(users)
       .where(and(eq(users.accountId, accountId), eq(users.isActive, true)))

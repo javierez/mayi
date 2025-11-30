@@ -18,6 +18,8 @@ import { eq, and, ne, sql, gte } from "drizzle-orm";
 import type { Listing } from "../../lib/data";
 import { getCurrentUserAccountId } from "../../lib/dal";
 import { getCurrentListingOwners } from "./contact";
+import { logListingCreated, logFichaCompleted } from "./log-activity";
+import { calculateCompletion } from "~/lib/properties/completion-tracker";
 
 // Wrapper functions that automatically get accountId from current session
 // These maintain backward compatibility while adding account filtering
@@ -72,6 +74,11 @@ export async function getAccountWebsiteWithAuth() {
 export async function getRecentlyUpdatedListingsWithAuth() {
   const accountId = await getCurrentUserAccountId();
   return getRecentlyUpdatedListings(accountId);
+}
+
+export async function getRecentContactsForGalleryWithAuth() {
+  const accountId = await getCurrentUserAccountId();
+  return getRecentContactsForGallery(accountId);
 }
 
 export async function updateListingWithAuth(
@@ -213,7 +220,10 @@ export async function duplicateListingContacts(
 
 // Create a new listing
 export async function createListing(
-  data: Omit<Listing, "listingId" | "createdAt" | "updatedAt">,
+  data: Omit<Listing, "listingId" | "createdAt" | "updatedAt"> & {
+    fcLocationVisibility?: number;
+    fcPriceVisibility?: boolean;
+  },
 ) {
   try {
     const accountId = await getCurrentUserAccountId();
@@ -249,6 +259,8 @@ export async function createListing(
         tv: data.tv,
         stoneware: data.stoneware,
         fotocasa: data.fotocasa,
+        fcLocationVisibility: data.fcLocationVisibility ?? 1,
+        fcPriceVisibility: data.fcPriceVisibility ?? false,
         idealista: data.idealista,
         habitaclia: data.habitaclia,
         pisoscom: data.pisoscom,
@@ -269,6 +281,19 @@ export async function createListing(
           eq(listings.accountId, BigInt(accountId)),
         ),
       );
+
+    // Log the listing creation activity (Alta stage - 10%)
+    if (newListing) {
+      await logListingCreated({
+        listingId: BigInt(result.listingId),
+        userId: data.agentId,
+        propertyId: Number(data.propertyId),
+        listingType: data.listingType,
+        initialStatus: data.status ?? "Draft",
+        source: "manual",
+      });
+    }
+
     return newListing;
   } catch (error) {
     console.error("Error creating listing:", error);
@@ -369,8 +394,8 @@ export async function updateListing(
         listingCreatedAt = listing.createdAt;
         const newPrice = Number(data.price);
 
-        // Only log if price actually changed
-        shouldLogPriceChange = oldPrice !== newPrice;
+        // Only log if price actually changed AND it's not the initial price setting (from 0)
+        shouldLogPriceChange = oldPrice !== newPrice && oldPrice !== 0;
       }
     }
 
@@ -424,6 +449,99 @@ export async function updateListing(
       } catch (logError) {
         // Don't fail the update if logging fails
         console.error("Failed to log price change:", logError);
+      }
+    }
+
+    // Check for ficha completion (Ficha Completa stage - 24%)
+    // Only check if fichaCompletedAt is null (not yet completed)
+    if (updatedListing && !updatedListing.fichaCompletedAt) {
+      try {
+        // Fetch property and location data for completion check
+        const [propertyData] = await db
+          .select({
+            propertyType: properties.propertyType,
+            street: properties.street,
+            postalCode: properties.postalCode,
+            squareMeter: properties.squareMeter,
+            bedrooms: properties.bedrooms,
+            bathrooms: properties.bathrooms,
+            neighborhoodId: properties.neighborhoodId,
+          })
+          .from(properties)
+          .where(eq(properties.propertyId, updatedListing.propertyId));
+
+        // Get location data
+        let city: string | null = null;
+        let province: string | null = null;
+        if (propertyData?.neighborhoodId) {
+          const [locationData] = await db
+            .select({
+              city: locations.city,
+              province: locations.province,
+            })
+            .from(locations)
+            .where(eq(locations.neighborhoodId, propertyData.neighborhoodId));
+          if (locationData) {
+            city = locationData.city;
+            province = locationData.province;
+          }
+        }
+
+        // Get image count
+        const [imageResult] = await db
+          .select({ count: sql<number>`COUNT(*)` })
+          .from(propertyImages)
+          .where(
+            and(
+              eq(propertyImages.propertyId, updatedListing.propertyId),
+              eq(propertyImages.isActive, true),
+            ),
+          );
+        const imageCount = imageResult?.count ?? 0;
+
+        // Build combined data object for completion check
+        const combinedData: Record<string, unknown> = {
+          listingId: updatedListing.listingId,
+          price: updatedListing.price,
+          listingType: updatedListing.listingType,
+          description: updatedListing.description,
+          propertyType: propertyData?.propertyType,
+          street: propertyData?.street,
+          city,
+          province,
+          postalCode: propertyData?.postalCode,
+          squareMeter: propertyData?.squareMeter,
+          bedrooms: propertyData?.bedrooms,
+          bathrooms: propertyData?.bathrooms,
+          imageCount,
+        };
+
+        // Calculate completion
+        const completion = calculateCompletion(combinedData);
+
+        // If all mandatory fields are complete, log the activity
+        if (completion.canPublishToPortals) {
+          const { getCurrentUser } = await import("~/lib/dal");
+          const currentUser = await getCurrentUser();
+          const completedFields = completion.mandatory.completed.map((f) => f.id);
+
+          // Log the ficha completion activity
+          await logFichaCompleted({
+            listingId: BigInt(listingId),
+            userId: currentUser.id,
+            completedFields,
+            triggerField: Object.keys(data)[0], // First field that was updated
+          });
+
+          // Update the listing with fichaCompletedAt timestamp
+          await db
+            .update(listings)
+            .set({ fichaCompletedAt: new Date() })
+            .where(eq(listings.listingId, BigInt(listingId)));
+        }
+      } catch (completionError) {
+        // Don't fail the update if completion check fails
+        console.error("Failed to check ficha completion:", completionError);
       }
     }
 
@@ -1082,6 +1200,311 @@ export async function getRecentlyUpdatedListings(accountId: number) {
   }
 }
 
+// Get contacts (owners/buyers) for recently updated listings - deduplicated
+export async function getRecentContactsForGallery(accountId: number) {
+  try {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    // Get all contacts linked to recently updated listings
+    const recentContacts = await db
+      .select({
+        contactId: contacts.contactId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        contactType: listingContacts.contactType,
+        listingId: listings.listingId,
+        referenceNumber: properties.referenceNumber,
+        updatedAt: listingContacts.updatedAt,
+      })
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .innerJoin(listings, eq(listingContacts.listingId, listings.listingId))
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(
+        and(
+          eq(listings.accountId, BigInt(accountId)),
+          eq(listings.isActive, true),
+          eq(listingContacts.isActive, true),
+          eq(contacts.isActive, true),
+          sql`${listingContacts.contactType} IN ('owner', 'buyer')`,
+          sql`${listings.status} NOT IN ('Draft')`,
+          gte(properties.updatedAt, twentyFourHoursAgo),
+        ),
+      )
+      .orderBy(sql`${listingContacts.updatedAt} DESC`);
+
+    // Deduplicate contacts and aggregate their roles
+    const contactMap = new Map<
+      string,
+      {
+        contactId: bigint;
+        firstName: string;
+        lastName: string;
+        roles: Array<{
+          role: "owner" | "buyer";
+          listingId: bigint;
+          referenceNumber: string | null;
+        }>;
+        updatedAt: Date;
+      }
+    >();
+
+    for (const row of recentContacts) {
+      const key = row.contactId.toString();
+      const existing = contactMap.get(key);
+
+      if (existing) {
+        // Add role if not already present for this listing
+        const roleExists = existing.roles.some(
+          (r) => r.listingId === row.listingId && r.role === row.contactType,
+        );
+        if (!roleExists) {
+          existing.roles.push({
+            role: row.contactType as "owner" | "buyer",
+            listingId: row.listingId,
+            referenceNumber: row.referenceNumber,
+          });
+        }
+        // Update to most recent timestamp
+        if (row.updatedAt > existing.updatedAt) {
+          existing.updatedAt = row.updatedAt;
+        }
+      } else {
+        contactMap.set(key, {
+          contactId: row.contactId,
+          firstName: row.firstName,
+          lastName: row.lastName,
+          roles: [
+            {
+              role: row.contactType as "owner" | "buyer",
+              listingId: row.listingId,
+              referenceNumber: row.referenceNumber,
+            },
+          ],
+          updatedAt: row.updatedAt,
+        });
+      }
+    }
+
+    // Convert to array and sort by most recent updatedAt
+    return Array.from(contactMap.values()).sort(
+      (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
+    );
+  } catch (error) {
+    console.error("Error getting recent contacts for gallery:", error);
+    return [];
+  }
+}
+
+// Search gallery items (listings, contacts, agents) by search term
+export async function searchGalleryItems(searchTerm: string) {
+  const accountId = await getCurrentUserAccountId();
+  const normalizedSearch = searchTerm.toLowerCase().trim();
+
+  if (!normalizedSearch) {
+    return { listings: [], contacts: [], agents: [] };
+  }
+
+  const searchPattern = `%${normalizedSearch}%`;
+
+  try {
+    // Search listings (by street, city, referenceNumber, agentName)
+    const matchingListings = await db
+      .select({
+        listingId: listings.listingId,
+        propertyId: listings.propertyId,
+        price: listings.price,
+        status: listings.status,
+        listingType: listings.listingType,
+        isBankOwned: listings.isBankOwned,
+        referenceNumber: properties.referenceNumber,
+        propertyType: properties.propertyType,
+        street: properties.street,
+        city: locations.city,
+        province: locations.province,
+        agentName: users.name,
+        imageUrl: sql<string>`img1.image_url`,
+        imageUrl2: sql<string>`img2.image_url`,
+      })
+      .from(listings)
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
+      .leftJoin(users, eq(listings.agentId, users.id))
+      .leftJoin(
+        sql`(
+          SELECT
+            property_id,
+            image_url,
+            ROW_NUMBER() OVER (PARTITION BY property_id ORDER BY image_order ASC) as rn
+          FROM property_images
+          WHERE is_active = true
+            AND (image_tag IS NULL OR image_tag NOT IN ('video', 'youtube', 'tour'))
+        ) img1`,
+        sql`img1.property_id = ${properties.propertyId} AND img1.rn = 1`,
+      )
+      .leftJoin(
+        sql`(
+          SELECT
+            property_id,
+            image_url,
+            ROW_NUMBER() OVER (PARTITION BY property_id ORDER BY image_order ASC) as rn
+          FROM property_images
+          WHERE is_active = true
+            AND (image_tag IS NULL OR image_tag NOT IN ('video', 'youtube', 'tour'))
+        ) img2`,
+        sql`img2.property_id = ${properties.propertyId} AND img2.rn = 2`,
+      )
+      .where(
+        and(
+          eq(listings.accountId, BigInt(accountId)),
+          eq(listings.isActive, true),
+          sql`${listings.status} NOT IN ('Draft')`,
+          sql`(
+            LOWER(${properties.street}) LIKE ${searchPattern} OR
+            LOWER(${locations.city}) LIKE ${searchPattern} OR
+            LOWER(${properties.referenceNumber}) LIKE ${searchPattern} OR
+            LOWER(${users.name}) LIKE ${searchPattern}
+          )`,
+        ),
+      )
+      .limit(20);
+
+    // Search contacts (by firstName, lastName)
+    const matchingContactsRaw = await db
+      .select({
+        contactId: contacts.contactId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        contactType: listingContacts.contactType,
+        listingId: listings.listingId,
+        referenceNumber: properties.referenceNumber,
+        updatedAt: listingContacts.updatedAt,
+      })
+      .from(contacts)
+      .leftJoin(listingContacts, eq(contacts.contactId, listingContacts.contactId))
+      .leftJoin(listings, eq(listingContacts.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(
+        and(
+          eq(contacts.accountId, BigInt(accountId)),
+          eq(contacts.isActive, true),
+          sql`(
+            LOWER(${contacts.firstName}) LIKE ${searchPattern} OR
+            LOWER(${contacts.lastName}) LIKE ${searchPattern} OR
+            LOWER(CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})) LIKE ${searchPattern}
+          )`,
+        ),
+      )
+      .limit(50);
+
+    // Deduplicate contacts and aggregate roles (same logic as getRecentContactsForGallery)
+    const contactMap = new Map<
+      string,
+      {
+        contactId: bigint;
+        firstName: string;
+        lastName: string;
+        roles: Array<{
+          role: "owner" | "buyer";
+          listingId: bigint;
+          referenceNumber: string | null;
+        }>;
+        updatedAt: Date;
+      }
+    >();
+
+    for (const row of matchingContactsRaw) {
+      const key = row.contactId.toString();
+      const existing = contactMap.get(key);
+
+      if (existing) {
+        if (row.listingId && row.contactType) {
+          const roleExists = existing.roles.some(
+            (r) => r.listingId === row.listingId && r.role === row.contactType,
+          );
+          if (!roleExists && (row.contactType === "owner" || row.contactType === "buyer")) {
+            existing.roles.push({
+              role: row.contactType,
+              listingId: row.listingId,
+              referenceNumber: row.referenceNumber,
+            });
+          }
+        }
+        if (row.updatedAt && row.updatedAt > existing.updatedAt) {
+          existing.updatedAt = row.updatedAt;
+        }
+      } else {
+        const roles: Array<{
+          role: "owner" | "buyer";
+          listingId: bigint;
+          referenceNumber: string | null;
+        }> = [];
+        if (row.listingId && row.contactType && (row.contactType === "owner" || row.contactType === "buyer")) {
+          roles.push({
+            role: row.contactType,
+            listingId: row.listingId,
+            referenceNumber: row.referenceNumber,
+          });
+        }
+        contactMap.set(key, {
+          contactId: row.contactId,
+          firstName: row.firstName,
+          lastName: row.lastName,
+          roles,
+          updatedAt: row.updatedAt ?? new Date(),
+        });
+      }
+    }
+
+    const matchingContacts = Array.from(contactMap.values())
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+      .slice(0, 20);
+
+    // Search agents (by name, firstName, lastName)
+    const matchingAgents = await db
+      .select({
+        userId: users.id,
+        name: users.name,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        image: users.image,
+        updatedAt: users.lastLogin,
+      })
+      .from(users)
+      .where(
+        and(
+          eq(users.accountId, BigInt(accountId)),
+          eq(users.isActive, true),
+          sql`(
+            LOWER(${users.name}) LIKE ${searchPattern} OR
+            LOWER(${users.firstName}) LIKE ${searchPattern} OR
+            LOWER(${users.lastName}) LIKE ${searchPattern}
+          )`,
+        ),
+      )
+      .limit(10);
+
+    return {
+      listings: matchingListings,
+      contacts: matchingContacts,
+      agents: matchingAgents.map((agent) => ({
+        userId: agent.userId,
+        name: agent.name,
+        firstName: agent.firstName,
+        lastName: agent.lastName,
+        image: agent.image,
+        updatedAt: agent.updatedAt ?? new Date(),
+      })),
+    };
+  } catch (error) {
+    console.error("Error searching gallery items:", error);
+    return { listings: [], contacts: [], agents: [] };
+  }
+}
+
 // Get listings associated with a specific contact (as owner or buyer)
 export async function listListingsForContact(
   accountId: number,
@@ -1397,7 +1820,14 @@ export async function getListingDetails(listingId: number, accountId: number) {
         tv: listings.tv,
         stoneware: listings.stoneware,
         fotocasa: listings.fotocasa,
+        fcLocationVisibility: listings.fcLocationVisibility,
+        fcPriceVisibility: listings.fcPriceVisibility,
         idealista: listings.idealista,
+        idCoordinatesPrecision: listings.idCoordinatesPrecision,
+        rentalType: listings.rentalType,
+        shortTermLicense: listings.shortTermLicense,
+        occupationStatus: listings.occupationStatus,
+        priceReferenceIndex: listings.priceReferenceIndex,
         habitaclia: listings.habitaclia,
         pisoscom: listings.pisoscom,
         yaencontre: listings.yaencontre,
@@ -1750,6 +2180,18 @@ export async function createDefaultListing(propertyId: number) {
       .select()
       .from(listings)
       .where(eq(listings.listingId, BigInt(result.listingId)));
+
+    // Log the listing creation activity (Alta stage - 10%)
+    if (newListing) {
+      await logListingCreated({
+        listingId: BigInt(result.listingId),
+        userId: listingData.agentId,
+        propertyId: propertyId,
+        listingType: listingData.listingType,
+        initialStatus: listingData.status,
+        source: "manual",
+      });
+    }
 
     return newListing;
   } catch (error) {
@@ -2195,7 +2637,14 @@ export async function getListingTabsData(listingId: number) {
         neighborhood: locations.neighborhood,
         title: properties.title,
         fotocasa: listings.fotocasa,
+        fcLocationVisibility: listings.fcLocationVisibility,
+        fcPriceVisibility: listings.fcPriceVisibility,
         idealista: listings.idealista,
+        idCoordinatesPrecision: listings.idCoordinatesPrecision,
+        rentalType: listings.rentalType,
+        shortTermLicense: listings.shortTermLicense,
+        occupationStatus: listings.occupationStatus,
+        priceReferenceIndex: listings.priceReferenceIndex,
         habitaclia: listings.habitaclia,
         milanuncios: listings.milanuncios,
         publishToWebsite: listings.publishToWebsite,

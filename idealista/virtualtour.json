@@ -1,0 +1,29 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "https://feeds.idealista.com/v6/schemas/properties/virtualtours.json",
+    "description": "There are two types of virtual visits, the first is 3D through Matterport or VistaPlayer3d providers. Other kind of virtual tour could be through Immoviewer, Spectando, Floorplanner, Realisti_co, Goldmark, Floorfy, Fastout, Panotour, Everpano, Toursvirtuales360, KeepEyeOnBall, Inmovilla, Abitarepn, Pano2VR, Plushglobalmedia, Vizor.io, Nodalview, Gothru, Guru360, Creotour, Habiteo, Vitrio, Plug-in.studio, Ppgstudios, 360forcurious, Roundme, Virtualitour, Sircase, Divein.studio, Casagest24, Spherical, Gizmo-3d, Kuula, Emporda360, Vista360, Clicktours, Espaciosvirtuales.es, Cloudpano, Bizionar and Matterport360 providers. If you are sending a VT type different from the ones listed above, contact us to ensure we can process it.",
+    "title": "Virtual Tours Object",
+    "type": "object",
+    "additionalProperties": false,
+    "anyOf": [
+      {
+        "required": [
+          "virtualTour"
+        ]
+      },
+      {
+        "required": [
+          "virtualTour3D"
+        ]
+      }
+    ],
+    "properties": {
+      "virtualTour3D": {
+        "$ref": "virtualTour3D.json#"
+      },
+      "virtualTour": {
+        "$ref": "virtualTour.json#"
+      }
+    }
+  }
+  

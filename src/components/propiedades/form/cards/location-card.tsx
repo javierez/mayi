@@ -5,13 +5,7 @@ import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { cn } from "~/lib/utils";
-import {
-  ChevronDown,
-  Loader,
-  Search,
-  AlertTriangle,
-  CheckCircle,
-} from "lucide-react";
+import { ChevronDown, Loader, Search, CheckCircle } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { ModernSaveIndicator } from "../common/modern-save-indicator";
@@ -21,6 +15,7 @@ import {
 } from "../address-autocomplete";
 import { CadastralSelectionModal } from "../cadastral-selection-modal";
 import { CadastralActionModal } from "../cadastral-action-modal";
+import { CadastralCorrectionsModal } from "../cadastral-corrections-modal";
 import type { PropertyListing } from "~/types/property-listing";
 import type { SaveState } from "~/types/save-state";
 import { getNeighborhoodFromCoordinates } from "~/server/googlemaps/retrieve_geo";
@@ -48,6 +43,10 @@ interface LocationCardProps {
   setMunicipality: (value: string) => void;
   setIsMapsPopupOpen: (value: boolean) => void;
   getCardStyles: (moduleName: string) => string;
+  // Callbacks for property details fields (builtSurfaceArea, yearBuilt)
+  setBuiltSurfaceArea?: (value: number) => void;
+  setYearBuilt?: (value: number) => void;
+  onPropertyDetailsChange?: () => void;
 }
 
 export function LocationCard({
@@ -66,6 +65,9 @@ export function LocationCard({
   setMunicipality,
   setIsMapsPopupOpen,
   getCardStyles,
+  setBuiltSurfaceArea,
+  setYearBuilt,
+  onPropertyDetailsChange,
 }: LocationCardProps) {
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
   const [streetValue, setStreetValue] = useState(listing.street ?? "");
@@ -91,13 +93,6 @@ export function LocationCard({
     "none" | "validating" | "valid" | "invalid"
   >("none");
 
-  // Helper to get discrepancy for a specific field
-  const getFieldDiscrepancy = (fieldName: string) => {
-    return cadastralDiscrepancies?.differences.find(
-      (diff) => diff.field === fieldName,
-    );
-  };
-
   // Cadastral search state
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [potentialReferences, setPotentialReferences] = useState<
@@ -108,6 +103,9 @@ export function LocationCard({
 
   // Cadastral action modal state
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+
+  // Cadastral corrections modal state
+  const [isCorrectionsModalOpen, setIsCorrectionsModalOpen] = useState(false);
 
   // Controlled state for cadastral reference input
   const [cadastralReferenceValue, setCadastralReferenceValue] = useState(
@@ -182,12 +180,16 @@ export function LocationCard({
     setCadastralValidationStatus("validating");
 
     try {
-      // Get current form data
+      // Get current form data including property details
       const currentData = {
         street: streetValue,
         postalCode: postalCodeValue,
         city: city,
         province: province,
+        builtSurfaceArea: listing.builtSurfaceArea
+          ? Math.round(listing.builtSurfaceArea)
+          : undefined,
+        yearBuilt: listing.yearBuilt ?? undefined,
       };
 
       console.log(
@@ -218,6 +220,11 @@ export function LocationCard({
       setCadastralValidationStatus(
         comparison.hasDiscrepancies ? "invalid" : "valid",
       );
+
+      // Open corrections modal if discrepancies found
+      if (comparison.hasDiscrepancies) {
+        setIsCorrectionsModalOpen(true);
+      }
 
       console.log("✅ [LocationCard] ========================================");
       console.log("✅ [LocationCard] VALIDATION COMPLETED SUCCESSFULLY");
@@ -428,6 +435,8 @@ export function LocationCard({
       suggestedValue,
     );
 
+    let isPropertyDetailsField = false;
+
     switch (fieldName) {
       case "street":
         setStreetValue(suggestedValue);
@@ -441,6 +450,29 @@ export function LocationCard({
       case "province":
         setProvince(suggestedValue);
         break;
+      case "builtSurfaceArea": {
+        // Extract numeric value from "85 m²" format
+        const numericValue = parseInt(suggestedValue.replace(/[^\d]/g, ""), 10);
+        if (!isNaN(numericValue)) {
+          // Update listing directly
+          listing.builtSurfaceArea = numericValue;
+          // Call callback if provided
+          setBuiltSurfaceArea?.(numericValue);
+          isPropertyDetailsField = true;
+        }
+        break;
+      }
+      case "yearBuilt": {
+        const yearValue = parseInt(suggestedValue, 10);
+        if (!isNaN(yearValue)) {
+          // Update listing directly
+          listing.yearBuilt = yearValue;
+          // Call callback if provided
+          setYearBuilt?.(yearValue);
+          isPropertyDetailsField = true;
+        }
+        break;
+      }
     }
 
     // Remove the applied discrepancy from the list
@@ -450,9 +482,10 @@ export function LocationCard({
       );
 
       if (remainingDifferences.length === 0) {
-        // All discrepancies resolved
+        // All discrepancies resolved - close modal
         setCadastralDiscrepancies(null);
         setCadastralValidationStatus("valid");
+        setIsCorrectionsModalOpen(false);
       } else {
         // Update with remaining discrepancies
         setCadastralDiscrepancies({
@@ -465,7 +498,74 @@ export function LocationCard({
     // Mark as having changes
     onUpdateModule(true);
 
+    // Also mark property details as changed if applicable
+    if (isPropertyDetailsField) {
+      onPropertyDetailsChange?.();
+    }
+
     toast.success("Sugerencia aplicada correctamente.");
+  };
+
+  // Apply all cadastral suggestions at once
+  const applyAllSuggestions = () => {
+    if (!cadastralDiscrepancies) return;
+
+    console.log("✅ [LocationCard] Applying all cadastral suggestions");
+
+    let hasPropertyDetailsChanges = false;
+
+    for (const diff of cadastralDiscrepancies.differences) {
+      switch (diff.field) {
+        case "street":
+          setStreetValue(diff.suggested);
+          break;
+        case "postalCode":
+          setPostalCodeValue(diff.suggested);
+          break;
+        case "city":
+          setCity(diff.suggested);
+          break;
+        case "province":
+          setProvince(diff.suggested);
+          break;
+        case "builtSurfaceArea": {
+          // Extract numeric value from "85 m²" format
+          const numericValue = parseInt(
+            diff.suggested.replace(/[^\d]/g, ""),
+            10,
+          );
+          if (!isNaN(numericValue)) {
+            listing.builtSurfaceArea = numericValue;
+            setBuiltSurfaceArea?.(numericValue);
+            hasPropertyDetailsChanges = true;
+          }
+          break;
+        }
+        case "yearBuilt": {
+          const yearValue = parseInt(diff.suggested, 10);
+          if (!isNaN(yearValue)) {
+            listing.yearBuilt = yearValue;
+            setYearBuilt?.(yearValue);
+            hasPropertyDetailsChanges = true;
+          }
+          break;
+        }
+      }
+    }
+
+    // Clear discrepancies and set as valid
+    setCadastralDiscrepancies(null);
+    setCadastralValidationStatus("valid");
+
+    // Mark as having changes
+    onUpdateModule(true);
+
+    // Also mark property details as changed if applicable
+    if (hasPropertyDetailsChanges) {
+      onPropertyDetailsChange?.();
+    }
+
+    toast.success("Todas las sugerencias aplicadas correctamente.");
   };
 
   // Wrap the onSave function with logging
@@ -768,48 +868,18 @@ export function LocationCard({
           <Label htmlFor="street" className="text-sm">
             Calle
           </Label>
-          <div className="relative">
-            <AddressAutocomplete
-              value={streetValue}
-              onChange={(value) => {
-                setStreetValue(value);
-                onUpdateModule(true);
-              }}
-              onLocationSelected={handleLocationSelected}
-              placeholder="Buscar dirección..."
-              disabled={!canEdit}
-            />
-            {getFieldDiscrepancy("street") && (
-              <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
-                <AlertTriangle className="h-4 w-4 text-amber-500" />
-              </div>
-            )}
-          </div>
+          <AddressAutocomplete
+            value={streetValue}
+            onChange={(value) => {
+              setStreetValue(value);
+              onUpdateModule(true);
+            }}
+            onLocationSelected={handleLocationSelected}
+            placeholder="Buscar dirección..."
+            disabled={!canEdit}
+          />
           {/* Hidden input to maintain compatibility with parent form's DOM reading */}
           <input type="hidden" id="street" value={streetValue} readOnly />
-          {/* Field-level warning */}
-          {getFieldDiscrepancy("street") && (
-            <div className="flex items-center gap-2 rounded border border-amber-200/50 bg-amber-50/50 px-2 py-1 text-xs">
-              <span className="flex-1 text-amber-900">
-                <span className="font-medium">
-                  {getFieldDiscrepancy("street")!.suggested}
-                </span>
-              </span>
-              <button
-                type="button"
-                className="rounded border border-amber-400/50 bg-white px-1.5 py-0.5 text-[10px] text-amber-700 transition-colors hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() =>
-                  applyFieldSuggestion(
-                    "street",
-                    getFieldDiscrepancy("street")!.suggested,
-                  )
-                }
-                disabled={!canEdit}
-              >
-                Aplicar
-              </button>
-            </div>
-          )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="addressDetails" className="text-sm">
@@ -829,50 +899,16 @@ export function LocationCard({
             <Label htmlFor="postalCode" className="text-sm">
               Código Postal
             </Label>
-            <div className="relative">
-              <Input
-                id="postalCode"
-                value={postalCodeValue}
-                onChange={(e) => {
-                  setPostalCodeValue(e.target.value);
-                  onUpdateModule(true);
-                }}
-                className={cn(
-                  "h-8 text-gray-500",
-                  getFieldDiscrepancy("postalCode") &&
-                    "border-amber-500 pr-8 focus:border-amber-500",
-                )}
-                disabled={!canEdit}
-              />
-              {getFieldDiscrepancy("postalCode") && (
-                <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
-                  <AlertTriangle className="h-4 w-4 text-amber-500" />
-                </div>
-              )}
-            </div>
-            {/* Field-level warning */}
-            {getFieldDiscrepancy("postalCode") && (
-              <div className="flex items-center gap-2 rounded border border-amber-200/50 bg-amber-50/50 px-2 py-1 text-xs">
-                <span className="flex-1 text-amber-900">
-                  <span className="font-medium">
-                    {getFieldDiscrepancy("postalCode")!.suggested}
-                  </span>
-                </span>
-                <button
-                  type="button"
-                  className="rounded border border-amber-400/50 bg-white px-1.5 py-0.5 text-[10px] text-amber-700 transition-colors hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={() =>
-                    applyFieldSuggestion(
-                      "postalCode",
-                      getFieldDiscrepancy("postalCode")!.suggested,
-                    )
-                  }
-                  disabled={!canEdit}
-                >
-                  Aplicar
-                </button>
-              </div>
-            )}
+            <Input
+              id="postalCode"
+              value={postalCodeValue}
+              onChange={(e) => {
+                setPostalCodeValue(e.target.value);
+                onUpdateModule(true);
+              }}
+              className="h-8 text-gray-500"
+              disabled={!canEdit}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="neighborhood" className="text-sm">
@@ -909,50 +945,16 @@ export function LocationCard({
             <Label htmlFor="city" className="text-sm">
               Ciudad
             </Label>
-            <div className="relative">
-              <Input
-                id="city"
-                value={city}
-                onChange={(e) => {
-                  setCity(e.target.value);
-                  onUpdateModule(true);
-                }}
-                className={cn(
-                  "h-8 text-gray-500",
-                  getFieldDiscrepancy("city") &&
-                    "border-amber-500 pr-8 focus:border-amber-500",
-                )}
-                disabled={!canEdit}
-              />
-              {getFieldDiscrepancy("city") && (
-                <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
-                  <AlertTriangle className="h-4 w-4 text-amber-500" />
-                </div>
-              )}
-            </div>
-            {/* Field-level warning */}
-            {getFieldDiscrepancy("city") && (
-              <div className="flex items-center gap-2 rounded border border-amber-200/50 bg-amber-50/50 px-2 py-1 text-xs">
-                <span className="flex-1 text-amber-900">
-                  <span className="font-medium">
-                    {getFieldDiscrepancy("city")!.suggested}
-                  </span>
-                </span>
-                <button
-                  type="button"
-                  className="rounded border border-amber-400/50 bg-white px-1.5 py-0.5 text-[10px] text-amber-700 transition-colors hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={() =>
-                    applyFieldSuggestion(
-                      "city",
-                      getFieldDiscrepancy("city")!.suggested,
-                    )
-                  }
-                  disabled={!canEdit}
-                >
-                  Aplicar
-                </button>
-              </div>
-            )}
+            <Input
+              id="city"
+              value={city}
+              onChange={(e) => {
+                setCity(e.target.value);
+                onUpdateModule(true);
+              }}
+              className="h-8 text-gray-500"
+              disabled={!canEdit}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="municipality" className="text-sm">
@@ -974,50 +976,16 @@ export function LocationCard({
           <Label htmlFor="province" className="text-sm">
             Provincia
           </Label>
-          <div className="relative">
-            <Input
-              id="province"
-              value={province}
-              onChange={(e) => {
-                setProvince(e.target.value);
-                onUpdateModule(true);
-              }}
-              className={cn(
-                "h-8 text-gray-500",
-                getFieldDiscrepancy("province") &&
-                  "border-amber-500 pr-8 focus:border-amber-500",
-              )}
-              disabled={!canEdit}
-            />
-            {getFieldDiscrepancy("province") && (
-              <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
-                <AlertTriangle className="h-4 w-4 text-amber-500" />
-              </div>
-            )}
-          </div>
-          {/* Field-level warning */}
-          {getFieldDiscrepancy("province") && (
-            <div className="flex items-center gap-2 rounded border border-amber-200/50 bg-amber-50/50 px-2 py-1 text-xs">
-              <span className="flex-1 text-amber-900">
-                <span className="font-medium">
-                  {getFieldDiscrepancy("province")!.suggested}
-                </span>
-              </span>
-              <button
-                type="button"
-                className="rounded border border-amber-400/50 bg-white px-1.5 py-0.5 text-[10px] text-amber-700 transition-colors hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() =>
-                  applyFieldSuggestion(
-                    "province",
-                    getFieldDiscrepancy("province")!.suggested,
-                  )
-                }
-                disabled={!canEdit}
-              >
-                Aplicar
-              </button>
-            </div>
-          )}
+          <Input
+            id="province"
+            value={province}
+            onChange={(e) => {
+              setProvince(e.target.value);
+              onUpdateModule(true);
+            }}
+            className="h-8 text-gray-500"
+            disabled={!canEdit}
+          />
         </div>
 
         <div className="space-y-1.5">
@@ -1127,6 +1095,15 @@ export function LocationCard({
         onValidateData={handleCadastralLookup}
         onOpenCadastralMap={handleOpenCadastralMap}
         cadastralReference={cadastralReferenceValue}
+      />
+
+      {/* Cadastral Corrections Modal */}
+      <CadastralCorrectionsModal
+        isOpen={isCorrectionsModalOpen}
+        onClose={() => setIsCorrectionsModalOpen(false)}
+        discrepancies={cadastralDiscrepancies?.differences ?? []}
+        onApplyField={applyFieldSuggestion}
+        onApplyAll={applyAllSuggestions}
       />
     </Card>
   );

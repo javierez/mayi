@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, AlertCircle, CheckCircle2, AlertTriangle, X } from "lucide-react";
 import {
   Dialog,
@@ -19,6 +19,23 @@ import {
   type ChecklistItem,
 } from "~/lib/helpers/process-stage-checklist";
 import { completeStagesUpTo } from "~/app/actions/process-stages";
+import {
+  getProgressStageActivities,
+  type ProgressStageActivity,
+} from "~/app/actions/listing-actions";
+import { cn } from "~/lib/utils";
+
+// All progress stages in order
+const ALL_STAGES = [
+  { action: "listing_created", label: "Alta de propiedad", percent: 10 },
+  { action: "ficha_completed", label: "Ficha completa", percent: 24 },
+  { action: "encargo_signed", label: "Encargo firmado", percent: 43 },
+  { action: "visitas_started", label: "Visitas", percent: 56 },
+  { action: "offer_accepted", label: "Oferta aceptada", percent: 60 },
+  { action: "arras_signed", label: "Arras", percent: 73 },
+  { action: "escritura_signed", label: "Escritura", percent: 93 },
+  { action: "deal_closed", label: "Cierre", percent: 100 },
+] as const;
 
 interface ProcessStage {
   id: string;
@@ -69,6 +86,19 @@ export function ProcessStageModal({
   const [success, setSuccess] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [timelineActivities, setTimelineActivities] = useState<ProgressStageActivity[]>([]);
+  const [isLoadingTimeline, setIsLoadingTimeline] = useState(false);
+
+  // Fetch timeline activities when modal opens
+  useEffect(() => {
+    if (isOpen && listingId) {
+      setIsLoadingTimeline(true);
+      getProgressStageActivities(listingId)
+        .then(setTimelineActivities)
+        .catch(console.error)
+        .finally(() => setIsLoadingTimeline(false));
+    }
+  }, [isOpen, listingId]);
 
   // Generate checklist items
   const allItems = getChecklistItemsForStage(
@@ -210,26 +240,106 @@ export function ProcessStageModal({
         </DialogHeader>
 
         <div className="space-y-4 py-6">
-          {hasIncompleteItems ? (
-            <>
-              {/* Checklist Items */}
-              <div className="space-y-3">
-                {incompleteItems.map((item) => (
-                  <ChecklistItemRow
-                    key={item.id}
-                    item={item}
-                    isSelected={selectedItems.has(item.id)}
-                    onToggle={() => handleToggle(item.id)}
-                  />
-                ))}
-              </div>
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-8">
-              <CheckCircle2 className="mb-4 h-16 w-16 text-green-500" />
-              <p className="text-center text-gray-600">
-                No hay tareas pendientes hasta esta etapa.
+          {/* Timeline Display - Only show when no pending tasks */}
+          {!hasIncompleteItems && (
+            <div className="mb-6">
+              {isLoadingTimeline ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                </div>
+              ) : (
+                <div className="space-y-0">
+                  {ALL_STAGES.map((stage, index) => {
+                    const activity = timelineActivities.find(
+                      (a) => a.action === stage.action,
+                    );
+                    const isCompleted = !!activity;
+                    const isLast = index === ALL_STAGES.length - 1;
+                    const nextActivity = ALL_STAGES[index + 1]
+                      ? timelineActivities.find(
+                          (a) => a.action === ALL_STAGES[index + 1]?.action,
+                        )
+                      : null;
+                    const isNextCompleted = !!nextActivity;
+
+                    return (
+                      <div key={stage.action} className="flex">
+                        {/* Left column: bullet + line */}
+                        <div className="flex flex-col items-center mr-3">
+                          {/* Bullet */}
+                          <div
+                            className={cn(
+                              "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2",
+                              isCompleted
+                                ? "border-green-500 bg-green-500"
+                                : "border-gray-300 bg-white",
+                            )}
+                          >
+                            {isCompleted && (
+                              <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                            )}
+                          </div>
+                          {/* Connecting line */}
+                          {!isLast && (
+                            <div
+                              className={cn(
+                                "w-0.5 flex-1 min-h-[24px]",
+                                isCompleted && isNextCompleted
+                                  ? "bg-green-500"
+                                  : "bg-gray-200",
+                              )}
+                            />
+                          )}
+                        </div>
+
+                        {/* Right column: content */}
+                        <div className={cn("pb-4", isLast && "pb-0")}>
+                          <p
+                            className={cn(
+                              "text-sm font-medium leading-4",
+                              isCompleted ? "text-gray-900" : "text-gray-400",
+                            )}
+                          >
+                            {stage.label}
+                          </p>
+                          {isCompleted && activity ? (
+                            <p className="mt-0.5 text-xs text-gray-500">
+                              {activity.createdAt.toLocaleDateString("es-ES", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          ) : (
+                            <p className="mt-0.5 text-xs text-gray-300">
+                              Pendiente
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Checklist Items (if any incomplete) */}
+          {hasIncompleteItems && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-gray-700 mb-3">
+                Tareas pendientes:
               </p>
+              {incompleteItems.map((item) => (
+                <ChecklistItemRow
+                  key={item.id}
+                  item={item}
+                  isSelected={selectedItems.has(item.id)}
+                  onToggle={() => handleToggle(item.id)}
+                />
+              ))}
             </div>
           )}
 
@@ -252,37 +362,40 @@ export function ProcessStageModal({
           )}
         </div>
 
-        <DialogFooter>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              onClick={handleSubmit}
-              disabled={!hasSelectedItems || isSubmitting || success}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Actualizando...
-                </>
-              ) : success ? (
-                <>
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Completado
-                </>
-              ) : (
-                "Confirmar"
-              )}
-            </Button>
-          </div>
-        </DialogFooter>
+        {/* Only show footer buttons when there are pending tasks */}
+        {hasIncompleteItems && (
+          <DialogFooter>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                disabled={isSubmitting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSubmit}
+                disabled={!hasSelectedItems || isSubmitting || success}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Actualizando...
+                  </>
+                ) : success ? (
+                  <>
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Completado
+                  </>
+                ) : (
+                  "Confirmar"
+                )}
+              </Button>
+            </div>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

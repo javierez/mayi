@@ -1,0 +1,68 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "id": "https://feeds.idealista.com/v6/schemas/properties/garage.json",
+    "title": "Garaje Object",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "featuresType",
+      "featuresAreaConstructed"
+    ],
+    "properties": {
+      "featuresType": {
+        "title": "property types",
+        "enum": [
+          "garage"
+        ]
+      },
+      "featuresGarageCapacityType": {
+        "$ref": "features.json#/featuresGarageCapacityType"
+      },
+      "featuresAreaConstructed": {
+        "description": "Deprecated. featuresGarageCapacityType now available to indicate the garage capacity type instead of calculate it with the meters",
+        "$ref": "features.json#/featuresAreaConstructed"
+      },
+      "featuresLiftAvailable": {
+        "$ref": "features.json#/featuresLiftAvailable"
+      },
+      "featuresParkingAutomaticDoor": {
+        "$ref": "features.json#/featuresParkingAutomaticDoor"
+      },
+      "featuresParkingPlaceCovered": {
+        "$ref": "features.json#/featuresParkingPlaceCovered"
+      },
+      "featuresParkingType": {
+        "$ref": "features.json#/featuresParkingType"
+      },
+      "featuresSecurityAlarm": {
+        "$ref": "features.json#/featuresSecurityAlarm"
+      },
+      "featuresSecurityPersonnel": {
+        "$ref": "features.json#/featuresSecurityPersonnel"
+      },
+      "featuresSecuritySystem": {
+        "$ref": "features.json#/featuresSecuritySystem"
+      },
+      "featuresAuction": {
+        "$ref": "features.json#/featuresAuction"
+      },
+      "featuresMinAuctionBidIncrement": {
+        "$ref": "features.json#/featuresMinAuctionBidIncrement"
+      },
+      "featuresAuctionDeposit": {
+        "$ref": "features.json#/featuresAuctionDeposit"
+      },
+      "featuresAuctionDate": {
+        "$ref": "features.json#/featuresAuctionDate"
+      },
+      "featuresAuctionTribunal": {
+        "$ref": "features.json#/featuresAuctionTribunal"
+      },
+      "featuresCurrentOccupation": {
+        "$ref": "features.json#/featuresCurrentOccupation"
+      },
+      "featuresHiddenPrice": {
+        "$ref": "features.json#/featuresHiddenPrice"
+      }
+    }
+  }

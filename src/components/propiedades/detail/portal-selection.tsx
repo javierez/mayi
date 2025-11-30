@@ -47,7 +47,12 @@ interface PortalSelectionProps {
   hasCartel?: boolean;
   enEscaparate?: boolean;
   hasKeys?: boolean;
-  // Portal props from database (JSON columns)
+  // Fotocasa & Idealista visibility settings (shared - explicit fields from database)
+  fcLocationVisibility?: number; // 1=Exact, 2=Street, 3=Zone (used by both Fotocasa and Idealista)
+  fcPriceVisibility?: boolean; // true=hidden, false=shown (Fotocasa only)
+  // Idealista-specific settings
+  idCoordinatesPrecision?: "exact" | "moved";
+  // Portal props from database (JSON columns) - Legacy support
   fotocasaProps?: unknown;
   idealistaProps?: unknown;
   habitacliaProps?: unknown;
@@ -79,7 +84,8 @@ interface PortalSelectionProps {
     hasCartel?: boolean;
     enEscaparate?: boolean;
     hasKeys?: boolean;
-    fotocasaProps?: unknown;
+    fcLocationVisibility?: number;
+    fcPriceVisibility?: boolean;
   }) => void;
 }
 
@@ -193,7 +199,10 @@ export function PortalSelection({
   hasCartel = false,
   enEscaparate = false,
   hasKeys = false,
-  fotocasaProps,
+  fcLocationVisibility = 1,
+  fcPriceVisibility = false,
+  idCoordinatesPrecision = "exact",
+  fotocasaProps: _fotocasaProps,
   idealistaProps: _idealistaProps,
   habitacliaProps: _habitacliaProps,
   milanunciosProps: _milanunciosProps,
@@ -213,21 +222,18 @@ export function PortalSelection({
   const [savedPlatformStates, setSavedPlatformStates] = useState<
     Record<string, boolean>
   >({});
-  // Type guard for fotocasaProps
-  const parsedFotocasaProps = fotocasaProps as
-    | { visibilityMode?: number; hidePrice?: boolean }
-    | undefined;
 
+  // Use server-side fields directly, with fallback to legacy fotocasaProps if needed
   const [visibilityModes, setVisibilityModes] = useState<
     Record<string, number>
   >(
     initialVisibilityModes ?? {
-      fotocasa: parsedFotocasaProps?.visibilityMode ?? 1, // Use database value or default to Exact
+      fotocasa: fcLocationVisibility ?? 1, // Use database field directly
     },
   );
   const [hidePriceModes, setHidePriceModes] = useState<Record<string, boolean>>(
     initialHidePriceModes ?? {
-      fotocasa: parsedFotocasaProps?.hidePrice ?? false, // Use database value or default to show price
+      fotocasa: fcPriceVisibility ?? false, // Use database field directly
     },
   );
   const [refreshingPlatforms, setRefreshingPlatforms] = useState<
@@ -235,6 +241,15 @@ export function PortalSelection({
   >({});
   const [fotocasaSettingsExpanded, setFotocasaSettingsExpanded] =
     useState(false);
+  const [idealistaSettingsExpanded, setIdealistaSettingsExpanded] =
+    useState(false);
+  const [publishToWebsiteSettingsExpanded, setPublishToWebsiteSettingsExpanded] =
+    useState(false);
+
+  // Idealista-specific settings state (address visibility uses shared fcLocationVisibility)
+  const [idealistaCoordinatesPrecision, setIdealistaCoordinatesPrecision] = useState<
+    "exact" | "moved"
+  >(idCoordinatesPrecision);
 
   // Initialize platforms based on portal fields and defaults
   useEffect(() => {
@@ -385,8 +400,7 @@ export function PortalSelection({
         try {
           const fotocasaResult = await publishToFotocasa(
             Number(listingId),
-            visibilityModes.fotocasa ?? 1,
-            hidePriceModes.fotocasa ?? false,
+            // Parameters now optional - will read from database fields
           );
           if (fotocasaResult.success) {
             console.log("Successfully published to Fotocasa");
@@ -455,12 +469,19 @@ export function PortalSelection({
           platforms.find((p) => p.id === "enEscaparate")?.isActive ?? false,
         hasKeys:
           platforms.find((p) => p.id === "hasKeys")?.isActive ?? false,
-        // Save portal-specific configuration props
+        // Save Fotocasa visibility settings as explicit fields (preferred approach)
+        fcLocationVisibility: visibilityModes.fotocasa ?? 1,
+        fcPriceVisibility: hidePriceModes.fotocasa ?? false,
+        // Legacy support: Also update fotocasaProps JSON for backward compatibility
         fotocasaProps: {
           visibilityMode: visibilityModes.fotocasa ?? 1,
           hidePrice: hidePriceModes.fotocasa ?? false,
         },
-        idealistaProps: {}, // Placeholder for future Idealista settings
+        // Idealista visibility settings (address visibility uses shared fcLocationVisibility)
+        idCoordinatesPrecision: idealistaCoordinatesPrecision,
+        idealistaProps: {
+          coordinatesPrecision: idealistaCoordinatesPrecision,
+        },
         habitacliaProps: {}, // Placeholder for future Habitaclia settings
         milanunciosProps: {}, // Placeholder for future Milanuncios settings
         pisoscomProps: {}, // Placeholder for future Pisos.com settings
@@ -604,7 +625,8 @@ export function PortalSelection({
           hasCartel: portalUpdates.hasCartel,
           enEscaparate: portalUpdates.enEscaparate,
           hasKeys: portalUpdates.hasKeys,
-          fotocasaProps: portalUpdates.fotocasaProps,
+          fcLocationVisibility: portalUpdates.fcLocationVisibility,
+          fcPriceVisibility: portalUpdates.fcPriceVisibility,
         };
         onPortalsSaved(updatedPortalValues);
       }
@@ -695,13 +717,12 @@ export function PortalSelection({
         );
         const result = await updateFotocasa(
           Number(listingId),
-          visibilityModes.fotocasa ?? 1,
-          hidePriceModes.fotocasa ?? false,
+          // Parameters now optional - will read from database fields
         );
 
         if (result.success) {
           console.log(`Successfully updated ${platformId}`);
-          toast.success("Correctamente actualizado en Fotocasa");
+          toast.success("Visibilidad y precio actualizados");
 
           // Update platform status to active
           const updatedPlatforms = platforms.map((p) =>
@@ -711,8 +732,11 @@ export function PortalSelection({
           );
           setPlatforms(updatedPlatforms);
 
-          // Update fotocasaProps in database with new settings
+          // Update Fotocasa settings in database with new settings
           await updateListingWithAuth(Number(listingId), {
+            fcLocationVisibility: visibilityModes.fotocasa ?? 1,
+            fcPriceVisibility: hidePriceModes.fotocasa ?? false,
+            // Legacy support: also update fotocasaProps for backward compatibility
             fotocasaProps: {
               visibilityMode: visibilityModes.fotocasa ?? 1,
               hidePrice: hidePriceModes.fotocasa ?? false,
@@ -879,7 +903,15 @@ export function PortalSelection({
                   "group relative cursor-pointer transition-all duration-300",
                   getCardStyles(platform),
                 )}
-                onClick={() => handlePlatformToggle(platform.id, !platform.isActive)}
+                onClick={(e) => {
+                  // Prevent card click when clicking settings panel
+                  if (
+                    (e.target as HTMLElement).closest(".settings-panel")
+                  ) {
+                    return;
+                  }
+                  handlePlatformToggle(platform.id, !platform.isActive);
+                }}
               >
                 {/* Orange Dot for Pending State */}
                 {platform.isActive && !savedPlatformStates[platform.id] && (
@@ -891,6 +923,77 @@ export function PortalSelection({
                   <div className="flex h-full w-full items-center justify-center">
                     <div className="relative">{renderPlatformIcon(platform)}</div>
                   </div>
+
+                  {/* Chevron Button and Settings Panel - Only for Publicar en Web */}
+                  {platform.isActive && platform.id === "publishToWebsite" && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPublishToWebsiteSettingsExpanded(!publishToWebsiteSettingsExpanded);
+                        }}
+                        className="settings-panel absolute bottom-2 right-2 z-10 rounded-full p-1.5 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                      >
+                        <ChevronDown
+                          className={cn(
+                            "h-4 w-4 transition-transform duration-200",
+                            publishToWebsiteSettingsExpanded && "rotate-180",
+                          )}
+                        />
+                      </button>
+
+                      {/* Collapsible Content */}
+                      <AnimatePresence>
+                        {publishToWebsiteSettingsExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="settings-panel w-full overflow-hidden"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="mt-4 space-y-3 border-t pb-6 pt-3">
+                              {/* Visibility Mode - Tile Selection */}
+                              <div className="space-y-2">
+                                <Label className="text-xs font-medium text-gray-700">
+                                  Visibilidad
+                                </Label>
+                                <div className="grid grid-cols-3 gap-2">
+                                  {[
+                                    { value: 1, label: "Exacta" },
+                                    { value: 2, label: "Calle" },
+                                    { value: 3, label: "Zona" },
+                                  ].map((option) => (
+                                    <button
+                                      key={option.value}
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleVisibilityModeChange(
+                                          "fotocasa",
+                                          option.value,
+                                        );
+                                      }}
+                                      className={cn(
+                                        "flex items-center justify-center rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200",
+                                        visibilityModes.fotocasa === option.value
+                                          ? "border-gray-700 bg-gray-700 text-white shadow-sm"
+                                          : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50",
+                                      )}
+                                    >
+                                      {option.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -964,7 +1067,84 @@ export function PortalSelection({
                     </div>
                   </div>
 
-                  {/* Chevron Button - Bottom Right Corner */}
+                  {/* Chevron Button - Bottom Right Corner (Idealista) */}
+                  {platform.isActive && platform.id === "idealista" && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIdealistaSettingsExpanded(!idealistaSettingsExpanded);
+                        }}
+                        className="settings-panel absolute bottom-2 right-2 z-10 rounded-full p-1.5 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                      >
+                        <ChevronDown
+                          className={cn(
+                            "h-4 w-4 transition-transform duration-200",
+                            idealistaSettingsExpanded && "rotate-180",
+                          )}
+                        />
+                      </button>
+
+                      {/* Collapsible Content */}
+                      <AnimatePresence>
+                        {idealistaSettingsExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="settings-panel overflow-hidden"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="mt-4 space-y-3 border-t pb-6 pt-3">
+                              {/* Address Visibility Note */}
+                              <p className="text-xs text-gray-500">
+                                La visibilidad de dirección se gestiona desde la configuración de Fotocasa (compartida).
+                              </p>
+
+                              {/* Coordinates Precision */}
+                              <div className="space-y-2">
+                                <Label className="text-xs font-medium text-gray-700">
+                                  Precisión mapa
+                                </Label>
+                                <div className="grid grid-cols-2 gap-2">
+                                  {[
+                                    { value: "exact" as const, label: "Exacta" },
+                                    { value: "moved" as const, label: "Aproximada" },
+                                  ].map((option) => (
+                                    <button
+                                      key={option.value}
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIdealistaCoordinatesPrecision(option.value);
+                                      }}
+                                      className={cn(
+                                        "flex items-center justify-center rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200",
+                                        idealistaCoordinatesPrecision === option.value
+                                          ? "border-gray-700 bg-gray-700 text-white shadow-sm"
+                                          : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50",
+                                      )}
+                                    >
+                                      {option.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Info Note */}
+                              <p className="text-xs text-gray-500">
+                                Nota: Idealista no permite ocultar el precio en España.
+                              </p>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </>
+                  )}
+
+                  {/* Chevron Button - Bottom Right Corner (Fotocasa) */}
                   {platform.isActive && platform.id === "fotocasa" && (
                     <>
                       <button
@@ -994,7 +1174,7 @@ export function PortalSelection({
                             className="settings-panel overflow-hidden"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <div className="mt-4 space-y-3 border-t pt-3">
+                            <div className="mt-4 space-y-3 border-t pb-6 pt-3">
                               {/* Visibility Mode - Tile Selection */}
                               <div className="space-y-2">
                                 <Label className="text-xs font-medium text-gray-700">
@@ -1059,7 +1239,7 @@ export function PortalSelection({
                                     className={cn(
                                       "pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out",
                                       hidePriceModes.fotocasa
-                                        ? "translate-x-4.5"
+                                        ? "translate-x-4"
                                         : "translate-x-0.5",
                                     )}
                                   />

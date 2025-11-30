@@ -31,6 +31,10 @@ export interface PropertyListing {
   habitaclia?: boolean;
   milanuncios?: boolean;
 
+  // Fotocasa-specific settings (explicit fields for better performance)
+  fcLocationVisibility?: number; // 1=Exact, 2=Street, 3=Zone
+  fcPriceVisibility?: boolean; // true=hidden, false=shown
+
   // Dimensions
   bedrooms?: number;
   bathrooms?: number;
@@ -200,6 +204,9 @@ export interface PropertyListing {
   // Timestamps
   createdAt?: Date | null;
   updatedAt?: Date | null;
+
+  // Progress Stage Tracking
+  fichaCompletedAt?: Date | null;
 }
 
 // Type guard to check if an object is a PropertyListing
@@ -245,6 +252,8 @@ export function convertDbListingToPropertyListing(
     idealista: getBoolean(dbListing.idealista),
     habitaclia: getBoolean(dbListing.habitaclia),
     milanuncios: getBoolean(dbListing.milanuncios),
+    fcLocationVisibility: getNumber(dbListing.fcLocationVisibility),
+    fcPriceVisibility: getBoolean(dbListing.fcPriceVisibility),
     bedrooms: (dbListing.bedrooms as number) ?? undefined,
     bathrooms: (dbListing.bathrooms as number) ?? undefined,
     squareMeter: (dbListing.squareMeter as number) ?? undefined,
@@ -419,5 +428,6 @@ export function convertDbListingToPropertyListing(
         : null,
     createdAt: dbListing.createdAt instanceof Date ? dbListing.createdAt : null,
     updatedAt: dbListing.updatedAt instanceof Date ? dbListing.updatedAt : null,
+    fichaCompletedAt: dbListing.fichaCompletedAt instanceof Date ? dbListing.fichaCompletedAt : null,
   };
 }

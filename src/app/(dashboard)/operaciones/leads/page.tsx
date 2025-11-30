@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { TrendingUp, Plus, Info } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -28,7 +28,6 @@ export default function LeadsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [agents, setAgents] = useState<Array<{ id: string; name: string }>>([]);
-  const prefetchCacheRef = useRef<Map<number, LeadWithDetails[]>>(new Map());
   const [infoModalOpen, setInfoModalOpen] = useState(false);
 
   // Get view mode from URL (default to list since Kanban is disabled)
@@ -156,97 +155,6 @@ export default function LeadsPage() {
 
     void fetchLeads();
   }, [searchParams]);
-
-  // Prefetch handler
-  const handlePrefetchPage = useCallback(
-    async (page: number) => {
-      // Check if already cached
-      if (prefetchCacheRef.current.has(page)) {
-        console.log(`Page ${page} already cached`);
-        return;
-      }
-
-      try {
-        console.log(`Prefetching page ${page}`);
-        const search = searchParams.get("search") ?? "";
-        const badgeStatusFilters =
-          searchParams.get("badgeStatus")?.split(",") ?? [];
-        const sourceFilters = searchParams.get("source")?.split(",") ?? [];
-        const agentFilters = searchParams.get("agent")?.split(",") ?? [];
-        const isActiveParam = searchParams.get("isActive");
-
-        // Parse isActive filter - if multiple values selected, use the first one
-        const isActiveFilters = isActiveParam?.split(",") ?? ["true"];
-        let isActiveFilter: boolean | undefined = undefined;
-        if (isActiveFilters.length === 1) {
-          isActiveFilter = isActiveFilters[0] === "true";
-        }
-
-        const result = await listLeadsWithAuth(
-          page,
-          ITEMS_PER_PAGE,
-          search || undefined,
-          badgeStatusFilters.length > 0 ? badgeStatusFilters : undefined,
-          sourceFilters.length > 0 ? sourceFilters : undefined,
-          agentFilters.length > 0 ? agentFilters : undefined,
-          isActiveFilter,
-        );
-
-        if (result && "leads" in result) {
-          /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any */
-          const processedLeads = result.leads.map((item: any) => ({
-            leadId: item.listingContactId,
-            contactId: item.contactId,
-            listingId: item.listingId ?? null,
-            prospectId: item.prospectId ?? null,
-            source: item.source,
-            status: item.status as LeadStatus,
-            offer: item.offer ?? null,
-            offerAccepted: item.offerAccepted ?? null,
-            createdAt: item.createdAt,
-            updatedAt: item.updatedAt,
-            isActive: item.isActive ?? true,
-            visitCount: item.visitCount ?? 0,
-            hasUpcomingVisit: item.hasUpcomingVisit ?? false,
-            hasMissedVisit: item.hasMissedVisit ?? false,
-            hasCompletedVisit: item.hasCompletedVisit ?? false,
-            hasCancelledVisit: item.hasCancelledVisit ?? false,
-            hasOffer: item.hasOffer ?? false,
-            contact: item.contact,
-            listing: item.listing?.listingId
-              ? {
-                  listingId: item.listing.listingId,
-                  referenceNumber: item.listing.referenceNumber,
-                  title: item.listing.title,
-                  street: item.listing.street,
-                  price: item.listing.price ?? "0",
-                  listingType: item.listing.listingType,
-                  propertyType: item.listing.propertyType,
-                  bedrooms: item.listing.bedrooms,
-                  squareMeter: item.listing.squareMeter,
-                }
-              : undefined,
-            owner: item.owner?.contactId
-              ? {
-                  contactId: item.owner.contactId,
-                  firstName: item.owner.firstName,
-                  lastName: item.owner.lastName,
-                  email: item.owner.email,
-                  phone: item.owner.phone,
-                }
-              : undefined,
-          }));
-          /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any */
-
-          prefetchCacheRef.current.set(page, processedLeads);
-          console.log(`Successfully prefetched page ${page}`);
-        }
-      } catch (error) {
-        console.error(`Failed to prefetch page ${page}:`, error);
-      }
-    },
-    [searchParams],
-  );
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());

@@ -145,13 +145,13 @@ export const LeadTable = React.memo(function LeadTable({
     }, [] as LeadWithDetails[]);
   }, [leads]);
 
-  const formatDate = (date: Date) => {
+  const formatDate = React.useCallback((date: Date) => {
     return new Intl.DateTimeFormat("es-ES", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
     }).format(date);
-  };
+  }, []);
 
   const handleViewListing = (listingId: bigint | null | undefined) => {
     if (listingId) {
@@ -222,7 +222,7 @@ export const LeadTable = React.memo(function LeadTable({
     );
   };
 
-  const getBadgeConfig = (lead: LeadWithDetails) => {
+  const getBadgeConfig = React.useCallback((lead: LeadWithDetails) => {
     // Highest priority: Check if lead is inactive
     if (lead.isActive === false) {
       return {
@@ -299,7 +299,7 @@ export const LeadTable = React.memo(function LeadTable({
         title: "Sin visitas",
       };
     }
-  };
+  }, []);
 
   // Export leads to Excel
   const handleExport = React.useCallback(() => {

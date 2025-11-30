@@ -1,10 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentUserAccountId } from "~/lib/dal";
+import { getCurrentUserAccountId, getCurrentUser } from "~/lib/dal";
 import { db } from "~/server/db";
 import { listingContacts, contacts, deals } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
+import { logListingOfferAccepted } from "~/server/queries/log-activity";
 
 /**
  * Deactivate a listing contact (set isActive = false)
@@ -212,6 +213,7 @@ export async function updateOfferStatusAction(
           listingContactId: listingContacts.listingContactId,
           listingId: listingContacts.listingId,
           contactId: listingContacts.contactId,
+          offer: listingContacts.offer,
         })
         .from(listingContacts)
         .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
@@ -268,6 +270,19 @@ export async function updateOfferStatusAction(
             listingContactId: listingContactId,
             status: "Arras Pending",
           });
+        }
+
+        // Log the offer_accepted activity
+        try {
+          const currentUser = await getCurrentUser();
+          await logListingOfferAccepted({
+            listingId: listingContact.listingId,
+            userId: currentUser.id,
+            listingContactId: listingContactId,
+            offerAmount: listingContact.offer ?? undefined,
+          });
+        } catch (logError) {
+          console.error("Failed to log offer_accepted activity:", logError);
         }
       } else if (offerAccepted === null) {
         // Revoking acceptance: delete any associated deal
