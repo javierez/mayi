@@ -570,7 +570,26 @@ export function PortalSelection({
         });
 
       if (changedPortals.length > 0) {
-        toast.success(`Actualizado: ${changedPortals.join(", ")}`);
+        // Check if Idealista was enabled - show specific message
+        const idealistaEnabled =
+          portalUpdates.idealista === true && idealista === false;
+        const idealistaDisabled =
+          portalUpdates.idealista === false && idealista === true;
+
+        if (idealistaEnabled) {
+          toast.success(
+            "Anuncio publicado en Idealista. Espera 15 minutos para ver los resultados.",
+            { duration: 5000 },
+          );
+        } else if (idealistaDisabled) {
+          toast.success("Anuncio eliminado de Idealista.");
+        }
+
+        // Show generic message for other portals (excluding Idealista)
+        const otherPortals = changedPortals.filter((p) => p !== "Idealista");
+        if (otherPortals.length > 0) {
+          toast.success(`Actualizado: ${otherPortals.join(", ")}`);
+        }
       }
 
       // Update local state to reflect the confirmed changes

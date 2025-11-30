@@ -13,6 +13,9 @@ import { processAndUploadWatermarkedImages } from "../utils/watermarked-upload";
 import { POSITION_MAPPING } from "~/types/watermark";
 import type { WatermarkConfig } from "~/types/watermark";
 import { getCurrentUser } from "~/lib/dal";
+import { s3Client } from "~/lib/s3";
+import { getDynamicBucketName } from "~/lib/s3-bucket";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import {
   PROPERTY_TYPE_MAPPING,
   PROPERTY_SUBTYPE_MAPPING,
@@ -33,6 +36,58 @@ import {
   type IdealistaCountry,
   type IdealistaDescriptionLanguage,
 } from "./idealista-mappings";
+
+// ============================================
+// S3 STORAGE
+// ============================================
+
+/**
+ * Upload Idealista JSON export to S3
+ * Stored at: {bucket}/idealista/{timestamp}.json
+ */
+async function uploadIdealistaJsonToS3(jsonContent: string): Promise<{
+  success: boolean;
+  s3Url?: string;
+  s3Key?: string;
+  error?: string;
+}> {
+  try {
+    const bucketName = await getDynamicBucketName();
+
+    // Generate timestamp filename: YYYYMMDD_HHMMSS.json
+    const now = new Date();
+    const timestamp = now
+      .toISOString()
+      .replace(/[-:]/g, "")
+      .replace("T", "_")
+      .slice(0, 15);
+    const s3Key = `idealista/${timestamp}.json`;
+
+    // Upload to S3
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: bucketName,
+        Key: s3Key,
+        Body: jsonContent,
+        ContentType: "application/json",
+      }),
+    );
+
+    const s3Url = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
+
+    return {
+      success: true,
+      s3Url,
+      s3Key,
+    };
+  } catch (error) {
+    console.error("Error uploading Idealista JSON to S3:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown S3 error",
+    };
+  }
+}
 
 // ============================================
 // TYPE DEFINITIONS
@@ -701,7 +756,7 @@ export async function toggleIdealistaListing(
 }
 
 /**
- * Export all Idealista-enabled listings to JSON
+ * Export all Idealista-enabled listings to JSON and save to S3
  */
 export async function exportToIdealista(
   accountId: number,
@@ -716,6 +771,8 @@ export async function exportToIdealista(
   success: boolean;
   jsonContent?: string;
   propertyCount?: number;
+  s3Url?: string;
+  s3Key?: string;
   error?: string;
 }> {
   try {
@@ -726,11 +783,19 @@ export async function exportToIdealista(
     );
     const jsonContent = JSON.stringify(exportData, null, 2);
 
+    // Save to S3
+    const s3Result = await uploadIdealistaJsonToS3(jsonContent);
+    if (!s3Result.success) {
+      console.error("Failed to save Idealista JSON to S3:", s3Result.error);
+      // Continue anyway - S3 save is not critical
+    }
+
     // Log activity
     try {
       const currentUser = await getCurrentUser();
       console.log(
         `User ${currentUser.id} exported ${exportData.customerProperties.length} properties to Idealista for account ${accountId}`,
+        s3Result.success ? `(saved to ${s3Result.s3Key})` : "(S3 save failed)",
       );
     } catch (activityError) {
       console.error("Error logging Idealista export activity:", activityError);
@@ -740,6 +805,8 @@ export async function exportToIdealista(
       success: true,
       jsonContent,
       propertyCount: exportData.customerProperties.length,
+      s3Url: s3Result.s3Url,
+      s3Key: s3Result.s3Key,
     };
   } catch (error) {
     console.error("Error exporting to Idealista:", error);
