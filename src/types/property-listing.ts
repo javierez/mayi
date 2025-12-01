@@ -24,6 +24,13 @@ export interface PropertyListing {
   encargo?: boolean;
   offerAccepted?: boolean;
   hasScheduledVisits?: boolean;
+
+  // Rental-specific fields (only for rent operations)
+  rentalType?: "residential" | "seasonal" | "short_term";
+  shortTermLicense?: string;
+
+  // Sale-specific fields (only for sale operations)
+  occupationStatus?: "free" | "tenanted" | "bare_ownership" | "illegally_occupied";
   
   // Portal publication flags
   fotocasa?: boolean;
@@ -248,6 +255,9 @@ export function convertDbListingToPropertyListing(
     encargo: (dbListing.encargo as boolean) ?? undefined,
     offerAccepted: (dbListing.offerAccepted as boolean) ?? undefined,
     hasScheduledVisits: (dbListing.hasScheduledVisits as boolean) ?? undefined,
+    rentalType: (dbListing.rentalType as PropertyListing["rentalType"]) ?? undefined,
+    shortTermLicense: (dbListing.shortTermLicense as string) ?? undefined,
+    occupationStatus: (dbListing.occupationStatus as PropertyListing["occupationStatus"]) ?? undefined,
     fotocasa: getBoolean(dbListing.fotocasa),
     idealista: getBoolean(dbListing.idealista),
     habitaclia: getBoolean(dbListing.habitaclia),

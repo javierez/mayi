@@ -787,6 +787,36 @@ export function PortalSelection({
           );
           setPlatforms(updatedPlatforms);
         }
+      } else if (platformId === "idealista") {
+        // Re-export all Idealista-enabled properties with current data
+        triggerIdealistaExport()
+          .then((result) => {
+            if (result.success) {
+              console.log("Idealista export triggered successfully");
+              toast.success(
+                "Exportación a Idealista iniciada. Los cambios se reflejarán en ~15 minutos.",
+              );
+              // Update platform status to active with new sync time
+              const updatedPlatforms = platforms.map((p) =>
+                p.id === platformId
+                  ? { ...p, status: "active" as const, lastSync: new Date() }
+                  : p,
+              );
+              setPlatforms(updatedPlatforms);
+            } else {
+              console.error("Idealista export failed:", result.error);
+              toast.error(`Error al exportar a Idealista: ${result.error}`);
+              // Update platform status to error
+              const updatedPlatforms = platforms.map((p) =>
+                p.id === platformId ? { ...p, status: "error" as const } : p,
+              );
+              setPlatforms(updatedPlatforms);
+            }
+          })
+          .catch((error) => {
+            console.error("Idealista export error:", error);
+            toast.error("Error al conectar con Idealista");
+          });
       } else {
         // For other platforms, show not implemented message
         toast.info(`Actualización de ${platform.name} no implementada aún`);
@@ -919,9 +949,9 @@ export function PortalSelection({
           )}
         </AnimatePresence>
 
-        {/* First Row - Icon-based Options (4 columns) */}
+        {/* First Row - Icon-based Options (responsive grid) */}
         <motion.div
-          className="grid grid-cols-4 gap-4"
+          className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.3 }}
@@ -995,7 +1025,7 @@ export function PortalSelection({
                                 <Label className="text-xs font-medium text-gray-700">
                                   Visibilidad
                                 </Label>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="flex flex-wrap gap-2">
                                   {[
                                     { value: 1, label: "Exacta" },
                                     { value: 2, label: "Calle" },
@@ -1012,7 +1042,7 @@ export function PortalSelection({
                                         );
                                       }}
                                       className={cn(
-                                        "flex items-center justify-center rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200",
+                                        "flex flex-1 items-center justify-center rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200",
                                         visibilityModes.fotocasa === option.value
                                           ? "border-gray-700 bg-gray-700 text-white shadow-sm"
                                           : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50",
@@ -1035,9 +1065,9 @@ export function PortalSelection({
           ))}
         </motion.div>
 
-        {/* Portal Cards Grid - 2 Rows of 4 Columns */}
+        {/* Portal Cards Grid - Responsive columns */}
         <motion.div
-          className="grid grid-cols-4 gap-4"
+          className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.3 }}
@@ -1094,8 +1124,8 @@ export function PortalSelection({
                   </Button>
                 </div>
 
-                <CardContent className="flex flex-col p-6">
-                  <div className="flex h-20 flex-col items-center justify-center">
+                <CardContent className="flex flex-col p-4 sm:p-6">
+                  <div className="flex h-16 flex-col items-center justify-center sm:h-20">
                     {/* Platform Logo */}
                     <div className="flex h-full w-full items-center justify-center">
                       <div className="relative h-full w-full">{renderPlatformIcon(platform)}</div>
@@ -1138,7 +1168,7 @@ export function PortalSelection({
                                 <Label className="text-xs font-medium text-gray-700">
                                   Precisión mapa
                                 </Label>
-                                <div className="grid grid-cols-2 gap-2">
+                                <div className="flex flex-wrap gap-2">
                                   {[
                                     { value: "exact" as const, label: "Exacta" },
                                     { value: "moved" as const, label: "Aproximada" },
@@ -1151,7 +1181,7 @@ export function PortalSelection({
                                         setIdealistaCoordinatesPrecision(option.value);
                                       }}
                                       className={cn(
-                                        "flex items-center justify-center rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200",
+                                        "flex flex-1 items-center justify-center rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200",
                                         idealistaCoordinatesPrecision === option.value
                                           ? "border-gray-700 bg-gray-700 text-white shadow-sm"
                                           : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50",
@@ -1210,7 +1240,7 @@ export function PortalSelection({
                                 <Label className="text-xs font-medium text-gray-700">
                                   Visibilidad
                                 </Label>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="flex flex-wrap gap-2">
                                   {[
                                     { value: 1, label: "Exacta" },
                                     { value: 2, label: "Calle" },
@@ -1227,7 +1257,7 @@ export function PortalSelection({
                                         );
                                       }}
                                       className={cn(
-                                        "flex items-center justify-center rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200",
+                                        "flex flex-1 items-center justify-center rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200",
                                         visibilityModes.fotocasa === option.value
                                           ? "border-gray-700 bg-gray-700 text-white shadow-sm"
                                           : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50",

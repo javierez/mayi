@@ -344,12 +344,13 @@ export default function ContactsPage() {
   return (
     <>
       <div className="space-y-4">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">Contactos</h1>
+        <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Contactos</h1>
           <div className="flex gap-2">
-            <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Button onClick={() => setIsCreateModalOpen(true)} className="flex-1 sm:flex-none">
               <Plus className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">Crear Contacto</span>
+              <span className="sm:hidden">Crear</span>
             </Button>
             <Button variant="outline" asChild>
               <Link href="/contactos/borradores">

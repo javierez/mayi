@@ -305,12 +305,12 @@ function PropertyFormInner({ listingId }: PropertyFormProps) {
       );
     }
 
-    router.push("/propiedades");
+    router.push("/operaciones");
   };
 
   // Handle discard and close action
   const handleDiscardAndClose = () => {
-    router.push("/propiedades");
+    router.push("/operaciones");
   };
 
   // Handle close confirmation dialog close

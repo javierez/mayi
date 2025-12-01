@@ -24,7 +24,6 @@ import {
   Calendar,
   BarChart3,
   Menu,
-  X,
   LogOut,
   User,
   Shield,
@@ -243,7 +242,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
           onClick={() => setSidebarOpen(false)}
         />
         <div className="fixed inset-y-0 left-0 flex w-60 flex-col overflow-visible bg-white">
-          <div className="mt-6 flex h-16 items-center justify-between px-4">
+          <div className="mt-6 flex h-16 items-center px-4">
             <div className="relative flex h-16 w-40 items-center justify-center">
               <Image
                 src={accountLogo ?? "/vestazoomin.jpeg"}
@@ -252,13 +251,6 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
                 className="object-contain"
               />
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setSidebarOpen(false)}
-            >
-              <X className="h-5 w-5" />
-            </Button>
           </div>
           <nav className="flex-1 space-y-1 overflow-visible px-2 py-4">
             {navigation
@@ -755,7 +747,7 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
             className="px-4 lg:hidden"
             onClick={() => setSidebarOpen(true)}
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-6 w-6" />
           </Button>
         </div>
         <main className="py-6">

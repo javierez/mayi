@@ -131,19 +131,19 @@ export default function ContactDraftsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <div className="container mx-auto px-4 py-4 sm:py-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Button variant="ghost" size="sm" asChild>
             <Link href="/contactos">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <h1 className="text-2xl font-bold">Contactos Inactivos</h1>
+          <h1 className="text-xl font-bold sm:text-2xl">Contactos Inactivos</h1>
         </div>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-6 sm:mt-8">
         {draftContacts.length === 0 ? (
           <div className="py-12 text-center">
             <User className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
@@ -158,15 +158,15 @@ export default function ContactDraftsPage() {
             </Button>
           </div>
         ) : (
-          <div className="rounded-md border">
+          <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Información de contacto</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Creado</TableHead>
-                  <TableHead className="w-[100px]">Acciones</TableHead>
+                  <TableHead className="min-w-[120px]">Nombre</TableHead>
+                  <TableHead className="hidden min-w-[180px] sm:table-cell">Información de contacto</TableHead>
+                  <TableHead className="min-w-[100px]">Estado</TableHead>
+                  <TableHead className="hidden min-w-[140px] md:table-cell">Creado</TableHead>
+                  <TableHead className="w-[60px] sm:w-[100px]">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -179,19 +179,24 @@ export default function ContactDraftsPage() {
                     }
                   >
                     <TableCell className="font-medium">
-                      {contact.firstName} {contact.lastName}
+                      <div className="min-w-0">
+                        <div className="truncate">{contact.firstName} {contact.lastName}</div>
+                        <div className="truncate text-xs text-muted-foreground sm:hidden">
+                          {formatContactInfo(contact) || "Sin info"}
+                        </div>
+                      </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="text-sm text-muted-foreground">
+                    <TableCell className="hidden sm:table-cell">
+                      <div className="min-w-0 truncate text-sm text-muted-foreground">
                         {formatContactInfo(contact) ||
                           "Sin información de contacto"}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">Sin clasificar</Badge>
+                      <Badge variant="secondary" className="whitespace-nowrap text-xs">Sin clasificar</Badge>
                     </TableCell>
-                    <TableCell>
-                      <div className="text-sm text-muted-foreground">
+                    <TableCell className="hidden md:table-cell">
+                      <div className="whitespace-nowrap text-sm text-muted-foreground">
                         {formatDate(contact.createdAt)}
                       </div>
                     </TableCell>

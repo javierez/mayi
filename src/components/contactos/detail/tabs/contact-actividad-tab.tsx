@@ -444,42 +444,43 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
     return (
       <div className="space-y-4">
         {/* Role Toggle - visible during loading */}
-        <div className="flex justify-center">
-          <div className="inline-flex rounded-lg bg-gray-50 p-1">
+        <div className="flex justify-center px-2">
+          <div className="inline-flex w-full max-w-md flex-wrap justify-center gap-1 rounded-lg bg-gray-50 p-1 sm:w-auto sm:flex-nowrap sm:gap-0">
             <button
               onClick={() => setSelectedRole("propiedades")}
               className={cn(
-                "rounded-md px-4 py-2 text-sm font-medium transition-all duration-200",
+                "flex-1 rounded-md px-2 py-2 text-xs font-medium transition-all duration-200 sm:flex-none sm:px-4 sm:text-sm",
                 currentRole === "propiedades"
                   ? "bg-white text-gray-900 shadow-md"
                   : "text-gray-600 hover:text-gray-900",
               )}
             >
-              <Building className="mr-2 inline-block h-4 w-4" />
-              Propiedades
+              <Building className="mr-1 inline-block h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Propiedades</span>
+              <span className="sm:hidden">Props</span>
             </button>
             <button
               onClick={() => setSelectedRole("intereses")}
               className={cn(
-                "rounded-md px-4 py-2 text-sm font-medium transition-all duration-200",
+                "flex-1 rounded-md px-2 py-2 text-xs font-medium transition-all duration-200 sm:flex-none sm:px-4 sm:text-sm",
                 currentRole === "intereses"
                   ? "bg-white text-gray-900 shadow-md"
                   : "text-gray-600 hover:text-gray-900",
               )}
             >
-              <Home className="mr-2 inline-block h-4 w-4" />
+              <Home className="mr-1 inline-block h-4 w-4 sm:mr-2" />
               Intereses
             </button>
             <button
               onClick={() => setSelectedRole("general")}
               className={cn(
-                "rounded-md px-4 py-2 text-sm font-medium transition-all duration-200",
+                "flex-1 rounded-md px-2 py-2 text-xs font-medium transition-all duration-200 sm:flex-none sm:px-4 sm:text-sm",
                 currentRole === "general"
                   ? "bg-white text-gray-900 shadow-md"
                   : "text-gray-600 hover:text-gray-900",
               )}
             >
-              <Clock className="mr-2 inline-block h-4 w-4" />
+              <Clock className="mr-1 inline-block h-4 w-4 sm:mr-2" />
               General
             </button>
           </div>
@@ -498,42 +499,43 @@ export function ContactActividadTab({ contactId }: ContactActividadTabProps) {
   return (
     <div className="space-y-4">
       {/* Role Toggle - Always visible */}
-      <div className="flex justify-center">
-        <div className="inline-flex rounded-lg bg-gray-50 p-1">
+      <div className="flex justify-center px-2">
+        <div className="inline-flex w-full max-w-md flex-wrap justify-center gap-1 rounded-lg bg-gray-50 p-1 sm:w-auto sm:flex-nowrap sm:gap-0">
           <button
             onClick={() => setSelectedRole("propiedades")}
             className={cn(
-              "rounded-md px-4 py-2 text-sm font-medium transition-all duration-200",
+              "flex-1 rounded-md px-2 py-2 text-xs font-medium transition-all duration-200 sm:flex-none sm:px-4 sm:text-sm",
               selectedRole === "propiedades"
                 ? "bg-white text-gray-900 shadow-md"
                 : "text-gray-600 hover:text-gray-900",
             )}
           >
-            <Building className="mr-2 inline-block h-4 w-4" />
-            Propiedades
+            <Building className="mr-1 inline-block h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Propiedades</span>
+            <span className="sm:hidden">Props</span>
           </button>
           <button
             onClick={() => setSelectedRole("intereses")}
             className={cn(
-              "rounded-md px-4 py-2 text-sm font-medium transition-all duration-200",
+              "flex-1 rounded-md px-2 py-2 text-xs font-medium transition-all duration-200 sm:flex-none sm:px-4 sm:text-sm",
               selectedRole === "intereses"
                 ? "bg-white text-gray-900 shadow-md"
                 : "text-gray-600 hover:text-gray-900",
             )}
           >
-            <Home className="mr-2 inline-block h-4 w-4" />
+            <Home className="mr-1 inline-block h-4 w-4 sm:mr-2" />
             Intereses
           </button>
           <button
             onClick={() => setSelectedRole("general")}
             className={cn(
-              "rounded-md px-4 py-2 text-sm font-medium transition-all duration-200",
+              "flex-1 rounded-md px-2 py-2 text-xs font-medium transition-all duration-200 sm:flex-none sm:px-4 sm:text-sm",
               selectedRole === "general"
                 ? "bg-white text-gray-900 shadow-md"
                 : "text-gray-600 hover:text-gray-900",
             )}
           >
-            <Clock className="mr-2 inline-block h-4 w-4" />
+            <Clock className="mr-1 inline-block h-4 w-4 sm:mr-2" />
             General
           </button>
         </div>

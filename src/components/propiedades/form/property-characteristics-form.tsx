@@ -244,6 +244,11 @@ export function PropertyCharacteristicsForm({
             listingType: listingTypes[0],
             isBankOwned,
             price: numericPrice ? parseFloat(numericPrice) : 0,
+            // Rental-specific fields
+            rentalType: rentalType ?? null,
+            shortTermLicense: shortTermLicense || null,
+            // Sale-specific fields
+            occupationStatus: occupationStatus ?? null,
           };
           propertyData = {
             propertyType,
@@ -870,6 +875,20 @@ export function PropertyCharacteristicsForm({
   const [newConstruction, setNewConstruction] = useState(
     listing.newConstruction ?? false,
   );
+
+  // Rental-specific fields (only for rent operations)
+  const [rentalType, setRentalType] = useState<"residential" | "seasonal" | "short_term" | undefined>(
+    listing.rentalType,
+  );
+  const [shortTermLicense, setShortTermLicense] = useState(
+    listing.shortTermLicense ?? "",
+  );
+
+  // Sale-specific fields (only for sale operations)
+  const [occupationStatus, setOccupationStatus] = useState<"free" | "tenanted" | "bare_ownership" | "illegally_occupied" | undefined>(
+    listing.occupationStatus,
+  );
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingShort, setIsGeneratingShort] = useState(false);
   const [description, setDescription] = useState(listing.description ?? "");
@@ -1504,6 +1523,9 @@ export function PropertyCharacteristicsForm({
             currentTitle={currentTitle}
             allowedUse={allowedUse}
             canEdit={canEdit}
+            rentalType={rentalType}
+            shortTermLicense={shortTermLicense}
+            occupationStatus={occupationStatus}
             onToggleSection={toggleSection}
             onSave={() => saveModule("basicInfo")}
             onUpdateModule={(hasChanges) =>
@@ -1516,6 +1538,9 @@ export function PropertyCharacteristicsForm({
             setAllowedUse={setAllowedUse}
             setIsBankOwned={setIsBankOwned}
             setNewConstruction={setNewConstruction}
+            setRentalType={setRentalType}
+            setShortTermLicense={setShortTermLicense}
+            setOccupationStatus={setOccupationStatus}
             getCardStyles={getCardStyles}
           />
 

@@ -29,6 +29,10 @@ interface BasicInfoCardProps {
   currentTitle?: string;
   allowedUse: number;
   canEdit?: boolean;
+  // New rental/sale specific fields
+  rentalType?: "residential" | "seasonal" | "short_term";
+  shortTermLicense?: string;
+  occupationStatus?: "free" | "tenanted" | "bare_ownership" | "illegally_occupied";
   onToggleSection: (section: string) => void;
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
@@ -41,6 +45,9 @@ interface BasicInfoCardProps {
   setAllowedUse: (value: number) => void;
   setIsBankOwned: (value: boolean) => void;
   setNewConstruction: (value: boolean) => void;
+  setRentalType?: (value: "residential" | "seasonal" | "short_term" | undefined) => void;
+  setShortTermLicense?: (value: string) => void;
+  setOccupationStatus?: (value: "free" | "tenanted" | "bare_ownership" | "illegally_occupied" | undefined) => void;
   getCardStyles: (moduleName: string) => string;
 }
 
@@ -56,6 +63,9 @@ export function BasicInfoCard({
   currentTitle,
   allowedUse,
   canEdit = true,
+  rentalType,
+  shortTermLicense,
+  occupationStatus,
   onToggleSection,
   onSave,
   onUpdateModule,
@@ -66,6 +76,9 @@ export function BasicInfoCard({
   setAllowedUse,
   setIsBankOwned,
   setNewConstruction,
+  setRentalType,
+  setShortTermLicense,
+  setOccupationStatus,
   getCardStyles,
 }: BasicInfoCardProps) {
   const currentListingType = listingTypes[0] ?? "";
@@ -245,6 +258,75 @@ export function BasicInfoCard({
             </div>
           </div>
         )}
+
+        {/* Rental Type - Only shown for rent listings */}
+        {["Rent", "RentWithOption", "RoomSharing"].includes(currentListingType) && (
+          <div className="space-y-1.5">
+            <Label className="text-sm">Tipo de Alquiler</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={rentalType === "residential" ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setRentalType?.(rentalType === "residential" ? undefined : "residential");
+                  onUpdateModule(true);
+                }}
+                className="flex-1"
+                disabled={!canEdit}
+              >
+                Residencial
+              </Button>
+              <Button
+                type="button"
+                variant={rentalType === "seasonal" ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setRentalType?.(rentalType === "seasonal" ? undefined : "seasonal");
+                  onUpdateModule(true);
+                }}
+                className="flex-1"
+                disabled={!canEdit}
+              >
+                Temporada
+              </Button>
+              <Button
+                type="button"
+                variant={rentalType === "short_term" ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setRentalType?.(rentalType === "short_term" ? undefined : "short_term");
+                  onUpdateModule(true);
+                }}
+                className="flex-1"
+                disabled={!canEdit}
+              >
+                Vacacional
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Short Term License - Shown for seasonal and short_term rental types */}
+        {(rentalType === "seasonal" || rentalType === "short_term") && (
+          <div className="space-y-1.5">
+            <Label htmlFor="shortTermLicense" className="text-sm">
+              Licencia turística
+            </Label>
+            <Input
+              id="shortTermLicense"
+              value={shortTermLicense ?? ""}
+              onChange={(e) => {
+                setShortTermLicense?.(e.target.value);
+                onUpdateModule(true);
+              }}
+              className="h-8 text-gray-500"
+              placeholder="Ej: VT-12345-A"
+              disabled={!canEdit}
+            />
+          </div>
+        )}
+
         {["Sale", "Transfer"].includes(currentListingType) && (
           <div className="ml-2 flex flex-row items-center gap-6">
             <div className="flex items-center gap-2">
@@ -465,6 +547,67 @@ export function BasicInfoCard({
             Obra nueva
           </Button>
         </div>
+
+        {/* Occupation Status - Only shown for sale listings */}
+        {["Sale", "Transfer"].includes(currentListingType) && (
+          <div className="space-y-1.5">
+            <Label className="text-sm">Estado de ocupación</Label>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant={occupationStatus === "free" ? "default" : "outline"}
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => {
+                  setOccupationStatus?.(occupationStatus === "free" ? undefined : "free");
+                  onUpdateModule(true);
+                }}
+                disabled={!canEdit}
+              >
+                Libre
+              </Button>
+              <Button
+                type="button"
+                variant={occupationStatus === "tenanted" ? "default" : "outline"}
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => {
+                  setOccupationStatus?.(occupationStatus === "tenanted" ? undefined : "tenanted");
+                  onUpdateModule(true);
+                }}
+                disabled={!canEdit}
+              >
+                Alquilado
+              </Button>
+              <Button
+                type="button"
+                variant={occupationStatus === "bare_ownership" ? "default" : "outline"}
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => {
+                  setOccupationStatus?.(occupationStatus === "bare_ownership" ? undefined : "bare_ownership");
+                  onUpdateModule(true);
+                }}
+                disabled={!canEdit}
+              >
+                Nuda propiedad
+              </Button>
+              <Button
+                type="button"
+                variant={occupationStatus === "illegally_occupied" ? "default" : "outline"}
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => {
+                  setOccupationStatus?.(occupationStatus === "illegally_occupied" ? undefined : "illegally_occupied");
+                  onUpdateModule(true);
+                }}
+                disabled={!canEdit}
+              >
+                Ocupado
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="my-2 border-t border-border" />
       </div>

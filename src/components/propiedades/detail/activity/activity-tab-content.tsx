@@ -163,11 +163,11 @@ function AcceptedOfferCard({
   }
 
   return (
-    <div className="space-y-4 rounded-lg border bg-white p-4 transition-all hover:shadow-md">
+    <div className="space-y-3 rounded-lg border bg-white p-3 transition-all hover:shadow-md sm:space-y-4 sm:p-4">
       {/* Header with name and badge */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">{contactName}</h3>
-        <Badge className="bg-green-100 text-xs text-green-800">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <h3 className="min-w-0 truncate text-base font-semibold text-gray-900 sm:text-lg">{contactName}</h3>
+        <Badge className="w-fit shrink-0 bg-green-100 text-xs text-green-800">
           <span className="flex items-center gap-1">
             <ThumbsUp className="h-3 w-3" />
             Oferta Aceptada
@@ -176,16 +176,16 @@ function AcceptedOfferCard({
       </div>
 
       {/* Buyer Contact Information */}
-      <div className="space-y-1.5 border-b pb-4">
+      <div className="space-y-1.5 border-b pb-3 sm:pb-4">
         {contact.email && (
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <button
               onClick={() => window.open(`mailto:${contact.email}`, "_blank")}
-              className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gray-900"
+              className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gray-900"
               title="Enviar email"
             >
-              <Mail className="h-3.5 w-3.5" />
-              <span className="underline decoration-dotted underline-offset-2 hover:decoration-solid">
+              <Mail className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate underline decoration-dotted underline-offset-2 hover:decoration-solid">
                 {contact.email}
               </span>
             </button>
@@ -193,13 +193,13 @@ function AcceptedOfferCard({
         )}
 
         {contact.phone && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => window.open(`tel:${contact.phone}`, "_blank")}
               className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gray-900"
               title="Llamar"
             >
-              <Phone className="h-3.5 w-3.5" />
+              <Phone className="h-3.5 w-3.5 shrink-0" />
               <span className="underline decoration-dotted underline-offset-2 hover:decoration-solid">
                 {contact.phone}
               </span>
@@ -212,7 +212,7 @@ function AcceptedOfferCard({
               className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-green-600"
               title="Enviar WhatsApp"
             >
-              <MessageCircle className="h-3.5 w-3.5" />
+              <MessageCircle className="h-3.5 w-3.5 shrink-0" />
               <span className="text-xs">WhatsApp</span>
             </button>
           </div>
@@ -220,7 +220,7 @@ function AcceptedOfferCard({
       </div>
 
       {/* Offer Comparison with Bars */}
-      <div className="border-b pb-4">
+      <div className="border-b pb-3 sm:pb-4">
         <OfferComparisonCard
           offer={contact.offer}
           listingPrice={listingPrice}
@@ -229,7 +229,7 @@ function AcceptedOfferCard({
 
       {/* Action Buttons */}
       {permissions.canEditContacts && (
-        <div className="space-y-2 border-b pb-4">
+        <div className="space-y-2 border-b pb-3 sm:pb-4">
           <Button
             variant="ghost"
             size="sm"
@@ -279,21 +279,21 @@ function AcceptedOfferCard({
       {/* Owner Contact Section */}
       {ownerContact && (
         <div className="space-y-1.5">
-          <p className="text-sm font-medium text-gray-900">
+          <p className="truncate text-sm font-medium text-gray-900">
             {ownerContact.firstName} {ownerContact.lastName ?? ""}
           </p>
 
           {ownerContact.email && (
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-2">
               <button
                 onClick={() =>
                   window.open(`mailto:${ownerContact.email}`, "_blank")
                 }
-                className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gray-900"
+                className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gray-900"
                 title="Enviar email"
               >
-                <Mail className="h-3.5 w-3.5" />
-                <span className="underline decoration-dotted underline-offset-2 hover:decoration-solid">
+                <Mail className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate underline decoration-dotted underline-offset-2 hover:decoration-solid">
                   {ownerContact.email}
                 </span>
               </button>
@@ -301,7 +301,7 @@ function AcceptedOfferCard({
           )}
 
           {ownerContact.phone && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() =>
                   window.open(`tel:${ownerContact.phone}`, "_blank")
@@ -309,7 +309,7 @@ function AcceptedOfferCard({
                 className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-gray-900"
                 title="Llamar"
               >
-                <Phone className="h-3.5 w-3.5" />
+                <Phone className="h-3.5 w-3.5 shrink-0" />
                 <span className="underline decoration-dotted underline-offset-2 hover:decoration-solid">
                   {ownerContact.phone}
                 </span>
@@ -325,7 +325,7 @@ function AcceptedOfferCard({
                 className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-green-600"
                 title="Enviar WhatsApp"
               >
-                <MessageCircle className="h-3.5 w-3.5" />
+                <MessageCircle className="h-3.5 w-3.5 shrink-0" />
                 <span className="text-xs">WhatsApp</span>
               </button>
             </div>
@@ -810,7 +810,7 @@ export function ActivityTabContent({
   return (
     <div className="space-y-6">
       {/* KPI Navigation Cards */}
-      <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="mb-6 grid grid-cols-1 gap-3 sm:mb-8 sm:gap-4 md:grid-cols-2">
         <VisitsKPICard
           completedCount={allCompletedVisits.length}
           scheduledCount={allScheduledVisits.length}
@@ -838,10 +838,10 @@ export function ActivityTabContent({
         <div className="animate-in fade-in space-y-4 duration-300">
           {/* Toggle between all visits and timeline view */}
           {hasAcceptedOffer && acceptedOfferContact && (
-            <div className="mb-4 flex items-center gap-2 border-b border-gray-200">
+            <div className="mb-4 flex items-center gap-1 overflow-x-auto border-b border-gray-200 sm:gap-2">
               <button
                 onClick={() => setVisitViewMode("all")}
-                className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+                className={`whitespace-nowrap border-b-2 px-3 py-2 text-xs font-medium transition-colors sm:px-4 sm:text-sm ${
                   visitViewMode === "all"
                     ? "border-primary text-primary"
                     : "border-transparent text-gray-500 hover:text-gray-700"
@@ -851,7 +851,7 @@ export function ActivityTabContent({
               </button>
               <button
                 onClick={() => setVisitViewMode("timeline")}
-                className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+                className={`whitespace-nowrap border-b-2 px-3 py-2 text-xs font-medium transition-colors sm:px-4 sm:text-sm ${
                   visitViewMode === "timeline"
                     ? "border-green-600 text-green-700"
                     : "border-transparent text-gray-500 hover:text-gray-700"
@@ -1216,10 +1216,10 @@ export function ActivityTabContent({
         <div className="animate-in fade-in space-y-4 duration-300">
           {/* Tab Toggle - Only show when there's an accepted offer */}
           {hasAcceptedOffer && (
-            <div className="flex items-center gap-2 border-b border-gray-200">
+            <div className="flex items-center gap-1 overflow-x-auto border-b border-gray-200 sm:gap-2">
               <button
                 onClick={() => setContactViewMode("accepted")}
-                className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+                className={`whitespace-nowrap border-b-2 px-3 py-2 text-xs font-medium transition-colors sm:px-4 sm:text-sm ${
                   contactViewMode === "accepted"
                     ? "border-green-600 text-green-700"
                     : "border-transparent text-gray-500 hover:text-gray-700"
@@ -1229,7 +1229,7 @@ export function ActivityTabContent({
               </button>
               <button
                 onClick={() => setContactViewMode("all")}
-                className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
+                className={`whitespace-nowrap border-b-2 px-3 py-2 text-xs font-medium transition-colors sm:px-4 sm:text-sm ${
                   contactViewMode === "all"
                     ? "border-primary text-primary"
                     : "border-transparent text-gray-500 hover:text-gray-700"

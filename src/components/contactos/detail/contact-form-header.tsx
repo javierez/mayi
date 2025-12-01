@@ -69,17 +69,17 @@ export function ContactFormHeader({
   }
 
   return (
-    <div className="mb-8">
-      <Card className="p-6">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-4">
-            <Avatar className="h-16 w-16">
+    <div className="mb-6 sm:mb-8">
+      <Card className="p-4 sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <Avatar className="h-12 w-12 flex-shrink-0 sm:h-16 sm:w-16">
               <AvatarFallback className="bg-gray-100 text-gray-600">
-                <User className="h-8 w-8" />
+                <User className="h-6 w-6 sm:h-8 sm:w-8" />
               </AvatarFallback>
             </Avatar>
-            <div className="flex flex-col">
-              <h1 className="text-3xl font-bold text-gray-900">
+            <div className="flex min-w-0 flex-col">
+              <h1 className="break-words text-xl font-bold text-gray-900 sm:text-2xl md:text-3xl">
                 {contact.firstName} {contact.lastName}
               </h1>
               <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -210,17 +210,17 @@ export function ContactFormHeader({
                   </Badge>
                 )}
               </div>
-              <div className="mt-4 flex items-center gap-6 text-sm text-gray-600">
+              <div className="mt-3 flex flex-col gap-2 text-sm text-gray-600 sm:mt-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4 md:gap-6">
                 {contact.email && (
-                  <div className="group flex items-center gap-2">
-                    <Mail className="h-4 w-4" />
-                    <span className="transition-all duration-200 group-hover:font-semibold">
+                  <div className="group flex min-w-0 items-center gap-2">
+                    <Mail className="h-4 w-4 flex-shrink-0" />
+                    <span className="min-w-0 truncate transition-all duration-200 group-hover:font-semibold">
                       {contact.email}
                     </span>
-                    <div className="flex w-0 items-center overflow-hidden opacity-0 transition-all duration-300 ease-out group-hover:w-auto group-hover:opacity-100">
+                    <div className="flex flex-shrink-0 items-center gap-1 sm:w-0 sm:overflow-hidden sm:opacity-0 sm:transition-all sm:duration-300 sm:ease-out sm:group-hover:w-auto sm:group-hover:opacity-100">
                       <button
                         onClick={() => handleCopy("email", contact.email!)}
-                        className="scale-0 transform rounded p-1 transition-all duration-200 hover:bg-gray-100 group-hover:scale-100"
+                        className="rounded p-1 transition-all duration-200 hover:bg-gray-100 sm:scale-0 sm:transform sm:group-hover:scale-100"
                         title="Copiar email"
                       >
                         {copied.field === "email" &&
@@ -234,7 +234,7 @@ export function ContactFormHeader({
                         href={`mailto:${contact.email}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="ml-1 scale-0 transform rounded p-1 transition-all duration-200 hover:bg-gray-100 group-hover:scale-100"
+                        className="rounded p-1 transition-all duration-200 hover:bg-gray-100 sm:scale-0 sm:transform sm:group-hover:scale-100"
                         style={{ transitionDelay: "100ms" }}
                         title="Enviar email"
                       >
@@ -244,15 +244,15 @@ export function ContactFormHeader({
                   </div>
                 )}
                 {contact.phone && (
-                  <div className="group flex items-center gap-2">
-                    <Phone className="h-4 w-4" />
-                    <span className="transition-all duration-200 group-hover:font-semibold">
+                  <div className="group flex min-w-0 items-center gap-2">
+                    <Phone className="h-4 w-4 flex-shrink-0" />
+                    <span className="min-w-0 truncate transition-all duration-200 group-hover:font-semibold">
                       {contact.phone}
                     </span>
-                    <div className="flex w-0 items-center overflow-hidden opacity-0 transition-all duration-300 ease-out group-hover:w-auto group-hover:opacity-100">
+                    <div className="flex flex-shrink-0 items-center gap-1 sm:w-0 sm:overflow-hidden sm:opacity-0 sm:transition-all sm:duration-300 sm:ease-out sm:group-hover:w-auto sm:group-hover:opacity-100">
                       <button
                         onClick={() => handleCopy("phone", contact.phone!)}
-                        className="scale-0 transform rounded p-1 transition-all duration-200 hover:bg-gray-100 group-hover:scale-100"
+                        className="rounded p-1 transition-all duration-200 hover:bg-gray-100 sm:scale-0 sm:transform sm:group-hover:scale-100"
                         title="Copiar teléfono"
                       >
                         {copied.field === "phone" &&
@@ -266,7 +266,7 @@ export function ContactFormHeader({
                         href={`tel:${contact.phone}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="ml-1 scale-0 transform rounded p-1 transition-all duration-200 hover:bg-gray-100 group-hover:scale-100"
+                        className="rounded p-1 transition-all duration-200 hover:bg-gray-100 sm:scale-0 sm:transform sm:group-hover:scale-100"
                         style={{ transitionDelay: "100ms" }}
                         title="Llamar"
                       >
@@ -288,18 +288,18 @@ export function ContactFormHeader({
                 </button>
               </div>
               {showDates && (
-                <div className="mt-3 flex items-center gap-6 text-sm text-gray-600">
+                <div className="mt-3 flex flex-col gap-2 text-sm text-gray-600 sm:flex-row sm:items-center sm:gap-4 md:gap-6">
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    <span>
+                    <Calendar className="h-4 w-4 flex-shrink-0" />
+                    <span className="whitespace-nowrap">
                       Creado:{" "}
                       {new Date(contact.createdAt).toLocaleDateString("es-ES")}
                     </span>
                   </div>
                   {contact.updatedAt && (
                     <div className="flex items-center gap-2">
-                      <RefreshCw className="h-4 w-4" />
-                      <span>
+                      <RefreshCw className="h-4 w-4 flex-shrink-0" />
+                      <span className="whitespace-nowrap">
                         Actualizado:{" "}
                         {new Date(contact.updatedAt).toLocaleDateString(
                           "es-ES",
