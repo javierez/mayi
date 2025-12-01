@@ -816,7 +816,13 @@ export function PortalSelection({
           .catch((error) => {
             console.error("Idealista export error:", error);
             toast.error("Error al conectar con Idealista");
+          })
+          .finally(() => {
+            // Reset refreshing state after async operation completes
+            setRefreshingPlatforms((prev) => ({ ...prev, [platformId]: false }));
           });
+        // Return early to prevent the outer finally from resetting refreshing state
+        return;
       } else {
         // For other platforms, show not implemented message
         toast.info(`Actualización de ${platform.name} no implementada aún`);

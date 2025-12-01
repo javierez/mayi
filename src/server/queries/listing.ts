@@ -20,6 +20,11 @@ import { getCurrentUserAccountId } from "../../lib/dal";
 import { getCurrentListingOwners } from "./contact";
 import { logListingCreated, logFichaCompleted } from "./log-activity";
 import { calculateCompletion } from "~/lib/properties/completion-tracker";
+import {
+  cleanupPortalAdsForListing,
+  cleanupPortalAdsForMultipleListings,
+  triggerIdealistaExportForAccount,
+} from "~/server/portals/cleanup";
 
 // Wrapper functions that automatically get accountId from current session
 // These maintain backward compatibility while adding account filtering
@@ -2277,9 +2282,14 @@ export async function discardListingWithAuth(listingId: number) {
 
 export async function discardListing(listingId: number, accountId: number) {
   try {
-    // First verify the listing belongs to this account
+    // First verify the listing belongs to this account and get portal status
     const [listing] = await db
-      .select()
+      .select({
+        listingId: listings.listingId,
+        accountId: listings.accountId,
+        fotocasa: listings.fotocasa,
+        idealista: listings.idealista,
+      })
       .from(listings)
       .where(
         and(
@@ -2292,16 +2302,42 @@ export async function discardListing(listingId: number, accountId: number) {
       throw new Error("Listing not found or access denied");
     }
 
-    // Update the listing status to "Descartado"
+    // PORTAL CLEANUP: Unpublish from portals when discarding
+    // Fotocasa is blocking, Idealista is non-blocking
+    console.log(`🗑️ [Discard Listing] Starting portal cleanup for listing ${listingId}...`);
+
+    const { fotocasaResult, needsIdealistaExport } = await cleanupPortalAdsForListing(listingId);
+
+    console.log(`📊 [Discard Listing] Portal cleanup results:`, {
+      fotocasa: fotocasaResult,
+      needsIdealistaExport,
+    });
+
+    // Update the listing status to "Descartado" and set portal flags to false
     await db
       .update(listings)
-      .set({ status: "Descartado" })
+      .set({
+        status: "Descartado",
+        // Also disable portal publishing when discarding
+        fotocasa: false,
+        idealista: false,
+      })
       .where(
         and(
           eq(listings.listingId, BigInt(listingId)),
           eq(listings.accountId, BigInt(accountId)),
         ),
       );
+
+    // PORTAL CLEANUP: Trigger Idealista export AFTER database update (non-blocking)
+    // The new export will NOT include this listing since idealista is now false
+    if (needsIdealistaExport) {
+      console.log(`📤 [Discard Listing] Triggering Idealista export for account ${accountId}...`);
+      // Fire and forget - don't await, non-blocking
+      triggerIdealistaExportForAccount(accountId).catch((error) => {
+        console.error(`⚠️ [Discard Listing] Idealista export failed (non-blocking):`, error);
+      });
+    }
 
     return {
       success: true,
@@ -2398,6 +2434,18 @@ export async function deleteListingOnly(listingId: number, accountId: number) {
       throw new Error("Listing not found or access denied");
     }
 
+    // PORTAL CLEANUP: Clean up portal ads BEFORE deleting from database
+    // Fotocasa deletion is blocking (throws if fails)
+    // Idealista just tracks if export is needed
+    console.log(`🗑️ [Delete Listing] Starting portal cleanup for listing ${listingId}...`);
+
+    const { fotocasaResult, needsIdealistaExport } = await cleanupPortalAdsForListing(listingId);
+
+    console.log(`📊 [Delete Listing] Portal cleanup results:`, {
+      fotocasa: fotocasaResult,
+      needsIdealistaExport,
+    });
+
     // 1. Delete listing_contacts for this listing
     await db
       .delete(listingContacts)
@@ -2412,6 +2460,16 @@ export async function deleteListingOnly(listingId: number, accountId: number) {
           eq(listings.accountId, BigInt(accountId)),
         ),
       );
+
+    // PORTAL CLEANUP: Trigger Idealista export AFTER database deletion (non-blocking)
+    // The new export will NOT include the deleted listing
+    if (needsIdealistaExport) {
+      console.log(`📤 [Delete Listing] Triggering Idealista export for account ${accountId}...`);
+      // Fire and forget - don't await, non-blocking
+      triggerIdealistaExportForAccount(accountId).catch((error) => {
+        console.error(`⚠️ [Delete Listing] Idealista export failed (non-blocking):`, error);
+      });
+    }
 
     return {
       success: true,
@@ -2447,7 +2505,37 @@ export async function deleteProperty(propertyId: number, accountId: number) {
       throw new Error("Property not found or access denied");
     }
 
-    // IMPORTANT: Delete all S3 files (images, videos, documents, etc.) BEFORE deleting database records
+    // Get all listings for this property FIRST (need this for portal cleanup)
+    const propertyListings = await db
+      .select({ listingId: listings.listingId })
+      .from(listings)
+      .where(
+        and(
+          eq(listings.propertyId, BigInt(propertyId)),
+          eq(listings.accountId, BigInt(accountId)),
+        ),
+      );
+
+    // PORTAL CLEANUP: Clean up portal ads BEFORE deleting from database
+    // This must happen before any database modifications
+    let needsIdealistaExport = false;
+
+    if (propertyListings.length > 0) {
+      const listingIds = propertyListings.map((l) => l.listingId);
+      console.log(`🗑️ [Delete Property] Starting portal cleanup for ${listingIds.length} listings...`);
+
+      // Clean up all listings' portal ads (Fotocasa is blocking)
+      const portalCleanup = await cleanupPortalAdsForMultipleListings(listingIds, accountId);
+
+      console.log(`📊 [Delete Property] Portal cleanup results:`, {
+        fotocasaResults: Object.fromEntries(portalCleanup.fotocasaResults),
+        needsIdealistaExport: portalCleanup.needsIdealistaExport,
+      });
+
+      needsIdealistaExport = portalCleanup.needsIdealistaExport;
+    }
+
+    // S3 CLEANUP: Delete all S3 files (images, videos, documents, etc.)
     let s3CleanupResult = {
       deletedCount: 0,
       deletedFiles: [] as string[],
@@ -2470,17 +2558,6 @@ export async function deleteProperty(propertyId: number, accountId: number) {
         // This prevents partial deletion if S3 fails
       }
     }
-
-    // Get all listings for this property to get their IDs
-    const propertyListings = await db
-      .select({ listingId: listings.listingId })
-      .from(listings)
-      .where(
-        and(
-          eq(listings.propertyId, BigInt(propertyId)),
-          eq(listings.accountId, BigInt(accountId)),
-        ),
-      );
 
     // Start transaction-like cleanup (SingleStore doesn't support full transactions)
 
@@ -2524,6 +2601,16 @@ export async function deleteProperty(propertyId: number, accountId: number) {
           eq(properties.accountId, BigInt(accountId)),
         ),
       );
+
+    // PORTAL CLEANUP: Trigger Idealista export AFTER database deletion (non-blocking)
+    // The new export will NOT include the deleted listings
+    if (needsIdealistaExport) {
+      console.log(`📤 [Delete Property] Triggering Idealista export for account ${accountId}...`);
+      // Fire and forget - don't await, non-blocking
+      triggerIdealistaExportForAccount(accountId).catch((error) => {
+        console.error(`⚠️ [Delete Property] Idealista export failed (non-blocking):`, error);
+      });
+    }
 
     return {
       success: true,

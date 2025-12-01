@@ -9,7 +9,10 @@ import {
   getAccountWatermarkConfig,
   getAccountIdForListing,
 } from "../queries/accounts";
-import { processAndUploadWatermarkedImages } from "../utils/watermarked-upload";
+import {
+  processAndUploadWatermarkedImages,
+  cleanupAllWatermarkedImagesForReference,
+} from "../utils/watermarked-upload";
 import { POSITION_MAPPING } from "~/types/watermark";
 import type { WatermarkConfig } from "~/types/watermark";
 import { getCurrentUser } from "~/lib/dal";
@@ -281,10 +284,10 @@ export async function buildIdealistaPropertyPayload(
     usableArea?: number | null;
     plotArea?: number | null;
     rooms?: number | null;
-    balcony?: boolean | null;
+    balconyCount?: number | null; // DB has balconyCount, not balcony boolean
     accessibleAccess?: boolean | null;
     accessibleUse?: boolean | null;
-    windowsLocation?: string | null;
+    exterior?: boolean | null; // DB has exterior boolean for windows location
     virtualTourUrl?: string | null;
     externalUrl?: string | null;
     videos?: Array<{ url: string }> | null;
@@ -428,7 +431,11 @@ export async function buildIdealistaPropertyPayload(
     featuresPool:
       listing.pool ?? listing.communityPool ?? listing.privatePool ?? undefined,
     featuresTerrace: listing.terrace ?? undefined,
-    featuresBalcony: listing.balcony ?? undefined,
+    // Balcony: DB has balconyCount (smallint), convert to boolean
+    featuresBalcony:
+      listing.balconyCount !== null && listing.balconyCount !== undefined
+        ? listing.balconyCount > 0
+        : undefined,
     featuresWardrobes: listing.builtInWardrobes ?? undefined,
     featuresChimney: listing.fireplace ?? undefined,
     featuresConditionedAir: listing.airConditioningType
@@ -486,11 +493,12 @@ export async function buildIdealistaPropertyPayload(
         ...(listing.isFurnished && { featuresEquippedWithFurniture: true }),
       }),
 
-    // Windows location (only for Spain)
-    ...(listing.windowsLocation && {
-      featuresWindowsLocation:
-        listing.windowsLocation === "exterior" ? "exterior" : "interior",
-    }),
+    // Windows location (only for Spain) - DB has 'exterior' boolean field
+    // exterior: true → "exterior", exterior: false → "interior"
+    ...(listing.exterior !== null &&
+      listing.exterior !== undefined && {
+        featuresWindowsLocation: listing.exterior ? "exterior" : "interior",
+      }),
 
     // Current occupation (only for sale, housing types)
     ...(operationType === "sale" &&
@@ -795,6 +803,9 @@ export async function exportToIdealista(
   s3Key?: string;
   error?: string;
 }> {
+  // Track reference numbers for cleanup
+  const referenceNumbers: string[] = [];
+
   try {
     const exportData = await buildIdealistaExportFile(
       accountId,
@@ -802,6 +813,13 @@ export async function exportToIdealista(
       options,
     );
     const jsonContent = JSON.stringify(exportData, null, 2);
+
+    // Collect reference numbers from exported properties for cleanup
+    for (const property of exportData.customerProperties) {
+      if (property.propertyCode) {
+        referenceNumbers.push(property.propertyCode);
+      }
+    }
 
     // Save to S3
     const s3Result = await uploadIdealistaJsonToS3(jsonContent);
@@ -821,6 +839,14 @@ export async function exportToIdealista(
       console.error("Error logging Idealista export activity:", activityError);
     }
 
+    // Clean up temporary watermarked images after successful export
+    if (referenceNumbers.length > 0) {
+      console.log(
+        `Cleaning up temporary watermarked images for ${referenceNumbers.length} properties...`,
+      );
+      await cleanupWatermarkedImagesForReferences(referenceNumbers);
+    }
+
     return {
       success: true,
       jsonContent,
@@ -830,11 +856,45 @@ export async function exportToIdealista(
     };
   } catch (error) {
     console.error("Error exporting to Idealista:", error);
+
+    // Still attempt cleanup on error to avoid orphaned temp files
+    if (referenceNumbers.length > 0) {
+      console.log(
+        `Cleaning up temporary watermarked images after export error...`,
+      );
+      await cleanupWatermarkedImagesForReferences(referenceNumbers).catch(
+        (cleanupError) =>
+          console.error("Failed to cleanup watermarked images:", cleanupError),
+      );
+    }
+
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",
     };
   }
+}
+
+/**
+ * Clean up watermarked images for multiple reference numbers
+ */
+async function cleanupWatermarkedImagesForReferences(
+  referenceNumbers: string[],
+): Promise<void> {
+  const cleanupPromises = referenceNumbers.map(async (refNum) => {
+    try {
+      const result = await cleanupAllWatermarkedImagesForReference(refNum);
+      if (result.success) {
+        console.log(`Cleaned up watermarked images for ${refNum}: ${result.message}`);
+      } else {
+        console.warn(`Failed to cleanup watermarked images for ${refNum}: ${result.message}`);
+      }
+    } catch (error) {
+      console.error(`Error cleaning up watermarked images for ${refNum}:`, error);
+    }
+  });
+
+  await Promise.all(cleanupPromises);
 }
 
 /**

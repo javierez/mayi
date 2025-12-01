@@ -1,0 +1,241 @@
+{
+    "customerCode": "ilc09eac97a83b004a52e90b909f693db19353c0511",
+    "customerCountry": "Spain",
+    "customerSendDate": "2025/12/01 19:55:14",
+    "customerProperties": [
+      {
+        "propertyCode": "VESTA2025000081",
+        "propertyReference": "VESTA2025000081",
+        "propertyVisibility": "idealista",
+        "propertyOperation": {
+          "operationType": "sale",
+          "operationPrice": 98000
+        },
+        "propertyAddress": {
+          "addressVisibility": "full",
+          "addressStreetName": "Plaza de Santa María 1",
+          "addressStreetNumber": "1",
+          "addressFloor": "01",
+          "addressDoor": "A",
+          "addressPostalCode": "49600",
+          "addressTown": "Benavente",
+          "addressCountry": "Spain",
+          "addressCoordinatesPrecision": "exact",
+          "addressCoordinatesLatitude": 42.0022019,
+          "addressCoordinatesLongitude": -5.6802717
+        },
+        "propertyFeatures": {
+          "featuresType": "flat",
+          "featuresAreaConstructed": 70,
+          "featuresBathroomNumber": 1,
+          "featuresBedroomNumber": 2,
+          "featuresLiftAvailable": false,
+          "featuresParkingAvailable": false,
+          "featuresStorage": false,
+          "featuresGarden": true,
+          "featuresPool": true,
+          "featuresTerrace": true,
+          "featuresBalcony": true,
+          "featuresWardrobes": true,
+          "featuresChimney": true,
+          "featuresConservation": "good",
+          "featuresEnergyCertificateRating": "C",
+          "featuresEnergyCertificateEmissionsRating": "C",
+          "featuresEnergyCertificatePerformance": 30,
+          "featuresEnergyCertificateEmissionsValue": 48,
+          "featuresOrientationSouth": true,
+          "featuresOrientationEast": true,
+          "featuresBuiltYear": 1990,
+          "featuresWindowsLocation": "exterior",
+          "featuresCurrentOccupation": "illegally_occupied"
+        },
+        "propertyDescriptions": [
+          {
+            "descriptionLanguage": "spanish",
+            "descriptionText": "Piso exterior en Plaza de Santa María, Centro de Benavente\n\nEn pleno corazón del casco histórico, se ofrece este luminoso piso amueblado que combina la comodidad de una vivienda lista para entrar a vivir con el encanto de vivir frente a una de las plazas más emblemáticas de Benavente. Con una superficie útil de 70m2 y 80m2 construidos, la orientación sureste llena de luz las estancias y potencia la sensación de amplitud en cada rincón.\n\nSituado en primera planta de un edificio de tres alturas sin ascensor, el piso mantiene acabados cuidados que facilitan el día a día: suelo de mármol, carpintería y ventanas de PVC con doble acristalamiento y persianas manuales que garantizan aislamiento y confort. La puerta de seguridad y los armarios empotrados aportan funcionalidad y sensación de hogar seguro. La vivienda está equipada con cocina amueblada y electrodomésticos —vitrocerámica, horno, nevera, microondas y lavadora—, agua caliente por sistema eléctrico, televisión, etc. Todo dispuesto para instalarse sin complicaciones.\n\nLa distribución prioriza la práctica: dos dormitorios bien aprovechados y un baño, con varias piezas exteriores que se abren a la vida urbana. Cuatro balcones y una terraza conectan directamente con la plaza, invitando a desayunos al sol y a disfrutar del ambiente de las terrazas y restaurantes cercanos, y creando un vínculo natural entre la casa y el pulso de la ciudad.\n\nVivir en Plaza de Santa María supone acceso inmediato a la Colegiata y a un entorno repleto de bares de tapas, cafés, pastelerías y restaurantes tradicionales de Castilla y León, así como a una oferta de tiendas locales, mercado semanal y servicios cotidianos a pocos pasos. La ubicación en el centro favorece una vida cómoda y caminable, con plazas arboladas, actividades culturales, centros educativos y buenas conexiones regionales para quienes necesitan moverse con facilidad.\n\nSi buscas una vivienda céntrica, luminosa y con carácter en el histórico corazón de Benavente, Inmobiliaria Acrópolis puede mostrarte todas sus posibilidades y acompañarte en el proceso de visita y valoración."
+          }
+        ],
+        "propertyImages": [
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000081/watermarked/temp_image_1_ZzwVJ4.jpg",
+            "imageOrder": 1,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000081/watermarked/temp_image_2__itUPk.jpg",
+            "imageOrder": 2,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000081/watermarked/temp_image_3_VkUVqn.jpg",
+            "imageOrder": 3,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000081/watermarked/temp_image_4_xHqrhP.jpg",
+            "imageOrder": 4,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000081/watermarked/temp_image_5_Y-TNjQ.jpg",
+            "imageOrder": 5,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000081/images/enhanced_7_y9tpxd.png",
+            "imageOrder": 6,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000081/watermarked/temp_image_7_JwAwQ9.jpg",
+            "imageOrder": 7,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000081/watermarked/temp_image_8_fmzowF.jpg",
+            "imageOrder": 8,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000081/watermarked/temp_image_9_RkM5DE.jpg",
+            "imageOrder": 9,
+            "imageLabel": "unknown"
+          }
+        ],
+        "propertyContact": {
+          "contactEmail": "alberto_acropolisinmobiliaria@yahoo.com",
+          "contactPrimaryPhoneNumber": "625174449",
+          "contactPrimaryPhonePrefix": "34"
+        }
+      },
+      {
+        "propertyCode": "VESTA2025000001",
+        "propertyReference": "VESTA2025000001",
+        "propertyVisibility": "idealista",
+        "propertyOperation": {
+          "operationType": "rent",
+          "operationPrice": 1500
+        },
+        "propertyAddress": {
+          "addressVisibility": "full",
+          "addressStreetName": "Calle de Donoso Cortés 33",
+          "addressStreetNumber": "33",
+          "addressFloor": "05",
+          "addressDoor": "YD",
+          "addressPostalCode": "28015",
+          "addressTown": "Madrid",
+          "addressCountry": "Spain",
+          "addressCoordinatesPrecision": "exact",
+          "addressCoordinatesLatitude": 40.4361626,
+          "addressCoordinatesLongitude": -3.7098981
+        },
+        "propertyFeatures": {
+          "featuresType": "flat",
+          "featuresAreaConstructed": 80,
+          "featuresBathroomNumber": 1,
+          "featuresBedroomNumber": 3,
+          "featuresPenthouse": true,
+          "featuresLiftAvailable": true,
+          "featuresParkingAvailable": true,
+          "featuresStorage": true,
+          "featuresGarden": true,
+          "featuresPool": true,
+          "featuresTerrace": true,
+          "featuresBalcony": true,
+          "featuresWardrobes": true,
+          "featuresChimney": true,
+          "featuresConditionedAir": true,
+          "featuresAllowPets": true,
+          "featuresConservation": "toRestore",
+          "featuresEnergyCertificateRating": "C",
+          "featuresEnergyCertificateEmissionsRating": "B",
+          "featuresEnergyCertificatePerformance": 49,
+          "featuresEnergyCertificateEmissionsValue": 24,
+          "featuresOrientationEast": true,
+          "featuresBuiltYear": 1950,
+          "featuresEquippedKitchen": true,
+          "featuresEquippedWithFurniture": true,
+          "featuresWindowsLocation": "exterior",
+          "featuresResidential": true
+        },
+        "propertyDescriptions": [
+          {
+            "descriptionLanguage": "spanish",
+            "descriptionText": "Piso en alquiler en Chamberí, Calle de Donoso Cortés 33\n\nVive en el corazón de Chamberí con este luminoso piso exterior de ochenta metros cuadrados, tres dormitorios y un baño, perfecto para quien busca espacio y comodidad en una de las calles más tranquilas y elegantes del barrio. Situado en una quinta planta con ascensor, la vivienda se ofrece amueblada con mobiliario de alta calidad y una distribución que potencia la luz natural gracias a su orientación noreste y a ventanas de PVC con doble acristalamiento.\n\nLa vivienda mantiene un estilo cuidado con suelos de parquet, carpintería de madera y persianas automáticas. La sala de estar, con doce metros de superficie, se abre a un balcón y una galería que permiten disfrutar de vistas y ventilación constante. La cocina, de tipo abierta y francesa, funciona con gas y está equipada y amueblada, incluyendo despensa anexa. Los armarios empotrados ofrecen solución práctica de almacenamiento, complementada por un trastero de doce metros disponible opcionalmente. Además existe la posibilidad de plaza de garaje abierta en el propio edificio.\n\nEl edificio aporta confort y seguridad con portería y servicio de conserjería, vigilancia, videoportero y servicios comunes pensados para la vida diaria: lavandería, zonas deportivas, gimnasio, piscina comunitaria y áreas infantiles, así como una bodega de doce metros que suma valor de almacenaje. La vivienda dispone de calefacción por gasóleo, agua caliente por gas natural y aire acondicionado portátil, y está adaptada para acceso con movilidad reducida. Se permite la compañía de mascotas y el inmueble está catalogado como VPO.\n\nLa localización es uno de sus grandes atractivos: en una calle residencial y tranquila, a pocos minutos de plazas con terrazas, cafés y una oferta gastronómica muy variada, mercados de barrio y comercios independientes que facilitan el día a día. La conexión con el resto de Madrid es excelente, con varias opciones de transporte público y calles amigables para la bicicleta que hacen sencillo el acceso a centros culturales, museos y ocio. Inmobiliaria Acrópolis presenta esta oportunidad para quien busca una vida céntrica, segura y con el confort de servicios completos en Chamberí. Para más detalles y visitas, consulta con Inmobiliaria Acrópolis."
+          }
+        ],
+        "propertyImages": [
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_1_Cbj5WD.jpg",
+            "imageOrder": 1,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_2_aE1vZs.jpg",
+            "imageOrder": 2,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_3_P6sdkm.jpg",
+            "imageOrder": 3,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_4_SdSgbe.jpg",
+            "imageOrder": 4,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000001/images/enhanced_11_0-lHeU.png",
+            "imageOrder": 5,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_6_gvEL4I.jpg",
+            "imageOrder": 6,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_7_ipEXqe.jpg",
+            "imageOrder": 7,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_8_AJosVE.jpg",
+            "imageOrder": 8,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_9_uS6oG_.jpg",
+            "imageOrder": 9,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_10_EfGfOP.jpg",
+            "imageOrder": 10,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_11_fZTjSC.jpg",
+            "imageOrder": 11,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_12_Ma0_wq.jpg",
+            "imageOrder": 12,
+            "imageLabel": "unknown"
+          },
+          {
+            "imageUrl": "https://inmobiliariaacropolis.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_13_Um4isw.jpg",
+            "imageOrder": 13,
+            "imageLabel": "unknown"
+          }
+        ],
+        "propertyContact": {
+          "contactEmail": "alberto_acropolisinmobiliaria@yahoo.com",
+          "contactPrimaryPhoneNumber": "625174449",
+          "contactPrimaryPhonePrefix": "34"
+        }
+      }
+    ]
+  }

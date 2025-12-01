@@ -307,8 +307,9 @@ export function BasicInfoCard({
           </div>
         )}
 
-        {/* Short Term License - Shown for seasonal and short_term rental types */}
-        {(rentalType === "seasonal" || rentalType === "short_term") && (
+        {/* Short Term License - Shown for seasonal and short_term rental types (only for rent) */}
+        {["Rent", "RentWithOption", "RoomSharing"].includes(currentListingType) &&
+          (rentalType === "seasonal" || rentalType === "short_term") && (
           <div className="space-y-1.5">
             <Label htmlFor="shortTermLicense" className="text-sm">
               Licencia turística
