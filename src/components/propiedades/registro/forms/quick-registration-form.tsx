@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import Image from "next/image";
 import { Card } from "~/components/ui/card";
-import { Loader, X, Zap } from "lucide-react";
+import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
@@ -20,6 +21,7 @@ import SecondPage from "~/components/crear/pages/second";
 import ThirdPage from "~/components/crear/pages/third";
 import { saveQuickFormData } from "~/server/queries/forms/quickform/save-quick-form";
 import RegistrationProgressBar from "./registration-progress-bar";
+import { CrearFirstSkeleton } from "~/components/ui/skeletons";
 
 interface QuickRegistrationFormProps {
   listingId: string;
@@ -548,13 +550,8 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
           </div>
 
           {state.isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="flex items-center space-x-3">
-                <Loader className="h-6 w-6 animate-spin text-gray-500" />
-                <span className="text-gray-600">
-                  Cargando agentes y contactos...
-                </span>
-              </div>
+            <div className="mb-6">
+              <CrearFirstSkeleton />
             </div>
           ) : (
             <>
@@ -575,7 +572,7 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
                 </AnimatePresence>
               </div>
 
-              {/* Save indicator with bolt animation */}
+              {/* Save indicator with logo animation */}
               {isSaving && (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -585,17 +582,28 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
                   className="fixed inset-0 z-50 flex items-center justify-center bg-white/90 backdrop-blur-sm"
                 >
                   <div className="text-center">
-                    {/* Animated bolt icon */}
-                    <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-r from-amber-400 to-rose-400 transition-all duration-700 ease-in-out">
-                      <Zap className="h-14 w-14 scale-110 text-white transition-all duration-700 ease-in-out" />
-                    </div>
-
-                    {/* Loading text */}
-                    <div className="flex items-center justify-center gap-2 text-gray-600">
-                      <span className="text-sm font-medium">
-                        Completando registro...
-                      </span>
-                    </div>
+                    {/* Animated Vesta logo */}
+                    <motion.div
+                      animate={{
+                        scale: [1, 1.08, 1],
+                        opacity: [0.7, 1, 0.7],
+                      }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                      className="mx-auto"
+                    >
+                      <Image
+                        src="/vestazoomin.jpeg"
+                        alt="Vesta"
+                        width={120}
+                        height={120}
+                        className="rounded-2xl shadow-lg"
+                        priority
+                      />
+                    </motion.div>
                   </div>
                 </motion.div>
               )}

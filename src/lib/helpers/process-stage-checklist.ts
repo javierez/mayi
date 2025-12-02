@@ -74,8 +74,8 @@ export const STAGE_REQUIREMENTS: Record<string, StageRequirement[]> = {
   ],
 };
 
-// Human-readable labels for each stage
-export const STAGE_LABELS: Record<string, { title: string; description: string }> = {
+// Human-readable labels for each stage (sale)
+const STAGE_LABELS_SALE: Record<string, { title: string; description: string }> = {
   alta: {
     title: "Alta de propiedad",
     description: "La propiedad ha sido registrada en el sistema",
@@ -105,6 +105,49 @@ export const STAGE_LABELS: Record<string, { title: string; description: string }
     description: "La operación se ha cerrado completamente",
   },
 };
+
+// Human-readable labels for each stage (rent)
+const STAGE_LABELS_RENT: Record<string, { title: string; description: string }> = {
+  alta: {
+    title: "Alta de propiedad",
+    description: "La propiedad ha sido registrada en el sistema",
+  },
+  "completar-info": {
+    title: "Ficha completa",
+    description: "Todos los campos obligatorios están completados",
+  },
+  "firma-encargo": {
+    title: "Encargo firmado",
+    description: "El contrato de encargo ha sido firmado con el propietario",
+  },
+  visitas: {
+    title: "Oferta aceptada",
+    description: "Un cliente ha hecho una oferta que ha sido aceptada",
+  },
+  arras: {
+    title: "Reserva firmada",
+    description: "Se ha firmado la reserva con el inquilino",
+  },
+  contrato: {
+    title: "Firma del contrato",
+    description: "Se ha firmado el contrato de alquiler",
+  },
+  "cierre-final": {
+    title: "Cierre de operación",
+    description: "La operación se ha cerrado completamente",
+  },
+};
+
+/**
+ * Get stage labels based on listing type
+ * For rentals, "Arras" becomes "Reserva" and "Escritura" becomes "Firma del contrato"
+ */
+export function getStageLabelsByType(listingType?: string): Record<string, { title: string; description: string }> {
+  return listingType === "rent" ? STAGE_LABELS_RENT : STAGE_LABELS_SALE;
+}
+
+// Default export for backwards compatibility (sale labels)
+export const STAGE_LABELS = STAGE_LABELS_SALE;
 
 interface ProcessStage {
   id: string;
@@ -161,14 +204,16 @@ export function getSubstageIdsUpTo(
 export function getChecklistItemsForStage(
   processStages: ProcessStage[],
   targetStageId: string,
-  currentProgress: CurrentProgress
+  currentProgress: CurrentProgress,
+  listingType?: string
 ): ChecklistItem[] {
   const stageIdsUpToTarget = getSubstageIdsUpTo(processStages, targetStageId);
   const checklistItems: ChecklistItem[] = [];
+  const stageLabels = getStageLabelsByType(listingType);
 
   for (const stageId of stageIdsUpToTarget) {
     const isCompleted = isStageCompleted(stageId, currentProgress);
-    const stageInfo = STAGE_LABELS[stageId];
+    const stageInfo = stageLabels[stageId];
 
     if (!stageInfo) continue;
 

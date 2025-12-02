@@ -406,6 +406,7 @@ export function PropertyStatusRow({
   const fotocasaActive = listing?.fotocasa ?? false;
   const idealistaActive = listing?.idealista ?? false;
   const enEscaparate = listing?.enEscaparate ?? false;
+  const listingType = listing?.listingType as string | undefined;
 
   return (
     <TooltipProvider>
@@ -876,6 +877,7 @@ export function PropertyStatusRow({
             processStages={processStages}
             currentProgress={currentProgress}
             onSuccess={handleSuccess}
+            listingType={listingType}
           />
         )}
 
@@ -1006,6 +1008,7 @@ export function PropertyStatusRow({
           processStages={processStages}
           progressPercent={progressPercent}
           substagePercentages={substagePercentages}
+          listingType={listingType}
         />
       </div>
     </TooltipProvider>

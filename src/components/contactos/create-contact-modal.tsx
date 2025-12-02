@@ -526,8 +526,8 @@ export function CreateContactModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto custom-scrollbar [&>button]:hidden">
-          <DialogHeader className="space-y-0">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col overflow-hidden [&>button]:hidden">
+          <DialogHeader className="space-y-0 shrink-0">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <DialogTitle className="text-xl font-semibold text-gray-900">
@@ -553,7 +553,7 @@ export function CreateContactModal({
             </div>
           </DialogHeader>
 
-          <div className="space-y-4 pt-2 pb-4">
+          <div className="flex-1 overflow-y-auto custom-scrollbar space-y-4 pt-2 pb-4">
             {step === "personal" ? (
               /* Step 1: Personal Information */
               <>
@@ -1381,7 +1381,7 @@ export function CreateContactModal({
             )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="shrink-0">
             {step === "property" && (
               <Button
                 variant="ghost"

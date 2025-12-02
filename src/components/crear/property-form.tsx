@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Card } from "~/components/ui/card";
-import { Loader, X } from "lucide-react";
+import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import {
@@ -29,6 +29,7 @@ import EighthPage from "./pages/eighth";
 import NinethPage from "./pages/nineth";
 import DescriptionPage from "./pages/description";
 import RentPage from "./pages/rent";
+import { CrearFirstSkeleton } from "~/components/ui/skeletons";
 
 interface PropertyFormProps {
   listingId: string;
@@ -579,13 +580,8 @@ function PropertyFormInner({ listingId }: PropertyFormProps) {
           </div>
 
           {state.isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="flex items-center space-x-3">
-                <Loader className="h-6 w-6 animate-spin text-gray-500" />
-                <span className="text-gray-600">
-                  Cargando datos del inmueble...
-                </span>
-              </div>
+            <div className="mb-6">
+              <CrearFirstSkeleton />
             </div>
           ) : (
             <>

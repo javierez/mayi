@@ -307,8 +307,25 @@ export default function AppointmentForm({
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [listingSearchQuery, setListingSearchQuery] = useState("");
-  const [durationHours, setDurationHours] = useState(0);
-  const [durationMinutes, setDurationMinutes] = useState(30);
+  // Calculate initial duration from initialData if available
+  const initialDuration = (() => {
+    if (
+      initialData.startDate &&
+      initialData.startTime &&
+      initialData.endDate &&
+      initialData.endTime
+    ) {
+      return calculateDurationFromEndDateTime(
+        initialData.startDate,
+        initialData.startTime,
+        initialData.endDate,
+        initialData.endTime,
+      );
+    }
+    return { hours: 0, minutes: 30 };
+  })();
+  const [durationHours, setDurationHours] = useState(initialDuration.hours);
+  const [durationMinutes, setDurationMinutes] = useState(initialDuration.minutes);
   const [agents, setAgents] = useState<
     { id: string; name: string; firstName?: string; lastName?: string }[]
   >([]);
@@ -1863,8 +1880,10 @@ export default function AppointmentForm({
                 <Calendar className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <div className="text-sm text-muted-foreground">
-                    {formData.startDate} • {formData.startTime} -{" "}
-                    {formData.endTime}
+                    <span className="font-semibold text-foreground">
+                      {formData.startDate} • {formData.startTime} -{" "}
+                      {formData.endTime}
+                    </span>
                     {formData.endDate !== formData.startDate && (
                       <> (hasta {formData.endDate})</>
                     )}

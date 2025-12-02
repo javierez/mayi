@@ -53,7 +53,6 @@ export default function CapturaPage() {
     {
       id: "quick",
       title: "Formulario Rápido",
-      icon: () => <></>, // Will be handled by RegistrationOptions component
       description:
         "Captura los datos esenciales para crear la propiedad en un instante",
       features: [
@@ -71,7 +70,6 @@ export default function CapturaPage() {
     {
       id: "recording",
       title: "Grabación de Voz",
-      icon: () => <></>,
       description:
         "Habla con nuesetro sistema y la IA registrará la información automáticamente",
       features: [
@@ -89,7 +87,6 @@ export default function CapturaPage() {
     {
       id: "upload",
       title: "Ficha de Encargo",
-      icon: () => <></>,
       description:
         "Carga documentos existentes y extrae información automáticamente",
       features: [

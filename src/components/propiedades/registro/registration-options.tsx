@@ -1,12 +1,11 @@
 "use client";
 
 import { cn } from "~/lib/utils";
-import { Mic, Zap, FileSignature, Check } from "lucide-react";
+import { Check } from "lucide-react";
 
 export interface RegistrationOption {
   id: string;
   title: string;
-  icon: React.ComponentType<{ className?: string }>;
   description: string;
   features: string[];
   additionalInfo?: string;
@@ -30,7 +29,6 @@ export function RegistrationOptions({
     {
       id: "quick",
       title: "Formulario Rápido",
-      icon: Zap,
       description:
         "Captura los datos esenciales para crear la propiedad en un instante",
       features: [
@@ -45,7 +43,6 @@ export function RegistrationOptions({
     {
       id: "recording",
       title: "Grabación de Voz",
-      icon: Mic,
       description:
         "Habla con nuesetro sistema y la IA registrará la información automáticamente",
       features: [
@@ -63,7 +60,6 @@ export function RegistrationOptions({
     {
       id: "upload",
       title: "Ficha de Encargo",
-      icon: FileSignature,
       description:
         "Carga documentos existentes y extrae información automáticamente",
       features: [
@@ -86,7 +82,6 @@ export function RegistrationOptions({
       )}
     >
       {options.map((option) => {
-        const Icon = option.icon;
         const isActive = activeOption === option.id;
 
         return (
@@ -94,31 +89,16 @@ export function RegistrationOptions({
             key={option.id}
             onClick={() => onToggleOption(option.id)}
             className={cn(
-              "relative flex flex-col items-center justify-center rounded-xl p-3 transition-all duration-200 sm:p-4",
-              "min-h-[80px] hover:scale-[1.02] sm:min-h-[100px]",
+              "relative flex items-center justify-center rounded-xl px-4 py-3 transition-all duration-200 sm:px-6 sm:py-4",
+              "hover:scale-[1.02]",
               isActive
                 ? `bg-gradient-to-br ${option.bgActive} shadow-lg`
                 : "bg-gray-50 shadow hover:shadow-lg",
             )}
           >
-            <div
-              className={cn(
-                "mb-1.5 rounded-lg p-1.5 transition-colors sm:mb-2 sm:p-2",
-                isActive
-                  ? `bg-gradient-to-r ${option.gradient}`
-                  : "bg-gray-100",
-              )}
-            >
-              <Icon
-                className={cn(
-                  "h-4 w-4 transition-colors sm:h-5 sm:w-5",
-                  isActive ? "text-white" : "text-gray-600",
-                )}
-              />
-            </div>
             <span
               className={cn(
-                "text-center text-xs font-medium leading-tight transition-colors sm:text-sm",
+                "text-center text-xs font-bold uppercase leading-tight tracking-widest transition-colors sm:text-sm",
                 isActive ? "text-gray-900" : "text-gray-600",
               )}
             >

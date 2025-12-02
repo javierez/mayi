@@ -33,7 +33,7 @@ export async function generateReferenceNumber(): Promise<string> {
         ),
       );
 
-    const count = result?.count ?? 0;
+    const count = Number(result?.count) || 0;
 
     // Format: VESTA-YYYY-XXXXXX (e.g., VESTA-2024-000001)
     const referenceNumber = `VESTA${currentYear}${String(count + 1).padStart(6, "0")}`;

@@ -13,7 +13,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useFormContext } from "../form-context";
-// import FormSkeleton from "./form-skeleton"; // Removed - using single loading state
 import { QuickContactModal } from "~/components/contactos/quick-contact-modal";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Separator } from "~/components/ui/separator";
@@ -412,12 +411,6 @@ export default function FirstPage({
     // Note: No need to refresh search results
   };
 
-  // Main form already handles loading state with spinner
-  // No need for skeleton since data is in formData
-  // if (!state.formData) {
-  //   return <FormSkeleton />;
-  // }
-
   return (
     <div className="space-y-6">
       {/* Price Section */}
@@ -805,6 +798,7 @@ export default function FirstPage({
             )}
             {formData.propertyType === "local" && (
               <>
+                <SelectItem value="Local Comercial">Local Comercial</SelectItem>
                 <SelectItem value="Residencial">Residencial</SelectItem>
                 <SelectItem value="Otros">Otros</SelectItem>
                 <SelectItem value="Mixto residencial">

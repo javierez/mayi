@@ -491,6 +491,7 @@ export function PropertyCharacteristicsForm({
             exterior: isExterior,
             bright: isBright,
             orientation,
+            hasEscaparate,
           };
           break;
 
@@ -720,6 +721,7 @@ export function PropertyCharacteristicsForm({
   const [isExterior, setIsExterior] = useState(listing.exterior ?? false);
   const [orientation, setOrientation] = useState(listing.orientation ?? "");
   const [isBright, setIsBright] = useState(listing.bright ?? false);
+  const [hasEscaparate, setHasEscaparate] = useState(listing.hasEscaparate ?? false);
   const [garageType, setGarageType] = useState(listing.garageType ?? "");
   const [garageSpaces, setGarageSpaces] = useState(() => {
     const spaces = listing.garageSpaces;
@@ -1770,6 +1772,7 @@ export function PropertyCharacteristicsForm({
           <OrientationCard
             isExterior={isExterior}
             isBright={isBright}
+            hasEscaparate={hasEscaparate}
             orientation={orientation}
             propertyType={propertyType}
             collapsedSections={collapsedSections}
@@ -1782,6 +1785,7 @@ export function PropertyCharacteristicsForm({
             }
             setIsExterior={setIsExterior}
             setIsBright={setIsBright}
+            setHasEscaparate={setHasEscaparate}
             setOrientation={setOrientation}
             getCardStyles={getCardStyles}
           />

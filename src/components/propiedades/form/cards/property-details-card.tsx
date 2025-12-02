@@ -196,6 +196,35 @@ export function PropertyDetailsCard({
             />
           </div>
         )}
+        {propertyType === "local" && (
+          <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
+            <div className="flex flex-col">
+              <Label htmlFor="isDiafano" className="text-sm font-medium">
+                Local Diáfano
+              </Label>
+              <span className="text-xs text-gray-500">
+                Espacio abierto sin divisiones
+              </span>
+            </div>
+            <label className="relative inline-flex cursor-pointer items-center">
+              <input
+                type="checkbox"
+                id="isDiafano"
+                checked={listing.isDiafano ?? false}
+                onChange={(e) => {
+                  listing.isDiafano = e.target.checked;
+                  onUpdateModule(true);
+                }}
+                className="peer sr-only"
+                disabled={!canEdit}
+              />
+              <div className={cn(
+                "peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-gray-900 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-gray-300",
+                !canEdit && "cursor-not-allowed opacity-50"
+              )}></div>
+            </label>
+          </div>
+        )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="squareMeter" className="text-sm">

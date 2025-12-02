@@ -64,6 +64,8 @@ export interface CompleteFormData {
   energyCertificate?: string;
   emissions?: string;
   cadastralReference?: string;
+  isDiafano?: boolean; // Only for 'local' property type - open-plan/open-space commercial
+  hasEscaparate?: boolean; // Only for 'local' property type - has shop window/storefront
 
   // Page 3 - Address
   address?: string;

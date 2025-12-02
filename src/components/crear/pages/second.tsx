@@ -35,6 +35,8 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
     renovationYearUnknown: state.formData.renovationYearUnknown ?? false,
     totalFloors: state.formData.totalFloors ?? 0,
     conservationStatus: state.formData.conservationStatus ?? 3,
+    isDiafano: state.formData.isDiafano ?? false,
+    hasEscaparate: state.formData.hasEscaparate ?? false,
   };
 
   const propertyType = state.formData?.propertyType ?? "";
@@ -209,6 +211,52 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
               label="Baños"
             />
           </div>
+        </div>
+      )}
+
+      {/* Diáfano toggle - Only show for local property type */}
+      {propertyType === "local" && (
+        <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-gray-900">
+              Local Diáfano
+            </span>
+            <span className="text-xs text-gray-500">
+              Espacio abierto sin divisiones
+            </span>
+          </div>
+          <label className="relative inline-flex cursor-pointer items-center">
+            <input
+              type="checkbox"
+              checked={formData.isDiafano}
+              onChange={(e) => updateField("isDiafano", e.target.checked)}
+              className="peer sr-only"
+            />
+            <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-gray-900 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-gray-300"></div>
+          </label>
+        </div>
+      )}
+
+      {/* Escaparate toggle - Only show for local property type */}
+      {propertyType === "local" && (
+        <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
+          <div className="flex flex-col">
+            <span className="text-sm font-medium text-gray-900">
+              Escaparate
+            </span>
+            <span className="text-xs text-gray-500">
+              Tiene escaparate o ventana a calle
+            </span>
+          </div>
+          <label className="relative inline-flex cursor-pointer items-center">
+            <input
+              type="checkbox"
+              checked={formData.hasEscaparate}
+              onChange={(e) => updateField("hasEscaparate", e.target.checked)}
+              className="peer sr-only"
+            />
+            <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-gray-900 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-gray-300"></div>
+          </label>
         </div>
       )}
 

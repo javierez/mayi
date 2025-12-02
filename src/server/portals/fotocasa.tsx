@@ -98,7 +98,7 @@ interface FotocasaProperty {
   ExternalId: string;
   AgencyReference: string;
   TypeId: number;
-  SubTypeId: number;
+  SubTypeId?: number; // Optional - omitted for "Local Comercial" subtype
   ContactTypeId: number;
   PropertyAddress: PropertyAddress[];
   PropertyDocument?: PropertyDocument[];
@@ -1146,12 +1146,17 @@ export async function buildFotocasaPayload(
     ];
 
     // Build the complete payload
+    // Special handling: "Local Comercial" maps directly to TypeId 3 with no SubTypeId
+    const isLocalComercial = listing.propertySubtype === "Local Comercial";
+
     const fotocasaPayload: FotocasaProperty = {
       ExternalId: (listing.listingId ?? 0).toString(),
       AgencyReference: (listing.listingId ?? 0).toString(),
       TypeId: PROPERTY_TYPE_MAPPING[listing.propertyType ?? "piso"] ?? 1,
-      SubTypeId:
-        PROPERTY_SUBTYPE_MAPPING[listing.propertySubtype ?? "Piso"] ?? 9, // Default to Flat (9) if no subtype
+      // Omit SubTypeId for "Local Comercial" - it maps directly to Commercial store (TypeId 3)
+      ...(isLocalComercial
+        ? {}
+        : { SubTypeId: PROPERTY_SUBTYPE_MAPPING[listing.propertySubtype ?? "Piso"] ?? 9 }),
       ContactTypeId: 3, // Agency contact (hardcoded for now)
       PropertyAddress: propertyAddress,
       PropertyDocument:

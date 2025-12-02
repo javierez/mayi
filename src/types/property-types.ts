@@ -28,7 +28,7 @@ export interface PropertySubtypes {
     | "Chalet"
     | "Casa rústica"
     | "Bungalow";
-  local: "Residencial" | "Otros" | "Mixto residencial" | "Oficinas" | "Hotel";
+  local: "Local Comercial" | "Residencial" | "Otros" | "Mixto residencial" | "Oficinas" | "Hotel";
   solar: "Suelo residencial" | "Suelo industrial" | "Suelo rústico";
   garaje: "Moto" | "Doble" | "Individual";
 }
@@ -671,7 +671,7 @@ export function getPropertySubtypes(propertyType: PropertyType): string[] {
       "Casa rústica",
       "Bungalow",
     ],
-    local: ["Residencial", "Otros", "Mixto residencial", "Oficinas", "Hotel"],
+    local: ["Local Comercial", "Residencial", "Otros", "Mixto residencial", "Oficinas", "Hotel"],
     solar: ["Suelo residencial", "Suelo industrial", "Suelo rústico"],
     garaje: ["Moto", "Doble", "Individual"],
   };

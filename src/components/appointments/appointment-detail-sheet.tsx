@@ -614,17 +614,48 @@ export function AppointmentDetailSheet({
 
           {/* Appointment Details */}
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm">
-              <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span>{formatDate(appointment.datetimeStart)}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span>
-                {formatTime(appointment.datetimeStart)} -{" "}
-                {formatTime(appointment.datetimeEnd)}
-              </span>
-            </div>
+            {(() => {
+              const startDate = appointment.datetimeStart;
+              const endDate = appointment.datetimeEnd;
+              const isSameDay =
+                startDate.getFullYear() === endDate.getFullYear() &&
+                startDate.getMonth() === endDate.getMonth() &&
+                startDate.getDate() === endDate.getDate();
+
+              if (isSameDay) {
+                return (
+                  <>
+                    <div className="flex items-center gap-2 text-sm">
+                      <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span>{formatDate(startDate)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span>
+                        {formatTime(startDate)} - {formatTime(endDate)}
+                      </span>
+                    </div>
+                  </>
+                );
+              }
+
+              // Different days - show combined date+time format
+              const formatShortDate = (date: Date) =>
+                new Intl.DateTimeFormat("es-ES", {
+                  day: "2-digit",
+                  month: "short",
+                }).format(date);
+
+              return (
+                <div className="flex items-center gap-2 text-sm">
+                  <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span>
+                    {formatShortDate(startDate)} {formatTime(startDate)} -{" "}
+                    {formatShortDate(endDate)} {formatTime(endDate)}
+                  </span>
+                </div>
+              );
+            })()}
             {appointment.listingId && (
               <div className="flex items-center gap-2 text-sm">
                 <Home className="h-4 w-4 shrink-0 text-muted-foreground" />

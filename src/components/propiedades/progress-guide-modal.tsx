@@ -12,6 +12,7 @@ interface ProgressGuideModalProps {
   processStages: ProcessStage[];
   progressPercent: number;
   substagePercentages: Record<string, number>;
+  listingType?: string;
 }
 
 interface StageGuide {
@@ -22,7 +23,8 @@ interface StageGuide {
   requirements: string[];
 }
 
-const stageGuides: StageGuide[] = [
+// Stage guides for sale listings
+const stageGuidesSale: StageGuide[] = [
   {
     id: "alta",
     label: "Alta",
@@ -113,13 +115,115 @@ const stageGuides: StageGuide[] = [
   },
 ];
 
+// Stage guides for rent listings
+const stageGuidesRent: StageGuide[] = [
+  {
+    id: "alta",
+    label: "Alta",
+    percentage: 10,
+    description: "La propiedad ha sido creada en el sistema",
+    requirements: [
+      "La propiedad existe en el sistema",
+      "El registro básico de la propiedad está completo",
+    ],
+  },
+  {
+    id: "completar-info",
+    label: "Ficha Completa",
+    percentage: 24,
+    description: "La información de la propiedad está completa y lista para comercializar",
+    requirements: [
+      "Todos los campos obligatorios están completados",
+      "Se ha subido al menos una imagen de la propiedad",
+      "La propiedad puede publicarse en portales externos",
+    ],
+  },
+  {
+    id: "firma-encargo",
+    label: "Encargo",
+    percentage: 43,
+    description: "Contrato de encargo firmado con el propietario",
+    requirements: [
+      "La información de la propiedad debe estar completa (Ficha Completa)",
+      "El contrato de encargo ha sido firmado",
+      "La propiedad está oficialmente bajo representación de tu agencia",
+    ],
+  },
+  {
+    id: "visitas",
+    label: "Visitas",
+    percentage: 56,
+    description: "Se están programando y realizando visitas a la propiedad",
+    requirements: [
+      "El encargo debe estar firmado",
+      "Se ha programado al menos una visita a la propiedad",
+      "Hay esfuerzos activos para mostrar la propiedad a potenciales inquilinos",
+    ],
+  },
+  {
+    id: "oferta-aceptada",
+    label: "Oferta",
+    percentage: 60,
+    description: "Una oferta de alquiler ha sido aceptada por el propietario",
+    requirements: [
+      "Se han realizado visitas a la propiedad",
+      "Un inquilino ha hecho una oferta",
+      "El propietario ha aceptado la oferta",
+    ],
+  },
+  {
+    id: "arras",
+    label: "Reserva",
+    percentage: 73,
+    description: "Contrato de reserva firmado y depósito pagado",
+    requirements: [
+      "La oferta ha sido aceptada",
+      "El contrato de reserva ha sido firmado",
+      "El inquilino ha pagado el depósito de reserva",
+    ],
+  },
+  {
+    id: "contrato",
+    label: "Firma",
+    percentage: 93,
+    description: "Contrato de alquiler firmado",
+    requirements: [
+      "La reserva ha sido completada",
+      "El contrato de alquiler ha sido firmado por ambas partes",
+      "La fianza ha sido entregada",
+    ],
+  },
+  {
+    id: "cierre-final",
+    label: "Cierre",
+    percentage: 100,
+    description: "Operación completada exitosamente",
+    requirements: [
+      "El contrato de alquiler ha sido firmado",
+      "El primer mes de alquiler ha sido pagado",
+      "Las llaves han sido entregadas al inquilino",
+      "El estado de la operación está marcado como 'Cerrado' en el sistema",
+    ],
+  },
+];
+
+/**
+ * Get stage guides based on listing type
+ */
+function getStageGuides(listingType?: string): StageGuide[] {
+  return listingType === "rent" ? stageGuidesRent : stageGuidesSale;
+}
+
 export function ProgressGuideModal({
   open,
   onOpenChange,
   processStages,
   progressPercent,
   substagePercentages,
+  listingType,
 }: ProgressGuideModalProps) {
+  // Get stage guides based on listing type (sale vs rent)
+  const stageGuides = getStageGuides(listingType);
   const handleClose = () => {
     onOpenChange(false);
   };

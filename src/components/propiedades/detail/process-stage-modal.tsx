@@ -25,17 +25,21 @@ import {
 } from "~/app/actions/listing-actions";
 import { cn } from "~/lib/utils";
 
-// All progress stages in order
-const ALL_STAGES = [
-  { action: "listing_created", label: "Alta de propiedad", percent: 10 },
-  { action: "ficha_completed", label: "Ficha completa", percent: 24 },
-  { action: "encargo_signed", label: "Encargo firmado", percent: 43 },
-  { action: "visitas_started", label: "Visitas", percent: 56 },
-  { action: "offer_accepted", label: "Oferta aceptada", percent: 60 },
-  { action: "arras_signed", label: "Arras", percent: 73 },
-  { action: "escritura_signed", label: "Escritura", percent: 93 },
-  { action: "deal_closed", label: "Cierre", percent: 100 },
-] as const;
+// All progress stages in order - get with correct labels based on listing type
+function getTimelineStages(listingType?: string) {
+  const isRent = listingType === "rent";
+  return [
+    { action: "listing_created", label: "Alta de propiedad", percent: 10 },
+    { action: "ficha_completed", label: "Ficha completa", percent: 24 },
+    { action: "encargo_signed", label: "Encargo firmado", percent: 43 },
+    { action: "visitas_started", label: "Visitas", percent: 56 },
+    { action: "offer_accepted", label: "Oferta aceptada", percent: 60 },
+    { action: "arras_signed", label: isRent ? "Reserva" : "Arras", percent: 73 },
+    { action: "escritura_signed", label: isRent ? "Firma" : "Escritura", percent: 93 },
+    { action: "deal_closed", label: "Cierre", percent: 100 },
+  ] as const;
+}
+
 
 interface ProcessStage {
   id: string;
@@ -69,6 +73,7 @@ interface ProcessStageModalProps {
   processStages: ProcessStage[];
   currentProgress: CurrentProgress;
   onSuccess?: () => void;
+  listingType?: string;
 }
 
 export function ProcessStageModal({
@@ -80,6 +85,7 @@ export function ProcessStageModal({
   processStages,
   currentProgress,
   onSuccess,
+  listingType,
 }: ProcessStageModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,11 +106,12 @@ export function ProcessStageModal({
     }
   }, [isOpen, listingId]);
 
-  // Generate checklist items
+  // Generate checklist items with correct labels for listing type
   const allItems = getChecklistItemsForStage(
     processStages,
     targetStageId,
     currentProgress,
+    listingType,
   );
 
   // Filter out completed items
@@ -249,15 +256,17 @@ export function ProcessStageModal({
                 </div>
               ) : (
                 <div className="space-y-0">
-                  {ALL_STAGES.map((stage, index) => {
+                  {(() => {
+                    const stages = getTimelineStages(listingType);
+                    return stages.map((stage, index) => {
                     const activity = timelineActivities.find(
                       (a) => a.action === stage.action,
                     );
                     const isCompleted = !!activity;
-                    const isLast = index === ALL_STAGES.length - 1;
-                    const nextActivity = ALL_STAGES[index + 1]
+                    const isLast = index === stages.length - 1;
+                    const nextActivity = stages[index + 1]
                       ? timelineActivities.find(
-                          (a) => a.action === ALL_STAGES[index + 1]?.action,
+                          (a) => a.action === stages[index + 1]?.action,
                         )
                       : null;
                     const isNextCompleted = !!nextActivity;
@@ -320,7 +329,8 @@ export function ProcessStageModal({
                         </div>
                       </div>
                     );
-                  })}
+                  });
+                  })()}
                 </div>
               )}
             </div>

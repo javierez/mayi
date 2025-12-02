@@ -19,3 +19,4 @@ export {
   BrandingSkeleton,
   BrandingPageSkeleton,
 } from "./branding-skeleton";
+export { CrearFirstSkeleton } from "./crear-first-skeleton";

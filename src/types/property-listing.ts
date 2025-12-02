@@ -161,6 +161,8 @@ export interface PropertyListing {
   loadingArea?: boolean;
   patio?: boolean;
   allowedUse?: number; // Allowed use for solar/land properties (1-9 enum)
+  isDiafano?: boolean; // Only for 'local' property type - open-plan/open-space commercial
+  hasEscaparate?: boolean; // Only for 'local' property type - has shop window/storefront
   gym?: boolean;
   sportsArea?: boolean;
   childrenArea?: boolean;
@@ -355,6 +357,8 @@ export function convertDbListingToPropertyListing(
     loadingArea: getBoolean(dbListing.loadingArea),
     patio: getBoolean(dbListing.patio),
     allowedUse: getNumber(dbListing.allowedUse),
+    isDiafano: getBoolean(dbListing.isDiafano),
+    hasEscaparate: getBoolean(dbListing.hasEscaparate),
     gym: getBoolean(dbListing.gym),
     sportsArea: getBoolean(dbListing.sportsArea),
     childrenArea: getBoolean(dbListing.childrenArea),

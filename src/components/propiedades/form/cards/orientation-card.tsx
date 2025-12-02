@@ -17,6 +17,7 @@ import type { SaveState } from "~/types/save-state";
 interface OrientationCardProps {
   isExterior: boolean;
   isBright: boolean;
+  hasEscaparate: boolean;
   orientation: string;
   propertyType: string;
   collapsedSections: Record<string, boolean>;
@@ -27,6 +28,7 @@ interface OrientationCardProps {
   onUpdateModule: (hasChanges: boolean) => void;
   setIsExterior: (value: boolean) => void;
   setIsBright: (value: boolean) => void;
+  setHasEscaparate: (value: boolean) => void;
   setOrientation: (value: string) => void;
   getCardStyles: (moduleName: string) => string;
 }
@@ -34,6 +36,7 @@ interface OrientationCardProps {
 export function OrientationCard({
   isExterior,
   isBright,
+  hasEscaparate,
   orientation,
   propertyType,
   collapsedSections,
@@ -44,6 +47,7 @@ export function OrientationCard({
   onUpdateModule,
   setIsExterior,
   setIsBright,
+  setHasEscaparate,
   setOrientation,
   getCardStyles,
 }: OrientationCardProps) {
@@ -109,6 +113,22 @@ export function OrientationCard({
             />
             <Label htmlFor="isBright" className="text-sm">
               Luminoso
+            </Label>
+          </div>
+        )}
+        {propertyType === "local" && (
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="hasEscaparate"
+              checked={hasEscaparate}
+              onCheckedChange={(checked) => {
+                setHasEscaparate(checked as boolean);
+                onUpdateModule(true);
+              }}
+              disabled={!canEdit}
+            />
+            <Label htmlFor="hasEscaparate" className="text-sm">
+              Escaparate
             </Label>
           </div>
         )}

@@ -90,37 +90,75 @@ function validateGlobalProgression(stages: ProcessStage[]): ProcessStage[] {
   });
 }
 
-const rawProcessStages: ProcessStage[] = [
-  {
-    id: "oportunidad",
-    label: "Oportunidad",
-    status: "accomplished",
-    subStages: [
-      { id: "alta", label: "Alta", status: "accomplished" },
-      { id: "completar-info", label: "Ficha completa", status: "accomplished" },
-      { id: "firma-encargo", label: "Encargo", status: "future" },
-    ],
-  },
-  {
-    id: "busqueda",
-    label: "Búsqueda",
-    status: "ongoing",
-    subStages: [
-      { id: "visitas", label: "Visitas", status: "accomplished" },
-      { id: "oferta-aceptada", label: "Oferta", status: "future" },
-    ],
-  },
-  {
-    id: "cierre",
-    label: "Cierre",
-    status: "future",
-    subStages: [
-      { id: "arras", label: "Arras", status: "future" },
-      { id: "contrato", label: "Escritura", status: "future" },
-      { id: "cierre-final", label: "Cierre", status: "future" },
-    ],
-  },
-];
+/**
+ * Get the label for a stage based on listing type
+ * For rentals, "Arras" becomes "Reserva" and "Escritura" becomes "Firma"
+ */
+export function getStageLabel(stageId: string, listingType?: string): string {
+  const isRent = listingType === "rent";
+
+  const labels: Record<string, { sale: string; rent: string }> = {
+    "arras": { sale: "Arras", rent: "Reserva" },
+    "contrato": { sale: "Escritura", rent: "Firma" },
+  };
+
+  const labelConfig = labels[stageId];
+  if (labelConfig) {
+    return isRent ? labelConfig.rent : labelConfig.sale;
+  }
+
+  // Default labels for stages without rent-specific overrides
+  const defaultLabels: Record<string, string> = {
+    "alta": "Alta",
+    "completar-info": "Ficha completa",
+    "firma-encargo": "Encargo",
+    "visitas": "Visitas",
+    "oferta-aceptada": "Oferta",
+    "cierre-final": "Cierre",
+  };
+
+  return defaultLabels[stageId] ?? stageId;
+}
+
+/**
+ * Generate raw process stages with labels based on listing type
+ */
+function getRawProcessStages(listingType?: string): ProcessStage[] {
+  return [
+    {
+      id: "oportunidad",
+      label: "Oportunidad",
+      status: "accomplished",
+      subStages: [
+        { id: "alta", label: getStageLabel("alta", listingType), status: "accomplished" },
+        { id: "completar-info", label: getStageLabel("completar-info", listingType), status: "accomplished" },
+        { id: "firma-encargo", label: getStageLabel("firma-encargo", listingType), status: "future" },
+      ],
+    },
+    {
+      id: "busqueda",
+      label: "Búsqueda",
+      status: "ongoing",
+      subStages: [
+        { id: "visitas", label: getStageLabel("visitas", listingType), status: "accomplished" },
+        { id: "oferta-aceptada", label: getStageLabel("oferta-aceptada", listingType), status: "future" },
+      ],
+    },
+    {
+      id: "cierre",
+      label: "Cierre",
+      status: "future",
+      subStages: [
+        { id: "arras", label: getStageLabel("arras", listingType), status: "future" },
+        { id: "contrato", label: getStageLabel("contrato", listingType), status: "future" },
+        { id: "cierre-final", label: getStageLabel("cierre-final", listingType), status: "future" },
+      ],
+    },
+  ];
+}
+
+// Default stages for sale listings (backwards compatibility)
+const rawProcessStages: ProcessStage[] = getRawProcessStages();
 
 // Apply validation: first individual substage progression, then global progression
 export const PROCESS_STAGES: ProcessStage[] = validateGlobalProgression(
@@ -168,10 +206,14 @@ export function getProcessStages(
   // Calculate completion status
   const completion = calculateCompletion(listingWithDefaults);
 
+  // Extract listingType for label customization
+  const listingType = listing.listingType as string | undefined;
+
   // Log completion calculation results
   console.log("📊 Property Completion Calculation:", {
     canPublishToPortals: completion.canPublishToPortals,
     overallPercentage: completion.overallPercentage,
+    listingType,
     mandatory: {
       completed: completion.mandatory.completedCount,
       total: completion.mandatory.total,
@@ -185,8 +227,8 @@ export function getProcessStages(
     },
   });
 
-  // Clone raw stages to avoid mutation
-  const dynamicStages: ProcessStage[] = rawProcessStages.map(cloneProcessStage);
+  // Clone raw stages with appropriate labels based on listingType
+  const dynamicStages: ProcessStage[] = getRawProcessStages(listingType).map(cloneProcessStage);
 
   // Find and update "Ficha completa" substage based on mandatory field completion
   const oportunidadStage = dynamicStages.find(

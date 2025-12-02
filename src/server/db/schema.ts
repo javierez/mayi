@@ -373,6 +373,8 @@ export const properties = pgTable("properties", {
   loadingArea: boolean("loading_area"),
   patio: boolean("patio"),
   allowedUse: smallint("allowed_use"), // Allowed use for solar/land properties (1-9 enum)
+  isDiafano: boolean("is_diafano"), // Only for 'local' property type - open-plan/open-space commercial
+  hasEscaparate: boolean("has_escaparate"), // Only for 'local' property type - has shop window/storefront
 
   // Utilities and Installations
   electricityType: varchar("electricity_type", { length: 50 }), // 'monofasica' | 'trifasica' | 'mixta' | 'no_disponible'
