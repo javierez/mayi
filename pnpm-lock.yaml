@@ -285,6 +285,9 @@ importers:
       '@types/react-signature-canvas':
         specifier: ^1.0.7
         version: 1.0.7
+      '@types/xlsx':
+        specifier: ^0.0.36
+        version: 0.0.36
       autoprefixer:
         specifier: ^10.4.21
         version: 10.4.21(postcss@8.4.31)
@@ -2631,6 +2634,10 @@ packages:
 
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
+
+  '@types/xlsx@0.0.36':
+    resolution: {integrity: sha512-mvfrKiKKMErQzLMF8ElYEH21qxWCZtN59pHhWGmWCWFJStYdMWjkDSAy6mGowFxHXaXZWe5/TW7pBUiWclIVOw==}
+    deprecated: This is a stub types definition for xlsx (https://github.com/sheetjs/js-xlsx). xlsx provides its own type definitions, so you don't need @types/xlsx installed!
 
   '@types/yauzl@2.10.3':
     resolution: {integrity: sha512-oJoftv0LSuaDZE3Le4DbKX+KS9G36NzOeSap90UIK0yMA/NhKJhqlSGtNDORNRaIbQfzjXDrQa0ytJ6mNRGz/Q==}
@@ -8589,6 +8596,10 @@ snapshots:
   '@types/ws@8.18.1':
     dependencies:
       '@types/node': 20.19.21
+
+  '@types/xlsx@0.0.36':
+    dependencies:
+      xlsx: 0.18.5
 
   '@types/yauzl@2.10.3':
     dependencies:

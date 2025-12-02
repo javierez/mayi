@@ -175,7 +175,7 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
   // Handle discard and close action
   const handleDiscardAndClose = () => {
     setShouldBlockNavigation(false);
-    router.push(`/propiedades/${listingId}?new=true`);
+    router.push(`/propiedades`);
   };
 
   // Handle close confirmation dialog close

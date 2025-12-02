@@ -51,9 +51,13 @@ import {
 
 /**
  * Upload Idealista JSON export to S3
- * Stored at: {bucket}/idealista/{timestamp}.json
+ * Stored at: {bucket}/idealista/{customerCode}.json
+ * Per Idealista requirements, filename must contain the customerCode
  */
-async function uploadIdealistaJsonToS3(jsonContent: string): Promise<{
+async function uploadIdealistaJsonToS3(
+  jsonContent: string,
+  customerCode: string,
+): Promise<{
   success: boolean;
   s3Url?: string;
   s3Key?: string;
@@ -62,14 +66,8 @@ async function uploadIdealistaJsonToS3(jsonContent: string): Promise<{
   try {
     const bucketName = await getDynamicBucketName();
 
-    // Generate timestamp filename: YYYYMMDD_HHMMSS.json
-    const now = new Date();
-    const timestamp = now
-      .toISOString()
-      .replace(/[-:]/g, "")
-      .replace("T", "_")
-      .slice(0, 15);
-    const s3Key = `idealista/${timestamp}.json`;
+    // Filename must contain customerCode per Idealista requirements
+    const s3Key = `idealista/${customerCode}.json`;
 
     // Upload to S3
     await s3Client.send(
@@ -227,20 +225,19 @@ function extractStreetNumber(
 
 /**
  * Extract floor from address details
+ * Returns only numeric floors without leading zeros per Idealista requirements
  */
 function extractFloor(addressDetails: string | null): string | undefined {
   if (!addressDetails) return undefined;
-  const floorMatch =
-    /(\d+|bajo|bj|ent|entresuelo|principal)[ºª]?\s*(piso|planta|º)?/i.exec(
-      addressDetails,
-    );
+
+  // Match floor number patterns like "1º", "2ª piso", "planta 3", etc.
+  const floorMatch = /(\d+)[ºª]?\s*(piso|planta|º)?/i.exec(addressDetails);
+
   if (floorMatch?.[1]) {
-    const floor = floorMatch[1].toLowerCase();
-    if (floor === "bajo" || floor === "bj") return "bj";
-    if (floor === "ent" || floor === "entresuelo") return "en";
-    if (floor === "principal") return "pr";
-    return floorMatch[1];
+    // Return number without leading zeros (e.g., "01" -> "1")
+    return String(parseInt(floorMatch[1], 10));
   }
+
   return undefined;
 }
 
@@ -253,6 +250,33 @@ function extractDoor(addressDetails: string | null): string | undefined {
     addressDetails,
   );
   return doorMatch?.[1];
+}
+
+/**
+ * Parse Spanish address to separate street name from street number
+ * Handles formats like: "Calle Mayor 15", "Av. Principal, 23", "Plaza Santa María nº 1"
+ */
+function parseSpanishAddress(street: string | null): {
+  streetName: string | undefined;
+  streetNumber: string | undefined;
+} {
+  if (!street) return { streetName: undefined, streetNumber: undefined };
+
+  const trimmed = street.trim();
+
+  // Pattern: "Street Name 123" or "Street Name, 123" or "Street Name nº 123"
+  // The number can optionally have a letter suffix (e.g., "15A")
+  const match = /^(.+?)\s*[,\s]\s*(n[ºo°]?\s*)?(\d+[A-Za-z]?)$/i.exec(trimmed);
+
+  if (match?.[1] && match[3]) {
+    return {
+      streetName: match[1].replace(/,\s*$/, "").trim(),
+      streetNumber: match[3],
+    };
+  }
+
+  // No number found - return original street name
+  return { streetName: trimmed, streetNumber: undefined };
 }
 
 // ============================================
@@ -368,14 +392,16 @@ export async function buildIdealistaPropertyPayload(
     (listing.idCoordinatesPrecision as IdealistaCoordinatesPrecision) ??
     "exact";
 
+  // Parse street to separate name from number
+  const parsedAddress = parseSpanishAddress(listing.street ?? null);
+
   // Build address - Use FULL country name!
   const propertyAddress: IdealistaAddress = {
     addressVisibility,
-    addressStreetName: listing.street?.split(",")[0]?.trim(),
-    addressStreetNumber: extractStreetNumber(
-      listing.street ?? null,
-      listing.addressDetails ?? null,
-    ),
+    addressStreetName: parsedAddress.streetName,
+    addressStreetNumber:
+      parsedAddress.streetNumber ??
+      extractStreetNumber(listing.street ?? null, listing.addressDetails ?? null),
     addressFloor: extractFloor(listing.addressDetails ?? null),
     addressDoor: extractDoor(listing.addressDetails ?? null),
     addressPostalCode: listing.postalCode ?? undefined,
@@ -608,8 +634,8 @@ export async function buildIdealistaPropertyPayload(
   ) as IdealistaFeatures;
 
   return {
-    propertyCode: listing.referenceNumber ?? listingId.toString(),
-    propertyReference: listing.referenceNumber ?? undefined,
+    propertyCode: listingId.toString(), // Always unique ID for Idealista
+    propertyReference: listing.referenceNumber ?? undefined, // Agency's internal reference
     propertyVisibility: "idealista",
     propertyUrl: listing.externalUrl ?? undefined,
     propertyOperation, // Singular object
@@ -821,8 +847,8 @@ export async function exportToIdealista(
       }
     }
 
-    // Save to S3
-    const s3Result = await uploadIdealistaJsonToS3(jsonContent);
+    // Save to S3 - filename must contain customerCode per Idealista requirements
+    const s3Result = await uploadIdealistaJsonToS3(jsonContent, customerCode);
     if (!s3Result.success) {
       console.error("Failed to save Idealista JSON to S3:", s3Result.error);
       // Continue anyway - S3 save is not critical

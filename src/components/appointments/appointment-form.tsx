@@ -1320,7 +1320,7 @@ export default function AppointmentForm({
             </div>
 
             {/* Duration and End Date/Time Row */}
-            <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
               {/* Duration */}
               <div className="relative">
                 <label className="absolute -top-6 left-0 z-10 px-2 text-xs font-medium text-gray-600">
@@ -1780,9 +1780,9 @@ export default function AppointmentForm({
 
 
             {/* Title - editable, styled as heading */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               {isEditingTitle ? (
-                <div className="flex w-full items-center gap-2">
+                <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
                   <input
                     type="text"
                     value={titleEditValue}
@@ -1796,35 +1796,37 @@ export default function AppointmentForm({
                         setIsEditingTitle(false);
                       }
                     }}
-                    className="flex-1 rounded-md border border-gray-200 bg-background px-3 py-2 text-xl font-semibold shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                    className="w-full rounded-md border border-gray-200 bg-background px-3 py-2 text-lg font-semibold shadow-sm focus:outline-none focus:ring-1 focus:ring-ring sm:flex-1 sm:text-xl"
                     autoFocus
                   />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={() => {
-                      handleInputChange("title")(titleEditValue);
-                      setIsEditingTitle(false);
-                    }}
-                  >
-                    <Check className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0"
-                    onClick={() => {
-                      setTitleEditValue(formData.title ?? "");
-                      setIsEditingTitle(false);
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => {
+                        handleInputChange("title")(titleEditValue);
+                        setIsEditingTitle(false);
+                      }}
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => {
+                        setTitleEditValue(formData.title ?? "");
+                        setIsEditingTitle(false);
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <>
-                  <h2 className="flex-1 text-2xl font-semibold text-gray-900">
+                  <h2 className="min-w-0 flex-1 break-words text-xl font-semibold text-gray-900 sm:text-2xl">
                     {formData.title ?? "Sin título"}
                   </h2>
                   <Button
@@ -1956,24 +1958,24 @@ export default function AppointmentForm({
   return (
     <div className="flex h-full w-full flex-col">
       {/* Progress Steps */}
-      <div className="mb-6 px-6 pt-4">
-        <div className="flex items-center justify-center space-x-8">
+      <div className="mb-4 px-4 pt-4 sm:mb-6 sm:px-6">
+        <div className="flex items-center justify-center space-x-4 sm:space-x-8">
           {steps.map((step, index) => {
             const isActive = index === currentStep;
             const isCompleted = index < currentStep;
 
             return (
-              <div key={step.id} className="flex items-center space-x-2">
+              <div key={step.id} className="flex items-center space-x-1 sm:space-x-2">
                 <div
                   className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-full border-2 transition-colors",
+                    "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors sm:h-10 sm:w-10",
                     isActive &&
                       "border-primary bg-primary text-primary-foreground",
                     isCompleted && "border-green-500 bg-green-500 text-white",
                     !isActive && !isCompleted && "border-muted bg-background",
                   )}
                 >
-                  {isCompleted ? <Check className="h-5 w-5" /> : step.icon}
+                  {isCompleted ? <Check className="h-4 w-4 sm:h-5 sm:w-5" /> : <span className="[&>svg]:h-4 [&>svg]:w-4 sm:[&>svg]:h-5 sm:[&>svg]:w-5">{step.icon}</span>}
                 </div>
                 <div
                   className={cn(
@@ -1992,7 +1994,7 @@ export default function AppointmentForm({
       </div>
 
       {/* Form Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto px-6">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}
@@ -2008,40 +2010,42 @@ export default function AppointmentForm({
       </div>
 
       {/* Footer - Fixed at bottom */}
-      <div className="flex shrink-0 flex-col space-y-3 border-t bg-background px-6 py-4">
+      <div className="flex shrink-0 flex-col space-y-3 border-t bg-background px-4 py-3 sm:px-6 sm:py-4">
         {/* Validation Error */}
         {validationError && (
-          <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+          <div className="rounded-lg bg-red-50 p-2 text-sm text-red-600 sm:p-3">
             {validationError}
           </div>
         )}
 
         {/* Navigation Buttons */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center justify-center gap-2 sm:justify-start">
             {currentStep > initialStep && (
-              <Button variant="outline" onClick={prevStep}>
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Anterior
+              <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={prevStep}>
+                <ChevronLeft className="mr-1 h-4 w-4 sm:mr-2" />
+                <span className="hidden xs:inline">Anterior</span>
+                <span className="xs:hidden">Atrás</span>
               </Button>
             )}
-            <Button variant="outline" onClick={onCancel}>
+            <Button variant="outline" size="sm" className="flex-1 sm:flex-none" onClick={onCancel}>
               Cancelar
             </Button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center gap-2 sm:justify-end">
             {currentStep < steps.length - 1 && (
-              <Button onClick={nextStep}>
+              <Button size="sm" className="flex-1 sm:flex-none" onClick={nextStep}>
                 Siguiente
-                <ChevronRight className="ml-2 h-4 w-4" />
+                <ChevronRight className="ml-1 h-4 w-4 sm:ml-2" />
               </Button>
             )}
             {currentStep === steps.length - 1 && (
               <Button
                 onClick={handleSubmit}
                 disabled={isCreating}
-                className="min-w-[120px]"
+                size="sm"
+                className="min-w-[100px] flex-1 sm:min-w-[120px] sm:flex-none"
               >
                 {isCreating ? (
                   <Loader className="h-4 w-4 animate-spin" />

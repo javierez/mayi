@@ -492,10 +492,11 @@ export default function FirstPage({
           </div>
         </div>
       </div>
-      {/* Replace the secondary toggles with checkboxes */}
+      {/* Replace the secondary toggles with checkboxes - only for residential properties */}
       {["Rent", "RentWithOption", "RoomSharing"].includes(
         formData.listingType,
-      ) && (
+      ) &&
+        ["piso", "casa"].includes(formData.propertyType) && (
         <div className="mb-6 ml-6 flex flex-row items-center gap-6">
           <div className="flex items-center gap-2">
             <Checkbox
@@ -615,6 +616,10 @@ export default function FirstPage({
               onClick={() => {
                 updateField("propertyType", "local");
                 updateField("propertySubtype", "Otros");
+                // Reset to basic Rent if special rent type was selected
+                if (["RoomSharing", "RentWithOption"].includes(formData.listingType)) {
+                  updateField("listingType", "Rent");
+                }
               }}
               className={cn(
                 "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
@@ -629,6 +634,10 @@ export default function FirstPage({
               onClick={() => {
                 updateField("propertyType", "solar");
                 updateField("propertySubtype", "Suelo residencial");
+                // Reset to basic Rent if special rent type was selected
+                if (["RoomSharing", "RentWithOption"].includes(formData.listingType)) {
+                  updateField("listingType", "Rent");
+                }
               }}
               className={cn(
                 "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
@@ -643,6 +652,10 @@ export default function FirstPage({
               onClick={() => {
                 updateField("propertyType", "garaje");
                 updateField("propertySubtype", "Individual");
+                // Reset to basic Rent if special rent type was selected
+                if (["RoomSharing", "RentWithOption"].includes(formData.listingType)) {
+                  updateField("listingType", "Rent");
+                }
               }}
               className={cn(
                 "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
@@ -689,6 +702,10 @@ export default function FirstPage({
             onClick={() => {
               updateField("propertyType", "local");
               updateField("propertySubtype", "Otros");
+              // Reset to basic Rent if special rent type was selected
+              if (["RoomSharing", "RentWithOption"].includes(formData.listingType)) {
+                updateField("listingType", "Rent");
+              }
             }}
             className={cn(
               "h-10 rounded-lg text-sm font-medium transition-all duration-200",
@@ -703,6 +720,10 @@ export default function FirstPage({
             onClick={() => {
               updateField("propertyType", "solar");
               updateField("propertySubtype", "Suelo residencial");
+              // Reset to basic Rent if special rent type was selected
+              if (["RoomSharing", "RentWithOption"].includes(formData.listingType)) {
+                updateField("listingType", "Rent");
+              }
             }}
             className={cn(
               "col-span-1 h-10 rounded-lg text-sm font-medium transition-all duration-200",
@@ -717,6 +738,10 @@ export default function FirstPage({
             onClick={() => {
               updateField("propertyType", "garaje");
               updateField("propertySubtype", "Individual");
+              // Reset to basic Rent if special rent type was selected
+              if (["RoomSharing", "RentWithOption"].includes(formData.listingType)) {
+                updateField("listingType", "Rent");
+              }
             }}
             className={cn(
               "col-span-2 h-10 rounded-lg text-sm font-medium transition-all duration-200",

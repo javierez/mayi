@@ -211,10 +211,11 @@ export function BasicInfoCard({
           </div>
         </div>
 
-        {/* Secondary checkboxes, vertical for rent types */}
+        {/* Secondary checkboxes, vertical for rent types - only for residential properties (piso, casa) */}
         {["Rent", "RentWithOption", "RoomSharing"].includes(
           currentListingType,
-        ) && (
+        ) &&
+          ["piso", "casa"].includes(propertyType) && (
           <div className="ml-2 flex flex-col items-start gap-2">
             <div className="flex items-center gap-2">
               <Checkbox
@@ -259,8 +260,9 @@ export function BasicInfoCard({
           </div>
         )}
 
-        {/* Rental Type - Only shown for rent listings */}
-        {["Rent", "RentWithOption", "RoomSharing"].includes(currentListingType) && (
+        {/* Rental Type - Only shown for rent listings on residential properties (piso, casa) */}
+        {["Rent", "RentWithOption", "RoomSharing"].includes(currentListingType) &&
+          ["piso", "casa"].includes(propertyType) && (
           <div className="space-y-1.5">
             <Label className="text-sm">Tipo de Alquiler</Label>
             <div className="flex gap-2">
@@ -307,8 +309,9 @@ export function BasicInfoCard({
           </div>
         )}
 
-        {/* Short Term License - Shown for seasonal and short_term rental types (only for rent) */}
+        {/* Short Term License - Shown for seasonal and short_term rental types on residential properties */}
         {["Rent", "RentWithOption", "RoomSharing"].includes(currentListingType) &&
+          ["piso", "casa"].includes(propertyType) &&
           (rentalType === "seasonal" || rentalType === "short_term") && (
           <div className="space-y-1.5">
             <Label htmlFor="shortTermLicense" className="text-sm">

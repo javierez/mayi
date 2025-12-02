@@ -684,7 +684,7 @@ export function AppointmentDetailSheet({
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-2 pt-3 sm:pt-4">
+          <div className="flex flex-col gap-2 pt-3 sm:flex-row sm:pt-4">
             {showVisitaButton && (
               <Button
                 variant="ghost"
@@ -697,8 +697,8 @@ export function AppointmentDetailSheet({
               </Button>
             )}
             {!showVisitaButton &&
-            (canEditAppointment || canDeleteAppointment) ? (
-              <div className="flex w-full items-center justify-center gap-2 sm:gap-3">
+            (Boolean(canEditAppointment) || Boolean(canDeleteAppointment)) ? (
+              <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-center sm:gap-3">
                 {canEditAppointment && onEdit && (
                   <Button
                     size="default"
@@ -730,7 +730,7 @@ export function AppointmentDetailSheet({
                 )}
               </div>
             ) : (
-              <>
+              <div className="flex items-center gap-2">
                 {canEditAppointment && onEdit && (
                   <Button
                     size="sm"
@@ -760,12 +760,12 @@ export function AppointmentDetailSheet({
                     )}
                   </Button>
                 )}
-              </>
+              </div>
             )}
           </div>
 
           {/* Comments Section */}
-          <div className="mt-6 border-t pt-6">
+          <div className="mt-4 border-t pt-4 sm:mt-6 sm:pt-6">
             {isLoadingComments ? (
               <div className="flex justify-center py-8">
                 <Loader className="h-6 w-6 animate-spin text-gray-400" />

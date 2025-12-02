@@ -154,7 +154,8 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
         return;
       }
 
-      if (!formData.bathrooms || formData.bathrooms === 0) {
+      // Bathrooms required for piso/casa, optional (can be 0) for local
+      if (propertyType !== "local" && (!formData.bathrooms || formData.bathrooms === 0)) {
         alert("Por favor, introduce el número de baños.");
         return;
       }
