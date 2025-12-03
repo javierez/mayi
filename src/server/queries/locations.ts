@@ -1,7 +1,7 @@
 "use server";
 import { db } from "../db";
 import { locations } from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, ilike, or, sql } from "drizzle-orm";
 import type { Location } from "../../lib/data";
 
 // Interface for location data from geocoding
@@ -347,6 +347,49 @@ export async function getCitiesFromAccountPropertiesWithAuth() {
       "Error fetching cities from account properties with auth:",
       error,
     );
+    throw error;
+  }
+}
+
+// Search neighborhoods by partial match (for autocomplete)
+// Returns matching neighborhoods with their city for display
+export async function searchNeighborhoods(query: string, limit = 10) {
+  try {
+    if (!query || query.trim().length < 2) {
+      return [];
+    }
+
+    const searchTerm = `%${query.trim()}%`;
+
+    const results = await db
+      .select({
+        neighborhoodId: locations.neighborhoodId,
+        neighborhood: locations.neighborhood,
+        city: locations.city,
+        municipality: locations.municipality,
+        province: locations.province,
+      })
+      .from(locations)
+      .where(
+        and(
+          eq(locations.isActive, true),
+          or(
+            ilike(locations.neighborhood, searchTerm),
+            ilike(locations.city, searchTerm),
+          ),
+        ),
+      )
+      .orderBy(
+        // Prioritize exact matches at the start
+        sql`CASE WHEN LOWER(${locations.neighborhood}) LIKE LOWER(${query.trim() + "%"}) THEN 0 ELSE 1 END`,
+        locations.neighborhood,
+        locations.city,
+      )
+      .limit(limit);
+
+    return results;
+  } catch (error) {
+    console.error("Error searching neighborhoods:", error);
     throw error;
   }
 }

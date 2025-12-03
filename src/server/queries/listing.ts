@@ -404,10 +404,27 @@ export async function updateListing(
       }
     }
 
+    // Sync grouped portals: fotocasa, habitaclia, milanuncios should always have the same value
+    const groupedPortalKeys = ["fotocasa", "habitaclia", "milanuncios"] as const;
+    const updatedGroupKey = groupedPortalKeys.find(
+      (key) => key in data && data[key as keyof typeof data] !== undefined,
+    );
+
+    let syncedData = data;
+    if (updatedGroupKey) {
+      const groupValue = data[updatedGroupKey as keyof typeof data] as boolean;
+      syncedData = {
+        ...data,
+        fotocasa: groupValue,
+        habitaclia: groupValue,
+        milanuncios: groupValue,
+      };
+    }
+
     // Perform the update
     await db
       .update(listings)
-      .set(data)
+      .set(syncedData)
       .where(
         and(
           eq(listings.listingId, BigInt(listingId)),
@@ -1837,6 +1854,7 @@ export async function getListingDetails(listingId: number, accountId: number) {
         pisoscom: listings.pisoscom,
         yaencontre: listings.yaencontre,
         milanuncios: listings.milanuncios,
+        listglobally: listings.listglobally,
         isFeatured: listings.isFeatured,
         isBankOwned: listings.isBankOwned,
         publishToWebsite: listings.publishToWebsite,

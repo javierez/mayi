@@ -164,23 +164,25 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
       };
     }
 
-    // NEW: Auto-create lead if missing and we have required data
-    if (!appointmentData.listingContactId && appointmentData.contactId) {
+    // NEW: Auto-create lead if missing and we have required data (contact + listing)
+    if (!appointmentData.listingContactId && appointmentData.contactId && appointmentData.listingId) {
       try {
-        const { listingContactId: autoCreatedListingContactId, created } =
-          await findOrCreateLeadForAppointment(
-            appointmentData.contactId,
-            appointmentData.listingId,
-            appointmentData.prospectId,
-          );
-        appointmentData.listingContactId = autoCreatedListingContactId;
+        const result = await findOrCreateLeadForAppointment(
+          appointmentData.contactId,
+          appointmentData.listingId,
+          appointmentData.prospectId,
+        );
 
-        console.log("🎯 Lead auto-creation result:", {
-          listingContactId: autoCreatedListingContactId.toString(),
-          created,
-          contactId: appointmentData.contactId.toString(),
-          listingId: appointmentData.listingId?.toString(),
-        });
+        if (result) {
+          appointmentData.listingContactId = result.listingContactId;
+
+          console.log("🎯 Lead auto-creation result:", {
+            listingContactId: result.listingContactId.toString(),
+            created: result.created,
+            contactId: appointmentData.contactId.toString(),
+            listingId: appointmentData.listingId?.toString(),
+          });
+        }
       } catch (error) {
         console.error("Failed to auto-create lead for appointment:", error);
         // Don't fail the appointment creation if lead creation fails

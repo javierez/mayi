@@ -1310,6 +1310,7 @@ export default function AppointmentForm({
                   placeholder="Fecha de inicio"
                   type="date"
                   required
+                  className="text-sm"
                 />
 
               <div className="relative mt-8">
@@ -1320,7 +1321,7 @@ export default function AppointmentForm({
                   value={formData.startTime}
                   onValueChange={handleInputChange("startTime")}
                 >
-                  <SelectTrigger className="h-9 border border-gray-200 shadow-md">
+                  <SelectTrigger className="h-9 border border-gray-200 text-sm shadow-md">
                     <SelectValue placeholder="Seleccionar hora" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1337,7 +1338,7 @@ export default function AppointmentForm({
             </div>
 
             {/* Duration and End Date/Time Row */}
-            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+            <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-4 md:grid-cols-3">
               {/* Duration */}
               <div className="relative">
                 <label className="absolute -top-6 left-0 z-10 px-2 text-xs font-medium text-gray-600">
@@ -1378,7 +1379,7 @@ export default function AppointmentForm({
                       setDurationMinutes(m ?? 0);
                     }}
                   >
-                    <SelectTrigger className="h-9 flex-1 border border-gray-200 shadow-md">
+                    <SelectTrigger className="h-9 flex-1 border border-gray-200 text-sm shadow-md">
                       <SelectValue>
                         {(() => {
                           const totalMinutes = durationHours * 60 + durationMinutes;
@@ -1551,7 +1552,7 @@ export default function AppointmentForm({
                     }
                   }}
                 >
-                  <SelectTrigger className="h-9 border border-gray-200 shadow-md">
+                  <SelectTrigger className="h-9 border border-gray-200 text-sm shadow-md">
                     <SelectValue placeholder="Seleccionar hora" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1567,28 +1568,41 @@ export default function AppointmentForm({
               </div>
             </div>
 
-            <div className="relative">
-              <label className="absolute -top-5 left-0 z-10 px-2 text-xs font-medium text-gray-600">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-gray-600">
                 Tipo de cita
               </label>
-              <Select
-                value={formData.appointmentType}
-                onValueChange={handleInputChange("appointmentType")}
-              >
-                <SelectTrigger className="h-9 border border-gray-200 shadow-md">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {appointmentTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      <div className="flex items-center gap-2">
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                {appointmentTypes.map((type) => {
+                  const isSelected = formData.appointmentType === type.value;
+                  return (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => handleInputChange("appointmentType")(type.value)}
+                      className={cn(
+                        "flex flex-col items-center justify-center gap-1 rounded-lg p-2 shadow transition-all hover:shadow-md sm:p-3",
+                        isSelected
+                          ? "bg-primary/10 ring-2 ring-primary"
+                          : "bg-white"
+                      )}
+                    >
+                      <span className={cn(
+                        "text-gray-500",
+                        isSelected && "text-primary"
+                      )}>
                         {type.icon}
-                        <span>{type.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                      </span>
+                      <span className={cn(
+                        "text-xs font-medium",
+                        isSelected ? "text-primary" : "text-gray-600"
+                      )}>
+                        {type.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Listing selection - only show for "Visita" appointments */}

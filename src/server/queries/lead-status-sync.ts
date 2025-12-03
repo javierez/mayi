@@ -70,13 +70,22 @@ export async function findLeadByContactAndListing(
 /**
  * Find existing lead or create new one for appointment
  * PATTERN: Use auth wrapper functions (see lead.ts)
+ * NOTE: Only creates leads when a listingId is provided - appointments without
+ * a listing (e.g., meetings, internal appointments) should not create leads
  */
 export async function findOrCreateLeadForAppointment(
   contactId: bigint,
   listingId: bigint | undefined,
   prospectId: bigint | undefined,
-): Promise<{ listingContactId: bigint; created: boolean }> {
+): Promise<{ listingContactId: bigint; created: boolean } | null> {
   try {
+    // Don't create leads for appointments without a listing
+    // Leads require a property context - appointments without listings are
+    // internal/personal (meetings, tasks, etc.) and don't need lead tracking
+    if (!listingId) {
+      return null;
+    }
+
     // CRITICAL: Check for existing lead by contact+listing combination
     const existingLead = await findLeadByContactAndListing(
       contactId,

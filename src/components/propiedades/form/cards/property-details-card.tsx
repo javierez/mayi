@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -84,15 +84,22 @@ export function PropertyDetailsCard({
     listing.yearBuilt?.toString() ?? "",
   );
 
-  // Update display values when listing or controlled values change
+  // Track the last controlled value to detect external changes
+  const lastControlledBuiltSurfaceRef = useRef(controlledBuiltSurfaceArea);
+
+  // Update display only when controlled value changes from parent (cadastral)
   useEffect(() => {
-    setSquareMeterDisplay(formatArea(listing.squareMeter));
-    // Use controlled value if provided, otherwise use listing value
-    const surfaceValue = controlledBuiltSurfaceArea ?? listing.builtSurfaceArea;
-    setBuiltSurfaceDisplay(
-      formatArea(surfaceValue ? Math.round(surfaceValue) : null),
-    );
-  }, [listing.squareMeter, listing.builtSurfaceArea, controlledBuiltSurfaceArea]);
+    // Only update if the controlled value actually changed from outside
+    if (
+      controlledBuiltSurfaceArea !== undefined &&
+      controlledBuiltSurfaceArea !== lastControlledBuiltSurfaceRef.current
+    ) {
+      setBuiltSurfaceDisplay(
+        formatArea(Math.round(controlledBuiltSurfaceArea)),
+      );
+      lastControlledBuiltSurfaceRef.current = controlledBuiltSurfaceArea;
+    }
+  }, [controlledBuiltSurfaceArea]);
 
   // Update yearBuilt when controlled value changes
   useEffect(() => {

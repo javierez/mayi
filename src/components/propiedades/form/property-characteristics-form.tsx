@@ -327,44 +327,57 @@ export function PropertyCharacteristicsForm({
           });
 
           // Find or create location in locations table and get neighborhoodId
+          // All 4 fields are required: city, province, municipality, and neighborhood
           let neighborhoodId: bigint | null = null;
 
-          if (
-            cityValue &&
-            provinceValue &&
-            municipalityValue &&
-            neighborhoodValue
-          ) {
-            console.log(
-              "✅ [SAVE] All 4 location fields present, calling findOrCreateLocation...",
-            );
-            try {
-              neighborhoodId = BigInt(
-                await findOrCreateLocation({
-                  city: cityValue,
-                  province: provinceValue,
-                  municipality: municipalityValue,
-                  neighborhood: neighborhoodValue,
-                }),
-              );
-              console.log(
-                "🏘️ [SAVE] Created/found location with neighborhoodId:",
-                neighborhoodId,
-              );
-            } catch (error) {
-              console.error("❌ [SAVE] Error handling location:", error);
-              // neighborhoodId will remain null if location update fails
-            }
-          } else {
+          // Validate required location fields
+          const missingFields: string[] = [];
+          if (!cityValue) missingFields.push("Ciudad");
+          if (!provinceValue) missingFields.push("Provincia");
+          if (!municipalityValue) missingFields.push("Municipio");
+          if (!neighborhoodValue) missingFields.push("Barrio");
+
+          if (missingFields.length > 0) {
             console.warn(
-              "⚠️ [SAVE] Missing location fields, neighborhoodId will NOT be updated:",
+              "⚠️ [SAVE] Missing required location fields:",
+              missingFields,
+            );
+            toast.error(
+              `Por favor, completa los siguientes campos: ${missingFields.join(", ")}`,
               {
-                hasCity: !!cityValue,
-                hasProvince: !!provinceValue,
-                hasMunicipality: !!municipalityValue,
-                hasNeighborhood: !!neighborhoodValue,
+                description:
+                  "Usa el autocompletado de Google Maps o introduce el barrio manualmente.",
               },
             );
+            return; // Stop save - don't proceed without required fields
+          }
+
+          console.log(
+            "✅ [SAVE] All location fields present, calling findOrCreateLocation...",
+            {
+              city: cityValue,
+              province: provinceValue,
+              municipality: municipalityValue,
+              neighborhood: neighborhoodValue,
+            },
+          );
+          try {
+            neighborhoodId = BigInt(
+              await findOrCreateLocation({
+                city: cityValue,
+                province: provinceValue,
+                municipality: municipalityValue,
+                neighborhood: neighborhoodValue,
+              }),
+            );
+            console.log(
+              "🏘️ [SAVE] Created/found location with neighborhoodId:",
+              neighborhoodId,
+            );
+          } catch (error) {
+            console.error("❌ [SAVE] Error handling location:", error);
+            toast.error("Error al guardar la ubicación. Inténtalo de nuevo.");
+            return; // Stop save on error
           }
 
           // Get coordinates from hidden inputs
