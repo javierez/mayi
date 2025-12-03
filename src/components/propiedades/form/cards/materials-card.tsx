@@ -255,6 +255,8 @@ export function MaterialsCard({
                           <SelectItem value="microcemento">
                             Microcemento
                           </SelectItem>
+                          <SelectItem value="terrazo">Terrazo</SelectItem>
+                          <SelectItem value="plaqueta">Plaqueta</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

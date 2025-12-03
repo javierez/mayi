@@ -163,6 +163,7 @@ export interface PropertyListing {
   allowedUse?: number; // Allowed use for solar/land properties (1-9 enum)
   isDiafano?: boolean; // Only for 'local' property type - open-plan/open-space commercial
   hasEscaparate?: boolean; // Only for 'local' property type - has shop window/storefront
+  streetType?: string; // Only for 'local' - traffic intensity: muy_transitada, transitada, moderada, poco_transitada
   gym?: boolean;
   sportsArea?: boolean;
   childrenArea?: boolean;
@@ -359,6 +360,7 @@ export function convertDbListingToPropertyListing(
     allowedUse: getNumber(dbListing.allowedUse),
     isDiafano: getBoolean(dbListing.isDiafano),
     hasEscaparate: getBoolean(dbListing.hasEscaparate),
+    streetType: (dbListing.streetType as string) ?? undefined,
     gym: getBoolean(dbListing.gym),
     sportsArea: getBoolean(dbListing.sportsArea),
     childrenArea: getBoolean(dbListing.childrenArea),

@@ -598,8 +598,8 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
                       <Image
                         src="/vestazoomin.jpeg"
                         alt="Vesta"
-                        width={120}
-                        height={120}
+                        width={160}
+                        height={160}
                         className="rounded-2xl shadow-lg"
                         priority
                       />

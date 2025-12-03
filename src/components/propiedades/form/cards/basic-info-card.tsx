@@ -436,6 +436,7 @@ export function BasicInfoCard({
               )}
               {propertyType === "local" && (
                 <>
+                  <SelectItem value="Local Comercial">Local Comercial</SelectItem>
                   <SelectItem value="Residencial">Residencial</SelectItem>
                   <SelectItem value="Otros">Otros</SelectItem>
                   <SelectItem value="Mixto residencial">

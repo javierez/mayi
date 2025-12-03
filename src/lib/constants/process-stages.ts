@@ -95,7 +95,7 @@ function validateGlobalProgression(stages: ProcessStage[]): ProcessStage[] {
  * For rentals, "Arras" becomes "Reserva" and "Escritura" becomes "Firma"
  */
 export function getStageLabel(stageId: string, listingType?: string): string {
-  const isRent = listingType === "rent";
+  const isRent = listingType?.toLowerCase() === "rent";
 
   const labels: Record<string, { sale: string; rent: string }> = {
     "arras": { sale: "Arras", rent: "Reserva" },

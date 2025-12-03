@@ -4,8 +4,19 @@ import React, { useState } from "react";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { cn } from "~/lib/utils";
 import { ChevronDown, Loader, Search, CheckCircle } from "lucide-react";
+import {
+  STREET_TYPE_VALUES,
+  STREET_TYPE_LABELS,
+} from "~/lib/constants/street-type";
 import Image from "next/image";
 import { toast } from "sonner";
 import { ModernSaveIndicator } from "../common/modern-save-indicator";
@@ -32,6 +43,8 @@ interface LocationCardProps {
   city: string;
   province: string;
   municipality: string;
+  streetType: string;
+  propertyType: string;
   collapsedSections: Record<string, boolean>;
   saveState: SaveState;
   canEdit?: boolean;
@@ -41,6 +54,7 @@ interface LocationCardProps {
   setCity: (value: string) => void;
   setProvince: (value: string) => void;
   setMunicipality: (value: string) => void;
+  setStreetType: (value: string) => void;
   setIsMapsPopupOpen: (value: boolean) => void;
   getCardStyles: (moduleName: string) => string;
   // Callbacks for property details fields (builtSurfaceArea, yearBuilt)
@@ -54,6 +68,8 @@ export function LocationCard({
   city,
   province,
   municipality,
+  streetType,
+  propertyType,
   collapsedSections,
   saveState,
   canEdit = true,
@@ -63,6 +79,7 @@ export function LocationCard({
   setCity,
   setProvince,
   setMunicipality,
+  setStreetType,
   setIsMapsPopupOpen,
   getCardStyles,
   setBuiltSurfaceArea,
@@ -143,21 +160,11 @@ export function LocationCard({
     }
   };
 
-  // Handle cadastral reference button click (copied from third.tsx)
+  // Handle cadastral reference button click - always show modal, never auto-fill
   const handleCadastralLookup = async () => {
     const reference = cadastralReferenceValue.trim();
-
-    // Check if we have all key info (street, city, postal code)
-    const hasKeyInfo =
-      streetValue.trim() && city.trim() && postalCodeValue.trim();
-
-    if (hasKeyInfo) {
-      // If we have all key info, do comparison
-      await validateCadastralReference(reference);
-    } else {
-      // If missing key info, fill up the values
-      await fillCadastralData(reference);
-    }
+    // Always validate and show modal - user decides what to apply
+    await validateCadastralReference(reference);
   };
 
   // Validate cadastral reference against current form data
@@ -987,6 +994,34 @@ export function LocationCard({
             disabled={!canEdit}
           />
         </div>
+
+        {/* Street Type - Only show for local property type */}
+        {propertyType === "local" && (
+          <div className="space-y-1.5">
+            <Label htmlFor="streetType" className="text-sm">
+              Tipo de Calle
+            </Label>
+            <Select
+              value={streetType}
+              onValueChange={(value) => {
+                setStreetType(value);
+                onUpdateModule(true);
+              }}
+              disabled={!canEdit}
+            >
+              <SelectTrigger className="h-8 text-gray-500">
+                <SelectValue placeholder="Seleccionar tipo de calle" />
+              </SelectTrigger>
+              <SelectContent>
+                {STREET_TYPE_VALUES.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {STREET_TYPE_LABELS[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="space-y-1.5">
           <Label htmlFor="cadastralReference" className="text-sm">

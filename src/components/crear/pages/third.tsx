@@ -2,6 +2,13 @@ import { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { FloatingLabelInput } from "~/components/ui/floating-label-input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import {
   ChevronLeft,
   ChevronRight,
   Loader,
@@ -9,6 +16,10 @@ import {
   AlertTriangle,
   CheckCircle,
 } from "lucide-react";
+import {
+  STREET_TYPE_VALUES,
+  STREET_TYPE_LABELS,
+} from "~/lib/constants/street-type";
 import { motion } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -86,7 +97,10 @@ export default function ThirdPage({
     province: state.formData.province ?? "",
     municipality: state.formData.municipality ?? "",
     neighborhood: state.formData.neighborhood ?? "",
+    streetType: state.formData.streetType ?? "",
   };
+
+  const propertyType = state.formData?.propertyType ?? "";
 
   // Address value state for AddressAutocomplete
   const [addressValue, setAddressValue] = useState(formData.address);
@@ -1082,6 +1096,30 @@ export default function ThirdPage({
           )}
         </button>
       </div>
+
+      {/* Street Type - Only show for local property type */}
+      {propertyType === "local" && (
+        <div className="space-y-1.5">
+          <label className="text-xs font-medium text-gray-600">
+            Tipo de Calle
+          </label>
+          <Select
+            value={formData.streetType}
+            onValueChange={(value) => updateField("streetType", value)}
+          >
+            <SelectTrigger className="h-10 border border-gray-200 shadow-md">
+              <SelectValue placeholder="Seleccionar tipo de calle" />
+            </SelectTrigger>
+            <SelectContent>
+              {STREET_TYPE_VALUES.map((value) => (
+                <SelectItem key={value} value={value}>
+                  {STREET_TYPE_LABELS[value]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* Hidden input fields for coordinates */}
       <input type="hidden" id="latitude" value={latitude ?? ""} readOnly />

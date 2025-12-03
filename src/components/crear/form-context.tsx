@@ -77,6 +77,7 @@ export interface CompleteFormData {
   neighborhood?: string;
   latitude?: number | string;
   longitude?: number | string;
+  streetType?: string; // Only for 'local' - traffic intensity: muy_transitada, transitada, moderada, poco_transitada
 
   // Page 4 - Equipment
   heating?: string;

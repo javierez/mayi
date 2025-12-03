@@ -402,6 +402,7 @@ export function PropertyCharacteristicsForm({
             latitude: latitudeValue || null,
             longitude: longitudeValue || null,
             title: newTitle, // Add generated title to property data
+            streetType: streetType || null, // Only for 'local' property type
           };
 
           console.log("📝 [SAVE] Property data prepared for update:", {
@@ -855,6 +856,7 @@ export function PropertyCharacteristicsForm({
   const [city, setCity] = useState(listing.city ?? "");
   const [province, setProvince] = useState(listing.province ?? "");
   const [municipality, setMunicipality] = useState(listing.municipality ?? "");
+  const [streetType, setStreetType] = useState(listing.streetType ?? "");
   const [showAdditionalCharacteristics, setShowAdditionalCharacteristics] =
     useState(false);
   const [showMaterials, setShowMaterials] = useState(false);
@@ -1742,6 +1744,8 @@ export function PropertyCharacteristicsForm({
             city={city}
             province={province}
             municipality={municipality}
+            streetType={streetType}
+            propertyType={propertyType}
             collapsedSections={collapsedSections}
             saveState={moduleStates.location?.saveState ?? "idle"}
             canEdit={canEdit}
@@ -1753,6 +1757,7 @@ export function PropertyCharacteristicsForm({
             setCity={setCity}
             setProvince={setProvince}
             setMunicipality={setMunicipality}
+            setStreetType={setStreetType}
             setIsMapsPopupOpen={setIsMapsPopupOpen}
             getCardStyles={getCardStyles}
             setBuiltSurfaceArea={(value) => {

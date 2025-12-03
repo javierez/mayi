@@ -153,6 +153,7 @@ export function FeaturesCard({
     { value: "Butano", label: "Butano" },
     { value: "Propano", label: "Propano" },
     { value: "Solar", label: "Solar" },
+    { value: "Bomba de calor", label: "Bomba de calor" },
   ];
 
   return (

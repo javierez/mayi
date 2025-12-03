@@ -211,7 +211,7 @@ const stageGuidesRent: StageGuide[] = [
  * Get stage guides based on listing type
  */
 function getStageGuides(listingType?: string): StageGuide[] {
-  return listingType === "rent" ? stageGuidesRent : stageGuidesSale;
+  return listingType?.toLowerCase() === "rent" ? stageGuidesRent : stageGuidesSale;
 }
 
 export function ProgressGuideModal({

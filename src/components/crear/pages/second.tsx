@@ -131,11 +131,7 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
   const handleNext = () => {
     // Validate required fields based on property type
     if (propertyType === "solar") {
-      // For solar, only surface is required
-      if (!formData.totalSurface || formData.totalSurface === 0) {
-        alert("Por favor, introduce la superficie.");
-        return;
-      }
+      // For solar, surface is optional - no validation needed
     } else if (propertyType === "garaje") {
       // For garage, year built is optional if "don't know" is checked
       if (
@@ -162,12 +158,7 @@ export default function SecondPage({ onNext, onBack }: SecondPageProps) {
         return;
       }
 
-      if (!formData.totalSurface || formData.totalSurface === 0) {
-        alert("Por favor, introduce la superficie.");
-        return;
-      }
-
-      // Superficie construida is now optional - users can enter any value or leave it empty
+      // Surface fields (totalSurface and usefulSurface) are optional - users can leave them empty
 
       // Year built is optional if "don't know" is checked
       if (
