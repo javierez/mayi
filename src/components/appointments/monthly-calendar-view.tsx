@@ -416,14 +416,8 @@ function SpanningEventBar({
   onEventClick,
   selectedEventId,
 }: SpanningEventBarProps) {
-  const {
-    event,
-    startColumn,
-    columnSpan,
-    stackIndex,
-    isContinuation,
-    continuesNextWeek,
-  } = segment;
+  const { event, columnSpan, stackIndex, isContinuation, continuesNextWeek } =
+    segment;
 
   const typeConfig = appointmentTypes[
     event.type as keyof typeof appointmentTypes
@@ -500,10 +494,13 @@ export function MonthlyCalendarView({
   };
 
   const calendarDays = getCalendarDays(currentMonth);
-  const weeks: Date[][] = [];
-  for (let i = 0; i < calendarDays.length; i += 7) {
-    weeks.push(calendarDays.slice(i, i + 7));
-  }
+  const weeks = React.useMemo(() => {
+    const result: Date[][] = [];
+    for (let i = 0; i < calendarDays.length; i += 7) {
+      result.push(calendarDays.slice(i, i + 7));
+    }
+    return result;
+  }, [calendarDays]);
 
   // Separate multi-day and single-day events
   const { multiDayEvents, singleDayEvents } = React.useMemo(() => {

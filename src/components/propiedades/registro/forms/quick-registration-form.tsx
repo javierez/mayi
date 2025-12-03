@@ -504,11 +504,11 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
 
     switch (step.id) {
       case "basic":
-        return <FirstPage {...pageProps} />;
+        return <ThirdPage {...pageProps} />;
       case "details":
-        return <SecondPage {...pageProps} />;
+        return <FirstPage {...pageProps} />;
       case "address":
-        return <ThirdPage {...pageProps} nextButtonText="Finalizar" />;
+        return <SecondPage {...pageProps} />;
       default:
         return (
           <div className="space-y-4">

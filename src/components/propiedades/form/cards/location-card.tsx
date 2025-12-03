@@ -256,75 +256,6 @@ export function LocationCard({
     }
   };
 
-  // Fill missing cadastral data
-  const fillCadastralData = async (cadastralRef: string) => {
-    console.log("🔍 [LocationCard] ========================================");
-    console.log("🔍 [LocationCard] STARTING CADASTRAL FILL DATA");
-    console.log("🔍 [LocationCard] ========================================");
-    console.log("📋 [LocationCard] Input cadastral reference:", cadastralRef);
-
-    if (!cadastralRef.trim()) {
-      console.log("⚠️ [LocationCard] Empty cadastral reference");
-      toast.error("Referencia catastral requerida");
-      return;
-    }
-
-    setIsCadastralLoading(true);
-
-    try {
-      console.log("📡 [LocationCard] Calling retrieveCadastralData...");
-      const cadastralData = await retrieveCadastralData(cadastralRef);
-
-      if (!cadastralData) {
-        console.log("❌ [LocationCard] No cadastral data found for reference");
-        toast.error("Referencia no encontrada", {
-          description:
-            "No se encontraron datos para esta referencia catastral. Verifica que sea correcta.",
-        });
-        return;
-      }
-
-      console.log("📊 [LocationCard] Retrieved cadastral data:", cadastralData);
-
-      // Update form fields with cadastral data
-      setStreetValue(cadastralData.street);
-      setNeighborhoodValue(cadastralData.neighborhood);
-      setPostalCodeValue(cadastralData.postalCode);
-
-      // Update city, province, municipality
-      if (cadastralData.city) setCity(cadastralData.city);
-      if (cadastralData.province) setProvince(cadastralData.province);
-      if (cadastralData.municipality)
-        setMunicipality(cadastralData.municipality);
-
-      // Mark as having changes
-      onUpdateModule(true);
-
-      console.log("✅ [LocationCard] ========================================");
-      console.log("✅ [LocationCard] FILL DATA COMPLETED SUCCESSFULLY");
-      console.log("✅ [LocationCard] ========================================");
-
-      toast.success("Datos catastrales cargados", {
-        description:
-          "La información del inmueble se ha completado automáticamente",
-      });
-    } catch (error) {
-      console.error(
-        "❌ [LocationCard] ========================================",
-      );
-      console.error("❌ [LocationCard] FILL DATA FAILED WITH ERROR");
-      console.error(
-        "❌ [LocationCard] ========================================",
-      );
-      console.error("❌ [LocationCard] Fill error:", error);
-      toast.error("Error al consultar el catastro", {
-        description: "No se pudo conectar con el servicio. Inténtalo de nuevo.",
-      });
-    } finally {
-      setIsCadastralLoading(false);
-    }
-  };
-
   // Search for cadastral references by coordinates
   const searchCadastralReferences = async () => {
     console.log("🔍 [LocationCard] ========================================");
@@ -1009,7 +940,7 @@ export function LocationCard({
               }}
               disabled={!canEdit}
             >
-              <SelectTrigger className="h-8 text-gray-500">
+              <SelectTrigger className="h-8 text-sm text-gray-500">
                 <SelectValue placeholder="Seleccionar tipo de calle" />
               </SelectTrigger>
               <SelectContent>
