@@ -537,17 +537,42 @@ export const PropertyTable = React.memo(function PropertyTable({
                     className="overflow-hidden"
                     style={getColumnStyle("estado")}
                   >
-                    <div className="truncate">
+                    <div className="flex flex-col items-center gap-1">
                       <Badge
                         variant="secondary"
                         className={cn(
                           "font-normal",
-                          statusColors[listing.status as ValidStatus] ||
+                          statusColors[listing.status as ValidStatus] ??
                             "border-gray-200 bg-gray-50 text-gray-600",
                         )}
                       >
                         <span className="truncate">{listing.status}</span>
                       </Badge>
+                      {(listing.status === "En Venta" ||
+                        listing.status === "En Alquiler") && (
+                        <div className="flex items-center gap-2">
+                          <Image
+                            src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/faviconfoto.png"
+                            alt="Fotocasa"
+                            width={12}
+                            height={12}
+                            className={cn(
+                              "h-3 w-3",
+                              !listing.fotocasa && "grayscale opacity-50",
+                            )}
+                          />
+                          <Image
+                            src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/faviconide.png"
+                            alt="Idealista"
+                            width={12}
+                            height={12}
+                            className={cn(
+                              "h-3 w-3",
+                              !listing.idealista && "grayscale opacity-50",
+                            )}
+                          />
+                        </div>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell

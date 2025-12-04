@@ -37,6 +37,8 @@ export type ListingOverview = {
   isFeatured?: boolean | null;
   isBankOwned?: boolean | null;
   publishToWebsite?: boolean | null;
+  fotocasa?: boolean | null;
+  idealista?: boolean | null;
   viewCount?: number | null;
   inquiryCount?: number | null;
   street?: string | null;

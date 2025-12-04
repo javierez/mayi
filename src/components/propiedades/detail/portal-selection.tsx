@@ -789,40 +789,38 @@ export function PortalSelection({
         }
       } else if (platformId === "idealista") {
         // Re-export all Idealista-enabled properties with current data
-        triggerIdealistaExport()
-          .then((result) => {
-            if (result.success) {
-              console.log("Idealista export triggered successfully");
-              toast.success(
-                "Exportación a Idealista iniciada. Los cambios se reflejarán en ~15 minutos.",
-              );
-              // Update platform status to active with new sync time
-              const updatedPlatforms = platforms.map((p) =>
-                p.id === platformId
-                  ? { ...p, status: "active" as const, lastSync: new Date() }
-                  : p,
-              );
-              setPlatforms(updatedPlatforms);
-            } else {
-              console.error("Idealista export failed:", result.error);
-              toast.error(`Error al exportar a Idealista: ${result.error}`);
-              // Update platform status to error
-              const updatedPlatforms = platforms.map((p) =>
-                p.id === platformId ? { ...p, status: "error" as const } : p,
-              );
-              setPlatforms(updatedPlatforms);
-            }
-          })
-          .catch((error) => {
-            console.error("Idealista export error:", error);
-            toast.error("Error al conectar con Idealista");
-          })
-          .finally(() => {
-            // Reset refreshing state after async operation completes
-            setRefreshingPlatforms((prev) => ({ ...prev, [platformId]: false }));
-          });
-        // Return early to prevent the outer finally from resetting refreshing state
-        return;
+        try {
+          const result = await triggerIdealistaExport();
+          if (result.success) {
+            console.log("Idealista export triggered successfully");
+            toast.success(
+              "Exportación a Idealista iniciada. Los cambios se reflejarán en ~15 minutos.",
+            );
+            // Update platform status to active with new sync time
+            const updatedPlatforms = platforms.map((p) =>
+              p.id === platformId
+                ? { ...p, status: "active" as const, lastSync: new Date() }
+                : p,
+            );
+            setPlatforms(updatedPlatforms);
+          } else {
+            console.error("Idealista export failed:", result.error);
+            toast.error(`Error al exportar a Idealista: ${result.error}`);
+            // Update platform status to error
+            const updatedPlatforms = platforms.map((p) =>
+              p.id === platformId ? { ...p, status: "error" as const } : p,
+            );
+            setPlatforms(updatedPlatforms);
+          }
+        } catch (error) {
+          console.error("Idealista export error:", error);
+          toast.error("Error al conectar con Idealista");
+          // Update platform status to error
+          const updatedPlatforms = platforms.map((p) =>
+            p.id === platformId ? { ...p, status: "error" as const } : p,
+          );
+          setPlatforms(updatedPlatforms);
+        }
       } else {
         // For other platforms, show not implemented message
         toast.info(`Actualización de ${platform.name} no implementada aún`);

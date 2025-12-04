@@ -940,12 +940,12 @@ export function LocationCard({
               }}
               disabled={!canEdit}
             >
-              <SelectTrigger className="h-8 text-sm text-gray-500">
+              <SelectTrigger className="h-8 text-gray-500 [&>span]:text-sm [&>span]:font-medium [&>span]:text-gray-700">
                 <SelectValue placeholder="Seleccionar tipo de calle" />
               </SelectTrigger>
               <SelectContent>
                 {STREET_TYPE_VALUES.map((value) => (
-                  <SelectItem key={value} value={value}>
+                  <SelectItem key={value} value={value} className="text-xs">
                     {STREET_TYPE_LABELS[value]}
                   </SelectItem>
                 ))}

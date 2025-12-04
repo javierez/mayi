@@ -130,6 +130,10 @@ export type Property = {
   communityPool?: boolean;
   privatePool?: boolean;
   tennisCourt?: boolean;
+  // Local (commercial) property specific fields
+  isDiafano?: boolean;
+  hasEscaparate?: boolean;
+  streetType?: string;
 };
 
 export type Prospect = {

@@ -813,6 +813,8 @@ export async function listListings(
             listingType: listings.listingType,
             status: listings.status,
             publishToWebsite: listings.publishToWebsite,
+            fotocasa: listings.fotocasa,
+            idealista: listings.idealista,
             referenceNumber: properties.referenceNumber,
             title: properties.title,
             propertyType: properties.propertyType,
@@ -1997,6 +1999,9 @@ export async function getListingDetails(listingId: number, accountId: number) {
         loadingArea: properties.loadingArea, // For Fotocasa FeatureId 204
         patio: properties.patio, // For Fotocasa FeatureId 263
         allowedUse: properties.allowedUse, // For Fotocasa FeatureId 21 (solar only)
+        isDiafano: properties.isDiafano, // For local property type - open-plan
+        hasEscaparate: properties.hasEscaparate, // For local property type - shop window
+        streetType: properties.streetType, // For local property type - traffic intensity
         electricityType: properties.electricityType,
         electricityStatus: properties.electricityStatus,
         plumbingType: properties.plumbingType,
