@@ -434,10 +434,14 @@ export async function buildIdealistaPropertyPayload(
   };
 
   // Build features
+  // Area fallback logic: use constructed area if available, otherwise use usable area and vice versa
+  const areaConstructed = listing.squareMeter ?? (listing.builtSurfaceArea ? Math.round(Number(listing.builtSurfaceArea)) : undefined);
+  const areaUsable = listing.builtSurfaceArea ? Math.round(Number(listing.builtSurfaceArea)) : (listing.squareMeter ?? undefined);
+
   const propertyFeatures: IdealistaFeatures = {
     featuresType: propertyType ?? "flat",
-    featuresAreaConstructed: listing.squareMeter ?? undefined,
-    featuresAreaUsable: listing.usableArea ?? undefined,
+    featuresAreaConstructed: areaConstructed,
+    featuresAreaUsable: areaUsable,
     featuresAreaPlot: listing.plotArea ?? undefined,
     // Schema: integer1to99 (min 1) - ensure at least 1 if bathrooms exist
     featuresBathroomNumber: listing.bathrooms

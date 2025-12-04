@@ -24,6 +24,10 @@ import {
   AddressAutocomplete,
   type LocationData,
 } from "../address-autocomplete";
+import {
+  NeighborhoodAutocomplete,
+  type NeighborhoodResult,
+} from "../neighborhood-autocomplete";
 import { CadastralSelectionModal } from "../cadastral-selection-modal";
 import { CadastralActionModal } from "../cadastral-action-modal";
 import { CadastralCorrectionsModal } from "../cadastral-corrections-modal";
@@ -528,7 +532,22 @@ export function LocationCard({
 
   // Handle Google Places autocomplete selection
   const handleLocationSelected = async (data: LocationData) => {
-    console.log("📍 [LocationCard] Google Places location selected:", data);
+    console.log("📍 [LocationCard] ========================================");
+    console.log("📍 [LocationCard] GOOGLE PLACES AUTOCOMPLETE TRIGGERED");
+    console.log("📍 [LocationCard] ========================================");
+    console.log("📍 [LocationCard] Full data received:", data);
+    console.log("📍 [LocationCard] Address components:", data.addressComponents);
+    console.log("📍 [LocationCard] Coordinates:", { lat: data.lat, lng: data.lng });
+
+    // Log current state BEFORE updates
+    console.log("📍 [LocationCard] Current state BEFORE update:", {
+      city: city,
+      province: province,
+      municipality: municipality,
+      streetValue: streetValue,
+      postalCodeValue: postalCodeValue,
+      neighborhoodValue: neighborhoodValue,
+    });
 
     // Store coordinates for cadastral search
     setLatitude(data.lat);
@@ -542,22 +561,27 @@ export function LocationCard({
     const streetWithNumber =
       data.addressComponents.streetNumber && data.addressComponents.route
         ? `${data.addressComponents.route} ${data.addressComponents.streetNumber}`
-        : data.addressComponents.route || streetValue;
+        : data.addressComponents.route ?? streetValue;
 
     // Update street value state
+    console.log("📍 [LocationCard] Setting street to:", streetWithNumber);
     setStreetValue(streetWithNumber);
 
     // Update postal code if available
     if (data.addressComponents.postalCode) {
+      console.log("📍 [LocationCard] Setting postalCode to:", data.addressComponents.postalCode);
       setPostalCodeValue(data.addressComponents.postalCode);
+    } else {
+      console.log("⚠️ [LocationCard] No postalCode in address components");
     }
 
     // Update neighborhood value from Google Maps if available, otherwise fetch from Nominatim
     if (data.addressComponents.sublocality) {
+      console.log("📍 [LocationCard] Setting neighborhood to (from Google):", data.addressComponents.sublocality);
       setNeighborhoodValue(data.addressComponents.sublocality);
     } else {
       // Fetch neighborhood from Nominatim using coordinates
-      console.log("🔄 [LocationCard] Fetching neighborhood from Nominatim...");
+      console.log("🔄 [LocationCard] No sublocality from Google, fetching neighborhood from Nominatim...");
       const neighborhood = await getNeighborhoodFromCoordinates(
         data.lat,
         data.lng,
@@ -574,24 +598,42 @@ export function LocationCard({
     }
 
     // Update state variables for city, province, municipality
+    console.log("📍 [LocationCard] Checking city/province/municipality from address components:");
+    console.log("📍 [LocationCard] - locality:", data.addressComponents.locality);
+    console.log("📍 [LocationCard] - administrativeAreaLevel1:", data.addressComponents.administrativeAreaLevel1);
+    console.log("📍 [LocationCard] - administrativeAreaLevel2:", data.addressComponents.administrativeAreaLevel2);
+
     if (data.addressComponents.locality) {
+      console.log("📍 [LocationCard] Setting city to:", data.addressComponents.locality);
       setCity(data.addressComponents.locality);
+    } else {
+      console.log("⚠️ [LocationCard] NO LOCALITY - city will NOT be updated!");
     }
+
     if (data.addressComponents.administrativeAreaLevel1) {
+      console.log("📍 [LocationCard] Setting province to:", data.addressComponents.administrativeAreaLevel1);
       setProvince(data.addressComponents.administrativeAreaLevel1);
+    } else {
+      console.log("⚠️ [LocationCard] NO administrativeAreaLevel1 - province will NOT be updated!");
     }
+
     if (
-      data.addressComponents.administrativeAreaLevel2 ||
+      data.addressComponents.administrativeAreaLevel2 ??
       data.addressComponents.locality
     ) {
-      setMunicipality(
-        data.addressComponents.administrativeAreaLevel2 ||
-          data.addressComponents.locality,
-      );
+      const municipalityValue = data.addressComponents.administrativeAreaLevel2 ?? data.addressComponents.locality;
+      console.log("📍 [LocationCard] Setting municipality to:", municipalityValue);
+      setMunicipality(municipalityValue);
+    } else {
+      console.log("⚠️ [LocationCard] NO administrativeAreaLevel2 or locality - municipality will NOT be updated!");
     }
 
     // Mark the module as having changes
     onUpdateModule(true);
+
+    console.log("📍 [LocationCard] ========================================");
+    console.log("📍 [LocationCard] GOOGLE PLACES UPDATE COMPLETE");
+    console.log("📍 [LocationCard] ========================================");
 
     toast.success("Dirección autocompletada. Guarda para aplicar los cambios.");
   };
@@ -853,21 +895,35 @@ export function LocationCard({
               Barrio
             </Label>
             <div className="relative">
-              <Input
-                id="neighborhood"
+              <NeighborhoodAutocomplete
                 value={neighborhoodValue}
-                onChange={(e) => {
-                  setNeighborhoodValue(e.target.value);
+                onChange={(value) => {
+                  setNeighborhoodValue(value);
                   onUpdateModule(true);
                 }}
-                className="h-8 pr-10 text-gray-500"
+                onNeighborhoodSelected={(result: NeighborhoodResult) => {
+                  console.log("📍 [LocationCard] Neighborhood selected from DB:", result);
+                  // Auto-fill city, municipality, and province from the selected neighborhood
+                  setCity(result.city);
+                  setMunicipality(result.municipality);
+                  setProvince(result.province);
+                  onUpdateModule(true);
+                  toast.success(
+                    `Barrio "${result.neighborhood}" seleccionado. Ciudad, municipio y provincia actualizados.`,
+                  );
+                }}
+                placeholder="Buscar barrio..."
+                className="pr-10"
                 disabled={!canEdit}
               />
+              {/* Hidden input to maintain compatibility with parent form's DOM reading */}
+              <input type="hidden" id="neighborhood" value={neighborhoodValue} readOnly />
               <button
                 type="button"
                 onClick={autoCompleteAddress}
                 disabled={!canEdit || isUpdatingAddress}
                 className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md bg-background hover:bg-accent hover:text-accent-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                title="Autocompletar desde Nominatim"
               >
                 {isUpdatingAddress ? (
                   <Loader className="h-4 w-4 animate-spin" />

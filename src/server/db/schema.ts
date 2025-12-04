@@ -474,6 +474,7 @@ export const listings = pgTable("listings", {
   pisoscom: boolean("pisoscom").default(false), // Pisos.com publication status
   yaencontre: boolean("yaencontre").default(false), // Yaencontre.com publication status
   milanuncios: boolean("milanuncios").default(false), // Milanuncios.com publication status
+  listglobally: boolean("listglobally").default(false), // ListGlobally international portal
 
   // Fotocasa-specific settings (explicit fields for better performance and type safety)
   fcLocationVisibility: smallint("fc_location_visibility").default(1).notNull(), // 1=Exact, 2=Street, 3=Zone
@@ -499,6 +500,7 @@ export const listings = pgTable("listings", {
   pisoscomProps: jsonb("pisoscom_props").default({}), // Portal-specific settings for Pisos.com
   yaencontreProps: jsonb("yaencontre_props").default({}), // Portal-specific settings for Yaencontre
   milanunciosProps: jsonb("milanuncios_props").default({}), // Portal-specific settings for Milanuncios
+  listgloballyProps: jsonb("listglobally_props").default({}), // Portal-specific settings for ListGlobally
 
   // Progress Stage Tracking
   fichaCompletedAt: timestamp("ficha_completed_at"), // When all mandatory fields were first completed (24% stage)

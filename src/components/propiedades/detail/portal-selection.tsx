@@ -43,6 +43,7 @@ interface PortalSelectionProps {
   yaencontre?: boolean;
   enalquiler?: boolean;
   kyero?: boolean;
+  listglobally?: boolean;
   // Additional listing fields
   publishToWebsite?: boolean;
   hasCartel?: boolean;
@@ -81,6 +82,7 @@ interface PortalSelectionProps {
     yaencontre?: boolean;
     enalquiler?: boolean;
     kyero?: boolean;
+    listglobally?: boolean;
     publishToWebsite?: boolean;
     hasCartel?: boolean;
     enEscaparate?: boolean;
@@ -156,6 +158,13 @@ const platformConfig = [
     isDefault: false,
   },
   {
+    id: "listglobally",
+    name: "ListGlobally",
+    logo: "https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/logo-listglobally.png",
+    description: "Portal inmobiliario internacional",
+    isDefault: false,
+  },
+  {
     id: "publishToWebsite",
     name: "Publicar en Web",
     logo: "/vestazoomin.jpeg", // Vesta logo from dashboard
@@ -196,6 +205,7 @@ export function PortalSelection({
   yaencontre = false,
   enalquiler = false,
   kyero = false,
+  listglobally = false,
   publishToWebsite = false,
   hasCartel = false,
   enEscaparate = false,
@@ -264,6 +274,7 @@ export function PortalSelection({
         yaencontre,
         enalquiler,
         kyero,
+        listglobally,
         publishToWebsite,
         hasCartel,
         enEscaparate,
@@ -322,6 +333,7 @@ export function PortalSelection({
     yaencontre,
     enalquiler,
     kyero,
+    listglobally,
     publishToWebsite,
     hasCartel,
     enEscaparate,
@@ -332,17 +344,18 @@ export function PortalSelection({
   ]);
 
   const handlePlatformToggle = (platformId: string, isActive: boolean) => {
-    const updatedPlatforms = platforms.map((platform) => {
-      if (platform.id === platformId) {
-        let status: Platform["status"] = "inactive";
+    // Group: fotocasa, habitaclia, milanuncios should toggle together
+    const groupedPortals = ["fotocasa", "habitaclia", "milanuncios"];
+    const isGroupedPortal = groupedPortals.includes(platformId);
 
-        if (isActive) {
-          // If enabling, set to pending (needs confirmation)
-          status = "pending";
-        } else {
-          // If disabling, set to inactive
-          status = "inactive";
-        }
+    const updatedPlatforms = platforms.map((platform) => {
+      // Check if this platform should be updated
+      const shouldUpdate = isGroupedPortal
+        ? groupedPortals.includes(platform.id) // Update all grouped portals
+        : platform.id === platformId; // Update only the clicked platform
+
+      if (shouldUpdate) {
+        const status: Platform["status"] = isActive ? "pending" : "inactive";
 
         return {
           ...platform,
@@ -462,6 +475,8 @@ export function PortalSelection({
           platforms.find((p) => p.id === "enalquiler")?.isActive ?? false,
         kyero:
           platforms.find((p) => p.id === "kyero")?.isActive ?? false,
+        listglobally:
+          platforms.find((p) => p.id === "listglobally")?.isActive ?? false,
         publishToWebsite:
           platforms.find((p) => p.id === "publishToWebsite")?.isActive ?? false,
         hasCartel:
@@ -538,6 +553,7 @@ export function PortalSelection({
         yaencontre: "Yaencontre",
         enalquiler: "EnAlquiler",
         kyero: "Kyero",
+        listglobally: "ListGlobally",
         publishToWebsite: "Publicar en Web",
         hasCartel: "Cartel Colocado",
         enEscaparate: "En Escaparate",
@@ -552,6 +568,7 @@ export function PortalSelection({
         yaencontre,
         enalquiler,
         kyero,
+        listglobally,
         publishToWebsite,
         hasCartel,
         enEscaparate,
@@ -656,6 +673,7 @@ export function PortalSelection({
           yaencontre: portalUpdates.yaencontre,
           enalquiler: portalUpdates.enalquiler,
           kyero: portalUpdates.kyero,
+          listglobally: portalUpdates.listglobally,
           publishToWebsite: portalUpdates.publishToWebsite,
           hasCartel: portalUpdates.hasCartel,
           enEscaparate: portalUpdates.enEscaparate,
@@ -960,7 +978,7 @@ export function PortalSelection({
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.3 }}
         >
-          {platforms.slice(8, 12).map((platform, index) => (
+          {platforms.slice(9, 13).map((platform, index) => (
             <motion.div
               key={platform.id}
               initial={{ opacity: 0, y: 10 }}
@@ -1076,7 +1094,7 @@ export function PortalSelection({
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.3 }}
         >
-          {platforms.slice(0, 8).map((platform, index) => (
+          {platforms.slice(0, 9).map((platform, index) => (
             <motion.div
               key={platform.id}
               initial={{ opacity: 0, y: 10 }}
