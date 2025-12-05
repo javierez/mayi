@@ -28,6 +28,35 @@ interface PushToTalkWhisperButtonProps {
  * />
  * ```
  */
+/**
+ * Get the best supported audio MIME type for MediaRecorder
+ * Prioritizes formats that OpenAI Whisper supports well:
+ * - Safari/iOS: audio/mp4 (AAC codec)
+ * - Chrome/Edge: audio/webm;codecs=opus
+ * - Firefox: audio/webm;codecs=opus or audio/ogg;codecs=opus
+ */
+function getSupportedMimeType(): { mimeType: string; extension: string } {
+  // Prioritized list of MIME types (most compatible with OpenAI Whisper first)
+  const mimeTypes = [
+    { mimeType: "audio/mp4", extension: "mp4" }, // Safari/iOS - best compatibility
+    { mimeType: "audio/webm;codecs=opus", extension: "webm" }, // Chrome/Firefox
+    { mimeType: "audio/webm", extension: "webm" }, // Chrome fallback
+    { mimeType: "audio/ogg;codecs=opus", extension: "ogg" }, // Firefox fallback
+    { mimeType: "audio/ogg", extension: "ogg" }, // Firefox fallback
+  ];
+
+  for (const { mimeType, extension } of mimeTypes) {
+    if (MediaRecorder.isTypeSupported(mimeType)) {
+      console.log("Selected audio MIME type:", mimeType);
+      return { mimeType, extension };
+    }
+  }
+
+  // Ultimate fallback - let browser decide
+  console.warn("No preferred MIME type supported, using browser default");
+  return { mimeType: "", extension: "webm" };
+}
+
 export function PushToTalkWhisperButton({
   onTranscript,
   language = "es",
@@ -41,6 +70,7 @@ export function PushToTalkWhisperButton({
   const streamRef = useRef<MediaStream | null>(null);
   const recordingToastIdRef = useRef<string | number | undefined>(undefined);
   const mimeTypeRef = useRef<string>("audio/webm");
+  const extensionRef = useRef<string>("webm");
 
   const MAX_RECORDING_DURATION = 300000; // 300 seconds (5 minutes)
 
@@ -55,12 +85,21 @@ export function PushToTalkWhisperButton({
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      // Create MediaRecorder (browser will choose best format)
-      const mediaRecorder = new MediaRecorder(stream);
+      // Get the best supported MIME type for this browser
+      const { mimeType: supportedMimeType, extension } = getSupportedMimeType();
+
+      // Create MediaRecorder with explicit MIME type if supported
+      const mediaRecorderOptions: MediaRecorderOptions = {};
+      if (supportedMimeType) {
+        mediaRecorderOptions.mimeType = supportedMimeType;
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, mediaRecorderOptions);
       mediaRecorderRef.current = mediaRecorder;
 
-      // Store mimeType now, before recorder is stopped and ref is nullified
-      mimeTypeRef.current = mediaRecorder.mimeType || "audio/webm";
+      // Store mimeType and extension now, before recorder is stopped
+      mimeTypeRef.current = mediaRecorder.mimeType || supportedMimeType || "audio/webm";
+      extensionRef.current = extension;
 
       // Collect audio data
       mediaRecorder.ondataavailable = (event) => {
@@ -139,8 +178,9 @@ export function PushToTalkWhisperButton({
     try {
       setIsProcessing(true);
 
-      // Use stored mimeType (saved before recorder was stopped)
+      // Use stored mimeType and extension (saved before recorder was stopped)
       const mimeType = mimeTypeRef.current;
+      const extension = extensionRef.current;
 
       // Create blob with the actual mimeType
       const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
@@ -148,17 +188,6 @@ export function PushToTalkWhisperButton({
       if (audioBlob.size < 100) {
         toast.error("Audio demasiado corto");
         return;
-      }
-
-      // Determine file extension from mime type
-      // iOS uses mp4/m4a, Android/Desktop Chrome use webm, Firefox uses ogg
-      let extension = "webm";
-      if (mimeType.includes("mp4") || mimeType.includes("m4a") || mimeType.includes("aac")) {
-        extension = "mp4";
-      } else if (mimeType.includes("ogg")) {
-        extension = "ogg";
-      } else if (mimeType.includes("wav")) {
-        extension = "wav";
       }
 
       console.log("Audio recording info:", {
