@@ -9,7 +9,7 @@ import {
   prospects,
   tasks,
 } from "../db/schema";
-import { eq, and, or, like, sql, inArray, desc, asc } from "drizzle-orm";
+import { eq, and, or, sql, inArray, desc, asc } from "drizzle-orm";
 import type { Contact } from "../../lib/data";
 import { listingContacts } from "../db/schema";
 import { prospectUtils } from "../../lib/utils";
@@ -20,6 +20,75 @@ import {
   normalizeName,
   type DuplicateContact,
 } from "../../lib/contact-duplicate-detection";
+import { normalizeSearchText, normalizePhoneForSearch } from "../../lib/search-utils";
+
+// =============================================================================
+// SQL Search Helper - Creates normalized search conditions
+// =============================================================================
+
+/**
+ * Creates a SQL condition for normalized text search.
+ * Applies LOWER() to the column and normalizes the search query.
+ * This enables case-insensitive and accent-insensitive searching.
+ */
+function createNormalizedSearchCondition(
+  column: ReturnType<typeof sql>,
+  searchQuery: string,
+) {
+  // Normalize the search query (lowercase, remove accents, trim)
+  const normalizedQuery = normalizeSearchText(searchQuery);
+
+  // Build SQL condition using LOWER() for case-insensitivity
+  // and comparing against the normalized query
+  return sql`LOWER(${column}) LIKE ${`%${normalizedQuery}%`}`;
+}
+
+/**
+ * Creates a SQL condition for phone search with normalization.
+ * Strips non-digit characters from both column and query.
+ */
+function createPhoneSearchCondition(
+  column: ReturnType<typeof sql>,
+  searchQuery: string,
+) {
+  const normalizedPhone = normalizePhoneForSearch(searchQuery);
+  if (!normalizedPhone) return sql`1=0`; // No match if empty
+
+  // Remove common phone separators from the column value
+  return sql`REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(${column}, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') LIKE ${`%${normalizedPhone}%`}`;
+}
+
+/**
+ * Creates comprehensive search conditions for contact fields.
+ * Searches across firstName, lastName, email, phone, and nif with proper normalization.
+ */
+function createContactSearchConditions(searchQuery: string) {
+  const normalizedQuery = normalizeSearchText(searchQuery);
+  const normalizedPhone = normalizePhoneForSearch(searchQuery);
+
+  // Build conditions for each field
+  const conditions = [
+    // Name search (case-insensitive, accent-normalized)
+    sql`LOWER(${contacts.firstName}) LIKE ${`%${normalizedQuery}%`}`,
+    sql`LOWER(${contacts.lastName}) LIKE ${`%${normalizedQuery}%`}`,
+    // Combined name search for word-order independence
+    sql`LOWER(CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})) LIKE ${`%${normalizedQuery}%`}`,
+    sql`LOWER(CONCAT(${contacts.lastName}, ' ', ${contacts.firstName})) LIKE ${`%${normalizedQuery}%`}`,
+    // Email search (case-insensitive)
+    sql`LOWER(${contacts.email}) LIKE ${`%${normalizedQuery}%`}`,
+    // NIF search (case-insensitive)
+    sql`LOWER(${contacts.nif}) LIKE ${`%${normalizedQuery}%`}`,
+  ];
+
+  // Add phone search if query looks like it could contain phone digits
+  if (normalizedPhone.length >= 3) {
+    conditions.push(
+      sql`REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(${contacts.phone}, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') LIKE ${`%${normalizedPhone}%`}`,
+    );
+  }
+
+  return or(...conditions);
+}
 
 // Wrapper functions that automatically get accountId from current session
 // These maintain backward compatibility while adding account filtering
@@ -718,6 +787,7 @@ export async function getContactsByOrgId(orgId: number, accountId: number) {
 }
 
 // Optimized search contacts by name, email, phone, and NIF
+// Uses normalized search for case-insensitive and accent-insensitive matching
 export async function searchContacts(
   query: string,
   accountId: number,
@@ -736,13 +806,7 @@ export async function searchContacts(
         and(
           eq(contacts.accountId, BigInt(accountId)),
           eq(contacts.isActive, true),
-          or(
-            like(contacts.firstName, `%${query}%`),
-            like(contacts.lastName, `%${query}%`),
-            like(contacts.email, `%${query}%`),
-            like(contacts.phone, `%${query}%`),
-            like(contacts.nif, `%${query}%`),
-          ),
+          createContactSearchConditions(query),
         ),
       )
       .orderBy(contacts.firstName, contacts.lastName)
@@ -851,15 +915,8 @@ export async function listContactsWithTypes(
         whereConditions.push(eq(contacts.isActive, filters.isActive));
       }
       if (filters.searchQuery) {
-        whereConditions.push(
-          or(
-            like(contacts.firstName, `%${filters.searchQuery}%`),
-            like(contacts.lastName, `%${filters.searchQuery}%`),
-            like(contacts.email, `%${filters.searchQuery}%`),
-            like(contacts.phone, `%${filters.searchQuery}%`),
-            like(contacts.nif, `%${filters.searchQuery}%`),
-          ),
-        );
+        // Use normalized search for case-insensitive and accent-insensitive matching
+        whereConditions.push(createContactSearchConditions(filters.searchQuery));
       }
     } else {
       // By default, only show active contacts
@@ -1900,15 +1957,8 @@ export async function listContactsOwnerData(
         whereConditions.push(eq(contacts.isActive, filters.isActive));
       }
       if (filters.searchQuery) {
-        whereConditions.push(
-          or(
-            like(contacts.firstName, `%${filters.searchQuery}%`),
-            like(contacts.lastName, `%${filters.searchQuery}%`),
-            like(contacts.email, `%${filters.searchQuery}%`),
-            like(contacts.phone, `%${filters.searchQuery}%`),
-            like(contacts.nif, `%${filters.searchQuery}%`),
-          ),
-        );
+        // Use normalized search for case-insensitive and accent-insensitive matching
+        whereConditions.push(createContactSearchConditions(filters.searchQuery));
       }
       // Apply last contact date filtering at database level
       if (filters.lastContactFilter && filters.lastContactFilter !== "all") {
@@ -2240,15 +2290,8 @@ export async function listContactsBuyerData(
         whereConditions.push(eq(contacts.isActive, filters.isActive));
       }
       if (filters.searchQuery) {
-        whereConditions.push(
-          or(
-            like(contacts.firstName, `%${filters.searchQuery}%`),
-            like(contacts.lastName, `%${filters.searchQuery}%`),
-            like(contacts.email, `%${filters.searchQuery}%`),
-            like(contacts.phone, `%${filters.searchQuery}%`),
-            like(contacts.nif, `%${filters.searchQuery}%`),
-          ),
-        );
+        // Use normalized search for case-insensitive and accent-insensitive matching
+        whereConditions.push(createContactSearchConditions(filters.searchQuery));
       }
       // Apply last contact date filtering at database level
       if (filters.lastContactFilter && filters.lastContactFilter !== "all") {

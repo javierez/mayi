@@ -43,6 +43,7 @@ import { getAgentsForSelectionWithAuth } from "~/server/queries/users";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { cn } from "~/lib/utils";
 import { useSession } from "~/lib/auth-client";
+import { matchesSearch, matchesPhoneSearch } from "~/lib/search-utils";
 import {
   Select,
   SelectContent,
@@ -683,13 +684,12 @@ export default function AppointmentForm({
       return true;
     }
 
+    // Use normalized search for case-insensitive and accent-insensitive matching
+    const fullName = `${contact.firstName} ${contact.lastName}`;
     return (
-      `${contact.firstName} ${contact.lastName}`
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      (contact.email?.toLowerCase().includes(searchQuery.toLowerCase()) ??
-        false) ||
-      (contact.phone?.includes(searchQuery) ?? false)
+      matchesSearch(fullName, searchQuery) ||
+      matchesSearch(contact.email, searchQuery) ||
+      matchesPhoneSearch(contact.phone, searchQuery)
     );
   });
 
@@ -705,12 +705,11 @@ export default function AppointmentForm({
       return true;
     }
 
+    // Use normalized search for case-insensitive and accent-insensitive matching
     return (
-      listing.title?.toLowerCase().includes(listingSearchQuery.toLowerCase()) ??
-      listing.referenceNumber
-        ?.toLowerCase()
-        .includes(listingSearchQuery.toLowerCase()) ??
-      listing.city?.toLowerCase().includes(listingSearchQuery.toLowerCase())
+      matchesSearch(listing.title, listingSearchQuery) ||
+      matchesSearch(listing.referenceNumber, listingSearchQuery) ||
+      matchesSearch(listing.city, listingSearchQuery)
     );
   });
 

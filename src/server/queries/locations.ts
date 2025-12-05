@@ -1,8 +1,9 @@
 "use server";
 import { db } from "../db";
 import { locations } from "../db/schema";
-import { eq, and, ilike, or, sql } from "drizzle-orm";
+import { eq, and, or, sql } from "drizzle-orm";
 import type { Location } from "../../lib/data";
+import { normalizeSearchText } from "../../lib/search-utils";
 
 // Interface for location data from geocoding
 interface LocationData {
@@ -359,7 +360,10 @@ export async function searchNeighborhoods(query: string, limit = 10) {
       return [];
     }
 
-    const searchTerm = `%${query.trim()}%`;
+    // Use normalized search for case-insensitive and accent-insensitive matching
+    const normalizedQuery = normalizeSearchText(query);
+    const searchTerm = `%${normalizedQuery}%`;
+    const prefixSearchTerm = `${normalizedQuery}%`;
 
     const results = await db
       .select({
@@ -374,14 +378,14 @@ export async function searchNeighborhoods(query: string, limit = 10) {
         and(
           eq(locations.isActive, true),
           or(
-            ilike(locations.neighborhood, searchTerm),
-            ilike(locations.city, searchTerm),
+            sql`LOWER(${locations.neighborhood}) LIKE ${searchTerm}`,
+            sql`LOWER(${locations.city}) LIKE ${searchTerm}`,
           ),
         ),
       )
       .orderBy(
         // Prioritize exact matches at the start
-        sql`CASE WHEN LOWER(${locations.neighborhood}) LIKE LOWER(${query.trim() + "%"}) THEN 0 ELSE 1 END`,
+        sql`CASE WHEN LOWER(${locations.neighborhood}) LIKE ${prefixSearchTerm} THEN 0 ELSE 1 END`,
         locations.neighborhood,
         locations.city,
       )

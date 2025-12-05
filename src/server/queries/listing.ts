@@ -25,6 +25,7 @@ import {
   cleanupPortalAdsForMultipleListings,
   triggerIdealistaExportForAccount,
 } from "~/server/portals/cleanup";
+import { normalizeSearchText } from "../../lib/search-utils";
 
 // Wrapper functions that automatically get accountId from current session
 // These maintain backward compatibility while adding account filtering
@@ -793,13 +794,15 @@ export async function listListings(
         );
       }
       if (filters.searchQuery) {
+        // Use normalized search for case-insensitive and accent-insensitive matching
+        const normalizedQuery = normalizeSearchText(filters.searchQuery);
         whereConditions.push(
           sql`(
-            ${properties.title} LIKE ${`%${filters.searchQuery}%`} OR
-            ${properties.referenceNumber} LIKE ${`%${filters.searchQuery}%`} OR
-            ${properties.street} LIKE ${`%${filters.searchQuery}%`} OR
-            ${locations.city} LIKE ${`%${filters.searchQuery}%`} OR
-            ${locations.province} LIKE ${`%${filters.searchQuery}%`}
+            LOWER(${properties.title}) LIKE ${`%${normalizedQuery}%`} OR
+            LOWER(${properties.referenceNumber}) LIKE ${`%${normalizedQuery}%`} OR
+            LOWER(${properties.street}) LIKE ${`%${normalizedQuery}%`} OR
+            LOWER(${locations.city}) LIKE ${`%${normalizedQuery}%`} OR
+            LOWER(${locations.province}) LIKE ${`%${normalizedQuery}%`}
           )`,
         );
       }
@@ -1069,13 +1072,15 @@ export async function listListingsCompact(
         );
       }
       if (filters.searchQuery) {
+        // Use normalized search for case-insensitive and accent-insensitive matching
+        const normalizedQuery = normalizeSearchText(filters.searchQuery);
         whereConditions.push(
           sql`(
-            ${properties.title} LIKE ${`%${filters.searchQuery}%`} OR
-            ${properties.referenceNumber} LIKE ${`%${filters.searchQuery}%`} OR
-            ${properties.street} LIKE ${`%${filters.searchQuery}%`} OR
-            ${locations.city} LIKE ${`%${filters.searchQuery}%`} OR
-            ${locations.province} LIKE ${`%${filters.searchQuery}%`}
+            LOWER(${properties.title}) LIKE ${`%${normalizedQuery}%`} OR
+            LOWER(${properties.referenceNumber}) LIKE ${`%${normalizedQuery}%`} OR
+            LOWER(${properties.street}) LIKE ${`%${normalizedQuery}%`} OR
+            LOWER(${locations.city}) LIKE ${`%${normalizedQuery}%`} OR
+            LOWER(${locations.province}) LIKE ${`%${normalizedQuery}%`}
           )`,
         );
       }
@@ -1323,7 +1328,8 @@ export async function getRecentContactsForGallery(accountId: number) {
 // Search gallery items (listings, contacts, agents) by search term
 export async function searchGalleryItems(searchTerm: string) {
   const accountId = await getCurrentUserAccountId();
-  const normalizedSearch = searchTerm.toLowerCase().trim();
+  // Use normalized search for case-insensitive and accent-insensitive matching
+  const normalizedSearch = normalizeSearchText(searchTerm);
 
   if (!normalizedSearch) {
     return { listings: [], contacts: [], agents: [] };

@@ -49,6 +49,7 @@ import {
   DialogTitle,
 } from "~/components/ui/dialog";
 import { cn } from "~/lib/utils";
+import { matchesSearch } from "~/lib/search-utils";
 // import { CompactPropertyCard } from "~/components/propiedades/compact-property-card";
 import { DuplicateWarningDialog } from "../duplicate-warning-dialog";
 import type { DuplicateContact } from "~/lib/contact-duplicate-detection";
@@ -444,16 +445,12 @@ export default function ContactForm() {
 
   // Filter listings based on search and filters
   const filteredListings = listings.filter((listing: ListingData) => {
-    const matchesSearch =
+    // Use normalized search for case-insensitive and accent-insensitive matching
+    const matchesSearchQuery =
       !searchQuery ||
-      (listing.title?.toLowerCase().includes(searchQuery.toLowerCase()) ??
-        false) ||
-      (listing.referenceNumber
-        ?.toLowerCase()
-        .includes(searchQuery.toLowerCase()) ??
-        false) ||
-      (listing.city?.toLowerCase().includes(searchQuery.toLowerCase()) ??
-        false);
+      matchesSearch(listing.title, searchQuery) ||
+      matchesSearch(listing.referenceNumber, searchQuery) ||
+      matchesSearch(listing.city, searchQuery);
 
     const matchesListingType =
       filters.listingType.length === 0 ||
@@ -463,7 +460,7 @@ export default function ContactForm() {
       filters.propertyType.length === 0 ||
       filters.propertyType.includes(listing.propertyType ?? "");
 
-    return matchesSearch && matchesListingType && matchesPropertyType;
+    return matchesSearchQuery && matchesListingType && matchesPropertyType;
   });
 
   const toggleFilter = (

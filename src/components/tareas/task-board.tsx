@@ -18,6 +18,7 @@ import { useToast } from "~/components/hooks/use-toast";
 import { updateTaskWithAuth } from "~/server/queries/task";
 import { useRouter } from "next/navigation";
 import type { DetailedTask } from "~/lib/operations/task-utils";
+import { matchesSearch } from "~/lib/search-utils";
 
 interface Task {
   taskId: string;
@@ -60,21 +61,20 @@ export function TaskBoard({ initialTasks, searchQuery = "" }: TaskBoardProps) {
   const { toast } = useToast();
   const router = useRouter();
 
-  // Client-side search filtering
+  // Client-side search filtering with normalized search for accent-insensitive matching
   const filteredTasks = useMemo(() => {
     if (!searchQuery.trim()) return tasks;
-    const query = searchQuery.toLowerCase();
     return tasks.filter((task) => {
       // Search in title
-      const titleMatch = task.title.toLowerCase().includes(query);
-      
+      const titleMatch = matchesSearch(task.title, searchQuery);
+
       // Search in contact name
-      const contactName = `${task.contactFirstName ?? ""} ${task.contactLastName ?? ""}`.trim().toLowerCase();
-      const contactMatch = contactName.includes(query);
-      
+      const contactName = `${task.contactFirstName ?? ""} ${task.contactLastName ?? ""}`.trim();
+      const contactMatch = matchesSearch(contactName, searchQuery);
+
       // Search in property title
-      const propertyMatch = task.propertyTitle?.toLowerCase().includes(query) ?? false;
-      
+      const propertyMatch = matchesSearch(task.propertyTitle, searchQuery);
+
       return titleMatch || contactMatch || propertyMatch;
     });
   }, [tasks, searchQuery]);

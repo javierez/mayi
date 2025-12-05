@@ -41,6 +41,7 @@ import { createContactActivityAction, findListingContactIdAction, createListingC
 import { listListingsCompactWithAuth, listListingsForContactWithAuth } from "~/server/queries/listing";
 import { listContactsWithAuth, searchContactsWithAuth } from "~/server/queries/contact";
 import type { ListingContactActivityAction } from "~/lib/constants/listing-contact-activity-actions";
+import { matchesSearch } from "~/lib/search-utils";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Badge } from "~/components/ui/badge";
 import { summarizeNotes, extractTasksFromNotes, type ExtractedTask } from "~/server/openai/notes-transformer";
@@ -607,12 +608,11 @@ export function QuickActionModal({
       return true;
     }
 
+    // Use normalized search for case-insensitive and accent-insensitive matching
     return (
-      listing.title?.toLowerCase().includes(listingSearchQuery.toLowerCase()) ??
-      listing.referenceNumber
-        ?.toLowerCase()
-        .includes(listingSearchQuery.toLowerCase()) ??
-      listing.city?.toLowerCase().includes(listingSearchQuery.toLowerCase())
+      matchesSearch(listing.title, listingSearchQuery) ||
+      matchesSearch(listing.referenceNumber, listingSearchQuery) ||
+      matchesSearch(listing.city, listingSearchQuery)
     );
   });
 
