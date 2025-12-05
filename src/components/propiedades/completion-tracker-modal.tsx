@@ -141,7 +141,7 @@ export function CompletionTrackerModal({
                       r="50"
                       fill="none"
                       stroke={
-                        completion.canPublishToPortals
+                        completion!.canPublishToPortals
                           ? "#10b981"
                           : completionPercentage >= 50
                             ? "#f59e0b"
@@ -166,7 +166,7 @@ export function CompletionTrackerModal({
               </div>
 
               {/* Publish readiness indicator */}
-              {completion.canPublishToPortals ? (
+              {completion!.canPublishToPortals ? (
                 <div className="flex items-center justify-center gap-3 rounded-lg bg-gradient-to-r from-emerald-500 to-green-600 px-4 py-3 text-white shadow-md">
                   <CheckCircle2 className="h-6 w-6 flex-shrink-0" />
                   <span className="text-base font-semibold">
@@ -177,7 +177,7 @@ export function CompletionTrackerModal({
                 <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
                   <AlertCircle className="h-4 w-4 flex-shrink-0" />
                   <span>
-                    {completion.mandatory.pending.length} campos obligatorios
+                    {completion!.mandatory.pending.length} campos obligatorios
                     pendientes
                   </span>
                 </div>
@@ -188,7 +188,7 @@ export function CompletionTrackerModal({
             <FieldSection
               title="CAMPOS OBLIGATORIOS"
               subtitle="Esenciales para publicar en portales"
-              data={completion.mandatory}
+              data={completion!.mandatory}
               color="mandatory"
               expanded={expandedSections.mandatory}
               onToggle={() =>
@@ -200,7 +200,7 @@ export function CompletionTrackerModal({
             <FieldSection
               title="CAMPOS OPCIONALES"
               subtitle="Mejoran la calidad del anuncio"
-              data={completion.nth}
+              data={completion!.nth}
               color="optional"
               expanded={expandedSections.nth}
               onToggle={() => setExpandedSections((s) => ({ ...s, nth: !s.nth }))}

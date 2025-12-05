@@ -15,6 +15,17 @@ export async function GET(request: NextRequest) {
     // Get the origin from the request URL to ensure redirect URI matches
     const origin = request.nextUrl.origin;
 
+    // Debug logging
+    console.log("🔗 [Google Calendar Connect] Request details:", {
+      url: request.url,
+      origin: origin,
+      nextUrlOrigin: request.nextUrl.origin,
+      host: request.headers.get("host"),
+      xForwardedHost: request.headers.get("x-forwarded-host"),
+      xForwardedProto: request.headers.get("x-forwarded-proto"),
+      redirectUri: `${origin}/api/google/calendar/callback`,
+    });
+
     // Generate a state parameter for CSRF protection
     const state = nanoid(32);
 
@@ -26,6 +37,8 @@ export async function GET(request: NextRequest) {
 
     // Generate OAuth consent URL with origin for correct redirect URI
     const authUrl = generateAuthUrl(stateData, origin);
+
+    console.log("🔗 [Google Calendar Connect] Generated auth URL:", authUrl);
 
     // Redirect to Google OAuth
     return NextResponse.redirect(authUrl);
