@@ -302,3 +302,98 @@ export function getImageSizes(
       return "100vw";
   }
 }
+
+/**
+ * Accepted image types for file inputs, including HEIC/HEIF from iPhones
+ */
+export const ACCEPTED_IMAGE_TYPES = "image/*,.heic,.heif";
+
+/**
+ * Check if a file is a HEIC/HEIF image (common iPhone format)
+ */
+export function isHeicFile(file: File): boolean {
+  const heicTypes = [
+    "image/heic",
+    "image/heif",
+    "image/heic-sequence",
+    "image/heif-sequence",
+  ];
+  const heicExtensions = [".heic", ".heif"];
+
+  // Check MIME type
+  if (heicTypes.includes(file.type.toLowerCase())) {
+    return true;
+  }
+
+  // Check file extension (some browsers don't report correct MIME type for HEIC)
+  const fileName = file.name.toLowerCase();
+  return heicExtensions.some((ext) => fileName.endsWith(ext));
+}
+
+/**
+ * Convert a HEIC file to JPEG (for browser compatibility)
+ * Returns a new File object with the converted image
+ */
+export async function convertHeicToJpeg(file: File): Promise<File> {
+  if (!isHeicFile(file)) {
+    return file;
+  }
+
+  // Dynamic import to avoid SSR issues (heic2any uses browser APIs)
+  const heic2any = (await import("heic2any")).default;
+
+  try {
+    const convertedBlob = await heic2any({
+      blob: file,
+      toType: "image/jpeg",
+      quality: 0.9,
+    });
+
+    // heic2any can return a single blob or array of blobs
+    const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+
+    if (!blob) {
+      throw new Error("HEIC conversion returned empty result");
+    }
+
+    // Create a new filename with .jpg extension
+    const newFileName = file.name
+      .replace(/\.heic$/i, ".jpg")
+      .replace(/\.heif$/i, ".jpg");
+
+    // Create a new File object from the blob
+    const convertedFile = new File([blob], newFileName, {
+      type: "image/jpeg",
+      lastModified: file.lastModified,
+    });
+
+    return convertedFile;
+  } catch (error) {
+    console.error("Error converting HEIC to JPEG:", error);
+    throw new Error(`Failed to convert HEIC image: ${file.name}`);
+  }
+}
+
+/**
+ * Process a list of files, converting any HEIC files to JPEG
+ * Returns a new array with converted files
+ */
+export async function processImageFiles(files: File[]): Promise<File[]> {
+  const processedFiles: File[] = [];
+
+  for (const file of files) {
+    if (isHeicFile(file)) {
+      try {
+        const convertedFile = await convertHeicToJpeg(file);
+        processedFiles.push(convertedFile);
+      } catch (error) {
+        console.error(`Failed to convert ${file.name}:`, error);
+        // Skip files that fail to convert
+      }
+    } else {
+      processedFiles.push(file);
+    }
+  }
+
+  return processedFiles;
+}

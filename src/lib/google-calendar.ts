@@ -54,10 +54,26 @@ export interface AppointmentData {
 // OAuth configuration
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
-const REDIRECT_URI =
-  process.env.NODE_ENV === "production"
-    ? "https://vesta-crm.com/api/google/calendar/callback"
-    : "http://localhost:3000/api/google/calendar/callback";
+
+// Get the base URL for redirect URI
+function getRedirectUri(origin?: string): string {
+  // If origin is provided (from request), use it
+  if (origin) {
+    return `${origin}/api/google/calendar/callback`;
+  }
+
+  // Fallback to environment-based detection
+  if (process.env.NODE_ENV === "production") {
+    // Use NEXT_PUBLIC_APP_URL if set, otherwise default to vesta-crm.com
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://vesta-crm.com";
+    return `${appUrl}/api/google/calendar/callback`;
+  }
+
+  return "http://localhost:3000/api/google/calendar/callback";
+}
+
+// Default redirect URI for server-side operations
+const REDIRECT_URI = getRedirectUri();
 
 // Calendar API scopes
 // Using calendar.events which provides read/write access to calendar events
@@ -66,20 +82,24 @@ const SCOPES = ["https://www.googleapis.com/auth/calendar.events"];
 
 /**
  * Get OAuth2 client instance
+ * @param origin - Optional origin URL for redirect URI (e.g., from request headers)
  */
-export function getOAuth2Client() {
+export function getOAuth2Client(origin?: string) {
+  const redirectUri = origin ? getRedirectUri(origin) : REDIRECT_URI;
   return new google.auth.OAuth2(
     GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET,
-    REDIRECT_URI,
+    redirectUri,
   );
 }
 
 /**
  * Generate OAuth consent URL
+ * @param state - State parameter for CSRF protection
+ * @param origin - Optional origin URL for redirect URI (e.g., from request headers)
  */
-export function generateAuthUrl(state: string): string {
-  const oauth2Client = getOAuth2Client();
+export function generateAuthUrl(state: string, origin?: string): string {
+  const oauth2Client = getOAuth2Client(origin);
   return oauth2Client.generateAuthUrl({
     access_type: "offline",
     scope: SCOPES,
@@ -90,9 +110,11 @@ export function generateAuthUrl(state: string): string {
 
 /**
  * Exchange authorization code for tokens
+ * @param code - Authorization code from OAuth callback
+ * @param origin - Optional origin URL for redirect URI (must match the one used in generateAuthUrl)
  */
-export async function exchangeCodeForTokens(code: string) {
-  const oauth2Client = getOAuth2Client();
+export async function exchangeCodeForTokens(code: string, origin?: string) {
+  const oauth2Client = getOAuth2Client(origin);
   const { tokens } = await oauth2Client.getToken(code);
   return tokens;
 }

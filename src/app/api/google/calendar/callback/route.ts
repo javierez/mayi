@@ -37,16 +37,35 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Verify state parameter (basic verification - in production you'd want more robust state management)
-    if (!state.startsWith(user.id)) {
+    // Parse state parameter: userId:randomState:encodedOrigin
+    const stateParts = state.split(":");
+    const stateUserId = stateParts[0];
+    const encodedOrigin = stateParts[2];
+
+    // Verify state parameter matches user
+    if (stateUserId !== user.id) {
       return NextResponse.redirect(
         new URL(`/calendario?error=invalid_state`, request.url),
       );
     }
 
+    // Decode the origin from state (used to ensure redirect URI matches)
+    let origin: string | undefined;
+    if (encodedOrigin) {
+      try {
+        origin = Buffer.from(encodedOrigin, "base64").toString("utf-8");
+      } catch {
+        console.warn("Failed to decode origin from state, using request origin");
+        origin = request.nextUrl.origin;
+      }
+    } else {
+      // Fallback to request origin for backwards compatibility
+      origin = request.nextUrl.origin;
+    }
+
     try {
-      // Exchange authorization code for tokens
-      const tokens = await exchangeCodeForTokens(code);
+      // Exchange authorization code for tokens (using the same origin as connect)
+      const tokens = await exchangeCodeForTokens(code, origin);
 
       if (!tokens?.access_token) {
         throw new Error("No access token received");

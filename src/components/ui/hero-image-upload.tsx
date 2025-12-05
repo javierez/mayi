@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { Upload, Image as ImageIcon, Video } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { isHeicFile, convertHeicToJpeg } from "~/lib/image-utils";
 
 interface HeroMediaUploadProps {
   onUpload: (file: File, type: "image" | "video") => Promise<void>;
@@ -19,9 +20,14 @@ export function HeroImageUpload({
 }: HeroMediaUploadProps) {
   const [isDragActive, setIsDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isConverting, setIsConverting] = useState(false);
 
   const validateFile = useCallback(
     (file: File): "image" | "video" | null => {
+      // Check for HEIC files (iPhone format)
+      if (isHeicFile(file)) {
+        return "image";
+      }
       if (file.type.startsWith("image/")) {
         return "image";
       }
@@ -51,7 +57,7 @@ export function HeroImageUpload({
       setError(null);
 
       if (e.dataTransfer.files?.[0]) {
-        const file = e.dataTransfer.files[0];
+        let file = e.dataTransfer.files[0];
         const fileType = validateFile(file);
         if (!fileType) {
           setError(
@@ -60,6 +66,18 @@ export function HeroImageUpload({
               : "Por favor selecciona un archivo de imagen válido",
           );
           return;
+        }
+        // Convert HEIC to JPEG if needed
+        if (fileType === "image" && isHeicFile(file)) {
+          try {
+            setIsConverting(true);
+            file = await convertHeicToJpeg(file);
+          } catch {
+            setError("Error al convertir la imagen HEIC");
+            return;
+          } finally {
+            setIsConverting(false);
+          }
         }
         await onUpload(file, fileType);
       }
@@ -73,7 +91,7 @@ export function HeroImageUpload({
       setError(null);
 
       if (e.target.files?.[0]) {
-        const file = e.target.files[0];
+        let file = e.target.files[0];
         const fileType = validateFile(file);
         if (!fileType) {
           setError(
@@ -83,13 +101,27 @@ export function HeroImageUpload({
           );
           return;
         }
+        // Convert HEIC to JPEG if needed
+        if (fileType === "image" && isHeicFile(file)) {
+          try {
+            setIsConverting(true);
+            file = await convertHeicToJpeg(file);
+          } catch {
+            setError("Error al convertir la imagen HEIC");
+            return;
+          } finally {
+            setIsConverting(false);
+          }
+        }
         await onUpload(file, fileType);
       }
     },
     [onUpload, acceptVideo, validateFile],
   );
 
-  const acceptTypes = acceptVideo ? "image/*,video/*" : "image/*";
+  const acceptTypes = acceptVideo
+    ? "image/*,video/*,.heic,.heif"
+    : "image/*,.heic,.heif";
 
   return (
     <div className={cn("w-full", className)}>
@@ -103,19 +135,26 @@ export function HeroImageUpload({
           isDragActive
             ? "border-primary bg-primary/5"
             : "border-gray-300 hover:border-gray-400",
-          isUploading && "pointer-events-none opacity-50",
+          (isUploading || isConverting) && "pointer-events-none opacity-50",
         )}
       >
         <input
           type="file"
           accept={acceptTypes}
           onChange={handleChange}
-          disabled={isUploading}
+          disabled={isUploading || isConverting}
           className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
         />
 
         <div className="flex flex-col items-center justify-center text-center">
-          {isUploading ? (
+          {isConverting ? (
+            <>
+              <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-gray-600" />
+              <p className="text-sm font-medium text-gray-700">
+                Convirtiendo imagen...
+              </p>
+            </>
+          ) : isUploading ? (
             <>
               <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-primary" />
               <p className="text-sm font-medium text-gray-700">
@@ -149,8 +188,8 @@ export function HeroImageUpload({
               </p>
               <p className="text-xs text-gray-500">
                 {acceptVideo
-                  ? "JPG, PNG, WebP o MP4 (máximo 50MB para videos)"
-                  : "JPG, PNG o WebP (máximo 10MB)"}
+                  ? "JPG, PNG, WebP, HEIC o MP4 (máximo 50MB para videos)"
+                  : "JPG, PNG, WebP o HEIC (máximo 10MB)"}
               </p>
             </>
           )}

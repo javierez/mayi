@@ -62,17 +62,20 @@ export function CompletionTrackerModal({
     }
   }, [isOpen, listing?.propertyId]);
 
-  // Calculate completion with image count
+  // Calculate completion with image count (only when images are loaded)
   const listingWithImages: Record<string, unknown> = {
     ...listing,
     imageCount,
   };
 
-  const completion = calculateCompletion(listingWithImages);
+  // Only calculate completion after image count is loaded to avoid false warnings
+  const completion = isLoadingImages
+    ? null
+    : calculateCompletion(listingWithImages);
 
   // Use ONLY mandatory fields for the percentage ring
-  const mandatoryTotal = completion.mandatory.total;
-  const mandatoryCompleted = completion.mandatory.completedCount;
+  const mandatoryTotal = completion?.mandatory.total ?? 0;
+  const mandatoryCompleted = completion?.mandatory.completedCount ?? 0;
   const completionPercentage =
     mandatoryTotal > 0
       ? Math.round((mandatoryCompleted / mandatoryTotal) * 100)

@@ -13,6 +13,10 @@ import {
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
+import {
+  ACCEPTED_IMAGE_TYPES,
+  processImageFiles,
+} from "~/lib/image-utils";
 import type { PropertyImage } from "~/lib/data";
 import {
   uploadPropertyImage,
@@ -62,6 +66,7 @@ export function ImageGallery({
   const [selectedImages, setSelectedImages] = useState<Set<number>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
   const [isTogglingVisibility, setIsTogglingVisibility] = useState<Set<number>>(
     new Set(),
   );
@@ -210,10 +215,24 @@ export function ImageGallery({
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    setIsUploading(true);
+    // Check if any files need HEIC conversion
+    const hasHeicFiles = Array.from(files).some(
+      (file) =>
+        file.name.toLowerCase().endsWith(".heic") ||
+        file.name.toLowerCase().endsWith(".heif"),
+    );
+
+    if (hasHeicFiles) {
+      setIsConverting(true);
+    }
 
     try {
-      const uploadPromises = Array.from(files).map(async (file, index) => {
+      // Process files to convert any HEIC images to JPEG
+      const processedFiles = await processImageFiles(Array.from(files));
+      setIsConverting(false);
+      setIsUploading(true);
+
+      const uploadPromises = processedFiles.map(async (file, index) => {
         const fileId = `${file.name}-${Date.now()}-${index}`;
         setUploadProgress((prev) => ({ ...prev, [fileId]: 0 }));
 
@@ -281,6 +300,7 @@ export function ImageGallery({
       console.error("Error uploading images:", error);
       // TODO: Show error toast
     } finally {
+      setIsConverting(false);
       setIsUploading(false);
       setUploadProgress({});
     }
@@ -623,18 +643,25 @@ export function ImageGallery({
           <label
             className={cn(
               "group relative flex h-40 w-full min-w-[120px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed border-gray-200 bg-white transition-all duration-200 hover:bg-gray-50",
-              isUploading && "cursor-not-allowed opacity-50",
+              (isUploading || isConverting) && "cursor-not-allowed opacity-50",
             )}
           >
             <input
               type="file"
-              accept="image/*"
+              accept={ACCEPTED_IMAGE_TYPES}
               multiple
               className="hidden"
               onChange={handleFileChange}
-              disabled={isUploading}
+              disabled={isUploading || isConverting}
             />
-            {isUploading ? (
+            {isConverting ? (
+              <div className="flex flex-col items-center justify-center px-4">
+                <div className="mb-2 h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+                <span className="text-xs font-medium text-gray-500">
+                  Convirtiendo...
+                </span>
+              </div>
+            ) : isUploading ? (
               <div className="w-full space-y-2 px-4">
                 {Object.entries(uploadProgress).map(([fileId, progress]) => (
                   <div key={fileId} className="space-y-1">

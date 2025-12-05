@@ -28,6 +28,7 @@ import {
   deleteDocument,
   renameDocumentFolder,
 } from "~/app/actions/upload";
+import { isHeicFile, convertHeicToJpeg } from "~/lib/image-utils";
 import { processDocumentInBackgroundEnhanced } from "~/server/ocr/ocr-initial-form";
 import { useSession } from "~/lib/auth-client";
 import {
@@ -129,6 +130,7 @@ const PropertyIdentificationForm: FC = () => {
   const [tempReferenceNumber, setTempReferenceNumber] = useState<string>("");
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<{
@@ -771,11 +773,25 @@ const PropertyIdentificationForm: FC = () => {
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (files) {
-        for (const file of Array.from(files)) {
-          if (
-            file.type === "application/pdf" ||
-            file.type.startsWith("image/")
-          ) {
+        for (let file of Array.from(files)) {
+          // Check if it's an image (including HEIC) or PDF
+          const isImage = file.type.startsWith("image/") || isHeicFile(file);
+          const isPdf = file.type === "application/pdf";
+
+          if (isPdf || isImage) {
+            // Convert HEIC to JPEG if needed
+            if (isImage && isHeicFile(file)) {
+              try {
+                setIsConverting(true);
+                file = await convertHeicToJpeg(file);
+              } catch (err) {
+                console.error("Error converting HEIC:", err);
+                setIsConverting(false);
+                continue; // Skip this file if conversion fails
+              } finally {
+                setIsConverting(false);
+              }
+            }
             await handleFileUpload(file);
           }
         }
@@ -940,7 +956,7 @@ const PropertyIdentificationForm: FC = () => {
               </div>
 
               {/* Upload Area or Document Preview */}
-              {uploadedDocuments.length === 0 && !isUploading ? (
+              {uploadedDocuments.length === 0 && !isUploading && !isConverting ? (
                 <div
                   className={`flex min-h-[200px] items-center justify-center rounded-lg border-2 border-dashed transition-colors ${
                     isDragOver
@@ -963,9 +979,20 @@ const PropertyIdentificationForm: FC = () => {
                         Subir documentos o tomar foto
                       </p>
                       <p className="text-xs text-gray-500">
-                        PDF, JPG, PNG o usar cámara
+                        PDF, JPG, PNG, HEIC o usar cámara
                       </p>
                     </div>
+                  </div>
+                </div>
+              ) : isConverting ? (
+                <div className="flex min-h-[200px] items-center justify-center rounded-lg border border-gray-200 p-6">
+                  <div className="w-full max-w-md space-y-4">
+                    <div className="flex justify-center">
+                      <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+                    </div>
+                    <p className="text-center text-sm text-gray-600">
+                      Convirtiendo imagen...
+                    </p>
                   </div>
                 </div>
               ) : isUploading ? (
@@ -1085,7 +1112,7 @@ const PropertyIdentificationForm: FC = () => {
                 id="fichaPropiedadInput"
                 type="file"
                 multiple
-                accept=".pdf,.jpg,.jpeg,.png,image/*"
+                accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,image/*"
                 capture="environment"
                 className="hidden"
                 onChange={handleFileSelect}
