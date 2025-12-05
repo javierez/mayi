@@ -29,6 +29,17 @@ interface PushToTalkWhisperButtonProps {
  * ```
  */
 /**
+ * Detect if running on iOS Safari
+ */
+function isIOSSafari(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isSafari = /Safari/.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua);
+  return isIOS && isSafari;
+}
+
+/**
  * Get the best supported audio MIME type for MediaRecorder
  * Prioritizes formats that OpenAI Whisper supports well:
  * - Safari/iOS: audio/mp4 (AAC codec)
@@ -36,9 +47,34 @@ interface PushToTalkWhisperButtonProps {
  * - Firefox: audio/webm;codecs=opus or audio/ogg;codecs=opus
  */
 function getSupportedMimeType(): { mimeType: string; extension: string } {
+  // iOS Safari specific handling - isTypeSupported may not work correctly
+  // iOS Safari natively produces MP4/AAC audio
+  if (isIOSSafari()) {
+    console.log("iOS Safari detected, using audio/mp4");
+    // Try mp4 first, then let browser decide with empty string
+    if (typeof MediaRecorder !== "undefined") {
+      // On iOS Safari, even if isTypeSupported returns false for audio/mp4,
+      // the MediaRecorder still produces mp4/aac audio
+      const testTypes = ["audio/mp4", "audio/aac", "audio/mpeg", ""];
+      for (const mimeType of testTypes) {
+        try {
+          if (mimeType === "" || MediaRecorder.isTypeSupported(mimeType)) {
+            console.log("iOS Safari: selected MIME type:", mimeType || "(browser default)");
+            return { mimeType, extension: "mp4" };
+          }
+        } catch {
+          // Some browsers throw on isTypeSupported
+        }
+      }
+    }
+    // iOS Safari fallback - use empty mimeType but mp4 extension
+    // The browser will use its native format (mp4/aac)
+    return { mimeType: "", extension: "mp4" };
+  }
+
   // Prioritized list of MIME types (most compatible with OpenAI Whisper first)
   const mimeTypes = [
-    { mimeType: "audio/mp4", extension: "mp4" }, // Safari/iOS - best compatibility
+    { mimeType: "audio/mp4", extension: "mp4" }, // Safari - best compatibility
     { mimeType: "audio/webm;codecs=opus", extension: "webm" }, // Chrome/Firefox
     { mimeType: "audio/webm", extension: "webm" }, // Chrome fallback
     { mimeType: "audio/ogg;codecs=opus", extension: "ogg" }, // Firefox fallback
@@ -46,9 +82,13 @@ function getSupportedMimeType(): { mimeType: string; extension: string } {
   ];
 
   for (const { mimeType, extension } of mimeTypes) {
-    if (MediaRecorder.isTypeSupported(mimeType)) {
-      console.log("Selected audio MIME type:", mimeType);
-      return { mimeType, extension };
+    try {
+      if (MediaRecorder.isTypeSupported(mimeType)) {
+        console.log("Selected audio MIME type:", mimeType);
+        return { mimeType, extension };
+      }
+    } catch {
+      // Some browsers throw on isTypeSupported for certain types
     }
   }
 
@@ -71,6 +111,7 @@ export function PushToTalkWhisperButton({
   const recordingToastIdRef = useRef<string | number | undefined>(undefined);
   const mimeTypeRef = useRef<string>("audio/webm");
   const extensionRef = useRef<string>("webm");
+  const isIOSRef = useRef<boolean>(false);
 
   const MAX_RECORDING_DURATION = 300000; // 300 seconds (5 minutes)
 
@@ -86,6 +127,8 @@ export function PushToTalkWhisperButton({
       streamRef.current = stream;
 
       // Get the best supported MIME type for this browser
+      const isIOS = isIOSSafari();
+      isIOSRef.current = isIOS;
       const { mimeType: supportedMimeType, extension } = getSupportedMimeType();
 
       // Create MediaRecorder with explicit MIME type if supported
@@ -98,8 +141,16 @@ export function PushToTalkWhisperButton({
       mediaRecorderRef.current = mediaRecorder;
 
       // Store mimeType and extension now, before recorder is stopped
-      mimeTypeRef.current = mediaRecorder.mimeType || supportedMimeType || "audio/webm";
-      extensionRef.current = extension;
+      // On iOS Safari, always use mp4 extension regardless of what mimeType reports
+      // because iOS Safari may incorrectly report audio/webm but produce mp4/aac
+      if (isIOS) {
+        mimeTypeRef.current = "audio/mp4";
+        extensionRef.current = "mp4";
+        console.log("iOS Safari: forcing mp4 format");
+      } else {
+        mimeTypeRef.current = mediaRecorder.mimeType || supportedMimeType || "audio/webm";
+        extensionRef.current = extension;
+      }
 
       // Collect audio data
       mediaRecorder.ondataavailable = (event) => {
@@ -179,15 +230,50 @@ export function PushToTalkWhisperButton({
       setIsProcessing(true);
 
       // Use stored mimeType and extension (saved before recorder was stopped)
-      const mimeType = mimeTypeRef.current;
-      const extension = extensionRef.current;
+      let mimeType = mimeTypeRef.current;
+      let extension = extensionRef.current;
 
       // Create blob with the actual mimeType
-      const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+      let audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
 
       if (audioBlob.size < 100) {
         toast.error("Audio demasiado corto");
         return;
+      }
+
+      // Detect actual format from magic bytes (first 12 bytes)
+      // This helps identify the real format regardless of what mimeType says
+      try {
+        const header = await audioBlob.slice(0, 12).arrayBuffer();
+        const bytes = new Uint8Array(header);
+
+        // Check for common audio format signatures
+        const isMp4 = bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70; // "ftyp"
+        const isWebm = bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3; // EBML header
+        const isOgg = bytes[0] === 0x4f && bytes[1] === 0x67 && bytes[2] === 0x67 && bytes[3] === 0x53; // "OggS"
+
+        console.log("Audio magic bytes:", Array.from(bytes.slice(0, 12)).map(b => b.toString(16).padStart(2, '0')).join(' '));
+        console.log("Format detection:", { isMp4, isWebm, isOgg });
+
+        // If format doesn't match what we think it is, correct it
+        if (isMp4 && extension !== "mp4") {
+          console.log("Correcting format: detected MP4, was", extension);
+          extension = "mp4";
+          mimeType = "audio/mp4";
+          audioBlob = new Blob(audioChunksRef.current, { type: "audio/mp4" });
+        } else if (isWebm && extension !== "webm") {
+          console.log("Correcting format: detected WebM, was", extension);
+          extension = "webm";
+          mimeType = "audio/webm";
+          audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        } else if (isOgg && extension !== "ogg") {
+          console.log("Correcting format: detected OGG, was", extension);
+          extension = "ogg";
+          mimeType = "audio/ogg";
+          audioBlob = new Blob(audioChunksRef.current, { type: "audio/ogg" });
+        }
+      } catch (e) {
+        console.warn("Could not detect audio format from magic bytes:", e);
       }
 
       console.log("Audio recording info:", {
@@ -195,6 +281,7 @@ export function PushToTalkWhisperButton({
         extension,
         blobSize: audioBlob.size,
         chunksCount: audioChunksRef.current.length,
+        isIOS: isIOSRef.current,
       });
 
       // Create form data

@@ -1,3 +1,145 @@
+// =============================================================================
+// SEARCH TEXT NORMALIZATION UTILITIES
+// =============================================================================
+
+/**
+ * Normalizes text for search comparison by:
+ * - Converting to lowercase
+ * - Removing accents/diacritics (á → a, ñ → n, etc.)
+ * - Removing punctuation
+ * - Collapsing multiple spaces
+ * - Trimming whitespace
+ */
+export function normalizeSearchText(text: string | null | undefined): string {
+  if (!text) return "";
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Remove accents/diacritics
+    .replace(/[.,\-'"`()]/g, "") // Remove common punctuation
+    .replace(/\s+/g, " ") // Collapse multiple spaces
+    .trim();
+}
+
+/**
+ * Normalizes phone number by removing all non-digit characters.
+ * Useful for comparing phone numbers regardless of format.
+ * Example: "+34 612 345 678" → "34612345678"
+ */
+export function normalizePhoneForSearch(
+  phone: string | null | undefined,
+): string {
+  if (!phone) return "";
+  return phone.replace(/\D/g, "");
+}
+
+/**
+ * Checks if a target string matches a search query using normalized comparison.
+ * Supports partial matching - all query words must be present in the target.
+ *
+ * @param target - The text to search in (e.g., contact name)
+ * @param query - The search query from user input
+ * @returns true if all query words are found in the target
+ *
+ * @example
+ * matchesSearch("José García López", "garcia jose") // true
+ * matchesSearch("García", "García López") // false (López not in target)
+ */
+export function matchesSearch(
+  target: string | null | undefined,
+  query: string | null | undefined,
+): boolean {
+  if (!query) return true; // Empty query matches everything
+  if (!target) return false; // No target can't match non-empty query
+
+  const normalizedTarget = normalizeSearchText(target);
+  const normalizedQuery = normalizeSearchText(query);
+
+  if (!normalizedQuery) return true;
+
+  // Split query into words and check if all are present in target
+  const queryWords = normalizedQuery.split(" ").filter(Boolean);
+  return queryWords.every((word) => normalizedTarget.includes(word));
+}
+
+/**
+ * Checks if a phone number matches a search query.
+ * Compares normalized (digits-only) versions of both.
+ *
+ * @example
+ * matchesPhoneSearch("+34 612 345 678", "612345678") // true
+ * matchesPhoneSearch("612-345-678", "612 345 678") // true
+ */
+export function matchesPhoneSearch(
+  targetPhone: string | null | undefined,
+  queryPhone: string | null | undefined,
+): boolean {
+  if (!queryPhone) return true;
+  if (!targetPhone) return false;
+
+  const normalizedTarget = normalizePhoneForSearch(targetPhone);
+  const normalizedQuery = normalizePhoneForSearch(queryPhone);
+
+  if (!normalizedQuery) return true;
+
+  // Allow partial phone number matching
+  return normalizedTarget.includes(normalizedQuery);
+}
+
+/**
+ * Combined search matcher for contacts.
+ * Checks name, email, phone, and NIF with appropriate normalization for each.
+ *
+ * @param contact - Object with contact fields to search
+ * @param query - The search query from user input
+ * @returns true if query matches any searchable field
+ */
+export function matchesContactSearch(
+  contact: {
+    firstName?: string | null;
+    lastName?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    nif?: string | null;
+  },
+  query: string | null | undefined,
+): boolean {
+  if (!query) return true;
+
+  const normalizedQuery = normalizeSearchText(query);
+  if (!normalizedQuery) return true;
+
+  // Check full name
+  const fullName = `${contact.firstName ?? ""} ${contact.lastName ?? ""}`;
+  if (matchesSearch(fullName, query)) return true;
+
+  // Check email
+  if (matchesSearch(contact.email, query)) return true;
+
+  // Check phone (use phone-specific matching)
+  if (matchesPhoneSearch(contact.phone, query)) return true;
+
+  // Check NIF/DNI
+  if (matchesSearch(contact.nif, query)) return true;
+
+  return false;
+}
+
+/**
+ * SQL-safe search pattern generator.
+ * Creates a pattern suitable for SQL LIKE queries with normalization hints.
+ * Note: For full accent-insensitive search in SQL, use database collation
+ * or the UNACCENT extension (PostgreSQL) / custom function (MySQL).
+ */
+export function createSearchPattern(query: string): string {
+  const normalized = normalizeSearchText(query);
+  return `%${normalized}%`;
+}
+
+// =============================================================================
+// URL SLUG UTILITIES (Property Search)
+// =============================================================================
+
 export type PropertyType =
   | "piso"
   | "casa"
