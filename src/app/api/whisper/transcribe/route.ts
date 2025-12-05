@@ -116,17 +116,39 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof OpenAI.APIError) {
       const errorStatus = typeof error.status === "number" ? error.status : 500;
+
+      // Map OpenAI error codes to user-friendly messages
+      let userMessage = error.message;
+      if (error.code === "audio_too_short") {
+        userMessage = "El audio es demasiado corto para transcribir.";
+      } else if (error.code === "invalid_audio") {
+        userMessage = "Formato de audio no válido.";
+      } else if (error.code === "rate_limit_exceeded") {
+        userMessage = "Límite de solicitudes excedido. Intenta en unos segundos.";
+      } else if (error.message.includes("Could not process audio")) {
+        userMessage = "No se pudo procesar el audio. Verifica el formato.";
+      }
+
       return NextResponse.json(
         {
-          error: error.message,
-          type: String(error.type ?? "unknown")
+          error: userMessage,
+          type: String(error.type ?? "unknown"),
+          code: error.code,
         },
         { status: errorStatus }
       );
     }
 
+    // Handle other error types
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { error: error.message, type: "internal_error" },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json(
-      { error: "Failed to transcribe audio" },
+      { error: "Error desconocido al transcribir audio", type: "unknown_error" },
       { status: 500 }
     );
   }

@@ -17,6 +17,7 @@ import {
   ACCEPTED_IMAGE_TYPES,
   processImageFiles,
 } from "~/lib/image-utils";
+import { toast } from "sonner";
 import type { PropertyImage } from "~/lib/data";
 import {
   uploadPropertyImage,
@@ -228,8 +229,26 @@ export function ImageGallery({
 
     try {
       // Process files to convert any HEIC images to JPEG
-      const processedFiles = await processImageFiles(Array.from(files));
+      const { files: processedFiles, failedFiles } = await processImageFiles(
+        Array.from(files),
+      );
+
+      // Show toast for failed conversions
+      if (failedFiles.length > 0) {
+        const failedList = failedFiles.join(", ");
+        toast.error(
+          `No se pudieron convertir ${failedFiles.length} archivo(s) HEIC: ${failedList}. Intenta convertirlos manualmente a JPG.`,
+          { duration: 6000 },
+        );
+      }
+
       setIsConverting(false);
+
+      // If no files were successfully processed, exit early
+      if (processedFiles.length === 0) {
+        return;
+      }
+
       setIsUploading(true);
 
       const uploadPromises = processedFiles.map(async (file, index) => {

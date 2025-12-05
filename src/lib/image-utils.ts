@@ -331,7 +331,8 @@ export function isHeicFile(file: File): boolean {
 }
 
 /**
- * Convert a HEIC file to JPEG (for browser compatibility)
+ * Convert a HEIC file to JPEG using server-side conversion
+ * Uses sharp on the server which has updated libheif support for iOS 17/18
  * Returns a new File object with the converted image
  */
 export async function convertHeicToJpeg(file: File): Promise<File> {
@@ -339,47 +340,67 @@ export async function convertHeicToJpeg(file: File): Promise<File> {
     return file;
   }
 
-  // Dynamic import to avoid SSR issues (heic2any uses browser APIs)
-  const heic2any = (await import("heic2any")).default;
-
   try {
-    const convertedBlob = await heic2any({
-      blob: file,
-      toType: "image/jpeg",
-      quality: 0.9,
+    // Use server-side conversion with sharp (supports iOS 17/18 HEIC)
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("/api/convert-heic", {
+      method: "POST",
+      body: formData,
     });
 
-    // heic2any can return a single blob or array of blobs
-    const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-
-    if (!blob) {
-      throw new Error("HEIC conversion returned empty result");
+    if (!response.ok) {
+      const errorData = (await response.json()) as { error?: string };
+      throw new Error(errorData.error ?? "Server conversion failed");
     }
 
-    // Create a new filename with .jpg extension
-    const newFileName = file.name
-      .replace(/\.heic$/i, ".jpg")
-      .replace(/\.heif$/i, ".jpg");
+    // Get the converted image blob
+    const convertedBlob = await response.blob();
+
+    // Get the new filename from response headers or generate it
+    const newFileName =
+      response.headers.get("X-New-Filename") ??
+      file.name.replace(/\.heic$/i, ".jpg").replace(/\.heif$/i, ".jpg");
 
     // Create a new File object from the blob
-    const convertedFile = new File([blob], newFileName, {
+    const convertedFile = new File([convertedBlob], newFileName, {
       type: "image/jpeg",
       lastModified: file.lastModified,
     });
 
     return convertedFile;
   } catch (error) {
-    console.error("Error converting HEIC to JPEG:", error);
-    throw new Error(`Failed to convert HEIC image: ${file.name}`);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    console.error(
+      `Error converting HEIC to JPEG (${file.name}):`,
+      errorMessage,
+      error,
+    );
+    throw new Error(
+      `Failed to convert HEIC image: ${file.name}. Reason: ${errorMessage}`,
+    );
   }
 }
 
 /**
- * Process a list of files, converting any HEIC files to JPEG
- * Returns a new array with converted files
+ * Result from processing image files, including any failures
  */
-export async function processImageFiles(files: File[]): Promise<File[]> {
+export interface ProcessImageFilesResult {
+  files: File[];
+  failedFiles: string[];
+}
+
+/**
+ * Process a list of files, converting any HEIC files to JPEG
+ * Returns processed files and a list of files that failed to convert
+ */
+export async function processImageFiles(
+  files: File[],
+): Promise<ProcessImageFilesResult> {
   const processedFiles: File[] = [];
+  const failedFiles: string[] = [];
 
   for (const file of files) {
     if (isHeicFile(file)) {
@@ -388,6 +409,7 @@ export async function processImageFiles(files: File[]): Promise<File[]> {
         processedFiles.push(convertedFile);
       } catch (error) {
         console.error(`Failed to convert ${file.name}:`, error);
+        failedFiles.push(file.name);
         // Skip files that fail to convert
       }
     } else {
@@ -395,5 +417,5 @@ export async function processImageFiles(files: File[]): Promise<File[]> {
     }
   }
 
-  return processedFiles;
+  return { files: processedFiles, failedFiles };
 }

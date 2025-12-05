@@ -175,15 +175,66 @@ export function PushToTalkWhisperButton({
       formData.append("language", language);
       formData.append("response_format", "json");
 
-      // Send to API
-      const response = await fetch("/api/whisper/transcribe", {
-        method: "POST",
-        body: formData,
-      });
+      // Send to API with timeout for mobile networks
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+
+      let response: Response;
+      try {
+        response = await fetch("/api/whisper/transcribe", {
+          method: "POST",
+          body: formData,
+          signal: controller.signal,
+        });
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        // Handle network-specific errors
+        if (fetchError instanceof Error) {
+          if (fetchError.name === "AbortError") {
+            toast.error("Tiempo de espera agotado. Verifica tu conexión e intenta de nuevo.");
+            return;
+          }
+          if (fetchError.message.includes("network") || fetchError.message.includes("fetch")) {
+            toast.error("Error de conexión. Verifica que tienes internet.");
+            return;
+          }
+        }
+        throw fetchError;
+      }
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`API error: ${error}`);
+        // Parse error response for more specific messages
+        let errorMessage = "Error del servidor";
+        try {
+          const errorData = await response.json() as { error?: string; type?: string };
+          if (errorData.error) {
+            // Map common API errors to user-friendly messages
+            if (errorData.error.includes("audio") || errorData.error.includes("format")) {
+              errorMessage = "Formato de audio no compatible. Intenta grabar de nuevo.";
+            } else if (errorData.error.includes("size") || errorData.error.includes("large")) {
+              errorMessage = "Audio demasiado largo. Intenta con una grabación más corta.";
+            } else if (errorData.error.includes("rate") || errorData.error.includes("limit")) {
+              errorMessage = "Demasiadas solicitudes. Espera unos segundos.";
+            } else if (errorData.type === "invalid_request_error") {
+              errorMessage = "Error en la solicitud. Intenta grabar de nuevo.";
+            } else {
+              errorMessage = errorData.error;
+            }
+          }
+        } catch {
+          // If JSON parsing fails, use status-based message
+          if (response.status === 413) {
+            errorMessage = "Audio demasiado largo. Intenta con una grabación más corta.";
+          } else if (response.status === 429) {
+            errorMessage = "Demasiadas solicitudes. Espera unos segundos.";
+          } else if (response.status >= 500) {
+            errorMessage = "Error del servidor. Intenta de nuevo en unos segundos.";
+          }
+        }
+        console.error("API error:", { status: response.status, message: errorMessage });
+        toast.error(errorMessage);
+        return;
       }
 
       const data = await response.json() as { text?: string };
@@ -192,11 +243,18 @@ export function PushToTalkWhisperButton({
         onTranscript(data.text);
         toast.success("Audio transcrito correctamente");
       } else {
-        toast.error("No se pudo transcribir el audio");
+        toast.error("No se detectó audio claro. Intenta hablar más cerca del micrófono.");
       }
     } catch (error) {
       console.error("Processing error:", error);
-      toast.error("Error al procesar el audio");
+      // Provide more specific error messages based on error type
+      if (error instanceof TypeError) {
+        toast.error("Error de conexión. Verifica tu internet e intenta de nuevo.");
+      } else if (error instanceof Error && error.message.includes("API")) {
+        toast.error("Error del servicio de transcripción. Intenta de nuevo.");
+      } else {
+        toast.error("Error al procesar el audio. Intenta grabar de nuevo.");
+      }
     } finally {
       setIsProcessing(false);
     }
