@@ -3,6 +3,8 @@
  * Validates property listing fields and categorizes them by importance
  */
 
+import { getSquareMeter } from "~/lib/properties/area-utils";
+
 export type PropertyType = "piso" | "casa" | "local" | "solar" | "garaje";
 
 export interface FieldRule {
@@ -95,17 +97,11 @@ export const fieldRules: FieldRule[] = [
     importance: "mandatory",
     category: "Detalles de la Propiedad",
     applicablePropertyTypes: ["piso", "casa", "local", "solar"],
-    validator: (v, listing) => {
-      // For solar properties, allow builtSurfaceArea as fallback
-      if (listing?.propertyType === "solar") {
-        const squareMeter = v !== null && v !== undefined && Number(v) > 0;
-        const builtSurfaceArea = listing.builtSurfaceArea !== null &&
-                                  listing.builtSurfaceArea !== undefined &&
-                                  Number(listing.builtSurfaceArea) > 0;
-        return squareMeter || builtSurfaceArea;
-      }
-      // For other property types, only check squareMeter
-      return v !== null && v !== undefined && Number(v) > 0;
+    validator: (_v, listing) => {
+      // Use bidirectional fallback for all property types
+      if (!listing) return false;
+      const areaValue = getSquareMeter(listing as { squareMeter?: number | null; builtSurfaceArea?: string | number | null });
+      return areaValue !== null && areaValue > 0;
     },
   },
 

@@ -14,6 +14,7 @@ import {
 
 import type { PropertyListing } from "~/types/property-listing";
 import { navigateToPage } from "~/lib/navigation";
+import { getSquareMeter } from "~/lib/properties/area-utils";
 
 interface Agent {
   id: string;
@@ -51,23 +52,9 @@ export function PropertySummaryCard({
   const shouldShowBedsAndBaths = !isGarageOrSolar;
   const isLocal = propertyType === "local";
   
-  // Helper to safely convert to number (handles string decimals from DB)
-  const toNumber = (value: unknown): number | null => {
-    if (value == null) return null;
-    if (typeof value === "number") return isNaN(value) ? null : value;
-    if (typeof value === "string") {
-      const parsed = parseFloat(value);
-      return isNaN(parsed) ? null : parsed;
-    }
-    return null;
-  };
+  // Use bidirectional fallback for area values
+  const rawAreaValue = getSquareMeter(listing);
 
-  // Use fallback pattern for all property types: squareMeter ?? builtSurfaceArea
-  // Convert both to numbers first to handle string decimals from database
-  const squareMeterNum = toNumber(listing.squareMeter);
-  const builtSurfaceAreaNum = toNumber(listing.builtSurfaceArea);
-  const rawAreaValue = squareMeterNum ?? builtSurfaceAreaNum;
-  
   const areaValue =
     propertyType === "solar" && rawAreaValue != null
       ? Math.round(rawAreaValue)

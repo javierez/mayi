@@ -48,7 +48,7 @@ export default function RegistrationProgressBar({
         {/* Progress Line */}
         <div className="absolute left-0 right-0 top-4 z-0 h-0.5 bg-gray-200">
           <motion.div
-            className="h-full bg-gradient-to-r from-blue-400 to-yellow-300"
+            className="h-full bg-gradient-to-r from-amber-400 to-rose-400"
             initial={{ width: 0 }}
             animate={{ width: `${progressPercentage}%` }}
             transition={{ duration: 0.5, ease: "easeOut" }}
@@ -91,9 +91,9 @@ export default function RegistrationProgressBar({
                 <motion.div
                   className={`relative flex h-8 w-8 items-center justify-center rounded-full shadow transition-all duration-300 ${
                     isCompleted
-                      ? "bg-gradient-to-r from-blue-400 to-yellow-300 shadow-lg"
+                      ? "bg-gradient-to-r from-amber-400 to-rose-400 shadow-lg"
                       : isCurrent
-                        ? "bg-gradient-to-r from-blue-400 to-yellow-300 shadow-md ring-2 ring-blue-200 ring-offset-2"
+                        ? "bg-gradient-to-r from-amber-400 to-rose-400 shadow-md ring-2 ring-amber-200 ring-offset-2"
                         : "border-2 border-gray-300 bg-gray-100"
                   } ${
                     isClickable

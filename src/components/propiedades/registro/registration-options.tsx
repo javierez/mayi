@@ -12,6 +12,7 @@ export interface RegistrationOption {
   gradient: string;
   bgActive: string;
   action: () => void;
+  comingSoon?: boolean;
 }
 
 interface RegistrationOptionsProps {
@@ -56,6 +57,7 @@ export function RegistrationOptions({
       gradient: "from-amber-400 to-rose-400",
       bgActive: "from-amber-50 to-rose-50",
       action: () => console.log("Open recording panel"),
+      comingSoon: true,
     },
     {
       id: "upload",
@@ -71,6 +73,7 @@ export function RegistrationOptions({
       gradient: "from-amber-400 to-rose-400",
       bgActive: "from-amber-50 to-rose-50",
       action: () => console.log("Open upload panel"),
+      comingSoon: true,
     },
   ];
 
@@ -83,23 +86,38 @@ export function RegistrationOptions({
     >
       {options.map((option) => {
         const isActive = activeOption === option.id;
+        const isDisabled = option.comingSoon;
 
         return (
           <button
             key={option.id}
-            onClick={() => onToggleOption(option.id)}
+            onClick={() => !isDisabled && onToggleOption(option.id)}
+            disabled={isDisabled}
             className={cn(
               "relative flex items-center justify-center rounded-xl px-4 py-3 transition-all duration-200 sm:px-6 sm:py-4",
-              "hover:scale-[1.02]",
-              isActive
-                ? `bg-gradient-to-br ${option.bgActive} shadow-lg`
-                : "bg-gray-50 shadow hover:shadow-lg",
+              isDisabled
+                ? "cursor-not-allowed bg-gray-100 opacity-60"
+                : "hover:scale-[1.02]",
+              !isDisabled &&
+                (isActive
+                  ? `bg-gradient-to-br ${option.bgActive} shadow-lg`
+                  : "bg-gray-50 shadow hover:shadow-lg"),
             )}
           >
+            {/* Coming Soon Badge */}
+            {option.comingSoon && (
+              <span className="absolute -right-1 -top-1 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 px-2 py-0.5 text-[10px] font-semibold text-white shadow-sm">
+                Muy pronto
+              </span>
+            )}
             <span
               className={cn(
                 "text-center text-xs font-bold uppercase leading-tight tracking-widest transition-colors sm:text-sm",
-                isActive ? "text-gray-900" : "text-gray-600",
+                isDisabled
+                  ? "text-gray-400"
+                  : isActive
+                    ? "text-gray-900"
+                    : "text-gray-600",
               )}
             >
               {option.title}

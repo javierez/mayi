@@ -10,6 +10,7 @@ import {
   getPropertyTypeDisplayName,
   type PropertyType,
 } from "~/types/property-types";
+import { getSquareMeter, getBuiltSurfaceArea } from "~/lib/properties/area-utils";
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -329,7 +330,7 @@ ${EXAMPLES_FILE_ID ? `CRITICAL: Before writing, carefully study the uploaded exa
     Property Type: ${propertyTypeDisplay}
 
     Property Specifications:
-    ${relevantListing.propertyType !== "garaje" ? `Size: ${relevantListing.squareMeter ?? "N/A"}m²` : `Built Area: ${relevantListing.builtSurfaceArea ?? "N/A"}m²`}
+    ${relevantListing.propertyType !== "garaje" ? `Size: ${getSquareMeter(relevantListing) ?? "N/A"}m²` : `Built Area: ${getBuiltSurfaceArea(relevantListing) ?? "N/A"}m²`}
     ${relevantListing.propertyType !== "garaje" && relevantListing.propertyType !== "solar" ? `Bedrooms: ${relevantListing.bedrooms ?? "N/A"}` : ""}
     ${relevantListing.propertyType !== "garaje" && relevantListing.propertyType !== "solar" ? `Bathrooms: ${relevantListing.bathrooms ?? "N/A"}` : ""}
 

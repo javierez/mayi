@@ -277,7 +277,7 @@ export const properties = pgTable("properties", {
   heatingType: varchar("heating_type", { length: 50 }), // 'Gas natural' | 'Calefacción central' | 'Eléctrica' | 'gas' | 'induccion' | 'vitroceramica' | 'carbon' | 'electrico' | 'mixto'
 
   // Basic Amenities
-  hasElevator: boolean("has_elevator").default(false),
+  hasElevator: boolean("has_elevator"),
   hasGarage: boolean("has_garage").default(false),
   hasStorageRoom: boolean("has_storage_room").default(false),
 
@@ -473,8 +473,12 @@ export const listings = pgTable("listings", {
   habitaclia: boolean("habitaclia").default(false), // Habitaclia.com publication status
   pisoscom: boolean("pisoscom").default(false), // Pisos.com publication status
   yaencontre: boolean("yaencontre").default(false), // Yaencontre.com publication status
+  enalquiler: boolean("enalquiler").default(false), // EnAlquiler.com publication status
   milanuncios: boolean("milanuncios").default(false), // Milanuncios.com publication status
-  listglobally: boolean("listglobally").default(false), // ListGlobally international portal
+  kyero: boolean("kyero").default(false), // Kyero international portal (Adevinta)
+  spainhouses: boolean("spainhouses").default(false), // Spainhouses international portal (Adevinta)
+  thinkspain: boolean("thinkspain").default(false), // Think Spain portal (Adevinta)
+  listglobally: boolean("listglobally").default(false), // ListGlobally international portal (Adevinta)
 
   // Fotocasa-specific settings (explicit fields for better performance and type safety)
   fcLocationVisibility: smallint("fc_location_visibility").default(1).notNull(), // 1=Exact, 2=Street, 3=Zone
@@ -499,7 +503,11 @@ export const listings = pgTable("listings", {
   habitacliaProps: jsonb("habitaclia_props").default({}), // Portal-specific settings for Habitaclia
   pisoscomProps: jsonb("pisoscom_props").default({}), // Portal-specific settings for Pisos.com
   yaencontreProps: jsonb("yaencontre_props").default({}), // Portal-specific settings for Yaencontre
+  enalquilerProps: jsonb("enalquiler_props").default({}), // Portal-specific settings for EnAlquiler
   milanunciosProps: jsonb("milanuncios_props").default({}), // Portal-specific settings for Milanuncios
+  kyeroProps: jsonb("kyero_props").default({}), // Portal-specific settings for Kyero
+  spainhousesProps: jsonb("spainhouses_props").default({}), // Portal-specific settings for Spainhouses
+  thinkspainProps: jsonb("thinkspain_props").default({}), // Portal-specific settings for Think Spain
   listgloballyProps: jsonb("listglobally_props").default({}), // Portal-specific settings for ListGlobally
 
   // Progress Stage Tracking

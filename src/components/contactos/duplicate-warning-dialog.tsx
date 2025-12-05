@@ -76,14 +76,14 @@ export function DuplicateWarningDialog({
               key={duplicate.contactId}
               onClick={() => setSelectedContactId(duplicate.contactId)}
               className={cn(
-                "cursor-pointer rounded-lg border-2 p-4 transition-all hover:border-amber-300 hover:bg-amber-50",
+                "relative cursor-pointer rounded-lg border p-3 transition-all hover:border-gray-300 hover:bg-gray-50/50",
                 selectedContactId === duplicate.contactId
-                  ? "border-amber-500 bg-amber-50"
+                  ? "border-gray-300 bg-gray-50/70 ring-1 ring-gray-200"
                   : "border-gray-200 bg-white",
               )}
             >
               <div className="flex items-start justify-between">
-                <div className="flex-1 space-y-2">
+                <div className="space-y-1">
                   {/* Contact Name */}
                   <div className="flex items-center space-x-2">
                     <User className="h-4 w-4 text-gray-500" />
@@ -94,9 +94,9 @@ export function DuplicateWarningDialog({
 
                   {/* Contact Email */}
                   {duplicate.email && (
-                    <div className="flex items-center space-x-2">
-                      <Mail className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-700">
+                    <div className="flex items-center space-x-1.5">
+                      <Mail className="h-3 w-3 text-gray-400" />
+                      <span className="text-xs text-gray-500">
                         {duplicate.email}
                       </span>
                     </div>
@@ -104,27 +104,25 @@ export function DuplicateWarningDialog({
 
                   {/* Contact Phone */}
                   {duplicate.phone && (
-                    <div className="flex items-center space-x-2">
-                      <Phone className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-700">
+                    <div className="flex items-center space-x-1.5">
+                      <Phone className="h-3 w-3 text-gray-400" />
+                      <span className="text-xs text-gray-500">
                         {duplicate.phone}
                       </span>
                     </div>
                   )}
-
-                  {/* Match Reason */}
-                  <div className="mt-2">
-                    <span className="inline-block rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-800">
-                      {duplicate.matchReason}
-                    </span>
-                  </div>
                 </div>
 
                 {/* Selection Indicator */}
                 {selectedContactId === duplicate.contactId && (
-                  <CheckCircle2 className="h-5 w-5 text-amber-500" />
+                  <CheckCircle2 className="h-7 w-7 text-emerald-500 shrink-0" />
                 )}
               </div>
+
+              {/* Match Reason - Bottom Right (absolute) */}
+              <span className="absolute bottom-2 right-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800">
+                {duplicate.matchReason}
+              </span>
             </div>
           ))}
         </div>

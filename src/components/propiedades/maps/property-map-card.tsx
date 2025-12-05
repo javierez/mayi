@@ -1,4 +1,5 @@
 import type { ListingOverview } from "~/types/listing";
+import { getSquareMeter } from "~/lib/properties/area-utils";
 
 interface PropertyMapCardProps {
   listing: ListingOverview;
@@ -51,7 +52,7 @@ export function PropertyMapCard({ listing }: PropertyMapCardProps) {
   const bathrooms = listing.bathrooms
     ? Math.floor(Number(listing.bathrooms))
     : "-";
-  const sqm = (listing.squareMeter ?? listing.builtSurfaceArea) ?? "-";
+  const sqm = getSquareMeter(listing) ?? "-";
   const listingUrl = `/propiedades/${listing.listingId}`;
   const propertyTypeLabel = getPropertyTypeLabel(listing.propertyType);
   const listingTypeLabel = formatListingType(listing.listingType);

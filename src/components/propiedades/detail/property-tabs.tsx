@@ -91,6 +91,13 @@ interface PropertyTabsProps {
     idealista?: boolean | null;
     habitaclia?: boolean | null;
     milanuncios?: boolean | null;
+    pisoscom?: boolean | null;
+    yaencontre?: boolean | null;
+    enalquiler?: boolean | null;
+    kyero?: boolean | null;
+    spainhouses?: boolean | null;
+    thinkspain?: boolean | null;
+    listglobally?: boolean | null;
     publishToWebsite?: boolean | null;
     hasCartel?: boolean | null;
     enEscaparate?: boolean | null;
@@ -513,6 +520,9 @@ export function PropertyTabs({
     yaencontre?: boolean;
     enalquiler?: boolean;
     kyero?: boolean;
+    spainhouses?: boolean;
+    thinkspain?: boolean;
+    listglobally?: boolean;
     publishToWebsite?: boolean;
     hasCartel?: boolean;
     enEscaparate?: boolean;
@@ -526,6 +536,13 @@ export function PropertyTabs({
       idealista: updatedPortalValues.idealista ?? prev.idealista,
       habitaclia: updatedPortalValues.habitaclia ?? prev.habitaclia,
       milanuncios: updatedPortalValues.milanuncios ?? prev.milanuncios,
+      pisoscom: updatedPortalValues.pisoscom ?? prev.pisoscom,
+      yaencontre: updatedPortalValues.yaencontre ?? prev.yaencontre,
+      enalquiler: updatedPortalValues.enalquiler ?? prev.enalquiler,
+      kyero: updatedPortalValues.kyero ?? prev.kyero,
+      spainhouses: updatedPortalValues.spainhouses ?? prev.spainhouses,
+      thinkspain: updatedPortalValues.thinkspain ?? prev.thinkspain,
+      listglobally: updatedPortalValues.listglobally ?? prev.listglobally,
       publishToWebsite: updatedPortalValues.publishToWebsite ?? prev.publishToWebsite,
       hasCartel: updatedPortalValues.hasCartel ?? prev.hasCartel,
       enEscaparate: updatedPortalValues.enEscaparate ?? prev.enEscaparate,
@@ -810,6 +827,13 @@ export function PropertyTabs({
             idealista={listing.idealista ?? undefined}
             habitaclia={listing.habitaclia ?? undefined}
             milanuncios={listing.milanuncios ?? undefined}
+            pisoscom={listing.pisoscom ?? undefined}
+            yaencontre={listing.yaencontre ?? undefined}
+            enalquiler={listing.enalquiler ?? undefined}
+            kyero={listing.kyero ?? undefined}
+            spainhouses={listing.spainhouses ?? undefined}
+            thinkspain={listing.thinkspain ?? undefined}
+            listglobally={listing.listglobally ?? undefined}
             publishToWebsite={listing.publishToWebsite ?? undefined}
             hasCartel={listing.hasCartel ?? undefined}
             enEscaparate={listing.enEscaparate ?? undefined}

@@ -21,6 +21,7 @@ import {
 } from "~/components/contactos/contact-config";
 import { PropertyImagePlaceholder } from "./PropertyImagePlaceholder";
 import { Button } from "~/components/ui/button";
+import { getSquareMeter } from "~/lib/properties/area-utils";
 
 interface CompactPropertyCardProps {
   listing: {
@@ -153,10 +154,10 @@ export function CompactPropertyCard({
                 <span>{Math.floor(Number(listing.bathrooms))}</span>
               </div>
             )}
-            {(listing.squareMeter ?? listing.builtSurfaceArea) != null && (
+            {getSquareMeter(listing) != null && (
               <div className="flex items-center gap-1">
                 <Maximize className="h-3 w-3" />
-                <span>{(listing.squareMeter ?? listing.builtSurfaceArea)}m²</span>
+                <span>{getSquareMeter(listing)}m²</span>
               </div>
             )}
           </div>

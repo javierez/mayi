@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { ConfirmPublishDialog } from "./confirm-publish-dialog";
+import { getSquareMeter } from "~/lib/properties/area-utils";
 
 interface SharePropertyModalProps {
   open: boolean;
@@ -99,9 +100,7 @@ export function SharePropertyModal({
     const baths = property.bathrooms
       ? Math.floor(Number(property.bathrooms))
       : 0;
-    const sqm = Math.round(
-      Number(property.squareMeter ?? property.builtSurfaceArea ?? 0),
-    );
+    const sqm = getSquareMeter(property) ?? 0;
 
     switch (format) {
       case "simple":

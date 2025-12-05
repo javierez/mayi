@@ -51,6 +51,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { QuickContactModal } from "~/components/contactos/quick-contact-modal";
+import { getSquareMeter } from "~/lib/properties/area-utils";
 
 // Appointment form data interface from PRP
 interface AppointmentFormData {
@@ -1648,8 +1649,8 @@ export default function AppointmentForm({
                             `${selectedListing.bedrooms} hab`}
                           {selectedListing.bathrooms &&
                             ` • ${Math.floor(parseFloat(selectedListing.bathrooms))} baños`}
-                          {(selectedListing.squareMeter ?? selectedListing.builtSurfaceArea) &&
-                            ` • ${(selectedListing.squareMeter ?? selectedListing.builtSurfaceArea)}m²`}
+                          {getSquareMeter(selectedListing) &&
+                            ` • ${getSquareMeter(selectedListing)}m²`}
                         </div>
                       </div>
                       {/* Only show clear button if listing wasn't pre-selected via URL */}
@@ -1707,8 +1708,8 @@ export default function AppointmentForm({
                                     `${listing.bedrooms} hab`}
                                   {listing.bathrooms &&
                                     ` • ${Math.floor(parseFloat(listing.bathrooms))} baños`}
-                                  {(listing.squareMeter ?? listing.builtSurfaceArea) &&
-                                    ` • ${(listing.squareMeter ?? listing.builtSurfaceArea)}m²`}
+                                  {getSquareMeter(listing) &&
+                                    ` • ${getSquareMeter(listing)}m²`}
                                 </div>
                               </div>
                             </div>

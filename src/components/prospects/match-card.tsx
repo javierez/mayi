@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type { ProspectMatch, MatchAction } from "~/types/connection-matches";
 import { navigateToPage } from "~/lib/navigation";
+import { getSquareMeter } from "~/lib/properties/area-utils";
 
 interface MatchCardProps {
   match: ProspectMatch;
@@ -183,7 +184,7 @@ export const MatchCard = React.memo(function MatchCard({
             {/* Square meters */}
             <div className="flex items-center justify-center gap-0.5 text-gray-700">
               <SquareIcon className="h-3 w-3" />
-              <span>{(listing.properties.squareMeter ?? listing.properties.builtSurfaceArea) ?? "-"}m²</span>
+              <span>{getSquareMeter(listing.properties) ?? "-"}m²</span>
             </div>
           </div>
 

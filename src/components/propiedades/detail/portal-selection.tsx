@@ -16,6 +16,10 @@ import {
   updateFotocasa,
 } from "~/server/portals/fotocasa";
 import { savePortalChangesWithActivity } from "~/server/actions/portal-activity";
+import {
+  type AdevintaPortalId,
+  ADEVINTA_PORTAL_IDS,
+} from "~/lib/constants/adevinta-portals";
 import { triggerIdealistaExport } from "~/app/actions/listing-actions";
 
 interface Platform {
@@ -43,6 +47,8 @@ interface PortalSelectionProps {
   yaencontre?: boolean;
   enalquiler?: boolean;
   kyero?: boolean;
+  spainhouses?: boolean;
+  thinkspain?: boolean;
   listglobally?: boolean;
   // Additional listing fields
   publishToWebsite?: boolean;
@@ -82,6 +88,8 @@ interface PortalSelectionProps {
     yaencontre?: boolean;
     enalquiler?: boolean;
     kyero?: boolean;
+    spainhouses?: boolean;
+    thinkspain?: boolean;
     listglobally?: boolean;
     publishToWebsite?: boolean;
     hasCartel?: boolean;
@@ -101,6 +109,7 @@ const defaultPortalSettings = {
 };
 
 const platformConfig = [
+  // Portals Row 1: Main portals (indices 0-3)
   {
     id: "idealista",
     name: "Idealista",
@@ -114,6 +123,7 @@ const platformConfig = [
     logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-fotocasa-min.png",
     description: "Encuentra tu casa ideal con millones de anuncios",
     isDefault: defaultPortalSettings.fotocasa,
+    isAdevintaPortal: true,
   },
   {
     id: "habitaclia",
@@ -129,12 +139,14 @@ const platformConfig = [
     description: "Portal de anuncios clasificados líder en España",
     isDefault: defaultPortalSettings.milanuncios,
   },
+  // Portals Row 2: Secondary portals (indices 4-7)
   {
     id: "pisoscom",
     name: "Pisos.com",
     logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-pisos.png",
     description: "Tu portal inmobiliario de confianza",
     isDefault: false,
+    isAdevintaPortal: true,
   },
   {
     id: "yaencontre",
@@ -156,39 +168,59 @@ const platformConfig = [
     logo: "https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/kyerologo.webp",
     description: "Portal inmobiliario internacional",
     isDefault: false,
+    isAdevintaPortal: true,
   },
+  // Portals Row 3: International Adevinta portals (indices 8-10)
   {
     id: "listglobally",
     name: "ListGlobally",
     logo: "https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/logo-listglobally.png",
-    description: "Portal inmobiliario internacional",
+    description: "Distribución global de propiedades",
     isDefault: false,
+    isAdevintaPortal: true,
   },
+  {
+    id: "thinkspain",
+    name: "Think Spain",
+    logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-thinkspain.png",
+    description: "Portal para compradores británicos",
+    isDefault: false,
+    isAdevintaPortal: true,
+  },
+  {
+    id: "spainhouses",
+    name: "Spainhouses",
+    logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-spainhouses.png",
+    description: "Portal internacional para compradores extranjeros",
+    isDefault: false,
+    isAdevintaPortal: true,
+  },
+  // Utility toggles (indices 11-14) - rendered in first row
   {
     id: "publishToWebsite",
     name: "Publicar en Web",
-    logo: "/vestazoomin.jpeg", // Vesta logo from dashboard
+    logo: "/vestazoomin.jpeg",
     description: "Publicar propiedad en el sitio web",
     isDefault: false,
   },
   {
     id: "hasCartel",
     name: "Cartel Colocado",
-    logo: "", // Will use FileImage icon instead
+    logo: "",
     description: "Propiedad con cartel físico",
     isDefault: false,
   },
   {
     id: "enEscaparate",
     name: "En Escaparate",
-    logo: "", // Will use Store icon instead
+    logo: "",
     description: "Destacar propiedad en escaparate",
     isDefault: false,
   },
   {
     id: "hasKeys",
     name: "Tiene Llaves",
-    logo: "", // Will use icon instead
+    logo: "",
     description: "Tenemos las llaves de la propiedad",
     isDefault: false,
   },
@@ -205,6 +237,8 @@ export function PortalSelection({
   yaencontre = false,
   enalquiler = false,
   kyero = false,
+  spainhouses = false,
+  thinkspain = false,
   listglobally = false,
   publishToWebsite = false,
   hasCartel = false,
@@ -274,6 +308,8 @@ export function PortalSelection({
         yaencontre,
         enalquiler,
         kyero,
+        spainhouses,
+        thinkspain,
         listglobally,
         publishToWebsite,
         hasCartel,
@@ -333,6 +369,8 @@ export function PortalSelection({
     yaencontre,
     enalquiler,
     kyero,
+    spainhouses,
+    thinkspain,
     listglobally,
     publishToWebsite,
     hasCartel,
@@ -385,79 +423,115 @@ export function PortalSelection({
     setIsLoading(true);
 
     try {
-      const currentFotocasaState =
-        platforms.find((p) => p.id === "fotocasa")?.isActive ?? false;
+      // === ADEVINTA MULTI-PORTAL LOGIC ===
+      // Collect ALL enabled Adevinta portals from UI toggles
+      const enabledAdevintaPortals = ADEVINTA_PORTAL_IDS.filter((portalId) =>
+        platforms.find((p) => p.id === portalId)?.isActive,
+      );
+
+      // Previous Adevinta portal states from database
+      const previousAdevintaPortals: AdevintaPortalId[] = [];
+      if (fotocasa) previousAdevintaPortals.push("fotocasa");
+      if (pisoscom) previousAdevintaPortals.push("pisoscom");
+      if (kyero) previousAdevintaPortals.push("kyero");
+      if (spainhouses) previousAdevintaPortals.push("spainhouses");
+      if (thinkspain) previousAdevintaPortals.push("thinkspain");
+      if (listglobally) previousAdevintaPortals.push("listglobally");
+
+      // Check if any Adevinta portal changed
+      const adevintaPortalsChanged =
+        enabledAdevintaPortals.length !== previousAdevintaPortals.length ||
+        enabledAdevintaPortals.some((p) => !previousAdevintaPortals.includes(p)) ||
+        previousAdevintaPortals.some((p) => !enabledAdevintaPortals.includes(p));
+
+      // Is the listing currently published to Adevinta? (fotocasa=1 in DB means listing exists on API)
+      const isPublishedToAdevinta = fotocasa;
 
       // Debug logging
-      console.log("=== handleConfirmChanges DEBUG ===");
-      console.log(
-        "currentFotocasaState (from UI toggle):",
-        currentFotocasaState,
-      );
-      console.log("fotocasa prop (from database):", fotocasa);
-      console.log(
-        "Condition for POST (currentFotocasaState && !fotocasa):",
-        currentFotocasaState && !fotocasa,
-      );
-      console.log(
-        "Condition for DELETE (!currentFotocasaState && fotocasa):",
-        !currentFotocasaState && fotocasa,
-      );
+      console.log("=== handleConfirmChanges DEBUG (Multi-Portal) ===");
+      console.log("Enabled Adevinta portals (from UI):", enabledAdevintaPortals);
+      console.log("Previous Adevinta portals (from DB):", previousAdevintaPortals);
+      console.log("Is published to Adevinta (fotocasa DB):", isPublishedToAdevinta);
+      console.log("Adevinta portals changed:", adevintaPortalsChanged);
 
-      // Track if Fotocasa API call was successful
-      let fotocasaApiSuccess = true;
+      // Track if Adevinta API call was successful
+      let adevintaApiSuccess = true;
 
-      // Determine the operation based on current vs previous state
-      if (currentFotocasaState && !fotocasa) {
-        // fotocasa = 0, toggled ON → POST (publish)
-        console.log("✅ Publishing to Fotocasa (POST)...");
+      // Determine operation based on state
+      if (enabledAdevintaPortals.length > 0 && !isPublishedToAdevinta) {
+        // CASE 1: Not on Adevinta, enabling portals → POST
+        console.log("✅ Publishing to Adevinta portals (POST)...", enabledAdevintaPortals);
         try {
-          const fotocasaResult = await publishToFotocasa(
+          const result = await publishToFotocasa(
             Number(listingId),
-            // Parameters now optional - will read from database fields
+            undefined, // visibilityMode - will read from database
+            undefined, // hidePrice - will read from database
+            enabledAdevintaPortals,
           );
-          if (fotocasaResult.success) {
-            console.log("Successfully published to Fotocasa");
-            toast.success("Correctamente subido a Fotocasa");
+          if (result.success) {
+            console.log("Successfully published to Adevinta portals:", result.portals);
+            const portalNames = enabledAdevintaPortals
+              .map((id) => platformConfig.find((p) => p.id === id)?.name ?? id)
+              .join(", ");
+            toast.success(`Correctamente subido a: ${portalNames}`);
           } else {
-            console.error(
-              "Failed to publish to Fotocasa:",
-              fotocasaResult.error,
-            );
-            toast.error(
-              `Error al publicar en Fotocasa: ${fotocasaResult.error}`,
-            );
-            fotocasaApiSuccess = false;
+            console.error("Failed to publish to Adevinta:", result.error);
+            toast.error(`Error al publicar: ${result.error}`);
+            adevintaApiSuccess = false;
           }
         } catch (error) {
-          console.error("Error calling Fotocasa API:", error);
-          toast.error("Error al conectar con Fotocasa");
-          fotocasaApiSuccess = false;
+          console.error("Error calling Adevinta API:", error);
+          toast.error("Error al conectar con Adevinta");
+          adevintaApiSuccess = false;
         }
-      } else if (!currentFotocasaState && fotocasa) {
-        // fotocasa = 1, toggled OFF → DELETE (unpublish)
-        console.log("Deleting from Fotocasa (DELETE)...");
+      } else if (enabledAdevintaPortals.length > 0 && isPublishedToAdevinta && adevintaPortalsChanged) {
+        // CASE 2: Already on Adevinta, portal selection changed → PUT
+        console.log("✅ Updating Adevinta portals (PUT)...", enabledAdevintaPortals);
         try {
-          const fotocasaResult = await deleteFromFotocasa(Number(listingId));
-          if (fotocasaResult.success) {
-            console.log("Successfully deleted from Fotocasa");
-            toast.success("Borrado correctamente de Fotocasa");
+          const result = await updateFotocasa(
+            Number(listingId),
+            undefined, // visibilityMode - will read from database
+            undefined, // hidePrice - will read from database
+            enabledAdevintaPortals,
+          );
+          if (result.success) {
+            console.log("Successfully updated Adevinta portals:", result.portals);
+            const portalNames = enabledAdevintaPortals
+              .map((id) => platformConfig.find((p) => p.id === id)?.name ?? id)
+              .join(", ");
+            toast.success(`Portales actualizados: ${portalNames}`);
           } else {
-            console.error(
-              "Failed to delete from Fotocasa:",
-              fotocasaResult.error,
-            );
-            toast.error(
-              `Error al eliminar de Fotocasa: ${fotocasaResult.error}`,
-            );
-            fotocasaApiSuccess = false;
+            console.error("Failed to update Adevinta:", result.error);
+            toast.error(`Error al actualizar: ${result.error}`);
+            adevintaApiSuccess = false;
           }
         } catch (error) {
-          console.error("Error calling Fotocasa delete API:", error);
-          toast.error("Error al conectar con Fotocasa para eliminar");
-          fotocasaApiSuccess = false;
+          console.error("Error calling Adevinta update API:", error);
+          toast.error("Error al conectar con Adevinta");
+          adevintaApiSuccess = false;
+        }
+      } else if (enabledAdevintaPortals.length === 0 && isPublishedToAdevinta) {
+        // CASE 3: On Adevinta, all portals disabled → DELETE
+        console.log("Deleting from all Adevinta portals (DELETE)...");
+        try {
+          const result = await deleteFromFotocasa(Number(listingId));
+          if (result.success) {
+            console.log("Successfully deleted from all Adevinta portals");
+            toast.success("Borrado correctamente de todos los portales Adevinta");
+          } else {
+            console.error("Failed to delete from Adevinta:", result.error);
+            toast.error(`Error al eliminar: ${result.error}`);
+            adevintaApiSuccess = false;
+          }
+        } catch (error) {
+          console.error("Error calling Adevinta delete API:", error);
+          toast.error("Error al conectar con Adevinta para eliminar");
+          adevintaApiSuccess = false;
         }
       }
+
+      // Legacy variable for backward compatibility with rest of function
+      const fotocasaApiSuccess = adevintaApiSuccess;
 
       // Update database with portal configuration (excluding fotocasa status - handled by API)
       const portalUpdates = {
@@ -475,6 +549,10 @@ export function PortalSelection({
           platforms.find((p) => p.id === "enalquiler")?.isActive ?? false,
         kyero:
           platforms.find((p) => p.id === "kyero")?.isActive ?? false,
+        spainhouses:
+          platforms.find((p) => p.id === "spainhouses")?.isActive ?? false,
+        thinkspain:
+          platforms.find((p) => p.id === "thinkspain")?.isActive ?? false,
         listglobally:
           platforms.find((p) => p.id === "listglobally")?.isActive ?? false,
         publishToWebsite:
@@ -504,6 +582,9 @@ export function PortalSelection({
         yaencontreProps: {}, // Placeholder for future Yaencontre settings
         enalquilerProps: {}, // Placeholder for future EnAlquiler settings
         kyeroProps: {}, // Placeholder for future Kyero settings
+        spainhousesProps: {}, // Placeholder for future Spainhouses settings
+        thinkspainProps: {}, // Placeholder for future Think Spain settings
+        listgloballyProps: {}, // Placeholder for future ListGlobally settings
       };
 
       // Update the listing with the new portal values (except fotocasa, handled by API)
@@ -553,6 +634,8 @@ export function PortalSelection({
         yaencontre: "Yaencontre",
         enalquiler: "EnAlquiler",
         kyero: "Kyero",
+        spainhouses: "Spainhouses",
+        thinkspain: "Think Spain",
         listglobally: "ListGlobally",
         publishToWebsite: "Publicar en Web",
         hasCartel: "Cartel Colocado",
@@ -568,6 +651,8 @@ export function PortalSelection({
         yaencontre,
         enalquiler,
         kyero,
+        spainhouses,
+        thinkspain,
         listglobally,
         publishToWebsite,
         hasCartel,
@@ -662,10 +747,13 @@ export function PortalSelection({
 
       // Notify parent component of successfully saved portal values
       if (onPortalsSaved) {
+        // fotocasa DB field is true if any Adevinta portal is enabled
+        const newFotocasaState = adevintaApiSuccess
+          ? enabledAdevintaPortals.length > 0
+          : fotocasa; // Fallback to previous on API failure
+
         const updatedPortalValues = {
-          fotocasa: fotocasaApiSuccess
-            ? currentFotocasaState
-            : fotocasa, // Use API result or fallback to previous
+          fotocasa: newFotocasaState,
           idealista: portalUpdates.idealista,
           habitaclia: portalUpdates.habitaclia,
           milanuncios: portalUpdates.milanuncios,
@@ -673,6 +761,8 @@ export function PortalSelection({
           yaencontre: portalUpdates.yaencontre,
           enalquiler: portalUpdates.enalquiler,
           kyero: portalUpdates.kyero,
+          spainhouses: portalUpdates.spainhouses,
+          thinkspain: portalUpdates.thinkspain,
           listglobally: portalUpdates.listglobally,
           publishToWebsite: portalUpdates.publishToWebsite,
           hasCartel: portalUpdates.hasCartel,
@@ -927,7 +1017,9 @@ export function PortalSelection({
             // Fallback for missing logos
             const target = e.target as HTMLImageElement;
             target.style.display = "none";
-            target.parentElement!.innerHTML = `<div class="text-sm font-medium text-gray-500 h-full w-full flex items-center justify-center">${platform.name}</div>`;
+            if (target.parentElement) {
+              target.parentElement.innerHTML = `<div class="text-sm font-medium text-gray-500 h-full w-full flex items-center justify-center">${platform.name}</div>`;
+            }
           }}
         />
       );
@@ -978,7 +1070,7 @@ export function PortalSelection({
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.3 }}
         >
-          {platforms.slice(9, 13).map((platform, index) => (
+          {platforms.slice(11, 15).map((platform, index) => (
             <motion.div
               key={platform.id}
               initial={{ opacity: 0, y: 10 }}
@@ -1094,7 +1186,7 @@ export function PortalSelection({
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.3 }}
         >
-          {platforms.slice(0, 9).map((platform, index) => (
+          {platforms.slice(0, 11).map((platform, index) => (
             <motion.div
               key={platform.id}
               initial={{ opacity: 0, y: 10 }}
@@ -1122,8 +1214,11 @@ export function PortalSelection({
                   <div className="absolute left-2 top-2 h-2 w-2 rounded-full bg-orange-400"></div>
                 )}
 
-                {/* Refresh Button - Top Right Corner, Only on Hover */}
-                <div className="refresh-button absolute right-2 top-2 z-10 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                {/* Refresh Button - Top Right Corner, visible on hover or when refreshing */}
+                <div className={cn(
+                  "refresh-button absolute right-2 top-2 z-10 transition-opacity duration-200 group-hover:opacity-100",
+                  refreshingPlatforms[platform.id] ? "opacity-100" : "opacity-0"
+                )}>
                   <Button
                     variant="ghost"
                     size="sm"

@@ -40,6 +40,7 @@ export function PushToTalkWhisperButton({
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const recordingToastIdRef = useRef<string | number | undefined>(undefined);
+  const mimeTypeRef = useRef<string>("audio/webm");
 
   const MAX_RECORDING_DURATION = 300000; // 300 seconds (5 minutes)
 
@@ -57,6 +58,9 @@ export function PushToTalkWhisperButton({
       // Create MediaRecorder (browser will choose best format)
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
+
+      // Store mimeType now, before recorder is stopped and ref is nullified
+      mimeTypeRef.current = mediaRecorder.mimeType || "audio/webm";
 
       // Collect audio data
       mediaRecorder.ondataavailable = (event) => {
@@ -135,8 +139,8 @@ export function PushToTalkWhisperButton({
     try {
       setIsProcessing(true);
 
-      // Get the actual mimeType from MediaRecorder
-      const mimeType = mediaRecorderRef.current?.mimeType ?? "audio/webm";
+      // Use stored mimeType (saved before recorder was stopped)
+      const mimeType = mimeTypeRef.current;
 
       // Create blob with the actual mimeType
       const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
@@ -147,10 +151,22 @@ export function PushToTalkWhisperButton({
       }
 
       // Determine file extension from mime type
+      // iOS uses mp4/m4a, Android/Desktop Chrome use webm, Firefox uses ogg
       let extension = "webm";
-      if (mimeType.includes("mp4")) extension = "mp4";
-      else if (mimeType.includes("ogg")) extension = "ogg";
-      else if (mimeType.includes("wav")) extension = "wav";
+      if (mimeType.includes("mp4") || mimeType.includes("m4a") || mimeType.includes("aac")) {
+        extension = "mp4";
+      } else if (mimeType.includes("ogg")) {
+        extension = "ogg";
+      } else if (mimeType.includes("wav")) {
+        extension = "wav";
+      }
+
+      console.log("Audio recording info:", {
+        mimeType,
+        extension,
+        blobSize: audioBlob.size,
+        chunksCount: audioChunksRef.current.length,
+      });
 
       // Create form data
       const formData = new FormData();

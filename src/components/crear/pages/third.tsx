@@ -323,22 +323,23 @@ export default function ThirdPage({
   ) => {
     console.log("✅ [ThirdPage] Selected cadastral reference:", selectedRef);
 
-    // Update ONLY cadastral reference and addressDetails
+    // Update cadastral reference, addressDetails, AND property characteristics
     const updatedData = {
       cadastralReference: selectedRef.cadastralReference,
       addressDetails: selectedRef.addressDetails,
+      // Apply cadastral surface and year data automatically
+      totalSurface: selectedRef.builtSurfaceArea,
+      usefulSurface: selectedRef.builtSurfaceArea,
+      buildYear: selectedRef.yearBuilt,
     };
 
     // DO NOT update: address, postalCode, city, province, municipality, neighborhood
-    // These should remain as they are
+    // These should remain as they are (user entered via Google Places)
 
-    // Update form context with only the two allowed fields
     updateFormData(updatedData);
-
-    // Close modal
     setIsSearchModalOpen(false);
 
-    toast.success("Referencia catastral y detalles de dirección actualizados.");
+    toast.success("Referencia catastral y datos del inmueble actualizados.");
   };
 
   // Function to validate cadastral reference format

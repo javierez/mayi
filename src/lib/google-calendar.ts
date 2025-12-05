@@ -56,7 +56,7 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
 const REDIRECT_URI =
   process.env.NODE_ENV === "production"
-    ? "https://v0-vesta-eight.vercel.app/api/google/calendar/callback"
+    ? "https://vesta-crm.com/api/google/calendar/callback"
     : "http://localhost:3000/api/google/calendar/callback";
 
 // Calendar API scopes
@@ -403,7 +403,7 @@ export async function startWatchChannel(userId: string): Promise<boolean> {
 
     const channelId = `vesta-${userId}-${nanoid(8)}`;
     const webhookUrl =
-      "https://v0-vesta-eight.vercel.app/api/google/calendar/webhook";
+      "https://vesta-crm.com/api/google/calendar/webhook";
 
     const expiration = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 

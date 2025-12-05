@@ -44,6 +44,7 @@ import {
   type IdealistaCountry,
   type IdealistaDescriptionLanguage,
 } from "./idealista-mappings";
+import { getSquareMeter, getBuiltSurfaceArea } from "~/lib/properties/area-utils";
 
 // ============================================
 // S3 STORAGE
@@ -434,9 +435,9 @@ export async function buildIdealistaPropertyPayload(
   };
 
   // Build features
-  // Area fallback logic: use constructed area if available, otherwise use usable area and vice versa
-  const areaConstructed = listing.squareMeter ?? (listing.builtSurfaceArea ? Math.round(Number(listing.builtSurfaceArea)) : undefined);
-  const areaUsable = listing.builtSurfaceArea ? Math.round(Number(listing.builtSurfaceArea)) : (listing.squareMeter ?? undefined);
+  // Area fallback logic: use bidirectional fallback for area values
+  const areaConstructed = getSquareMeter(listing) ?? undefined;
+  const areaUsable = getBuiltSurfaceArea(listing) ?? undefined;
 
   const propertyFeatures: IdealistaFeatures = {
     featuresType: propertyType ?? "flat",

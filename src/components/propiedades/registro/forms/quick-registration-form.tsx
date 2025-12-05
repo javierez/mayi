@@ -91,9 +91,9 @@ interface Step {
 }
 
 const registrationSteps: Step[] = [
+  { id: "address", title: "Dirección" },
   { id: "basic", title: "Información Básica" },
   { id: "details", title: "Detalles de la Propiedad" },
-  { id: "address", title: "Dirección" },
 ];
 
 // Convert fetched database data to CompleteFormData format
@@ -499,15 +499,15 @@ function QuickRegistrationFormInner({ listingId }: QuickRegistrationFormProps) {
 
     const pageProps = {
       ...sharedPageProps,
-      onBack: step.id === "basic" && currentStep === 0 ? undefined : prevStep,
+      onBack: step.id === "address" && currentStep === 0 ? undefined : prevStep,
     };
 
     switch (step.id) {
-      case "basic":
-        return <ThirdPage {...pageProps} />;
-      case "details":
-        return <FirstPage {...pageProps} />;
       case "address":
+        return <ThirdPage {...pageProps} />;
+      case "basic":
+        return <FirstPage {...pageProps} />;
+      case "details":
         return <SecondPage {...pageProps} />;
       default:
         return (

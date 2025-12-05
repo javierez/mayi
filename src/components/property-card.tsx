@@ -22,6 +22,7 @@ import { formatListingType } from "./contactos/contact-config";
 import type { ListingOverview } from "~/types/listing";
 import { PropertyImagePlaceholder } from "./propiedades/PropertyImagePlaceholder";
 import { SharePropertyModal } from "./propiedades/share-property-modal";
+import { getSquareMeter } from "~/lib/properties/area-utils";
 
 type Listing = {
   // Listing fields
@@ -326,7 +327,7 @@ export const PropertyCard = React.memo(function PropertyCard({
               )}
             <div className="flex items-center">
               <SquareFoot className="mr-1 h-3.5 w-3.5" />
-              <span>{(listing.squareMeter ?? listing.builtSurfaceArea) ?? "-"} m²</span>
+              <span>{getSquareMeter(listing) ?? "-"} m²</span>
             </div>
           </div>
         </CardContent>

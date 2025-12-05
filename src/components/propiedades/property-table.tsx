@@ -33,6 +33,7 @@ import { Button } from "~/components/ui/button";
 import type { ListingOverview } from "~/types/listing";
 import { PropertyImagePlaceholder } from "./PropertyImagePlaceholder";
 import { SharePropertyModal } from "./share-property-modal";
+import { getSquareMeter } from "~/lib/properties/area-utils";
 
 interface PropertyTableProps {
   listings: ListingOverview[];
@@ -612,10 +613,10 @@ export const PropertyTable = React.memo(function PropertyTable({
                               </span>
                             </div>
                           )}
-                        {(listing.squareMeter ?? listing.builtSurfaceArea) !== null && (
+                        {getSquareMeter(listing) !== null && (
                           <div className="flex items-center text-sm text-muted-foreground">
                             <Square className="mr-1 h-4 w-4 flex-shrink-0" />
-                            <span>{Math.round(Number(listing.squareMeter ?? listing.builtSurfaceArea))}m²</span>
+                            <span>{getSquareMeter(listing)}m²</span>
                           </div>
                         )}
                       </div>

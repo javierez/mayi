@@ -18,6 +18,7 @@ import { InactiveUserBanner } from "~/components/auth/inactive-user-banner";
 import OnboardingModal from "~/components/onboarding/onboarding-modal";
 import { Toaster } from "sonner";
 import { TokenTrackerRing } from "~/components/layout/token-tracker-ring";
+import { StickyVestaButton } from "~/components/layout/sticky-vesta-button";
 import {
   Building2,
   Users,
@@ -778,6 +779,9 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
 
       {/* Toast Notifications */}
       <Toaster position="top-right" richColors />
+
+      {/* Sticky Vesta Button */}
+      <StickyVestaButton />
     </div>
   );
 };

@@ -32,6 +32,11 @@ import {
   logFotocasaUpdated,
   logFotocasaDeleted,
 } from "../queries/log-activity";
+import {
+  type AdevintaPortalId,
+  getPropertyPublications,
+} from "~/lib/constants/adevinta-portals";
+import { getSquareMeter, getBuiltSurfaceArea } from "~/lib/properties/area-utils";
 
 // Types
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -224,6 +229,7 @@ export async function buildFotocasaPayload(
   listingId: number,
   visibilityMode?: number, // Optional - will read from database if not provided
   hidePrice?: boolean, // Optional - will read from database if not provided
+  enabledAdevintaPortals?: AdevintaPortalId[], // Portals to publish to (defaults to fotocasa only)
 ): Promise<{ payload: FotocasaProperty; watermarkedKeys: string[] }> {
   try {
     // Get listing details and property images
@@ -458,13 +464,12 @@ export async function buildFotocasaPayload(
     // Build PropertyFeatures
     const propertyFeatures: PropertyFeature[] = [];
 
-    // Surface (FeatureId: 1) - use appropriate field based on property type with fallback
+    // Surface (FeatureId: 1) - use bidirectional fallback for area values
     // For "local" properties, prefer builtSurfaceArea, otherwise use squareMeter
-    // For other properties, prefer squareMeter, otherwise use builtSurfaceArea
     const surfaceValue =
       listing.propertyType === "local"
-        ? (listing.builtSurfaceArea ?? listing.squareMeter)
-        : (listing.squareMeter ?? listing.builtSurfaceArea);
+        ? getBuiltSurfaceArea(listing)
+        : getSquareMeter(listing);
 
     if (surfaceValue) {
       propertyFeatures.push({
@@ -1164,12 +1169,9 @@ export async function buildFotocasaPayload(
       PropertyFeature: propertyFeatures,
       PropertyContactInfo: propertyContactInfo,
       PropertyTransaction: propertyTransaction,
-      PropertyPublications: [
-        {
-          PublicationId: 31, // Fotocasa publication ID
-          PublicationTypeId: 2,
-        },
-      ],
+      PropertyPublications: getPropertyPublications(
+        enabledAdevintaPortals ?? ["fotocasa"],
+      ),
     };
 
     // Get watermarkedKeys from the tracking variable
@@ -1195,11 +1197,13 @@ export async function publishToFotocasa(
   listingId: number,
   visibilityMode?: number, // Optional - will read from database if not provided
   hidePrice?: boolean, // Optional - will read from database if not provided
+  enabledAdevintaPortals?: AdevintaPortalId[], // Portals to publish to (defaults to fotocasa only)
 ): Promise<{
   success: boolean;
   payload?: FotocasaProperty;
   error?: string;
   response?: unknown;
+  portals?: AdevintaPortalId[];
 }> {
   try {
     // Get account ID for the listing
@@ -1232,11 +1236,13 @@ export async function publishToFotocasa(
       finalHidePrice = finalHidePrice ?? listing.fcPriceVisibility ?? false;
     }
 
-    // Build the payload
+    // Build the payload with enabled portals
+    const portals = enabledAdevintaPortals ?? ["fotocasa"];
     const { payload, watermarkedKeys } = await buildFotocasaPayload(
       listingId,
       finalVisibilityMode,
       finalHidePrice,
+      portals,
     );
 
     // Prepare request headers
@@ -1324,6 +1330,7 @@ export async function publishToFotocasa(
         success: true,
         payload,
         response: responseData,
+        portals,
       };
     } else {
       const errorMessage =
@@ -1348,7 +1355,7 @@ export async function publishToFotocasa(
       };
     }
   } catch (error) {
-    console.error("Error publishing to Fotocasa:", error);
+    console.error("Error publishing to Adevinta portals:", error);
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
 
@@ -1368,14 +1375,16 @@ export async function publishToFotocasa(
   }
 }
 
-// Server action to update existing listing on Fotocasa
+// Server action to update existing listing on Adevinta portals (Fotocasa, Kyero, etc.)
 export async function updateFotocasa(
   listingId: number,
   visibilityMode?: number, // Optional - will read from database if not provided
   hidePrice?: boolean, // Optional - will read from database if not provided
+  enabledAdevintaPortals?: AdevintaPortalId[], // Portals to publish to (defaults to fotocasa only)
 ): Promise<{
   success: boolean;
   payload?: FotocasaProperty;
+  portals?: AdevintaPortalId[];
   error?: string;
   response?: unknown;
 }> {
@@ -1410,11 +1419,13 @@ export async function updateFotocasa(
       finalHidePrice = finalHidePrice ?? listing.fcPriceVisibility ?? false;
     }
 
-    // Build the payload (same as create operation)
+    // Build the payload with enabled portals (same as create operation)
+    const portals = enabledAdevintaPortals ?? ["fotocasa"];
     const { payload, watermarkedKeys } = await buildFotocasaPayload(
       listingId,
       finalVisibilityMode,
       finalHidePrice,
+      portals,
     );
 
     // Prepare request headers
@@ -1504,6 +1515,7 @@ export async function updateFotocasa(
         success: true,
         payload,
         response: responseData,
+        portals,
       };
     } else {
       const errorMessage =
