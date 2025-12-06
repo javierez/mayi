@@ -424,14 +424,12 @@ export async function buildIdealistaPropertyPayload(
     operationType,
     operationPrice: Math.round(Number(listing.price ?? 0)),
     // operationPriceCommunity only for SALE in Spain/Portugal per Idealista spec
-    ...(operationType === "sale" &&
-      listing.communityFees && {
-        operationPriceCommunity: Math.round(Number(listing.communityFees)),
-      }),
-    ...(operationType === "rent" &&
-      listing.depositMonths && {
-        operationDepositMonths: listing.depositMonths,
-      }),
+    ...(operationType === "sale" && listing.communityFees
+      ? { operationPriceCommunity: Math.round(Number(listing.communityFees)) }
+      : {}),
+    ...(operationType === "rent" && listing.depositMonths
+      ? { operationDepositMonths: listing.depositMonths }
+      : {}),
   };
 
   // Build features

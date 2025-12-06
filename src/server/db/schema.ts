@@ -383,6 +383,25 @@ export const properties = pgTable("properties", {
   plumbingType: varchar("plumbing_type", { length: 50 }), // 'cobre' | 'pvc' | 'multicapa' | 'galvanizado' | 'mixto' | 'no_disponible'
   plumbingStatus: varchar("plumbing_status", { length: 50 }), // 'nuevo' | 'buen_estado' | 'funcional' | 'necesita_actualizacion' | 'tiene_fugas' | 'necesita_reparacion' | 'no_disponible'
 
+  // Property Expenses - Taxes & Fees
+  ibi: decimal("ibi", { precision: 10, scale: 2 }), // IBI property tax (€/year)
+  garbageTax: decimal("garbage_tax", { precision: 10, scale: 2 }), // Garbage collection tax (€/year)
+  vadoPermanente: decimal("vado_permanente", { precision: 10, scale: 2 }), // Permanent driveway permit (€/year)
+
+  // Property Expenses - Community
+  communityFees: decimal("community_fees", { precision: 10, scale: 2 }), // HOA/community fees (€/month)
+  derrama: decimal("derrama", { precision: 10, scale: 2 }), // Special community assessment (€)
+
+  // Property Expenses - Utility Estimates
+  electricityEstimate: decimal("electricity_estimate", { precision: 10, scale: 2 }), // Estimated electricity (€/month)
+  gasEstimate: decimal("gas_estimate", { precision: 10, scale: 2 }), // Estimated gas (€/month)
+  waterEstimate: decimal("water_estimate", { precision: 10, scale: 2 }), // Estimated water (€/month)
+  centralHeatingFee: decimal("central_heating_fee", { precision: 10, scale: 2 }), // Central heating fee (€/month)
+  internetEstimate: decimal("internet_estimate", { precision: 10, scale: 2 }), // Estimated internet (€/month)
+
+  // Property Expenses - Insurance
+  homeInsurance: decimal("home_insurance", { precision: 10, scale: 2 }), // Home insurance (€/year)
+
   // Data Processing Fields
   scrapedText: varchar("scraped_text", { length: 1024 }), // S3 path for property scraped text data
 });
@@ -490,6 +509,14 @@ export const listings = pgTable("listings", {
   // Rental-specific fields (only for rent operations)
   rentalType: varchar("rental_type", { length: 20 }), // "residential" | "seasonal" | "short_term" - MUTUALLY EXCLUSIVE
   shortTermLicense: varchar("short_term_license", { length: 100 }), // Required if rentalType = "short_term"
+
+  // Rental Terms (deposit and guarantees)
+  securityDeposit: decimal("security_deposit", { precision: 10, scale: 2 }), // Security deposit amount (€)
+  additionalGuarantee: decimal("additional_guarantee", { precision: 10, scale: 2 }), // Additional guarantee amount (€)
+  bankGuaranteeRequired: boolean("bank_guarantee_required").default(false), // Bank guarantee requirement
+  managementFees: decimal("management_fees", { precision: 10, scale: 2 }), // Property management fees (€/month)
+  nonPaymentInsurance: boolean("non_payment_insurance").default(false), // Landlord's non-payment insurance
+  nonPaymentInsuranceAmount: decimal("non_payment_insurance_amount", { precision: 10, scale: 2 }), // Non-payment insurance cost (€/year)
 
   // Sale-specific fields (only for sale operations)
   occupationStatus: varchar("occupation_status", { length: 20 }), // "free" | "tenanted" | "bare_ownership" | "illegally_occupied"

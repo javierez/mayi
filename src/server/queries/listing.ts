@@ -1858,6 +1858,14 @@ export async function getListingDetails(listingId: number, accountId: number) {
         shortTermLicense: listings.shortTermLicense,
         occupationStatus: listings.occupationStatus,
         priceReferenceIndex: listings.priceReferenceIndex,
+        // Rental Terms - Deposit & Guarantees
+        securityDeposit: listings.securityDeposit,
+        additionalGuarantee: listings.additionalGuarantee,
+        bankGuaranteeRequired: listings.bankGuaranteeRequired,
+        // Rental Terms - Management & Insurance
+        managementFees: listings.managementFees,
+        nonPaymentInsurance: listings.nonPaymentInsurance,
+        nonPaymentInsuranceAmount: listings.nonPaymentInsuranceAmount,
         habitaclia: listings.habitaclia,
         pisoscom: listings.pisoscom,
         yaencontre: listings.yaencontre,
@@ -2043,6 +2051,22 @@ export async function getListingDetails(listingId: number, accountId: number) {
         privatePool: properties.privatePool,
         tennisCourt: properties.tennisCourt,
         communityArea: properties.communityArea, // For Fotocasa FeatureId 301
+
+        // Property Expenses - Taxes & Fees
+        ibi: properties.ibi,
+        garbageTax: properties.garbageTax,
+        vadoPermanente: properties.vadoPermanente,
+        // Property Expenses - Community
+        communityFees: properties.communityFees,
+        derrama: properties.derrama,
+        // Property Expenses - Utility Estimates
+        electricityEstimate: properties.electricityEstimate,
+        gasEstimate: properties.gasEstimate,
+        waterEstimate: properties.waterEstimate,
+        centralHeatingFee: properties.centralHeatingFee,
+        internetEstimate: properties.internetEstimate,
+        // Property Expenses - Insurance
+        homeInsurance: properties.homeInsurance,
 
         // Agent information - optimized to only needed fields
         agent: {

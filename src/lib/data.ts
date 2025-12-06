@@ -134,6 +134,21 @@ export type Property = {
   isDiafano?: boolean;
   hasEscaparate?: boolean;
   streetType?: string;
+  // Property Expenses - Taxes & Fees
+  ibi?: string;
+  garbageTax?: string;
+  vadoPermanente?: string;
+  // Property Expenses - Community
+  communityFees?: string;
+  derrama?: string;
+  // Property Expenses - Utility Estimates
+  electricityEstimate?: string;
+  gasEstimate?: string;
+  waterEstimate?: string;
+  centralHeatingFee?: string;
+  internetEstimate?: string;
+  // Property Expenses - Insurance
+  homeInsurance?: string;
 };
 
 export type Prospect = {
@@ -1091,6 +1106,14 @@ export type Listing = {
   occupationStatus?: string | null;
   // Catalonia-specific
   priceReferenceIndex?: string | null;
+  // Rental Terms - Deposit & Guarantees
+  securityDeposit?: string;
+  additionalGuarantee?: string;
+  bankGuaranteeRequired?: boolean;
+  // Rental Terms - Management & Insurance
+  managementFees?: string;
+  nonPaymentInsurance?: boolean;
+  nonPaymentInsuranceAmount?: string;
 };
 
 export type Contact = {

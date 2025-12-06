@@ -35,7 +35,7 @@ function isIOSSafari(): boolean {
   if (typeof navigator === "undefined") return false;
   const ua = navigator.userAgent;
   const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  const isSafari = /Safari/.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS/.test(ua);
+  const isSafari = ua.includes("Safari") && !["Chrome", "CriOS", "FxiOS", "EdgiOS"].some(browser => ua.includes(browser));
   return isIOS && isSafari;
 }
 

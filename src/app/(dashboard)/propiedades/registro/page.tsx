@@ -11,11 +11,10 @@ import {
 import { VoiceRecordingEnhanced } from "~/components/propiedades/registro/voice-recording-enhanced";
 import type { EnhancedExtractedPropertyData } from "~/types/textract-enhanced";
 import { FileUpload } from "~/components/propiedades/registro/file-upload";
-import { QuickForm } from "~/components/propiedades/registro/quick-form";
 
 export default function CapturaPage() {
   const router = useRouter();
-  const [activeOption, setActiveOption] = useState<string | null>("quick");
+  const [activeOption, setActiveOption] = useState<string | null>(null);
 
   // Handle voice recording completion
   const handleVoiceProcessingComplete = (
@@ -49,24 +48,8 @@ export default function CapturaPage() {
     setActiveOption("quick");
   };
 
+  // Only define options that need OptionDetails (recording needs instructions)
   const options: RegistrationOption[] = [
-    {
-      id: "quick",
-      title: "Formulario Rápido",
-      description:
-        "Captura los datos esenciales para crear la propiedad en un instante",
-      features: [
-        "Venta o alquiler, casa o piso",
-        "Información de contacto",
-        "Dirección y precio",
-      ],
-      gradient: "from-amber-400 to-rose-400",
-      bgActive: "from-amber-50 to-rose-50",
-      action: () => {
-        // The actual action is handled by the button in QuickForm component
-        console.log("Quick form option selected");
-      },
-    },
     {
       id: "recording",
       title: "Grabación de Voz",
@@ -103,6 +86,12 @@ export default function CapturaPage() {
   ];
 
   const toggleOption = (optionId: string) => {
+    // Quick form navigates directly
+    if (optionId === "quick") {
+      router.push("/propiedades/crear");
+      return;
+    }
+
     setActiveOption(activeOption === optionId ? null : optionId);
     const option = options.find((o) => o.id === optionId);
     if (option && optionId !== "upload") {
@@ -146,15 +135,14 @@ export default function CapturaPage() {
               className="mb-4 sm:mb-6 md:mb-8"
             />
 
-            {/* Expanded Content */}
-            {activeOption && activeOption !== "upload" && (
+            {/* Recording Option with Details */}
+            {activeOption === "recording" && (
               <div className="animate-in slide-in-from-top-4 duration-300">
                 <div className="rounded-2xl bg-gradient-to-br from-amber-50/50 to-rose-50/50 p-4 shadow-lg sm:p-6 md:p-8">
                   <div className="grid gap-4 sm:gap-6 md:gap-8 lg:grid-cols-3">
-                    {/* Description and Features */}
                     {(() => {
                       const selectedOption = options.find(
-                        (o) => o.id === activeOption,
+                        (o) => o.id === "recording",
                       );
                       return selectedOption ? (
                         <OptionDetails
@@ -163,18 +151,13 @@ export default function CapturaPage() {
                         />
                       ) : null;
                     })()}
-
-                    {/* Visual Preview */}
                     <div className="flex items-center justify-center lg:col-span-2">
-                      {activeOption === "recording" && (
-                        <VoiceRecordingEnhanced
-                          onProcessingComplete={handleVoiceProcessingComplete}
-                          onRetryRecording={handleRetryRecording}
-                          onManualEntry={handleManualEntry}
-                          referenceNumber="temp-voice-recording"
-                        />
-                      )}
-                      {activeOption === "quick" && <QuickForm />}
+                      <VoiceRecordingEnhanced
+                        onProcessingComplete={handleVoiceProcessingComplete}
+                        onRetryRecording={handleRetryRecording}
+                        onManualEntry={handleManualEntry}
+                        referenceNumber="temp-voice-recording"
+                      />
                     </div>
                   </div>
                 </div>

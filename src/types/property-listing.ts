@@ -186,6 +186,30 @@ export interface PropertyListing {
   tv?: boolean;
   stoneware?: boolean;
 
+  // Property Expenses - Taxes & Fees (properties table)
+  ibi?: number;
+  garbageTax?: number;
+  vadoPermanente?: number;
+  // Property Expenses - Community (properties table)
+  communityFees?: number;
+  derrama?: number;
+  // Property Expenses - Utilities (properties table)
+  electricityEstimate?: number;
+  gasEstimate?: number;
+  waterEstimate?: number;
+  centralHeatingFee?: number;
+  internetEstimate?: number;
+  // Property Expenses - Insurance (properties table)
+  homeInsurance?: number;
+
+  // Rental Terms (listings table)
+  securityDeposit?: number;
+  additionalGuarantee?: number;
+  bankGuaranteeRequired?: boolean;
+  managementFees?: number;
+  nonPaymentInsurance?: boolean;
+  nonPaymentInsuranceAmount?: number;
+
   // Content
   description?: string;
   shortDescription?: string;
@@ -378,6 +402,28 @@ export function convertDbListingToPropertyListing(
     fridge: getBoolean(dbListing.fridge),
     tv: getBoolean(dbListing.tv),
     stoneware: getBoolean(dbListing.stoneware),
+    // Property Expenses - Taxes & Fees
+    ibi: getNumber(dbListing.ibi),
+    garbageTax: getNumber(dbListing.garbageTax),
+    vadoPermanente: getNumber(dbListing.vadoPermanente),
+    // Property Expenses - Community
+    communityFees: getNumber(dbListing.communityFees),
+    derrama: getNumber(dbListing.derrama),
+    // Property Expenses - Utilities
+    electricityEstimate: getNumber(dbListing.electricityEstimate),
+    gasEstimate: getNumber(dbListing.gasEstimate),
+    waterEstimate: getNumber(dbListing.waterEstimate),
+    centralHeatingFee: getNumber(dbListing.centralHeatingFee),
+    internetEstimate: getNumber(dbListing.internetEstimate),
+    // Property Expenses - Insurance
+    homeInsurance: getNumber(dbListing.homeInsurance),
+    // Rental Terms
+    securityDeposit: getNumber(dbListing.securityDeposit),
+    additionalGuarantee: getNumber(dbListing.additionalGuarantee),
+    bankGuaranteeRequired: getBoolean(dbListing.bankGuaranteeRequired),
+    managementFees: getNumber(dbListing.managementFees),
+    nonPaymentInsurance: getBoolean(dbListing.nonPaymentInsurance),
+    nonPaymentInsuranceAmount: getNumber(dbListing.nonPaymentInsuranceAmount),
     description: (dbListing.description as string) ?? undefined,
     shortDescription: (dbListing.shortDescription as string) ?? undefined,
     agent:

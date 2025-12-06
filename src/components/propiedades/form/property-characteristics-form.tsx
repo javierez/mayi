@@ -27,6 +27,8 @@ import { AdditionalSpacesCard } from "./cards/additional-spaces-card";
 import { MaterialsCard } from "./cards/materials-card";
 import { RentalPropertiesCard } from "./cards/rental-properties-card";
 import { DescriptionCard } from "./cards/description-card";
+import { PropertyExpensesCard } from "./cards/property-expenses-card";
+import { RentalTermsCard } from "./cards/rental-terms-card";
 import { ContactInfoCard } from "./cards/contact-info-card";
 import { Separator } from "~/components/ui/separator";
 import {
@@ -83,7 +85,9 @@ type ModuleName =
   | "premiumFeatures"
   | "additionalSpaces"
   | "materials"
-  | "rentalProperties";
+  | "rentalProperties"
+  | "propertyExpenses"
+  | "rentalTerms";
 
 interface PropertyCharacteristicsFormProps {
   listing: PropertyListing;
@@ -156,6 +160,8 @@ export function PropertyCharacteristicsForm({
         materials: { saveState: "idle" as SaveState, hasChanges: false },
         description: { saveState: "idle" as SaveState, hasChanges: false },
         rentalProperties: { saveState: "idle" as SaveState, hasChanges: false },
+        propertyExpenses: { saveState: "idle" as SaveState, hasChanges: false },
+        rentalTerms: { saveState: "idle" as SaveState, hasChanges: false },
       };
 
       // Set basicInfo to modified if property type changed
@@ -612,6 +618,35 @@ export function PropertyCharacteristicsForm({
           };
           // No propertyData for rental properties - these are listing-specific
           break;
+
+        case "propertyExpenses":
+          // Property expenses go to properties table
+          propertyData = {
+            ibi,
+            garbageTax,
+            vadoPermanente,
+            communityFees,
+            derrama,
+            electricityEstimate,
+            gasEstimate,
+            waterEstimate,
+            centralHeatingFee,
+            internetEstimate,
+            homeInsurance,
+          };
+          break;
+
+        case "rentalTerms":
+          // Rental terms go to listings table
+          listingData = {
+            securityDeposit,
+            additionalGuarantee,
+            bankGuaranteeRequired,
+            managementFees,
+            nonPaymentInsurance,
+            nonPaymentInsuranceAmount,
+          };
+          break;
       }
 
       // Update property if there's property data
@@ -942,6 +977,8 @@ export function PropertyCharacteristicsForm({
     materials: true,
     description: true,
     rentalProperties: true,
+    propertyExpenses: true,
+    rentalTerms: true,
   });
 
   const toggleSection = (section: string) => {
@@ -1005,6 +1042,60 @@ export function PropertyCharacteristicsForm({
   const [furnitureQuality, setFurnitureQuality] = useState(
     listing.furnitureQuality ?? "",
   );
+
+  // Property Expenses - Taxes & Fees
+  const [ibi, setIbi] = useState<number | null>(listing.ibi ?? null);
+  const [garbageTax, setGarbageTax] = useState<number | null>(
+    listing.garbageTax ?? null,
+  );
+  const [vadoPermanente, setVadoPermanente] = useState<number | null>(
+    listing.vadoPermanente ?? null,
+  );
+  // Property Expenses - Community
+  const [communityFees, setCommunityFees] = useState<number | null>(
+    listing.communityFees ?? null,
+  );
+  const [derrama, setDerrama] = useState<number | null>(listing.derrama ?? null);
+  // Property Expenses - Utilities
+  const [electricityEstimate, setElectricityEstimate] = useState<number | null>(
+    listing.electricityEstimate ?? null,
+  );
+  const [gasEstimate, setGasEstimate] = useState<number | null>(
+    listing.gasEstimate ?? null,
+  );
+  const [waterEstimate, setWaterEstimate] = useState<number | null>(
+    listing.waterEstimate ?? null,
+  );
+  const [centralHeatingFee, setCentralHeatingFee] = useState<number | null>(
+    listing.centralHeatingFee ?? null,
+  );
+  const [internetEstimate, setInternetEstimate] = useState<number | null>(
+    listing.internetEstimate ?? null,
+  );
+  // Property Expenses - Insurance
+  const [homeInsurance, setHomeInsurance] = useState<number | null>(
+    listing.homeInsurance ?? null,
+  );
+
+  // Rental Terms
+  const [securityDeposit, setSecurityDeposit] = useState<number | null>(
+    listing.securityDeposit ?? null,
+  );
+  const [additionalGuarantee, setAdditionalGuarantee] = useState<number | null>(
+    listing.additionalGuarantee ?? null,
+  );
+  const [bankGuaranteeRequired, setBankGuaranteeRequired] = useState(
+    listing.bankGuaranteeRequired ?? false,
+  );
+  const [managementFees, setManagementFees] = useState<number | null>(
+    listing.managementFees ?? null,
+  );
+  const [nonPaymentInsurance, setNonPaymentInsurance] = useState(
+    listing.nonPaymentInsurance ?? false,
+  );
+  const [nonPaymentInsuranceAmount, setNonPaymentInsuranceAmount] = useState<
+    number | null
+  >(listing.nonPaymentInsuranceAmount ?? null);
 
   // Rental duplicate state
   const [duplicateForRent, setDuplicateForRent] = useState(false);
@@ -1724,6 +1815,32 @@ export function PropertyCharacteristicsForm({
             setBuiltInWardrobes={setBuiltInWardrobes}
             getCardStyles={getCardStyles}
           />
+
+          {/* Rental Terms - Only shows for Rent listings */}
+          <RentalTermsCard
+            securityDeposit={securityDeposit}
+            additionalGuarantee={additionalGuarantee}
+            bankGuaranteeRequired={bankGuaranteeRequired}
+            managementFees={managementFees}
+            nonPaymentInsurance={nonPaymentInsurance}
+            nonPaymentInsuranceAmount={nonPaymentInsuranceAmount}
+            listingType={currentListingType}
+            collapsedSections={collapsedSections}
+            saveState={moduleStates.rentalTerms?.saveState ?? "idle"}
+            canEdit={canEdit}
+            onToggleSection={toggleSection}
+            onSave={() => saveModule("rentalTerms")}
+            onUpdateModule={(hasChanges) =>
+              updateModuleState("rentalTerms", hasChanges)
+            }
+            setSecurityDeposit={setSecurityDeposit}
+            setAdditionalGuarantee={setAdditionalGuarantee}
+            setBankGuaranteeRequired={setBankGuaranteeRequired}
+            setManagementFees={setManagementFees}
+            setNonPaymentInsurance={setNonPaymentInsurance}
+            setNonPaymentInsuranceAmount={setNonPaymentInsuranceAmount}
+            getCardStyles={getCardStyles}
+          />
         </div>
 
         {/* Right Column */}
@@ -1899,34 +2016,47 @@ export function PropertyCharacteristicsForm({
             setShowMaterials={setShowMaterials}
             getCardStyles={getCardStyles}
           />
+
+          {/* Property Expenses */}
+          <PropertyExpensesCard
+            ibi={ibi}
+            garbageTax={garbageTax}
+            vadoPermanente={vadoPermanente}
+            communityFees={communityFees}
+            derrama={derrama}
+            electricityEstimate={electricityEstimate}
+            gasEstimate={gasEstimate}
+            waterEstimate={waterEstimate}
+            centralHeatingFee={centralHeatingFee}
+            internetEstimate={internetEstimate}
+            homeInsurance={homeInsurance}
+            propertyType={propertyType}
+            collapsedSections={collapsedSections}
+            saveState={moduleStates.propertyExpenses?.saveState ?? "idle"}
+            canEdit={canEdit}
+            onToggleSection={toggleSection}
+            onSave={() => saveModule("propertyExpenses")}
+            onUpdateModule={(hasChanges) =>
+              updateModuleState("propertyExpenses", hasChanges)
+            }
+            setIbi={setIbi}
+            setGarbageTax={setGarbageTax}
+            setVadoPermanente={setVadoPermanente}
+            setCommunityFees={setCommunityFees}
+            setDerrama={setDerrama}
+            setElectricityEstimate={setElectricityEstimate}
+            setGasEstimate={setGasEstimate}
+            setWaterEstimate={setWaterEstimate}
+            setCentralHeatingFee={setCentralHeatingFee}
+            setInternetEstimate={setInternetEstimate}
+            setHomeInsurance={setHomeInsurance}
+            getCardStyles={getCardStyles}
+          />
         </div>
       </div>
 
-      {/* Separator before Description */}
+      {/* Separator before Rental/Description */}
       <Separator className="my-3 opacity-50" />
-
-      {/* Description Module */}
-      <DescriptionCard
-        description={description}
-        shortDescription={shortDescription}
-        isGenerating={isGenerating}
-        isGeneratingShort={isGeneratingShort}
-        signature={signature}
-        isSignatureDialogOpen={isSignatureDialogOpen}
-        saveState={moduleStates.description?.saveState ?? "idle"}
-        canEdit={canEdit}
-        onSave={() => saveModule("description")}
-        onUpdateModule={(hasChanges) =>
-          updateModuleState("description", hasChanges)
-        }
-        onGenerateDescription={handleGenerateDescription}
-        onGenerateShortDescription={handleGenerateShortDescription}
-        setSignature={setSignature}
-        setIsSignatureDialogOpen={setIsSignatureDialogOpen}
-        setDescription={setDescription}
-        setShortDescription={setShortDescription}
-        getCardStyles={getCardStyles}
-      />
 
       {/* Rental Properties Module */}
       <RentalPropertiesCard
@@ -1960,6 +2090,29 @@ export function PropertyCharacteristicsForm({
         setAppliancesIncluded={setAppliancesIncluded}
         setDuplicateForRent={setDuplicateForRent}
         setRentalPrice={setRentalPrice}
+        getCardStyles={getCardStyles}
+      />
+
+      {/* Description Module */}
+      <DescriptionCard
+        description={description}
+        shortDescription={shortDescription}
+        isGenerating={isGenerating}
+        isGeneratingShort={isGeneratingShort}
+        signature={signature}
+        isSignatureDialogOpen={isSignatureDialogOpen}
+        saveState={moduleStates.description?.saveState ?? "idle"}
+        canEdit={canEdit}
+        onSave={() => saveModule("description")}
+        onUpdateModule={(hasChanges) =>
+          updateModuleState("description", hasChanges)
+        }
+        onGenerateDescription={handleGenerateDescription}
+        onGenerateShortDescription={handleGenerateShortDescription}
+        setSignature={setSignature}
+        setIsSignatureDialogOpen={setIsSignatureDialogOpen}
+        setDescription={setDescription}
+        setShortDescription={setShortDescription}
         getCardStyles={getCardStyles}
       />
 

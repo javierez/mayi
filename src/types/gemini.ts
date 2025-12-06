@@ -135,112 +135,28 @@ CRITICAL:
 export const RENDER_3D_PROMPT = `render this picture in 3D`;
 
 // Prompt for enhancing lighting in real estate photos
-export const ENHANCE_LIGHTING_PROMPT = `You are a professional real estate photographer using advanced HDR and exposure blending techniques. Transform this image to create a DRAMATICALLY brighter, naturally lit space that looks like it was photographed at noon on a bright, sunny day.
+export const ENHANCE_LIGHTING_PROMPT = `You are a professional real estate photo editor. DRAMATICALLY enhance the illumination of this photo.
 
-CRITICAL VISUAL TRANSFORMATION REQUIRED:
-The enhanced image must be VISIBLY and DRAMATICALLY brighter than the original. The difference should be immediately obvious - like comparing a photo taken at dusk versus midday.
+AGGRESSIVE LIGHTING ENHANCEMENT:
+- Increase overall exposure by 2-3 stops (the image must be VISIBLY much brighter)
+- Eliminate ALL dark shadows - brighten every dark corner and area
+- Apply strong HDR tone mapping to lift the entire image
+- The result should look like the room was photographed at bright midday
+- Make the difference from the original immediately obvious
 
-STEP 1: WINDOW LIGHT MAXIMIZATION (Highest Priority - Do This First):
-- CRITICAL ANTI-FLARE REQUIREMENT: Windows must look REALISTIC and NATURAL - NO lens flares, NO glare artifacts, NO unrealistic bright spots
-- If windows exist: Increase window brightness naturally - make them bright but REALISTIC, like real windows on a sunny day
-- Windows should appear bright but maintain realistic appearance - like actual windows with natural daylight coming through
-- Apply natural brightness: Make windows bright enough to illuminate the room, but keep them looking like REAL windows, not artificial light sources
-- Use HDR-like processing: Blend exposures to brighten windows while preserving realistic detail and appearance
-- Windows should be the primary light source but must look NATURAL and REALISTIC
-- ABSOLUTELY FORBIDDEN: NO lens flares, NO glare artifacts, NO unrealistic bright spots, NO overexposed white areas on windows
-- Remove ALL flares: Eliminate any lens flare effects, glare patterns, or unrealistic bright artifacts on or around windows
-- Keep windows realistic: Windows should look like actual windows with daylight - bright but natural, not artificial or glowing unnaturally
-- Prevent unrealistic brightness: Avoid making windows appear as pure white light sources - maintain realistic window appearance
-- Natural light only: Light should come THROUGH windows naturally, not create flares or unrealistic effects ON the windows
+STRICTLY FORBIDDEN - DO NOT MODIFY THE IMAGE:
+- Do NOT add, remove, or modify windows, doors, or any architectural elements
+- Do NOT change wall colors, furniture colors, or flooring
+- Do NOT add light rays, lens flares, or visual effects
+- Do NOT alter the room structure, perspective, or camera angle
+- Do NOT create or hallucinate any elements not present in the original
 
-STEP 2: NATURAL LIGHT DISTRIBUTION (Fill Every Corner):
-- Use tone mapping to make natural light from windows reach EVERY dark corner
-- Create visible light falloff: Bright near windows, gradually spreading but still bright throughout
-- Simulate light bouncing: Make walls, floors, and ceilings reflect and amplify natural light
-- Apply exposure blending: Combine bright window exposure with properly exposed interior
-- Every surface should appear illuminated by natural light - no dark zones remaining
-- Use fill light technique: Simulate natural light bouncing to eliminate all shadows
+PRESERVE EXACTLY:
+- All architectural elements unchanged
+- All furniture and objects in their exact positions
+- Room geometry and layout identical to original
 
-STEP 3: EXPOSURE ENHANCEMENT (Professional HDR Technique):
-- Increase overall exposure by 50-70% using exposure blending and tone mapping
-- Lift shadows aggressively: Use shadow recovery to brighten dark areas by 60-80%
-- Preserve highlights: Keep window areas bright but maintain detail in bright surfaces - AVOID overexposure and blown highlights
-- Apply global brightness boost: Make the entire image 2-3 stops brighter overall
-- Use graduated exposure: Brightest at windows, gradually decreasing but still bright everywhere
-- Result should look like professional HDR photography with perfect exposure balance
-- CRITICAL: Prevent glare and harsh reflections (destellos) - maintain controlled brightness without harsh white spots
-- Avoid lens flare artifacts: Remove or minimize any lens flare effects that create distracting bright spots
-
-STEP 4: SHADOW ELIMINATION (Natural Light Fill):
-- Eliminate ALL harsh shadows using natural light fill technique
-- Fill shadows with simulated bounced natural light from windows
-- Reduce shadow density by 80-90% - shadows should be barely visible, just subtle depth cues
-- Use shadow lifting: Brighten all shadow areas to match midtone brightness
-- Dark corners must become bright - fill them with visible natural light
-- Maintain only subtle, soft shadows for depth - no dark, harsh shadows
-
-STEP 5: COLOR AND ATMOSPHERE (Daylight Quality):
-- Apply daylight white balance: Use 5500K-6500K color temperature throughout
-- Make colors vibrant and fresh: Enhance saturation slightly to compensate for brightness increase
-- Create bright, airy atmosphere: Space should feel like a bright, sunny day
-- Natural light should have crisp, clean, energizing quality
-- Avoid warm tones - prioritize cool, bright daylight tones
-- Make the space feel fresh, open, and naturally illuminated
-
-STEP 6: VISUAL IMPACT ENHANCEMENTS:
-- Create natural light rays: Add subtle, realistic light rays streaming through windows - but keep them NATURAL, not dramatic flares
-- Enhance light reflections: Make surfaces reflect natural light visibly (floors, furniture, walls) - but keep reflections soft and natural
-- Create light gradients: Brightest at windows, gradually spreading but maintaining brightness
-- Add atmospheric brightness: Make the air itself appear brighter, as if filled with daylight
-- Enhance contrast in bright areas: Make well-lit areas pop with natural brightness
-- ABSOLUTELY CRITICAL: ELIMINATE ALL FLARES - Remove ALL lens flares, glare artifacts, and unrealistic bright spots, especially on windows
-- Windows must look REALISTIC: No flares, no glare patterns, no unrealistic bright effects - windows should look like real windows
-- Prevent overexposed areas: Avoid pure white, blown-out highlights that lose detail and create glare
-- Soften reflections: Make reflections on glass, mirrors, and shiny surfaces natural and pleasant, not harsh or distracting
-- NO artificial effects: Do not add any lens flare effects, glare patterns, or unrealistic bright artifacts - keep everything natural
-
-SECONDARY ENHANCEMENTS (Minimal, Only If Needed):
-- Existing artificial lights: Keep them subtle and secondary - natural light must dominate
-- Add fixtures ONLY in windowless areas: Minimal, realistic fixtures that don't compete with natural light
-- All artificial lighting should be barely noticeable compared to natural light
-
-ABSOLUTE PRESERVATION (Do NOT Change):
-- EXACT positions: All objects, furniture, walls, decor stay in identical positions
-- NO color changes: Wall colors, furniture colors, flooring colors remain EXACTLY as shown
-- NO structural changes: Room dimensions, camera angle, perspective stay identical
-- NO architectural changes: Do not add/remove windows, doors, or structural elements
-- ONLY modify: Lighting intensity, exposure, brightness, shadows, and natural light amplification
-
-TECHNICAL PHOTOGRAPHY REQUIREMENTS:
-- Apply professional HDR technique: Multiple exposure blending for perfect brightness
-- Use tone mapping: Compress dynamic range while maximizing brightness
-- Apply shadow recovery: Aggressively lift all dark areas
-- Use highlight preservation: Keep bright areas bright but maintain detail - AVOID overexposure and glare
-- ABSOLUTELY CRITICAL: ELIMINATE ALL FLARES - Remove ALL lens flares, glare artifacts, and unrealistic bright spots
-- Windows must be realistic: No flares, no glare patterns, no unrealistic effects - windows should look like real windows
-- Prevent glare and harsh reflections (destellos): Remove or soften any bright, distracting white spots
-- Control highlight clipping: Maintain detail in bright areas without creating harsh glare or blown highlights
-- Remove flare effects: Actively remove any lens flare artifacts, glare patterns, or unrealistic bright spots, especially on windows
-- Result must look like professional real estate photography with perfect natural lighting
-- Image should appear as if photographed with professional HDR equipment at midday
-- NO harsh glare, NO lens flares, NO overexposed white spots - brightness must be controlled and natural
-- Windows must look REALISTIC - like actual windows with natural daylight, not artificial light sources with flares
-
-VISUAL OUTCOME REQUIREMENTS:
-The enhanced image must show DRAMATIC VISUAL IMPROVEMENT:
-✓ Windows appear bright and natural-looking (realistic brightness increase)
-✓ Natural light rays streaming through windows (subtle and realistic, NOT flares)
-✓ Overall image 50-70% brighter than original
-✓ All shadows dramatically reduced or eliminated (80-90% reduction)
-✓ Every corner bright and well-lit by natural light
-✓ Space feels like bright, sunny day at noon
-✓ Professional HDR photography appearance
-✓ Natural light is the obvious, dominant illumination source
-✓ ABSOLUTELY NO lens flares, NO glare artifacts, NO unrealistic bright spots on windows
-✓ Windows look REALISTIC - like actual windows with natural daylight, not artificial light sources
-✓ NO harsh reflections on glass or shiny surfaces - all reflections are soft and pleasant
-
-Return an image that is DRAMATICALLY brighter with maximized natural lighting. Windows should be bright enough to illuminate the room but MUST look REALISTIC - like actual windows with natural daylight coming through. ABSOLUTELY CRITICAL: Remove ALL lens flares, glare artifacts, and unrealistic bright spots on windows. Windows must look like real windows, not artificial light sources with flares. The space should look like professional HDR photography taken at midday - bright, airy, and naturally sunlit. The difference from the original must be immediately and dramatically visible, but windows must remain realistic and natural-looking with NO flares or unrealistic effects.`;
+Return a DRAMATICALLY brighter version of the EXACT same scene. Only lighting levels change - nothing else.`;
 
 // Style instruction sets for different aesthetics - condensed narrative format
 export const RENOVATION_STYLES = {

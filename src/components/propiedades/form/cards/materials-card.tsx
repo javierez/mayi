@@ -191,10 +191,15 @@ export function MaterialsCard({
                           <SelectValue placeholder="Seleccionar tipo" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="aluminio">Aluminio</SelectItem>
-                          <SelectItem value="pvc">PVC</SelectItem>
-                          <SelectItem value="madera">Madera</SelectItem>
-                          <SelectItem value="hierro">Hierro</SelectItem>
+                          <SelectItem value="sin_especificar">Sin Especificar</SelectItem>
+                          <SelectItem value="roble">Roble</SelectItem>
+                          <SelectItem value="sapelly">Sapelly</SelectItem>
+                          <SelectItem value="nogal">Nogal</SelectItem>
+                          <SelectItem value="castano">Castaño</SelectItem>
+                          <SelectItem value="pino_rojo">Pino rojo</SelectItem>
+                          <SelectItem value="cerezo">Cerezo</SelectItem>
+                          <SelectItem value="lacada">Lacada</SelectItem>
+                          <SelectItem value="haya_vaporizada">Haya vaporizada</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

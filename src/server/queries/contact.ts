@@ -27,38 +27,6 @@ import { normalizeSearchText, normalizePhoneForSearch } from "../../lib/search-u
 // =============================================================================
 
 /**
- * Creates a SQL condition for normalized text search.
- * Applies LOWER() to the column and normalizes the search query.
- * This enables case-insensitive and accent-insensitive searching.
- */
-function createNormalizedSearchCondition(
-  column: ReturnType<typeof sql>,
-  searchQuery: string,
-) {
-  // Normalize the search query (lowercase, remove accents, trim)
-  const normalizedQuery = normalizeSearchText(searchQuery);
-
-  // Build SQL condition using LOWER() for case-insensitivity
-  // and comparing against the normalized query
-  return sql`LOWER(${column}) LIKE ${`%${normalizedQuery}%`}`;
-}
-
-/**
- * Creates a SQL condition for phone search with normalization.
- * Strips non-digit characters from both column and query.
- */
-function createPhoneSearchCondition(
-  column: ReturnType<typeof sql>,
-  searchQuery: string,
-) {
-  const normalizedPhone = normalizePhoneForSearch(searchQuery);
-  if (!normalizedPhone) return sql`1=0`; // No match if empty
-
-  // Remove common phone separators from the column value
-  return sql`REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(${column}, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') LIKE ${`%${normalizedPhone}%`}`;
-}
-
-/**
  * Creates comprehensive search conditions for contact fields.
  * Searches across firstName, lastName, email, phone, and nif with proper normalization.
  */
