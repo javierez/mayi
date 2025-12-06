@@ -12,6 +12,7 @@ export const CONTACT_SOURCES = [
   "visita_oficina",
   "servihabitat",
   "otra_inmob",
+  "pagina_web",
 ] as const;
 
 export type ContactSource = (typeof CONTACT_SOURCES)[number];
@@ -28,4 +29,5 @@ export const CONTACT_SOURCE_LABELS: Record<ContactSource, string> = {
   visita_oficina: "Visita Oficina",
   servihabitat: "Servihabitat",
   otra_inmob: "Otra Inmob.",
+  pagina_web: "Página web",
 };

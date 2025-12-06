@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import {
   Table,
   TableBody,
@@ -26,6 +26,11 @@ import {
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { CONTACT_SOURCES, CONTACT_SOURCE_LABELS } from "~/types/contact-source";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 import { updateContactWithAuth } from "~/server/queries/contact";
 
 // Default column widths (in pixels)
@@ -206,26 +211,6 @@ export function ContactSpreadsheetTable({
       onMouseDown={(e) => handleResizeStart(column, e)}
     />
   );
-
-  // Close source editor on click outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (editingSourceId) {
-        // Check if click is outside the source editor
-        const target = event.target as HTMLElement;
-        const isInsideSourceEditor = target.closest("[data-source-editor]");
-
-        if (!isInsideSourceEditor) {
-          setEditingSourceId(null);
-        }
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [editingSourceId]);
 
   // Export contacts to Excel
   const handleExport = useCallback(async () => {
@@ -555,48 +540,45 @@ export function ContactSpreadsheetTable({
                   </TableCell>
 
                   <TableCell
-                    className="group/source relative overflow-visible py-2.5"
+                    className="py-2.5"
                     style={getColumnStyle("origen")}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div
-                      className="relative flex items-center justify-start"
-                      data-source-editor
+                    <Popover
+                      open={editingSourceId === contactId}
+                      onOpenChange={(open) =>
+                        setEditingSourceId(open ? contactId : null)
+                      }
                     >
-                      {/* Current source display */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingSourceId(
-                            editingSourceId === contactId ? null : contactId,
-                          );
-                        }}
-                        className={cn(
-                          "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-all",
-                          displaySource
-                            ? "bg-muted/50 text-muted-foreground hover:bg-muted"
-                            : "text-muted-foreground/40 hover:bg-muted/30",
-                          editingSourceId === contactId && "bg-muted",
-                        )}
-                      >
-                        {displaySource ? (
-                          (CONTACT_SOURCE_LABELS[
-                            displaySource as keyof typeof CONTACT_SOURCE_LABELS
-                          ] ?? displaySource)
-                        ) : (
-                          <>
-                            <ChevronDown className="h-3 w-3" />
-                            <span className="text-xs">Añadir</span>
-                          </>
-                        )}
-                      </button>
-
-                      {/* Inline source options */}
-                      {editingSourceId === contactId && (
-                        <div
-                          className="absolute left-0 top-full z-50 mt-1 flex min-w-[140px] flex-col gap-0.5 rounded-md border bg-background p-1 shadow-lg"
-                          onMouseDown={(e) => e.stopPropagation()}
+                      <PopoverTrigger asChild>
+                        <button
+                          onClick={(e) => e.stopPropagation()}
+                          className={cn(
+                            "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-all",
+                            displaySource
+                              ? "bg-muted/50 text-muted-foreground hover:bg-muted"
+                              : "text-muted-foreground/40 hover:bg-muted/30",
+                            editingSourceId === contactId && "bg-muted",
+                          )}
                         >
+                          {displaySource ? (
+                            (CONTACT_SOURCE_LABELS[
+                              displaySource as keyof typeof CONTACT_SOURCE_LABELS
+                            ] ?? displaySource)
+                          ) : (
+                            <>
+                              <ChevronDown className="h-3 w-3" />
+                              <span className="text-xs">Añadir</span>
+                            </>
+                          )}
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-auto min-w-[140px] p-1"
+                        align="start"
+                        sideOffset={4}
+                      >
+                        <div className="flex flex-col gap-0.5">
                           {CONTACT_SOURCES.map((sourceOption) => (
                             <button
                               key={sourceOption}
@@ -618,8 +600,8 @@ export function ContactSpreadsheetTable({
                             </button>
                           ))}
                         </div>
-                      )}
-                    </div>
+                      </PopoverContent>
+                    </Popover>
                   </TableCell>
 
                   <TableCell
