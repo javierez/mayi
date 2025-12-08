@@ -19,6 +19,7 @@ import OnboardingModal from "~/components/onboarding/onboarding-modal";
 import { Toaster } from "sonner";
 import { TokenTrackerRing } from "~/components/layout/token-tracker-ring";
 import { StickyVestaButton } from "~/components/layout/sticky-vesta-button";
+import { NotificationDropdown } from "~/components/notifications";
 import {
   Building2,
   Users,
@@ -741,7 +742,8 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
 
       {/* Main content */}
       <div className="lg:pl-60">
-        <div className="sticky top-0 flex h-4 flex-shrink-0">
+        <div className="sticky top-0 z-10 flex h-4 flex-shrink-0 items-center justify-end gap-2 px-4">
+          <NotificationDropdown />
           <Button
             variant="ghost"
             size="sm"

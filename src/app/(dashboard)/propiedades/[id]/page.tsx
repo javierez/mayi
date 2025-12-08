@@ -216,6 +216,8 @@ export default async function PropertyPage({
         listingType={headerData.listingType}
         status={headerData.status}
         isBankOwned={headerData.isBankOwned ?? false}
+        isFeatured={headerData.isFeatured ?? false}
+        isOpportunity={headerData.isOpportunity ?? false}
         neighborhood=""
         dynamicTitle={false}
         listing={

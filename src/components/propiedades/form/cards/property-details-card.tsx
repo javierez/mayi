@@ -36,6 +36,11 @@ interface PropertyDetailsCardProps {
   // Optional controlled values from cadastral corrections
   builtSurfaceArea?: number;
   yearBuilt?: number;
+  // Finca fields - specific to 'casa' property type
+  finca: boolean;
+  superficieFinca: number | null;
+  setFinca: (value: boolean) => void;
+  setSuperficieFinca: (value: number | null) => void;
 }
 
 export function PropertyDetailsCard({
@@ -54,6 +59,10 @@ export function PropertyDetailsCard({
   getCardStyles,
   builtSurfaceArea: controlledBuiltSurfaceArea,
   yearBuilt: controlledYearBuilt,
+  finca,
+  superficieFinca,
+  setFinca,
+  setSuperficieFinca,
 }: PropertyDetailsCardProps) {
   // Format area with thousand separators
   const formatArea = (value: number | null | undefined): string => {
@@ -351,6 +360,53 @@ export function PropertyDetailsCard({
               </SelectContent>
             </Select>
           </div>
+        )}
+        {/* Finca fields - only for 'casa' property type */}
+        {propertyType === "casa" && (
+          <>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="finca"
+                checked={finca}
+                onCheckedChange={(checked) => {
+                  setFinca(checked as boolean);
+                  if (!checked) {
+                    setSuperficieFinca(null); // Clear surface when finca is unchecked
+                  }
+                  onUpdateModule(true);
+                }}
+                disabled={!canEdit}
+              />
+              <Label htmlFor="finca" className="text-sm">
+                Finca
+              </Label>
+            </div>
+            {finca && (
+              <div className="ml-6 space-y-1.5">
+                <Label htmlFor="superficieFinca" className="text-sm">
+                  Superficie Finca (m²)
+                </Label>
+                <Input
+                  id="superficieFinca"
+                  type="number"
+                  value={superficieFinca ?? ""}
+                  placeholder="0"
+                  onChange={(e) => {
+                    const value =
+                      e.target.value === "" ? null : parseFloat(e.target.value);
+                    setSuperficieFinca(
+                      value !== null && isNaN(value) ? null : value,
+                    );
+                    onUpdateModule(true);
+                  }}
+                  className="h-8 text-gray-500"
+                  min="0"
+                  step="0.01"
+                  disabled={!canEdit}
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
     </Card>

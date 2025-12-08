@@ -18,5 +18,11 @@
       "maxDuration": 90,
       "memory": 2048
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/notifications",
+      "schedule": "*/15 * * * *"
+    }
+  ]
 }

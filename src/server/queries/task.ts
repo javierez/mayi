@@ -18,6 +18,7 @@ import { eq, and, or, sql, isNotNull, asc, lte, gte } from "drizzle-orm";
 import type { Task } from "../../lib/data";
 import { getCurrentUserAccountId, getSecureSession } from "../../lib/dal";
 import { updateAppointment } from "./appointment";
+import { notifyTaskAssigned, notifyTaskCompleted } from "../services/notification-service";
 
 // Extend globalThis to include debug properties
 declare global {
@@ -35,13 +36,13 @@ async function syncTaskToAppointment(
   taskData: {
     title?: string;
     description?: string;
-    dueDate?: Date;
-    dueTime?: string;
-    contactId?: bigint;
-    listingId?: bigint;
-    listingContactId?: bigint;
+    dueDate?: Date | null;
+    dueTime?: string | null;
+    contactId?: bigint | null;
+    listingId?: bigint | null;
+    listingContactId?: bigint | null;
     userId?: string;
-    completed?: boolean;
+    completed?: boolean | null;
   },
 ) {
   try {
@@ -58,7 +59,7 @@ async function syncTaskToAppointment(
     }
 
     // Sync date/time to datetimeStart (keep 30-minute duration)
-    if (taskData.dueDate !== undefined && taskData.dueTime !== undefined) {
+    if (taskData.dueDate && taskData.dueTime) {
       const dueDateStr = taskData.dueDate.toISOString().split("T")[0];
       const startDateTime = new Date(`${dueDateStr}T${taskData.dueTime}`);
       appointmentUpdate.datetimeStart = startDateTime;
@@ -363,7 +364,7 @@ export async function createTask(
     if (!result) throw new Error("Failed to create task");
     const [newTask] = await db
       .select({
-        taskId: sql<number>`CAST(${tasks.taskId} AS BIGINT)`,
+        taskId: sql<bigint>`CAST(${tasks.taskId} AS BIGINT)`,
         userId: tasks.userId,
         title: tasks.title,
         description: tasks.description,
@@ -372,18 +373,29 @@ export async function createTask(
         completed: tasks.completed,
         createdBy: tasks.createdBy,
         urgency: tasks.urgency,
-        listingId: sql<number>`CAST(${tasks.listingId} AS BIGINT)`,
-        listingContactId: sql<number>`CAST(${tasks.listingContactId} AS BIGINT)`,
-        dealId: sql<number>`CAST(${tasks.dealId} AS BIGINT)`,
-        appointmentId: sql<number>`CAST(${tasks.appointmentId} AS BIGINT)`,
-        prospectId: sql<number>`CAST(${tasks.prospectId} AS BIGINT)`,
-        contactId: sql<number>`CAST(${tasks.contactId} AS BIGINT)`,
+        listingId: sql<bigint>`CAST(${tasks.listingId} AS BIGINT)`,
+        listingContactId: sql<bigint>`CAST(${tasks.listingContactId} AS BIGINT)`,
+        dealId: sql<bigint>`CAST(${tasks.dealId} AS BIGINT)`,
+        appointmentId: sql<bigint>`CAST(${tasks.appointmentId} AS BIGINT)`,
+        prospectId: sql<bigint>`CAST(${tasks.prospectId} AS BIGINT)`,
+        contactId: sql<bigint>`CAST(${tasks.contactId} AS BIGINT)`,
         isActive: tasks.isActive,
         createdAt: tasks.createdAt,
         updatedAt: tasks.updatedAt,
       })
       .from(tasks)
       .where(eq(tasks.taskId, BigInt(result.taskId)));
+    
+    // Create notification if task is assigned to a different user
+    if (newTask && data.userId && data.createdBy && data.userId !== data.createdBy) {
+      try {
+        await notifyTaskAssigned(newTask, data.userId, data.createdBy, BigInt(accountId));
+      } catch (error) {
+        console.error("Error creating task assigned notification:", error);
+        // Don't fail task creation if notification fails
+      }
+    }
+    
     return newTask;
   } catch (error) {
     console.error("Error creating task:", error);
@@ -886,7 +898,7 @@ export async function updateTask(
 
     const [updatedTask] = await db
       .select({
-        taskId: sql<number>`CAST(${tasks.taskId} AS BIGINT)`,
+        taskId: sql<bigint>`CAST(${tasks.taskId} AS BIGINT)`,
         userId: tasks.userId,
         title: tasks.title,
         description: tasks.description,
@@ -896,11 +908,11 @@ export async function updateTask(
         completedBy: tasks.completedBy,
         editedBy: tasks.editedBy,
         category: tasks.category,
-        listingId: sql<number>`CAST(${tasks.listingId} AS BIGINT)`,
-        listingContactId: sql<number>`CAST(${tasks.listingContactId} AS BIGINT)`,
-        dealId: sql<number>`CAST(${tasks.dealId} AS BIGINT)`,
-        appointmentId: sql<number>`CAST(${tasks.appointmentId} AS BIGINT)`,
-        prospectId: sql<number>`CAST(${tasks.prospectId} AS BIGINT)`,
+        listingId: sql<bigint>`CAST(${tasks.listingId} AS BIGINT)`,
+        listingContactId: sql<bigint>`CAST(${tasks.listingContactId} AS BIGINT)`,
+        dealId: sql<bigint>`CAST(${tasks.dealId} AS BIGINT)`,
+        appointmentId: sql<bigint>`CAST(${tasks.appointmentId} AS BIGINT)`,
+        prospectId: sql<bigint>`CAST(${tasks.prospectId} AS BIGINT)`,
         isActive: tasks.isActive,
         createdAt: tasks.createdAt,
         updatedAt: tasks.updatedAt,
@@ -1556,7 +1568,7 @@ export async function completeTask(
 
     const [updatedTask] = await db
       .select({
-        taskId: sql<number>`CAST(${tasks.taskId} AS BIGINT)`,
+        taskId: sql<bigint>`CAST(${tasks.taskId} AS BIGINT)`,
         userId: tasks.userId,
         title: tasks.title,
         description: tasks.description,
@@ -1564,13 +1576,15 @@ export async function completeTask(
         dueTime: tasks.dueTime,
         completed: tasks.completed,
         completedBy: tasks.completedBy,
+        createdBy: tasks.createdBy,
         editedBy: tasks.editedBy,
         category: tasks.category,
-        listingId: sql<number>`CAST(${tasks.listingId} AS BIGINT)`,
-        listingContactId: sql<number>`CAST(${tasks.listingContactId} AS BIGINT)`,
-        dealId: sql<number>`CAST(${tasks.dealId} AS BIGINT)`,
-        appointmentId: sql<number>`CAST(${tasks.appointmentId} AS BIGINT)`,
-        prospectId: sql<number>`CAST(${tasks.prospectId} AS BIGINT)`,
+        listingId: sql<bigint>`CAST(${tasks.listingId} AS BIGINT)`,
+        listingContactId: sql<bigint>`CAST(${tasks.listingContactId} AS BIGINT)`,
+        dealId: sql<bigint>`CAST(${tasks.dealId} AS BIGINT)`,
+        appointmentId: sql<bigint>`CAST(${tasks.appointmentId} AS BIGINT)`,
+        prospectId: sql<bigint>`CAST(${tasks.prospectId} AS BIGINT)`,
+        contactId: sql<bigint>`CAST(${tasks.contactId} AS BIGINT)`,
         isActive: tasks.isActive,
         createdAt: tasks.createdAt,
         updatedAt: tasks.updatedAt,
@@ -1585,6 +1599,16 @@ export async function completeTask(
         existingTask.appointmentId,
         { completed: true },
       );
+    }
+
+    // Create notification if task was just completed (not already completed)
+    if (!wasCompleted && updatedTask) {
+      try {
+        await notifyTaskCompleted(updatedTask, completedBy ?? null, BigInt(accountId));
+      } catch (error) {
+        console.error("Error creating task completed notification:", error);
+        // Don't fail task completion if notification fails
+      }
     }
 
     return updatedTask;

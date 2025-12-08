@@ -291,6 +291,8 @@ export function PropertyCharacteristicsForm({
             lastRenovationYear: lastRenovationYear || null,
             buildingFloors: buildingFloors,
             conservationStatus: listing.conservationStatus ?? 1,
+            finca: finca,
+            superficieFinca: superficieFinca,
           };
           break;
 
@@ -771,6 +773,10 @@ export function PropertyCharacteristicsForm({
   const [orientation, setOrientation] = useState(listing.orientation ?? "");
   const [isBright, setIsBright] = useState(listing.bright ?? false);
   const [hasEscaparate, setHasEscaparate] = useState(listing.hasEscaparate ?? false);
+  const [finca, setFinca] = useState(listing.finca ?? false); // For 'casa' - has estate/land
+  const [superficieFinca, setSuperficieFinca] = useState<number | null>(
+    listing.superficieFinca ?? null,
+  ); // For 'casa' - estate surface area in m²
   const [garageType, setGarageType] = useState(listing.garageType ?? "");
   const [garageSpaces, setGarageSpaces] = useState(() => {
     const spaces = listing.garageSpaces;
@@ -1204,6 +1210,44 @@ export function PropertyCharacteristicsForm({
 
     void fetchFormData();
   }, [listing.propertyId]); // Removed serverAgents, serverOwners, serverCurrentOwners - no longer needed
+
+  // Listen for command palette navigation events
+  useEffect(() => {
+    const handleNavigateToField = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        sectionKey: string;
+        inputId: string;
+        label: string;
+      }>;
+      const { sectionKey, inputId } = customEvent.detail;
+
+      // Expand the section if it's collapsed
+      setCollapsedSections((prev) => ({
+        ...prev,
+        [sectionKey]: false,
+      }));
+
+      // Wait for DOM update then scroll and focus
+      setTimeout(() => {
+        const element = document.getElementById(inputId);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          // Focus after scroll completes
+          setTimeout(() => {
+            element.focus();
+          }, 300);
+        }
+      }, 100);
+    };
+
+    window.addEventListener("vesta:navigate-to-field", handleNavigateToField);
+    return () => {
+      window.removeEventListener(
+        "vesta:navigate-to-field",
+        handleNavigateToField,
+      );
+    };
+  }, []);
 
   // Toggle handlers
   // const handleToggleKeys = async () => {
@@ -1671,6 +1715,10 @@ export function PropertyCharacteristicsForm({
             getCardStyles={getCardStyles}
             builtSurfaceArea={builtSurfaceArea}
             yearBuilt={yearBuilt}
+            finca={finca}
+            superficieFinca={superficieFinca}
+            setFinca={setFinca}
+            setSuperficieFinca={setSuperficieFinca}
           />
 
           {/* Features */}

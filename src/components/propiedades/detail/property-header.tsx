@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Pencil, Check, X } from "lucide-react";
+import { MapPin, Check, X, MoreVertical } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -8,11 +8,18 @@ import { formatPrice, cn } from "~/lib/utils";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { updatePropertyTitle } from "~/app/actions/property-settings";
-import { updateListingStatus } from "~/app/actions/listing-settings";
+import { updateListingStatus, updateListingOpportunity, updateListingFeatured } from "~/app/actions/listing-settings";
 import { toast } from "sonner";
 import { formatListingType } from "../../contactos/contact-config";
 import { generatePropertyTitle } from "~/lib/property-title";
 import { CompletionTrackerModal } from "../completion-tracker-modal";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "~/components/ui/dropdown-menu";
 import { calculateCompletion } from "~/lib/properties/completion-tracker";
 
 const statusColors: Record<string, string> = {
@@ -42,6 +49,7 @@ interface PropertyHeaderProps {
   status?: string; // 'En Venta' | 'En Alquiler' | 'Vendido' | 'Draft'
   isBankOwned?: boolean;
   isFeatured?: boolean;
+  isOpportunity?: boolean;
   neighborhood?: string;
   // Optional props for dynamic title generation
   dynamicTitle?: boolean; // If true, generate title dynamically instead of using title prop
@@ -63,7 +71,8 @@ export function PropertyHeader({
   listingType,
   status,
   isBankOwned = false,
-  isFeatured: _isFeatured = false,
+  isFeatured: initialIsFeatured = false,
+  isOpportunity: initialIsOpportunity = false,
   neighborhood,
   dynamicTitle = false,
   listing,
@@ -83,6 +92,14 @@ export function PropertyHeader({
   // Status toggle state
   const [currentStatus, setCurrentStatus] = useState(status);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  // Opportunity toggle state
+  const [isOpportunity, setIsOpportunity] = useState(initialIsOpportunity);
+  const [isUpdatingOpportunity, setIsUpdatingOpportunity] = useState(false);
+
+  // Featured toggle state
+  const [isFeatured, setIsFeatured] = useState(initialIsFeatured);
+  const [isUpdatingFeatured, setIsUpdatingFeatured] = useState(false);
 
   // Completion tracker modal state
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
@@ -238,6 +255,68 @@ export function PropertyHeader({
     }
   };
 
+  const handleOpportunityToggle = async () => {
+    if (!listingId || isUpdatingOpportunity) return;
+
+    const newValue = !isOpportunity;
+
+    // Optimistic update
+    setIsOpportunity(newValue);
+    setIsUpdatingOpportunity(true);
+
+    try {
+      const result = await updateListingOpportunity(listingId, newValue);
+
+      if (result.success) {
+        toast.success(
+          newValue ? "Marcado como oportunidad" : "Oportunidad desmarcada",
+        );
+      } else {
+        // Rollback on error
+        setIsOpportunity(!newValue);
+        toast.error(result.error ?? "Error al actualizar");
+      }
+    } catch (error) {
+      // Rollback on error
+      setIsOpportunity(!newValue);
+      console.error("Error updating opportunity:", error);
+      toast.error("Error al actualizar");
+    } finally {
+      setIsUpdatingOpportunity(false);
+    }
+  };
+
+  const handleFeaturedToggle = async () => {
+    if (!listingId || isUpdatingFeatured) return;
+
+    const newValue = !isFeatured;
+
+    // Optimistic update
+    setIsFeatured(newValue);
+    setIsUpdatingFeatured(true);
+
+    try {
+      const result = await updateListingFeatured(listingId, newValue);
+
+      if (result.success) {
+        toast.success(
+          newValue ? "Marcado como destacado" : "Destacado desmarcado",
+        );
+      } else {
+        // Rollback on error
+        setIsFeatured(!newValue);
+        toast.error(result.error ?? "Error al actualizar");
+      }
+    } catch (error) {
+      // Rollback on error
+      setIsFeatured(!newValue);
+      console.error("Error updating featured:", error);
+      toast.error("Error al actualizar");
+    } finally {
+      setIsUpdatingFeatured(false);
+    }
+  };
+
   return (
     <div className="mb-4 py-2 sm:mb-6 sm:py-3">
       <div className="flex flex-col gap-3 sm:gap-4 md:flex-row md:items-center md:justify-between">
@@ -287,16 +366,58 @@ export function PropertyHeader({
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="min-w-0 break-words text-xl font-bold leading-tight sm:text-2xl md:text-3xl">
                     <span className="inline break-words">{currentTitle}</span>
-                    {propertyId && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="ml-2 inline-flex min-h-[44px] min-w-[44px] whitespace-nowrap rounded-full p-1.5 align-baseline opacity-0 transition-opacity group-hover:opacity-100 sm:ml-3 sm:p-2"
-                        onClick={() => setIsEditing(true)}
-                        aria-label="Editar título"
-                      >
-                        <Pencil className="h-4 w-4 text-muted-foreground sm:h-5 sm:w-5" />
-                      </Button>
+                    {(Boolean(propertyId) || Boolean(listingId)) && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="ml-1.5 -mt-1 inline-flex h-7 w-7 items-center justify-center rounded-md bg-muted/60 p-0 transition-all hover:bg-muted/90 sm:ml-2"
+                            aria-label="Opciones"
+                          >
+                            <MoreVertical className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="start"
+                          sideOffset={8}
+                          className="min-w-[200px] rounded-lg border border-border/50 bg-popover/95 p-1.5 shadow-lg backdrop-blur-sm"
+                        >
+                          {propertyId && (
+                            <DropdownMenuItem
+                              onClick={() => setIsEditing(true)}
+                              className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium"
+                            >
+                              Editar título
+                            </DropdownMenuItem>
+                          )}
+                          {propertyId && listingId && <DropdownMenuSeparator className="my-1.5" />}
+                          {listingId && (
+                            <>
+                              <DropdownMenuItem
+                                onClick={handleOpportunityToggle}
+                                disabled={isUpdatingOpportunity}
+                                className={cn(
+                                  "cursor-pointer rounded-md px-3 py-2 text-sm",
+                                  isOpportunity && "font-semibold text-foreground",
+                                )}
+                              >
+                                {isOpportunity ? "Quitar oportunidad" : "Marcar como oportunidad"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={handleFeaturedToggle}
+                                disabled={isUpdatingFeatured}
+                                className={cn(
+                                  "cursor-pointer rounded-md px-3 py-2 text-sm",
+                                  isFeatured && "font-semibold text-foreground",
+                                )}
+                              >
+                                {isFeatured ? "Quitar destacado" : "Marcar como destacado"}
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
                   </h1>
                   {isBankOwned && (

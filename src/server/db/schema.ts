@@ -377,6 +377,10 @@ export const properties = pgTable("properties", {
   hasEscaparate: boolean("has_escaparate"), // Only for 'local' property type - has shop window/storefront
   streetType: varchar("street_type", { length: 50 }), // Only for 'local' - traffic intensity: muy_transitada, transitada, moderada, poco_transitada
 
+  // Finca (estate/land) - specific to 'casa' property type
+  finca: boolean("finca").default(false), // Indicates if the casa has an estate/land
+  superficieFinca: decimal("superficie_finca", { precision: 10, scale: 2 }), // Surface area of the estate in m²
+
   // Utilities and Installations
   electricityType: varchar("electricity_type", { length: 50 }), // 'monofasica' | 'trifasica' | 'mixta' | 'no_disponible'
   electricityStatus: varchar("electricity_status", { length: 50 }), // 'nuevo' | 'buen_estado' | 'funcional' | 'necesita_actualizacion' | 'necesita_reparacion' | 'no_disponible'
@@ -476,6 +480,7 @@ export const listings = pgTable("listings", {
   // Listing Status and Visibility
   isFeatured: boolean("is_featured").default(false),
   isBankOwned: boolean("is_bank_owned").default(false),
+  isOpportunity: boolean("is_opportunity").default(false), // Mark listing as a special opportunity/deal
   isActive: boolean("is_active").default(true),
   publishToWebsite: boolean("publish_to_website").default(false), // Controls whether listing appears on company website
   enEscaparate: boolean("en_escaparate").default(false).notNull(), // Property poster/sign displayed in office shop window

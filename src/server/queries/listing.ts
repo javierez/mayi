@@ -1877,6 +1877,7 @@ export async function getListingDetails(listingId: number, accountId: number) {
         thinkspain: listings.thinkspain,
         isFeatured: listings.isFeatured,
         isBankOwned: listings.isBankOwned,
+        isOpportunity: listings.isOpportunity,
         publishToWebsite: listings.publishToWebsite,
         visibilityMode: listings.visibilityMode,
         isActive: listings.isActive,
@@ -2038,6 +2039,8 @@ export async function getListingDetails(listingId: number, accountId: number) {
         isDiafano: properties.isDiafano, // For local property type - open-plan
         hasEscaparate: properties.hasEscaparate, // For local property type - shop window
         streetType: properties.streetType, // For local property type - traffic intensity
+        finca: properties.finca, // For casa property type - has estate/land
+        superficieFinca: properties.superficieFinca, // For casa property type - estate surface area
         electricityType: properties.electricityType,
         electricityStatus: properties.electricityStatus,
         plumbingType: properties.plumbingType,
@@ -2733,6 +2736,8 @@ export async function getListingHeaderData(listingId: number) {
         listingType: listings.listingType,
         status: listings.status,
         isBankOwned: listings.isBankOwned,
+        isFeatured: listings.isFeatured,
+        isOpportunity: listings.isOpportunity,
       })
       .from(listings)
       .leftJoin(properties, eq(listings.propertyId, properties.propertyId))

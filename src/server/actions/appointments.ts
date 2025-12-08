@@ -17,6 +17,12 @@ import {
 import { findOrCreateLeadForAppointment } from "~/server/queries/lead-status-sync";
 import { syncToGoogle } from "~/lib/google-calendar-sync";
 import { getAppointmentTasksWithAuth } from "~/server/queries/task";
+import {
+  notifyAppointmentScheduled,
+  notifyAppointmentRescheduled,
+  notifyAppointmentCancelled,
+  notifyAppointmentCompleted,
+} from "~/server/services/notification-service";
 
 // Form data structure from PRP
 interface AppointmentFormData {
@@ -76,6 +82,10 @@ export async function updateAppointmentAction(
       };
     }
 
+    // Get current appointment to check if datetime changed
+    const currentAppointment = await getAppointmentByIdWithAuth(Number(appointmentId));
+    const previousDateTime = currentAppointment?.appointments.datetimeStart;
+
     // PATTERN: Use existing query function
     console.log(
       "Updating appointment with ID:",
@@ -94,6 +104,17 @@ export async function updateAppointmentAction(
         success: false,
         error: "Error al actualizar la cita",
       };
+    }
+
+    // Create notification if datetime changed
+    if (previousDateTime && result.datetimeStart.getTime() !== previousDateTime.getTime()) {
+      try {
+        const accountId = await getCurrentUserAccountId();
+        await notifyAppointmentRescheduled(result, previousDateTime, currentUser.id, BigInt(accountId));
+      } catch (error) {
+        console.error("Error creating appointment rescheduled notification:", error);
+        // Don't fail appointment update if notification fails
+      }
     }
 
     // NEW: Sync to Google Calendar after successful appointment update
@@ -215,6 +236,15 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
 
     // Lead status is already set to "Cita Pendiente" during creation
     // No need to update it again
+
+    // Create notification for appointment scheduled
+    try {
+      const accountId = await getCurrentUserAccountId();
+      await notifyAppointmentScheduled(result, currentUser.id, BigInt(accountId));
+    } catch (error) {
+      console.error("Error creating appointment scheduled notification:", error);
+      // Don't fail appointment creation if notification fails
+    }
 
     // NEW: Sync to Google Calendar after successful appointment creation
     // Sync to assignee's calendar (if assigned), otherwise creator's
@@ -396,6 +426,19 @@ export async function updateAppointmentStatusAction(
         success: false,
         error: "Error al actualizar el estado de la cita",
       };
+    }
+
+    // Create notifications based on status change
+    try {
+      const accountId = await getCurrentUserAccountId();
+      if (status === "Cancelled") {
+        await notifyAppointmentCancelled(appointment, currentUser.id, BigInt(accountId));
+      } else if (status === "Completed") {
+        await notifyAppointmentCompleted(appointment, currentUser.id, BigInt(accountId));
+      }
+    } catch (error) {
+      console.error("Error creating appointment status notification:", error);
+      // Don't fail status update if notification fails
     }
 
     // Sync to Google Calendar after status update

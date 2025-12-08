@@ -16,6 +16,7 @@ export interface PropertyListing {
   // Status flags
   isBankOwned?: boolean;
   isFeatured?: boolean;
+  isOpportunity?: boolean;
   newConstruction?: boolean;
   publishToWebsite?: boolean;
   hasKeys?: boolean;
@@ -164,6 +165,8 @@ export interface PropertyListing {
   isDiafano?: boolean; // Only for 'local' property type - open-plan/open-space commercial
   hasEscaparate?: boolean; // Only for 'local' property type - has shop window/storefront
   streetType?: string; // Only for 'local' - traffic intensity: muy_transitada, transitada, moderada, poco_transitada
+  finca?: boolean; // Only for 'casa' - indicates if the house has an estate/land
+  superficieFinca?: number; // Only for 'casa' - surface area of the estate in m²
   gym?: boolean;
   sportsArea?: boolean;
   childrenArea?: boolean;
@@ -274,6 +277,7 @@ export function convertDbListingToPropertyListing(
     cadastralReference: (dbListing.cadastralReference as string) ?? undefined,
     isBankOwned: (dbListing.isBankOwned as boolean) ?? undefined,
     isFeatured: (dbListing.isFeatured as boolean) ?? undefined,
+    isOpportunity: getBoolean(dbListing.isOpportunity),
     newConstruction: (dbListing.newConstruction as boolean) ?? undefined,
     publishToWebsite: (dbListing.publishToWebsite as boolean) ?? undefined,
     hasKeys: getBoolean(dbListing.hasKeys),
@@ -385,6 +389,8 @@ export function convertDbListingToPropertyListing(
     isDiafano: getBoolean(dbListing.isDiafano),
     hasEscaparate: getBoolean(dbListing.hasEscaparate),
     streetType: (dbListing.streetType as string) ?? undefined,
+    finca: getBoolean(dbListing.finca),
+    superficieFinca: getNumber(dbListing.superficieFinca),
     gym: getBoolean(dbListing.gym),
     sportsArea: getBoolean(dbListing.sportsArea),
     childrenArea: getBoolean(dbListing.childrenArea),

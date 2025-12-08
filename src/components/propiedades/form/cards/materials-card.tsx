@@ -221,9 +221,14 @@ export function MaterialsCard({
                           <SelectValue placeholder="Seleccionar tipo" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="manual">Manual</SelectItem>
-                          <SelectItem value="electrico">Eléctrica</SelectItem>
-                          <SelectItem value="automatica">Automática</SelectItem>
+                          <SelectItem value="sin_especificar">Sin Especificar</SelectItem>
+                          <SelectItem value="aluminio">Aluminio</SelectItem>
+                          <SelectItem value="plastico">Plástico</SelectItem>
+                          <SelectItem value="pvc">PVC</SelectItem>
+                          <SelectItem value="contras_madera">Contras de Madera</SelectItem>
+                          <SelectItem value="estores">Estores</SelectItem>
+                          <SelectItem value="blackout">Blackout</SelectItem>
+                          <SelectItem value="contraventanas">Contraventanas</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

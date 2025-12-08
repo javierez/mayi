@@ -1181,19 +1181,20 @@ export type Appointment = {
   appointmentId: bigint;
   userId: string; // Changed to string to match User type
   contactId: bigint | null;
-  listingId?: bigint;
-  listingContactId?: bigint;
-  dealId?: bigint;
-  prospectId?: bigint;
+  listingId?: bigint | null;
+  listingContactId?: bigint | null;
+  dealId?: bigint | null;
+  prospectId?: bigint | null;
+  taskId?: bigint | null;
   datetimeStart: Date;
   datetimeEnd: Date;
-  tripTimeMinutes?: number;
-  status: "Scheduled" | "Completed" | "Cancelled" | "Rescheduled" | "NoShow";
+  tripTimeMinutes?: number | null;
+  status: string; // "Scheduled" | "Completed" | "Cancelled" | "Rescheduled" | "NoShow"
   title: string;
-  notes?: string;
-  type?: string;
-  assignedTo?: string;
-  isActive: boolean;
+  notes?: string | null;
+  type?: string | null;
+  assignedTo?: string | null;
+  isActive: boolean | null;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -1203,22 +1204,22 @@ export type Task = {
   userId: string; // Changed to string to match User type
   title: string;
   description: string;
-  dueDate?: Date;
-  dueTime?: string;
-  completed: boolean;
+  dueDate?: Date | null;
+  dueTime?: string | null;
+  completed: boolean | null;
   createdBy?: string | null; // FK → users.id (who created the task)
   completedBy?: string | null; // FK → users.id (who completed the task)
   editedBy?: string | null; // FK → users.id (who last edited the task)
   category?: string | null; // Task category/type
   urgency?: number | null; // Urgency rating (1-5: 1=Low, 5=Critical)
   status?: string | null; // Task status: 'backlog' | 'blocked' | 'ready' | 'in_progress' | 'validation' | 'finished'
-  listingId?: bigint;
-  listingContactId?: bigint;
-  dealId?: bigint;
-  appointmentId?: bigint;
-  prospectId?: bigint;
-  contactId?: bigint;
-  isActive: boolean;
+  listingId?: bigint | null;
+  listingContactId?: bigint | null;
+  dealId?: bigint | null;
+  appointmentId?: bigint | null;
+  prospectId?: bigint | null;
+  contactId?: bigint | null;
+  isActive: boolean | null;
   createdAt: Date;
   updatedAt: Date;
 };
