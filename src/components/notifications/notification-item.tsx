@@ -111,9 +111,6 @@ export function NotificationItem({
         </div>
       </div>
 
-      {!isRead && (
-        <div className="absolute left-0 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-blue-500" />
-      )}
     </div>
   );
 }

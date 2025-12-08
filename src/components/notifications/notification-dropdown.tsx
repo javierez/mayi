@@ -41,7 +41,7 @@ export function NotificationDropdown() {
           <NotificationBell />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
+      <PopoverContent className="w-96 p-0" align="end">
         <div className="flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between border-b px-4 py-3">
