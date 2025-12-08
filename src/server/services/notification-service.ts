@@ -57,8 +57,11 @@ function determinePriority(type: NotificationType): NotificationPriority {
     case "appointment_reminder":
       return "high";
     case "task_due_soon":
+    case "task_deleted":
       return "normal";
     case "task_assigned":
+    case "task_updated":
+    case "task_reassigned":
     case "task_completed":
     case "appointment_scheduled":
     case "appointment_rescheduled":
@@ -82,8 +85,14 @@ function buildTitle(
   switch (type) {
     case "task_assigned":
       return `Nueva tarea asignada: ${entityTitle}`;
+    case "task_updated":
+      return `Tarea actualizada: ${entityTitle}`;
+    case "task_reassigned":
+      return `Tarea reasignada: ${entityTitle}`;
     case "task_completed":
       return `Tarea completada: ${entityTitle}`;
+    case "task_deleted":
+      return `Tarea eliminada: ${entityTitle}`;
     case "task_due_soon":
       const dueTimeframe = context?.timeframe as TaskReminderTimeframe;
       if (dueTimeframe === "same_day") {
@@ -130,12 +139,34 @@ function buildMessage(
         return `${assignerName} te ha asignado una nueva tarea.`;
       }
       return "Se te ha asignado una nueva tarea.";
+    case "task_updated":
+      const updaterName = context.updaterName as string | undefined;
+      const updatedFields = context.updatedFields as string[] | undefined;
+      if (updaterName && updatedFields && updatedFields.length > 0) {
+        return `${updaterName} ha actualizado la tarea: ${updatedFields.join(", ")}.`;
+      }
+      if (updaterName) {
+        return `${updaterName} ha actualizado la tarea.`;
+      }
+      return "La tarea ha sido actualizada.";
+    case "task_reassigned":
+      const reassignerName = context.reassignerName as string | undefined;
+      if (reassignerName) {
+        return `${reassignerName} te ha reasignado esta tarea.`;
+      }
+      return "Se te ha reasignado esta tarea.";
     case "task_completed":
       const completedByName = context.completedByName as string | undefined;
       if (completedByName) {
         return `${completedByName} ha completado la tarea.`;
       }
       return "La tarea ha sido completada.";
+    case "task_deleted":
+      const deleterName = context.deleterName as string | undefined;
+      if (deleterName) {
+        return `${deleterName} ha eliminado una tarea que te fue asignada.`;
+      }
+      return "Una tarea que te fue asignada ha sido eliminada.";
     case "task_due_soon":
       const dueTimeframe = context.timeframe as TaskReminderTimeframe;
       if (dueTimeframe === "same_day") {
@@ -224,6 +255,155 @@ export async function notifyTaskAssigned(
     });
   } catch (error) {
     console.error("Error creating task assigned notification:", error);
+    throw error;
+  }
+}
+
+/**
+ * Create notification when a task is updated
+ * Only notifies the assigned user if they are different from the editor
+ */
+export async function notifyTaskUpdated(
+  task: Task,
+  assigneeId: string,
+  editorId: string | null,
+  accountId: bigint,
+  updatedFields: string[],
+): Promise<void> {
+  try {
+    // Don't notify if the editor is the same as the assignee
+    if (editorId === assigneeId) {
+      return;
+    }
+
+    const metadata: TaskNotificationMetadata = {
+      taskTitle: task.title,
+      dueDate: task.dueDate?.toISOString(),
+      dueTime: task.dueTime ?? undefined,
+      urgency: task.urgency ?? undefined,
+      category: task.category ?? undefined,
+      listingId: task.listingId?.toString(),
+      contactId: task.contactId?.toString(),
+      updatedFields,
+    };
+
+    await createNotificationInternal({
+      accountId,
+      userId: assigneeId,
+      fromUserId: editorId,
+      type: "task_updated",
+      title: buildTitle("task_updated", task.title),
+      message: buildMessage("task_updated", {
+        updaterName: editorId ? undefined : "Sistema",
+        updatedFields,
+      }),
+      actionUrl: buildActionUrl("task", task.taskId),
+      priority: determinePriority("task_updated"),
+      category: "tasks",
+      entityType: "task",
+      entityId: task.taskId,
+      metadata,
+    });
+  } catch (error) {
+    console.error("Error creating task updated notification:", error);
+    throw error;
+  }
+}
+
+/**
+ * Create notification when a task is reassigned to a different user
+ */
+export async function notifyTaskReassigned(
+  task: Task,
+  newAssigneeId: string,
+  previousAssigneeId: string | null,
+  reassignerId: string | null,
+  accountId: bigint,
+): Promise<void> {
+  try {
+    // Don't notify if reassigning to the same person who made the change
+    if (reassignerId === newAssigneeId) {
+      return;
+    }
+
+    const metadata: TaskNotificationMetadata = {
+      taskTitle: task.title,
+      dueDate: task.dueDate?.toISOString(),
+      dueTime: task.dueTime ?? undefined,
+      urgency: task.urgency ?? undefined,
+      category: task.category ?? undefined,
+      listingId: task.listingId?.toString(),
+      contactId: task.contactId?.toString(),
+      previousAssigneeId: previousAssigneeId ?? undefined,
+    };
+
+    await createNotificationInternal({
+      accountId,
+      userId: newAssigneeId,
+      fromUserId: reassignerId,
+      type: "task_reassigned",
+      title: buildTitle("task_reassigned", task.title),
+      message: buildMessage("task_reassigned", {
+        reassignerName: reassignerId ? undefined : "Sistema",
+      }),
+      actionUrl: buildActionUrl("task", task.taskId),
+      priority: determinePriority("task_reassigned"),
+      category: "tasks",
+      entityType: "task",
+      entityId: task.taskId,
+      metadata,
+    });
+  } catch (error) {
+    console.error("Error creating task reassigned notification:", error);
+    throw error;
+  }
+}
+
+/**
+ * Create notification when a task is deleted
+ * Notifies the assigned user if they are different from the deleter
+ */
+export async function notifyTaskDeleted(
+  task: Task,
+  assigneeId: string,
+  deleterId: string | null,
+  accountId: bigint,
+): Promise<void> {
+  try {
+    // Don't notify if the deleter is the same as the assignee
+    if (deleterId === assigneeId) {
+      return;
+    }
+
+    const metadata: TaskNotificationMetadata = {
+      taskTitle: task.title,
+      dueDate: task.dueDate?.toISOString(),
+      dueTime: task.dueTime ?? undefined,
+      urgency: task.urgency ?? undefined,
+      category: task.category ?? undefined,
+      listingId: task.listingId?.toString(),
+      contactId: task.contactId?.toString(),
+      deletedByName: deleterId ?? undefined,
+    };
+
+    await createNotificationInternal({
+      accountId,
+      userId: assigneeId,
+      fromUserId: deleterId,
+      type: "task_deleted",
+      title: buildTitle("task_deleted", task.title),
+      message: buildMessage("task_deleted", {
+        deleterName: deleterId ? undefined : "Sistema",
+      }),
+      actionUrl: null, // No action URL since the task is deleted
+      priority: determinePriority("task_deleted"),
+      category: "tasks",
+      entityType: "task",
+      entityId: task.taskId,
+      metadata,
+    });
+  } catch (error) {
+    console.error("Error creating task deleted notification:", error);
     throw error;
   }
 }

@@ -4,7 +4,10 @@ import { z } from "zod";
 export type NotificationType =
   // Task notifications
   | "task_assigned"
+  | "task_updated"
+  | "task_reassigned"
   | "task_completed"
+  | "task_deleted"
   | "task_due_soon"
   | "task_overdue"
   // Appointment notifications
@@ -93,7 +96,10 @@ export interface CreateNotificationInput {
 // Zod schemas for validation
 export const notificationTypeSchema = z.enum([
   "task_assigned",
+  "task_updated",
+  "task_reassigned",
   "task_completed",
+  "task_deleted",
   "task_due_soon",
   "task_overdue",
   "appointment_scheduled",
@@ -162,6 +168,14 @@ export interface TaskNotificationMetadata extends Record<string, unknown> {
   category?: string;
   listingId?: string;
   contactId?: string;
+  // For task_updated notification
+  updatedFields?: string[];
+  // For task_reassigned notification
+  previousAssigneeId?: string;
+  previousAssigneeName?: string;
+  newAssigneeName?: string;
+  // For task_deleted notification
+  deletedByName?: string;
 }
 
 export interface AppointmentNotificationMetadata extends Record<string, unknown> {

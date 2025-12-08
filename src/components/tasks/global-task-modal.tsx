@@ -782,9 +782,9 @@ export function GlobalTaskModal({
                       </div>
                     ) : (
                       <div className="space-y-1.5">
-                        {searchResults.map((contact) => (
+                        {searchResults.map((contact, index) => (
                           <div
-                            key={contact.contactId.toString()}
+                            key={`${contact.contactId}-${contact.contactType ?? index}`}
                             className="cursor-pointer rounded-lg border border-gray-100/50 bg-gray-50/30 p-3 transition-all hover:border-gray-200 hover:bg-gray-100/60 hover:shadow-sm"
                             onClick={() => handleContactSelect(contact)}
                           >

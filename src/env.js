@@ -43,6 +43,8 @@ export const env = createEnv({
     TWILIO_AUTH_TOKEN: z.string(),
     TWILIO_PHONE_NUMBER: z.string(), // E.164 format: +1234567890
     TWILIO_SENDER_ID: z.string().optional(),
+    // Cron Job Security
+    CRON_SECRET: z.string().optional(),
   },
 
   /**
@@ -93,6 +95,8 @@ export const env = createEnv({
     TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
     TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER,
     TWILIO_SENDER_ID: process.env.TWILIO_SENDER_ID,
+    // Cron Job Security
+    CRON_SECRET: process.env.CRON_SECRET,
     // Client variables
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:
       process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,

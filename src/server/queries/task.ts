@@ -18,7 +18,13 @@ import { eq, and, or, sql, isNotNull, asc, lte, gte } from "drizzle-orm";
 import type { Task } from "../../lib/data";
 import { getCurrentUserAccountId, getSecureSession } from "../../lib/dal";
 import { updateAppointment } from "./appointment";
-import { notifyTaskAssigned, notifyTaskCompleted } from "../services/notification-service";
+import {
+  notifyTaskAssigned,
+  notifyTaskCompleted,
+  notifyTaskUpdated,
+  notifyTaskReassigned,
+  notifyTaskDeleted
+} from "../services/notification-service";
 
 // Extend globalThis to include debug properties
 declare global {
@@ -204,7 +210,9 @@ export async function softDeleteTaskWithAuth(taskId: number) {
 
 export async function deleteTaskWithAuth(taskId: number) {
   const accountId = await getCurrentUserAccountId();
-  return deleteTask(taskId, accountId);
+  const session = await getSecureSession();
+  const userId = session?.user?.id;
+  return deleteTask(taskId, accountId, userId);
 }
 
 export async function deleteContactTaskWithAuth(taskId: number) {
@@ -927,6 +935,42 @@ export async function updateTask(
         existingTask.appointmentId,
         data,
       );
+    }
+
+    // Handle notifications for task updates
+    if (updatedTask) {
+      try {
+        // Check if task was reassigned (userId changed)
+        if (data.userId && data.userId !== existingTask.userId) {
+          // Notify the new assignee about the reassignment
+          await notifyTaskReassigned(
+            updatedTask,
+            data.userId,
+            existingTask.userId ?? null,
+            editedBy ?? null,
+            BigInt(accountId),
+          );
+        } else if (updatedTask.userId && updatedTask.userId !== editedBy) {
+          // Task was updated but not reassigned - notify assignee about the update
+          // Only notify if there are meaningful field changes (not just completed status, which has its own notification)
+          const updatedFields = Object.keys(data).filter(
+            (key) => key !== "completed" && key !== "completedBy" && key !== "editedBy"
+          );
+
+          if (updatedFields.length > 0) {
+            await notifyTaskUpdated(
+              updatedTask,
+              updatedTask.userId,
+              editedBy ?? null,
+              BigInt(accountId),
+              updatedFields,
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Error creating task update notification:", error);
+        // Don't fail task update if notification fails
+      }
     }
 
     return updatedTask;
@@ -1665,7 +1709,7 @@ export async function softDeleteTask(taskId: number, accountId: number) {
 }
 
 // Hard delete task (remove from database)
-export async function deleteTask(taskId: number, accountId: number) {
+export async function deleteTask(taskId: number, accountId: number, deletedBy?: string) {
   try {
     // First verify the task belongs to this account using JOINs instead of subqueries
     const [existingTask] = await db
@@ -1673,6 +1717,15 @@ export async function deleteTask(taskId: number, accountId: number) {
         taskId: tasks.taskId,
         userId: tasks.userId,
         createdBy: tasks.createdBy,
+        title: tasks.title,
+        description: tasks.description,
+        dueDate: tasks.dueDate,
+        dueTime: tasks.dueTime,
+        urgency: tasks.urgency,
+        category: tasks.category,
+        completed: tasks.completed,
+        listingId: tasks.listingId,
+        contactId: tasks.contactId,
       })
       .from(tasks)
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
@@ -1709,6 +1762,33 @@ export async function deleteTask(taskId: number, accountId: number) {
 
     if (!hasPermission) {
       throw new Error("Permission denied: Cannot delete this task");
+    }
+
+    // Send notification before deleting (if task was assigned to someone other than the deleter)
+    if (existingTask.userId && existingTask.userId !== deletedBy) {
+      try {
+        await notifyTaskDeleted(
+          {
+            taskId: existingTask.taskId,
+            userId: existingTask.userId,
+            title: existingTask.title,
+            description: existingTask.description,
+            dueDate: existingTask.dueDate,
+            dueTime: existingTask.dueTime,
+            urgency: existingTask.urgency,
+            category: existingTask.category,
+            completed: existingTask.completed,
+            listingId: existingTask.listingId,
+            contactId: existingTask.contactId,
+          } as Task,
+          existingTask.userId,
+          deletedBy ?? null,
+          BigInt(accountId),
+        );
+      } catch (error) {
+        console.error("Error creating task deleted notification:", error);
+        // Don't fail task deletion if notification fails
+      }
     }
 
     await db.delete(tasks).where(eq(tasks.taskId, BigInt(taskId)));

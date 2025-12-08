@@ -55,7 +55,10 @@ The notification system provides real-time and scheduled notifications for Tasks
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │  notification-service.ts (Business Logic)            │  │
 │  │  ├── notifyTaskAssigned                              │  │
+│  │  ├── notifyTaskUpdated                               │  │
+│  │  ├── notifyTaskReassigned                            │  │
 │  │  ├── notifyTaskCompleted                             │  │
+│  │  ├── notifyTaskDeleted                               │  │
 │  │  ├── notifyTaskDueSoon                               │  │
 │  │  ├── notifyTaskOverdue                               │  │
 │  │  ├── notifyAppointmentScheduled                      │  │
@@ -72,7 +75,9 @@ The notification system provides real-time and scheduled notifications for Tasks
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │  Task Queries (task.ts)                              │  │
 │  │  ├── createTask() → notifyTaskAssigned               │  │
-│  │  └── completeTask() → notifyTaskCompleted            │  │
+│  │  ├── updateTask() → notifyTaskUpdated/Reassigned     │  │
+│  │  ├── completeTask() → notifyTaskCompleted            │  │
+│  │  └── deleteTask() → notifyTaskDeleted                │  │
 │  │                                                       │  │
 │  │  Appointment Actions (appointments.ts)               │  │
 │  │  ├── createAppointmentAction() → scheduled           │  │
@@ -100,7 +105,25 @@ The notification system provides real-time and scheduled notifications for Tasks
 - **Message**: "Se te ha asignado una nueva tarea."
 - **Action URL**: `/tareas?taskId={taskId}`
 
-#### 2. `task_completed` (Instant)
+#### 2. `task_updated` (Instant)
+- **Trigger**: When task details are edited (title, description, due date, priority, etc.)
+- **Location**: `src/server/queries/task.ts` → `updateTask()`
+- **Recipient**: The user assigned to the task (only if different from the editor)
+- **Priority**: Normal
+- **Message**: "{updaterName} ha actualizado la tarea: {updatedFields}."
+- **Action URL**: `/tareas?taskId={taskId}`
+- **Note**: Does not trigger if the editor is the same as the assignee. Does not trigger for completion status changes (those have their own notification).
+
+#### 3. `task_reassigned` (Instant)
+- **Trigger**: When a task is assigned to a different user
+- **Location**: `src/server/queries/task.ts` → `updateTask()`
+- **Recipient**: The new assignee (only if different from the reassigner)
+- **Priority**: Normal
+- **Message**: "{reassignerName} te ha reasignado esta tarea."
+- **Action URL**: `/tareas?taskId={taskId}`
+- **Note**: Does not trigger if the reassigner is assigning the task to themselves.
+
+#### 4. `task_completed` (Instant)
 - **Trigger**: When a task is marked as completed
 - **Location**: `src/server/queries/task.ts` → `completeTask()`
 - **Recipient**: Both the assigned user (`task.userId`) AND the creator (`task.createdBy`) - if they are different
@@ -108,7 +131,16 @@ The notification system provides real-time and scheduled notifications for Tasks
 - **Message**: "La tarea ha sido completada."
 - **Action URL**: `/tareas?taskId={taskId}`
 
-#### 3. `task_due_soon` (Scheduled)
+#### 5. `task_deleted` (Instant)
+- **Trigger**: When a task is deleted
+- **Location**: `src/server/queries/task.ts` → `deleteTask()`
+- **Recipient**: The user assigned to the task (only if different from the deleter)
+- **Priority**: Normal
+- **Message**: "{deleterName} ha eliminado una tarea que te fue asignada."
+- **Action URL**: None (task no longer exists)
+- **Note**: Does not trigger if the deleter is the same as the assignee.
+
+#### 7. `task_due_soon` (Scheduled)
 - **Trigger**: Created by cron job for tasks due today or tomorrow
 - **Location**: `src/app/api/cron/notifications/route.ts`
 - **Recipient**: The user assigned to the task
@@ -119,7 +151,7 @@ The notification system provides real-time and scheduled notifications for Tasks
 - **Action URL**: `/tareas?taskId={taskId}`
 - **Frequency**: Cron runs every 15 minutes, checks tasks due within next 24 hours
 
-#### 4. `task_overdue` (Scheduled)
+#### 8. `task_overdue` (Scheduled)
 - **Trigger**: Created by cron job for tasks past their due date
 - **Location**: `src/app/api/cron/notifications/route.ts`
 - **Recipient**: The user assigned to the task
@@ -131,7 +163,7 @@ The notification system provides real-time and scheduled notifications for Tasks
 
 ### Appointment Notifications
 
-#### 5. `appointment_scheduled` (Instant)
+#### 9. `appointment_scheduled` (Instant)
 - **Trigger**: When a new appointment is created
 - **Location**: `src/server/actions/appointments.ts` → `createAppointmentAction()`
 - **Recipient**: The assigned user (`assignedTo`) or creator (`userId`) if no one is assigned
@@ -139,7 +171,7 @@ The notification system provides real-time and scheduled notifications for Tasks
 - **Message**: "Se ha programado una nueva cita."
 - **Action URL**: `/calendario?appointmentId={appointmentId}`
 
-#### 6. `appointment_rescheduled` (Instant)
+#### 10. `appointment_rescheduled` (Instant)
 - **Trigger**: When an appointment's start time (`datetimeStart`) is changed
 - **Location**: `src/server/actions/appointments.ts` → `updateAppointmentAction()`
 - **Recipient**: The assigned user or creator
@@ -148,7 +180,7 @@ The notification system provides real-time and scheduled notifications for Tasks
 - **Action URL**: `/calendario?appointmentId={appointmentId}`
 - **Note**: Only triggers if the datetime actually changed (compared before and after update)
 
-#### 7. `appointment_cancelled` (Instant)
+#### 11. `appointment_cancelled` (Instant)
 - **Trigger**: When appointment status is changed to "Cancelled"
 - **Location**: `src/server/actions/appointments.ts` → `updateAppointmentStatusAction()`
 - **Recipient**: The assigned user or creator
@@ -156,7 +188,7 @@ The notification system provides real-time and scheduled notifications for Tasks
 - **Message**: "La cita ha sido cancelada."
 - **Action URL**: `/calendario?appointmentId={appointmentId}`
 
-#### 8. `appointment_completed` (Instant)
+#### 12. `appointment_completed` (Instant)
 - **Trigger**: When appointment status is changed to "Completed"
 - **Location**: `src/server/actions/appointments.ts` → `updateAppointmentStatusAction()`
 - **Recipient**: Both the assigned user (`assignedTo` or `userId`) AND the creator (`userId`) - if they are different
@@ -164,7 +196,7 @@ The notification system provides real-time and scheduled notifications for Tasks
 - **Message**: "La cita ha sido completada."
 - **Action URL**: `/calendario?appointmentId={appointmentId}`
 
-#### 9. `appointment_reminder` (Scheduled)
+#### 13. `appointment_reminder` (Scheduled)
 - **Trigger**: Created by cron job for upcoming appointments
 - **Location**: `src/app/api/cron/notifications/route.ts`
 - **Recipient**: The assigned user or creator
@@ -301,7 +333,9 @@ src/
 ```
 src/server/queries/task.ts
 ├── createTask() → notifyTaskAssigned()
-└── completeTask() → notifyTaskCompleted()
+├── updateTask() → notifyTaskUpdated() / notifyTaskReassigned()
+├── completeTask() → notifyTaskCompleted()
+└── deleteTask() → notifyTaskDeleted()
 
 src/server/actions/appointments.ts
 ├── createAppointmentAction() → notifyAppointmentScheduled()
@@ -457,7 +491,10 @@ The `useNotifications` hook implements polling to keep notifications up-to-date:
 ### Manual Testing Checklist
 
 - [ ] Create a task assigned to another user → Notification appears
+- [ ] Update a task assigned to another user → Notification appears
+- [ ] Reassign a task to another user → Notification appears
 - [ ] Complete a task → Notification appears
+- [ ] Delete a task assigned to another user → Notification appears
 - [ ] Create an appointment → Notification appears
 - [ ] Reschedule an appointment → Notification appears
 - [ ] Cancel an appointment → Notification appears
@@ -504,7 +541,7 @@ Potential improvements:
 
 The notification system is fully implemented with:
 
-✅ **9 notification types** (4 task, 5 appointment)
+✅ **13 notification types** (8 task, 5 appointment)
 ✅ **Instant notifications** for all CRUD operations
 ✅ **Scheduled reminders** via Vercel Cron
 ✅ **Complete UI** with bell icon and dropdown
@@ -512,6 +549,17 @@ The notification system is fully implemented with:
 ✅ **Multi-tenant security** with account isolation
 ✅ **Error handling** that doesn't break parent operations
 ✅ **Optimistic updates** for better UX
+
+### Task Notification Summary
+| Operation | Notification Type | Recipient |
+|-----------|-------------------|-----------|
+| Create | `task_assigned` | Assignee (if different from creator) |
+| Update | `task_updated` | Assignee (if different from editor) |
+| Reassign | `task_reassigned` | New assignee |
+| Complete | `task_completed` | Assignee + Creator |
+| Delete | `task_deleted` | Assignee (if different from deleter) |
+| Due Soon | `task_due_soon` | Assignee (cron-based) |
+| Overdue | `task_overdue` | Assignee (cron-based) |
 
 All components are production-ready and follow the existing codebase patterns.
 
