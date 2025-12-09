@@ -1226,6 +1226,21 @@ export const notifications = pgTable("notifications", {
   isActive: boolean("is_active").default(true),
 });
 
+// Push Subscriptions table (for browser push notifications)
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  subscriptionId: bigserial("subscription_id", { mode: "bigint" })
+    .primaryKey(),
+  userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
+  endpoint: text("endpoint").notNull(), // Push service URL
+  p256dh: text("p256dh").notNull(), // Encryption key
+  auth: text("auth").notNull(), // Auth secret
+  userAgent: text("user_agent"), // Device/browser info (optional)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  isActive: boolean("is_active").default(true),
+});
+
 // Deal Activity (track important deal changes and milestones)
 export const dealActivity = pgTable("deal_activity", {
   id: bigserial("id", { mode: "bigint" }).primaryKey(),

@@ -11,10 +11,12 @@ import {
 import { VoiceRecordingEnhanced } from "~/components/propiedades/registro/voice-recording-enhanced";
 import type { EnhancedExtractedPropertyData } from "~/types/textract-enhanced";
 import { FileUpload } from "~/components/propiedades/registro/file-upload";
+import { createQuickPropertyAction } from "~/app/actions/quick-property";
 
 export default function CapturaPage() {
   const router = useRouter();
   const [activeOption, setActiveOption] = useState<string | null>(null);
+  const [isCreatingProperty, setIsCreatingProperty] = useState(false);
 
   // Handle voice recording completion
   const handleVoiceProcessingComplete = (
@@ -85,10 +87,31 @@ export default function CapturaPage() {
     },
   ];
 
+  const handleQuickForm = async () => {
+    if (isCreatingProperty) return;
+
+    try {
+      setIsCreatingProperty(true);
+      const result = await createQuickPropertyAction();
+
+      if (result.success) {
+        router.push(`/propiedades/registro/${result.data.listingId}`);
+      } else {
+        console.error("Error creating property:", result.error);
+        alert("Error al crear la propiedad. Por favor, inténtalo de nuevo.");
+        setIsCreatingProperty(false);
+      }
+    } catch (error) {
+      console.error("Error creating property:", error);
+      alert("Error inesperado. Por favor, inténtalo de nuevo.");
+      setIsCreatingProperty(false);
+    }
+  };
+
   const toggleOption = (optionId: string) => {
-    // Quick form navigates directly
+    // Quick form creates a property and navigates to it
     if (optionId === "quick") {
-      router.push("/propiedades/crear");
+      void handleQuickForm();
       return;
     }
 
@@ -133,6 +156,7 @@ export default function CapturaPage() {
               activeOption={activeOption}
               onToggleOption={toggleOption}
               className="mb-4 sm:mb-6 md:mb-8"
+              isQuickFormLoading={isCreatingProperty}
             />
 
             {/* Recording Option with Details */}

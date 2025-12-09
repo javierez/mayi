@@ -19,12 +19,14 @@ interface RegistrationOptionsProps {
   activeOption: string | null;
   onToggleOption: (optionId: string) => void;
   className?: string;
+  isQuickFormLoading?: boolean;
 }
 
 export function RegistrationOptions({
   activeOption,
   onToggleOption,
   className,
+  isQuickFormLoading = false,
 }: RegistrationOptionsProps) {
   const options: RegistrationOption[] = [
     {
@@ -86,7 +88,8 @@ export function RegistrationOptions({
     >
       {options.map((option) => {
         const isActive = activeOption === option.id;
-        const isDisabled = option.comingSoon;
+        const isQuickLoading = option.id === "quick" && isQuickFormLoading;
+        const isDisabled = Boolean(option.comingSoon) || isQuickLoading;
 
         return (
           <button
@@ -120,7 +123,7 @@ export function RegistrationOptions({
                     : "text-gray-600",
               )}
             >
-              {option.title}
+              {isQuickLoading ? "Creando..." : option.title}
             </span>
           </button>
         );

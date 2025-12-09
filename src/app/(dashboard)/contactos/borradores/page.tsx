@@ -78,6 +78,14 @@ export default function ContactDraftsPage() {
   }, [toast]);
 
   const handleDelete = async (contactId: bigint) => {
+    if (
+      !confirm(
+        "¿Estás seguro de que quieres eliminar este contacto? Esta acción no se puede deshacer.",
+      )
+    ) {
+      return;
+    }
+
     try {
       setDeletingId(contactId);
       const { deleteDraftContactWithAuth } = await import(

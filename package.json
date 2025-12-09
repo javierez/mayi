@@ -106,6 +106,7 @@
     "three": "^0.181.1",
     "twilio": "^5.10.4",
     "use-places-autocomplete": "^4.0.1",
+    "web-push": "^3.6.7",
     "xlsx": "^0.18.5",
     "zod": "^3.24.2"
   },
@@ -117,6 +118,7 @@
     "@types/google.maps": "^3.58.1",
     "@types/node": "^20.17.30",
     "@types/react-signature-canvas": "^1.0.7",
+    "@types/web-push": "^3.6.4",
     "@types/xlsx": "^0.0.36",
     "autoprefixer": "^10.4.21",
     "drizzle-kit": "^0.31.0",

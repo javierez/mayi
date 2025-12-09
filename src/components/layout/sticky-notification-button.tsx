@@ -10,13 +10,14 @@ import {
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Button } from "~/components/ui/button";
 import { useNotifications } from "~/hooks/use-notifications";
-import { NotificationItem } from "./notification-item";
-import { NotificationBell } from "./notification-bell";
+import { NotificationItem } from "~/components/notifications/notification-item";
+import { PushSubscriptionButton } from "~/components/notifications/push-subscription-button";
 
-export function NotificationDropdown() {
+export function StickyNotificationButton() {
   const {
     notifications,
     loading,
+    unreadCount,
     markAsRead,
     dismiss,
     loadMore,
@@ -29,14 +30,32 @@ export function NotificationDropdown() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className="relative rounded-md p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+          className="fixed bottom-24 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
           aria-label="Notificaciones"
         >
-          <NotificationBell />
+          <div className="relative">
+            <Bell className="h-6 w-6 text-gray-600" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-semibold text-white">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </div>
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[420px] p-0 border-0 shadow-lg" align="end">
+      <PopoverContent
+        className="w-[420px] p-0 border-0 shadow-lg"
+        align="end"
+        side="top"
+        sideOffset={8}
+      >
         <div className="flex flex-col">
+          {/* Push Subscription Button Header */}
+          <div className="flex items-center justify-between border-b px-3 py-2">
+            <span className="text-sm font-medium text-gray-900">Notificaciones</span>
+            <PushSubscriptionButton />
+          </div>
+          
           {/* Notifications List */}
           <ScrollArea className="max-h-[400px]">
             {loading && notifications.length === 0 ? (

@@ -139,10 +139,12 @@ const isCurrentMonth = (date: Date, currentMonth: Date) => {
   );
 };
 
-// Helper to get date string
+// Helper to get date string (using local time, not UTC)
 const getDateString = (date: Date): string => {
-  const str = date.toISOString().split("T")[0];
-  return str ?? "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 // Helper to format month and year

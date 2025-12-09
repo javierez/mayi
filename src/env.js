@@ -45,6 +45,9 @@ export const env = createEnv({
     TWILIO_SENDER_ID: z.string().optional(),
     // Cron Job Security
     CRON_SECRET: z.string().optional(),
+    // Push Notifications (VAPID)
+    VAPID_PRIVATE_KEY: z.string().optional(),
+    VAPID_SUBJECT: z.string().optional(), // Email or URL for VAPID
   },
 
   /**
@@ -54,6 +57,7 @@ export const env = createEnv({
    */
   client: {
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: z.string(),
+    NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().optional(),
   },
 
   /**
@@ -97,9 +101,13 @@ export const env = createEnv({
     TWILIO_SENDER_ID: process.env.TWILIO_SENDER_ID,
     // Cron Job Security
     CRON_SECRET: process.env.CRON_SECRET,
+    // Push Notifications (VAPID)
+    VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
+    VAPID_SUBJECT: process.env.VAPID_SUBJECT,
     // Client variables
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:
       process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
+    NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

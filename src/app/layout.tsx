@@ -8,6 +8,7 @@ import { CookieConsentBanner } from "~/components/cookie-consent-banner";
 import { OrganizationSchema } from "~/components/seo/OrganizationSchema";
 import { SoftwareApplicationSchema } from "~/components/seo/SoftwareApplicationSchema";
 import { WebSiteSchema } from "~/components/seo/WebSiteSchema";
+import { ServiceWorkerRegistration } from "~/components/notifications/service-worker-registration";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -79,6 +80,7 @@ export default function RootLayout({
       <body className={`${inter.className} bg-gray-50`}>
         <UserRoleProvider>{children}</UserRoleProvider>
         <CookieConsentBanner />
+        <ServiceWorkerRegistration />
         <SpeedInsights />
         <Analytics />
         <OrganizationSchema />

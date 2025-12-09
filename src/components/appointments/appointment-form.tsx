@@ -1210,7 +1210,7 @@ export default function AppointmentForm({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex h-8 items-center space-x-1.5 px-2.5"
+                  className="flex h-6 items-center space-x-1 px-2 text-xs"
                   onClick={() => setShowContactPopup(true)}
                 >
                   <Plus className="h-3 w-3" />

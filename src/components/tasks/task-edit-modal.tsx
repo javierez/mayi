@@ -534,11 +534,12 @@ export function TaskEditModal({
       // Success - close modal and trigger refresh
       onOpenChange(false);
       
-      // Trigger refresh: use callback if provided, otherwise use router.refresh()
+      // Always refresh the page to ensure updated data is shown
+      router.refresh();
+      
+      // Also call onSuccess callback if provided (for parent component updates)
       if (onSuccess) {
         onSuccess();
-      } else {
-        router.refresh();
       }
     } catch (error) {
       console.error("Error updating task:", error);
@@ -596,11 +597,12 @@ export function TaskEditModal({
       setPendingSubmit(false);
       onOpenChange(false);
       
-      // Trigger refresh: use callback if provided, otherwise use router.refresh()
+      // Always refresh the page to ensure updated data is shown
+      router.refresh();
+      
+      // Also call onSuccess callback if provided (for parent component updates)
       if (onSuccess) {
         onSuccess();
-      } else {
-        router.refresh();
       }
     } catch (error) {
       console.error("Error creating relationship and updating task:", error);

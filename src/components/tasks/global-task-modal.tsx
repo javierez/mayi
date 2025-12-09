@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Label } from "~/components/ui/label";
-import { AlertCircle, Loader2, Search, X, Mail, Phone } from "lucide-react";
+import { AlertCircle, Loader2, Search, X, Mail, Phone, Plus } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { getInitials } from "~/lib/operations/task-utils";
 import { createTaskWithAuth, updateTaskWithAuth } from "~/server/queries/task";
@@ -35,6 +35,7 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import { Badge } from "~/components/ui/badge";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { createListingContactRelationshipAction } from "~/server/actions/contact-activity";
+import { QuickContactModal } from "~/components/contactos/quick-contact-modal";
 import Image from "next/image";
 
 interface Contact {
@@ -119,6 +120,9 @@ export function GlobalTaskModal({
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [, setPendingSubmit] = useState(false);
 
+  // Quick contact modal state
+  const [showContactPopup, setShowContactPopup] = useState(false);
+
   // Debounce search queries to prevent excessive API calls
   const debouncedContactSearchQuery = useDebounce(contactSearchQuery, 300);
   const debouncedPropertySearchQuery = useDebounce(propertySearchQuery, 300);
@@ -178,6 +182,7 @@ export function GlobalTaskModal({
       setSearchResults([]);
       setShowConfirmDialog(false);
       setPendingSubmit(false);
+      setShowContactPopup(false);
     }
   }, [open, session?.user?.id, initialListingId, initialContactId]);
 
@@ -413,6 +418,46 @@ export function GlobalTaskModal({
     // Contacts will be updated by the effect
   };
 
+  // Handle contact creation from popup
+  const handleContactCreated = (contact: unknown) => {
+    // Type guard to check if contact has the expected properties
+    interface NewContact {
+      contactId: number | bigint;
+      firstName: string;
+      lastName: string;
+      email?: string | null;
+      phone?: string | null;
+    }
+
+    const isValidContact = (obj: unknown): obj is NewContact => {
+      return (
+        typeof obj === "object" &&
+        obj !== null &&
+        "contactId" in obj &&
+        "firstName" in obj &&
+        "lastName" in obj
+      );
+    };
+
+    if (isValidContact(contact)) {
+      const newContactForList: Contact = {
+        contactId: typeof contact.contactId === "bigint"
+          ? contact.contactId
+          : BigInt(contact.contactId),
+        firstName: contact.firstName,
+        lastName: contact.lastName,
+        email: contact.email ?? null,
+        phone: contact.phone ?? null,
+      };
+
+      // Add to contacts list at the top
+      setSearchResults((prev) => [newContactForList, ...prev]);
+
+      // Auto-select the new contact
+      handleContactSelect(newContactForList);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!formData.title.trim() || !formData.description.trim()) {
       setSaveError("Por favor completa todos los campos requeridos");
@@ -424,7 +469,7 @@ export function GlobalTaskModal({
 
     try {
       const selectedUserId = formData.agentId || session?.user?.id;
-      
+
       if (!selectedUserId) {
         setSaveError("No se pudo determinar el usuario asignado");
         setLoading((prev) => ({ ...prev, saving: false }));
@@ -452,32 +497,8 @@ export function GlobalTaskModal({
         }
       }
 
-      const taskData = {
-        userId: selectedUserId,
-        title: formData.title,
-        description: formData.description,
-        completed: false,
-        isActive: true,
-        dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
-        dueTime: formData.dueDate ? formData.dueTime || "00:00" : undefined,
-        urgency: formData.urgency ? parseInt(formData.urgency) : undefined,
-        createdBy: session?.user?.id,
-        // Entity associations (all optional)
-        contactId: formData.contactId ? BigInt(formData.contactId) : undefined,
-        listingId: formData.listingId ? BigInt(formData.listingId) : undefined,
-        listingContactId,
-        dealId: undefined,
-        appointmentId: undefined,
-        prospectId: undefined,
-      };
-
-      const savedTask = await createTaskWithAuth(taskData);
-
-      if (!savedTask) {
-        throw new Error("Failed to save task");
-      }
-
-      // Create appointment if requested
+      // Create appointment FIRST if requested (so we can link it to the task)
+      let appointmentId: bigint | undefined;
       if (formData.createInCalendar && formData.dueDate && formData.dueTime) {
         try {
           const startDateTime = new Date(`${formData.dueDate}T${formData.dueTime}`);
@@ -497,17 +518,38 @@ export function GlobalTaskModal({
             listingContactId,
           });
 
-          // Link appointment back to task
           if (appointmentResult.success && appointmentResult.appointmentId) {
-            await updateTaskWithAuth(Number(savedTask.taskId), {
-              appointmentId: BigInt(appointmentResult.appointmentId),
-            });
+            appointmentId = BigInt(appointmentResult.appointmentId);
           }
         } catch (appointmentError) {
           console.error("Error creating appointment:", appointmentError);
-          // Don't fail the whole operation if appointment creation fails
-          // The task was already created successfully
+          // Continue with task creation even if appointment fails
         }
+      }
+
+      const taskData = {
+        userId: selectedUserId,
+        title: formData.title,
+        description: formData.description,
+        completed: false,
+        isActive: true,
+        dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
+        dueTime: formData.dueDate ? formData.dueTime || "00:00" : undefined,
+        urgency: formData.urgency ? parseInt(formData.urgency) : undefined,
+        createdBy: session?.user?.id,
+        // Entity associations (all optional)
+        contactId: formData.contactId ? BigInt(formData.contactId) : undefined,
+        listingId: formData.listingId ? BigInt(formData.listingId) : undefined,
+        listingContactId,
+        dealId: undefined,
+        appointmentId, // Now included directly when creating the task
+        prospectId: undefined,
+      };
+
+      const savedTask = await createTaskWithAuth(taskData);
+
+      if (!savedTask) {
+        throw new Error("Failed to save task");
       }
 
       // Success - close modal and call success callback
@@ -551,31 +593,8 @@ export function GlobalTaskModal({
         return;
       }
 
-      const taskData = {
-        userId: selectedUserId,
-        title: formData.title,
-        description: formData.description,
-        completed: false,
-        isActive: true,
-        dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
-        dueTime: formData.dueDate ? formData.dueTime || "00:00" : undefined,
-        urgency: formData.urgency ? parseInt(formData.urgency) : undefined,
-        createdBy: session?.user?.id,
-        contactId: BigInt(formData.contactId),
-        listingId: BigInt(formData.listingId),
-        listingContactId: createResult.listingContactId,
-        dealId: undefined,
-        appointmentId: undefined,
-        prospectId: undefined,
-      };
-
-      const savedTask = await createTaskWithAuth(taskData);
-
-      if (!savedTask) {
-        throw new Error("Failed to save task");
-      }
-
-      // Create appointment if requested
+      // Create appointment FIRST if requested (so we can link it to the task)
+      let appointmentId: bigint | undefined;
       if (formData.createInCalendar && formData.dueDate && formData.dueTime) {
         try {
           const startDateTime = new Date(`${formData.dueDate}T${formData.dueTime}`);
@@ -595,17 +614,37 @@ export function GlobalTaskModal({
             listingContactId: createResult.listingContactId,
           });
 
-          // Link appointment back to task
           if (appointmentResult.success && appointmentResult.appointmentId) {
-            await updateTaskWithAuth(Number(savedTask.taskId), {
-              appointmentId: BigInt(appointmentResult.appointmentId),
-            });
+            appointmentId = BigInt(appointmentResult.appointmentId);
           }
         } catch (appointmentError) {
           console.error("Error creating appointment:", appointmentError);
-          // Don't fail the whole operation if appointment creation fails
-          // The task was already created successfully
+          // Continue with task creation even if appointment fails
         }
+      }
+
+      const taskData = {
+        userId: selectedUserId,
+        title: formData.title,
+        description: formData.description,
+        completed: false,
+        isActive: true,
+        dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
+        dueTime: formData.dueDate ? formData.dueTime || "00:00" : undefined,
+        urgency: formData.urgency ? parseInt(formData.urgency) : undefined,
+        createdBy: session?.user?.id,
+        contactId: BigInt(formData.contactId),
+        listingId: BigInt(formData.listingId),
+        listingContactId: createResult.listingContactId,
+        dealId: undefined,
+        appointmentId, // Now included directly when creating the task
+        prospectId: undefined,
+      };
+
+      const savedTask = await createTaskWithAuth(taskData);
+
+      if (!savedTask) {
+        throw new Error("Failed to save task");
       }
 
       // Success - close modal and call success callback
@@ -695,7 +734,20 @@ export function GlobalTaskModal({
 
           {/* Contact Selection */}
           <div className="space-y-2">
-            <Label>Contacto</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label>Contacto</Label>
+              {!initialContactId && !selectedContact && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex h-6 items-center space-x-1 px-2 text-xs"
+                  onClick={() => setShowContactPopup(true)}
+                >
+                  <Plus className="h-3 w-3" />
+                  <span>Agregar</span>
+                </Button>
+              )}
+            </div>
 
             {loading.searching && initialContactId ? (
               <div className="flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 p-6">
@@ -1145,6 +1197,13 @@ export function GlobalTaskModal({
         confirmVariant="default"
         onConfirm={handleConfirmCreateRelationship}
         onCancel={handleCancelCreateRelationship}
+      />
+
+      {/* Quick Contact Creation Modal */}
+      <QuickContactModal
+        open={showContactPopup}
+        onOpenChange={setShowContactPopup}
+        onSuccess={handleContactCreated}
       />
     </Dialog>
   );

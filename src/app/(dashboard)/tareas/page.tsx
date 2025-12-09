@@ -140,40 +140,70 @@ export default function TareasPage() {
     setSearchQuery(value);
   };
 
+  const refetchTasks = async () => {
+    if (!session?.user?.id) return;
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      const userId = session.user.id;
+
+      // Parse filters from URL params
+      const createdByFilter = searchParams.get("createdBy")
+        ? searchParams.get("createdBy")!.split(",")
+        : undefined;
+      const urgencyFilter = searchParams.get("urgency")
+        ? searchParams.get("urgency")!.split(",").map(Number)
+        : undefined;
+      const assignedToFilter = searchParams.get("assignedTo")
+        ? searchParams.get("assignedTo")!.split(",")
+        : undefined;
+
+      // Fetch tasks with filters
+      const tasksResult = await getUserTasksWithAuth(userId, {
+        createdBy: createdByFilter,
+        urgency: urgencyFilter,
+        assignedTo: assignedToFilter,
+      });
+
+      // Transform tasks to match the expected format
+      const transformedTasks = tasksResult.map((result) => ({
+        taskId: result.tasks.taskId.toString(),
+        title: result.tasks.title,
+        description: result.tasks.description,
+        dueDate: result.tasks.dueDate,
+        urgency: result.tasks.urgency,
+        category: result.tasks.category,
+        status: result.tasks.status ?? "backlog",
+        completed: result.tasks.completed,
+        createdAt: result.tasks.createdAt,
+        listingId: result.tasks.listingId?.toString() ?? null,
+        contactId:
+          result.contacts?.contactId?.toString() ??
+          result.tasks.contactId?.toString() ??
+          null,
+        propertyTitle: result.properties?.title ?? null,
+        contactFirstName: result.contacts?.firstName ?? null,
+        contactLastName: result.contacts?.lastName ?? null,
+      }));
+
+      setTasks(transformedTasks);
+    } catch (error) {
+      console.error("Error refreshing tasks:", error);
+      setError("Error al cargar las tareas");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleTaskCreated = () => {
     // Refetch tasks when a new task is created
-    if (session?.user?.id) {
-      setIsLoading(true);
-      void getUserTasksWithAuth(session.user.id, {})
-        .then((tasksResult) => {
-          const transformedTasks = tasksResult.map((result) => ({
-            taskId: result.tasks.taskId.toString(),
-            title: result.tasks.title,
-            description: result.tasks.description,
-            dueDate: result.tasks.dueDate,
-            urgency: result.tasks.urgency,
-            category: result.tasks.category,
-            status: result.tasks.status ?? "backlog",
-            completed: result.tasks.completed,
-            createdAt: result.tasks.createdAt,
-            listingId: result.tasks.listingId?.toString() ?? null,
-            contactId:
-              result.contacts?.contactId?.toString() ??
-              result.tasks.contactId?.toString() ??
-              null,
-            propertyTitle: result.properties?.title ?? null,
-            contactFirstName: result.contacts?.firstName ?? null,
-            contactLastName: result.contacts?.lastName ?? null,
-          }));
-          setTasks(transformedTasks);
-        })
-        .catch((error) => {
-          console.error("Error refreshing tasks:", error);
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    }
+    void refetchTasks();
+  };
+
+  const handleTaskUpdated = () => {
+    // Refetch tasks when a task is updated/edited
+    void refetchTasks();
   };
 
   return (
@@ -204,7 +234,11 @@ export default function TareasPage() {
             <p className="text-destructive">{error}</p>
           </div>
         ) : (
-          <TaskBoard initialTasks={tasks} searchQuery={searchQuery} />
+          <TaskBoard 
+            initialTasks={tasks} 
+            searchQuery={searchQuery}
+            onTaskUpdated={handleTaskUpdated}
+          />
         )}
       </div>
     </div>

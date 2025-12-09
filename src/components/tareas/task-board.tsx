@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import {
   DndContext,
   type DragStartEvent,
@@ -40,6 +40,7 @@ interface Task {
 interface TaskBoardProps {
   initialTasks: Task[];
   searchQuery?: string;
+  onTaskUpdated?: () => void;
 }
 
 const TASK_STATUSES = [
@@ -51,7 +52,7 @@ const TASK_STATUSES = [
   { id: "blocked", label: "Bloqueado", color: "red" },
 ];
 
-export function TaskBoard({ initialTasks, searchQuery = "" }: TaskBoardProps) {
+export function TaskBoard({ initialTasks, searchQuery = "", onTaskUpdated }: TaskBoardProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
@@ -60,6 +61,12 @@ export function TaskBoard({ initialTasks, searchQuery = "" }: TaskBoardProps) {
   const previousTasks = useRef<Task[]>(initialTasks);
   const { toast } = useToast();
   const router = useRouter();
+
+  // Update tasks when initialTasks prop changes (e.g., after parent refresh)
+  useEffect(() => {
+    setTasks(initialTasks);
+    previousTasks.current = initialTasks;
+  }, [initialTasks]);
 
   // Client-side search filtering with normalized search for accent-insensitive matching
   const filteredTasks = useMemo(() => {
@@ -360,6 +367,10 @@ export function TaskBoard({ initialTasks, searchQuery = "" }: TaskBoardProps) {
         onSuccess={() => {
           // Refresh the page to get updated task data
           router.refresh();
+          // Call parent callback to refresh tasks list
+          if (onTaskUpdated) {
+            onTaskUpdated();
+          }
           // Also optimistically remove the task from local state if it was deleted
           if (selectedTaskId) {
             setTasks((prev) =>

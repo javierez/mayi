@@ -29,6 +29,7 @@ import {
   X,
   User,
   FileText,
+  Plus,
 } from "lucide-react";
 import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 import { NotesAiButtons, type TransformationType } from "~/components/shared/notes-ai-buttons";
@@ -36,6 +37,7 @@ import { NotesTransformationPreviewModal } from "~/components/shared/notes-trans
 import { TaskSelectionModal } from "~/components/shared/task-selection-modal";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { ContactSolicitudModal } from "~/components/contactos/detail/solicitudes/contact-solicitud-modal";
+import { QuickContactModal } from "~/components/contactos/quick-contact-modal";
 import { createListingContactActivityAction } from "~/server/actions/listing-contact-activity";
 import { createContactActivityAction, findListingContactIdAction, createListingContactRelationshipAction } from "~/server/actions/contact-activity";
 import { listListingsCompactWithAuth, listListingsForContactWithAuth } from "~/server/queries/listing";
@@ -129,6 +131,9 @@ export function QuickActionModal({
   // Solicitud modal state
   const [showSolicitudModal, setShowSolicitudModal] = useState(false);
 
+  // Quick contact modal state
+  const [showContactPopup, setShowContactPopup] = useState(false);
+
   // Reset form when modal closes
   React.useEffect(() => {
     if (!open) {
@@ -156,6 +161,8 @@ export function QuickActionModal({
       setPendingListingId(null);
       // Reset solicitud modal state
       setShowSolicitudModal(false);
+      // Reset quick contact modal state
+      setShowContactPopup(false);
     }
   }, [open]);
 
@@ -298,6 +305,46 @@ export function QuickActionModal({
   const handleContactSelect = (contact: Contact) => {
     setSelectedContact(contact);
     setStep("activity");
+  };
+
+  // Handle contact creation from popup
+  const handleContactCreated = (contact: unknown) => {
+    // Type guard to check if contact has the expected properties
+    interface NewContact {
+      contactId: number | bigint;
+      firstName: string;
+      lastName: string;
+      email?: string | null;
+      phone?: string | null;
+    }
+
+    const isValidContact = (obj: unknown): obj is NewContact => {
+      return (
+        typeof obj === "object" &&
+        obj !== null &&
+        "contactId" in obj &&
+        "firstName" in obj &&
+        "lastName" in obj
+      );
+    };
+
+    if (isValidContact(contact)) {
+      const newContactForList: Contact = {
+        contactId: typeof contact.contactId === "bigint"
+          ? contact.contactId
+          : BigInt(contact.contactId),
+        firstName: contact.firstName,
+        lastName: contact.lastName,
+        email: contact.email ?? null,
+        phone: contact.phone ?? null,
+      };
+
+      // Add to contacts list at the top
+      setContacts((prev) => [newContactForList, ...prev]);
+
+      // Auto-select the new contact and move to next step
+      handleContactSelect(newContactForList);
+    }
   };
 
   const handleActivityTypeSelect = (type: ActivityType) => {
@@ -647,7 +694,18 @@ export function QuickActionModal({
           /* Step 1: Contact Selection */
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="contact-search">Buscar contacto</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="contact-search">Buscar contacto</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex h-6 items-center space-x-1 px-2 text-xs"
+                  onClick={() => setShowContactPopup(true)}
+                >
+                  <Plus className="h-3 w-3" />
+                  <span>Agregar</span>
+                </Button>
+              </div>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -1064,6 +1122,13 @@ export function QuickActionModal({
           }}
         />
       )}
+
+      {/* Quick Contact Creation Modal */}
+      <QuickContactModal
+        open={showContactPopup}
+        onOpenChange={setShowContactPopup}
+        onSuccess={handleContactCreated}
+      />
     </Dialog>
   );
 }

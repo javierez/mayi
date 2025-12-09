@@ -757,7 +757,18 @@ export async function updateTask(
   editedBy?: string,
 ) {
   try {
+    console.log("🔍 [updateTask] Starting update check:", {
+      taskId,
+      accountId,
+      editedBy,
+      updateFields: Object.keys(data),
+    });
+
     // First verify the task belongs to this account using JOINs instead of subqueries
+    // Tasks can belong to account through:
+    // 1. Contact relationship (contact -> account)
+    // 2. Property/Listing relationship (property -> account)
+    // 3. User relationship (user -> account) - for tasks without contact/listing
     const [existingTask] = await db
       .select({
         taskId: tasks.taskId,
@@ -770,6 +781,7 @@ export async function updateTask(
         appointmentId: tasks.appointmentId,
       })
       .from(tasks)
+      .leftJoin(users, eq(tasks.userId, users.id))
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
       .leftJoin(
         contacts,
@@ -791,19 +803,49 @@ export async function updateTask(
           or(
             eq(contacts.accountId, BigInt(accountId)),
             eq(properties.accountId, BigInt(accountId)),
+            eq(users.accountId, BigInt(accountId)), // Check through assigned user
           ),
         ),
       );
 
+    console.log("🔍 [updateTask] Task lookup result:", {
+      found: !!existingTask,
+      taskId: existingTask?.taskId?.toString(),
+      userId: existingTask?.userId,
+      createdBy: existingTask?.createdBy,
+      title: existingTask?.title,
+    });
+
     if (!existingTask) {
+      console.error("❌ [updateTask] Task not found or access denied:", {
+        taskId,
+        accountId,
+        editedBy,
+      });
       throw new Error("Task not found or access denied");
     }
 
     // Check user permissions for this specific task
+    console.log("🔐 [updateTask] Checking permissions for update:", {
+      taskCreatedBy: existingTask.createdBy,
+      editedBy,
+    });
+
     const { canEditTask } = await import("~/app/actions/permissions/check-permissions");
     const hasPermission = await canEditTask(existingTask.createdBy);
 
+    console.log("🔐 [updateTask] Permission check result:", {
+      hasPermission,
+      taskCreatedBy: existingTask.createdBy,
+      editedBy,
+    });
+
     if (!hasPermission) {
+      console.error("❌ [updateTask] Permission denied:", {
+        taskId,
+        taskCreatedBy: existingTask.createdBy,
+        editedBy,
+      });
       throw new Error("Permission denied: Cannot edit this task");
     }
 
@@ -1361,6 +1403,10 @@ export async function completeTask(
 ) {
   try {
     // First verify the task belongs to this account and get activityId and activityType
+    // Tasks can belong to account through:
+    // 1. Contact relationship (contact -> account)
+    // 2. Property/Listing relationship (property -> account)
+    // 3. User relationship (user -> account) - for tasks without contact/listing
     const [existingTask] = await db
       .select({
         taskId: tasks.taskId,
@@ -1371,6 +1417,7 @@ export async function completeTask(
         appointmentId: tasks.appointmentId,
       })
       .from(tasks)
+      .leftJoin(users, eq(tasks.userId, users.id))
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
       .leftJoin(
         contacts,
@@ -1392,6 +1439,7 @@ export async function completeTask(
           or(
             eq(contacts.accountId, BigInt(accountId)),
             eq(properties.accountId, BigInt(accountId)),
+            eq(users.accountId, BigInt(accountId)), // Check through assigned user
           ),
         ),
       );
@@ -1666,9 +1714,14 @@ export async function completeTask(
 export async function softDeleteTask(taskId: number, accountId: number) {
   try {
     // First verify the task belongs to this account
+    // Tasks can belong to account through:
+    // 1. Contact relationship (contact -> account)
+    // 2. Property/Listing relationship (property -> account)
+    // 3. User relationship (user -> account) - for tasks without contact/listing
     const [existingTask] = await db
       .select({ taskId: tasks.taskId })
       .from(tasks)
+      .leftJoin(users, eq(tasks.userId, users.id))
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
       .leftJoin(
         contacts,
@@ -1689,6 +1742,7 @@ export async function softDeleteTask(taskId: number, accountId: number) {
           or(
             eq(contacts.accountId, BigInt(accountId)),
             eq(properties.accountId, BigInt(accountId)),
+            eq(users.accountId, BigInt(accountId)), // Check through assigned user
           ),
         ),
       );
@@ -1711,7 +1765,17 @@ export async function softDeleteTask(taskId: number, accountId: number) {
 // Hard delete task (remove from database)
 export async function deleteTask(taskId: number, accountId: number, deletedBy?: string) {
   try {
+    console.log("🔍 [deleteTask] Starting deletion check:", {
+      taskId,
+      accountId,
+      deletedBy,
+    });
+
     // First verify the task belongs to this account using JOINs instead of subqueries
+    // Tasks can belong to account through:
+    // 1. Contact relationship (contact -> account)
+    // 2. Property/Listing relationship (property -> account)
+    // 3. User relationship (user -> account) - for tasks without contact/listing
     const [existingTask] = await db
       .select({
         taskId: tasks.taskId,
@@ -1728,6 +1792,7 @@ export async function deleteTask(taskId: number, accountId: number, deletedBy?: 
         contactId: tasks.contactId,
       })
       .from(tasks)
+      .leftJoin(users, eq(tasks.userId, users.id))
       .leftJoin(prospects, eq(tasks.prospectId, prospects.id))
       .leftJoin(
         contacts,
@@ -1748,19 +1813,49 @@ export async function deleteTask(taskId: number, accountId: number, deletedBy?: 
           or(
             eq(contacts.accountId, BigInt(accountId)),
             eq(properties.accountId, BigInt(accountId)),
+            eq(users.accountId, BigInt(accountId)), // Check through assigned user
           ),
         ),
       );
 
+    console.log("🔍 [deleteTask] Task lookup result:", {
+      found: !!existingTask,
+      taskId: existingTask?.taskId?.toString(),
+      userId: existingTask?.userId,
+      createdBy: existingTask?.createdBy,
+      title: existingTask?.title,
+    });
+
     if (!existingTask) {
+      console.error("❌ [deleteTask] Task not found or access denied:", {
+        taskId,
+        accountId,
+        deletedBy,
+      });
       throw new Error("Task not found or access denied");
     }
 
     // Check user permissions for this specific task
+    console.log("🔐 [deleteTask] Checking permissions for deletion:", {
+      taskCreatedBy: existingTask.createdBy,
+      deletedBy,
+    });
+
     const { canDeleteTask } = await import("~/app/actions/permissions/check-permissions");
     const hasPermission = await canDeleteTask(existingTask.createdBy);
 
+    console.log("🔐 [deleteTask] Permission check result:", {
+      hasPermission,
+      taskCreatedBy: existingTask.createdBy,
+      deletedBy,
+    });
+
     if (!hasPermission) {
+      console.error("❌ [deleteTask] Permission denied:", {
+        taskId,
+        taskCreatedBy: existingTask.createdBy,
+        deletedBy,
+      });
       throw new Error("Permission denied: Cannot delete this task");
     }
 

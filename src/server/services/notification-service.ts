@@ -7,6 +7,7 @@
  */
 
 import { createNotificationInternal } from "~/server/queries/notification";
+import { sendPushToUser } from "~/server/services/push-service";
 import type {
   NotificationType,
   NotificationPriority,
@@ -18,6 +19,37 @@ import type {
 } from "~/types/notifications";
 import type { Task } from "~/lib/data";
 import type { Appointment } from "~/lib/data";
+
+/**
+ * Helper function to send push notification after creating DB notification
+ * Wraps errors so push failures don't break notification creation
+ */
+async function sendPushAfterNotification(
+  userId: string,
+  accountId: bigint,
+  notification: { notificationId: bigint; title: string; message: string; actionUrl: string | null },
+  entityType: EntityType | null,
+  entityId: bigint | null,
+): Promise<void> {
+  try {
+    await sendPushToUser(userId, accountId, {
+      title: notification.title,
+      body: notification.message,
+      icon: "/apple-icon.png",
+      badge: "/apple-icon.png",
+      data: {
+        url: notification.actionUrl ?? "/dashboard",
+        actionUrl: notification.actionUrl ?? "/dashboard",
+        notificationId: notification.notificationId.toString(),
+      },
+      tag: entityType && entityId ? `${entityType}-${entityId}` : undefined,
+      requireInteraction: false,
+    });
+  } catch (pushError) {
+    console.error("Error sending push notification:", pushError);
+    // Don't throw - push failures shouldn't break notification creation
+  }
+}
 
 /**
  * Build action URL for navigation based on entity type and ID
@@ -237,7 +269,7 @@ export async function notifyTaskAssigned(
       contactId: task.contactId?.toString(),
     };
 
-    await createNotificationInternal({
+    const notification = await createNotificationInternal({
       accountId,
       userId: assigneeId,
       fromUserId: assignerId,
@@ -253,6 +285,19 @@ export async function notifyTaskAssigned(
       entityId: task.taskId,
       metadata,
     });
+
+    await sendPushAfterNotification(
+      assigneeId,
+      accountId,
+      {
+        notificationId: notification.notificationId,
+        title: notification.title,
+        message: notification.message,
+        actionUrl: notification.actionUrl,
+      },
+      "task",
+      task.taskId,
+    );
   } catch (error) {
     console.error("Error creating task assigned notification:", error);
     throw error;
@@ -287,7 +332,7 @@ export async function notifyTaskUpdated(
       updatedFields,
     };
 
-    await createNotificationInternal({
+    const notification = await createNotificationInternal({
       accountId,
       userId: assigneeId,
       fromUserId: editorId,
@@ -304,6 +349,19 @@ export async function notifyTaskUpdated(
       entityId: task.taskId,
       metadata,
     });
+
+    await sendPushAfterNotification(
+      assigneeId,
+      accountId,
+      {
+        notificationId: notification.notificationId,
+        title: notification.title,
+        message: notification.message,
+        actionUrl: notification.actionUrl,
+      },
+      "task",
+      task.taskId,
+    );
   } catch (error) {
     console.error("Error creating task updated notification:", error);
     throw error;
@@ -337,7 +395,7 @@ export async function notifyTaskReassigned(
       previousAssigneeId: previousAssigneeId ?? undefined,
     };
 
-    await createNotificationInternal({
+    const notification = await createNotificationInternal({
       accountId,
       userId: newAssigneeId,
       fromUserId: reassignerId,
@@ -353,6 +411,19 @@ export async function notifyTaskReassigned(
       entityId: task.taskId,
       metadata,
     });
+
+    await sendPushAfterNotification(
+      newAssigneeId,
+      accountId,
+      {
+        notificationId: notification.notificationId,
+        title: notification.title,
+        message: notification.message,
+        actionUrl: notification.actionUrl,
+      },
+      "task",
+      task.taskId,
+    );
   } catch (error) {
     console.error("Error creating task reassigned notification:", error);
     throw error;
@@ -386,7 +457,7 @@ export async function notifyTaskDeleted(
       deletedByName: deleterId ?? undefined,
     };
 
-    await createNotificationInternal({
+    const notification = await createNotificationInternal({
       accountId,
       userId: assigneeId,
       fromUserId: deleterId,
@@ -402,6 +473,19 @@ export async function notifyTaskDeleted(
       entityId: task.taskId,
       metadata,
     });
+
+    await sendPushAfterNotification(
+      assigneeId,
+      accountId,
+      {
+        notificationId: notification.notificationId,
+        title: notification.title,
+        message: notification.message,
+        actionUrl: notification.actionUrl,
+      },
+      "task",
+      task.taskId,
+    );
   } catch (error) {
     console.error("Error creating task deleted notification:", error);
     throw error;
@@ -445,18 +529,42 @@ export async function notifyTaskCompleted(
 
     // Notify assigned user (if different from creator)
     if (task.userId) {
-      await createNotificationInternal({
+      const notification = await createNotificationInternal({
         ...notificationData,
         userId: task.userId,
       });
+      await sendPushAfterNotification(
+        task.userId,
+        accountId,
+        {
+          notificationId: notification.notificationId,
+          title: notification.title,
+          message: notification.message,
+          actionUrl: notification.actionUrl,
+        },
+        "task",
+        task.taskId,
+      );
     }
 
     // Notify creator (if different from assigned user and exists)
     if (task.createdBy && task.createdBy !== task.userId) {
-      await createNotificationInternal({
+      const notification = await createNotificationInternal({
         ...notificationData,
         userId: task.createdBy,
       });
+      await sendPushAfterNotification(
+        task.createdBy,
+        accountId,
+        {
+          notificationId: notification.notificationId,
+          title: notification.title,
+          message: notification.message,
+          actionUrl: notification.actionUrl,
+        },
+        "task",
+        task.taskId,
+      );
     }
   } catch (error) {
     console.error("Error creating task completed notification:", error);
@@ -487,7 +595,7 @@ export async function notifyTaskDueSoon(
       contactId: task.contactId?.toString(),
     };
 
-    await createNotificationInternal({
+    const notification = await createNotificationInternal({
       accountId,
       userId: task.userId,
       fromUserId: null, // System notification
@@ -504,6 +612,19 @@ export async function notifyTaskDueSoon(
         reminderType: timeframe,
       },
     });
+
+    await sendPushAfterNotification(
+      task.userId,
+      accountId,
+      {
+        notificationId: notification.notificationId,
+        title: notification.title,
+        message: notification.message,
+        actionUrl: notification.actionUrl,
+      },
+      "task",
+      task.taskId,
+    );
   } catch (error) {
     console.error("Error creating task due soon notification:", error);
     throw error;
@@ -532,7 +653,7 @@ export async function notifyTaskOverdue(
       contactId: task.contactId?.toString(),
     };
 
-    await createNotificationInternal({
+    const notification = await createNotificationInternal({
       accountId,
       userId: task.userId,
       fromUserId: null, // System notification
@@ -546,6 +667,19 @@ export async function notifyTaskOverdue(
       entityId: task.taskId,
       metadata,
     });
+
+    await sendPushAfterNotification(
+      task.userId,
+      accountId,
+      {
+        notificationId: notification.notificationId,
+        title: notification.title,
+        message: notification.message,
+        actionUrl: notification.actionUrl,
+      },
+      "task",
+      task.taskId,
+    );
   } catch (error) {
     console.error("Error creating task overdue notification:", error);
     throw error;
@@ -572,7 +706,7 @@ export async function notifyAppointmentScheduled(
       datetimeEnd: appointment.datetimeEnd.toISOString(),
     };
 
-    await createNotificationInternal({
+    const notification = await createNotificationInternal({
       accountId,
       userId: targetUserId,
       fromUserId: createdById,
@@ -588,6 +722,19 @@ export async function notifyAppointmentScheduled(
       entityId: appointment.appointmentId,
       metadata,
     });
+
+    await sendPushAfterNotification(
+      targetUserId,
+      accountId,
+      {
+        notificationId: notification.notificationId,
+        title: notification.title,
+        message: notification.message,
+        actionUrl: notification.actionUrl,
+      },
+      "appointment",
+      appointment.appointmentId,
+    );
   } catch (error) {
     console.error("Error creating appointment scheduled notification:", error);
     throw error;
@@ -613,7 +760,7 @@ export async function notifyAppointmentRescheduled(
       previousDatetime: previousDateTime.toISOString(),
     };
 
-    await createNotificationInternal({
+    const notification = await createNotificationInternal({
       accountId,
       userId: targetUserId,
       fromUserId: userId,
@@ -629,6 +776,19 @@ export async function notifyAppointmentRescheduled(
       entityId: appointment.appointmentId,
       metadata,
     });
+
+    await sendPushAfterNotification(
+      targetUserId,
+      accountId,
+      {
+        notificationId: notification.notificationId,
+        title: notification.title,
+        message: notification.message,
+        actionUrl: notification.actionUrl,
+      },
+      "appointment",
+      appointment.appointmentId,
+    );
   } catch (error) {
     console.error("Error creating appointment rescheduled notification:", error);
     throw error;
@@ -652,7 +812,7 @@ export async function notifyAppointmentCancelled(
       datetimeEnd: appointment.datetimeEnd.toISOString(),
     };
 
-    await createNotificationInternal({
+    const notification = await createNotificationInternal({
       accountId,
       userId: targetUserId,
       fromUserId: cancelledById,
@@ -668,6 +828,19 @@ export async function notifyAppointmentCancelled(
       entityId: appointment.appointmentId,
       metadata,
     });
+
+    await sendPushAfterNotification(
+      targetUserId,
+      accountId,
+      {
+        notificationId: notification.notificationId,
+        title: notification.title,
+        message: notification.message,
+        actionUrl: notification.actionUrl,
+      },
+      "appointment",
+      appointment.appointmentId,
+    );
   } catch (error) {
     console.error("Error creating appointment cancelled notification:", error);
     throw error;
@@ -709,17 +882,41 @@ export async function notifyAppointmentCompleted(
     };
 
     // Notify assigned user
-    await createNotificationInternal({
+    const assignedNotification = await createNotificationInternal({
       ...notificationData,
       userId: assignedUserId,
     });
+    await sendPushAfterNotification(
+      assignedUserId,
+      accountId,
+      {
+        notificationId: assignedNotification.notificationId,
+        title: assignedNotification.title,
+        message: assignedNotification.message,
+        actionUrl: assignedNotification.actionUrl,
+      },
+      "appointment",
+      appointment.appointmentId,
+    );
 
     // Notify creator (if different from assigned user)
     if (creatorUserId !== assignedUserId) {
-      await createNotificationInternal({
+      const creatorNotification = await createNotificationInternal({
         ...notificationData,
         userId: creatorUserId,
       });
+      await sendPushAfterNotification(
+        creatorUserId,
+        accountId,
+        {
+          notificationId: creatorNotification.notificationId,
+          title: creatorNotification.title,
+          message: creatorNotification.message,
+          actionUrl: creatorNotification.actionUrl,
+        },
+        "appointment",
+        appointment.appointmentId,
+      );
     }
   } catch (error) {
     console.error("Error creating appointment completed notification:", error);
@@ -745,7 +942,7 @@ export async function notifyAppointmentReminder(
       reminderType: timeframe,
     };
 
-    await createNotificationInternal({
+    const notification = await createNotificationInternal({
       accountId,
       userId: targetUserId,
       fromUserId: null, // System notification
@@ -763,6 +960,19 @@ export async function notifyAppointmentReminder(
       entityId: appointment.appointmentId,
       metadata,
     });
+
+    await sendPushAfterNotification(
+      targetUserId,
+      accountId,
+      {
+        notificationId: notification.notificationId,
+        title: notification.title,
+        message: notification.message,
+        actionUrl: notification.actionUrl,
+      },
+      "appointment",
+      appointment.appointmentId,
+    );
   } catch (error) {
     console.error("Error creating appointment reminder notification:", error);
     throw error;
