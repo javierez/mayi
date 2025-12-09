@@ -8,6 +8,7 @@
 
 import { createNotificationInternal } from "~/server/queries/notification";
 import { sendPushToUser } from "~/server/services/push-service";
+import { sendNotificationEmailIfNeeded } from "~/server/services/email-notification-service";
 import type {
   NotificationType,
   NotificationPriority,
@@ -680,6 +681,12 @@ export async function notifyTaskOverdue(
       "task",
       task.taskId,
     );
+
+    // Send email notification if needed (async, don't await)
+    sendNotificationEmailIfNeeded(notification).catch((error) => {
+      console.error("Failed to send email notification for overdue task:", error);
+      // Don't throw - notification was created successfully
+    });
   } catch (error) {
     console.error("Error creating task overdue notification:", error);
     throw error;
@@ -973,6 +980,12 @@ export async function notifyAppointmentReminder(
       "appointment",
       appointment.appointmentId,
     );
+
+    // Send email notification if needed (async, don't await)
+    sendNotificationEmailIfNeeded(notification).catch((error) => {
+      console.error("Failed to send email notification for appointment reminder:", error);
+      // Don't throw - notification was created successfully
+    });
   } catch (error) {
     console.error("Error creating appointment reminder notification:", error);
     throw error;

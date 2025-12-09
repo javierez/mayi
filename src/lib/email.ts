@@ -35,8 +35,12 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions) {
   }
 
   try {
+    // Use configured email or fallback to default
+    const fromEmail =
+      env.RESEND_FROM_EMAIL || "Vesta CRM <noreply@vesta-crm.com>";
+
     const result = await resend.emails.send({
-      from: "Vesta CRM <noreply@vesta-crm.com>", // Update with your domain
+      from: fromEmail,
       to,
       subject,
       text,

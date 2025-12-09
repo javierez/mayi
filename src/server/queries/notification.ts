@@ -342,6 +342,28 @@ export async function dismissNotificationWithAuth(
   return result.length > 0;
 }
 
+/**
+ * Update notification delivery status
+ * Used to track email delivery status after sending
+ */
+export async function updateNotificationDeliveryStatus(
+  notificationId: bigint,
+  deliveryChannel: string,
+  isDelivered: boolean,
+  deliveryError: string | null,
+): Promise<void> {
+  await db
+    .update(notifications)
+    .set({
+      deliveryChannel,
+      isDelivered,
+      deliveredAt: isDelivered ? new Date() : null,
+      deliveryError,
+      updatedAt: new Date(),
+    })
+    .where(eq(notifications.notificationId, notificationId));
+}
+
 // === CRON JOB HELPERS ===
 
 /**

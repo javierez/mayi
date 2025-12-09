@@ -36,6 +36,7 @@ export const env = createEnv({
     LINKEDIN_CLIENT_SECRET: z.string().optional(),
     // Email Service Configuration
     RESEND_API_KEY: z.string().optional(),
+    RESEND_FROM_EMAIL: z.string().optional(), // Email address to send from (e.g., "Vesta CRM <noreply@yourdomain.com>")
     // Fotocasa Configuration
     FOTOCASA_ID: z.string().uuid(),
     // Twilio Configuration (for SMS 2FA)
@@ -92,6 +93,7 @@ export const env = createEnv({
     LINKEDIN_CLIENT_SECRET: process.env.LINKEDIN_CLIENT_SECRET,
     // Email Service Configuration
     RESEND_API_KEY: process.env.RESEND_API_KEY,
+    RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
     // Fotocasa Configuration
     FOTOCASA_ID: process.env.FOTOCASA_ID,
     // Twilio Configuration
