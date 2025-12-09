@@ -9,6 +9,7 @@ const publicPaths = [
   "/auth/verify-reset-code",
   "/auth/account-setup",
   "/api/auth",
+  "/api/cron", // Cron jobs authenticate with CRON_SECRET header
   "/api/puppet/template",
   "/ingest", // PostHog analytics proxy
   "/templates",

@@ -5,8 +5,8 @@ import { eq, and, gte, lte, isNotNull } from "drizzle-orm";
 import {
   notifyAppointmentReminder,
   notifyTaskDueSoon,
-  notifyTaskOverdue,
 } from "~/server/services/notification-service";
+import { sendTaskDigestEmail } from "~/server/services/task-digest-email-service";
 import { reminderExistsForEntity } from "~/server/queries/notification";
 
 /**
@@ -293,44 +293,113 @@ export async function GET(request: NextRequest) {
         ),
       );
 
+    // Group tasks by user and urgency
+    const tasksByUser = new Map<
+      string,
+      { accountId: bigint; critical: typeof overdueTasks; normal: typeof overdueTasks }
+    >();
+
     for (const task of overdueTasks) {
       const accountId = task.accountId;
       if (!accountId || typeof accountId !== "bigint") continue;
 
-      // Check if notification already exists (only one overdue notification per task)
-      const exists = await reminderExistsForEntity(
-        BigInt(accountId),
-        "task",
-        task.taskId,
-        "task_overdue",
-        "overdue",
-      );
+      if (!tasksByUser.has(task.userId)) {
+        tasksByUser.set(task.userId, {
+          accountId: BigInt(accountId),
+          critical: [],
+          normal: [],
+        });
+      }
 
-      if (!exists && task.dueDate) {
+      const userTasks = tasksByUser.get(task.userId)!;
+      const isCritical = task.urgency === 5;
+
+      if (isCritical) {
+        userTasks.critical.push(task);
+      } else {
+        userTasks.normal.push(task);
+      }
+    }
+
+    // Send digest emails
+    for (const [userId, { accountId, critical, normal }] of tasksByUser) {
+      // Send daily digest for critical tasks (urgency = 5)
+      if (critical.length > 0) {
         try {
-          await notifyTaskOverdue(
-            {
-              taskId: task.taskId,
-              userId: task.userId,
-              title: task.title,
-              description: task.description,
-              dueDate: task.dueDate,
-              dueTime: task.dueTime ?? undefined,
-              completed: false,
-              urgency: task.urgency ?? undefined,
-              category: task.category ?? undefined,
-              listingId: task.listingId ?? undefined,
-              contactId: task.contactId ?? undefined,
-              isActive: true,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-            BigInt(accountId),
+          const criticalTasks = critical.map((task) => ({
+            taskId: task.taskId,
+            userId: task.userId,
+            title: task.title,
+            description: task.description,
+            dueDate: task.dueDate ?? undefined,
+            dueTime: task.dueTime ?? undefined,
+            completed: false,
+            urgency: task.urgency ?? undefined,
+            category: task.category ?? undefined,
+            listingId: task.listingId ?? undefined,
+            contactId: task.contactId ?? undefined,
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }));
+
+          const result = await sendTaskDigestEmail(
+            userId,
+            criticalTasks,
+            "daily",
+            accountId,
           );
-          tasksNotified.push(1);
+
+          if (result.success) {
+            tasksNotified.push(critical.length);
+            console.log(
+              `✅ Daily digest sent to user ${userId}: ${critical.length} critical tasks`,
+            );
+          }
         } catch (error) {
           console.error(
-            `Error creating overdue notification for task ${task.taskId}:`,
+            `Error sending daily digest for user ${userId}:`,
+            error,
+          );
+        }
+      }
+
+      // Send weekly digest for normal tasks (urgency < 5)
+      if (normal.length > 0) {
+        try {
+          const normalTasks = normal.map((task) => ({
+            taskId: task.taskId,
+            userId: task.userId,
+            title: task.title,
+            description: task.description,
+            dueDate: task.dueDate ?? undefined,
+            dueTime: task.dueTime ?? undefined,
+            completed: false,
+            urgency: task.urgency ?? undefined,
+            category: task.category ?? undefined,
+            listingId: task.listingId ?? undefined,
+            contactId: task.contactId ?? undefined,
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }));
+
+          const result = await sendTaskDigestEmail(
+            userId,
+            normalTasks,
+            "weekly",
+            accountId,
+          );
+
+          if (result.success) {
+            tasksNotified.push(normal.length);
+            console.log(
+              `✅ Weekly digest sent to user ${userId}: ${normal.length} normal tasks`,
+            );
+          }
+        } catch (error) {
+          console.error(
+            `Error sending weekly digest for user ${userId}:`,
             error,
           );
         }
