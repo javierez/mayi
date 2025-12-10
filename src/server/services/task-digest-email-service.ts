@@ -102,7 +102,6 @@ export async function sendTaskDigestEmail(
     const { subject, html, text } = generateTaskDigestEmail({
       tasks,
       digestType,
-      userEmail: user.email,
     });
 
     // Send email

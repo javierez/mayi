@@ -50,7 +50,7 @@ export const MailConfiguration = () => {
         if (result.success && result.data) {
           setSettings(result.data);
         } else {
-          setError(result.error || "Failed to load notification settings");
+          setError(result.error ?? "Failed to load notification settings");
           // Use defaults on error
           setSettings(defaultSettings);
         }
@@ -63,7 +63,7 @@ export const MailConfiguration = () => {
       }
     };
 
-    loadSettings();
+    void loadSettings();
   }, []);
 
   const handleTaskToggle = (
@@ -145,7 +145,7 @@ export const MailConfiguration = () => {
     channel: "email" | "sms",
   ) => {
     setSettings((prev) => {
-      const currentOption = (prev.appointments[appointmentType] as AppointmentNotificationSettings)[optionKey];
+      const currentOption = prev.appointments[appointmentType][optionKey];
       return {
         ...prev,
         appointments: {
@@ -307,7 +307,7 @@ export const MailConfiguration = () => {
         setHasChanges(false);
         toast.success("Configuración guardada");
       } else {
-        const errorMessage = result.error || "Failed to save notification settings";
+        const errorMessage = result.error ?? "Failed to save notification settings";
         setError(errorMessage);
         toast.error(errorMessage);
       }
@@ -409,7 +409,6 @@ export const MailConfiguration = () => {
                 <TaskNotificationSection
                   key={category.id}
                   title={category.title}
-                  description={category.description}
                   settings={settings.tasks[category.id]}
                   onToggleEmail={(optionKey) =>
                     handleTaskToggle(category.id, optionKey, "email")
@@ -447,11 +446,7 @@ export const MailConfiguration = () => {
                 <AppointmentNotificationSection
                   key={appointmentType.id}
                   title={appointmentType.title}
-                  settings={
-                    settings.appointments[
-                      appointmentType.id
-                    ] as AppointmentNotificationSettings
-                  }
+                  settings={settings.appointments[appointmentType.id]}
                   onToggleEmail={(optionKey) =>
                     handleAppointmentToggle(appointmentType.id, optionKey, "email")
                   }
@@ -516,11 +511,7 @@ export const MailConfiguration = () => {
                 <CustomerAppointmentNotificationSection
                   key={appointmentType.id}
                   title={appointmentType.title}
-                  settings={
-                    settings.customers.appointments[
-                      appointmentType.id
-                    ] as CustomerAppointmentNotificationSettings
-                  }
+                  settings={settings.customers.appointments[appointmentType.id]}
                   onToggleEmail={(optionKey) =>
                     handleCustomerAppointmentToggle(
                       appointmentType.id,

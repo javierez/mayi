@@ -15,7 +15,7 @@ export function generateAppointmentNotificationEmail(
   notification: Notification,
 ): { subject: string; html: string; text: string } {
   const metadata = notification.metadata as AppointmentNotificationMetadata;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? "";
   const actionUrl = notification.actionUrl
     ? `${baseUrl}${notification.actionUrl}`
     : null;

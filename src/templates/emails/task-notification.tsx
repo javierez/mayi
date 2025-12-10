@@ -12,7 +12,7 @@ export function generateTaskNotificationEmail(
   notification: Notification,
 ): { subject: string; html: string; text: string } {
   const metadata = notification.metadata as TaskNotificationMetadata;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? "";
   const actionUrl = notification.actionUrl
     ? `${baseUrl}${notification.actionUrl}`
     : null;
@@ -43,8 +43,7 @@ export function generateTaskNotificationEmail(
       3: "Alta",
       4: "Urgente",
     };
-    const urgencyLabel =
-      urgencyLabels[metadata.urgency as keyof typeof urgencyLabels] || "Normal";
+    const urgencyLabel = urgencyLabels[metadata.urgency] ?? "Normal";
     detailedMessage += `\n\n⚡ Urgencia: ${urgencyLabel}`;
   }
 

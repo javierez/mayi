@@ -23,7 +23,7 @@ import { Label } from "~/components/ui/label";
 import { AlertCircle, Loader2, Search, X, Mail, Phone, Plus, Circle, CircleDot, AlertTriangle, Flame } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { getInitials } from "~/lib/operations/task-utils";
-import { createTaskWithAuth, updateTaskWithAuth } from "~/server/queries/task";
+import { createTaskWithAuth } from "~/server/queries/task";
 import { searchContactsWithAuth, getContactByIdWithAuth } from "~/server/queries/contact";
 import { createAppointmentAction } from "~/server/actions/appointments";
 import { listListingsForContactWithAuth, listContactsForListingWithAuth, listListingsCompactWithAuth, getListingCompactByIdWithAuth } from "~/server/queries/listing";

@@ -30,8 +30,8 @@ export function CustomerDocumentNotificationSection({
 }: CustomerDocumentNotificationSectionProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const enabledCount = Object.values(settings).filter(
-    (opt) => opt.emailEnabled || opt.smsEnabled,
+  const enabledCount = (Object.values(settings) as Array<{ emailEnabled: boolean; smsEnabled: boolean }>).filter(
+    (opt) => Boolean(opt.emailEnabled) || Boolean(opt.smsEnabled),
   ).length;
   const totalCount = Object.values(settings).length;
 

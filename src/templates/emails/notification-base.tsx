@@ -61,7 +61,7 @@ ${title} - Vesta CRM
 
 ${message}
 
-${actionUrl ? `${actionLabel || "Accede aquí"}: ${actionUrl}` : ''}
+${actionUrl ? `${actionLabel ?? "Accede aquí"}: ${actionUrl}` : ''}
 
 Este email fue enviado por Vesta CRM
 © ${new Date().getFullYear()} Vesta CRM. Todos los derechos reservados.

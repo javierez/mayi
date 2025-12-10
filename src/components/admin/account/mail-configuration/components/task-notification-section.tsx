@@ -18,7 +18,6 @@ import { NotificationOptionRow } from "./notification-option-row";
 
 interface TaskNotificationSectionProps {
   title: string;
-  description: string;
   settings: TaskNotificationSettings;
   onToggleEmail: (optionKey: keyof TaskNotificationSettings) => void;
   onToggleSMS: (optionKey: keyof TaskNotificationSettings) => void;
@@ -27,7 +26,6 @@ interface TaskNotificationSectionProps {
 
 export function TaskNotificationSection({
   title,
-  description,
   settings,
   onToggleEmail,
   onToggleSMS,
@@ -36,13 +34,15 @@ export function TaskNotificationSection({
   const [isOpen, setIsOpen] = useState(false);
 
   // Filter out 1h/2h options for non-critical tasks when counting
-  const visibleOptions = isCritical
-    ? Object.values(settings)
-    : Object.entries(settings)
+  type NotificationOptionType = { emailEnabled: boolean; smsEnabled: boolean };
+  const allValues = Object.values(settings) as NotificationOptionType[];
+  const visibleOptions: NotificationOptionType[] = isCritical
+    ? allValues
+    : (Object.entries(settings)
         .filter(([key]) => key !== "dueIn2h" && key !== "dueIn1h")
-        .map(([, value]) => value);
+        .map(([, value]) => value as NotificationOptionType));
 
-  const enabledCount = visibleOptions.filter((opt) => opt.emailEnabled || opt.smsEnabled).length;
+  const enabledCount = visibleOptions.filter((opt) => Boolean(opt.emailEnabled) || Boolean(opt.smsEnabled)).length;
   const totalCount = visibleOptions.length;
 
   return (

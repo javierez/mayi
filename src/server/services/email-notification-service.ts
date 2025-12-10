@@ -57,7 +57,7 @@ function generateNotificationEmail(
   }
 
   // Fallback to base template for other categories
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? "";
   const actionUrl = notification.actionUrl
     ? `${baseUrl}${notification.actionUrl}`
     : null;
@@ -153,8 +153,8 @@ export async function sendNotificationEmailIfNeeded(
       return { success: false, error: "Email not needed for this notification" };
     }
 
-    // Send email
-    return await sendNotificationEmail(notification, userEmail);
+    // Send email (userEmail is guaranteed non-null by shouldSendEmailNotification check)
+    return await sendNotificationEmail(notification, userEmail!);
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";

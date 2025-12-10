@@ -71,7 +71,7 @@ export async function createPushSubscription(
 
     // Create new subscription
     console.log("[PushSubscription] ➕ Creating new subscription...");
-    const result = await db.insert(pushSubscriptions).values({
+    await db.insert(pushSubscriptions).values({
       userId,
       accountId,
       endpoint: subscription.endpoint,

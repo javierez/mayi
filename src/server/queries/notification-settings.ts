@@ -70,7 +70,7 @@ export async function updateNotificationSettings(
     const [updated] = await db
       .update(accounts)
       .set({
-        notificationSettings: settings as Record<string, unknown>,
+        notificationSettings: settings as unknown as Record<string, unknown>,
         updatedAt: new Date(),
       })
       .where(eq(accounts.accountId, accountId))

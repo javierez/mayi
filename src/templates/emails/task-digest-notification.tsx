@@ -4,20 +4,18 @@
  * Generates email content for digest emails containing multiple overdue tasks
  */
 
-import { generateNotificationEmailBase } from "./notification-base";
 import type { Task } from "~/lib/data";
 
 export interface TaskDigestEmailData {
   tasks: Task[];
   digestType: "weekly" | "daily";
-  userEmail: string;
 }
 
 export function generateTaskDigestEmail(
   data: TaskDigestEmailData,
 ): { subject: string; html: string; text: string } {
-  const { tasks, digestType, userEmail } = data;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "";
+  const { tasks, digestType } = data;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? "";
 
   const taskCount = tasks.length;
   const isCritical = digestType === "daily";
@@ -38,7 +36,7 @@ export function generateTaskDigestEmail(
 
   const taskItemsHtml = tasks.map((task) => {
     const urgencyLabel = task.urgency
-      ? urgencyLabels[task.urgency as keyof typeof urgencyLabels] || "Normal"
+      ? (urgencyLabels[task.urgency] ?? "Normal")
       : "Normal";
     
     const dueDateStr = task.dueDate
@@ -163,7 +161,7 @@ export function generateTaskDigestEmail(
   // Build text version
   const taskItemsText = tasks.map((task, index) => {
     const urgencyLabel = task.urgency
-      ? urgencyLabels[task.urgency as keyof typeof urgencyLabels] || "Normal"
+      ? (urgencyLabels[task.urgency] ?? "Normal")
       : "Normal";
     
     const dueDateStr = task.dueDate

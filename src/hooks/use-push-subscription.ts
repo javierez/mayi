@@ -250,12 +250,12 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
           keys: {
             p256dh: btoa(
               String.fromCharCode(
-                ...new Uint8Array(subscription.getKey("p256dh") as ArrayBuffer),
+                ...new Uint8Array(subscription.getKey("p256dh")!),
               ),
             ),
             auth: btoa(
               String.fromCharCode(
-                ...new Uint8Array(subscription.getKey("auth") as ArrayBuffer),
+                ...new Uint8Array(subscription.getKey("auth")!),
               ),
             ),
           },

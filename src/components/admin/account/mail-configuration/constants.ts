@@ -10,8 +10,6 @@ import type {
   CustomerDocumentNotificationSettings,
   CustomerDealNotificationSettings,
   MailSettings,
-  NotificationOption,
-  CustomerNotificationOption,
 } from "./types";
 
 // Default notification options factory for upcoming tasks
