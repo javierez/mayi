@@ -14,6 +14,7 @@ const routeNames: Record<string, string> = {
   "/account-admin/carteleria": "Cartelería",
   "/account-admin/website": "Sitio Web",
   "/account-admin/seguridad": "Seguridad",
+  "/account-admin/correo": "Correo",
   "/account-admin/other": "Otras Opciones",
 };
 

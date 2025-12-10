@@ -16,6 +16,7 @@ import {
   CreditCard,
   Shield,
   Settings,
+  BarChart3,
 } from "lucide-react";
 
 interface OptionCard {
@@ -26,6 +27,12 @@ interface OptionCard {
 }
 
 const options: OptionCard[] = [
+  {
+    title: "Reportes",
+    description: "Revisa estadísticas y métricas de tu cuenta",
+    icon: BarChart3,
+    available: false,
+  },
   {
     title: "Gestión de Usuarios",
     description:

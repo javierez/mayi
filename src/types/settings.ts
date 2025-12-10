@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { MailSettings } from "~/components/admin/account/mail-configuration/types";
 
 // Account Settings Types (CRM organization/tenant level)
 export interface AccountSettings {
@@ -12,6 +13,7 @@ export interface AccountSettings {
   portalSettings: Record<string, unknown>;
   paymentSettings: Record<string, unknown>;
   preferences: Record<string, unknown>;
+  notificationSettings?: MailSettings;
   plan: string;
   subscriptionStatus: string;
   createdAt: Date;

@@ -10,7 +10,6 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import {
-  BarChart3,
   Settings,
   Users,
   Palette,
@@ -19,6 +18,7 @@ import {
   Monitor,
   Building,
   Shield,
+  Mail,
 } from "lucide-react";
 
 interface AccountAdminCard {
@@ -88,11 +88,11 @@ const accountAdminSections: AccountAdminCard[] = [
     available: true,
   },
   {
-    title: "Reportes",
-    description: "Revisa estadísticas y métricas de tu cuenta",
-    icon: BarChart3,
-    href: "/account-admin/reports",
-    available: false,
+    title: "Correo",
+    description: "Configura el servicio de correo electrónico y notificaciones",
+    icon: Mail,
+    href: "/account-admin/correo",
+    available: true,
   },
   {
     title: "Otras Opciones",

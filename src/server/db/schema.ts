@@ -53,6 +53,7 @@ export const accounts = pgTable("accounts", {
       generateCartel: { enabled: true, dueDays: 16 },
     },
   }), // Task creation preferences for automatic tasks (property listing tasks)
+  notificationSettings: jsonb("notification_settings").default({}), // Email/SMS notification preferences for tasks, appointments, and customer communications
   // Subscription/billing info
   plan: varchar("plan", { length: 50 }).default("basic"), // basic, pro, enterprise
   subscriptionType: varchar("subscription_type", { length: 100 }), // More detailed subscription type

@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Label } from "~/components/ui/label";
-import { AlertCircle, Loader2, Search, X, Mail, Phone, Plus } from "lucide-react";
+import { AlertCircle, Loader2, Search, X, Mail, Phone, Plus, Circle, CircleDot, AlertTriangle, Flame } from "lucide-react";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { getInitials } from "~/lib/operations/task-utils";
 import { createTaskWithAuth, updateTaskWithAuth } from "~/server/queries/task";
@@ -37,6 +37,7 @@ import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { createListingContactRelationshipAction } from "~/server/actions/contact-activity";
 import { QuickContactModal } from "~/components/contactos/quick-contact-modal";
 import Image from "next/image";
+import { cn } from "~/lib/utils";
 
 interface Contact {
   contactId: bigint;
@@ -80,6 +81,34 @@ const useDebounce = (value: string, delay: number) => {
   }, [value, delay]);
   return debouncedValue;
 };
+
+const urgencyTypes = [
+  {
+    value: "1",
+    label: "Muy Baja",
+    icon: <Circle className="h-4 w-4" />,
+  },
+  {
+    value: "2",
+    label: "Baja",
+    icon: <CircleDot className="h-4 w-4" />,
+  },
+  {
+    value: "3",
+    label: "Media",
+    icon: <AlertCircle className="h-4 w-4" />,
+  },
+  {
+    value: "4",
+    label: "Alta",
+    icon: <AlertTriangle className="h-4 w-4" />,
+  },
+  {
+    value: "5",
+    label: "Crítica",
+    icon: <Flame className="h-4 w-4" />,
+  },
+];
 
 export function GlobalTaskModal({
   open,
@@ -1069,24 +1098,40 @@ export function GlobalTaskModal({
 
           {/* Urgency */}
           <div className="space-y-2">
-            <Label htmlFor="urgency-select">Urgencia</Label>
-            <Select
-              value={formData.urgency}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, urgency: value as "" | "1" | "2" | "3" | "4" | "5" }))
-              }
-            >
-              <SelectTrigger className="h-8 text-gray-500">
-                <SelectValue placeholder="Seleccionar urgencia" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">Muy Baja</SelectItem>
-                <SelectItem value="2">Baja</SelectItem>
-                <SelectItem value="3">Media</SelectItem>
-                <SelectItem value="4">Alta</SelectItem>
-                <SelectItem value="5">Crítica</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label>Urgencia</Label>
+            <div className="grid grid-cols-5 gap-2">
+              {urgencyTypes.map((urgency) => {
+                const isSelected = formData.urgency === urgency.value;
+                return (
+                  <button
+                    key={urgency.value}
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({ ...prev, urgency: urgency.value as "" | "1" | "2" | "3" | "4" | "5" }))
+                    }
+                    className={cn(
+                      "flex flex-col items-center justify-center gap-1 rounded-lg p-2 shadow transition-all hover:shadow-md",
+                      isSelected
+                        ? "bg-primary/10 ring-2 ring-primary"
+                        : "bg-white"
+                    )}
+                  >
+                    <span className={cn(
+                      "text-gray-500",
+                      isSelected && "text-primary"
+                    )}>
+                      {urgency.icon}
+                    </span>
+                    <span className={cn(
+                      "text-xs font-medium",
+                      isSelected ? "text-primary" : "text-gray-600"
+                    )}>
+                      {urgency.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Due Date & Time */}
