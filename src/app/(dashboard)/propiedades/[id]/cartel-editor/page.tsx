@@ -33,8 +33,8 @@ export default async function CartelEditorPage({
     notFound();
   }
 
-  // Get images after we have headerData
-  const images = await getPropertyImages(headerData.propertyId).catch(() => []);
+  // Get images after we have headerData (all images, including inactive)
+  const images = await getPropertyImages(headerData.propertyId, undefined).catch(() => []);
 
   return (
     <>

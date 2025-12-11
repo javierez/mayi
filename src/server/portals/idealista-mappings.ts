@@ -343,8 +343,10 @@ export const HEATING_TYPE_MAPPING: Record<string, IdealistaHeatingType> = {
   propano: "individualPropaneButane",
   butano: "individualPropaneButane",
   "bomba de calor": "individualAirConditioningHeatPump",
+  "Bomba de calor": "individualAirConditioningHeatPump",
   aerotermia: "individualAirConditioningHeatPump",
   "suelo radiante": "individualOther",
+  "Suelo radiante": "individualOther",
   "sin calefacción": "noHeating",
   "no tiene": "noHeating",
 };
@@ -943,18 +945,27 @@ export function isRoomType(idealistaType: string | null | undefined): boolean {
 /**
  * Fields that should NOT be sent for specific property categories
  * per Idealista's additionalProperties: false in schemas
+ *
+ * IMPORTANT: These lists are generated from the actual JSON schemas:
+ * - homes.json, garage.json, offices.json, premises.json, land.json, storage.json, building.json, room.json
  */
 export const EXCLUDED_FIELDS_BY_CATEGORY: Record<
   IdealistaPropertyCategory,
   Set<string>
 > = {
-  housing: new Set(), // Housing accepts most fields
+  // homes.json - accepts most residential fields
+  housing: new Set([]),
+
+  // garage.json - only allows: featuresType, featuresAreaConstructed,
+  // featuresGarageCapacityType, featuresLiftAvailable, featuresParkingAutomaticDoor,
+  // featuresParkingPlaceCovered, featuresParkingType, featuresSecurity*,
+  // featuresAuction*, featuresCurrentOccupation, featuresHiddenPrice
   garage: new Set([
+    "featuresAreaUsable",
+    "featuresAreaPlot",
     "featuresBathroomNumber",
     "featuresBedroomNumber",
     "featuresRooms",
-    "featuresAreaUsable",
-    "featuresAreaPlot",
     "featuresBalcony",
     "featuresGarden",
     "featuresPool",
@@ -962,6 +973,7 @@ export const EXCLUDED_FIELDS_BY_CATEGORY: Record<
     "featuresWardrobes",
     "featuresChimney",
     "featuresConservation",
+    "featuresConditionedAir",
     "featuresEnergyCertificateRating",
     "featuresEnergyCertificatePerformance",
     "featuresEnergyCertificateEmissionsRating",
@@ -981,11 +993,24 @@ export const EXCLUDED_FIELDS_BY_CATEGORY: Record<
     "featuresSeasonalRental",
     "featuresShortTerm",
     "featuresShortTermLicense",
+    "featuresParkingAvailable",
+    "featuresStorage",
+    "featuresHandicapAdaptedAccess",
+    "featuresHandicapAdaptedUse",
+    "featuresPenthouse",
+    "featuresDuplex",
+    "featuresStudio",
   ]),
+
+  // offices.json - allows: featuresType, featuresAreaConstructed, featuresAreaUsable,
+  // featuresBathroomNumber, featuresBuiltYear, featuresConditionedAir, featuresConservation,
+  // featuresEnergyCertificate*, featuresEquippedKitchen, featuresHeating,
+  // featuresOrientation*, featuresStorage, featuresWindowsLocation,
+  // featuresCurrentOccupation, featuresHiddenPrice, etc.
   office: new Set([
+    "featuresAreaPlot",
     "featuresBedroomNumber",
     "featuresRooms",
-    "featuresAreaPlot",
     "featuresBalcony",
     "featuresGarden",
     "featuresPool",
@@ -993,16 +1018,32 @@ export const EXCLUDED_FIELDS_BY_CATEGORY: Record<
     "featuresWardrobes",
     "featuresChimney",
     "featuresAllowPets",
+    "featuresHeatingType", // offices use featuresHeating, not featuresHeatingType
     "featuresPriceReferenceIndex",
     "featuresResidential",
     "featuresSeasonalRental",
     "featuresShortTerm",
     "featuresShortTermLicense",
+    "featuresLiftAvailable", // offices use featuresLiftNumber
+    "featuresParkingAvailable", // offices use featuresParkingSpacesNumber
+    "featuresHandicapAdaptedAccess",
+    "featuresHandicapAdaptedUse",
+    "featuresPenthouse",
+    "featuresDuplex",
+    "featuresStudio",
+    "featuresEquippedWithFurniture",
   ]),
+
+  // premises.json - allows: featuresType, featuresAreaConstructed, featuresAreaUsable,
+  // featuresBathroomNumber, featuresConditionedAir, featuresConservation,
+  // featuresEnergyCertificate*, featuresEquippedKitchen, featuresHeating,
+  // featuresStorage, featuresRooms, featuresBuiltYear, featuresParkingAvailable,
+  // featuresParkingSpace*, featuresCurrentOccupation, featuresGardenType
   premises: new Set([
-    "featuresBedroomNumber",
     "featuresAreaPlot",
+    "featuresBedroomNumber",
     "featuresBalcony",
+    "featuresGarden", // Only featuresGardenType is allowed for premises
     "featuresPool",
     "featuresTerrace",
     "featuresWardrobes",
@@ -1013,14 +1054,26 @@ export const EXCLUDED_FIELDS_BY_CATEGORY: Record<
     "featuresOrientationSouth",
     "featuresOrientationEast",
     "featuresOrientationWest",
+    "featuresHeatingType", // premises use featuresHeating, not featuresHeatingType
     "featuresPriceReferenceIndex",
     "featuresResidential",
     "featuresSeasonalRental",
     "featuresShortTerm",
     "featuresShortTermLicense",
+    "featuresHandicapAdaptedAccess",
+    "featuresHandicapAdaptedUse",
+    "featuresPenthouse",
+    "featuresDuplex",
+    "featuresStudio",
+    "featuresEquippedWithFurniture",
+    "featuresWindowsLocation", // premises use featuresWindowsNumber
   ]),
+
+  // land.json - requires featuresAreaPlot (NOT featuresAreaConstructed!)
+  // allows: featuresType, featuresAreaPlot, featuresAreaBuildable,
+  // featuresClassification*, featuresUtilities*, featuresCurrentOccupation
   land: new Set([
-    "featuresAreaConstructed", // Land uses featuresAreaPlot instead!
+    "featuresAreaConstructed", // Land uses featuresAreaPlot, NOT this!
     "featuresAreaUsable",
     "featuresBathroomNumber",
     "featuresBedroomNumber",
@@ -1055,7 +1108,16 @@ export const EXCLUDED_FIELDS_BY_CATEGORY: Record<
     "featuresSeasonalRental",
     "featuresShortTerm",
     "featuresShortTermLicense",
+    "featuresHandicapAdaptedAccess",
+    "featuresHandicapAdaptedUse",
+    "featuresPenthouse",
+    "featuresDuplex",
+    "featuresStudio",
   ]),
+
+  // storage.json - only allows: featuresType, featuresAreaConstructed,
+  // featuresAccess24h, featuresAreaHeight, featuresLoadingDock,
+  // featuresSecurity24h, featuresAuction*, featuresCurrentOccupation
   storage: new Set([
     "featuresAreaUsable",
     "featuresAreaPlot",
@@ -1070,6 +1132,7 @@ export const EXCLUDED_FIELDS_BY_CATEGORY: Record<
     "featuresChimney",
     "featuresLiftAvailable",
     "featuresParkingAvailable",
+    "featuresStorage",
     "featuresConditionedAir",
     "featuresAllowPets",
     "featuresConservation",
@@ -1091,7 +1154,18 @@ export const EXCLUDED_FIELDS_BY_CATEGORY: Record<
     "featuresSeasonalRental",
     "featuresShortTerm",
     "featuresShortTermLicense",
+    "featuresHandicapAdaptedAccess",
+    "featuresHandicapAdaptedUse",
+    "featuresPenthouse",
+    "featuresDuplex",
+    "featuresStudio",
   ]),
+
+  // building.json - allows: featuresType, featuresAreaConstructed,
+  // featuresBuiltYear, featuresClassification*, featuresConservation,
+  // featuresEnergyCertificate*, featuresFloorsBuilding, featuresLiftNumber,
+  // featuresParkingSpacesNumber, featuresGarden, featuresGardenType,
+  // featuresCurrentOccupation
   building: new Set([
     "featuresAreaUsable",
     "featuresAreaPlot",
@@ -1103,8 +1177,9 @@ export const EXCLUDED_FIELDS_BY_CATEGORY: Record<
     "featuresTerrace",
     "featuresWardrobes",
     "featuresChimney",
-    "featuresLiftAvailable",
-    "featuresParkingAvailable",
+    "featuresLiftAvailable", // building uses featuresLiftNumber
+    "featuresParkingAvailable", // building uses featuresParkingSpacesNumber
+    "featuresStorage",
     "featuresConditionedAir",
     "featuresAllowPets",
     "featuresHeatingType",
@@ -1120,7 +1195,14 @@ export const EXCLUDED_FIELDS_BY_CATEGORY: Record<
     "featuresSeasonalRental",
     "featuresShortTerm",
     "featuresShortTermLicense",
+    "featuresHandicapAdaptedAccess",
+    "featuresHandicapAdaptedUse",
+    "featuresPenthouse",
+    "featuresDuplex",
+    "featuresStudio",
   ]),
+
+  // room.json - has many specific required fields
   room: new Set([
     "featuresAreaPlot",
     "featuresBedroomNumber", // Rooms use featuresRooms
@@ -1143,6 +1225,9 @@ export const EXCLUDED_FIELDS_BY_CATEGORY: Record<
     "featuresShortTerm",
     "featuresShortTermLicense",
     "featuresCurrentOccupation",
+    "featuresPenthouse",
+    "featuresDuplex",
+    "featuresStudio",
   ]),
 };
 

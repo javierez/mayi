@@ -318,8 +318,8 @@ export async function buildIdealistaPropertyPayload(
     videos?: Array<{ url: string }> | null;
   };
 
-  // Get and process images with watermarking
-  const images = await getPropertyImages(BigInt(listing.propertyId));
+  // Get and process images with watermarking (only active images for portal export)
+  const images = await getPropertyImages(BigInt(listing.propertyId), true);
   const accountId = await getAccountIdForListing(listingId);
   let processedImages = images;
 
@@ -564,14 +564,16 @@ export async function buildIdealistaPropertyPayload(
   };
 
   // Build descriptions - Use FULL language name!
-  const propertyDescriptions: IdealistaDescription[] = listing.description
-    ? [
-        {
-          descriptionLanguage: "spanish", // MUST be "spanish", NOT "es"
-          descriptionText: listing.description.substring(0, 4000), // Max 4000 chars
-        },
-      ]
-    : [];
+  // IMPORTANT: If no description, omit the field entirely (don't send empty array)
+  const propertyDescriptions: IdealistaDescription[] | undefined =
+    listing.description
+      ? [
+          {
+            descriptionLanguage: "spanish", // MUST be "spanish", NOT "es"
+            descriptionText: listing.description.substring(0, 4000), // Max 4000 chars
+          },
+        ]
+      : undefined;
 
   // Build images - Use "imageLabel", NOT "imageTag"!
   // Schema: imagesUrlFormat max ~400 chars (pattern: ^(https?://.{1,392})$)
@@ -644,7 +646,8 @@ export async function buildIdealistaPropertyPayload(
     propertyOperation, // Singular object
     propertyAddress,
     propertyFeatures: filteredFeatures,
-    propertyDescriptions,
+    // Only include propertyDescriptions if there are descriptions (min 1 item required)
+    ...(propertyDescriptions && { propertyDescriptions }),
     propertyImages,
     ...(propertyVideos && { propertyVideos }),
     ...(propertyVirtualTours && { propertyVirtualTours }),
@@ -1085,8 +1088,8 @@ export async function validateListingForIdealista(listingId: number): Promise<{
       warnings.push("Se recomienda añadir una descripción");
     }
 
-    const images = await getPropertyImages(BigInt(listing.propertyId));
-    if (images.filter((img) => img.isActive).length === 0) {
+    const images = await getPropertyImages(BigInt(listing.propertyId), true);
+    if (images.length === 0) {
       warnings.push("Se recomienda añadir al menos una imagen");
     }
 

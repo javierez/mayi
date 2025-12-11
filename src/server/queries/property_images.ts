@@ -87,7 +87,11 @@ export async function getPropertyImagesByReference(
 }
 
 // Get all images for a property (excludes videos, YouTube links, and virtual tours)
-export async function getPropertyImages(propertyId: bigint, isActive = true) {
+// isActive: true = only active, false = only inactive, undefined = all images
+export async function getPropertyImages(
+  propertyId: bigint,
+  isActive?: boolean,
+) {
   try {
     const conditions = [
       eq(propertyImages.propertyId, propertyId),
@@ -96,6 +100,7 @@ export async function getPropertyImages(propertyId: bigint, isActive = true) {
         sql`(${propertyImages.imageTag} IS NULL OR ${propertyImages.imageTag} NOT IN ('video', 'youtube', 'tour'))`,
       ),
     ];
+    // Only filter by isActive if explicitly provided (undefined means get all)
     if (isActive !== undefined) {
       conditions.push(eq(propertyImages.isActive, isActive));
     }

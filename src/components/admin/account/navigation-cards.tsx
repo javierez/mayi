@@ -88,10 +88,10 @@ const accountAdminSections: AccountAdminCard[] = [
     available: true,
   },
   {
-    title: "Correo",
+    title: "Sistema de Notificaciones",
     description: "Configura el servicio de correo electrónico y notificaciones",
     icon: Mail,
-    href: "/account-admin/correo",
+    href: "/account-admin/notification-system",
     available: true,
   },
   {

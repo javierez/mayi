@@ -110,7 +110,7 @@ export default async function PropertyPage({
     imageCount,
   ] = await Promise.all([
     getEnergyCertificate(Number(headerData.propertyId)),
-    getPropertyImages(BigInt(headerData.propertyId)),
+    getPropertyImages(BigInt(headerData.propertyId), undefined), // Get all images (active and inactive)
     getPropertyVideos(BigInt(headerData.propertyId)),
     getPropertyYouTubeLinks(BigInt(headerData.propertyId)),
     getPropertyVirtualTours(BigInt(headerData.propertyId)),
@@ -119,12 +119,13 @@ export default async function PropertyPage({
   const defaultPlaceholder = "";
 
   // Process images to ensure they have valid URLs and match PropertyImage type
+  // Note: Preserving isActive boolean values (including false) - only defaulting null/undefined to true
   const processedImages: PropertyImage[] = propertyImages.map((img) => ({
     propertyImageId: img.propertyImageId,
     propertyId: img.propertyId,
     referenceNumber: img.referenceNumber,
     imageUrl: img.imageUrl ?? defaultPlaceholder,
-    isActive: img.isActive ?? true,
+    isActive: img.isActive ?? true, // Preserves false, only defaults null/undefined to true
     createdAt: img.createdAt,
     updatedAt: img.updatedAt,
     imageKey: img.imageKey,

@@ -36,10 +36,12 @@ import type { SaveState } from "~/types/save-state";
 import { getNeighborhoodFromCoordinates } from "~/server/googlemaps/retrieve_geo";
 import {
   retrieveCadastralData,
-  searchCadastralByCoordinates,
+  searchCadastralParcelsWithDistance,
+  expandParcelToUnits,
   compareCadastralData,
   type CadastralComparisonResult,
   type CadastralSearchResult,
+  type CadastralParcel,
 } from "~/server/cadastral/retrieve_cadastral";
 
 interface LocationCardProps {
@@ -114,11 +116,11 @@ export function LocationCard({
     "none" | "validating" | "valid" | "invalid"
   >("none");
 
-  // Cadastral search state
+  // Cadastral search state (now uses parcels for two-step flow)
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
-  const [potentialReferences, setPotentialReferences] = useState<
-    CadastralSearchResult[]
-  >([]);
+  const [potentialParcels, setPotentialParcels] = useState<CadastralParcel[]>(
+    [],
+  );
   const [isSearching, setIsSearching] = useState(false);
   const [isCadastralLoading, setIsCadastralLoading] = useState(false);
 
@@ -260,10 +262,10 @@ export function LocationCard({
     }
   };
 
-  // Search for cadastral references by coordinates
+  // Search for cadastral parcels by coordinates (two-step flow)
   const searchCadastralReferences = async () => {
     console.log("🔍 [LocationCard] ========================================");
-    console.log("🔍 [LocationCard] STARTING CADASTRAL SEARCH");
+    console.log("🔍 [LocationCard] STARTING CADASTRAL PARCEL SEARCH");
     console.log("🔍 [LocationCard] ========================================");
 
     console.log("📋 [LocationCard] Current coordinates for search:", {
@@ -290,25 +292,23 @@ export function LocationCard({
       };
 
       console.log(
-        "📡 [LocationCard] Calling searchCadastralByCoordinates with params:",
+        "📡 [LocationCard] Calling searchCadastralParcelsWithDistance with params:",
         searchParams,
       );
 
-      const results = await searchCadastralByCoordinates(searchParams);
+      const parcels = await searchCadastralParcelsWithDistance(searchParams);
 
-      console.log("📊 [LocationCard] Search results received:", results);
-      setPotentialReferences(results);
+      console.log("📊 [LocationCard] Parcels found:", parcels);
+      setPotentialParcels(parcels);
 
       console.log("✅ [LocationCard] ========================================");
-      console.log("✅ [LocationCard] SEARCH COMPLETED SUCCESSFULLY");
+      console.log("✅ [LocationCard] PARCEL SEARCH COMPLETED SUCCESSFULLY");
       console.log("✅ [LocationCard] ========================================");
-      console.log(
-        `✅ [LocationCard] Found ${results.length} cadastral references`,
-      );
+      console.log(`✅ [LocationCard] Found ${parcels.length} parcels`);
 
-      if (results.length === 0) {
+      if (parcels.length === 0) {
         toast.info(
-          "No se encontraron referencias catastrales en estas coordenadas.",
+          "No se encontraron parcelas catastrales en estas coordenadas.",
           {
             description:
               "El Catastro no encontró propiedades en un radio de 50 metros.",
@@ -319,17 +319,33 @@ export function LocationCard({
       console.error(
         "❌ [LocationCard] ========================================",
       );
-      console.error("❌ [LocationCard] SEARCH FAILED WITH ERROR");
+      console.error("❌ [LocationCard] PARCEL SEARCH FAILED WITH ERROR");
       console.error(
         "❌ [LocationCard] ========================================",
       );
       console.error("❌ [LocationCard] Search error:", error);
       toast.error(
-        "Error al buscar referencias catastrales. Inténtalo de nuevo.",
+        "Error al buscar parcelas catastrales. Inténtalo de nuevo.",
       );
-      setPotentialReferences([]);
+      setPotentialParcels([]);
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  // Handle parcel expansion (called by modal when user selects a parcel)
+  const handleExpandParcel = async (
+    parcel: CadastralParcel,
+  ): Promise<CadastralSearchResult[]> => {
+    console.log("🔍 [LocationCard] Expanding parcel:", parcel.cadastralReference);
+    try {
+      const units = await expandParcelToUnits(parcel.cadastralReference);
+      console.log(`✅ [LocationCard] Expanded to ${units.length} units`);
+      return units;
+    } catch (error) {
+      console.error("❌ [LocationCard] Error expanding parcel:", error);
+      toast.error("Error al cargar las unidades de la parcela.");
+      return [];
     }
   };
 
@@ -1101,13 +1117,14 @@ export function LocationCard({
         <input type="hidden" id="longitude" value={longitude ?? ""} readOnly />
       </div>
 
-      {/* Cadastral Selection Modal */}
+      {/* Cadastral Selection Modal (two-step: parcels → units) */}
       <CadastralSelectionModal
         isOpen={isSearchModalOpen}
         onClose={() => setIsSearchModalOpen(false)}
-        searchResults={potentialReferences}
+        parcels={potentialParcels}
         isLoading={isSearching}
         onSelect={handleCadastralReferenceSelect}
+        onExpandParcel={handleExpandParcel}
       />
 
       {/* Cadastral Action Modal */}

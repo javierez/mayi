@@ -299,6 +299,12 @@ export async function notifyTaskAssigned(
       "task",
       task.taskId,
     );
+
+    // Send email notification if needed (async, don't await)
+    sendNotificationEmailIfNeeded(notification, accountId).catch((error) => {
+      console.error("Failed to send email notification for task assigned:", error);
+      // Don't throw - notification was created successfully
+    });
   } catch (error) {
     console.error("Error creating task assigned notification:", error);
     throw error;
@@ -425,6 +431,12 @@ export async function notifyTaskReassigned(
       "task",
       task.taskId,
     );
+
+    // Send email notification if needed (async, don't await)
+    sendNotificationEmailIfNeeded(notification, accountId).catch((error) => {
+      console.error("Failed to send email notification for task reassigned:", error);
+      // Don't throw - notification was created successfully
+    });
   } catch (error) {
     console.error("Error creating task reassigned notification:", error);
     throw error;
@@ -566,6 +578,12 @@ export async function notifyTaskCompleted(
         "task",
         task.taskId,
       );
+
+      // Send email notification if needed (async, don't await)
+      sendNotificationEmailIfNeeded(notification, accountId).catch((error) => {
+        console.error("Failed to send email notification for task completed:", error);
+        // Don't throw - notification was created successfully
+      });
     }
   } catch (error) {
     console.error("Error creating task completed notification:", error);
@@ -611,6 +629,7 @@ export async function notifyTaskDueSoon(
       metadata: {
         ...metadata,
         reminderType: timeframe,
+        timeframe: timeframe, // Also store as timeframe for template router
       },
     });
 
@@ -626,6 +645,12 @@ export async function notifyTaskDueSoon(
       "task",
       task.taskId,
     );
+
+    // Send email notification if needed (async, don't await)
+    sendNotificationEmailIfNeeded(notification, accountId).catch((error) => {
+      console.error("Failed to send email notification for task due soon:", error);
+      // Don't throw - notification was created successfully
+    });
   } catch (error) {
     console.error("Error creating task due soon notification:", error);
     throw error;
@@ -683,7 +708,7 @@ export async function notifyTaskOverdue(
     );
 
     // Send email notification if needed (async, don't await)
-    sendNotificationEmailIfNeeded(notification).catch((error) => {
+    sendNotificationEmailIfNeeded(notification, accountId).catch((error) => {
       console.error("Failed to send email notification for overdue task:", error);
       // Don't throw - notification was created successfully
     });
@@ -711,6 +736,7 @@ export async function notifyAppointmentScheduled(
       appointmentTitle: appointment.title,
       datetimeStart: appointment.datetimeStart.toISOString(),
       datetimeEnd: appointment.datetimeEnd.toISOString(),
+      appointmentType: appointment.type ?? undefined,
     };
 
     const notification = await createNotificationInternal({
@@ -742,6 +768,12 @@ export async function notifyAppointmentScheduled(
       "appointment",
       appointment.appointmentId,
     );
+
+    // Send email notification if needed (async, don't await)
+    sendNotificationEmailIfNeeded(notification, accountId).catch((error) => {
+      console.error("Failed to send email notification for appointment scheduled:", error);
+      // Don't throw - notification was created successfully
+    });
   } catch (error) {
     console.error("Error creating appointment scheduled notification:", error);
     throw error;
@@ -796,6 +828,12 @@ export async function notifyAppointmentRescheduled(
       "appointment",
       appointment.appointmentId,
     );
+
+    // Send email notification if needed (async, don't await)
+    sendNotificationEmailIfNeeded(notification, accountId).catch((error) => {
+      console.error("Failed to send email notification for appointment rescheduled:", error);
+      // Don't throw - notification was created successfully
+    });
   } catch (error) {
     console.error("Error creating appointment rescheduled notification:", error);
     throw error;
@@ -817,6 +855,7 @@ export async function notifyAppointmentCancelled(
       appointmentTitle: appointment.title,
       datetimeStart: appointment.datetimeStart.toISOString(),
       datetimeEnd: appointment.datetimeEnd.toISOString(),
+      appointmentType: appointment.type ?? undefined,
     };
 
     const notification = await createNotificationInternal({
@@ -848,6 +887,12 @@ export async function notifyAppointmentCancelled(
       "appointment",
       appointment.appointmentId,
     );
+
+    // Send email notification if needed (async, don't await)
+    sendNotificationEmailIfNeeded(notification, accountId).catch((error) => {
+      console.error("Failed to send email notification for appointment cancelled:", error);
+      // Don't throw - notification was created successfully
+    });
   } catch (error) {
     console.error("Error creating appointment cancelled notification:", error);
     throw error;
@@ -870,6 +915,7 @@ export async function notifyAppointmentCompleted(
       appointmentTitle: appointment.title,
       datetimeStart: appointment.datetimeStart.toISOString(),
       datetimeEnd: appointment.datetimeEnd.toISOString(),
+      appointmentType: appointment.type ?? undefined,
     };
 
     const notificationData = {
@@ -947,6 +993,7 @@ export async function notifyAppointmentReminder(
       datetimeStart: appointment.datetimeStart.toISOString(),
       datetimeEnd: appointment.datetimeEnd.toISOString(),
       reminderType: timeframe,
+      appointmentType: appointment.type ?? undefined,
     };
 
     const notification = await createNotificationInternal({
@@ -982,7 +1029,7 @@ export async function notifyAppointmentReminder(
     );
 
     // Send email notification if needed (async, don't await)
-    sendNotificationEmailIfNeeded(notification).catch((error) => {
+    sendNotificationEmailIfNeeded(notification, accountId).catch((error) => {
       console.error("Failed to send email notification for appointment reminder:", error);
       // Don't throw - notification was created successfully
     });

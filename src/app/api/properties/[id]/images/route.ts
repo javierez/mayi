@@ -10,7 +10,8 @@ export async function GET(
     const { id } = await params;
     const propertyId = BigInt(id);
 
-    const propertyImages = await getPropertyImages(propertyId);
+    // Get all images (active and inactive) for the API
+    const propertyImages = await getPropertyImages(propertyId, undefined);
     const defaultPlaceholder = "";
 
     // Process images to ensure they have valid URLs and match PropertyImage type

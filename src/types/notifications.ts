@@ -156,8 +156,8 @@ export const createNotificationSchema = z.object({
 });
 
 // Reminder timeframes
-export type TaskReminderTimeframe = "1_day" | "same_day";
-export type AppointmentReminderTimeframe = "30_min" | "1_day";
+export type TaskReminderTimeframe = "1_week" | "48h" | "24h" | "12h" | "2h" | "1h" | "1_day" | "same_day";
+export type AppointmentReminderTimeframe = "30_min" | "1h" | "12h" | "1_day" | "travel_time";
 
 // Metadata types for specific notifications
 export interface TaskNotificationMetadata extends Record<string, unknown> {
@@ -176,6 +176,13 @@ export interface TaskNotificationMetadata extends Record<string, unknown> {
   newAssigneeName?: string;
   // For task_deleted notification
   deletedByName?: string;
+  // For task reminders
+  timeframe?: string;
+  reminderType?: string;
+  // For task events
+  assignedByName?: string;
+  completedByName?: string;
+  reassignedByName?: string;
 }
 
 export interface AppointmentNotificationMetadata extends Record<string, unknown> {
@@ -186,4 +193,10 @@ export interface AppointmentNotificationMetadata extends Record<string, unknown>
   propertyAddress?: string;
   previousDatetime?: string;
   reminderType?: AppointmentReminderTimeframe;
+  appointmentType?: string;
+  cancellationReason?: string;
+  scheduledByName?: string;
+  rescheduledByName?: string;
+  cancelledByName?: string;
+  location?: string;
 }

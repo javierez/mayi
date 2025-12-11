@@ -232,9 +232,9 @@ export async function buildFotocasaPayload(
   enabledAdevintaPortals?: AdevintaPortalId[], // Portals to publish to (defaults to fotocasa only)
 ): Promise<{ payload: FotocasaProperty; watermarkedKeys: string[] }> {
   try {
-    // Get listing details and property images
+    // Get listing details and property images (only active images for portal export)
     const listing = await getListingDetailsWithAuth(listingId);
-    const images = await getPropertyImages(BigInt(listing.propertyId));
+    const images = await getPropertyImages(BigInt(listing.propertyId), true);
     
     // Get visibility settings from database if not provided as parameters
     const finalVisibilityMode = visibilityMode ?? listing.fcLocationVisibility ?? 1;
@@ -1017,6 +1017,8 @@ export async function buildFotocasaPayload(
       butano: 4,
       propano: 5,
       solar: 6,
+      "bomba de calor": 2, // Map to electric as closest match
+      "suelo radiante": 2, // Map to electric as closest match (often electric-powered)
     };
 
     if (listingWithEnergy.heatingType) {

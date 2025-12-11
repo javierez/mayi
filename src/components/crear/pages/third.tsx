@@ -25,10 +25,12 @@ import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
   retrieveCadastralData,
-  searchCadastralByCoordinates,
+  searchCadastralParcelsWithDistance,
+  expandParcelToUnits,
   compareCadastralData,
   type CadastralComparisonResult,
   type CadastralSearchResult,
+  type CadastralParcel,
 } from "~/server/cadastral/retrieve_cadastral";
 import { toast } from "sonner";
 // import FormSkeleton from "./form-skeleton"; // Removed - using single loading state
@@ -57,9 +59,9 @@ export default function ThirdPage({
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
   const [isCadastralLoading, setIsCadastralLoading] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
-  const [potentialReferences, setPotentialReferences] = useState<
-    CadastralSearchResult[]
-  >([]);
+  const [potentialParcels, setPotentialParcels] = useState<CadastralParcel[]>(
+    [],
+  );
   const [isSearching, setIsSearching] = useState(false);
   const searchParams = useSearchParams();
   const method = searchParams?.get("method");
@@ -248,10 +250,10 @@ export default function ThirdPage({
     toast.success("Dirección autocompletada. Los datos se han actualizado.");
   };
 
-  // Search for cadastral references by coordinates
+  // Search for cadastral parcels by coordinates (two-step flow)
   const searchCadastralReferences = async () => {
     console.log("🔍 [ThirdPage] ========================================");
-    console.log("🔍 [ThirdPage] STARTING CADASTRAL SEARCH");
+    console.log("🔍 [ThirdPage] STARTING CADASTRAL PARCEL SEARCH");
     console.log("🔍 [ThirdPage] ========================================");
 
     console.log("📋 [ThirdPage] Current coordinates for search:", {
@@ -278,25 +280,23 @@ export default function ThirdPage({
       };
 
       console.log(
-        "📡 [ThirdPage] Calling searchCadastralByCoordinates with params:",
+        "📡 [ThirdPage] Calling searchCadastralParcelsWithDistance with params:",
         searchParams,
       );
 
-      const results = await searchCadastralByCoordinates(searchParams);
+      const parcels = await searchCadastralParcelsWithDistance(searchParams);
 
-      console.log("📊 [ThirdPage] Search results received:", results);
-      setPotentialReferences(results);
+      console.log("📊 [ThirdPage] Parcels found:", parcels);
+      setPotentialParcels(parcels);
 
       console.log("✅ [ThirdPage] ========================================");
-      console.log("✅ [ThirdPage] SEARCH COMPLETED SUCCESSFULLY");
+      console.log("✅ [ThirdPage] PARCEL SEARCH COMPLETED SUCCESSFULLY");
       console.log("✅ [ThirdPage] ========================================");
-      console.log(
-        `✅ [ThirdPage] Found ${results.length} cadastral references`,
-      );
+      console.log(`✅ [ThirdPage] Found ${parcels.length} parcels`);
 
-      if (results.length === 0) {
+      if (parcels.length === 0) {
         toast.info(
-          "No se encontraron referencias catastrales en estas coordenadas.",
+          "No se encontraron parcelas catastrales en estas coordenadas.",
           {
             description:
               "El Catastro no encontró propiedades en un radio de 50 metros.",
@@ -305,15 +305,31 @@ export default function ThirdPage({
       }
     } catch (error) {
       console.error("❌ [ThirdPage] ========================================");
-      console.error("❌ [ThirdPage] SEARCH FAILED WITH ERROR");
+      console.error("❌ [ThirdPage] PARCEL SEARCH FAILED WITH ERROR");
       console.error("❌ [ThirdPage] ========================================");
       console.error("❌ [ThirdPage] Search error:", error);
       toast.error(
-        "Error al buscar referencias catastrales. Inténtalo de nuevo.",
+        "Error al buscar parcelas catastrales. Inténtalo de nuevo.",
       );
-      setPotentialReferences([]);
+      setPotentialParcels([]);
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  // Handle parcel expansion (called by modal when user selects a parcel)
+  const handleExpandParcel = async (
+    parcel: CadastralParcel,
+  ): Promise<CadastralSearchResult[]> => {
+    console.log("🔍 [ThirdPage] Expanding parcel:", parcel.cadastralReference);
+    try {
+      const units = await expandParcelToUnits(parcel.cadastralReference);
+      console.log(`✅ [ThirdPage] Expanded to ${units.length} units`);
+      return units;
+    } catch (error) {
+      console.error("❌ [ThirdPage] Error expanding parcel:", error);
+      toast.error("Error al cargar las unidades de la parcela.");
+      return [];
     }
   };
 
@@ -1169,13 +1185,14 @@ export default function ThirdPage({
         </motion.div>
       </motion.div>
 
-      {/* Cadastral Selection Modal */}
+      {/* Cadastral Selection Modal (two-step: parcels → units) */}
       <CadastralSelectionModal
         isOpen={isSearchModalOpen}
         onClose={() => setIsSearchModalOpen(false)}
-        searchResults={potentialReferences}
+        parcels={potentialParcels}
         isLoading={isSearching}
         onSelect={handleCadastralReferenceSelect}
+        onExpandParcel={handleExpandParcel}
       />
     </div>
   );

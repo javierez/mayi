@@ -3,6 +3,7 @@
  *
  * Generates email content for task-related notifications
  * with task-specific details like due dates, urgency, etc.
+ * Enhanced to handle task events: assigned, completed, reassigned
  */
 
 import { generateNotificationEmailBase } from "./notification-base";
@@ -19,6 +20,40 @@ export function generateTaskNotificationEmail(
 
   // Build detailed message with task information
   let detailedMessage = notification.message;
+
+  // Handle task-specific event types with enhanced messaging
+  if (notification.type === "task_assigned") {
+    // Task assigned notification
+    if (metadata.taskTitle) {
+      detailedMessage = `Se te ha asignado una nueva tarea: ${metadata.taskTitle}`;
+    }
+    // Add who assigned it if available
+    if (metadata.assignedByName) {
+      detailedMessage += `\n\n👤 Asignada por: ${metadata.assignedByName}`;
+    }
+  } else if (notification.type === "task_completed") {
+    // Task completed notification
+    if (metadata.taskTitle) {
+      detailedMessage = `La tarea "${metadata.taskTitle}" ha sido completada.`;
+    }
+    // Add who completed it if available
+    if (metadata.completedByName) {
+      detailedMessage += `\n\n✅ Completada por: ${metadata.completedByName}`;
+    }
+  } else if (notification.type === "task_reassigned") {
+    // Task reassigned notification
+    if (metadata.taskTitle) {
+      detailedMessage = `Tu tarea "${metadata.taskTitle}" ha sido reasignada.`;
+    }
+    if (metadata.previousAssigneeName && metadata.newAssigneeName) {
+      detailedMessage += `\n\n🔄 Reasignada de: ${metadata.previousAssigneeName} a: ${metadata.newAssigneeName}`;
+    } else if (metadata.newAssigneeName) {
+      detailedMessage += `\n\n🔄 Reasignada a: ${metadata.newAssigneeName}`;
+    }
+    if (metadata.reassignedByName) {
+      detailedMessage += `\n\n👤 Reasignada por: ${metadata.reassignedByName}`;
+    }
+  }
 
   // Add due date information if available
   if (metadata.dueDate) {
@@ -42,6 +77,7 @@ export function generateTaskNotificationEmail(
       2: "Media",
       3: "Alta",
       4: "Urgente",
+      5: "Crítica",
     };
     const urgencyLabel = urgencyLabels[metadata.urgency] ?? "Normal";
     detailedMessage += `\n\n⚡ Urgencia: ${urgencyLabel}`;
@@ -52,11 +88,21 @@ export function generateTaskNotificationEmail(
     detailedMessage += `\n\n📁 Categoría: ${metadata.category}`;
   }
 
+  // Determine action label based on notification type
+  let actionLabel = "Ver tarea";
+  if (notification.type === "task_assigned") {
+    actionLabel = "Ver tarea asignada";
+  } else if (notification.type === "task_completed") {
+    actionLabel = "Ver tarea completada";
+  } else if (notification.type === "task_reassigned") {
+    actionLabel = "Ver tarea reasignada";
+  }
+
   const { html, text } = generateNotificationEmailBase(
     notification.title,
     detailedMessage,
     actionUrl,
-    "Ver tarea",
+    actionLabel,
   );
 
   return {

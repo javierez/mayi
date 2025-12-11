@@ -1,7 +1,7 @@
 /**
  * Email Notification Service
  *
- * Handles sending email notifications for high-priority notifications.
+ * Handles sending email notifications based on MailSettings configuration.
  * This service is called asynchronously after notification creation.
  */
 
@@ -9,9 +9,13 @@ import { sendEmail } from "~/lib/email";
 import { getUserById } from "~/server/queries/users";
 import { updateNotificationDeliveryStatus } from "~/server/queries/notification";
 import type { Notification } from "~/types/notifications";
-import { generateTaskNotificationEmail } from "~/templates/emails/task-notification";
-import { generateAppointmentNotificationEmail } from "~/templates/emails/appointment-notification";
-import { generateNotificationEmailBase } from "~/templates/emails/notification-base";
+import {
+  getEmailSettingsForAccount,
+  shouldSendEmailForNotification,
+  isQuietHours,
+  shouldBypassQuietHours,
+} from "./email-config-helpers";
+import { routeToTemplate } from "./email-template-router";
 
 /**
  * Determine if an email notification should be sent
@@ -19,6 +23,8 @@ import { generateNotificationEmailBase } from "~/templates/emails/notification-b
 async function shouldSendEmailNotification(
   notification: Notification,
   userEmail: string | null,
+  accountId: bigint,
+  settings: Awaited<ReturnType<typeof getEmailSettingsForAccount>>,
 ): Promise<boolean> {
   // 1. User must have email
   if (!userEmail) {
@@ -30,15 +36,20 @@ async function shouldSendEmailNotification(
     return false;
   }
 
-  // 3. Check notification priority - send for high/urgent
-  const isHighPriority =
-    notification.priority === "high" || notification.priority === "urgent";
+  // 3. Check if email is enabled for this notification type in settings
+  const isEnabledInSettings = shouldSendEmailForNotification(notification, settings);
+  if (!isEnabledInSettings) {
+    return false;
+  }
 
-  // 4. Check notification type - always send for these types
-  const alwaysSendTypes = ["task_overdue", "appointment_reminder"];
-  const shouldSendByType = alwaysSendTypes.includes(notification.type);
+  // 4. Check quiet hours (unless notification should bypass)
+  if (!shouldBypassQuietHours(notification)) {
+    if (isQuietHours(settings)) {
+      return false;
+    }
+  }
 
-  return isHighPriority || shouldSendByType;
+  return true;
 }
 
 /**
@@ -46,34 +57,9 @@ async function shouldSendEmailNotification(
  */
 function generateNotificationEmail(
   notification: Notification,
+  settings: Awaited<ReturnType<typeof getEmailSettingsForAccount>>,
 ): { subject: string; html: string; text: string } {
-  // Route to appropriate template generator based on category
-  if (notification.category === "tasks") {
-    return generateTaskNotificationEmail(notification);
-  }
-
-  if (notification.category === "appointments") {
-    return generateAppointmentNotificationEmail(notification);
-  }
-
-  // Fallback to base template for other categories
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? "";
-  const actionUrl = notification.actionUrl
-    ? `${baseUrl}${notification.actionUrl}`
-    : null;
-
-  const { html, text } = generateNotificationEmailBase(
-    notification.title,
-    notification.message,
-    actionUrl,
-    "Ver detalles",
-  );
-
-  return {
-    subject: notification.title,
-    html,
-    text,
-  };
+  return routeToTemplate(notification, settings);
 }
 
 /**
@@ -82,10 +68,12 @@ function generateNotificationEmail(
 async function sendNotificationEmail(
   notification: Notification,
   userEmail: string,
+  accountId: bigint,
+  settings: Awaited<ReturnType<typeof getEmailSettingsForAccount>>,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     // Generate email content
-    const { subject, html, text } = generateNotificationEmail(notification);
+    const { subject, html, text } = generateNotificationEmail(notification, settings);
 
     // Send email
     await sendEmail({
@@ -132,6 +120,7 @@ async function sendNotificationEmail(
  */
 export async function sendNotificationEmailIfNeeded(
   notification: Notification,
+  accountId: bigint,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     // Check if notification has a user ID
@@ -143,10 +132,15 @@ export async function sendNotificationEmailIfNeeded(
     const user = await getUserById(notification.userId);
     const userEmail = user?.email ?? null;
 
+    // Get email settings for account
+    const settings = await getEmailSettingsForAccount(accountId);
+
     // Check if email should be sent
     const shouldSend = await shouldSendEmailNotification(
       notification,
       userEmail,
+      accountId,
+      settings,
     );
 
     if (!shouldSend) {
@@ -154,7 +148,7 @@ export async function sendNotificationEmailIfNeeded(
     }
 
     // Send email (userEmail is guaranteed non-null by shouldSendEmailNotification check)
-    return await sendNotificationEmail(notification, userEmail!);
+    return await sendNotificationEmail(notification, userEmail!, accountId, settings);
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";

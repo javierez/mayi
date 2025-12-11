@@ -33,8 +33,8 @@ export default async function ImageStudioPage({
     notFound();
   }
 
-  // Get images after we have headerData
-  const images = await getPropertyImages(headerData.propertyId).catch(() => []);
+  // Get images after we have headerData (all images, including inactive)
+  const images = await getPropertyImages(headerData.propertyId, undefined).catch(() => []);
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

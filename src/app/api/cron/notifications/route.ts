@@ -5,9 +5,12 @@ import { eq, and, gte, lte, isNotNull } from "drizzle-orm";
 import {
   notifyAppointmentReminder,
   notifyTaskDueSoon,
+  notifyTaskOverdue,
 } from "~/server/services/notification-service";
 import { sendTaskDigestEmail } from "~/server/services/task-digest-email-service";
 import { reminderExistsForEntity } from "~/server/queries/notification";
+import { getEmailSettingsForAccount, getReminderTimeframe } from "~/server/services/email-config-helpers";
+import type { TaskReminderTimeframe } from "~/types/notifications";
 
 /**
  * Cron job handler for scheduled notification reminders
@@ -42,12 +45,11 @@ export async function GET(request: NextRequest) {
 
     // ===== APPOINTMENT REMINDERS =====
 
-    // Calculate time windows
-    const in30Minutes = new Date(now.getTime() + 30 * 60 * 1000);
-    const in1Day = new Date(now.getTime() + 24 * 60 * 1000);
+    // Calculate time windows for different reminder timeframes
+    const in24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-    // Find appointments starting in 30 minutes (within 15 minute window)
-    const appointments30Min = await db
+    // Find appointments starting within next 24 hours
+    const upcomingAppointments = await db
       .select({
         appointmentId: appointments.appointmentId,
         userId: appointments.userId,
@@ -57,6 +59,8 @@ export async function GET(request: NextRequest) {
         datetimeStart: appointments.datetimeStart,
         datetimeEnd: appointments.datetimeEnd,
         status: appointments.status,
+        type: appointments.type,
+        tripTimeMinutes: appointments.tripTimeMinutes,
         accountId: users.accountId,
       })
       .from(appointments)
@@ -66,129 +70,158 @@ export async function GET(request: NextRequest) {
           eq(appointments.isActive, true),
           eq(appointments.status, "Scheduled"),
           gte(appointments.datetimeStart, now),
-          lte(appointments.datetimeStart, in30Minutes),
+          lte(appointments.datetimeStart, in24Hours),
         ),
       );
 
-    for (const appointment of appointments30Min) {
+    // Process each appointment and check which reminder timeframe applies
+    for (const appointment of upcomingAppointments) {
       const accountId = appointment.accountId;
       if (!accountId || typeof accountId !== "bigint") continue;
 
-      // Check if reminder already exists
-      const exists = await reminderExistsForEntity(
-        BigInt(accountId),
-        "appointment",
-        appointment.appointmentId,
-        "appointment_reminder",
-        "30_min",
-      );
+      // Get settings for this account
+      const settings = await getEmailSettingsForAccount(BigInt(accountId));
+      
+      const startTime = new Date(appointment.datetimeStart);
+      const timeUntilStart = startTime.getTime() - now.getTime();
+      const hoursUntilStart = timeUntilStart / (1000 * 60 * 60);
+      const minutesUntilStart = timeUntilStart / (1000 * 60);
 
-      if (!exists) {
-        try {
-          await notifyAppointmentReminder(
-            {
-              appointmentId: appointment.appointmentId,
-              userId: appointment.userId,
-              contactId: appointment.contactId,
-              assignedTo: appointment.assignedTo ?? undefined,
-              title: appointment.title,
-              datetimeStart: appointment.datetimeStart,
-              datetimeEnd: appointment.datetimeEnd,
-              status: "Scheduled",
-              isActive: true,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-            BigInt(accountId),
-            "30_min",
-          );
-          remindersCreated.push(1);
-        } catch (error) {
-          console.error(
-            `Error creating 30min reminder for appointment ${appointment.appointmentId}:`,
-            error,
-          );
+      // Determine which reminder timeframe applies (check in order of urgency)
+      let reminderTimeframe: "30_min" | "1h" | "12h" | "1_day" | null = null;
+      
+      if (minutesUntilStart <= 30 && minutesUntilStart > 15) {
+        reminderTimeframe = "30_min";
+      } else if (hoursUntilStart <= 1 && hoursUntilStart > 0.5) {
+        reminderTimeframe = "1h";
+      } else if (hoursUntilStart <= 12 && hoursUntilStart > 11) {
+        reminderTimeframe = "12h";
+      } else if (hoursUntilStart <= 24 && hoursUntilStart > 23) {
+        reminderTimeframe = "1_day";
+      }
+
+      if (reminderTimeframe) {
+        // Check if notification already exists for this timeframe
+        const exists = await reminderExistsForEntity(
+          BigInt(accountId),
+          "appointment",
+          appointment.appointmentId,
+          "appointment_reminder",
+          reminderTimeframe,
+        );
+
+        if (!exists) {
+          // Check if this reminder is enabled in settings
+          const appointmentType = appointment.type ?? "visita";
+          const appointmentSettings = settings.appointments[appointmentType as keyof typeof settings.appointments];
+          
+          if (appointmentSettings && "notify24h" in appointmentSettings) {
+            let isEnabled = false;
+            switch (reminderTimeframe) {
+              case "1_day":
+                isEnabled = appointmentSettings.notify24h.emailEnabled;
+                break;
+              case "12h":
+                isEnabled = appointmentSettings.notify12h.emailEnabled;
+                break;
+              case "1h":
+                isEnabled = appointmentSettings.notify1h.emailEnabled;
+                break;
+              case "30_min":
+                isEnabled = appointmentSettings.notify30min.emailEnabled;
+                break;
+            }
+
+            if (isEnabled) {
+              try {
+                await notifyAppointmentReminder(
+                  {
+                    appointmentId: appointment.appointmentId,
+                    userId: appointment.userId,
+                    contactId: appointment.contactId,
+                    assignedTo: appointment.assignedTo ?? undefined,
+                    title: appointment.title,
+                    datetimeStart: appointment.datetimeStart,
+                    datetimeEnd: appointment.datetimeEnd,
+                    status: "Scheduled",
+                    isActive: true,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                  },
+                  BigInt(accountId),
+                  reminderTimeframe,
+                );
+                remindersCreated.push(1);
+              } catch (error) {
+                console.error(
+                  `Error creating ${reminderTimeframe} reminder for appointment ${appointment.appointmentId}:`,
+                  error,
+                );
+              }
+            }
+          }
         }
       }
-    }
 
-    // Find appointments starting in 1 day (between 30min and 1day from now)
-    const appointments1Day = await db
-      .select({
-        appointmentId: appointments.appointmentId,
-        userId: appointments.userId,
-        contactId: appointments.contactId,
-        assignedTo: appointments.assignedTo,
-        title: appointments.title,
-        datetimeStart: appointments.datetimeStart,
-        datetimeEnd: appointments.datetimeEnd,
-        status: appointments.status,
-        accountId: users.accountId,
-      })
-      .from(appointments)
-      .innerJoin(users, eq(appointments.userId, users.id))
-      .where(
-        and(
-          eq(appointments.isActive, true),
-          eq(appointments.status, "Scheduled"),
-          gte(appointments.datetimeStart, in30Minutes),
-          lte(appointments.datetimeStart, in1Day),
-        ),
-      );
+      // Handle travel time reminders (if trip time is set)
+      if (appointment.tripTimeMinutes) {
+        const appointmentType = appointment.type ?? "visita";
+        const appointmentSettings = settings.appointments[appointmentType as keyof typeof settings.appointments];
+        
+        if (appointmentSettings && "notifyTravelTime" in appointmentSettings && appointmentSettings.notifyTravelTime.emailEnabled) {
+          const travelTimeMs = appointment.tripTimeMinutes * 60 * 1000;
+          const travelTimeReminder = new Date(startTime.getTime() - travelTimeMs);
+          const timeUntilTravelReminder = travelTimeReminder.getTime() - now.getTime();
+          
+          // Check if it's time to send travel reminder (within 15 minute window before travel time)
+          if (timeUntilTravelReminder >= 0 && timeUntilTravelReminder <= 15 * 60 * 1000) {
+            const existsTravel = await reminderExistsForEntity(
+              BigInt(accountId),
+              "appointment",
+              appointment.appointmentId,
+              "appointment_reminder",
+              "travel_time",
+            );
 
-    for (const appointment of appointments1Day) {
-      const accountId = appointment.accountId;
-      if (!accountId || typeof accountId !== "bigint") continue;
-
-      const exists = await reminderExistsForEntity(
-        BigInt(accountId),
-        "appointment",
-        appointment.appointmentId,
-        "appointment_reminder",
-        "1_day",
-      );
-
-      if (!exists) {
-        try {
-          await notifyAppointmentReminder(
-            {
-              appointmentId: appointment.appointmentId,
-              userId: appointment.userId,
-              contactId: appointment.contactId,
-              assignedTo: appointment.assignedTo ?? undefined,
-              title: appointment.title,
-              datetimeStart: appointment.datetimeStart,
-              datetimeEnd: appointment.datetimeEnd,
-              status: "Scheduled",
-              isActive: true,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-            BigInt(accountId),
-            "1_day",
-          );
-          remindersCreated.push(1);
-        } catch (error) {
-          console.error(
-            `Error creating 1day reminder for appointment ${appointment.appointmentId}:`,
-            error,
-          );
+            if (!existsTravel) {
+              try {
+                await notifyAppointmentReminder(
+                  {
+                    appointmentId: appointment.appointmentId,
+                    userId: appointment.userId,
+                    contactId: appointment.contactId,
+                    assignedTo: appointment.assignedTo ?? undefined,
+                    title: appointment.title,
+                    datetimeStart: appointment.datetimeStart,
+                    datetimeEnd: appointment.datetimeEnd,
+                    status: "Scheduled",
+                    isActive: true,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                  },
+                  BigInt(accountId),
+                  "travel_time",
+                );
+                remindersCreated.push(1);
+              } catch (error) {
+                console.error(
+                  `Error creating travel time reminder for appointment ${appointment.appointmentId}:`,
+                  error,
+                );
+              }
+            }
+          }
         }
       }
     }
 
     // ===== TASK REMINDERS =====
 
-    // Calculate dates for task due soon
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(23, 59, 59, 999);
+    // Calculate time windows for different reminder timeframes
+    const taskIn1Week = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-    const today = new Date(now);
-    today.setHours(23, 59, 59, 999);
-
-    // Find tasks due tomorrow or today (not completed)
-    const tasksDueSoon = await db
+    // Find tasks due within next week (not completed)
+    const upcomingTasks = await db
       .select({
         taskId: tasks.taskId,
         userId: tasks.userId,
@@ -211,57 +244,123 @@ export async function GET(request: NextRequest) {
           eq(tasks.completed, false),
           isNotNull(tasks.dueDate),
           gte(tasks.dueDate, now),
-          lte(tasks.dueDate, tomorrow),
+          lte(tasks.dueDate, taskIn1Week),
         ),
       );
 
-    for (const task of tasksDueSoon) {
+    // Process each task and check which reminder timeframe applies
+    for (const task of upcomingTasks) {
       const accountId = task.accountId;
       if (!accountId || typeof accountId !== "bigint" || !task.dueDate) continue;
 
-      // Determine if due today or tomorrow
+      // Get settings for this account
+      const settings = await getEmailSettingsForAccount(BigInt(accountId));
+      
+      // Calculate reminder timeframe
       const dueDate = new Date(task.dueDate);
-      const isToday =
-        dueDate.toDateString() === now.toDateString();
-      const timeframe = isToday ? "same_day" : "1_day";
+      const timeframe = getReminderTimeframe(dueDate, now);
+      
+      if (!timeframe) continue;
 
-      // Check if notification already exists
+      // Map timeframe to notification timeframe string
+      let notificationTimeframe: string;
+      switch (timeframe) {
+        case "1_week":
+          notificationTimeframe = "1_week";
+          break;
+        case "48h":
+          notificationTimeframe = "48h";
+          break;
+        case "24h":
+          notificationTimeframe = "24h";
+          break;
+        case "12h":
+          notificationTimeframe = "12h";
+          break;
+        case "2h":
+          notificationTimeframe = "2h";
+          break;
+        case "1h":
+          notificationTimeframe = "1h";
+          break;
+        default:
+          continue;
+      }
+
+      // Check if notification already exists for this timeframe
       const exists = await reminderExistsForEntity(
         BigInt(accountId),
         "task",
         task.taskId,
         "task_due_soon",
-        timeframe,
+        notificationTimeframe,
       );
 
       if (!exists) {
-        try {
-          await notifyTaskDueSoon(
-            {
-              taskId: task.taskId,
-              userId: task.userId,
-              title: task.title,
-              description: task.description,
-              dueDate: task.dueDate ?? undefined,
-              dueTime: task.dueTime ?? undefined,
-              completed: false,
-              urgency: task.urgency ?? undefined,
-              category: task.category ?? undefined,
-              listingId: task.listingId ?? undefined,
-              contactId: task.contactId ?? undefined,
-              isActive: true,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-            BigInt(accountId),
-            timeframe,
-          );
-          tasksNotified.push(1);
-        } catch (error) {
-          console.error(
-            `Error creating due soon notification for task ${task.taskId}:`,
-            error,
-          );
+        // Check if this reminder is enabled in settings
+        const urgency = task.urgency ?? 1;
+        let category: "critical" | "urgent" | "other";
+        if (urgency === 5) {
+          category = "critical";
+        } else if (urgency === 3 || urgency === 4) {
+          category = "urgent";
+        } else {
+          category = "other";
+        }
+
+        const categorySettings = settings.tasks[category];
+        let isEnabled = false;
+        
+        switch (timeframe) {
+          case "1_week":
+            isEnabled = categorySettings.dueIn1Week.emailEnabled;
+            break;
+          case "48h":
+            isEnabled = categorySettings.dueIn48h.emailEnabled;
+            break;
+          case "24h":
+            isEnabled = categorySettings.dueIn24h.emailEnabled;
+            break;
+          case "12h":
+            isEnabled = categorySettings.dueIn12h.emailEnabled;
+            break;
+          case "2h":
+            isEnabled = categorySettings.dueIn2h.emailEnabled;
+            break;
+          case "1h":
+            isEnabled = categorySettings.dueIn1h.emailEnabled;
+            break;
+        }
+
+        if (isEnabled) {
+          try {
+            await notifyTaskDueSoon(
+              {
+                taskId: task.taskId,
+                userId: task.userId,
+                title: task.title,
+                description: task.description,
+                dueDate: task.dueDate ?? undefined,
+                dueTime: task.dueTime ?? undefined,
+                completed: false,
+                urgency: task.urgency ?? undefined,
+                category: task.category ?? undefined,
+                listingId: task.listingId ?? undefined,
+                contactId: task.contactId ?? undefined,
+                isActive: true,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+              BigInt(accountId),
+              notificationTimeframe as TaskReminderTimeframe,
+            );
+            tasksNotified.push(1);
+          } catch (error) {
+            console.error(
+              `Error creating ${timeframe} reminder for task ${task.taskId}:`,
+              error,
+            );
+          }
         }
       }
     }
@@ -293,7 +392,65 @@ export async function GET(request: NextRequest) {
         ),
       );
 
-    // Group tasks by user and urgency
+    // Check for critical tasks that just became overdue (within last 15 minutes)
+    const recentlyOverdue = new Date(now.getTime() - 15 * 60 * 1000);
+    
+    for (const task of overdueTasks) {
+      const accountId = task.accountId;
+      if (!accountId || typeof accountId !== "bigint" || !task.dueDate) continue;
+
+      const dueDate = new Date(task.dueDate);
+      const isCritical = task.urgency === 5;
+      
+      // Check if critical task just became overdue (within last 15 minutes)
+      if (isCritical && dueDate >= recentlyOverdue && dueDate <= now) {
+        // Check if immediate notification is enabled
+        const settings = await getEmailSettingsForAccount(BigInt(accountId));
+        if (settings.tasks.overdue.notifyWhenOverdue.emailEnabled) {
+          // Check if notification already exists
+          const exists = await reminderExistsForEntity(
+            BigInt(accountId),
+            "task",
+            task.taskId,
+            "task_overdue",
+            "immediate",
+          );
+
+          if (!exists) {
+            try {
+              await notifyTaskOverdue(
+                {
+                  taskId: task.taskId,
+                  userId: task.userId,
+                  title: task.title,
+                  description: task.description,
+                  dueDate: task.dueDate ?? undefined,
+                  dueTime: task.dueTime ?? undefined,
+                  completed: false,
+                  urgency: task.urgency ?? undefined,
+                  category: task.category ?? undefined,
+                  listingId: task.listingId ?? undefined,
+                  contactId: task.contactId ?? undefined,
+                  isActive: true,
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                },
+                BigInt(accountId),
+              );
+              // Email is sent inside notifyTaskOverdue
+              tasksNotified.push(1);
+            } catch (error) {
+              console.error(
+                `Error creating immediate overdue notification for task ${task.taskId}:`,
+                error,
+              );
+            }
+          }
+        }
+      }
+    }
+
+    // Group tasks by user and urgency for digest emails
     const tasksByUser = new Map<
       string,
       { accountId: bigint; critical: typeof overdueTasks; normal: typeof overdueTasks }
@@ -302,6 +459,13 @@ export async function GET(request: NextRequest) {
     for (const task of overdueTasks) {
       const accountId = task.accountId;
       if (!accountId || typeof accountId !== "bigint") continue;
+
+      // Skip tasks that were just notified as immediate
+      const dueDate = new Date(task.dueDate!);
+      const isCritical = task.urgency === 5;
+      if (isCritical && dueDate >= recentlyOverdue && dueDate <= now) {
+        continue; // Already handled above
+      }
 
       if (!tasksByUser.has(task.userId)) {
         tasksByUser.set(task.userId, {
@@ -312,7 +476,6 @@ export async function GET(request: NextRequest) {
       }
 
       const userTasks = tasksByUser.get(task.userId)!;
-      const isCritical = task.urgency === 5;
 
       if (isCritical) {
         userTasks.critical.push(task);

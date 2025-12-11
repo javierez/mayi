@@ -154,6 +154,7 @@ export function FeaturesCard({
     { value: "Propano", label: "Propano" },
     { value: "Solar", label: "Solar" },
     { value: "Bomba de calor", label: "Bomba de calor" },
+    { value: "Suelo radiante", label: "Suelo radiante" },
   ];
 
   return (

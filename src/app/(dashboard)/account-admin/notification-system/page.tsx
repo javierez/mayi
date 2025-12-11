@@ -1,7 +1,7 @@
 import { AccountAdminBreadcrumb } from "~/components/admin/account/breadcrumb";
 import { MailConfiguration } from "~/components/admin/account/mail-configuration";
 
-export default function AccountAdminCorreoPage() {
+export default function AccountAdminNotificationSystemPage() {
   return (
     <div className="space-y-6">
       <AccountAdminBreadcrumb />

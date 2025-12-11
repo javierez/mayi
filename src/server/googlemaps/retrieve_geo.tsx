@@ -7,8 +7,9 @@ interface NominatimResponse {
   lat: string;
   lon: string;
   address: {
-    suburb?: string;
-    quarter?: string;
+    neighbourhood?: string; // British spelling - most specific
+    borough?: string; // District level
+    suburb?: string; // Suburb level
     city?: string;
     province?: string;
     state?: string;
@@ -22,10 +23,14 @@ export async function getNeighborhoodFromCoordinates(
 ): Promise<string | null> {
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1&accept-language=es`;
+    console.log(
+      "🌍 [NOMINATIM] ========== REVERSE GEOCODE REQUEST ==========",
+    );
     console.log("🌍 [NOMINATIM] Fetching neighborhood from coordinates:", {
       lat,
       lng,
     });
+    console.log("🌍 [NOMINATIM] API URL:", url);
 
     const response = await fetch(url, {
       method: "GET",
@@ -35,14 +40,59 @@ export async function getNeighborhoodFromCoordinates(
       },
     });
 
+    console.log(
+      "🌍 [NOMINATIM] Response status:",
+      response.status,
+      response.statusText,
+    );
+
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error("❌ [NOMINATIM] HTTP error response:", errorText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = (await response.json()) as NominatimResponse;
+    const responseText = await response.text();
+    console.log(
+      "📄 [NOMINATIM] ========== RAW API RESPONSE ==========",
+    );
+    console.log("📄 [NOMINATIM] Response length:", responseText.length, "chars");
+    console.log("📄 [NOMINATIM] Full response:", responseText);
+    console.log(
+      "📄 [NOMINATIM] ========================================",
+    );
 
-    const neighborhood = data.address?.suburb ?? data.address?.quarter ?? null;
-    console.log("🏘️ [NOMINATIM] Neighborhood found:", neighborhood);
+    const data = JSON.parse(responseText) as NominatimResponse;
+
+    console.log("📋 [NOMINATIM] Parsed address object:", data.address);
+    console.log("📋 [NOMINATIM] Available address fields:", {
+      neighbourhood: data.address?.neighbourhood,
+      borough: data.address?.borough,
+      suburb: data.address?.suburb,
+      city: data.address?.city,
+      province: data.address?.province,
+      state: data.address?.state,
+    });
+
+    // Priority: neighbourhood (most specific) > borough > suburb > null
+    let neighborhood: string | null = null;
+    if (data.address?.neighbourhood) {
+      neighborhood = data.address.neighbourhood;
+      console.log("🏘️ [NOMINATIM] Using neighbourhood:", neighborhood);
+    } else if (data.address?.borough) {
+      neighborhood = data.address.borough;
+      console.log("🏘️ [NOMINATIM] Using borough:", neighborhood);
+    } else if (data.address?.suburb) {
+      neighborhood = data.address.suburb;
+      console.log("🏘️ [NOMINATIM] Using suburb:", neighborhood);
+    } else {
+      console.log("🏘️ [NOMINATIM] No neighborhood data available");
+    }
+
+    console.log("🏘️ [NOMINATIM] Final selected neighborhood:", neighborhood);
+    console.log(
+      "🌍 [NOMINATIM] ========================================",
+    );
 
     return neighborhood;
   } catch (error) {
@@ -94,7 +144,9 @@ export async function retrieveGeocodingData(
     }
 
     const addressData = result.address;
-    const neighborhood = addressData.suburb;
+    // Priority: neighbourhood > borough > suburb > undefined
+    const neighborhood =
+      addressData.neighbourhood ?? addressData.borough ?? addressData.suburb;
 
     let neighborhoodId: number | undefined;
     if (neighborhood) {

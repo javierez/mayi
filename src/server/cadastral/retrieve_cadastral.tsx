@@ -95,6 +95,42 @@ interface CadastralResponse {
       }>;
     };
   };
+  // Distance-based coordinate search response
+  Consulta_RCCOOR_DistanciaResult?: {
+    control: {
+      cucoor: number;
+    };
+    coordenadas_distancias?: {
+      coordd: Array<{
+        geo: {
+          xcen: string;
+          ycen: string;
+          srs: string;
+        };
+        // lpcd contains array of parcels found at this location
+        lpcd: Array<{
+          pc: {
+            pc1: string;
+            pc2: string;
+          };
+          dt: {
+            loine: {
+              cp: string; // Province code
+              cm: string; // Municipality code
+            };
+            lourb?: {
+              dir?: {
+                cv: string;
+                pnp: string;
+              };
+            };
+          };
+          ldt: string; // Full address
+          dis: string; // Distance from search point in meters
+        }>;
+      }>;
+    };
+  };
 }
 
 // Formatted cadastral data for database
@@ -156,6 +192,15 @@ export interface CadastralSearchResult {
   municipality: string;
   builtSurfaceArea: number;
   yearBuilt: number;
+}
+
+// Type for parcel-level data (used in two-step selection flow)
+export interface CadastralParcel {
+  cadastralReference: string; // 14-char parcel reference
+  street: string;
+  municipality: string;
+  province?: string;
+  unitCount: number; // Number of units in this parcel
 }
 
 // Types for data comparison
@@ -786,6 +831,369 @@ export async function searchCadastralByCoordinates(params: {
       );
     }
     console.error("❌ [searchCadastralByCoordinates] Returning empty array");
+    return [];
+  }
+}
+
+// Search for cadastral parcels using distance-based API (returns parcel-level data, no auto-expansion)
+export async function searchCadastralParcelsWithDistance(params: {
+  latitude: number;
+  longitude: number;
+  distance?: number; // Search radius in meters (default 50)
+}): Promise<CadastralParcel[]> {
+  try {
+    console.log(
+      "🔍 [searchCadastralParcelsWithDistance] ========================================",
+    );
+    console.log(
+      "🔍 [searchCadastralParcelsWithDistance] STARTING DISTANCE-BASED PARCEL SEARCH",
+    );
+    console.log(
+      "🔍 [searchCadastralParcelsWithDistance] ========================================",
+    );
+    console.log(
+      "📋 [searchCadastralParcelsWithDistance] Input coordinates:",
+      params,
+    );
+
+    const searchDistance = params.distance ?? 50;
+
+    // Build the API URL for distance-based coordinate search
+    const baseUrl =
+      "https://ovc.catastro.meh.es/OVCServWeb/OVCWcfCallejero/COVCCoordenadas.svc/json/Consulta_RCCOOR_Distancia";
+
+    const queryParams = new URLSearchParams({
+      CoorX: params.longitude.toString(),
+      CoorY: params.latitude.toString(),
+      SRS: "EPSG:4326",
+      Distancia: searchDistance.toString(),
+    });
+
+    const apiUrl = `${baseUrl}?${queryParams.toString()}`;
+    console.log("📡 [searchCadastralParcelsWithDistance] API URL:", apiUrl);
+
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "Mozilla/5.0 (compatible; RealEstateApp/1.0)",
+      },
+    });
+
+    console.log(
+      "📊 [searchCadastralParcelsWithDistance] API Response status:",
+      response.status,
+      response.statusText,
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(
+        "❌ [searchCadastralParcelsWithDistance] API error:",
+        response.status,
+        errorText,
+      );
+      return [];
+    }
+
+    const responseText = await response.text();
+    console.log(
+      "📄 [searchCadastralParcelsWithDistance] ========== RAW API RESPONSE ==========",
+    );
+    console.log(
+      "📄 [searchCadastralParcelsWithDistance] Response length:",
+      responseText.length,
+      "chars",
+    );
+    console.log(
+      "📄 [searchCadastralParcelsWithDistance] Full response:",
+      responseText,
+    );
+    console.log(
+      "📄 [searchCadastralParcelsWithDistance] ========================================",
+    );
+
+    let data: CadastralResponse;
+    try {
+      data = JSON.parse(responseText) as CadastralResponse;
+      console.log(
+        "✅ [searchCadastralParcelsWithDistance] JSON parsed successfully",
+      );
+      console.log(
+        "📋 [searchCadastralParcelsWithDistance] Parsed data keys:",
+        Object.keys(data),
+      );
+    } catch (parseError) {
+      console.error(
+        "❌ [searchCadastralParcelsWithDistance] JSON parse error:",
+        parseError,
+      );
+      console.error(
+        "❌ [searchCadastralParcelsWithDistance] Failed response text:",
+        responseText,
+      );
+      return [];
+    }
+
+    // Check for distance-based response structure
+    console.log(
+      "🔍 [searchCadastralParcelsWithDistance] Checking response structure...",
+    );
+    console.log(
+      "🔍 [searchCadastralParcelsWithDistance] Has Consulta_RCCOOR_DistanciaResult?",
+      !!data.Consulta_RCCOOR_DistanciaResult,
+    );
+    console.log(
+      "🔍 [searchCadastralParcelsWithDistance] Has coordenadas_distancias?",
+      !!data.Consulta_RCCOOR_DistanciaResult?.coordenadas_distancias,
+    );
+    console.log(
+      "🔍 [searchCadastralParcelsWithDistance] Has coordd?",
+      !!data.Consulta_RCCOOR_DistanciaResult?.coordenadas_distancias?.coordd,
+    );
+
+    const coordArray =
+      data.Consulta_RCCOOR_DistanciaResult?.coordenadas_distancias?.coordd;
+    if (!coordArray) {
+      console.warn(
+        "⚠️ [searchCadastralParcelsWithDistance] No coordinate data found in response",
+      );
+      console.warn(
+        "⚠️ [searchCadastralParcelsWithDistance] Full response structure:",
+        JSON.stringify(data, null, 2),
+      );
+      return [];
+    }
+
+    console.log(
+      `📊 [searchCadastralParcelsWithDistance] Found ${coordArray.length} coordinate groups`,
+    );
+    console.log(
+      "📊 [searchCadastralParcelsWithDistance] First coordd item:",
+      JSON.stringify(coordArray[0], null, 2),
+    );
+
+    // Group references by 14-char parcel ID and count units
+    // The structure is: coordd[] -> lpcd[] (parcels at each coordinate)
+    const parcelMap = new Map<
+      string,
+      { street: string; municipality: string; province: string; count: number }
+    >();
+
+    for (const coordItem of coordArray) {
+      if (!coordItem?.lpcd) continue;
+
+      // Process each parcel in the lpcd array
+      for (const parcelItem of coordItem.lpcd) {
+        if (!parcelItem) continue;
+
+        // Get full cadastral reference
+        const fullRef =
+          parcelItem.pc.pc1 && parcelItem.pc.pc2
+            ? `${parcelItem.pc.pc1}${parcelItem.pc.pc2}`
+            : "";
+
+        // Extract 14-char parcel prefix
+        const parcelRef = fullRef.substring(0, 14);
+        if (!parcelRef) continue;
+
+        // Parse address to extract municipality and province
+        const fullAddress = parcelItem.ldt;
+        const addressRegex = /^(.+?)\s+(\d+)\s+(.+?)\s+\((.+?)\)$/;
+        const addressMatch = addressRegex.exec(fullAddress);
+
+        let street = fullAddress;
+        let municipality = "";
+        let province = "";
+
+        if (addressMatch) {
+          const streetPart = addressMatch[1] ?? "";
+          const streetNumber = addressMatch[2] ?? "";
+          municipality = addressMatch[3]?.trim() ?? "";
+          province = addressMatch[4]?.trim() ?? "";
+
+          // Format the street
+          const streetParts = streetPart.trim().split(/\s+/);
+          if (streetParts.length > 0) {
+            const streetType = formatStreetType(streetParts[0] ?? "");
+            const streetName = formatStreetName(streetParts.slice(1).join(" "));
+            street = `${streetType} ${streetName}, ${streetNumber}`;
+          }
+        }
+
+        // Update parcel map
+        const existing = parcelMap.get(parcelRef);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          parcelMap.set(parcelRef, {
+            street,
+            municipality,
+            province,
+            count: 1,
+          });
+        }
+      }
+    }
+
+    // Convert map to array of CadastralParcel
+    const parcels: CadastralParcel[] = [];
+    for (const [parcelRef, data] of parcelMap) {
+      parcels.push({
+        cadastralReference: parcelRef,
+        street: data.street,
+        municipality: data.municipality,
+        province: data.province,
+        unitCount: data.count,
+      });
+    }
+
+    console.log(
+      `✅ [searchCadastralParcelsWithDistance] Grouped into ${parcels.length} unique parcels`,
+    );
+    console.log(
+      "✅ [searchCadastralParcelsWithDistance] Parcels:",
+      parcels.map((p) => `${p.cadastralReference} (${p.unitCount} units)`),
+    );
+
+    return parcels;
+  } catch (error) {
+    console.error(
+      "❌ [searchCadastralParcelsWithDistance] Fatal error:",
+      error,
+    );
+    return [];
+  }
+}
+
+// Expand a 14-char parcel reference to its individual dwelling units
+export async function expandParcelToUnits(
+  parcelReference: string,
+): Promise<CadastralSearchResult[]> {
+  try {
+    console.log(
+      "🔍 [expandParcelToUnits] ========================================",
+    );
+    console.log(
+      `🔍 [expandParcelToUnits] Expanding parcel: ${parcelReference}`,
+    );
+    console.log(
+      "🔍 [expandParcelToUnits] ========================================",
+    );
+
+    if (parcelReference.length !== 14) {
+      console.warn(
+        `⚠️ [expandParcelToUnits] Reference is not 14 chars (got ${parcelReference.length})`,
+      );
+    }
+
+    const dnpUrl = `https://ovc.catastro.meh.es/OVCServWeb/OVCWcfCallejero/COVCCallejero.svc/json/Consulta_DNPRC?RefCat=${parcelReference}`;
+    console.log(`📡 [expandParcelToUnits] API URL:`, dnpUrl);
+
+    const response = await fetch(dnpUrl, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "Mozilla/5.0 (compatible; RealEstateApp/1.0)",
+      },
+    });
+
+    console.log(
+      `📊 [expandParcelToUnits] Response status:`,
+      response.status,
+      response.statusText,
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(
+        `❌ [expandParcelToUnits] API error:`,
+        response.status,
+        errorText,
+      );
+      return [];
+    }
+
+    const responseText = await response.text();
+    const data = JSON.parse(responseText) as CadastralResponse;
+
+    // Try new format first (lrcdnp.rcdnp), then fall back to old format (bico.bi)
+    let biList: BiUnit[] = [];
+    if (data?.consulta_dnprcResult?.lrcdnp?.rcdnp) {
+      biList = data.consulta_dnprcResult.lrcdnp.rcdnp;
+      console.log(
+        `✅ [expandParcelToUnits] Found ${biList.length} units (new format)`,
+      );
+    } else {
+      const biArray = data?.consulta_dnprcResult?.bico?.bi;
+      biList = Array.isArray(biArray) ? biArray : biArray ? [biArray] : [];
+      console.log(
+        `✅ [expandParcelToUnits] Found ${biList.length} units (old format)`,
+      );
+    }
+
+    const results: CadastralSearchResult[] = [];
+
+    for (const bi of biList) {
+      if (!bi) continue;
+
+      // Extract full cadastral reference including car (unit number)
+      const fullRC =
+        bi.rc?.pc1 && bi.rc?.pc2
+          ? `${bi.rc.pc1}${bi.rc.pc2}${bi.rc.car ?? ""}`
+          : bi.idbi?.rc?.pc1 && bi.idbi?.rc?.pc2
+            ? `${bi.idbi.rc.pc1}${bi.idbi.rc.pc2}`
+            : parcelReference;
+
+      const dir = bi.dt?.locs?.lous?.lourb?.dir;
+      const loint = bi.dt?.locs?.lous?.lourb?.loint;
+
+      let formattedStreet = "";
+      if (dir) {
+        const streetType = formatStreetType(dir.tv);
+        const streetName = formatStreetName(dir.nv);
+        formattedStreet = `${streetType} ${streetName}, ${dir.pnp ?? ""}`;
+      }
+
+      // Format address details: Floor and door
+      let addressDetails = "";
+      if (loint) {
+        const floor = loint.pt ?? "";
+        const door = loint.pu ?? "";
+        if (floor && door) {
+          addressDetails = `Planta ${floor}, Puerta ${door}`;
+        } else if (floor) {
+          addressDetails = `Planta ${floor}`;
+        } else if (door) {
+          addressDetails = `Puerta ${door}`;
+        }
+      }
+
+      const postalCode = bi.dt?.locs?.lous?.lourb?.dp ?? "";
+      const municipality = bi.dt?.nm ?? "";
+      const province = bi.dt?.np ?? "";
+      const builtSurfaceArea = parseFloat(bi.debi?.sfc ?? "0");
+      const yearBuilt = parseInt(bi.debi?.ant ?? "0", 10);
+
+      results.push({
+        cadastralReference: fullRC,
+        street: formattedStreet,
+        addressDetails,
+        postalCode,
+        city: province,
+        province,
+        municipality,
+        builtSurfaceArea,
+        yearBuilt,
+      });
+    }
+
+    console.log(
+      `✅ [expandParcelToUnits] Expanded to ${results.length} individual units`,
+    );
+    return results;
+  } catch (error) {
+    console.error(`❌ [expandParcelToUnits] Fatal error:`, error);
     return [];
   }
 }

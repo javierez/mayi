@@ -1013,6 +1013,7 @@ export function PortalSelection({
           width={72}
           height={72}
           className="h-full w-full object-contain"
+          unoptimized
           onError={(e) => {
             // Fallback for missing logos
             const target = e.target as HTMLImageElement;
