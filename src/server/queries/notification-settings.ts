@@ -31,13 +31,30 @@ export async function getNotificationSettings(
       return defaultSettings;
     }
 
-    // Merge with defaults to ensure all required fields exist
+    // Merge with defaults to ensure all required fields exist, including nested urgencyLevels
     return {
       ...defaultSettings,
       ...settings,
       tasks: {
         ...defaultSettings.tasks,
         ...(settings.tasks || {}),
+        events: {
+          ...defaultSettings.tasks.events,
+          ...(settings.tasks?.events || {}),
+          taskAssigned: {
+            ...defaultSettings.tasks.events.taskAssigned,
+            ...(settings.tasks?.events?.taskAssigned || {}),
+            urgencyLevels: settings.tasks?.events?.taskAssigned?.urgencyLevels ?? defaultSettings.tasks.events.taskAssigned.urgencyLevels,
+          },
+          taskCompleted: {
+            ...defaultSettings.tasks.events.taskCompleted,
+            ...(settings.tasks?.events?.taskCompleted || {}),
+          },
+          taskReassigned: {
+            ...defaultSettings.tasks.events.taskReassigned,
+            ...(settings.tasks?.events?.taskReassigned || {}),
+          },
+        },
       },
       appointments: {
         ...defaultSettings.appointments,

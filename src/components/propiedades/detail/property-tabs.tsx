@@ -266,6 +266,8 @@ export function PropertyTabs({
     if (!task?.taskId) return;
 
     const newCompleted = !task.completed;
+    // When completing, move to "finished"; when uncompleting, always move to "validation"
+    const newStatus = newCompleted ? "finished" : "validation";
 
     // Optimistic update
     setTabData((prev) => ({
@@ -279,6 +281,7 @@ export function PropertyTabs({
     try {
       await updateListingTaskWithAuth(Number(task.taskId), {
         completed: newCompleted,
+        status: newStatus,
         completedBy: newCompleted ? session?.user?.id : null,
       });
     } catch (error) {

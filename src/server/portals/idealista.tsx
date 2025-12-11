@@ -44,7 +44,6 @@ import {
   type IdealistaCountry,
   type IdealistaDescriptionLanguage,
 } from "./idealista-mappings";
-import { getSquareMeter, getBuiltSurfaceArea } from "~/lib/properties/area-utils";
 
 // ============================================
 // S3 STORAGE
@@ -383,6 +382,9 @@ export async function buildIdealistaPropertyPayload(
 
   const propertyFlags = getPropertyFlags(listing.propertySubtype ?? null);
 
+  // Get property category for conditional field inclusion
+  const propertyCategory = getPropertyCategory(propertyType);
+
   // Get visibility settings from database or options
   // Address visibility is shared with Fotocasa via fcLocationVisibility
   const addressVisibility: IdealistaAddressVisibility =
@@ -433,14 +435,39 @@ export async function buildIdealistaPropertyPayload(
   };
 
   // Build features
-  // Area fallback logic: use bidirectional fallback for area values
-  const areaConstructed = getSquareMeter(listing) ?? undefined;
-  const areaUsable = getBuiltSurfaceArea(listing) ?? undefined;
+  // Area mapping for Idealista (NO FALLBACKS - use actual DB fields):
+  // - featuresAreaConstructed = builtSurfaceArea (superficie construida) = constructed/built area
+  // - featuresAreaUsable = squareMeter (superficie útil) = usable/living area
+  // IMPORTANT: Usable area cannot equal constructed area per Idealista requirements
+  // Parse builtSurfaceArea (may be string or number in DB)
+  const builtSurfaceAreaRaw = listing.builtSurfaceArea;
+  const areaConstructed =
+    builtSurfaceAreaRaw !== null && builtSurfaceAreaRaw !== undefined
+      ? Math.round(
+          typeof builtSurfaceAreaRaw === "string"
+            ? parseFloat(builtSurfaceAreaRaw)
+            : builtSurfaceAreaRaw,
+        )
+      : undefined;
+
+  // Use squareMeter directly (no fallback)
+  const areaUsableRaw = listing.squareMeter ?? undefined;
+
+  // Only include usable area if it differs from constructed area
+  const areaUsable =
+    areaUsableRaw !== undefined &&
+    areaConstructed !== undefined &&
+    areaUsableRaw !== areaConstructed
+      ? areaUsableRaw
+      : undefined;
 
   const propertyFeatures: IdealistaFeatures = {
     featuresType: propertyType ?? "flat",
-    featuresAreaConstructed: areaConstructed,
-    featuresAreaUsable: areaUsable,
+    // Only include area fields if we have actual values from database
+    ...(areaConstructed !== undefined && {
+      featuresAreaConstructed: areaConstructed,
+    }),
+    ...(areaUsable !== undefined && { featuresAreaUsable: areaUsable }),
     featuresAreaPlot: listing.plotArea ?? undefined,
     // Schema: integer1to99 (min 1) - ensure at least 1 if bathrooms exist
     featuresBathroomNumber: listing.bathrooms
@@ -456,7 +483,12 @@ export async function buildIdealistaPropertyPayload(
     featuresLiftAvailable: listing.hasElevator ?? undefined,
     featuresParkingAvailable: listing.hasGarage ?? undefined,
     featuresStorage: listing.hasStorageRoom ?? undefined,
-    featuresGarden: listing.garden ?? undefined,
+    // featuresGarden only allowed for housing and building categories (not premises)
+    // Premises only support featuresGardenType, not the boolean featuresGarden
+    ...(propertyCategory === "housing" ||
+    propertyCategory === "building"
+      ? { featuresGarden: listing.garden ?? undefined }
+      : {}),
     featuresPool:
       listing.pool ?? listing.communityPool ?? listing.privatePool ?? undefined,
     featuresTerrace: listing.terrace ?? undefined,
@@ -632,7 +664,6 @@ export async function buildIdealistaPropertyPayload(
 
   // Filter features by property category to remove invalid fields
   // per Idealista's additionalProperties: false in schemas
-  const propertyCategory = getPropertyCategory(propertyType);
   const filteredFeatures = filterFeaturesByCategory(
     propertyFeatures as Record<string, unknown>,
     propertyCategory,

@@ -75,7 +75,36 @@ export function shouldSendEmailForNotification(
   if (notification.category === "tasks") {
     // Task events
     if (notificationType === "task_assigned") {
-      return settings.tasks.events.taskAssigned.emailEnabled;
+      // Check if email is enabled
+      if (!settings.tasks.events.taskAssigned.emailEnabled) {
+        return false;
+      }
+      
+      // Check if urgency level filtering is configured
+      const urgencyLevels = settings.tasks.events.taskAssigned.urgencyLevels;
+      
+      // If urgencyLevels is explicitly set (array exists), use it for filtering
+      if (urgencyLevels !== undefined) {
+        // If empty array, user explicitly deselected all - don't send
+        if (urgencyLevels.length === 0) {
+          return false;
+        }
+        
+        // Get task urgency from metadata
+        const metadata = notification.metadata as { urgency?: number };
+        const taskUrgency = metadata.urgency;
+        
+        // If task has no urgency, don't send
+        if (taskUrgency === undefined || taskUrgency === null) {
+          return false;
+        }
+        
+        // Only send if task urgency is in the configured urgency levels
+        return urgencyLevels.includes(taskUrgency);
+      }
+      
+      // If urgencyLevels is undefined (not configured), send for all (backward compatibility)
+      return true;
     }
     if (notificationType === "task_completed") {
       return settings.tasks.events.taskCompleted.emailEnabled;

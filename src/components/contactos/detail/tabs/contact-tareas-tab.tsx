@@ -67,6 +67,8 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
     if (!task?.taskId) return;
 
     const newCompleted = !task.completed;
+    // When completing, move to "finished"; when uncompleting, always move to "validation"
+    const newStatus = newCompleted ? "finished" : "validation";
 
     // Optimistic update
     setContactTasks(
@@ -78,6 +80,7 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
     try {
       await updateContactTaskWithAuth(Number(task.taskId), {
         completed: newCompleted,
+        status: newStatus,
       });
     } catch (error) {
       console.error("Error updating task:", error);

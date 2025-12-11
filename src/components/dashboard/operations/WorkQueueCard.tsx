@@ -394,6 +394,8 @@ export default function WorkQueueCard({
 
     const taskIdStr = taskIdNum.toString();
     const newCompleted = !task.completed;
+    // When completing, move to "finished"; when uncompleting, always move to "validation"
+    const newStatus = newCompleted ? "finished" : "validation";
 
     console.log("🔄 Starting optimistic update:", {
       taskIdNum,
@@ -438,6 +440,7 @@ export default function WorkQueueCard({
       // Use the general task update function
       await updateTaskWithAuth(taskIdNum, {
         completed: newCompleted,
+        status: newStatus,
       });
 
       setTaskStates((prev) => ({ ...prev, [taskIdStr]: "saved" }));

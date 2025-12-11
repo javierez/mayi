@@ -139,6 +139,34 @@ export const MailConfiguration = () => {
     setHasChanges(true);
   };
 
+  const handleTaskEventUrgencyToggle = (
+    optionKey: keyof TaskEventNotificationSettings,
+    level: number,
+  ) => {
+    setSettings((prev) => {
+      const currentOption = prev.tasks.events[optionKey];
+      const currentUrgencyLevels = currentOption.urgencyLevels ?? [];
+      const newUrgencyLevels = currentUrgencyLevels.includes(level)
+        ? currentUrgencyLevels.filter((l) => l !== level)
+        : [...currentUrgencyLevels, level].sort((a, b) => a - b);
+
+      return {
+        ...prev,
+        tasks: {
+          ...prev.tasks,
+          events: {
+            ...prev.tasks.events,
+            [optionKey]: {
+              ...currentOption,
+              urgencyLevels: newUrgencyLevels,
+            },
+          },
+        },
+      };
+    });
+    setHasChanges(true);
+  };
+
   const handleAppointmentToggle = (
     appointmentType: keyof Omit<MailSettings["appointments"], "events">,
     optionKey: keyof AppointmentNotificationSettings,
@@ -388,6 +416,9 @@ export const MailConfiguration = () => {
               }
               onToggleSMS={(optionKey) =>
                 handleTaskEventToggle(optionKey, "sms")
+              }
+              onToggleUrgency={(optionKey, level) =>
+                handleTaskEventUrgencyToggle(optionKey, level)
               }
             />
 

@@ -144,6 +144,18 @@ export async function sendNotificationEmailIfNeeded(
     );
 
     if (!shouldSend) {
+      // Log why email is not being sent for debugging
+      if (!userEmail) {
+        console.log(`[Email] Skipping email for notification ${notification.notificationId}: User ${notification.userId} has no email address`);
+      } else {
+        const isEnabled = shouldSendEmailForNotification(notification, settings);
+        const isQuiet = isQuietHours(settings);
+        console.log(`[Email] Skipping email for notification ${notification.notificationId} (type: ${notification.type}):`, {
+          isEnabledInSettings: isEnabled,
+          isQuietHours: isQuiet,
+          alreadyDelivered: notification.isDelivered && notification.deliveryChannel === "email",
+        });
+      }
       return { success: false, error: "Email not needed for this notification" };
     }
 

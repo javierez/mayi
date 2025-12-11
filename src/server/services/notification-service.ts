@@ -251,6 +251,99 @@ function buildMessage(
 // ===== TASK NOTIFICATIONS =====
 
 /**
+ * Helper function to fetch listing and contact data for task notifications
+ */
+async function fetchTaskRelatedData(
+  listingId: bigint | null | undefined,
+  contactId: bigint | null | undefined,
+): Promise<{
+  listing: TaskNotificationMetadata["listing"];
+  contact: TaskNotificationMetadata["contact"];
+}> {
+  let listingData: TaskNotificationMetadata["listing"] | undefined;
+  let contactData: TaskNotificationMetadata["contact"] | undefined;
+
+  // Fetch listing data if listingId exists
+  if (listingId) {
+    try {
+      const { getListingCompactByIdWithAuth } = await import("~/server/queries/listing");
+      const listing = await getListingCompactByIdWithAuth(listingId);
+      if (listing) {
+        listingData = {
+          listingId: listing.listingId.toString(),
+          title: listing.title,
+          referenceNumber: listing.referenceNumber,
+          price: listing.price,
+          listingType: listing.listingType,
+          propertyType: listing.propertyType,
+          bedrooms: listing.bedrooms,
+          bathrooms: listing.bathrooms,
+          squareMeter: listing.squareMeter,
+          builtSurfaceArea: listing.builtSurfaceArea ?? undefined,
+          city: listing.city,
+          agentName: listing.agentName,
+          imageUrl: listing.imageUrl,
+        };
+      }
+    } catch (error) {
+      console.error("Error fetching listing data for notification:", error);
+    }
+  }
+
+  // Fetch contact data if contactId exists
+  if (contactId) {
+    try {
+      const { getContactByIdWithAuth } = await import("~/server/queries/contact");
+      const contact = await getContactByIdWithAuth(Number(contactId));
+      if (contact) {
+        // Check if contact is owner or buyer
+        const { db } = await import("~/server/db");
+        const { listingContacts } = await import("~/server/db/schema");
+        const { eq, and } = await import("drizzle-orm");
+        
+        const ownerCheck = await db
+          .select()
+          .from(listingContacts)
+          .where(
+            and(
+              eq(listingContacts.contactId, contactId),
+              eq(listingContacts.contactType, "owner"),
+              eq(listingContacts.isActive, true),
+            ),
+          )
+          .limit(1);
+
+        const buyerCheck = await db
+          .select()
+          .from(listingContacts)
+          .where(
+            and(
+              eq(listingContacts.contactId, contactId),
+              eq(listingContacts.contactType, "buyer"),
+              eq(listingContacts.isActive, true),
+            ),
+          )
+          .limit(1);
+
+        contactData = {
+          contactId: contact.contactId.toString(),
+          firstName: contact.firstName,
+          lastName: contact.lastName,
+          email: contact.email ?? undefined,
+          phone: contact.phone ?? undefined,
+          isOwner: ownerCheck.length > 0,
+          isBuyer: buyerCheck.length > 0,
+        };
+      }
+    } catch (error) {
+      console.error("Error fetching contact data for notification:", error);
+    }
+  }
+
+  return { listing: listingData, contact: contactData };
+}
+
+/**
  * Create notification when a task is assigned to a user
  */
 export async function notifyTaskAssigned(
@@ -260,6 +353,31 @@ export async function notifyTaskAssigned(
   accountId: bigint,
 ): Promise<void> {
   try {
+    // Fetch listing and contact data
+    const { listing: listingData, contact: contactData } = await fetchTaskRelatedData(
+      task.listingId,
+      task.contactId,
+    );
+
+    // Fetch assigner information if available
+    let assignerEmail: string | undefined;
+    let assignerPhone: string | undefined;
+    let assignerName: string | undefined;
+    if (assignerId) {
+      try {
+        const { getUserByIdWithAuth } = await import("~/server/queries/users");
+        const assigner = await getUserByIdWithAuth(assignerId);
+        if (assigner) {
+          assignerEmail = assigner.email ?? undefined;
+          assignerPhone = assigner.phone ?? undefined;
+          assignerName = assigner.name ?? undefined;
+        }
+      } catch (error) {
+        console.error("Error fetching assigner data for notification:", error);
+        // Continue without assigner contact info
+      }
+    }
+
     const metadata: TaskNotificationMetadata = {
       taskTitle: task.title,
       dueDate: task.dueDate?.toISOString(),
@@ -268,6 +386,12 @@ export async function notifyTaskAssigned(
       category: task.category ?? undefined,
       listingId: task.listingId?.toString(),
       contactId: task.contactId?.toString(),
+      listing: listingData,
+      contact: contactData,
+      assignerEmail,
+      assignerPhone,
+      assignerName,
+      assignedByName: assignerName, // Also set for backward compatibility
     };
 
     const notification = await createNotificationInternal({

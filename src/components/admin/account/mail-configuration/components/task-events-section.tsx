@@ -15,18 +15,20 @@ import {
   CollapsibleTrigger,
 } from "~/components/ui/collapsible";
 import type { TaskEventNotificationSettings } from "../types";
-import { NotificationOptionRow } from "./notification-option-row";
+import { TaskEventNotificationRow } from "./task-event-notification-row";
 
 interface TaskEventsSectionProps {
   settings: TaskEventNotificationSettings;
   onToggleEmail: (optionKey: keyof TaskEventNotificationSettings) => void;
   onToggleSMS: (optionKey: keyof TaskEventNotificationSettings) => void;
+  onToggleUrgency?: (optionKey: keyof TaskEventNotificationSettings, level: number) => void;
 }
 
 export function TaskEventsSection({
   settings,
   onToggleEmail,
   onToggleSMS,
+  onToggleUrgency,
 }: TaskEventsSectionProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -71,11 +73,17 @@ export function TaskEventsSection({
               {(
                 Object.keys(settings) as Array<keyof TaskEventNotificationSettings>
               ).map((key) => (
-                <NotificationOptionRow
+                <TaskEventNotificationRow
                   key={key}
                   option={settings[key]}
                   onToggleEmail={() => onToggleEmail(key)}
                   onToggleSMS={() => onToggleSMS(key)}
+                  onToggleUrgency={
+                    onToggleUrgency && key === "taskAssigned"
+                      ? (level) => onToggleUrgency(key, level)
+                      : undefined
+                  }
+                  showUrgencySelector={key === "taskAssigned"}
                 />
               ))}
             </div>

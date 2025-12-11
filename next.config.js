@@ -56,6 +56,10 @@ const config = {
   serverExternalPackages: [
     "@sparticuz/chromium",
     "puppeteer-core",
+    "web-push",
+    "heic-convert",
+    "heic-decode",
+    "libheif-js",
   ],
   experimental: {
     serverActions: {

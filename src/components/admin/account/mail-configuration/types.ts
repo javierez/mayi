@@ -6,6 +6,7 @@ export interface NotificationOption {
   emailEnabled: boolean;
   smsEnabled: boolean;
   additionalUsers?: string[];
+  urgencyLevels?: number[]; // Array of urgency levels (1-5) that should trigger this notification
 }
 
 // Customer notification option with channel selection

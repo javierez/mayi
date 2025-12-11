@@ -168,6 +168,34 @@ export interface TaskNotificationMetadata extends Record<string, unknown> {
   category?: string;
   listingId?: string;
   contactId?: string;
+  // Listing data for email display
+  listing?: {
+    listingId: string;
+    title: string | null;
+    referenceNumber: string | null;
+    price: string;
+    listingType: string;
+    propertyType: string | null;
+    bedrooms: number | null;
+    bathrooms: string | null;
+    squareMeter: number | null;
+    builtSurfaceArea?: number | null;
+    city: string | null;
+    province?: string | null;
+    agentName: string | null;
+    imageUrl: string | null;
+    street?: string | null;
+  };
+  // Contact data for email display
+  contact?: {
+    contactId: string;
+    firstName: string;
+    lastName: string;
+    email?: string | null;
+    phone?: string | null;
+    isOwner?: boolean;
+    isBuyer?: boolean;
+  };
   // For task_updated notification
   updatedFields?: string[];
   // For task_reassigned notification
@@ -183,6 +211,10 @@ export interface TaskNotificationMetadata extends Record<string, unknown> {
   assignedByName?: string;
   completedByName?: string;
   reassignedByName?: string;
+  // Assigner contact information (who assigned the task)
+  assignerEmail?: string;
+  assignerPhone?: string;
+  assignerName?: string;
 }
 
 export interface AppointmentNotificationMetadata extends Record<string, unknown> {

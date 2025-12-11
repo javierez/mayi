@@ -108,6 +108,7 @@ export const createDefaultTaskEventNotifications = (): TaskEventNotificationSett
     description: "Notificar cuando alguien te asigne una tarea",
     emailEnabled: true,
     smsEnabled: false,
+    urgencyLevels: [1, 2, 3, 4, 5], // Default to all urgency levels
   },
   taskCompleted: {
     id: "task-completed",

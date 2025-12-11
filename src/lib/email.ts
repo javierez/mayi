@@ -39,6 +39,10 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions) {
     const fromEmail =
       env.RESEND_FROM_EMAIL ?? "Vesta CRM <noreply@vesta-crm.com>";
 
+    console.log(`[Email] RESEND_FROM_EMAIL env value:`, env.RESEND_FROM_EMAIL);
+    console.log(`[Email] Using fromEmail:`, fromEmail);
+    console.log(`[Email] Attempting to send email to ${to} from ${fromEmail}`);
+
     const result = await resend.emails.send({
       from: fromEmail,
       to,
@@ -47,7 +51,24 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions) {
       html,
     });
 
-    console.log(`✅ Email sent successfully to ${to} (ID: ${result.data?.id})`);
+    // Log full result for debugging
+    console.log(`[Email] Resend API response:`, {
+      success: !!result.data,
+      id: result.data?.id,
+      error: result.error,
+      fullResponse: JSON.stringify(result, null, 2),
+    });
+
+    if (result.error) {
+      console.error(`❌ Resend API error:`, result.error);
+      throw new Error(`Resend API error: ${JSON.stringify(result.error)}`);
+    }
+
+    if (!result.data?.id) {
+      console.warn(`⚠️ Email sent but no ID returned from Resend. Response:`, result);
+    }
+
+    console.log(`✅ Email sent successfully to ${to} (ID: ${result.data?.id ?? "unknown"})`);
     return { success: true, id: result.data?.id };
   } catch (error) {
     console.error("❌ Failed to send email:", error);
