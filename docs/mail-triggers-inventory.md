@@ -344,3 +344,4 @@ All email notifications (except critical overdue tasks) respect quiet hours:
 All triggers are controlled by the `MailSettings` configuration and can be enabled/disabled per account through the admin UI.
 
 
+
