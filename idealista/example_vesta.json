@@ -1,7 +1,7 @@
 {
   "customerCode": "ilc711ae6100f5a3d2c4160086e704e413092b2e600",
   "customerCountry": "Spain",
-  "customerSendDate": "2025/12/11 01:54:42",
+  "customerSendDate": "2025/12/11 16:34:14",
   "customerProperties": [
     {
       "propertyCode": "1000036",
@@ -27,7 +27,7 @@
       "propertyFeatures": {
         "featuresType": "flat",
         "featuresAreaConstructed": 244,
-        "featuresAreaUsable": 244,
+        "featuresAreaUsable": 265,
         "featuresBathroomNumber": 3,
         "featuresBedroomNumber": 6,
         "featuresDuplex": true,
@@ -54,32 +54,32 @@
       ],
       "propertyImages": [
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_1_ngHniR.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_1_ExNqbD.jpg",
           "imageOrder": 1,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_2_Uc6gLl.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_2_6GtMDn.jpg",
           "imageOrder": 2,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_3_aYz9_V.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_3_zD0rvl.jpg",
           "imageOrder": 3,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_4_alkaXr.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_4_qSE0a1.jpg",
           "imageOrder": 4,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_5_-MsInO.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_5_TGLVjG.jpg",
           "imageOrder": 5,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_6_HsBdDw.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_6_C8uii1.jpg",
           "imageOrder": 6,
           "imageLabel": "unknown"
         }
@@ -112,14 +112,12 @@
       "propertyFeatures": {
         "featuresType": "premises_commercial",
         "featuresAreaConstructed": 182,
-        "featuresAreaUsable": 182,
+        "featuresAreaUsable": 200,
         "featuresBathroomNumber": 1,
         "featuresParkingAvailable": false,
         "featuresStorage": false,
-        "featuresGarden": false,
         "featuresConservation": "good",
-        "featuresEquippedKitchen": false,
-        "featuresWindowsLocation": "exterior"
+        "featuresEquippedKitchen": false
       },
       "propertyDescriptions": [
         {
@@ -129,57 +127,57 @@
       ],
       "propertyImages": [
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_1_pUynFV.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_1_KaqobT.jpg",
           "imageOrder": 1,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_2_pNrQTP.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_2_pj6X-N.jpg",
           "imageOrder": 2,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_3_y6lQ68.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_3_jCxTer.jpg",
           "imageOrder": 3,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_4_KWTtaZ.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_4_5saL45.jpg",
           "imageOrder": 4,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_5_z566gI.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_5_TmNr60.jpg",
           "imageOrder": 5,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_6_gTTa7c.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_6_YuzsB8.jpg",
           "imageOrder": 6,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_7_BQ4IcP.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_7_RBKYbD.jpg",
           "imageOrder": 7,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_8_DIyhTZ.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_8_UIjDGr.jpg",
           "imageOrder": 8,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_9_lP4K9R.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_9_xr9Sx2.jpg",
           "imageOrder": 9,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_10_IDGcuN.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_10_imQM4S.jpg",
           "imageOrder": 10,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_11_Za4C_M.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_11_qEXB9P.jpg",
           "imageOrder": 11,
           "imageLabel": "unknown"
         }
@@ -214,7 +212,7 @@
       "propertyFeatures": {
         "featuresType": "flat",
         "featuresAreaConstructed": 78,
-        "featuresAreaUsable": 78,
+        "featuresAreaUsable": 86,
         "featuresBathroomNumber": 1,
         "featuresBedroomNumber": 3,
         "featuresLiftAvailable": false,
@@ -237,47 +235,47 @@
       ],
       "propertyImages": [
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_1_LRp_E7.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_1_PhizaS.jpg",
           "imageOrder": 1,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_2_Z4Ojqv.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_2_rzJi1A.jpg",
           "imageOrder": 2,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_3_uqHF7c.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_3_Oi5bSv.jpg",
           "imageOrder": 3,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_5_NiCfsy.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_5_MoRifO.jpg",
           "imageOrder": 4,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_6_4Tkb67.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_6_XrkbEf.jpg",
           "imageOrder": 5,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_7_6bQs5y.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_7_mjFblx.jpg",
           "imageOrder": 6,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_8_gFcbhR.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_8_fWk1W7.jpg",
           "imageOrder": 7,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_9_xXIeVU.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_9_LkZfFb.jpg",
           "imageOrder": 8,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_10_j8UB4u.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_10_hjaZ05.jpg",
           "imageOrder": 9,
           "imageLabel": "unknown"
         }
@@ -315,10 +313,8 @@
         "featuresBathroomNumber": 1,
         "featuresParkingAvailable": false,
         "featuresStorage": false,
-        "featuresGarden": false,
         "featuresConservation": "good",
-        "featuresBuiltYear": 1997,
-        "featuresWindowsLocation": "interior"
+        "featuresBuiltYear": 1997
       },
       "propertyDescriptions": [
         {
@@ -328,57 +324,57 @@
       ],
       "propertyImages": [
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_1_y6zJGI.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_1_W4QdKC.jpg",
           "imageOrder": 1,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_2_2jQp8O.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_2_UeDdst.jpg",
           "imageOrder": 2,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_3_OUTgb2.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_3_P4v0sP.jpg",
           "imageOrder": 3,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_4_Rw3TF-.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_4_LjTrGB.jpg",
           "imageOrder": 4,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_5_lVSc2P.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_5_yC9tU6.jpg",
           "imageOrder": 5,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_6_JjWua9.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_6_iqltzs.jpg",
           "imageOrder": 6,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_7_2WgCtM.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_7_qxTuw6.jpg",
           "imageOrder": 7,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_8_S571ev.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_8_jnh1He.jpg",
           "imageOrder": 8,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_9_xCYh8S.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_9_mOBRLT.jpg",
           "imageOrder": 9,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_10_2c70uQ.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_10_eiiwME.jpg",
           "imageOrder": 10,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_11_mxBJ5c.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_11_-8SCiO.jpg",
           "imageOrder": 11,
           "imageLabel": "unknown"
         }
@@ -413,7 +409,7 @@
       "propertyFeatures": {
         "featuresType": "flat",
         "featuresAreaConstructed": 244,
-        "featuresAreaUsable": 244,
+        "featuresAreaUsable": 265,
         "featuresBathroomNumber": 3,
         "featuresBedroomNumber": 6,
         "featuresDuplex": true,
@@ -438,32 +434,32 @@
       ],
       "propertyImages": [
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_1_hOjCk1.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_1_fUJBRE.jpg",
           "imageOrder": 1,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_2_B7dQK8.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_2_yRonPq.jpg",
           "imageOrder": 2,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_3_Jv6lF5.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_3_L_ZCuo.jpg",
           "imageOrder": 3,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_4_-77_QE.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_4_xYECmA.jpg",
           "imageOrder": 4,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_5_VyqrVX.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_5_BVa2gU.jpg",
           "imageOrder": 5,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_6_0URFgf.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_6_rm7X-F.jpg",
           "imageOrder": 6,
           "imageLabel": "unknown"
         }
@@ -498,7 +494,7 @@
       "propertyFeatures": {
         "featuresType": "flat",
         "featuresAreaConstructed": 93,
-        "featuresAreaUsable": 93,
+        "featuresAreaUsable": 104,
         "featuresBathroomNumber": 1,
         "featuresBedroomNumber": 2,
         "featuresLiftAvailable": false,
@@ -523,32 +519,32 @@
       ],
       "propertyImages": [
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_1_CeVoqL.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_1_5Px6VZ.jpg",
           "imageOrder": 1,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_2_zHVMSo.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_2_NH7mOn.jpg",
           "imageOrder": 2,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_3_dvUnlW.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_3_pEKPWC.jpg",
           "imageOrder": 3,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_4_YWnfZk.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_4_1Cl4wq.jpg",
           "imageOrder": 4,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_5_eoKGeq.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_5_T786K_.jpg",
           "imageOrder": 5,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_6_pQesLS.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_6_rsY3Y4.jpg",
           "imageOrder": 6,
           "imageLabel": "unknown"
         }
@@ -581,7 +577,7 @@
       "propertyFeatures": {
         "featuresType": "flat",
         "featuresAreaConstructed": 80,
-        "featuresAreaUsable": 80,
+        "featuresAreaUsable": 87,
         "featuresBathroomNumber": 2,
         "featuresBedroomNumber": 4,
         "featuresLiftAvailable": true,
@@ -610,62 +606,62 @@
       ],
       "propertyImages": [
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_10_sv7UO6.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_10_sMq0R0.jpg",
           "imageOrder": 1,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_11_wEg3EW.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_11_qGqqKl.jpg",
           "imageOrder": 2,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_12_XGJDso.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_12_G4Smrw.jpg",
           "imageOrder": 3,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_13_1Zs3kQ.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_13_Vr_iDD.jpg",
           "imageOrder": 4,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_14_LZYoEU.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_14_RSDS75.jpg",
           "imageOrder": 5,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_15_WU13j1.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_15_S8HB5Q.jpg",
           "imageOrder": 6,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_15_WU13j1.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_15_S8HB5Q.jpg",
           "imageOrder": 7,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_16_zOeLNi.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_16_OFl0xr.jpg",
           "imageOrder": 8,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_17_Bl0K0s.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_17_Myo-QH.jpg",
           "imageOrder": 9,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_18_84zo9t.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_18_jUzpHh.jpg",
           "imageOrder": 10,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_19_q_rbkX.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_19_aNG9y6.jpg",
           "imageOrder": 11,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_20_EfeEk-.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_20_N29lB0.jpg",
           "imageOrder": 12,
           "imageLabel": "unknown"
         }
@@ -700,7 +696,7 @@
       "propertyFeatures": {
         "featuresType": "flat",
         "featuresAreaConstructed": 93,
-        "featuresAreaUsable": 93,
+        "featuresAreaUsable": 104,
         "featuresBathroomNumber": 1,
         "featuresBedroomNumber": 2,
         "featuresLiftAvailable": false,
@@ -728,32 +724,32 @@
       ],
       "propertyImages": [
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_1_Dnsb6u.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_1_SsORsf.jpg",
           "imageOrder": 1,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_2_mvxdHS.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_2_goxW07.jpg",
           "imageOrder": 2,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_3_gZ4Ob5.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_3_3qNoNe.jpg",
           "imageOrder": 3,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_4_hR4H19.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_4_fQj1h-.jpg",
           "imageOrder": 4,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_5_TviBcY.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_5_mNkwWM.jpg",
           "imageOrder": 5,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_6_lbvAba.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_6_n8miNN.jpg",
           "imageOrder": 6,
           "imageLabel": "unknown"
         }
@@ -787,7 +783,7 @@
       "propertyFeatures": {
         "featuresType": "flat",
         "featuresAreaConstructed": 133,
-        "featuresAreaUsable": 133,
+        "featuresAreaUsable": 149,
         "featuresBathroomNumber": 1,
         "featuresBedroomNumber": 3,
         "featuresLiftAvailable": false,
@@ -809,27 +805,27 @@
       ],
       "propertyImages": [
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000021/watermarked/temp_image_1_oF1dev.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000021/watermarked/temp_image_1_74n0cj.jpg",
           "imageOrder": 1,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000021/watermarked/temp_image_2_gNsbX0.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000021/watermarked/temp_image_2_Io9LrT.jpg",
           "imageOrder": 2,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000021/watermarked/temp_image_3_FeV-Te.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000021/watermarked/temp_image_3_AfqEjZ.jpg",
           "imageOrder": 3,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000021/watermarked/temp_image_4_wLGrnK.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000021/watermarked/temp_image_4_yICqS6.jpg",
           "imageOrder": 4,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000021/watermarked/temp_image_5_ZNukio.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000021/watermarked/temp_image_5_0YvTc6.jpg",
           "imageOrder": 5,
           "imageLabel": "unknown"
         }
@@ -862,7 +858,7 @@
       "propertyFeatures": {
         "featuresType": "flat",
         "featuresAreaConstructed": 80,
-        "featuresAreaUsable": 80,
+        "featuresAreaUsable": 87,
         "featuresBathroomNumber": 2,
         "featuresBedroomNumber": 4,
         "featuresLiftAvailable": true,
@@ -889,62 +885,62 @@
       ],
       "propertyImages": [
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_10_5aHCS-.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_10_2YHDoR.jpg",
           "imageOrder": 1,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_11_QPqGg2.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_11_AGdI64.jpg",
           "imageOrder": 2,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_12_OUrzkl.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_12_-zMEZc.jpg",
           "imageOrder": 3,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_13_gIxOFe.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_13_RmjUFz.jpg",
           "imageOrder": 4,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_14_Vaz4CZ.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_14_lSzyjR.jpg",
           "imageOrder": 5,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_15_-dd5Oi.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_15_bilcQE.jpg",
           "imageOrder": 6,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_15_-dd5Oi.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_15_bilcQE.jpg",
           "imageOrder": 7,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_16_MYtdPW.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_16_vuwFbm.jpg",
           "imageOrder": 8,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_17_d0dEgx.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_17_Pauocd.jpg",
           "imageOrder": 9,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_18_bW4a-N.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_18_12TqC6.jpg",
           "imageOrder": 10,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_19_QnMqhK.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_19_VzoDgA.jpg",
           "imageOrder": 11,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_20_EoJdUp.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_20_CW1k6F.jpg",
           "imageOrder": 12,
           "imageLabel": "unknown"
         }
@@ -979,7 +975,7 @@
       "propertyFeatures": {
         "featuresType": "flat",
         "featuresAreaConstructed": 181,
-        "featuresAreaUsable": 181,
+        "featuresAreaUsable": 201,
         "featuresBathroomNumber": 2,
         "featuresBedroomNumber": 4,
         "featuresLiftAvailable": true,
@@ -1003,42 +999,42 @@
       ],
       "propertyImages": [
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_1_4k_Jo0.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_1_xqNrD-.jpg",
           "imageOrder": 1,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_2_DQIAvZ.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_2_w5VOwd.jpg",
           "imageOrder": 2,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_3_6VjFA3.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_3_lSOK9z.jpg",
           "imageOrder": 3,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_4_yIKCKf.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_4_D4DA2K.jpg",
           "imageOrder": 4,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_5_49QzSd.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_5_1Gbe8X.jpg",
           "imageOrder": 5,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_6_tOigMD.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_6_kuM0PD.jpg",
           "imageOrder": 6,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_7_BhxHk8.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_7_rv0kah.jpg",
           "imageOrder": 7,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_8_0bAX1Z.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_8_55BeTv.jpg",
           "imageOrder": 8,
           "imageLabel": "unknown"
         },
@@ -1076,7 +1072,7 @@
       "propertyFeatures": {
         "featuresType": "flat",
         "featuresAreaConstructed": 74,
-        "featuresAreaUsable": 74,
+        "featuresAreaUsable": 78,
         "featuresBathroomNumber": 1,
         "featuresBedroomNumber": 2,
         "featuresPenthouse": true,
@@ -1099,27 +1095,27 @@
       ],
       "propertyImages": [
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000017/watermarked/temp_image_2_ChY19Z.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000017/watermarked/temp_image_2_Y72ras.jpg",
           "imageOrder": 1,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000017/watermarked/temp_image_7_q8hCed.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000017/watermarked/temp_image_7_n_CaGY.jpg",
           "imageOrder": 2,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000017/watermarked/temp_image_8_ve_9xw.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000017/watermarked/temp_image_8_2kdr_0.jpg",
           "imageOrder": 3,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000017/watermarked/temp_image_9_GdRNs0.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000017/watermarked/temp_image_9_OndDuj.jpg",
           "imageOrder": 4,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000017/watermarked/temp_image_10_mfsZ_O.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000017/watermarked/temp_image_10_AWApoC.jpg",
           "imageOrder": 5,
           "imageLabel": "unknown"
         }
@@ -1152,14 +1148,12 @@
       "propertyFeatures": {
         "featuresType": "premises_commercial",
         "featuresAreaConstructed": 75,
-        "featuresAreaUsable": 75,
+        "featuresAreaUsable": 89,
         "featuresBathroomNumber": 1,
         "featuresParkingAvailable": false,
         "featuresStorage": false,
-        "featuresGarden": false,
         "featuresConservation": "good",
-        "featuresEquippedKitchen": false,
-        "featuresWindowsLocation": "interior"
+        "featuresEquippedKitchen": false
       },
       "propertyDescriptions": [
         {
@@ -1169,72 +1163,72 @@
       ],
       "propertyImages": [
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_1_2cxrJB.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_1_-wcDx7.jpg",
           "imageOrder": 1,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_2_3zj2Wn.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_2_WreFC8.jpg",
           "imageOrder": 2,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_3_kr8OdB.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_3_I7EKB_.jpg",
           "imageOrder": 3,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_4__VyUIH.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_4_gDPZt0.jpg",
           "imageOrder": 4,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_5_QFfuSR.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_5_YFgwz8.jpg",
           "imageOrder": 5,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_6_F699Hs.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_6_tf7CPU.jpg",
           "imageOrder": 6,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_7_Uxyqwd.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_7_H6vtWy.jpg",
           "imageOrder": 7,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_8_4F4ZPA.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_8_V3GT1W.jpg",
           "imageOrder": 8,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_9_BtVnJE.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_9_Bfo4TE.jpg",
           "imageOrder": 9,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_10_aJIf8J.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_10_PciMlf.jpg",
           "imageOrder": 10,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_11_zL3LFI.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_11_RZoMaP.jpg",
           "imageOrder": 11,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_12_kThRMO.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_12_v_IA3Z.jpg",
           "imageOrder": 12,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_13__FBNKZ.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_13_rrMrJk.jpg",
           "imageOrder": 13,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_14_1IKNEw.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_14_qXNrZc.jpg",
           "imageOrder": 14,
           "imageLabel": "unknown"
         }
@@ -1269,7 +1263,7 @@
       "propertyFeatures": {
         "featuresType": "flat",
         "featuresAreaConstructed": 74,
-        "featuresAreaUsable": 117,
+        "featuresAreaUsable": 78,
         "featuresBathroomNumber": 2,
         "featuresBedroomNumber": 2,
         "featuresLiftAvailable": true,
@@ -1293,87 +1287,87 @@
       ],
       "propertyImages": [
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_1_1_tWim.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_1_lgrKJh.jpg",
           "imageOrder": 1,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_2_sWVSwg.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_2_0OIKbb.jpg",
           "imageOrder": 2,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_3_AswzxP.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_3_TeSERM.jpg",
           "imageOrder": 3,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_4_4OVFkh.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_4_pNWN43.jpg",
           "imageOrder": 4,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_5_QVFv30.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_5_IaLprG.jpg",
           "imageOrder": 5,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_6_fs4mlU.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_6_2INypQ.jpg",
           "imageOrder": 6,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_7_p0ZW_P.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_7_X6QlqC.jpg",
           "imageOrder": 7,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_8_6dYQGd.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_8_H56SlT.jpg",
           "imageOrder": 8,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_9_syuNAZ.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_9_y6qocA.jpg",
           "imageOrder": 9,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_10_pUj-fy.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_10_X0imNG.jpg",
           "imageOrder": 10,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_11_f2q_By.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_11_184yqK.jpg",
           "imageOrder": 11,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_12_RanSWH.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_12_i8ZuDn.jpg",
           "imageOrder": 12,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_13_HZiKdY.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_13_OKcYl-.jpg",
           "imageOrder": 13,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_14_qh9hiR.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_14_zWUNHr.jpg",
           "imageOrder": 14,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_15_JbrPbi.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_15_FFlF04.jpg",
           "imageOrder": 15,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_16_MJixc2.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_16_WEmfgH.jpg",
           "imageOrder": 16,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_17_qjsCh6.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_17_3qA7-e.jpg",
           "imageOrder": 17,
           "imageLabel": "unknown"
         }
@@ -1432,42 +1426,42 @@
       ],
       "propertyImages": [
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_1_3W7lPS.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_1_f17OdM.jpg",
           "imageOrder": 1,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_3_fTcmVG.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_3_aPzdOS.jpg",
           "imageOrder": 2,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_5_82aWXK.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_5_GqShA_.jpg",
           "imageOrder": 3,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_11_z7942p.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_11_gqkyzO.jpg",
           "imageOrder": 4,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_13_wIGwVf.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_13_DYb8Wf.jpg",
           "imageOrder": 5,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_14_RHVUdd.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_14_KKtvRJ.jpg",
           "imageOrder": 6,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_15_TwTBVX.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_15_Sg1h91.jpg",
           "imageOrder": 7,
           "imageLabel": "unknown"
         },
         {
-          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_16_yVbgTB.jpg",
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_16__Mlvtu.jpg",
           "imageOrder": 8,
           "imageLabel": "unknown"
         }

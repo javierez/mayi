@@ -234,7 +234,7 @@ export function PropertyDetailsCard({
             <Label htmlFor="squareMeter" className="text-sm">
               {propertyType === "garaje"
                 ? "Medidas (m²)"
-                : "Superficie (m²)"}
+                : "Superficie útil (m²)"}
             </Label>
             <Input
               id="squareMeter"

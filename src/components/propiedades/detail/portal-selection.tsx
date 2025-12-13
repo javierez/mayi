@@ -290,6 +290,11 @@ export function PortalSelection({
     useState(false);
   const [publishToWebsiteSettingsExpanded, setPublishToWebsiteSettingsExpanded] =
     useState(false);
+  
+  // Track failed image loads for debugging and fallback rendering
+  const [failedImageLoads, setFailedImageLoads] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Idealista-specific settings state (address visibility uses shared fcLocationVisibility)
   const [idealistaCoordinatesPrecision, setIdealistaCoordinatesPrecision] = useState<
@@ -1006,6 +1011,19 @@ export function PortalSelection({
 
     // For platforms with logos (portals)
     if (platform.logo) {
+      // Check if this image has failed to load
+      const hasFailed = failedImageLoads.has(platform.id);
+      
+      if (hasFailed) {
+        // Show fallback text if image failed to load
+        return (
+          <div className="flex h-full w-full items-center justify-center text-sm font-medium text-gray-500">
+            {platform.name}
+          </div>
+        );
+      }
+
+      // Use Next.js Image component with proper error handling
       return (
         <Image
           src={platform.logo}
@@ -1015,13 +1033,27 @@ export function PortalSelection({
           className="h-full w-full object-contain"
           unoptimized
           onError={(e) => {
-            // Fallback for missing logos
-            const target = e.target as HTMLImageElement;
-            target.style.display = "none";
-            if (target.parentElement) {
-              target.parentElement.innerHTML = `<div class="text-sm font-medium text-gray-500 h-full w-full flex items-center justify-center">${platform.name}</div>`;
+            // Log error for debugging (always log in production too)
+            console.error(
+              `[PortalSelection] Failed to load logo for ${platform.name}`,
+              {
+                platformId: platform.id,
+                logoUrl: platform.logo,
+                error: e,
+              },
+            );
+            // Mark this image as failed so we can show fallback
+            setFailedImageLoads((prev) => new Set(prev).add(platform.id));
+          }}
+          onLoad={() => {
+            // Log successful loads in development
+            if (process.env.NODE_ENV === "development") {
+              console.log(
+                `[PortalSelection] Successfully loaded logo for ${platform.name}`,
+              );
             }
           }}
+          loading="lazy"
         />
       );
     }
