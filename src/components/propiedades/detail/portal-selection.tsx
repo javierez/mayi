@@ -128,14 +128,14 @@ const platformConfig = [
   {
     id: "habitaclia",
     name: "Habitaclia",
-    logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-habitaclia.png",
+    logo: "https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/logo-habitaclia.png",
     description: "Portal especializado en alquiler y venta",
     isDefault: defaultPortalSettings.habitaclia,
   },
   {
     id: "milanuncios",
     name: "Milanuncios",
-    logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-milanuncios.png",
+    logo: "https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/logo-milanuncios.png",
     description: "Portal de anuncios clasificados líder en España",
     isDefault: defaultPortalSettings.milanuncios,
   },
@@ -143,7 +143,7 @@ const platformConfig = [
   {
     id: "pisoscom",
     name: "Pisos.com",
-    logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-pisos.png",
+    logo: "https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/logo_pisos.png",
     description: "Tu portal inmobiliario de confianza",
     isDefault: false,
     isAdevintaPortal: true,
@@ -151,7 +151,7 @@ const platformConfig = [
   {
     id: "yaencontre",
     name: "Yaencontre",
-    logo: "https://vesta-configuration-files.s3.amazonaws.com/logos/logo-yaencontre.png",
+    logo: "https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/logo-yaencontre.png",
     description: "Encuentra tu hogar ideal",
     isDefault: false,
   },
@@ -290,7 +290,7 @@ export function PortalSelection({
     useState(false);
   const [publishToWebsiteSettingsExpanded, setPublishToWebsiteSettingsExpanded] =
     useState(false);
-  
+
   // Track failed image loads for debugging and fallback rendering
   const [failedImageLoads, setFailedImageLoads] = useState<Set<string>>(
     new Set(),
