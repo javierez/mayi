@@ -43,6 +43,9 @@ export interface PropertyListing {
   fcLocationVisibility?: number; // 1=Exact, 2=Street, 3=Zone
   fcPriceVisibility?: boolean; // true=hidden, false=shown
 
+  // Idealista-specific settings (explicit fields for better performance)
+  idCoordinatesPrecision?: "exact" | "moved"; // Coordinates precision for map display
+
   // Dimensions
   bedrooms?: number;
   bathrooms?: number;
@@ -295,6 +298,7 @@ export function convertDbListingToPropertyListing(
     milanuncios: getBoolean(dbListing.milanuncios),
     fcLocationVisibility: getNumber(dbListing.fcLocationVisibility),
     fcPriceVisibility: getBoolean(dbListing.fcPriceVisibility),
+    idCoordinatesPrecision: (dbListing.idCoordinatesPrecision as "exact" | "moved") ?? undefined,
     bedrooms: (dbListing.bedrooms as number) ?? undefined,
     bathrooms: (dbListing.bathrooms as number) ?? undefined,
     squareMeter: (dbListing.squareMeter as number) ?? undefined,

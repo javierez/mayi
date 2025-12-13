@@ -921,6 +921,15 @@ export function PortalSelection({
                 : p,
             );
             setPlatforms(updatedPlatforms);
+
+            // Update Idealista settings in database with current settings
+            await updateListingWithAuth(Number(listingId), {
+              idCoordinatesPrecision: idealistaCoordinatesPrecision,
+              // Legacy support: also update idealistaProps for backward compatibility
+              idealistaProps: {
+                coordinatesPrecision: idealistaCoordinatesPrecision,
+              },
+            } as Parameters<typeof updateListingWithAuth>[1]);
           } else {
             console.error("Idealista export failed:", result.error);
             toast.error(`Error al exportar a Idealista: ${result.error}`);

@@ -104,6 +104,7 @@ interface PropertyTabsProps {
     hasKeys?: boolean | null;
     fcLocationVisibility?: number | null;
     fcPriceVisibility?: boolean | null;
+    idCoordinatesPrecision?: "exact" | "moved" | null;
     fotocasaProps?: unknown;
     idealistaProps?: unknown;
     habitacliaProps?: unknown;
