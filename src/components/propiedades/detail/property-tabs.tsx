@@ -843,6 +843,7 @@ export function PropertyTabs({
             hasKeys={listing.hasKeys ?? undefined}
             fcLocationVisibility={listing.fcLocationVisibility ?? undefined}
             fcPriceVisibility={listing.fcPriceVisibility ?? undefined}
+            idCoordinatesPrecision={listing.idCoordinatesPrecision ?? undefined}
             fotocasaProps={listing.fotocasaProps ?? undefined}
             idealistaProps={listing.idealistaProps ?? undefined}
             habitacliaProps={listing.habitacliaProps ?? undefined}

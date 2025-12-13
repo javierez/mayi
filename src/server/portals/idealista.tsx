@@ -299,6 +299,7 @@ export async function buildIdealistaPropertyPayload(
   // Note: Address visibility uses fcLocationVisibility (shared with Fotocasa)
   const listing = listingData as typeof listingData & {
     idCoordinatesPrecision?: string | null;
+    idealistaProps?: { coordinatesPrecision?: IdealistaCoordinatesPrecision } | null;
     rentalType?: string | null;
     shortTermLicense?: string | null;
     occupationStatus?: string | null;
@@ -393,6 +394,7 @@ export async function buildIdealistaPropertyPayload(
   const coordinatesPrecision: IdealistaCoordinatesPrecision =
     options?.coordinatesPrecision ??
     (listing.idCoordinatesPrecision as IdealistaCoordinatesPrecision) ??
+    (listing.idealistaProps?.coordinatesPrecision) ??
     "exact";
 
   // Parse street to separate name from number

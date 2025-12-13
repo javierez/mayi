@@ -297,9 +297,14 @@ export function PortalSelection({
   );
 
   // Idealista-specific settings state (address visibility uses shared fcLocationVisibility)
+  // Use explicit database field with fallback to idealistaProps JSON (same pattern as Fotocasa)
   const [idealistaCoordinatesPrecision, setIdealistaCoordinatesPrecision] = useState<
     "exact" | "moved"
-  >(idCoordinatesPrecision);
+  >(
+    idCoordinatesPrecision ??
+    ((_idealistaProps as { coordinatesPrecision?: "exact" | "moved" })?.coordinatesPrecision) ??
+    "exact",
+  );
 
   // Initialize platforms based on portal fields and defaults
   useEffect(() => {
