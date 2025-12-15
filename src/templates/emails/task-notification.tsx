@@ -26,10 +26,9 @@ export function generateTaskNotificationEmail(
 
   // Build structured message HTML with better visual hierarchy
   let structuredMessageHtml = "";
-  
+
   // Use only task description in the message area
-  const taskDescription = (metadata.taskDescription as string | undefined) ?? "";
-  let detailedMessage = taskDescription;
+  const taskDescription = metadata.taskDescription ?? "";
 
   // Build structured HTML sections for task details using TABLE layout
   const taskDetailsSections: string[] = [];
@@ -553,11 +552,11 @@ function generatePropertyCardHtmlForTask(
 
   // Build property details row (bedrooms, bathrooms, square meters)
   let detailsHtml = "";
-  const showDetails = (listing.bedrooms || listing.bathrooms || squareMeter) && 
-    listing.propertyType && 
+  const showDetails = (Boolean(listing.bedrooms) || Boolean(listing.bathrooms) || Boolean(squareMeter)) &&
+    listing.propertyType &&
     !["solar", "garaje", "local"].includes(listing.propertyType.toLowerCase());
-  
-  if (showDetails || squareMeter) {
+
+  if (Boolean(showDetails) || Boolean(squareMeter)) {
     const details: string[] = [];
     if (showDetails) {
       if (listing.bedrooms) {

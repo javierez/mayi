@@ -269,8 +269,8 @@ async function fetchTaskRelatedData(
       const { getListingCompactByIdWithAuth } = await import("~/server/queries/listing");
       const { getPropertyImages } = await import("~/server/queries/property_images");
       const { db } = await import("~/server/db");
-      const { listings, properties: propertiesTable } = await import("~/server/db/schema");
-      const { eq, and } = await import("drizzle-orm");
+      const { listings } = await import("~/server/db/schema");
+      const { eq } = await import("drizzle-orm");
       
       const listing = await getListingCompactByIdWithAuth(listingId);
       if (listing) {

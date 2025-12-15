@@ -208,17 +208,17 @@ const calculateDurationFromEndDateTime = (
   }
 
   const startDateTime = new Date(
-    startDateParts[2]!, // year
-    startDateParts[1]! - 1, // month (0-indexed)
-    startDateParts[0]!, // day
+    startDateParts[2] ?? 0, // year
+    (startDateParts[1] ?? 1) - 1, // month (0-indexed)
+    startDateParts[0] ?? 1, // day
     startTimeParts[0] ?? 0,
     startTimeParts[1] ?? 0
   );
 
   const endDateTime = new Date(
-    endDateParts[2]!, // year
-    endDateParts[1]! - 1, // month (0-indexed)
-    endDateParts[0]!, // day
+    endDateParts[2] ?? 0, // year
+    (endDateParts[1] ?? 1) - 1, // month (0-indexed)
+    endDateParts[0] ?? 1, // day
     endTimeParts[0] ?? 0,
     endTimeParts[1] ?? 0
   );
@@ -1074,16 +1074,16 @@ export default function AppointmentForm({
     const endTimeParts = (data.endTime ?? data.startTime).split(":").map(Number);
     
     const startDateTime = new Date(
-      startDateParts[2]!, // year
-      startDateParts[1]! - 1, // month (0-indexed)
-      startDateParts[0]!, // day
+      startDateParts[2] ?? 0, // year
+      (startDateParts[1] ?? 1) - 1, // month (0-indexed)
+      startDateParts[0] ?? 1, // day
       startTimeParts[0] ?? 0,
       startTimeParts[1] ?? 0
     );
     const endDateTime = new Date(
-      endDateParts[2]!, // year
-      endDateParts[1]! - 1, // month (0-indexed)
-      endDateParts[0]!, // day
+      endDateParts[2] ?? 0, // year
+      (endDateParts[1] ?? 1) - 1, // month (0-indexed)
+      endDateParts[0] ?? 1, // day
       endTimeParts[0] ?? 0,
       endTimeParts[1] ?? 0
     );
@@ -1125,9 +1125,9 @@ export default function AppointmentForm({
         const dateParts = formData.startDate.split("-").map(Number);
         const timeParts = formData.startTime.split(":").map(Number);
         return new Date(
-          dateParts[2]!, // year
-          dateParts[1]! - 1, // month (0-indexed)
-          dateParts[0]!, // day
+          dateParts[2] ?? 0, // year
+          (dateParts[1] ?? 1) - 1, // month (0-indexed)
+          dateParts[0] ?? 1, // day
           timeParts[0] ?? 0,
           timeParts[1] ?? 0
         );
@@ -1141,9 +1141,9 @@ export default function AppointmentForm({
         const dateParts = endDate.split("-").map(Number);
         const timeParts = endTime.split(":").map(Number);
         return new Date(
-          dateParts[2]!, // year
-          dateParts[1]! - 1, // month (0-indexed)
-          dateParts[0]!, // day
+          dateParts[2] ?? 0, // year
+          (dateParts[1] ?? 1) - 1, // month (0-indexed)
+          dateParts[0] ?? 1, // day
           timeParts[0] ?? 0,
           timeParts[1] ?? 0
         );
@@ -1598,11 +1598,11 @@ export default function AppointmentForm({
                       const endTimeParts = formData.endTime.split(":").map(Number);
                       
                       const startDateTime = new Date(
-                        startDateParts[2]!, startDateParts[1]! - 1, startDateParts[0]!,
+                        startDateParts[2] ?? 0, (startDateParts[1] ?? 1) - 1, startDateParts[0] ?? 1,
                         startTimeParts[0] ?? 0, startTimeParts[1] ?? 0
                       );
                       const endDateTime = new Date(
-                        endDateParts[2]!, endDateParts[1]! - 1, endDateParts[0]!,
+                        endDateParts[2] ?? 0, (endDateParts[1] ?? 1) - 1, endDateParts[0] ?? 1,
                         endTimeParts[0] ?? 0, endTimeParts[1] ?? 0
                       );
 
