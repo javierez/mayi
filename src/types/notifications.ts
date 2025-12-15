@@ -188,7 +188,7 @@ export interface TaskNotificationMetadata extends Record<string, unknown> {
     imageUrls?: string[];
     street?: string | null;
   };
-  // Contact data for email display
+  // Contact data for email display (backward compatibility)
   contact?: {
     contactId: string;
     firstName: string;
@@ -197,6 +197,22 @@ export interface TaskNotificationMetadata extends Record<string, unknown> {
     phone?: string | null;
     isOwner?: boolean;
     isBuyer?: boolean;
+  };
+  // Owner contact data (from listingContacts table)
+  owner?: {
+    contactId: string;
+    firstName: string;
+    lastName: string;
+    email?: string | null;
+    phone?: string | null;
+  };
+  // Buyer contact data (from listingContacts table)
+  buyer?: {
+    contactId: string;
+    firstName: string;
+    lastName: string;
+    email?: string | null;
+    phone?: string | null;
   };
   // For task_updated notification
   updatedFields?: string[];
@@ -217,6 +233,10 @@ export interface TaskNotificationMetadata extends Record<string, unknown> {
   assignerEmail?: string;
   assignerPhone?: string;
   assignerName?: string;
+  // Completer contact information (who completed the task)
+  completerEmail?: string;
+  completerPhone?: string;
+  completerName?: string;
 }
 
 export interface AppointmentNotificationMetadata extends Record<string, unknown> {

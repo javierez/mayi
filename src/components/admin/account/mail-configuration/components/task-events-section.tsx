@@ -79,11 +79,11 @@ export function TaskEventsSection({
                   onToggleEmail={() => onToggleEmail(key)}
                   onToggleSMS={() => onToggleSMS(key)}
                   onToggleUrgency={
-                    onToggleUrgency && key === "taskAssigned"
+                    onToggleUrgency && (key === "taskAssigned" || key === "taskCompleted" || key === "taskReassigned")
                       ? (level) => onToggleUrgency(key, level)
                       : undefined
                   }
-                  showUrgencySelector={key === "taskAssigned"}
+                  showUrgencySelector={key === "taskAssigned" || key === "taskCompleted" || key === "taskReassigned"}
                 />
               ))}
             </div>

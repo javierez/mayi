@@ -116,6 +116,7 @@ export const createDefaultTaskEventNotifications = (): TaskEventNotificationSett
     description: "Notificar cuando se complete una tarea que creaste o sigues",
     emailEnabled: true,
     smsEnabled: false,
+    urgencyLevels: [1, 2, 3, 4, 5], // Default to all urgency levels
   },
   taskReassigned: {
     id: "task-reassigned",
@@ -123,6 +124,7 @@ export const createDefaultTaskEventNotifications = (): TaskEventNotificationSett
     description: "Notificar cuando una tarea tuya sea reasignada a otra persona",
     emailEnabled: true,
     smsEnabled: false,
+    urgencyLevels: [1, 2, 3, 4, 5], // Default to all urgency levels
   },
 });
 

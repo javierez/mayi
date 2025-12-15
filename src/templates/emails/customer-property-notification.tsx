@@ -270,8 +270,9 @@ function generatePropertyCardHtml(
   });
 
   // Get primary image (only one as requested)
-  const primaryImage = metadata.photos && metadata.photos.length > 0
-    ? metadata.photos[0].url ?? metadata.photos[0].thumbnail
+  const firstPhoto = metadata.photos?.[0];
+  const primaryImage = firstPhoto
+    ? firstPhoto.url ?? firstPhoto.thumbnail
     : null;
 
   // Check if image is valid (not a video)

@@ -999,11 +999,13 @@ export async function updateTask(
         createdBy: tasks.createdBy,
         editedBy: tasks.editedBy,
         category: tasks.category,
+        urgency: tasks.urgency,
         listingId: sql<bigint>`CAST(${tasks.listingId} AS BIGINT)`,
         listingContactId: sql<bigint>`CAST(${tasks.listingContactId} AS BIGINT)`,
         dealId: sql<bigint>`CAST(${tasks.dealId} AS BIGINT)`,
         appointmentId: sql<bigint>`CAST(${tasks.appointmentId} AS BIGINT)`,
         prospectId: sql<bigint>`CAST(${tasks.prospectId} AS BIGINT)`,
+        contactId: sql<bigint>`CAST(${tasks.contactId} AS BIGINT)`,
         isActive: tasks.isActive,
         createdAt: tasks.createdAt,
         updatedAt: tasks.updatedAt,
@@ -1223,7 +1225,7 @@ export async function updateContactTask(
 
     const [updatedTask] = await db
       .select({
-        taskId: sql<number>`CAST(${tasks.taskId} AS BIGINT)`,
+        taskId: sql<bigint>`CAST(${tasks.taskId} AS BIGINT)`,
         userId: tasks.userId,
         title: tasks.title,
         description: tasks.description,
@@ -1233,12 +1235,12 @@ export async function updateContactTask(
         createdBy: tasks.createdBy,
         category: tasks.category,
         urgency: tasks.urgency,
-        listingId: sql<number>`CAST(${tasks.listingId} AS BIGINT)`,
-        listingContactId: sql<number>`CAST(${tasks.listingContactId} AS BIGINT)`,
-        dealId: sql<number>`CAST(${tasks.dealId} AS BIGINT)`,
-        appointmentId: sql<number>`CAST(${tasks.appointmentId} AS BIGINT)`,
-        prospectId: sql<number>`CAST(${tasks.prospectId} AS BIGINT)`,
-        contactId: sql<number>`CAST(${tasks.contactId} AS BIGINT)`,
+        listingId: sql<bigint>`CAST(${tasks.listingId} AS BIGINT)`,
+        listingContactId: sql<bigint>`CAST(${tasks.listingContactId} AS BIGINT)`,
+        dealId: sql<bigint>`CAST(${tasks.dealId} AS BIGINT)`,
+        appointmentId: sql<bigint>`CAST(${tasks.appointmentId} AS BIGINT)`,
+        prospectId: sql<bigint>`CAST(${tasks.prospectId} AS BIGINT)`,
+        contactId: sql<bigint>`CAST(${tasks.contactId} AS BIGINT)`,
         isActive: tasks.isActive,
         createdAt: tasks.createdAt,
         updatedAt: tasks.updatedAt,
@@ -1262,7 +1264,7 @@ export async function updateContactTask(
       existingTask.completed !== true
     ) {
       try {
-        await notifyTaskCompleted(updatedTask, null, BigInt(accountId));
+        await notifyTaskCompleted(updatedTask as Task, null, BigInt(accountId));
       } catch (error) {
         console.error("Error creating task completed notification:", error);
         // Don't fail task update if notification fails
@@ -1422,7 +1424,7 @@ export async function updateListingTask(
 
     const [updatedTask] = await db
       .select({
-        taskId: sql<number>`CAST(${tasks.taskId} AS BIGINT)`,
+        taskId: sql<bigint>`CAST(${tasks.taskId} AS BIGINT)`,
         userId: tasks.userId,
         title: tasks.title,
         description: tasks.description,
@@ -1434,12 +1436,12 @@ export async function updateListingTask(
         editedBy: tasks.editedBy,
         category: tasks.category,
         urgency: tasks.urgency,
-        listingId: sql<number>`CAST(${tasks.listingId} AS BIGINT)`,
-        listingContactId: sql<number>`CAST(${tasks.listingContactId} AS BIGINT)`,
-        dealId: sql<number>`CAST(${tasks.dealId} AS BIGINT)`,
-        appointmentId: sql<number>`CAST(${tasks.appointmentId} AS BIGINT)`,
-        prospectId: sql<number>`CAST(${tasks.prospectId} AS BIGINT)`,
-        contactId: sql<number>`CAST(${tasks.contactId} AS BIGINT)`,
+        listingId: sql<bigint>`CAST(${tasks.listingId} AS BIGINT)`,
+        listingContactId: sql<bigint>`CAST(${tasks.listingContactId} AS BIGINT)`,
+        dealId: sql<bigint>`CAST(${tasks.dealId} AS BIGINT)`,
+        appointmentId: sql<bigint>`CAST(${tasks.appointmentId} AS BIGINT)`,
+        prospectId: sql<bigint>`CAST(${tasks.prospectId} AS BIGINT)`,
+        contactId: sql<bigint>`CAST(${tasks.contactId} AS BIGINT)`,
         isActive: tasks.isActive,
         createdAt: tasks.createdAt,
         updatedAt: tasks.updatedAt,
@@ -1463,7 +1465,7 @@ export async function updateListingTask(
       existingTask.completed !== true
     ) {
       try {
-        await notifyTaskCompleted(updatedTask, editedBy ?? null, BigInt(accountId));
+        await notifyTaskCompleted(updatedTask as Task, editedBy ?? null, BigInt(accountId));
       } catch (error) {
         console.error("Error creating task completed notification:", error);
         // Don't fail task update if notification fails

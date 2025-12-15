@@ -33,25 +33,49 @@ export function generateTaskNotificationEmail(
   // Build structured HTML sections for task details using TABLE layout
   const taskDetailsSections: string[] = [];
 
-  // Asignado por section
-  if (metadata.assignerName || metadata.assignedByName) {
-    const assignerName = metadata.assignerName ?? metadata.assignedByName ?? "";
-    taskDetailsSections.push(`
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 12px;">
-        <tr>
-          <td style="padding: 16px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
-            <table cellpadding="0" cellspacing="0" border="0" width="100%">
-              <tr>
-                <td style="font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 8px;">Asignado por</td>
-              </tr>
-              <tr>
-                <td style="font-size: 15px; font-weight: 400; color: #111827; line-height: 1.5;">${assignerName}</td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-    `);
+  // Asignado por / Completado por section
+  if (notification.type === "task_completed") {
+    // For completed tasks, show "Completado por" section
+    if (metadata.completerName || metadata.completedByName) {
+      const completerName = metadata.completerName ?? metadata.completedByName ?? "";
+      taskDetailsSections.push(`
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 12px;">
+          <tr>
+            <td style="padding: 16px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td style="font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 8px;">Completado por</td>
+                </tr>
+                <tr>
+                  <td style="font-size: 15px; font-weight: 400; color: #111827; line-height: 1.5;">${completerName}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      `);
+    }
+  } else {
+    // For assigned/reassigned tasks, show "Asignado por" section
+    if (metadata.assignerName || metadata.assignedByName) {
+      const assignerName = metadata.assignerName ?? metadata.assignedByName ?? "";
+      taskDetailsSections.push(`
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 12px;">
+          <tr>
+            <td style="padding: 16px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td style="font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 8px;">Asignado por</td>
+                </tr>
+                <tr>
+                  <td style="font-size: 15px; font-weight: 400; color: #111827; line-height: 1.5;">${assignerName}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      `);
+    }
   }
 
   // Due date section (deadline) - exclude for completed tasks
@@ -211,17 +235,18 @@ export function generateTaskNotificationEmail(
   let contactCardsHtml = "";
   const contactCards: string[] = [];
   
-  // Contact card (owner/buyer)
-  if (metadata.contact) {
-    const contact = metadata.contact;
-    const contactType = contact.isOwner ? "Propietario" : contact.isBuyer ? "Comprador" : "Contacto";
-    const contactName = `${contact.firstName} ${contact.lastName}`;
-    // For buyers, ensure "(Comprador)" is shown at the end
-    const displayName = contact.isBuyer 
-      ? `${contactName} (Comprador)`
-      : `${contactName} (${contactType})`;
+  // Helper function to generate a contact card
+  const generateContactCard = (
+    firstName: string,
+    lastName: string,
+    email: string | null | undefined,
+    phone: string | null | undefined,
+    label: string,
+  ): string => {
+    const contactName = `${firstName} ${lastName}`;
+    const displayName = `${contactName} (${label})`;
 
-    contactCards.push(`
+    return `
       <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 8px;">
         <tr>
           <td style="padding: 12px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
@@ -235,17 +260,17 @@ export function generateTaskNotificationEmail(
                 <td>
                   <table cellpadding="0" cellspacing="6" border="0">
                     <tr>
-                      ${contact.phone ? `
+                      ${phone ? `
                         <td>
-                          <a href="tel:${contact.phone.replace(/\s/g, "")}" 
+                          <a href="tel:${phone.replace(/\s/g, "")}" 
                              style="display: inline-block; padding: 6px 12px; background: #ffffff; color: #111827; text-decoration: none; font-size: 13px; font-weight: 500; border-radius: 6px; border: 1px solid #e5e7eb;">
                             📞 Llamar
                           </a>
                         </td>
                       ` : ""}
-                      ${contact.email ? `
+                      ${email ? `
                         <td>
-                          <a href="mailto:${contact.email}" 
+                          <a href="mailto:${email}" 
                              style="display: inline-block; padding: 6px 12px; background: #ffffff; color: #111827; text-decoration: none; font-size: 13px; font-weight: 500; border-radius: 6px; border: 1px solid #e5e7eb;">
                             ✉️ Email
                           </a>
@@ -259,52 +284,48 @@ export function generateTaskNotificationEmail(
           </td>
         </tr>
       </table>
-    `);
+    `;
+  };
+
+  // Owner card (from listingContacts table)
+  if (metadata.owner) {
+    const owner = metadata.owner;
+    contactCards.push(generateContactCard(
+      owner.firstName,
+      owner.lastName,
+      owner.email,
+      owner.phone,
+      "Propietario",
+    ));
   }
 
-  // Assigner contact card
-  if (metadata.assignerEmail || metadata.assignerPhone) {
-    const assignerName = metadata.assignerName ?? metadata.assignedByName ?? "Asignador";
-    contactCards.push(`
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 8px;">
-        <tr>
-          <td style="padding: 12px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
-            <table cellpadding="0" cellspacing="0" border="0" width="100%">
-              <tr>
-                <td style="font-size: 12px; font-weight: 500; color: #111827; line-height: 1.4; padding-bottom: 8px;">
-                  ${assignerName}
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <table cellpadding="0" cellspacing="6" border="0">
-                    <tr>
-                      ${metadata.assignerPhone ? `
-                        <td>
-                          <a href="tel:${metadata.assignerPhone.replace(/\s/g, "")}" 
-                             style="display: inline-block; padding: 6px 12px; background: #ffffff; color: #111827; text-decoration: none; font-size: 13px; font-weight: 500; border-radius: 6px; border: 1px solid #e5e7eb;">
-                            📞 Llamar
-                          </a>
-                        </td>
-                      ` : ""}
-                      ${metadata.assignerEmail ? `
-                        <td>
-                          <a href="mailto:${metadata.assignerEmail}" 
-                             style="display: inline-block; padding: 6px 12px; background: #ffffff; color: #111827; text-decoration: none; font-size: 13px; font-weight: 500; border-radius: 6px; border: 1px solid #e5e7eb;">
-                            ✉️ Email
-                          </a>
-                        </td>
-                      ` : ""}
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-    `);
+  // Buyer card (from listingContacts table)
+  if (metadata.buyer) {
+    const buyer = metadata.buyer;
+    contactCards.push(generateContactCard(
+      buyer.firstName,
+      buyer.lastName,
+      buyer.email,
+      buyer.phone,
+      "Comprador",
+    ));
   }
+
+  // Fallback to generic contact for backward compatibility (if no owner/buyer)
+  if (!metadata.owner && !metadata.buyer && metadata.contact) {
+    const contact = metadata.contact;
+    const contactType = contact.isOwner ? "Propietario" : contact.isBuyer ? "Comprador" : "Contacto";
+    contactCards.push(generateContactCard(
+      contact.firstName,
+      contact.lastName,
+      contact.email,
+      contact.phone,
+      contactType,
+    ));
+  }
+
+  // Note: Completer contact card removed for task_completed notifications
+  // Only owner, buyer, and generic contact cards are shown
 
   if (contactCards.length > 0) {
     contactCardsHtml = `

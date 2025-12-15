@@ -49,10 +49,12 @@ export async function getNotificationSettings(
           taskCompleted: {
             ...defaultSettings.tasks.events.taskCompleted,
             ...(settings.tasks?.events?.taskCompleted || {}),
+            urgencyLevels: settings.tasks?.events?.taskCompleted?.urgencyLevels ?? defaultSettings.tasks.events.taskCompleted.urgencyLevels,
           },
           taskReassigned: {
             ...defaultSettings.tasks.events.taskReassigned,
             ...(settings.tasks?.events?.taskReassigned || {}),
+            urgencyLevels: settings.tasks?.events?.taskReassigned?.urgencyLevels ?? defaultSettings.tasks.events.taskReassigned.urgencyLevels,
           },
         },
       },
