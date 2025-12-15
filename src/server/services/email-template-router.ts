@@ -9,7 +9,6 @@ import type { Notification } from "~/types/notifications";
 import type { MailSettings } from "~/components/admin/account/mail-configuration/types";
 import { generateTaskNotificationEmail } from "~/templates/emails/task-notification";
 import { generateAppointmentNotificationEmail } from "~/templates/emails/appointment-notification";
-import { generateCriticalTaskOverdueEmail } from "~/templates/emails/task-overdue-critical";
 import { generateTaskReminderEmail } from "~/templates/emails/task-reminder";
 import { generateAppointmentReminderEmail } from "~/templates/emails/appointment-reminder";
 import { generateNotificationEmailBase } from "~/templates/emails/notification-base";
@@ -31,13 +30,8 @@ export function routeToTemplate(
   
   // Task notifications
   if (category === "tasks") {
-    // Critical overdue tasks
+    // Overdue tasks (both critical and non-critical use the same template now)
     if (notificationType === "task_overdue") {
-      const metadata = notification.metadata as { urgency?: number };
-      if (metadata.urgency === 5) {
-        return generateCriticalTaskOverdueEmail(notification);
-      }
-      // Non-critical overdue handled by digest emails
       return generateTaskNotificationEmail(notification);
     }
     

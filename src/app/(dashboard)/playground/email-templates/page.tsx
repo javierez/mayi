@@ -2,7 +2,6 @@ import { db } from "~/server/db";
 import { tasks, users, listingContacts } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
 import { generateTaskNotificationEmail } from "~/templates/emails/task-notification";
-import { generateCriticalTaskOverdueEmail } from "~/templates/emails/task-overdue-critical";
 import { generateTaskReminderEmail } from "~/templates/emails/task-reminder";
 import { generateTaskBriefingEmail } from "~/templates/emails/task-briefing";
 import { generateTaskDigestEmail } from "~/templates/emails/task-digest-notification";
@@ -339,7 +338,7 @@ export default async function EmailTemplatesPage() {
           name: "Tarea Vencida (Crítica)",
           description: "Alerta urgente de tarea vencida",
           icon: "AlertTriangle",
-          preview: generateCriticalTaskOverdueEmail(createTaskNotification("task_overdue")),
+          preview: generateTaskNotificationEmail(createTaskNotification("task_overdue")),
         },
         {
           id: "task-reminder",

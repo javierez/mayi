@@ -96,7 +96,7 @@ export function generateTaskNotificationEmail(
       dueDateText += ` a las ${timeWithoutSeconds}`;
     }
     
-    // Calculate remaining time
+    // Calculate time difference - remaining time for non-overdue, overdue time for overdue tasks
     const targetDate = new Date(metadata.dueDate);
     if (metadata.dueTime) {
       const [hours, minutes] = metadata.dueTime.split(":").map(Number);
@@ -107,17 +107,38 @@ export function generateTaskNotificationEmail(
     
     const now = new Date();
     const timeDiff = targetDate.getTime() - now.getTime();
-    let remainingText = "";
-    if (timeDiff > 0) {
-      const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      
-      if (days > 0 && hours > 0) {
-        remainingText = ` (${days} ${days === 1 ? "día" : "días"} y ${hours} ${hours === 1 ? "hora" : "horas"} restantes)`;
-      } else if (days > 0) {
-        remainingText = ` (${days} ${days === 1 ? "día" : "días"} restantes)`;
-      } else if (hours > 0) {
-        remainingText = ` (${hours} ${hours === 1 ? "hora" : "horas"} restantes)`;
+    let timeText = "";
+    
+    if (notification.type === "task_overdue") {
+      // For overdue tasks, show how overdue
+      if (timeDiff < 0) {
+        const overdueMs = Math.abs(timeDiff);
+        const daysOverdue = Math.floor(overdueMs / (1000 * 60 * 60 * 24));
+        const hoursOverdue = Math.floor((overdueMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        
+        if (daysOverdue > 0 && hoursOverdue > 0) {
+          timeText = ` (Vencida hace ${daysOverdue} ${daysOverdue === 1 ? "día" : "días"} y ${hoursOverdue} ${hoursOverdue === 1 ? "hora" : "horas"})`;
+        } else if (daysOverdue > 0) {
+          timeText = ` (Vencida hace ${daysOverdue} ${daysOverdue === 1 ? "día" : "días"})`;
+        } else if (hoursOverdue > 0) {
+          timeText = ` (Vencida hace ${hoursOverdue} ${hoursOverdue === 1 ? "hora" : "horas"})`;
+        } else {
+          timeText = ` (Recién vencida)`;
+        }
+      }
+    } else {
+      // For non-overdue tasks, show remaining time
+      if (timeDiff > 0) {
+        const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        
+        if (days > 0 && hours > 0) {
+          timeText = ` (${days} ${days === 1 ? "día" : "días"} y ${hours} ${hours === 1 ? "hora" : "horas"} restantes)`;
+        } else if (days > 0) {
+          timeText = ` (${days} ${days === 1 ? "día" : "días"} restantes)`;
+        } else if (hours > 0) {
+          timeText = ` (${hours} ${hours === 1 ? "hora" : "horas"} restantes)`;
+        }
       }
     }
     
@@ -130,7 +151,7 @@ export function generateTaskNotificationEmail(
                 <td style="font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 8px;">Fecha límite</td>
               </tr>
               <tr>
-                <td style="font-size: 15px; font-weight: 400; color: #111827; line-height: 1.5;">${dueDateText}${remainingText}</td>
+                <td style="font-size: 15px; font-weight: 400; color: #111827; line-height: 1.5;">${dueDateText}${timeText}</td>
               </tr>
             </table>
           </td>
@@ -450,8 +471,13 @@ export function generateTaskNotificationEmail(
       }
     }
 
+  // Add warning emoji to subject for overdue tasks
+  const subject = notification.type === "task_overdue" 
+    ? `🚨 ${notification.title}`
+    : notification.title;
+
   return {
-    subject: notification.title,
+    subject,
     html: finalHtml,
     text: baseText,
   };
