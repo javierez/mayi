@@ -118,13 +118,33 @@ export async function createTaskWithAuth(
 ) {
   const accountId = await getCurrentUserAccountId();
   const session = await getSecureSession();
-  const userId = session?.user?.id;
+  const sessionUserId = session?.user?.id;
   
-  // Set createdBy to the current user's ID if not already provided
+  if (!sessionUserId) {
+    console.error(`[TASK CREATION ERROR] No session user found. Session:`, session);
+    throw new Error("No authenticated user found");
+  }
+  
+  // Always set createdBy to the current session user's ID (override any value passed in data)
   const taskData = {
     ...data,
-    createdBy: data.createdBy ?? userId ?? undefined,
+    createdBy: sessionUserId, // This will override any createdBy value passed in data
   };
+  
+  // Ensure createdBy is always set - double check
+  if (!taskData.createdBy) {
+    console.error(`[TASK CREATION ERROR] createTaskWithAuth - createdBy is null/undefined after setting. sessionUserId: ${sessionUserId}, session.user.id: ${session?.user?.id}`);
+    throw new Error("Failed to set createdBy: No authenticated user found");
+  }
+  
+  // Verify createdBy matches session user
+  if (taskData.createdBy !== sessionUserId) {
+    console.error(`[TASK CREATION ERROR] createdBy mismatch! sessionUserId: ${sessionUserId}, taskData.createdBy: ${taskData.createdBy}, data.createdBy (original): ${data.createdBy ?? 'undefined'}`);
+    // Force it to be correct
+    taskData.createdBy = sessionUserId;
+  }
+  
+  console.log(`[TASK CREATION] createTaskWithAuth - sessionUserId: ${sessionUserId}, userId (assigned to): ${taskData.userId ?? 'null'}, createdBy (creator): ${taskData.createdBy}, title: "${taskData.title ?? 'N/A'}", accountId: ${accountId}`);
   
   return createTask(taskData, accountId);
 }
@@ -291,6 +311,8 @@ export async function createAppointmentTaskWithAuth(
       isActive: true,
     };
 
+    console.log(`[TASK CREATION] createAppointmentTaskWithAuth - userId: ${taskData.userId}, createdBy: ${taskData.createdBy}, title: "${taskData.title}", contactId: ${contactId}`);
+
     const newTask = await createTask(taskData, accountId);
     return newTask;
   } catch (error) {
@@ -362,6 +384,9 @@ export async function createTask(
       if (!contact) throw new Error("Contact not found or access denied");
     }
 
+    // Log what we're about to insert
+    console.log(`[TASK CREATE] About to insert - data.createdBy: ${data.createdBy ?? 'null'}, data.userId: ${data.userId ?? 'null'}`);
+    
     const [result] = await db
       .insert(tasks)
       .values({
@@ -370,6 +395,10 @@ export async function createTask(
       })
       .returning();
     if (!result) throw new Error("Failed to create task");
+    
+    // Log what was returned from insert
+    console.log(`[TASK CREATE] Insert returned - result.createdBy: ${result.createdBy ?? 'null'}, result.userId: ${result.userId ?? 'null'}`);
+    
     const [newTask] = await db
       .select({
         taskId: sql<bigint>`CAST(${tasks.taskId} AS BIGINT)`,
@@ -393,6 +422,17 @@ export async function createTask(
       })
       .from(tasks)
       .where(eq(tasks.taskId, BigInt(result.taskId)));
+    
+    if (!newTask) {
+      throw new Error("Failed to retrieve created task");
+    }
+    
+    console.log(`[TASK CREATED] createTask - taskId: ${newTask.taskId}, userId: ${newTask.userId ?? 'null'}, createdBy: ${newTask.createdBy ?? 'null'}, title: "${newTask.title ?? 'N/A'}", accountId: ${accountId}`);
+    
+    // Verify createdBy matches what we intended
+    if (data.createdBy && newTask.createdBy !== data.createdBy) {
+      console.error(`[TASK CREATION ERROR] createdBy mismatch! Expected: ${data.createdBy}, Got from DB: ${newTask.createdBy}`);
+    }
     
     // Create notification if task is assigned to a different user
     if (newTask && data.userId && data.createdBy && data.userId !== data.createdBy) {
@@ -956,6 +996,7 @@ export async function updateTask(
         dueTime: tasks.dueTime,
         completed: tasks.completed,
         completedBy: tasks.completedBy,
+        createdBy: tasks.createdBy,
         editedBy: tasks.editedBy,
         category: tasks.category,
         listingId: sql<bigint>`CAST(${tasks.listingId} AS BIGINT)`,
@@ -982,6 +1023,14 @@ export async function updateTask(
     // Handle notifications for task updates
     if (updatedTask) {
       try {
+        // Check if task was just completed (completed changed from false/null to true)
+        if (
+          data.completed === true &&
+          existingTask.completed !== true
+        ) {
+          await notifyTaskCompleted(updatedTask, editedBy ?? null, BigInt(accountId));
+        }
+        
         // Check if task was reassigned (userId changed)
         if (data.userId && data.userId !== existingTask.userId) {
           // Notify the new assignee about the reassignment
@@ -1181,6 +1230,9 @@ export async function updateContactTask(
         dueDate: tasks.dueDate,
         dueTime: tasks.dueTime,
         completed: tasks.completed,
+        createdBy: tasks.createdBy,
+        category: tasks.category,
+        urgency: tasks.urgency,
         listingId: sql<number>`CAST(${tasks.listingId} AS BIGINT)`,
         listingContactId: sql<number>`CAST(${tasks.listingContactId} AS BIGINT)`,
         dealId: sql<number>`CAST(${tasks.dealId} AS BIGINT)`,
@@ -1201,6 +1253,20 @@ export async function updateContactTask(
         existingTask.appointmentId,
         data,
       );
+    }
+
+    // Create notification if task was just completed (not already completed)
+    if (
+      updatedTask &&
+      data.completed === true &&
+      existingTask.completed !== true
+    ) {
+      try {
+        await notifyTaskCompleted(updatedTask, null, BigInt(accountId));
+      } catch (error) {
+        console.error("Error creating task completed notification:", error);
+        // Don't fail task update if notification fails
+      }
     }
 
     return updatedTask;
@@ -1364,8 +1430,10 @@ export async function updateListingTask(
         dueTime: tasks.dueTime,
         completed: tasks.completed,
         completedBy: tasks.completedBy,
+        createdBy: tasks.createdBy,
         editedBy: tasks.editedBy,
         category: tasks.category,
+        urgency: tasks.urgency,
         listingId: sql<number>`CAST(${tasks.listingId} AS BIGINT)`,
         listingContactId: sql<number>`CAST(${tasks.listingContactId} AS BIGINT)`,
         dealId: sql<number>`CAST(${tasks.dealId} AS BIGINT)`,
@@ -1386,6 +1454,20 @@ export async function updateListingTask(
         existingTask.appointmentId,
         data,
       );
+    }
+
+    // Create notification if task was just completed (not already completed)
+    if (
+      updatedTask &&
+      data.completed === true &&
+      existingTask.completed !== true
+    ) {
+      try {
+        await notifyTaskCompleted(updatedTask, editedBy ?? null, BigInt(accountId));
+      } catch (error) {
+        console.error("Error creating task completed notification:", error);
+        // Don't fail task update if notification fails
+      }
     }
 
     return updatedTask;

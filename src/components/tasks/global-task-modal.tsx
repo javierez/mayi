@@ -565,7 +565,7 @@ export function GlobalTaskModal({
         dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
         dueTime: formData.dueDate ? formData.dueTime || "00:00" : undefined,
         urgency: formData.urgency ? parseInt(formData.urgency) : undefined,
-        createdBy: session?.user?.id,
+        // createdBy will be automatically set to the session user's ID by createTaskWithAuth
         // Entity associations (all optional)
         contactId: formData.contactId ? BigInt(formData.contactId) : undefined,
         listingId: formData.listingId ? BigInt(formData.listingId) : undefined,
@@ -661,7 +661,7 @@ export function GlobalTaskModal({
         dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
         dueTime: formData.dueDate ? formData.dueTime || "00:00" : undefined,
         urgency: formData.urgency ? parseInt(formData.urgency) : undefined,
-        createdBy: session?.user?.id,
+        // createdBy will be automatically set to the session user's ID by createTaskWithAuth
         contactId: BigInt(formData.contactId),
         listingId: BigInt(formData.listingId),
         listingContactId: createResult.listingContactId,

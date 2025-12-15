@@ -129,8 +129,10 @@ export async function sendNotificationEmailIfNeeded(
     }
 
     // Get user email
+    console.log(`[Email Notification] Looking up user email for userId: ${notification.userId}, Notification type: ${notification.type}`);
     const user = await getUserById(notification.userId);
     const userEmail = user?.email ?? null;
+    console.log(`[Email Notification] Found user email: ${userEmail ?? "null"} for userId: ${notification.userId}`);
 
     // Get email settings for account
     const settings = await getEmailSettingsForAccount(accountId);

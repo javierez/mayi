@@ -108,6 +108,65 @@ export const formFormatters = {
   },
 };
 
+// Date format utilities - DD-MM-YYYY format for user-facing dates
+export const dateFormatters = {
+  /**
+   * Convert YYYY-MM-DD to DD-MM-YYYY (for display)
+   */
+  toDisplayFormat: (dateStr: string): string => {
+    if (!dateStr) return "";
+    const parts = dateStr.split("-");
+    if (parts.length !== 3) return dateStr;
+    // YYYY-MM-DD -> DD-MM-YYYY
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  },
+
+  /**
+   * Convert DD-MM-YYYY to YYYY-MM-DD (for date inputs and database)
+   */
+  toInputFormat: (dateStr: string): string => {
+    if (!dateStr) return "";
+    const parts = dateStr.split("-");
+    if (parts.length !== 3) return dateStr;
+    // DD-MM-YYYY -> YYYY-MM-DD
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  },
+
+  /**
+   * Format Date object to DD-MM-YYYY string (using local time components)
+   */
+  formatDate: (date: Date): string => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+  },
+
+  /**
+   * Parse DD-MM-YYYY string to Date object (using local time components)
+   */
+  parseDate: (dateStr: string): Date | null => {
+    if (!dateStr) return null;
+    const parts = dateStr.split("-");
+    if (parts.length !== 3) return null;
+    
+    const day = parseInt(parts[0] ?? "0", 10);
+    const month = parseInt(parts[1] ?? "0", 10) - 1; // Month is 0-indexed
+    const year = parseInt(parts[2] ?? "0", 10);
+    
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+    
+    return new Date(year, month, day);
+  },
+
+  /**
+   * Get date string in DD-MM-YYYY format from Date object (using local time, not UTC)
+   */
+  getDateString: (date: Date): string => {
+    return dateFormatters.formatDate(date);
+  },
+};
+
 // Contact utilities (for UI configuration only)
 export const contactUtils = {
   /**

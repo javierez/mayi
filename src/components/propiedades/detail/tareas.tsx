@@ -524,7 +524,7 @@ export function Tareas({
         dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
         dueTime: formData.dueDate ? formData.dueTime || "00:00" : undefined,
         completed: false,
-        createdBy: session?.user?.id,
+        // createdBy will be automatically set to the session user's ID by createTaskWithAuth
         listingId: BigInt(listingId),
         listingContactId: ownerInfo?.listingContactId ?? listingContactId,
         dealId: dealId,

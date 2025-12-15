@@ -86,18 +86,20 @@ function getMonday(date: Date): Date {
   return d;
 }
 
-function get4WeekRange(currentWeekStart: Date): {
+function getYearRange(currentWeekStart: Date): {
   startDate: Date;
   endDate: Date;
 } {
-  // 2 weeks before current week
+  // 6 months before
   const startDate = new Date(currentWeekStart);
-  startDate.setDate(startDate.getDate() - 14);
+  startDate.setMonth(startDate.getMonth() - 6);
+  startDate.setDate(1);
   startDate.setHours(0, 0, 0, 0);
 
-  // 2 weeks after current week (so 4 weeks total: 2 before + current + 2 after)
+  // 6 months after (end of that month)
   const endDate = new Date(currentWeekStart);
-  endDate.setDate(endDate.getDate() + 21);
+  endDate.setMonth(endDate.getMonth() + 7);
+  endDate.setDate(0);
   endDate.setHours(23, 59, 59, 999);
 
   return { startDate, endDate };
@@ -208,9 +210,9 @@ export function useSimpleCalendar(
     filterByUserIds,
   );
 
-  // Calculate 4-week range
+  // Calculate year range (±6 months)
   const currentRange = useMemo(
-    () => get4WeekRange(currentWeekStart),
+    () => getYearRange(currentWeekStart),
     [currentWeekStart],
   );
 

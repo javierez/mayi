@@ -162,6 +162,7 @@ export type AppointmentReminderTimeframe = "30_min" | "1h" | "12h" | "1_day" | "
 // Metadata types for specific notifications
 export interface TaskNotificationMetadata extends Record<string, unknown> {
   taskTitle: string;
+  taskDescription?: string;
   dueDate?: string;
   dueTime?: string;
   urgency?: number;
@@ -184,6 +185,7 @@ export interface TaskNotificationMetadata extends Record<string, unknown> {
     province?: string | null;
     agentName: string | null;
     imageUrl: string | null;
+    imageUrls?: string[];
     street?: string | null;
   };
   // Contact data for email display

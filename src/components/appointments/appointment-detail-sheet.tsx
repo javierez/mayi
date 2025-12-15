@@ -362,10 +362,11 @@ export function AppointmentDetailSheet({
 
     const initialData: Partial<AppointmentFormData> = {
       contactId: appointment.contactId,
-      startDate: appointment.datetimeStart.toISOString().split("T")[0],
-      startTime: appointment.datetimeStart.toTimeString().slice(0, 5),
-      endDate: appointment.datetimeEnd.toISOString().split("T")[0],
-      endTime: appointment.datetimeEnd.toTimeString().slice(0, 5),
+      // Use local time components in DD-MM-YYYY format to avoid timezone conversion issues
+      startDate: `${String(appointment.datetimeStart.getDate()).padStart(2, '0')}-${String(appointment.datetimeStart.getMonth() + 1).padStart(2, '0')}-${appointment.datetimeStart.getFullYear()}`,
+      startTime: `${String(appointment.datetimeStart.getHours()).padStart(2, '0')}:${String(appointment.datetimeStart.getMinutes()).padStart(2, '0')}`,
+      endDate: `${String(appointment.datetimeEnd.getDate()).padStart(2, '0')}-${String(appointment.datetimeEnd.getMonth() + 1).padStart(2, '0')}-${appointment.datetimeEnd.getFullYear()}`,
+      endTime: `${String(appointment.datetimeEnd.getHours()).padStart(2, '0')}:${String(appointment.datetimeEnd.getMinutes()).padStart(2, '0')}`,
       tripTimeMinutes: appointment.tripTimeMinutes,
       title: appointment.title,
       notes: appointment.notes,

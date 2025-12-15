@@ -117,7 +117,7 @@ function buildTitle(
 ): string {
   switch (type) {
     case "task_assigned":
-      return `Nueva tarea asignada: ${entityTitle}`;
+      return `Nueva tarea: ${entityTitle}`;
     case "task_updated":
       return `Tarea actualizada: ${entityTitle}`;
     case "task_reassigned":
@@ -267,8 +267,55 @@ async function fetchTaskRelatedData(
   if (listingId) {
     try {
       const { getListingCompactByIdWithAuth } = await import("~/server/queries/listing");
+      const { getPropertyImages } = await import("~/server/queries/property_images");
+      const { db } = await import("~/server/db");
+      const { listings, properties: propertiesTable } = await import("~/server/db/schema");
+      const { eq, and } = await import("drizzle-orm");
+      
       const listing = await getListingCompactByIdWithAuth(listingId);
       if (listing) {
+        // Get propertyId from listing
+        const [listingWithProperty] = await db
+          .select({
+            propertyId: listings.propertyId,
+          })
+          .from(listings)
+          .where(eq(listings.listingId, listingId))
+          .limit(1);
+
+        // Fetch multiple property images (limit to 5 for email)
+        let imageUrls: string[] = [];
+        if (listingWithProperty?.propertyId) {
+          try {
+            const propertyImages = await getPropertyImages(listingWithProperty.propertyId, true);
+            imageUrls = propertyImages
+              .slice(0, 5) // Limit to 5 images for email
+              .map((img) => img.imageUrl)
+              .filter((url): url is string => url !== null && url !== undefined);
+          } catch (imageError) {
+            console.error("Error fetching property images for notification:", imageError);
+            // Fallback to single image if available
+            if (listing.imageUrl) {
+              imageUrls = [listing.imageUrl];
+            }
+          }
+        } else if (listing.imageUrl) {
+          // Fallback to single image if propertyId not found
+          imageUrls = [listing.imageUrl];
+        }
+
+        // Convert builtSurfaceArea to number if it's a string
+        const builtSurfaceAreaRaw = listing.builtSurfaceArea;
+        let builtSurfaceArea: number | null | undefined = null;
+        if (builtSurfaceAreaRaw !== null && builtSurfaceAreaRaw !== undefined) {
+          if (typeof builtSurfaceAreaRaw === "string") {
+            const parsed = parseFloat(builtSurfaceAreaRaw);
+            builtSurfaceArea = isNaN(parsed) ? null : parsed;
+          } else {
+            builtSurfaceArea = builtSurfaceAreaRaw;
+          }
+        }
+
         listingData = {
           listingId: listing.listingId.toString(),
           title: listing.title,
@@ -279,10 +326,11 @@ async function fetchTaskRelatedData(
           bedrooms: listing.bedrooms,
           bathrooms: listing.bathrooms,
           squareMeter: listing.squareMeter,
-          builtSurfaceArea: listing.builtSurfaceArea ?? undefined,
+          builtSurfaceArea: builtSurfaceArea ?? undefined,
           city: listing.city,
           agentName: listing.agentName,
           imageUrl: listing.imageUrl,
+          imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
         };
       }
     } catch (error) {
@@ -380,6 +428,7 @@ export async function notifyTaskAssigned(
 
     const metadata: TaskNotificationMetadata = {
       taskTitle: task.title,
+      taskDescription: task.description,
       dueDate: task.dueDate?.toISOString(),
       dueTime: task.dueTime ?? undefined,
       urgency: task.urgency ?? undefined,
@@ -454,6 +503,7 @@ export async function notifyTaskUpdated(
 
     const metadata: TaskNotificationMetadata = {
       taskTitle: task.title,
+      taskDescription: task.description,
       dueDate: task.dueDate?.toISOString(),
       dueTime: task.dueTime ?? undefined,
       urgency: task.urgency ?? undefined,
@@ -517,6 +567,7 @@ export async function notifyTaskReassigned(
 
     const metadata: TaskNotificationMetadata = {
       taskTitle: task.title,
+      taskDescription: task.description,
       dueDate: task.dueDate?.toISOString(),
       dueTime: task.dueTime ?? undefined,
       urgency: task.urgency ?? undefined,
@@ -640,6 +691,7 @@ export async function notifyTaskCompleted(
   try {
     const metadata: TaskNotificationMetadata = {
       taskTitle: task.title,
+      taskDescription: task.description,
       dueDate: task.dueDate?.toISOString(),
       dueTime: task.dueTime ?? undefined,
       urgency: task.urgency ?? undefined,
@@ -664,34 +716,19 @@ export async function notifyTaskCompleted(
       metadata,
     };
 
-    // Notify assigned user (if different from creator)
-    if (task.userId) {
+    // Notify the creator of the task (task.createdBy) when it's completed
+    // The creator should be notified, not the assignee, so they know their task was completed
+    const recipientId = task.createdBy;
+    
+    if (recipientId) {
+      console.log(`[Task Completed Notification] Task ID: ${task.taskId}, Task userId (assigned to): ${task.userId ?? 'null'}, Task createdBy (recipient): ${recipientId}, Completed by: ${completedById}`);
       const notification = await createNotificationInternal({
         ...notificationData,
-        userId: task.userId,
+        userId: recipientId,
       });
+      console.log(`[Task Completed Notification] Created notification ID: ${notification.notificationId}, Notification userId (recipient): ${notification.userId}`);
       await sendPushAfterNotification(
-        task.userId,
-        accountId,
-        {
-          notificationId: notification.notificationId,
-          title: notification.title,
-          message: notification.message,
-          actionUrl: notification.actionUrl,
-        },
-        "task",
-        task.taskId,
-      );
-    }
-
-    // Notify creator (if different from assigned user and exists)
-    if (task.createdBy && task.createdBy !== task.userId) {
-      const notification = await createNotificationInternal({
-        ...notificationData,
-        userId: task.createdBy,
-      });
-      await sendPushAfterNotification(
-        task.createdBy,
+        recipientId,
         accountId,
         {
           notificationId: notification.notificationId,
@@ -708,6 +745,8 @@ export async function notifyTaskCompleted(
         console.error("Failed to send email notification for task completed:", error);
         // Don't throw - notification was created successfully
       });
+    } else {
+      console.log(`[Task Completed Notification] Task ID: ${task.taskId} has no createdBy, skipping notification`);
     }
   } catch (error) {
     console.error("Error creating task completed notification:", error);
@@ -730,6 +769,7 @@ export async function notifyTaskDueSoon(
 
     const metadata: TaskNotificationMetadata = {
       taskTitle: task.title,
+      taskDescription: task.description,
       dueDate: task.dueDate?.toISOString(),
       dueTime: task.dueTime ?? undefined,
       urgency: task.urgency ?? undefined,
@@ -795,6 +835,7 @@ export async function notifyTaskOverdue(
 
     const metadata: TaskNotificationMetadata = {
       taskTitle: task.title,
+      taskDescription: task.description,
       dueDate: task.dueDate?.toISOString(),
       dueTime: task.dueTime ?? undefined,
       urgency: task.urgency ?? undefined,

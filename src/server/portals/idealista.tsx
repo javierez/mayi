@@ -455,9 +455,10 @@ export async function buildIdealistaPropertyPayload(
   // Use squareMeter directly (no fallback)
   const areaUsableRaw = listing.squareMeter ?? undefined;
 
-  // Only include usable area if it differs from constructed area
+  // Only include usable area if it differs from constructed area and is > 0
   const areaUsable =
     areaUsableRaw !== undefined &&
+    areaUsableRaw > 0 &&
     areaConstructed !== undefined &&
     areaUsableRaw !== areaConstructed
       ? areaUsableRaw

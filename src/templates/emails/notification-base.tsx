@@ -1,8 +1,22 @@
 /**
  * Base Email Template for Notifications
  *
- * Provides a reusable base template with Vesta branding
- * that matches the existing password reset email style.
+ * Provides a reusable base template with Vesta branding.
+ * Uses TABLE-BASED layouts for maximum email client compatibility
+ * (Outlook uses Word rendering engine, which doesn't support flexbox).
+ * 
+ * CSS Properties Supported in Most Email Clients:
+ * ✅ Tables, padding, margin, border, background-color
+ * ✅ Font styles (size, weight, family, color)
+ * ✅ Text alignment, line-height
+ * ✅ Width, height (on tables/cells)
+ * 
+ * CSS Properties NOT Supported (avoid these):
+ * ❌ display: flex/grid
+ * ❌ box-shadow
+ * ❌ position: absolute/relative
+ * ❌ CSS variables
+ * ❌ JavaScript
  */
 
 export function generateNotificationEmailBase(
@@ -16,42 +30,86 @@ export function generateNotificationEmailBase(
     <html>
       <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <title>${title} - Vesta CRM</title>
+        <!--[if mso]>
+        <style type="text/css">
+          table { border-collapse: collapse; }
+          td { font-family: Arial, sans-serif; }
+        </style>
+        <![endif]-->
       </head>
-      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #1f2937; margin-bottom: 10px;">
-            Vesta <span style="background: linear-gradient(to right, #f59e0b, #f43f5e); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">CRM</span>
-          </h1>
-        </div>
-        
-        <div style="background: #f9fafb; padding: 30px; border-radius: 8px; border: 1px solid #e5e7eb;">
-          <h2 style="color: #1f2937; margin-bottom: 20px;">${title}</h2>
-          
-          <p style="margin-bottom: 20px;">
-            ${message}
-          </p>
-          
-          ${actionUrl && actionLabel ? `
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${actionUrl}" 
-                 style="background: linear-gradient(to right, #f59e0b, #f43f5e); 
-                        color: white; 
-                        padding: 12px 30px; 
-                        text-decoration: none; 
-                        border-radius: 6px; 
-                        font-weight: bold; 
-                        display: inline-block;">
-                ${actionLabel}
-              </a>
-            </div>
-          ` : ''}
-        </div>
-        
-        <div style="text-align: center; margin-top: 30px; color: #6b7280; font-size: 14px;">
-          <p>Este email fue enviado por Vesta CRM</p>
-          <p>© ${new Date().getFullYear()} Vesta CRM. Todos los derechos reservados.</p>
-        </div>
+      <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #111827; background-color: #f9fafb;">
+        <!-- Outer wrapper table for full-width background -->
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f9fafb;">
+          <tr>
+            <td align="center" style="padding: 40px 20px;">
+              <!-- Inner container table -->
+              <table cellpadding="0" cellspacing="0" border="0" width="600" style="max-width: 600px; background-color: #ffffff; border-radius: 8px;">
+                <!-- Logo Section -->
+                <tr>
+                  <td align="center" style="padding: 12px 40px 8px 40px;">
+                    <img src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/vestalogotransp.png" alt="Vesta CRM" width="180" style="max-width: 180px; height: auto; display: block;" />
+                  </td>
+                </tr>
+                
+                <!-- Title Section -->
+                <tr>
+                  <td style="padding: 0 40px;">
+                    <h2 style="color: #111827; margin: 0 0 12px 0; font-size: 24px; font-weight: 400; line-height: 1.3;">${title}</h2>
+                  </td>
+                </tr>
+                
+                <!-- Message Section -->
+                <tr>
+                  <td style="padding: 0 40px;">
+                    <p style="margin: 0 0 12px 0; font-size: 15px; font-weight: 400; color: #374151; line-height: 1.6;">
+                      ${message}
+                    </p>
+                  </td>
+                </tr>
+                
+                ${actionUrl && actionLabel ? `
+                  <!-- Action Button Section -->
+                  <tr>
+                    <td align="center" style="padding: 16px 40px 40px 40px;">
+                      <table cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                          <td align="center" style="background-color: #111827; border-radius: 6px;">
+                            <a href="${actionUrl}" 
+                               style="display: inline-block; padding: 12px 24px; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 500; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;">
+                              ${actionLabel}
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                ` : `
+                  <!-- Spacer when no button -->
+                  <tr>
+                    <td style="padding: 0 40px 40px 40px;"></td>
+                  </tr>
+                `}
+                
+                <!-- Footer Section -->
+                <tr>
+                  <td style="padding: 32px 40px; border-top: 1px solid #e5e7eb;">
+                    <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                      <tr>
+                        <td align="center" style="color: #9ca3af; font-size: 12px; font-weight: 400; line-height: 1.6;">
+                          <p style="margin: 0 0 8px 0;">Este email fue enviado por Vesta CRM</p>
+                          <p style="margin: 0;">© ${new Date().getFullYear()} Vesta CRM. Todos los derechos reservados.</p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
       </body>
     </html>
   `;
@@ -69,4 +127,3 @@ Este email fue enviado por Vesta CRM
 
   return { html, text };
 }
-

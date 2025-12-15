@@ -1,6 +1,6 @@
 import { db } from "~/server/db";
-import { tasks, users } from "~/server/db/schema";
-import { eq } from "drizzle-orm";
+import { tasks, users, listingContacts } from "~/server/db/schema";
+import { eq, and } from "drizzle-orm";
 import { generateTaskNotificationEmail } from "~/templates/emails/task-notification";
 import { generateCriticalTaskOverdueEmail } from "~/templates/emails/task-overdue-critical";
 import { generateTaskReminderEmail } from "~/templates/emails/task-reminder";
@@ -13,12 +13,12 @@ import { generateCustomerAppointmentReminderEmail } from "~/templates/emails/cus
 import { generateCustomerPropertyNotificationEmail } from "~/templates/emails/customer-property-notification";
 import { generateCustomerDocumentNotificationEmail } from "~/templates/emails/customer-document-notification";
 import { generateCustomerDealNotificationEmail } from "~/templates/emails/customer-deal-notification";
-import type { Notification } from "~/types/notifications";
+import type { Notification, TaskNotificationMetadata } from "~/types/notifications";
 import { EmailTemplatesClient } from "./client";
 
-// Fetch real task data from database
+// Fetch real task data from database with related data (like production)
 async function getExampleTask() {
-  const EXAMPLE_TASK_ID = 156;
+  const EXAMPLE_TASK_ID = 158;
 
   const [task] = await db
     .select({
@@ -35,6 +35,8 @@ async function getExampleTask() {
       createdAt: tasks.createdAt,
       updatedAt: tasks.updatedAt,
       createdBy: tasks.createdBy,
+      listingId: tasks.listingId,
+      contactId: tasks.contactId,
       // User info
       userName: users.name,
       userFirstName: users.firstName,
@@ -48,13 +50,160 @@ async function getExampleTask() {
   return task;
 }
 
+// Fetch related data like production does
+async function fetchTaskRelatedData(
+  listingId: bigint | null | undefined,
+  contactId: bigint | null | undefined,
+): Promise<{
+  listing: TaskNotificationMetadata["listing"];
+  contact: TaskNotificationMetadata["contact"];
+}> {
+  let listingData: TaskNotificationMetadata["listing"] | undefined;
+  let contactData: TaskNotificationMetadata["contact"] | undefined;
+
+  // Fetch listing data if listingId exists
+  if (listingId) {
+    try {
+      const { getListingCompactByIdWithAuth } = await import("~/server/queries/listing");
+      const { getPropertyImages } = await import("~/server/queries/property_images");
+      const { db } = await import("~/server/db");
+      const { listings } = await import("~/server/db/schema");
+      const { eq } = await import("drizzle-orm");
+      
+      const listing = await getListingCompactByIdWithAuth(listingId);
+      if (listing) {
+        // Get propertyId from listing
+        const [listingWithProperty] = await db
+          .select({
+            propertyId: listings.propertyId,
+          })
+          .from(listings)
+          .where(eq(listings.listingId, listingId))
+          .limit(1);
+
+        // Fetch multiple property images (limit to 5 for email)
+        let imageUrls: string[] = [];
+        if (listingWithProperty?.propertyId) {
+          try {
+            const propertyImages = await getPropertyImages(listingWithProperty.propertyId, true);
+            imageUrls = propertyImages
+              .slice(0, 5) // Limit to 5 images for email
+              .map((img) => img.imageUrl)
+              .filter((url): url is string => url !== null && url !== undefined);
+          } catch (imageError) {
+            console.error("Error fetching property images for notification:", imageError);
+            // Fallback to single image if available
+            if (listing.imageUrl) {
+              imageUrls = [listing.imageUrl];
+            }
+          }
+        } else if (listing.imageUrl) {
+          // Fallback to single image if propertyId not found
+          imageUrls = [listing.imageUrl];
+        }
+
+        listingData = {
+          listingId: listing.listingId.toString(),
+          title: listing.title,
+          referenceNumber: listing.referenceNumber,
+          price: listing.price,
+          listingType: listing.listingType,
+          propertyType: listing.propertyType,
+          bedrooms: listing.bedrooms,
+          bathrooms: listing.bathrooms,
+          squareMeter: listing.squareMeter,
+          builtSurfaceArea: listing.builtSurfaceArea ? (typeof listing.builtSurfaceArea === "string" ? parseFloat(listing.builtSurfaceArea) : listing.builtSurfaceArea) : undefined,
+          city: listing.city,
+          agentName: listing.agentName,
+          imageUrl: listing.imageUrl,
+          imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+        };
+      }
+    } catch (error) {
+      console.error("Error fetching listing data for notification:", error);
+    }
+  }
+
+  // Fetch contact data if contactId exists
+  if (contactId) {
+    try {
+      const { getContactByIdWithAuth } = await import("~/server/queries/contact");
+      const contact = await getContactByIdWithAuth(Number(contactId));
+      if (contact) {
+        // Check if contact is owner or buyer
+        const ownerCheck = await db
+          .select()
+          .from(listingContacts)
+          .where(
+            and(
+              eq(listingContacts.contactId, contactId),
+              eq(listingContacts.contactType, "owner"),
+              eq(listingContacts.isActive, true),
+            ),
+          )
+          .limit(1);
+
+        const buyerCheck = await db
+          .select()
+          .from(listingContacts)
+          .where(
+            and(
+              eq(listingContacts.contactId, contactId),
+              eq(listingContacts.contactType, "buyer"),
+              eq(listingContacts.isActive, true),
+            ),
+          )
+          .limit(1);
+
+        contactData = {
+          contactId: contact.contactId.toString(),
+          firstName: contact.firstName,
+          lastName: contact.lastName,
+          email: contact.email ?? undefined,
+          phone: contact.phone ?? undefined,
+          isOwner: ownerCheck.length > 0,
+          isBuyer: buyerCheck.length > 0,
+        };
+      }
+    } catch (error) {
+      console.error("Error fetching contact data for notification:", error);
+    }
+  }
+
+  return { listing: listingData, contact: contactData };
+}
+
 export default async function EmailTemplatesPage() {
   const exampleTask = await getExampleTask();
+  
+  // Fetch related data (listing, contact) like production does
+  const { listing: listingData, contact: contactData } = await fetchTaskRelatedData(
+    exampleTask?.listingId,
+    exampleTask?.contactId,
+  );
 
-  // Create notification based on real task data
+  // Fetch assigner information if available
+  let assignerEmail: string | undefined;
+  let assignerPhone: string | undefined;
+  let assignerName: string | undefined;
+  if (exampleTask?.createdBy) {
+    try {
+      const { getUserByIdWithAuth } = await import("~/server/queries/users");
+      const assigner = await getUserByIdWithAuth(exampleTask.createdBy);
+      if (assigner) {
+        assignerEmail = assigner.email ?? undefined;
+        assignerPhone = assigner.phone ?? undefined;
+        assignerName = assigner.name ?? undefined;
+      }
+    } catch (error) {
+      console.error("Error fetching assigner data for notification:", error);
+    }
+  }
+
+  // Create notification based on real task data with full metadata (like production)
   function createTaskNotification(type: Notification["type"]): Notification {
     const taskTitle = exampleTask?.title ?? "Tarea de ejemplo";
-    const taskId = exampleTask?.taskId ?? BigInt(149);
+    const taskId = exampleTask?.taskId ?? BigInt(158);
     const assignedByName = exampleTask?.userFirstName && exampleTask?.userLastName
       ? `${exampleTask.userFirstName} ${exampleTask.userLastName}`
       : exampleTask?.userName ?? "Usuario";
@@ -65,7 +214,7 @@ export default async function EmailTemplatesPage() {
       userId: exampleTask?.userId ?? "user-1",
       fromUserId: exampleTask?.createdBy ?? "user-2",
       type,
-      title: `${type === "task_assigned" ? "Nueva tarea asignada" : type === "task_completed" ? "Tarea completada" : type === "task_reassigned" ? "Tarea reasignada" : type === "task_overdue" ? "Tarea vencida" : "Recordatorio"}: ${taskTitle}`,
+      title: `${type === "task_assigned" ? "Nueva tarea" : type === "task_completed" ? "Tarea completada" : type === "task_reassigned" ? "Tarea reasignada" : type === "task_overdue" ? "Tarea vencida" : "Recordatorio"}: ${taskTitle}`,
       message: type === "task_assigned"
         ? "Se te ha asignado una nueva tarea."
         : type === "task_completed"
@@ -99,7 +248,15 @@ export default async function EmailTemplatesPage() {
         dueTime: exampleTask?.dueTime ?? "17:00",
         urgency: exampleTask?.urgency ?? 3,
         category: exampleTask?.category ?? "general",
-        assignedByName,
+        listingId: exampleTask?.listingId?.toString(),
+        contactId: exampleTask?.contactId?.toString(),
+        // Include rich data like production
+        listing: listingData,
+        contact: contactData,
+        assignerEmail,
+        assignerPhone,
+        assignerName,
+        assignedByName: assignerName ?? assignedByName,
         completedByName: assignedByName,
         previousAssigneeName: "Usuario Anterior",
         newAssigneeName: assignedByName,
@@ -200,7 +357,7 @@ export default async function EmailTemplatesPage() {
             briefingType: "daily",
             tasks: [
               {
-                taskId: exampleTask?.taskId ?? BigInt(149),
+                taskId: exampleTask?.taskId ?? BigInt(158),
                 userId: exampleTask?.userId ?? "user-1",
                 title: exampleTask?.title ?? "Tarea de ejemplo",
                 description: exampleTask?.description ?? "Descripción de la tarea",
@@ -225,7 +382,7 @@ export default async function EmailTemplatesPage() {
             digestType: "weekly",
             tasks: [
               {
-                taskId: exampleTask?.taskId ?? BigInt(149),
+                taskId: exampleTask?.taskId ?? BigInt(158),
                 userId: exampleTask?.userId ?? "user-1",
                 title: exampleTask?.title ?? "Tarea vencida",
                 description: exampleTask?.description ?? "Descripción de la tarea",

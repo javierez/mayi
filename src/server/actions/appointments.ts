@@ -31,15 +31,44 @@ interface AppointmentFormData {
   listingContactId?: bigint;
   dealId?: bigint;
   prospectId?: bigint;
-  startDate: string; // YYYY-MM-DD format
+  startDate: string; // DD-MM-YYYY format
   startTime: string; // HH:mm format
-  endDate: string; // YYYY-MM-DD format
+  endDate: string; // DD-MM-YYYY format
   endTime: string; // HH:mm format
   tripTimeMinutes?: number;
   title: string;
   notes?: string;
   appointmentType: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje" | "Tarea";
   assignedTo?: string; // FK → users.id (who is assigned to the appointment)
+}
+
+// Helper function to create a Date from date and time strings using local time components
+// This prevents timezone conversion issues when the server timezone differs from user timezone
+// Date string format: DD-MM-YYYY
+function createLocalDateTime(dateStr: string, timeStr: string): Date {
+  // Parse date string (DD-MM-YYYY)
+  const dateParts = dateStr.split("-").map(Number);
+  // Parse time string (HH:mm)
+  const timeParts = timeStr.split(":").map(Number);
+  
+  // Validate parsed values
+  if (dateParts.length !== 3 || timeParts.length < 2) {
+    throw new Error(`Invalid date/time format: ${dateStr} ${timeStr}`);
+  }
+  
+  const day = dateParts[0];
+  const month = dateParts[1];
+  const year = dateParts[2];
+  const hours = timeParts[0];
+  const minutes = timeParts[1];
+  
+  // Validate all required values are defined
+  if (year === undefined || month === undefined || day === undefined || hours === undefined) {
+    throw new Error(`Invalid date/time values: ${dateStr} ${timeStr}`);
+  }
+  
+  // Create Date object using local time components (month is 0-indexed in Date constructor)
+  return new Date(year, month - 1, day, hours, minutes ?? 0, 0, 0);
 }
 
 // Server action for appointment update
@@ -62,8 +91,8 @@ export async function updateAppointmentAction(
         : undefined,
       dealId: formData.dealId ? BigInt(formData.dealId) : undefined,
       prospectId: formData.prospectId ? BigInt(formData.prospectId) : undefined,
-      datetimeStart: new Date(`${formData.startDate}T${formData.startTime}`),
-      datetimeEnd: new Date(`${formData.endDate}T${formData.endTime}`),
+      datetimeStart: createLocalDateTime(formData.startDate, formData.startTime),
+      datetimeEnd: createLocalDateTime(formData.endDate, formData.endTime),
       tripTimeMinutes: formData.tripTimeMinutes,
       status: "Scheduled" as const,
       title: formData.title,
@@ -166,8 +195,8 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
         : undefined,
       dealId: formData.dealId ? BigInt(formData.dealId) : undefined,
       prospectId: formData.prospectId ? BigInt(formData.prospectId) : undefined,
-      datetimeStart: new Date(`${formData.startDate}T${formData.startTime}`),
-      datetimeEnd: new Date(`${formData.endDate}T${formData.endTime}`),
+      datetimeStart: createLocalDateTime(formData.startDate, formData.startTime),
+      datetimeEnd: createLocalDateTime(formData.endDate, formData.endTime),
       tripTimeMinutes: formData.tripTimeMinutes,
       status: "Scheduled" as const,
       title: formData.title,
@@ -365,10 +394,11 @@ export async function validateAppointmentForm(
     formData.startTime &&
     formData.endTime
   ) {
-    const startDateTime = new Date(
-      `${formData.startDate}T${formData.startTime}`,
+    const startDateTime = createLocalDateTime(
+      formData.startDate,
+      formData.startTime,
     );
-    const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
+    const endDateTime = createLocalDateTime(formData.endDate, formData.endTime);
 
     if (startDateTime >= endDateTime) {
       errors.push("La hora de fin debe ser posterior a la hora de inicio");

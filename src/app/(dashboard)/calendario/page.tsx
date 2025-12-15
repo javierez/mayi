@@ -98,8 +98,13 @@ const getWeekStart = (date: Date) => {
   return new Date(d.setDate(diff));
 };
 
-// Helper to get date string in YYYY-MM-DD
-const getDateString = (date: Date) => date.toISOString().split("T")[0];
+// Helper to get date string in DD-MM-YYYY (using local time, not UTC)
+const getDateString = (date: Date): string => {
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
+};
 
 export default function AppointmentsPage() {
   const { data: session } = useSession();
@@ -913,7 +918,7 @@ export default function AppointmentsPage() {
           onRefetch={() => void refetch()}
           onEventClick={(appointmentId) => setSelectedEvent(appointmentId)}
           onDateClick={(date) => {
-            const dateString = date.toISOString().split("T")[0];
+            const dateString = getDateString(date);
             if (!dateString) return;
 
             setEditMode("create");
@@ -1014,14 +1019,13 @@ export default function AppointmentsPage() {
         open={isModalOpen}
         onOpenChange={(_open) => {
           closeModal();
-          // No refetch needed - optimistic updates already handle UI changes instantly
         }}
         initialData={initialData}
         mode={editMode}
         appointmentId={editingAppointmentId ?? undefined}
         onSuccess={() => {
-          // Optimistic updates handle immediate UI changes
-          // The form will convert optimistic events to real events on server response
+          // Trigger refresh of calendar view after successful create/update
+          void refetch();
         }}
         addOptimisticEvent={addOptimisticEvent}
         removeOptimisticEvent={removeOptimisticEvent}

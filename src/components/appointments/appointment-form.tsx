@@ -61,9 +61,9 @@ interface AppointmentFormData {
   leadId?: bigint;
   dealId?: bigint;
   prospectId?: bigint;
-  startDate: string; // YYYY-MM-DD format
+  startDate: string; // DD-MM-YYYY format (internal format)
   startTime: string; // HH:mm format
-  endDate: string; // YYYY-MM-DD format
+  endDate: string; // DD-MM-YYYY format (internal format)
   endTime: string; // HH:mm format
   tripTimeMinutes?: number;
   title: string; // Appointment title
@@ -112,11 +112,14 @@ interface AppointmentFormProps {
   ) => void;
 }
 
-// Helper function to get tomorrow's date in YYYY-MM-DD format
+// Helper function to get tomorrow's date in DD-MM-YYYY format
 const getTomorrowDate = () => {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  return tomorrow.toISOString().split("T")[0] ?? "";
+  const day = String(tomorrow.getDate()).padStart(2, '0');
+  const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+  const year = tomorrow.getFullYear();
+  return `${day}-${month}-${year}`;
 };
 
 // Helper function to get current time in HH:mm format, rounded to nearest 15 minutes
@@ -138,6 +141,7 @@ const getCurrentTime = () => {
 };
 
 // Helper function to calculate end date and time from start date, start time, and duration
+// Date format: DD-MM-YYYY
 const calculateEndDateTime = (
   startDate: string,
   startTime: string,
@@ -147,20 +151,41 @@ const calculateEndDateTime = (
     return { endDate: startDate, endTime: startTime };
   }
 
-  // Create a proper Date object with the start date and time
-  const startDateTime = new Date(`${startDate}T${startTime}`);
+  // Parse date and time strings to create Date object using local time components
+  // Date format: DD-MM-YYYY
+  const dateParts = startDate.split("-").map(Number);
+  const timeParts = startTime.split(":").map(Number);
+  
+  if (dateParts.length !== 3 || timeParts.length < 2) {
+    return { endDate: startDate, endTime: startTime };
+  }
+  
+  const day = dateParts[0];
+  const month = dateParts[1];
+  const year = dateParts[2];
+  const hours = timeParts[0];
+  const minutes = timeParts[1];
+  
+  // Validate parsed values
+  if (year === undefined || month === undefined || day === undefined || hours === undefined) {
+    return { endDate: startDate, endTime: startTime };
+  }
+  
+  // Create Date object using local time components (month is 0-indexed)
+  const startDateTime = new Date(year, month - 1, day, hours, minutes ?? 0, 0, 0);
 
   // Add the duration in minutes
   startDateTime.setMinutes(startDateTime.getMinutes() + durationMinutes);
 
-  // Extract the new date and time
-  const endDate = startDateTime.toISOString().split("T")[0] ?? startDate;
-  const endTime = startDateTime.toTimeString().slice(0, 5);
+  // Extract the new date and time using local time components in DD-MM-YYYY format
+  const endDate = `${String(startDateTime.getDate()).padStart(2, '0')}-${String(startDateTime.getMonth() + 1).padStart(2, '0')}-${startDateTime.getFullYear()}`;
+  const endTime = `${String(startDateTime.getHours()).padStart(2, '0')}:${String(startDateTime.getMinutes()).padStart(2, '0')}`;
 
   return { endDate, endTime };
 };
 
 // Helper function to calculate duration from start and end date/time
+// Date format: DD-MM-YYYY
 const calculateDurationFromEndDateTime = (
   startDate: string,
   startTime: string,
@@ -171,8 +196,32 @@ const calculateDurationFromEndDateTime = (
     return { hours: 0, minutes: 30 };
   }
 
-  const startDateTime = new Date(`${startDate}T${startTime}`);
-  const endDateTime = new Date(`${endDate}T${endTime}`);
+  // Parse DD-MM-YYYY format
+  const startDateParts = startDate.split("-").map(Number);
+  const endDateParts = endDate.split("-").map(Number);
+  const startTimeParts = startTime.split(":").map(Number);
+  const endTimeParts = endTime.split(":").map(Number);
+
+  if (startDateParts.length !== 3 || endDateParts.length !== 3 || 
+      startTimeParts.length < 2 || endTimeParts.length < 2) {
+    return { hours: 0, minutes: 30 };
+  }
+
+  const startDateTime = new Date(
+    startDateParts[2]!, // year
+    startDateParts[1]! - 1, // month (0-indexed)
+    startDateParts[0]!, // day
+    startTimeParts[0] ?? 0,
+    startTimeParts[1] ?? 0
+  );
+
+  const endDateTime = new Date(
+    endDateParts[2]!, // year
+    endDateParts[1]! - 1, // month (0-indexed)
+    endDateParts[0]!, // day
+    endTimeParts[0] ?? 0,
+    endTimeParts[1] ?? 0
+  );
 
   const diffMs = endDateTime.getTime() - startDateTime.getTime();
   const diffMinutes = Math.max(0, Math.floor(diffMs / 60000));
@@ -725,11 +774,36 @@ export default function AppointmentForm({
     return options;
   };
 
+  // Helper to convert YYYY-MM-DD (from date input) to DD-MM-YYYY (internal format)
+  const convertDateInputToInternal = (dateStr: string): string => {
+    if (!dateStr) return "";
+    const parts = dateStr.split("-");
+    if (parts.length !== 3) return dateStr;
+    // YYYY-MM-DD -> DD-MM-YYYY
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  };
+
+  // Helper to convert DD-MM-YYYY (internal format) to YYYY-MM-DD (for date input)
+  const convertInternalToDateInput = (dateStr: string): string => {
+    if (!dateStr) return "";
+    const parts = dateStr.split("-");
+    if (parts.length !== 3) return dateStr;
+    // DD-MM-YYYY -> YYYY-MM-DD
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  };
+
   // Handle input changes
   const handleInputChange =
     (field: keyof AppointmentFormData) => (value: string | number) => {
       setFormData((prev) => {
-        const updates: Partial<AppointmentFormData> = { [field]: value };
+        let processedValue: string | number = value;
+        
+        // Convert date inputs from YYYY-MM-DD to DD-MM-YYYY
+        if ((field === "startDate" || field === "endDate") && typeof value === "string") {
+          processedValue = convertDateInputToInternal(value);
+        }
+
+        const updates: Partial<AppointmentFormData> = { [field]: processedValue };
 
         // Auto-update endDate and endTime when startTime changes
         if (field === "startTime" && typeof value === "string") {
@@ -740,9 +814,9 @@ export default function AppointmentForm({
         }
 
         // Auto-update endDate and endTime when startDate changes
-        if (field === "startDate" && typeof value === "string") {
+        if (field === "startDate" && typeof processedValue === "string") {
           const startTime = prev.startTime ?? getCurrentTime();
-          const { endDate, endTime } = calculateEndDateTime(value, startTime, 30);
+          const { endDate, endTime } = calculateEndDateTime(processedValue, startTime, 30);
           updates.endDate = endDate;
           updates.endTime = endTime;
         }
@@ -993,10 +1067,25 @@ export default function AppointmentForm({
       return null;
     }
 
-    // Create start and end Date objects
-    const startDateTime = new Date(`${data.startDate}T${data.startTime}`);
+    // Create start and end Date objects (parse DD-MM-YYYY format)
+    const startDateParts = data.startDate.split("-").map(Number);
+    const endDateParts = (data.endDate ?? data.startDate).split("-").map(Number);
+    const startTimeParts = data.startTime.split(":").map(Number);
+    const endTimeParts = (data.endTime ?? data.startTime).split(":").map(Number);
+    
+    const startDateTime = new Date(
+      startDateParts[2]!, // year
+      startDateParts[1]! - 1, // month (0-indexed)
+      startDateParts[0]!, // day
+      startTimeParts[0] ?? 0,
+      startTimeParts[1] ?? 0
+    );
     const endDateTime = new Date(
-      `${data.endDate ?? data.startDate}T${data.endTime ?? data.startTime}`,
+      endDateParts[2]!, // year
+      endDateParts[1]! - 1, // month (0-indexed)
+      endDateParts[0]!, // day
+      endTimeParts[0] ?? 0,
+      endTimeParts[1] ?? 0
     );
 
     return {
@@ -1028,10 +1117,37 @@ export default function AppointmentForm({
         ? `${selectedContact.firstName} ${selectedContact.lastName}`
         : "New Contact",
       propertyAddress: selectedListing?.title ?? undefined,
-      startTime: new Date(`${formData.startDate}T${formData.startTime}`),
-      endTime: new Date(
-        `${formData.endDate ?? formData.startDate}T${formData.endTime ?? formData.startTime}`,
-      ),
+      // Parse DD-MM-YYYY format dates
+      startTime: (() => {
+        if (!formData.startDate || !formData.startTime) {
+          return new Date();
+        }
+        const dateParts = formData.startDate.split("-").map(Number);
+        const timeParts = formData.startTime.split(":").map(Number);
+        return new Date(
+          dateParts[2]!, // year
+          dateParts[1]! - 1, // month (0-indexed)
+          dateParts[0]!, // day
+          timeParts[0] ?? 0,
+          timeParts[1] ?? 0
+        );
+      })(),
+      endTime: (() => {
+        const endDate = formData.endDate ?? formData.startDate;
+        const endTime = formData.endTime ?? formData.startTime;
+        if (!endDate || !endTime) {
+          return new Date();
+        }
+        const dateParts = endDate.split("-").map(Number);
+        const timeParts = endTime.split(":").map(Number);
+        return new Date(
+          dateParts[2]!, // year
+          dateParts[1]! - 1, // month (0-indexed)
+          dateParts[0]!, // day
+          timeParts[0] ?? 0,
+          timeParts[1] ?? 0
+        );
+      })(),
       status: "Scheduled" as const,
       type: formData.appointmentType ?? "Visita",
       title: formData.title ?? "",
@@ -1305,7 +1421,7 @@ export default function AppointmentForm({
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FloatingLabelInput
                   id="startDate"
-                  value={formData.startDate ?? ""}
+                  value={formData.startDate ? convertInternalToDateInput(formData.startDate) : ""}
                   onChange={handleInputChange("startDate")}
                   placeholder="Fecha de inicio"
                   type="date"
@@ -1459,10 +1575,10 @@ export default function AppointmentForm({
                 <input
                   id="endDate"
                   type="date"
-                  value={formData.endDate ?? ""}
+                  value={formData.endDate ? convertInternalToDateInput(formData.endDate) : ""}
                   onChange={(e) => {
                     updateSourceRef.current = "end";
-                    const newEndDate = e.target.value;
+                    const newEndDate = convertDateInputToInternal(e.target.value);
                     setFormData((prev) => ({ ...prev, endDate: newEndDate }));
 
                     // Recalculate duration from new end date
@@ -1475,8 +1591,20 @@ export default function AppointmentForm({
                       );
 
                       // Validate: if end is before or equal to start, auto-correct to start + 30 min
-                      const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
-                      const endDateTime = new Date(`${newEndDate}T${formData.endTime}`);
+                      // Parse DD-MM-YYYY format
+                      const startDateParts = formData.startDate.split("-").map(Number);
+                      const endDateParts = newEndDate.split("-").map(Number);
+                      const startTimeParts = formData.startTime.split(":").map(Number);
+                      const endTimeParts = formData.endTime.split(":").map(Number);
+                      
+                      const startDateTime = new Date(
+                        startDateParts[2]!, startDateParts[1]! - 1, startDateParts[0]!,
+                        startTimeParts[0] ?? 0, startTimeParts[1] ?? 0
+                      );
+                      const endDateTime = new Date(
+                        endDateParts[2]!, endDateParts[1]! - 1, endDateParts[0]!,
+                        endTimeParts[0] ?? 0, endTimeParts[1] ?? 0
+                      );
 
                       if (endDateTime <= startDateTime) {
                         // Auto-correct to start + 30 minutes

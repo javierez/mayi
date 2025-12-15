@@ -23,8 +23,13 @@ interface CalendarListViewProps {
   appointmentTasksMap: Record<number, unknown[]>;
 }
 
-// Helper to get date string in YYYY-MM-DD
-const getDateString = (date: Date) => date.toISOString().split("T")[0];
+// Helper to get date string in DD-MM-YYYY (using local time, not UTC)
+const getDateString = (date: Date): string => {
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}-${month}-${year}`;
+};
 
 // Helper to format date for display in separators
 const formatDateSeparator = (date: Date) => {
