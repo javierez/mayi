@@ -1063,15 +1063,21 @@ export default function AppointmentForm({
   const transformFormDataToCalendarEvent = (
     data: Partial<AppointmentFormData>,
   ) => {
-    if (!data.contactId || !data.startDate || !data.startTime) {
-      return null;
-    }
+    // Use default values if date/time fields are missing
+    const now = new Date();
+    const defaultDate = `${now.getDate().toString().padStart(2, "0")}-${(now.getMonth() + 1).toString().padStart(2, "0")}-${now.getFullYear()}`;
+    const defaultTime = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+    
+    const startDate = data.startDate ?? defaultDate;
+    const startTime = data.startTime ?? defaultTime;
+    const endDate = data.endDate ?? startDate;
+    const endTime = data.endTime ?? startTime;
 
     // Create start and end Date objects (parse DD-MM-YYYY format)
-    const startDateParts = data.startDate.split("-").map(Number);
-    const endDateParts = (data.endDate ?? data.startDate).split("-").map(Number);
-    const startTimeParts = data.startTime.split(":").map(Number);
-    const endTimeParts = (data.endTime ?? data.startTime).split(":").map(Number);
+    const startDateParts = startDate.split("-").map(Number);
+    const endDateParts = endDate.split("-").map(Number);
+    const startTimeParts = startTime.split(":").map(Number);
+    const endTimeParts = endTime.split(":").map(Number);
     
     const startDateTime = new Date(
       startDateParts[2] ?? 0, // year
@@ -1089,7 +1095,7 @@ export default function AppointmentForm({
     );
 
     return {
-      contactId: data.contactId,
+      contactId: data.contactId ?? BigInt(0),
       contactName: selectedContact
         ? `${selectedContact.firstName} ${selectedContact.lastName}`
         : "New Contact",
@@ -1193,7 +1199,7 @@ export default function AppointmentForm({
     let tempEventId: bigint | null = null;
     if (mode === "create" && addOptimisticEvent) {
       try {
-        const eventData = transformFormDataToCalendarEvent(formData);
+        const eventData = transformFormDataToCalendarEvent(finalFormData);
         if (eventData) {
           tempEventId = addOptimisticEvent(eventData);
           setOptimisticEventId(tempEventId);

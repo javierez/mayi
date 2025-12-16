@@ -1,110 +1,305 @@
 /**
  * Daily Briefing Email Template
  *
- * Generates unified daily briefing email that can include:
- * - Tasks only
- * - Appointments only
- * - Both tasks and appointments
- * Based on configuration flags.
+ * Generates a refined daily briefing email with tasks and appointments
+ * for today and tomorrow. Uses TABLE-BASED layouts for maximum
+ * email client compatibility.
  */
 
 import type { Task } from "~/lib/data";
 import type { Appointment } from "~/lib/data";
-import { generateTaskBriefingEmail } from "./task-briefing";
-import { generateAppointmentBriefingEmail } from "./appointment-briefing";
 
 export interface DailyBriefingEmailData {
   tasks?: Task[];
   appointments?: Appointment[];
   includeTasks: boolean;
   includeAppointments: boolean;
-  date?: string; // "Fecha"
+  date?: string;
 }
 
 export function generateDailyBriefingEmail(
   data: DailyBriefingEmailData,
 ): { subject: string; html: string; text: string } {
-  const { tasks = [], appointments = [], includeTasks, includeAppointments, date } = data;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? "";
+  const {
+    tasks = [],
+    appointments = [],
+    includeTasks,
+    includeAppointments,
+    date,
+  } = data;
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ?? process.env.APP_URL ?? "";
 
   const hasTasks = includeTasks && tasks.length > 0;
   const hasAppointments = includeAppointments && appointments.length > 0;
-
-  // If only one type, use the specific template
-  if (hasTasks && !hasAppointments) {
-    return generateTaskBriefingEmail({
-      tasks,
-      briefingType: "daily",
-      date,
-    });
-  }
-
-  if (hasAppointments && !hasTasks) {
-    return generateAppointmentBriefingEmail({
-      appointments,
-      briefingType: "daily",
-      date,
-    });
-  }
-
-  // Combined briefing
   const taskCount = tasks.length;
   const appointmentCount = appointments.length;
-  const totalCount = taskCount + appointmentCount;
 
   // Build subject
-  let subject = "Resumen diario";
+  let subject = "Buenos dias";
   if (hasTasks && hasAppointments) {
-    subject = `Resumen diario - ${taskCount} tarea${taskCount > 1 ? "s" : ""} y ${appointmentCount} cita${appointmentCount > 1 ? "s" : ""}`;
+    subject = `Tu dia de hoy - ${taskCount} tarea${taskCount > 1 ? "s" : ""}, ${appointmentCount} cita${appointmentCount > 1 ? "s" : ""}`;
   } else if (hasTasks) {
-    subject = `Resumen diario de tareas - ${taskCount} tarea${taskCount > 1 ? "s" : ""}`;
+    subject = `Tu dia de hoy - ${taskCount} tarea${taskCount > 1 ? "s" : ""}`;
   } else if (hasAppointments) {
-    subject = `Resumen diario de citas - ${appointmentCount} cita${appointmentCount > 1 ? "s" : ""}`;
+    subject = `Tu dia de hoy - ${appointmentCount} cita${appointmentCount > 1 ? "s" : ""}`;
   }
   if (date) {
-    subject += ` - ${date}`;
+    subject += ` | ${date}`;
   }
 
-  // Generate individual sections
-  let tasksHtml = "";
-  let appointmentsHtml = "";
+  // Urgency labels and colors
+  const urgencyConfig: Record<
+    number,
+    { label: string; color: string; bgColor: string }
+  > = {
+    1: { label: "Baja", color: "#6b7280", bgColor: "#f9fafb" },
+    2: { label: "Normal", color: "#3b82f6", bgColor: "#eff6ff" },
+    3: { label: "Alta", color: "#f59e0b", bgColor: "#fffbeb" },
+    4: { label: "Urgente", color: "#f97316", bgColor: "#fff7ed" },
+    5: { label: "Critica", color: "#dc2626", bgColor: "#fef2f2" },
+  };
 
+  // Appointment type labels
+  const appointmentTypeLabels: Record<string, string> = {
+    visita: "Visita",
+    firma: "Firma",
+    reunion: "Reunion",
+    llamada: "Llamada",
+    cierre: "Cierre",
+    viaje: "Viaje",
+  };
+
+  // Default config for fallback
+  const defaultConfig = { label: "Normal", color: "#3b82f6", bgColor: "#eff6ff" };
+
+  // Build task row HTML
+  const buildTaskRow = (task: Task) => {
+    const config = task.urgency
+      ? (urgencyConfig[task.urgency] ?? defaultConfig)
+      : defaultConfig;
+
+    const dueDateStr = task.dueDate
+      ? new Date(task.dueDate).toLocaleDateString("es-ES", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+        })
+      : "";
+    const dueTimeStr = task.dueTime ?? "";
+    const taskUrl = `${baseUrl}/tareas?taskId=${task.taskId.toString()}`;
+
+    return `
+      <tr>
+        <td style="padding: 12px 0; border-bottom: 1px solid #f3f4f6;">
+          <table cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td width="4" style="background: ${config.color}; border-radius: 2px;"></td>
+              <td style="padding-left: 12px;">
+                <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td>
+                      <a href="${taskUrl}" style="color: #111827; text-decoration: none; font-size: 14px; font-weight: 500; line-height: 1.4;">
+                        ${task.title}
+                      </a>
+                    </td>
+                    <td align="right" style="white-space: nowrap;">
+                      <span style="display: inline-block; padding: 2px 8px; background: ${config.bgColor}; color: ${config.color}; font-size: 11px; font-weight: 500; border-radius: 10px;">
+                        ${config.label}
+                      </span>
+                    </td>
+                  </tr>
+                  ${
+                    dueDateStr || dueTimeStr
+                      ? `
+                  <tr>
+                    <td colspan="2" style="padding-top: 4px;">
+                      <span style="color: #6b7280; font-size: 12px;">
+                        ${dueDateStr}${dueTimeStr ? ` a las ${dueTimeStr}` : ""}
+                      </span>
+                    </td>
+                  </tr>
+                  `
+                      : ""
+                  }
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `;
+  };
+
+  // Build appointment row HTML
+  const buildAppointmentRow = (appointment: Appointment) => {
+    const startDate = new Date(appointment.datetimeStart);
+    const endDate = new Date(appointment.datetimeEnd);
+
+    const timeStr = `${startDate.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} - ${endDate.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`;
+    const dateStr = startDate.toLocaleDateString("es-ES", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    });
+
+    const typeLabel = appointment.type
+      ? (appointmentTypeLabels[appointment.type.toLowerCase()] ??
+        appointment.type)
+      : "Cita";
+
+    const appointmentUrl = `${baseUrl}/calendario?appointmentId=${appointment.appointmentId.toString()}`;
+
+    return `
+      <tr>
+        <td style="padding: 12px 0; border-bottom: 1px solid #f3f4f6;">
+          <table cellpadding="0" cellspacing="0" border="0" width="100%">
+            <tr>
+              <td width="4" style="background: #3b82f6; border-radius: 2px;"></td>
+              <td style="padding-left: 12px;">
+                <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                  <tr>
+                    <td>
+                      <a href="${appointmentUrl}" style="color: #111827; text-decoration: none; font-size: 14px; font-weight: 500; line-height: 1.4;">
+                        ${appointment.title}
+                      </a>
+                    </td>
+                    <td align="right" style="white-space: nowrap;">
+                      <span style="display: inline-block; padding: 2px 8px; background: #eff6ff; color: #3b82f6; font-size: 11px; font-weight: 500; border-radius: 10px;">
+                        ${typeLabel}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colspan="2" style="padding-top: 4px;">
+                      <span style="color: #6b7280; font-size: 12px;">
+                        ${dateStr} | ${timeStr}
+                      </span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `;
+  };
+
+  // Build tasks section
+  let tasksSectionHtml = "";
   if (hasTasks) {
-    const taskBriefing = generateTaskBriefingEmail({
-      tasks,
-      briefingType: "daily",
-      date,
-    });
-    // Extract the content section from the task briefing HTML
-    const taskContentRegex = /<div style="background: white[^>]*>([\s\S]*?)<\/div>\s*<\/div>\s*<div style="text-align: center/;
-    const taskContentMatch = taskContentRegex.exec(taskBriefing.html);
-    if (taskContentMatch?.[1]) {
-      tasksHtml = taskContentMatch[1];
-    }
+    const sortedTasks = [...tasks].sort(
+      (a, b) => (b.urgency ?? 2) - (a.urgency ?? 2),
+    );
+    tasksSectionHtml = `
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 24px;">
+        <tr>
+          <td style="padding-bottom: 12px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-size: 13px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">
+                  Tareas pendientes
+                </td>
+                <td align="right">
+                  <span style="display: inline-block; padding: 2px 10px; background: #f3f4f6; color: #6b7280; font-size: 12px; font-weight: 500; border-radius: 10px;">
+                    ${taskCount}
+                  </span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        ${sortedTasks.map(buildTaskRow).join("")}
+      </table>
+    `;
   }
 
+  // Build appointments section
+  let appointmentsSectionHtml = "";
   if (hasAppointments) {
-    const appointmentBriefing = generateAppointmentBriefingEmail({
-      appointments,
-      briefingType: "daily",
-      date,
-    });
-    // Extract the content section from the appointment briefing HTML
-    const appointmentContentRegex = /<div style="background: white[^>]*>([\s\S]*?)<\/div>\s*<\/div>\s*<div style="text-align: center/;
-    const appointmentContentMatch = appointmentContentRegex.exec(appointmentBriefing.html);
-    if (appointmentContentMatch?.[1]) {
-      appointmentsHtml = appointmentContentMatch[1];
-    }
+    const sortedAppointments = [...appointments].sort(
+      (a, b) =>
+        new Date(a.datetimeStart).getTime() -
+        new Date(b.datetimeStart).getTime(),
+    );
+    appointmentsSectionHtml = `
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 24px;">
+        <tr>
+          <td style="padding-bottom: 12px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-size: 13px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">
+                  Citas programadas
+                </td>
+                <td align="right">
+                  <span style="display: inline-block; padding: 2px 10px; background: #f3f4f6; color: #6b7280; font-size: 12px; font-weight: 500; border-radius: 10px;">
+                    ${appointmentCount}
+                  </span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        ${sortedAppointments.map(buildAppointmentRow).join("")}
+      </table>
+    `;
   }
 
-  // Build intro message
-  let introMessage = "Tus actividades para hoy y mañana:";
-  if (hasTasks && hasAppointments) {
-    introMessage = `Tus tareas y citas para hoy y mañana:`;
-  } else if (hasTasks) {
-    introMessage = `Tus tareas para hoy y mañana:`;
-  } else if (hasAppointments) {
-    introMessage = `Tus citas para hoy y mañana:`;
+  // Empty state
+  const emptyStateHtml = `
+    <table cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td align="center" style="padding: 32px 20px;">
+          <div style="font-size: 32px; margin-bottom: 12px;">&#9728;</div>
+          <p style="margin: 0; color: #6b7280; font-size: 14px;">
+            No tienes actividades programadas para hoy.
+          </p>
+          <p style="margin: 8px 0 0 0; color: #9ca3af; font-size: 13px;">
+            Disfruta de un dia tranquilo.
+          </p>
+        </td>
+      </tr>
+    </table>
+  `;
+
+  // Build action buttons
+  let actionButtonsHtml = "";
+  if (hasTasks || hasAppointments) {
+    const buttons: string[] = [];
+    if (hasTasks) {
+      buttons.push(`
+        <td style="padding: 0 6px;">
+          <a href="${baseUrl}/tareas"
+             style="display: inline-block; padding: 10px 20px; background: #111827; color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 500; border-radius: 6px;">
+            Ver tareas
+          </a>
+        </td>
+      `);
+    }
+    if (hasAppointments) {
+      buttons.push(`
+        <td style="padding: 0 6px;">
+          <a href="${baseUrl}/calendario"
+             style="display: inline-block; padding: 10px 20px; background: ${hasTasks ? "#ffffff" : "#111827"}; color: ${hasTasks ? "#111827" : "#ffffff"}; text-decoration: none; font-size: 13px; font-weight: 500; border-radius: 6px; ${hasTasks ? "border: 1px solid #e5e7eb;" : ""}">
+            Ver calendario
+          </a>
+        </td>
+      `);
+    }
+    actionButtonsHtml = `
+      <table cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr>
+          <td align="center" style="padding-top: 8px;">
+            <table cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                ${buttons.join("")}
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    `;
   }
 
   const html = `
@@ -112,136 +307,141 @@ export function generateDailyBriefingEmail(
     <html>
       <head>
         <meta charset="utf-8">
-        <title>${subject} - Vesta CRM</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+        <style>
+          @media only screen and (max-width: 600px) {
+            .email-container { width: 100% !important; padding: 16px !important; }
+            .email-padding { padding: 0 20px !important; }
+          }
+        </style>
       </head>
-      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 700px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #1f2937; margin-bottom: 10px;">
-            Vesta <span style="background: linear-gradient(to right, #f59e0b, #f43f5e); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">CRM</span>
-          </h1>
-        </div>
-        
-        <div style="background: #f9fafb; padding: 30px; border-radius: 8px; border: 1px solid #e5e7eb;">
-          <h2 style="color: #1f2937; margin-bottom: 20px; font-size: 24px;">
-            📋 Resumen Diario
-          </h2>
-          
-          <p style="margin-bottom: 24px; font-size: 16px; color: #374151;">
-            ${introMessage}
-          </p>
-          
-          ${totalCount === 0 ? `
-            <div style="background: white; padding: 24px; border-radius: 6px; text-align: center;">
-              <p style="color: #6b7280; font-size: 16px;">No tienes actividades programadas para hoy o mañana.</p>
-            </div>
-          ` : `
-            <div style="background: white; padding: 24px; border-radius: 6px; margin-bottom: 24px;">
-              ${hasTasks ? `
-                <div style="margin-bottom: ${hasAppointments ? "32px" : "0"}">
-                  <h3 style="color: #1f2937; font-size: 20px; font-weight: 600; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #3b82f6;">
-                    📋 Tareas (${taskCount})
-                  </h3>
-                  ${tasksHtml}
-                </div>
-              ` : ""}
-              
-              ${hasAppointments ? `
-                <div>
-                  <h3 style="color: #1f2937; font-size: 20px; font-weight: 600; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #3b82f6;">
-                    📅 Citas (${appointmentCount})
-                  </h3>
-                  ${appointmentsHtml}
-                </div>
-              ` : ""}
-            </div>
-          `}
-          
-          <div style="text-align: center; margin-top: 30px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
-            ${hasTasks ? `
-              <a href="${baseUrl}/tareas" 
-                 style="background: linear-gradient(to right, #f59e0b, #f43f5e); 
-                        color: white; 
-                        padding: 14px 32px; 
-                        text-decoration: none; 
-                        border-radius: 6px; 
-                        font-weight: bold; 
-                        font-size: 16px;
-                        display: inline-block;
-                        margin-right: ${hasAppointments ? "12px" : "0"}">
-                Ver todas las tareas
-              </a>
-            ` : ""}
-            ${hasAppointments ? `
-              <a href="${baseUrl}/calendario" 
-                 style="background: linear-gradient(to right, #f59e0b, #f43f5e); 
-                        color: white; 
-                        padding: 14px 32px; 
-                        text-decoration: none; 
-                        border-radius: 6px; 
-                        font-weight: bold; 
-                        font-size: 16px;
-                        display: inline-block;">
-                Ver calendario
-              </a>
-            ` : ""}
-          </div>
-        </div>
-        
-        <div style="text-align: center; margin-top: 30px; color: #6b7280; font-size: 14px;">
-          <p>Este email fue enviado por Vesta CRM</p>
-          <p>© ${new Date().getFullYear()} Vesta CRM. Todos los derechos reservados.</p>
-        </div>
+      <body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f9fafb;">
+          <tr>
+            <td align="center" style="padding: 40px 20px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width: 560px; background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);" class="email-container">
+
+                <!-- Header -->
+                <tr>
+                  <td style="padding: 32px 32px 24px 32px; border-bottom: 1px solid #f3f4f6;">
+                    <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                      <tr>
+                        <td>
+                          <span style="font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px;">
+                            Resumen diario
+                          </span>
+                        </td>
+                        <td align="right">
+                          <span style="font-size: 12px; color: #6b7280;">
+                            ${date ?? new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" style="padding-top: 8px;">
+                          <h1 style="margin: 0; font-size: 22px; font-weight: 600; color: #111827; line-height: 1.3;">
+                            Buenos dias
+                          </h1>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" style="padding-top: 6px;">
+                          <p style="margin: 0; font-size: 14px; color: #6b7280; line-height: 1.5;">
+                            ${hasTasks || hasAppointments ? "Esto es lo que tienes programado para hoy." : "Tu dia esta libre de compromisos."}
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Content -->
+                <tr>
+                  <td style="padding: 24px 32px;">
+                    ${hasTasks || hasAppointments ? `${tasksSectionHtml}${appointmentsSectionHtml}` : emptyStateHtml}
+                  </td>
+                </tr>
+
+                <!-- Action Buttons -->
+                ${
+                  hasTasks || hasAppointments
+                    ? `
+                <tr>
+                  <td style="padding: 0 32px 32px 32px;">
+                    ${actionButtonsHtml}
+                  </td>
+                </tr>
+                `
+                    : ""
+                }
+
+                <!-- Footer -->
+                <tr>
+                  <td style="padding: 20px 32px; background: #f9fafb; border-radius: 0 0 12px 12px;">
+                    <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                      <tr>
+                        <td align="center">
+                          <span style="font-size: 12px; color: #9ca3af;">
+                            Vesta CRM
+                          </span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+        </table>
       </body>
     </html>
   `;
 
   // Build text version
-  let tasksText = "";
-  let appointmentsText = "";
+  let textContent = `${subject}\n\n`;
+  textContent += `${date ?? new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })}\n\n`;
 
-  if (hasTasks) {
-    const taskBriefing = generateTaskBriefingEmail({
-      tasks,
-      briefingType: "daily",
-      date,
-    });
-    // Extract text content
-    const taskTextRegex = /TAREAS:([\s\S]*?)(?=Ver todas|$)/;
-    const taskTextMatch = taskTextRegex.exec(taskBriefing.text);
-    if (taskTextMatch?.[1]) {
-      tasksText = `\n📋 TAREAS:\n${taskTextMatch[1]}`;
+  if (!hasTasks && !hasAppointments) {
+    textContent += "No tienes actividades programadas para hoy.\n";
+  } else {
+    if (hasTasks) {
+      textContent += `TAREAS PENDIENTES (${taskCount}):\n`;
+      tasks.forEach((task) => {
+        const config = task.urgency
+          ? (urgencyConfig[task.urgency] ?? defaultConfig)
+          : defaultConfig;
+        const dueDateStr = task.dueDate
+          ? new Date(task.dueDate).toLocaleDateString("es-ES", {
+              weekday: "short",
+              day: "numeric",
+              month: "short",
+            })
+          : "";
+        textContent += `- ${task.title} [${config.label}]${dueDateStr ? ` - ${dueDateStr}` : ""}\n`;
+      });
+      textContent += `\nVer tareas: ${baseUrl}/tareas\n\n`;
+    }
+
+    if (hasAppointments) {
+      textContent += `CITAS PROGRAMADAS (${appointmentCount}):\n`;
+      appointments.forEach((apt) => {
+        const startDate = new Date(apt.datetimeStart);
+        const timeStr = startDate.toLocaleTimeString("es-ES", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        const typeLabel = apt.type
+          ? (appointmentTypeLabels[apt.type.toLowerCase()] ?? apt.type)
+          : "Cita";
+        textContent += `- ${apt.title} [${typeLabel}] - ${timeStr}\n`;
+      });
+      textContent += `\nVer calendario: ${baseUrl}/calendario\n`;
     }
   }
 
-  if (hasAppointments) {
-    const appointmentBriefing = generateAppointmentBriefingEmail({
-      appointments,
-      briefingType: "daily",
-      date,
-    });
-    // Extract text content
-    const appointmentTextRegex = /📅 [^:]+:([\s\S]*?)(?=Ver calendario|$)/;
-    const appointmentTextMatch = appointmentTextRegex.exec(appointmentBriefing.text);
-    if (appointmentTextMatch?.[1]) {
-      appointmentsText = `\n📅 CITAS:\n${appointmentTextMatch[1]}`;
-    }
-  }
+  textContent += `\n---\nVesta CRM`;
 
-  const text = `
-${subject} - Vesta CRM
-
-${introMessage}
-
-${totalCount === 0 ? "No tienes actividades programadas para hoy o mañana." : `${tasksText}${appointmentsText}`}
-
-${hasTasks ? `Ver todas las tareas: ${baseUrl}/tareas` : ""}
-${hasAppointments ? `Ver calendario: ${baseUrl}/calendario` : ""}
-
-Este email fue enviado por Vesta CRM
-© ${new Date().getFullYear()} Vesta CRM. Todos los derechos reservados.
-  `;
-
-  return { subject, html, text };
+  return { subject, html, text: textContent };
 }
-
-
