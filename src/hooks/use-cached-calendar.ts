@@ -382,12 +382,16 @@ export function useSimpleCalendar(
       },
     });
     
-    // Reset fetching flag if it's stuck (safety measure)
-    if (isFetchingRef.current && loading) {
-      console.warn("⚠️ [useCachedCalendar] Refetch called while already fetching, resetting state");
+    // ALWAYS reset fetching flag before refetch to ensure we don't skip the fetch
+    // This handles race conditions where isFetchingRef got stuck true
+    if (isFetchingRef.current) {
+      console.warn("⚠️ [useCachedCalendar] Resetting stuck isFetchingRef before refetch");
       isFetchingRef.current = false;
-      setLoading(false);
     }
+    
+    // Clear optimistic events before refetch since server data is authoritative
+    // This prevents duplicates when server returns the newly created/updated appointment
+    setOptimisticEvents([]);
     
     try {
       console.log("📡 [useCachedCalendar] Calling fetchAppointments...");

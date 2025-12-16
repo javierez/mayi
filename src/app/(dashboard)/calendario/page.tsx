@@ -1033,8 +1033,11 @@ export default function AppointmentsPage() {
         mode={editMode}
         appointmentId={editingAppointmentId ?? undefined}
         onSuccess={() => {
-          // Trigger refresh of calendar view after successful create/update
-          void refetch();
+          // Small delay to allow revalidatePath to propagate in production
+          // before fetching fresh data from server
+          setTimeout(() => {
+            void refetch();
+          }, 150);
         }}
         addOptimisticEvent={addOptimisticEvent}
         removeOptimisticEvent={removeOptimisticEvent}
