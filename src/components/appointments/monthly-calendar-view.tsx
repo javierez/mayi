@@ -165,12 +165,12 @@ const formatWeekday = (index: number) => {
     .toUpperCase();
 };
 
-// Helper to format time
+// Helper to format time using local time components (avoiding timezone conversion)
+// This ensures times display as stored (local time), not converted through timezones
 const formatTime = (date: Date) => {
-  return new Intl.DateTimeFormat("es-ES", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
 };
 
 // ===== Multi-day spanning event support =====

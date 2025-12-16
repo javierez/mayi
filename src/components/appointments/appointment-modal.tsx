@@ -136,6 +136,9 @@ export default function AppointmentModal({
 
         <div className="flex flex-1 flex-col overflow-hidden">
           <AppointmentForm
+            // Key forces remount when switching between create/edit modes
+            // This ensures form state is properly re-initialized
+            key={mode === "edit" && appointmentId ? `edit-${appointmentId.toString()}` : "create"}
             initialData={initialData}
             onSubmit={handleSubmit}
             onCancel={handleCancel}

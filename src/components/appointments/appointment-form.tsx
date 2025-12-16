@@ -1254,15 +1254,17 @@ export default function AppointmentForm({
         console.log(
           "Updating appointment in edit mode with ID:",
           appointmentId,
+          "with data:",
+          finalFormData,
         );
         result = await updateAppointmentAction(
           appointmentId,
-          formData as AppointmentFormData,
+          finalFormData as AppointmentFormData,
         );
       } else {
         // Create new appointment
-        console.log("Creating new appointment in create mode");
-        result = await createAppointmentAction(formData as AppointmentFormData);
+        console.log("Creating new appointment in create mode with data:", finalFormData);
+        result = await createAppointmentAction(finalFormData as AppointmentFormData);
       }
 
       if (result.success) {

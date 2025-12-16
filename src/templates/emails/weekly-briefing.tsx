@@ -4,6 +4,9 @@
  * Generates a refined weekly briefing email with tasks and appointments
  * for the upcoming week. Uses TABLE-BASED layouts for maximum
  * email client compatibility.
+ *
+ * IMPORTANT: Uses BOX-BASED design consistent with task and appointment
+ * notification templates for visual consistency across all emails.
  */
 
 import type { Task } from "~/lib/data";
@@ -58,13 +61,13 @@ export function generateWeeklyBriefingEmail(
   // Urgency labels and colors
   const urgencyConfig: Record<
     number,
-    { label: string; color: string; bgColor: string }
+    { label: string; color: string; bgColor: string; borderColor: string }
   > = {
-    1: { label: "Baja", color: "#6b7280", bgColor: "#f9fafb" },
-    2: { label: "Normal", color: "#3b82f6", bgColor: "#eff6ff" },
-    3: { label: "Alta", color: "#f59e0b", bgColor: "#fffbeb" },
-    4: { label: "Urgente", color: "#f97316", bgColor: "#fff7ed" },
-    5: { label: "Critica", color: "#dc2626", bgColor: "#fef2f2" },
+    1: { label: "Baja", color: "#6b7280", bgColor: "#f9fafb", borderColor: "#e5e7eb" },
+    2: { label: "Normal", color: "#3b82f6", bgColor: "#eff6ff", borderColor: "#dbeafe" },
+    3: { label: "Alta", color: "#f59e0b", bgColor: "#fffbeb", borderColor: "#fde68a" },
+    4: { label: "Urgente", color: "#f97316", bgColor: "#fff7ed", borderColor: "#fed7aa" },
+    5: { label: "Critica", color: "#dc2626", bgColor: "#fef2f2", borderColor: "#fecaca" },
   };
 
   // Appointment type labels
@@ -138,42 +141,43 @@ export function generateWeeklyBriefingEmail(
   const dayGroups = groupByDay();
 
   // Default config for fallback
-  const defaultConfig = { label: "Normal", color: "#3b82f6", bgColor: "#eff6ff" };
+  const defaultConfig = { label: "Normal", color: "#3b82f6", bgColor: "#eff6ff", borderColor: "#dbeafe" };
 
-  // Build task item HTML (compact version for weekly view)
-  const buildTaskItem = (task: Task) => {
+  // Build task box HTML (box-based design for weekly view)
+  const buildTaskBox = (task: Task) => {
     const config = task.urgency
       ? (urgencyConfig[task.urgency] ?? defaultConfig)
       : defaultConfig;
     const taskUrl = `${baseUrl}/tareas?taskId=${task.taskId.toString()}`;
-    const timeStr = task.dueTime ? `${task.dueTime}` : "";
+    const timeStr = task.dueTime ? `a las ${task.dueTime}` : "";
 
     return `
-      <tr>
-        <td style="padding: 8px 0;">
-          <table cellpadding="0" cellspacing="0" border="0" width="100%">
-            <tr>
-              <td width="6" style="background: ${config.color}; border-radius: 1px;"></td>
-              <td style="padding-left: 10px;">
-                <a href="${taskUrl}" style="color: #111827; text-decoration: none; font-size: 13px; font-weight: 500;">
-                  ${task.title}
-                </a>
-                ${timeStr ? `<span style="color: #9ca3af; font-size: 11px; margin-left: 8px;">${timeStr}</span>` : ""}
-              </td>
-              <td align="right" width="60">
-                <span style="display: inline-block; padding: 1px 6px; background: ${config.bgColor}; color: ${config.color}; font-size: 10px; font-weight: 500; border-radius: 8px;">
-                  ${config.label}
-                </span>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid ${config.borderColor}; border-radius: 6px; background: ${config.bgColor};">
+        <tr>
+          <td style="padding: 10px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-size: 10px; font-weight: 600; color: ${config.color}; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">
+                  Tarea · ${config.label}
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="${taskUrl}" style="color: #111827; text-decoration: none; font-size: 13px; font-weight: 500; line-height: 1.4;">
+                    ${task.title}
+                  </a>
+                  ${timeStr ? `<span style="color: #9ca3af; font-size: 11px; margin-left: 8px;">${timeStr}</span>` : ""}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
     `;
   };
 
-  // Build appointment item HTML (compact version for weekly view)
-  const buildAppointmentItem = (appointment: Appointment) => {
+  // Build appointment box HTML (box-based design for weekly view)
+  const buildAppointmentBox = (appointment: Appointment) => {
     const startDate = new Date(appointment.datetimeStart);
     const endDate = new Date(appointment.datetimeEnd);
     const timeStr = `${startDate.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} - ${endDate.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`;
@@ -186,30 +190,31 @@ export function generateWeeklyBriefingEmail(
     const appointmentUrl = `${baseUrl}/calendario?appointmentId=${appointment.appointmentId.toString()}`;
 
     return `
-      <tr>
-        <td style="padding: 8px 0;">
-          <table cellpadding="0" cellspacing="0" border="0" width="100%">
-            <tr>
-              <td width="6" style="background: #3b82f6; border-radius: 1px;"></td>
-              <td style="padding-left: 10px;">
-                <a href="${appointmentUrl}" style="color: #111827; text-decoration: none; font-size: 13px; font-weight: 500;">
-                  ${appointment.title}
-                </a>
-                <span style="color: #9ca3af; font-size: 11px; margin-left: 8px;">${timeStr}</span>
-              </td>
-              <td align="right" width="60">
-                <span style="display: inline-block; padding: 1px 6px; background: #eff6ff; color: #3b82f6; font-size: 10px; font-weight: 500; border-radius: 8px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #dbeafe; border-radius: 6px; background: #eff6ff;">
+        <tr>
+          <td style="padding: 10px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-size: 10px; font-weight: 600; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">
                   ${typeLabel}
-                </span>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="${appointmentUrl}" style="color: #111827; text-decoration: none; font-size: 13px; font-weight: 500; line-height: 1.4;">
+                    ${appointment.title}
+                  </a>
+                  <span style="color: #9ca3af; font-size: 11px; margin-left: 8px;">${timeStr}</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
     `;
   };
 
-  // Build day section HTML
+  // Build day section HTML (box-based)
   const buildDaySection = (group: DayGroup, isFirst: boolean) => {
     const capitalizedDay =
       group.dayLabel.charAt(0).toUpperCase() + group.dayLabel.slice(1);
@@ -226,32 +231,42 @@ export function generateWeeklyBriefingEmail(
     );
 
     return `
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 20px; ${!isFirst ? "border-top: 1px solid #f3f4f6; padding-top: 20px;" : ""}">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 16px; ${!isFirst ? "border-top: 1px solid #f3f4f6; padding-top: 16px;" : ""}">
+        <!-- Day Header Box -->
         <tr>
           <td style="padding-bottom: 10px;">
-            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
               <tr>
-                <td>
-                  <span style="font-size: 14px; font-weight: 600; color: #111827;">
-                    ${capitalizedDay}
-                  </span>
-                </td>
-                <td align="right">
-                  <span style="display: inline-block; padding: 2px 8px; background: #f3f4f6; color: #6b7280; font-size: 11px; font-weight: 500; border-radius: 8px;">
-                    ${itemCount} ${itemCount === 1 ? "item" : "items"}
-                  </span>
+                <td style="padding: 10px;">
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">
+                        ${capitalizedDay}
+                      </td>
+                      <td align="right">
+                        <span style="display: inline-block; padding: 2px 8px; background: #f3f4f6; color: #6b7280; font-size: 11px; font-weight: 500; border-radius: 8px;">
+                          ${itemCount} ${itemCount === 1 ? "item" : "items"}
+                        </span>
+                      </td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
             </table>
           </td>
         </tr>
-        ${sortedTasks.map(buildTaskItem).join("")}
-        ${sortedAppointments.map(buildAppointmentItem).join("")}
+        <!-- Day Items -->
+        <tr>
+          <td>
+            ${sortedTasks.map(buildTaskBox).join("")}
+            ${sortedAppointments.map(buildAppointmentBox).join("")}
+          </td>
+        </tr>
       </table>
     `;
   };
 
-  // Build summary stats
+  // Build summary stats (box-based)
   const buildSummaryStats = () => {
     const criticalCount = tasks.filter((t) => t.urgency === 5).length;
     const urgentCount = tasks.filter(
@@ -262,59 +277,70 @@ export function generateWeeklyBriefingEmail(
 
     if (hasTasks) {
       stats.push(`
-        <td style="padding: 12px 16px; background: #f9fafb; border-radius: 8px; text-align: center;">
-          <div style="font-size: 24px; font-weight: 600; color: #111827; line-height: 1;">${taskCount}</div>
-          <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">Tareas</div>
-        </td>
+        <table cellpadding="0" cellspacing="0" border="0" style="display: inline-block; margin-right: 8px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
+          <tr>
+            <td style="padding: 12px 16px; text-align: center;">
+              <div style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Tareas</div>
+              <div style="font-size: 22px; font-weight: 600; color: #111827; line-height: 1;">${taskCount}</div>
+            </td>
+          </tr>
+        </table>
       `);
     }
 
     if (hasAppointments) {
       stats.push(`
-        <td style="padding: 12px 16px; background: #f9fafb; border-radius: 8px; text-align: center;">
-          <div style="font-size: 24px; font-weight: 600; color: #3b82f6; line-height: 1;">${appointmentCount}</div>
-          <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">Citas</div>
-        </td>
+        <table cellpadding="0" cellspacing="0" border="0" style="display: inline-block; margin-right: 8px; border: 1px solid #dbeafe; border-radius: 6px; background: #eff6ff;">
+          <tr>
+            <td style="padding: 12px 16px; text-align: center;">
+              <div style="font-size: 10px; font-weight: 600; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Citas</div>
+              <div style="font-size: 22px; font-weight: 600; color: #3b82f6; line-height: 1;">${appointmentCount}</div>
+            </td>
+          </tr>
+        </table>
       `);
     }
 
     if (criticalCount > 0) {
       stats.push(`
-        <td style="padding: 12px 16px; background: #fef2f2; border-radius: 8px; text-align: center;">
-          <div style="font-size: 24px; font-weight: 600; color: #dc2626; line-height: 1;">${criticalCount}</div>
-          <div style="font-size: 11px; color: #dc2626; margin-top: 4px;">Criticas</div>
-        </td>
+        <table cellpadding="0" cellspacing="0" border="0" style="display: inline-block; margin-right: 8px; border: 1px solid #fecaca; border-radius: 6px; background: #fef2f2;">
+          <tr>
+            <td style="padding: 12px 16px; text-align: center;">
+              <div style="font-size: 10px; font-weight: 600; color: #dc2626; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Criticas</div>
+              <div style="font-size: 22px; font-weight: 600; color: #dc2626; line-height: 1;">${criticalCount}</div>
+            </td>
+          </tr>
+        </table>
       `);
     } else if (urgentCount > 0) {
       stats.push(`
-        <td style="padding: 12px 16px; background: #fffbeb; border-radius: 8px; text-align: center;">
-          <div style="font-size: 24px; font-weight: 600; color: #f59e0b; line-height: 1;">${urgentCount}</div>
-          <div style="font-size: 11px; color: #f59e0b; margin-top: 4px;">Urgentes</div>
-        </td>
+        <table cellpadding="0" cellspacing="0" border="0" style="display: inline-block; margin-right: 8px; border: 1px solid #fde68a; border-radius: 6px; background: #fffbeb;">
+          <tr>
+            <td style="padding: 12px 16px; text-align: center;">
+              <div style="font-size: 10px; font-weight: 600; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Urgentes</div>
+              <div style="font-size: 22px; font-weight: 600; color: #f59e0b; line-height: 1;">${urgentCount}</div>
+            </td>
+          </tr>
+        </table>
       `);
     }
 
     if (stats.length === 0) return "";
 
-    // Add spacing between cells
-    const spacedStats = stats.flatMap((stat, i) =>
-      i < stats.length - 1
-        ? [stat, '<td width="12"></td>']
-        : [stat],
-    );
-
     return `
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 24px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 20px;">
         <tr>
-          ${spacedStats.join("")}
+          <td align="center">
+            ${stats.join("")}
+          </td>
         </tr>
       </table>
     `;
   };
 
-  // Empty state
+  // Empty state (box-based)
   const emptyStateHtml = `
-    <table cellpadding="0" cellspacing="0" border="0" width="100%">
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
       <tr>
         <td align="center" style="padding: 32px 20px;">
           <div style="font-size: 32px; margin-bottom: 12px;">&#127796;</div>

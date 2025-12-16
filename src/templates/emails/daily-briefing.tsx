@@ -4,6 +4,9 @@
  * Generates a refined daily briefing email with tasks and appointments
  * for today and tomorrow. Uses TABLE-BASED layouts for maximum
  * email client compatibility.
+ *
+ * IMPORTANT: Uses BOX-BASED design consistent with task and appointment
+ * notification templates for visual consistency across all emails.
  */
 
 import type { Task } from "~/lib/data";
@@ -51,13 +54,13 @@ export function generateDailyBriefingEmail(
   // Urgency labels and colors
   const urgencyConfig: Record<
     number,
-    { label: string; color: string; bgColor: string }
+    { label: string; color: string; bgColor: string; borderColor: string }
   > = {
-    1: { label: "Baja", color: "#6b7280", bgColor: "#f9fafb" },
-    2: { label: "Normal", color: "#3b82f6", bgColor: "#eff6ff" },
-    3: { label: "Alta", color: "#f59e0b", bgColor: "#fffbeb" },
-    4: { label: "Urgente", color: "#f97316", bgColor: "#fff7ed" },
-    5: { label: "Critica", color: "#dc2626", bgColor: "#fef2f2" },
+    1: { label: "Baja", color: "#6b7280", bgColor: "#f9fafb", borderColor: "#e5e7eb" },
+    2: { label: "Normal", color: "#3b82f6", bgColor: "#eff6ff", borderColor: "#dbeafe" },
+    3: { label: "Alta", color: "#f59e0b", bgColor: "#fffbeb", borderColor: "#fde68a" },
+    4: { label: "Urgente", color: "#f97316", bgColor: "#fff7ed", borderColor: "#fed7aa" },
+    5: { label: "Critica", color: "#dc2626", bgColor: "#fef2f2", borderColor: "#fecaca" },
   };
 
   // Appointment type labels
@@ -71,10 +74,10 @@ export function generateDailyBriefingEmail(
   };
 
   // Default config for fallback
-  const defaultConfig = { label: "Normal", color: "#3b82f6", bgColor: "#eff6ff" };
+  const defaultConfig = { label: "Normal", color: "#3b82f6", bgColor: "#eff6ff", borderColor: "#dbeafe" };
 
-  // Build task row HTML
-  const buildTaskRow = (task: Task) => {
+  // Build task box HTML (box-based design)
+  const buildTaskBox = (task: Task) => {
     const config = task.urgency
       ? (urgencyConfig[task.urgency] ?? defaultConfig)
       : defaultConfig;
@@ -90,49 +93,40 @@ export function generateDailyBriefingEmail(
     const taskUrl = `${baseUrl}/tareas?taskId=${task.taskId.toString()}`;
 
     return `
-      <tr>
-        <td style="padding: 12px 0; border-bottom: 1px solid #f3f4f6;">
-          <table cellpadding="0" cellspacing="0" border="0" width="100%">
-            <tr>
-              <td width="4" style="background: ${config.color}; border-radius: 2px;"></td>
-              <td style="padding-left: 12px;">
-                <table cellpadding="0" cellspacing="0" border="0" width="100%">
-                  <tr>
-                    <td>
-                      <a href="${taskUrl}" style="color: #111827; text-decoration: none; font-size: 14px; font-weight: 500; line-height: 1.4;">
-                        ${task.title}
-                      </a>
-                    </td>
-                    <td align="right" style="white-space: nowrap;">
-                      <span style="display: inline-block; padding: 2px 8px; background: ${config.bgColor}; color: ${config.color}; font-size: 11px; font-weight: 500; border-radius: 10px;">
-                        ${config.label}
-                      </span>
-                    </td>
-                  </tr>
-                  ${
-                    dueDateStr || dueTimeStr
-                      ? `
-                  <tr>
-                    <td colspan="2" style="padding-top: 4px;">
-                      <span style="color: #6b7280; font-size: 12px;">
-                        ${dueDateStr}${dueTimeStr ? ` a las ${dueTimeStr}` : ""}
-                      </span>
-                    </td>
-                  </tr>
-                  `
-                      : ""
-                  }
-                </table>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 8px; border: 1px solid ${config.borderColor}; border-radius: 6px; background: ${config.bgColor};">
+        <tr>
+          <td style="padding: 12px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-size: 10px; font-weight: 600; color: ${config.color}; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 6px;">
+                  Tarea · ${config.label}
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="${taskUrl}" style="color: #111827; text-decoration: none; font-size: 14px; font-weight: 500; line-height: 1.4;">
+                    ${task.title}
+                  </a>
+                </td>
+              </tr>
+              ${(dueDateStr || dueTimeStr) ? `
+              <tr>
+                <td style="padding-top: 6px;">
+                  <span style="font-size: 12px; color: #6b7280;">
+                    ${dueDateStr}${dueTimeStr ? ` a las ${dueTimeStr}` : ""}
+                  </span>
+                </td>
+              </tr>
+              ` : ""}
+            </table>
+          </td>
+        </tr>
+      </table>
     `;
   };
 
-  // Build appointment row HTML
-  const buildAppointmentRow = (appointment: Appointment) => {
+  // Build appointment box HTML (box-based design)
+  const buildAppointmentBox = (appointment: Appointment) => {
     const startDate = new Date(appointment.datetimeStart);
     const endDate = new Date(appointment.datetimeEnd);
 
@@ -151,38 +145,33 @@ export function generateDailyBriefingEmail(
     const appointmentUrl = `${baseUrl}/calendario?appointmentId=${appointment.appointmentId.toString()}`;
 
     return `
-      <tr>
-        <td style="padding: 12px 0; border-bottom: 1px solid #f3f4f6;">
-          <table cellpadding="0" cellspacing="0" border="0" width="100%">
-            <tr>
-              <td width="4" style="background: #3b82f6; border-radius: 2px;"></td>
-              <td style="padding-left: 12px;">
-                <table cellpadding="0" cellspacing="0" border="0" width="100%">
-                  <tr>
-                    <td>
-                      <a href="${appointmentUrl}" style="color: #111827; text-decoration: none; font-size: 14px; font-weight: 500; line-height: 1.4;">
-                        ${appointment.title}
-                      </a>
-                    </td>
-                    <td align="right" style="white-space: nowrap;">
-                      <span style="display: inline-block; padding: 2px 8px; background: #eff6ff; color: #3b82f6; font-size: 11px; font-weight: 500; border-radius: 10px;">
-                        ${typeLabel}
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td colspan="2" style="padding-top: 4px;">
-                      <span style="color: #6b7280; font-size: 12px;">
-                        ${dateStr} | ${timeStr}
-                      </span>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 8px; border: 1px solid #dbeafe; border-radius: 6px; background: #eff6ff;">
+        <tr>
+          <td style="padding: 12px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-size: 10px; font-weight: 600; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 6px;">
+                  ${typeLabel}
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="${appointmentUrl}" style="color: #111827; text-decoration: none; font-size: 14px; font-weight: 500; line-height: 1.4;">
+                    ${appointment.title}
+                  </a>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding-top: 6px;">
+                  <span style="font-size: 12px; color: #6b7280;">
+                    ${dateStr} | ${timeStr}
+                  </span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
     `;
   };
 
@@ -193,24 +182,34 @@ export function generateDailyBriefingEmail(
       (a, b) => (b.urgency ?? 2) - (a.urgency ?? 2),
     );
     tasksSectionHtml = `
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 24px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 20px;">
         <tr>
           <td style="padding-bottom: 12px;">
-            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
               <tr>
-                <td style="font-size: 13px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">
-                  Tareas pendientes
-                </td>
-                <td align="right">
-                  <span style="display: inline-block; padding: 2px 10px; background: #f3f4f6; color: #6b7280; font-size: 12px; font-weight: 500; border-radius: 10px;">
-                    ${taskCount}
-                  </span>
+                <td style="padding: 10px;">
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">
+                        Tareas pendientes
+                      </td>
+                      <td align="right">
+                        <span style="display: inline-block; padding: 2px 8px; background: #f3f4f6; color: #6b7280; font-size: 11px; font-weight: 500; border-radius: 10px;">
+                          ${taskCount}
+                        </span>
+                      </td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
             </table>
           </td>
         </tr>
-        ${sortedTasks.map(buildTaskRow).join("")}
+        <tr>
+          <td>
+            ${sortedTasks.map(buildTaskBox).join("")}
+          </td>
+        </tr>
       </table>
     `;
   }
@@ -224,31 +223,41 @@ export function generateDailyBriefingEmail(
         new Date(b.datetimeStart).getTime(),
     );
     appointmentsSectionHtml = `
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 24px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 20px;">
         <tr>
           <td style="padding-bottom: 12px;">
-            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
               <tr>
-                <td style="font-size: 13px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">
-                  Citas programadas
-                </td>
-                <td align="right">
-                  <span style="display: inline-block; padding: 2px 10px; background: #f3f4f6; color: #6b7280; font-size: 12px; font-weight: 500; border-radius: 10px;">
-                    ${appointmentCount}
-                  </span>
+                <td style="padding: 10px;">
+                  <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">
+                        Citas programadas
+                      </td>
+                      <td align="right">
+                        <span style="display: inline-block; padding: 2px 8px; background: #f3f4f6; color: #6b7280; font-size: 11px; font-weight: 500; border-radius: 10px;">
+                          ${appointmentCount}
+                        </span>
+                      </td>
+                    </tr>
+                  </table>
                 </td>
               </tr>
             </table>
           </td>
         </tr>
-        ${sortedAppointments.map(buildAppointmentRow).join("")}
+        <tr>
+          <td>
+            ${sortedAppointments.map(buildAppointmentBox).join("")}
+          </td>
+        </tr>
       </table>
     `;
   }
 
-  // Empty state
+  // Empty state (box-based)
   const emptyStateHtml = `
-    <table cellpadding="0" cellspacing="0" border="0" width="100%">
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
       <tr>
         <td align="center" style="padding: 32px 20px;">
           <div style="font-size: 32px; margin-bottom: 12px;">&#9728;</div>
