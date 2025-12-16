@@ -7,6 +7,7 @@ import { getAppointmentsByDateRangeAction } from "~/server/actions/appointments"
 interface CalendarEvent {
   appointmentId: bigint;
   userId: string;
+  assignedTo?: string | null;
   contactName: string;
   propertyAddress?: string;
   propertyTitle?: string;
@@ -204,6 +205,7 @@ function transformToCalendarEvent(
   return {
     appointmentId,
     userId: rawAppointment.userId,
+    assignedTo: rawAppointment.assignedTo,
     contactName,
     propertyAddress: rawAppointment.propertyStreet ?? undefined,
     propertyTitle: rawAppointment.propertyTitle ?? undefined,

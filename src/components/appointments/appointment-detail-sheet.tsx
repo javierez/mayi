@@ -122,6 +122,7 @@ interface AppointmentFormData {
   title?: string;
   notes?: string;
   appointmentType?: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje" | "Tarea";
+  assignedTo?: string; // FK → users.id (who is assigned to the appointment)
 }
 
 export interface AppointmentDetailSheetProps {
@@ -398,6 +399,8 @@ export function AppointmentDetailSheet({
         | "Cierre"
         | "Viaje"
         | "Tarea",
+      // Preserve assignedTo to prevent accidental reassignment on edit
+      assignedTo: appointment.assignedTo ?? undefined,
     };
 
     // Add listingId from appointment itself first, then override with context if provided

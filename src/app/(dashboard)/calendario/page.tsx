@@ -990,6 +990,7 @@ export default function AppointmentsPage() {
                   agentName: event.agentName ?? undefined,
                   isOptimistic: event.isOptimistic ?? false,
                   userId: event.userId, // Include userId for ownership check
+                  assignedTo: event.assignedTo, // Include assignedTo for edit form
                   listingContactId: event.listingContactId,
                   dealId: event.dealId,
                   prospectId: event.prospectId,
@@ -1037,8 +1038,8 @@ export default function AppointmentsPage() {
           // Add the appointment data directly to state - no refetch needed!
           // This eliminates the caching race condition entirely
           if (appointmentData) {
-            // Type assertion: ServerAppointmentData matches the flexible type expected by addServerEvent
-            addServerEvent(appointmentData as Parameters<typeof addServerEvent>[0]);
+            // Type assertion: ServerAppointmentData is compatible with addServerEvent's flexible type
+            addServerEvent(appointmentData as any);
           } else {
             // Fallback: if server didn't return data, refetch (shouldn't happen normally)
             console.warn("Server didn't return appointment data, falling back to refetch");

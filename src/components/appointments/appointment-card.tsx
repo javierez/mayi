@@ -75,6 +75,7 @@ export interface AppointmentData {
   listingId?: bigint;
   agentName?: string;
   isOptimistic?: boolean;
+  assignedTo?: string | null;
 }
 
 interface AppointmentCardProps {

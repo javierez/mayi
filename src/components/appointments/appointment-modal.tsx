@@ -25,6 +25,7 @@ interface AppointmentFormData {
   tripTimeMinutes?: number;
   notes?: string;
   appointmentType: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje";
+  assignedTo?: string; // FK → users.id (who is assigned to the appointment)
 }
 
 // Type for appointment data returned from server
