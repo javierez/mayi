@@ -212,19 +212,19 @@ export const createDefaultAppointmentEventNotifications =
     },
   });
 
-// Default quiet hours settings
+// Default quiet hours settings - disabled by default
 export const createDefaultQuietHours = (): QuietHoursSettings => ({
   enabled: false,
   startTime: "22:00",
   endTime: "08:00",
   days: {
-    monday: true,
-    tuesday: true,
-    wednesday: true,
-    thursday: true,
-    friday: true,
-    saturday: true,
-    sunday: true,
+    monday: false,
+    tuesday: false,
+    wednesday: false,
+    thursday: false,
+    friday: false,
+    saturday: false,
+    sunday: false,
   },
 });
 

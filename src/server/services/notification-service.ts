@@ -1274,6 +1274,25 @@ export async function notifyTaskOverdue(
       accountId,
     );
 
+    // Fetch creator/assigner information if available
+    let assignerEmail: string | undefined;
+    let assignerPhone: string | undefined;
+    let assignerName: string | undefined;
+    if (task.createdBy) {
+      try {
+        const { getUserByIdWithAuth } = await import("~/server/queries/users");
+        const creator = await getUserByIdWithAuth(task.createdBy);
+        if (creator) {
+          assignerEmail = creator.email ?? undefined;
+          assignerPhone = creator.phone ?? undefined;
+          assignerName = creator.name ?? undefined;
+        }
+      } catch (error) {
+        console.error("Error fetching creator data for overdue notification:", error);
+        // Continue without creator contact info
+      }
+    }
+
     const metadata: TaskNotificationMetadata = {
       taskTitle: task.title,
       taskDescription: task.description,
@@ -1287,6 +1306,11 @@ export async function notifyTaskOverdue(
       contact: contactData,
       owner: ownerData,
       buyer: buyerData,
+      assignerEmail,
+      assignerPhone,
+      assignerName,
+      assignedByName: assignerName, // For backward compatibility with template
+      reminderType: "immediate", // Mark as immediate notification for deduplication
     };
 
     const notification = await createNotificationInternal({

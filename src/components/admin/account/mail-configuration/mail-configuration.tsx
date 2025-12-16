@@ -10,7 +10,8 @@ import {
   getNotificationSettingsAction,
   updateNotificationSettingsAction,
 } from "~/app/actions/notification-settings";
-import { QuietHoursSection } from "./components/quiet-hours-section";
+// QuietHoursSection hidden for now - will be implemented later
+// import { QuietHoursSection } from "./components/quiet-hours-section";
 import { TaskEventsSection } from "./components/task-events-section";
 import { OverdueTasksSection } from "./components/overdue-tasks-section";
 import { TaskNotificationSection } from "./components/task-notification-section";
@@ -414,12 +415,6 @@ export const MailConfiguration = () => {
           <p className="text-sm text-red-800">{error}</p>
         </div>
       )}
-
-      {/* Notification Hours - Always visible at top */}
-      <QuietHoursSection
-        settings={settings.quietHours}
-        onUpdate={handleQuietHoursUpdate}
-      />
 
       {/* Tabs for Internas and Clientes */}
       <Tabs defaultValue="internas" className="w-full">

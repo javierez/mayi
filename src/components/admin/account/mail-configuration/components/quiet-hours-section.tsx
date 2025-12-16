@@ -1,5 +1,6 @@
 "use client";
 
+import { Moon, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -33,8 +34,40 @@ export function QuietHoursSection({
     });
   };
 
+  const disableAll = () => {
+    onUpdate({
+      ...settings,
+      enabled: false,
+      days: {
+        monday: false,
+        tuesday: false,
+        wednesday: false,
+        thursday: false,
+        friday: false,
+        saturday: false,
+        sunday: false,
+      },
+    });
+  };
+
   return (
-    <div className="space-y-4 border-b border-gray-200 pb-6">
+    <div className="group space-y-4 border-b border-gray-200 pb-6">
+      {/* Header with moon icon */}
+      <div className="flex items-center justify-center gap-2 text-gray-400">
+        <Moon className="h-4 w-4" />
+        <span className="text-xs tracking-wide">silencio</span>
+        {settings.enabled && (
+          <button
+            type="button"
+            onClick={disableAll}
+            className="ml-1 opacity-0 transition-opacity group-hover:opacity-60 hover:!opacity-100"
+            title="Desactivar"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        )}
+      </div>
+
       {/* Modern rounded square day buttons */}
       <div className="flex items-center justify-center gap-4">
         {daysOfWeek.flatMap((day, index) => [
@@ -61,7 +94,7 @@ export function QuietHoursSection({
       </div>
       
       {/* Modern digital clock time pickers */}
-      <div className="flex items-center justify-center gap-2">
+      <div className={`flex items-center justify-center gap-2 transition-opacity ${settings.enabled ? "" : "opacity-40"}`}>
         <Select
           value={settings.startTime}
           onValueChange={(value) =>

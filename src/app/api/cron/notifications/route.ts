@@ -551,6 +551,7 @@ export async function GET(request: NextRequest) {
         category: tasks.category,
         listingId: tasks.listingId,
         contactId: tasks.contactId,
+        createdBy: tasks.createdBy,
         accountId: users.accountId,
       })
       .from(tasks)
@@ -564,48 +565,50 @@ export async function GET(request: NextRequest) {
         ),
       );
 
-    // Check for critical tasks that just became overdue (within last 15 minutes)
-    const recentlyOverdue = new Date(now.getTime() - 15 * 60 * 1000);
-    
+    // Check for overdue tasks that need immediate notification
+    // Send immediate notification for any overdue task that hasn't been notified yet
     for (const task of overdueTasks) {
       const accountId = task.accountId;
       if (!accountId || typeof accountId !== "bigint" || !task.dueDate) continue;
 
       const dueDate = new Date(task.dueDate);
-      const isCritical = task.urgency === 5;
       
       // Combine dueDate and dueTime to get actual deadline
       // If dueTime is set, use it; otherwise default to end of day (23:59)
+      // Use UTC methods to match getSpainTimeAsUTC() representation
       let actualDeadline: Date;
       if (task.dueTime) {
         const timeParts = task.dueTime.split(":").map(Number);
         const hours = timeParts[0] ?? 23;
         const minutes = timeParts[1] ?? 59;
         actualDeadline = new Date(
-          dueDate.getFullYear(),
-          dueDate.getMonth(),
-          dueDate.getDate(),
-          hours,
-          minutes,
-          0,
-          0
+          Date.UTC(
+            dueDate.getUTCFullYear(),
+            dueDate.getUTCMonth(),
+            dueDate.getUTCDate(),
+            hours,
+            minutes,
+            0,
+            0
+          )
         );
       } else {
         // No dueTime, use end of day
         actualDeadline = new Date(
-          dueDate.getFullYear(),
-          dueDate.getMonth(),
-          dueDate.getDate(),
-          23,
-          59,
-          59,
-          999
+          Date.UTC(
+            dueDate.getUTCFullYear(),
+            dueDate.getUTCMonth(),
+            dueDate.getUTCDate(),
+            23,
+            59,
+            59,
+            999
+          )
         );
       }
       
-      // Check if task just became overdue (within last 15 minutes)
-      // Now uses actualDeadline which includes dueTime
-      if (actualDeadline >= recentlyOverdue && actualDeadline <= now) {
+      // Check if task is overdue (deadline has passed)
+      if (actualDeadline <= now) {
         // Check if immediate notification is enabled
         const settings = await getEmailSettingsForAccount(BigInt(accountId));
         if (settings.tasks.overdue.notifyWhenOverdue.emailEnabled) {
@@ -636,6 +639,7 @@ export async function GET(request: NextRequest) {
                     category: task.category ?? undefined,
                     listingId: task.listingId ?? undefined,
                     contactId: task.contactId ?? undefined,
+                    createdBy: task.createdBy ?? undefined,
                     isActive: true,
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -666,42 +670,21 @@ export async function GET(request: NextRequest) {
       const accountId = task.accountId;
       if (!accountId || typeof accountId !== "bigint") continue;
 
-      // Skip tasks that were just notified as immediate
-      // Calculate actual deadline including dueTime
-      const dueDate = new Date(task.dueDate!);
-      let taskDeadline: Date;
-      if (task.dueTime) {
-        const timeParts = task.dueTime.split(":").map(Number);
-        const hours = timeParts[0] ?? 23;
-        const minutes = timeParts[1] ?? 59;
-        taskDeadline = new Date(
-          dueDate.getFullYear(),
-          dueDate.getMonth(),
-          dueDate.getDate(),
-          hours,
-          minutes,
-          0,
-          0
-        );
-      } else {
-        taskDeadline = new Date(
-          dueDate.getFullYear(),
-          dueDate.getMonth(),
-          dueDate.getDate(),
-          23,
-          59,
-          59,
-          999
-        );
-      }
-      
-      if (taskDeadline >= recentlyOverdue && taskDeadline <= now) {
-        // Check if this task was handled as immediate notification
-        const settings = await getEmailSettingsForAccount(BigInt(accountId));
-        if (settings.tasks.overdue.notifyWhenOverdue.emailEnabled) {
-          const urgencyLevels = settings.tasks.overdue.notifyWhenOverdue.urgencyLevels;
-          if (shouldIncludeTaskByUrgency(task.urgency ?? undefined, urgencyLevels)) {
-            continue; // Already handled as immediate notification
+      // Skip tasks that already received an immediate notification
+      // Check if immediate notification exists for this task
+      const settings = await getEmailSettingsForAccount(BigInt(accountId));
+      if (settings.tasks.overdue.notifyWhenOverdue.emailEnabled) {
+        const urgencyLevels = settings.tasks.overdue.notifyWhenOverdue.urgencyLevels;
+        if (shouldIncludeTaskByUrgency(task.urgency ?? undefined, urgencyLevels)) {
+          const immediateNotificationExists = await reminderExistsForEntity(
+            BigInt(accountId),
+            "task",
+            task.taskId,
+            "task_overdue",
+            "immediate",
+          );
+          if (immediateNotificationExists) {
+            continue; // Already handled as immediate notification, skip digest
           }
         }
       }
@@ -727,6 +710,7 @@ export async function GET(request: NextRequest) {
         // Filter tasks by urgency levels for daily digest
         const dailyTasks = userTasks.filter((task) => {
           // Calculate actual deadline including dueTime
+          // Use UTC methods to match getSpainTimeAsUTC() representation
           const dueDate = new Date(task.dueDate!);
           let taskActualDeadline: Date;
           if (task.dueTime) {
@@ -734,23 +718,27 @@ export async function GET(request: NextRequest) {
             const hours = timeParts[0] ?? 23;
             const minutes = timeParts[1] ?? 59;
             taskActualDeadline = new Date(
-              dueDate.getFullYear(),
-              dueDate.getMonth(),
-              dueDate.getDate(),
-              hours,
-              minutes,
-              0,
-              0
+              Date.UTC(
+                dueDate.getUTCFullYear(),
+                dueDate.getUTCMonth(),
+                dueDate.getUTCDate(),
+                hours,
+                minutes,
+                0,
+                0
+              )
             );
           } else {
             taskActualDeadline = new Date(
-              dueDate.getFullYear(),
-              dueDate.getMonth(),
-              dueDate.getDate(),
-              23,
-              59,
-              59,
-              999
+              Date.UTC(
+                dueDate.getUTCFullYear(),
+                dueDate.getUTCMonth(),
+                dueDate.getUTCDate(),
+                23,
+                59,
+                59,
+                999
+              )
             );
           }
           
@@ -759,13 +747,8 @@ export async function GET(request: NextRequest) {
             return false;
           }
           
-          // Skip tasks that were just notified as immediate
-          if (taskActualDeadline >= recentlyOverdue && taskActualDeadline <= now) {
-            const notifyUrgencyLevels = settings.tasks.overdue.notifyWhenOverdue.urgencyLevels;
-            if (shouldIncludeTaskByUrgency(task.urgency ?? undefined, notifyUrgencyLevels)) {
-              return false; // Already handled as immediate
-            }
-          }
+          // Tasks with immediate notifications are already excluded from tasksByUser
+          // so we don't need to check for them here
           return shouldIncludeTaskByUrgency(task.urgency ?? undefined, dailyUrgencyLevels);
         });
 
@@ -817,6 +800,7 @@ export async function GET(request: NextRequest) {
         // Filter tasks by urgency levels for weekly digest
         const weeklyTasks = userTasks.filter((task) => {
           // Calculate actual deadline including dueTime
+          // Use UTC methods to match getSpainTimeAsUTC() representation
           const dueDate = new Date(task.dueDate!);
           let taskActualDeadline: Date;
           if (task.dueTime) {
@@ -824,23 +808,27 @@ export async function GET(request: NextRequest) {
             const hours = timeParts[0] ?? 23;
             const minutes = timeParts[1] ?? 59;
             taskActualDeadline = new Date(
-              dueDate.getFullYear(),
-              dueDate.getMonth(),
-              dueDate.getDate(),
-              hours,
-              minutes,
-              0,
-              0
+              Date.UTC(
+                dueDate.getUTCFullYear(),
+                dueDate.getUTCMonth(),
+                dueDate.getUTCDate(),
+                hours,
+                minutes,
+                0,
+                0
+              )
             );
           } else {
             taskActualDeadline = new Date(
-              dueDate.getFullYear(),
-              dueDate.getMonth(),
-              dueDate.getDate(),
-              23,
-              59,
-              59,
-              999
+              Date.UTC(
+                dueDate.getUTCFullYear(),
+                dueDate.getUTCMonth(),
+                dueDate.getUTCDate(),
+                23,
+                59,
+                59,
+                999
+              )
             );
           }
           
@@ -849,13 +837,8 @@ export async function GET(request: NextRequest) {
             return false;
           }
           
-          // Skip tasks that were just notified as immediate
-          if (taskActualDeadline >= recentlyOverdue && taskActualDeadline <= now) {
-            const notifyUrgencyLevels = settings.tasks.overdue.notifyWhenOverdue.urgencyLevels;
-            if (shouldIncludeTaskByUrgency(task.urgency ?? undefined, notifyUrgencyLevels)) {
-              return false; // Already handled as immediate
-            }
-          }
+          // Tasks with immediate notifications are already excluded from tasksByUser
+          // so we don't need to check for them here
           return shouldIncludeTaskByUrgency(task.urgency ?? undefined, weeklyUrgencyLevels);
         });
 

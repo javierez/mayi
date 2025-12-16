@@ -1,5 +1,5 @@
 import { AccountAdminBreadcrumb } from "~/components/admin/account/breadcrumb";
-import { MailConfiguration } from "~/components/admin/account/mail-configuration";
+import { MailConfiguration } from "~/components/admin/account/mail-configuration/mail-configuration";
 
 export default function AccountAdminNotificationSystemPage() {
   return (
