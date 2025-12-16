@@ -256,7 +256,13 @@ export function AppointmentDetailSheet({
       if (result.success) {
         toast.success("Estado actualizado correctamente");
         if (onUpdate) {
-          await onUpdate();
+          console.log("🔄 [DetailSheet] Calling onUpdate after status change");
+          try {
+            await onUpdate();
+            console.log("✅ [DetailSheet] onUpdate completed successfully");
+          } catch (error) {
+            console.error("❌ [DetailSheet] Error in onUpdate callback:", error);
+          }
         }
         // Keep the sheet open to show the new layout
       } else {
@@ -292,7 +298,13 @@ export function AppointmentDetailSheet({
         toast.success("Cita eliminada correctamente");
         onClose();
         if (onUpdate) {
-          await onUpdate();
+          console.log("🔄 [DetailSheet] Calling onUpdate after deletion");
+          try {
+            await onUpdate();
+            console.log("✅ [DetailSheet] onUpdate completed successfully after deletion");
+          } catch (error) {
+            console.error("❌ [DetailSheet] Error in onUpdate callback after deletion:", error);
+          }
         }
       } else {
         toast.error(result.error ?? "Error al eliminar la cita");
@@ -330,7 +342,13 @@ export function AppointmentDetailSheet({
       if (result.success) {
         toast.success("Título actualizado");
         if (onUpdate) {
-          await onUpdate();
+          console.log("🔄 [DetailSheet] Calling onUpdate after title change");
+          try {
+            await onUpdate();
+            console.log("✅ [DetailSheet] onUpdate completed successfully after title change");
+          } catch (error) {
+            console.error("❌ [DetailSheet] Error in onUpdate callback after title change:", error);
+          }
         }
       } else {
         toast.error(result.error ?? "Error al actualizar el título");

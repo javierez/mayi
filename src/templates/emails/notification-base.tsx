@@ -33,6 +33,34 @@ export function generateNotificationEmailBase(
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <title>${title} - Vesta CRM</title>
+        <style type="text/css">
+          /* Mobile responsive styles - works in Gmail, Apple Mail, Outlook.com */
+          @media only screen and (max-width: 600px) {
+            .email-container {
+              width: 100% !important;
+              max-width: 100% !important;
+            }
+            .email-padding {
+              padding-left: 16px !important;
+              padding-right: 16px !important;
+            }
+            .email-outer-padding {
+              padding: 20px 10px !important;
+            }
+            .email-logo-padding {
+              padding-left: 16px !important;
+              padding-right: 16px !important;
+            }
+            .email-button-padding {
+              padding-left: 16px !important;
+              padding-right: 16px !important;
+            }
+            .email-footer-padding {
+              padding-left: 16px !important;
+              padding-right: 16px !important;
+            }
+          }
+        </style>
         <!--[if mso]>
         <style type="text/css">
           table { border-collapse: collapse; }
@@ -44,26 +72,26 @@ export function generateNotificationEmailBase(
         <!-- Outer wrapper table for full-width background -->
         <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f9fafb;">
           <tr>
-            <td align="center" style="padding: 40px 20px;">
-              <!-- Inner container table -->
-              <table cellpadding="0" cellspacing="0" border="0" width="600" style="max-width: 600px; background-color: #ffffff; border-radius: 8px;">
+            <td align="center" class="email-outer-padding" style="padding: 40px 20px;">
+              <!-- Inner container table - FLUID with max-width -->
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" class="email-container" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 8px;">
                 <!-- Logo Section -->
                 <tr>
-                  <td align="center" style="padding: 12px 40px 8px 40px;">
-                    <img src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/vestalogotransp.png" alt="Vesta CRM" width="180" style="max-width: 180px; height: auto; display: block;" />
+                  <td align="center" class="email-logo-padding" style="padding: 12px 40px 8px 40px;">
+                    <img src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/vestalogotransp.png" alt="Vesta CRM" width="180" style="max-width: 180px; width: 100%; height: auto; display: block;" />
                   </td>
                 </tr>
                 
                 <!-- Title Section -->
                 <tr>
-                  <td style="padding: 0 40px;">
+                  <td class="email-padding" style="padding: 0 40px;">
                     <h2 style="color: #111827; margin: 0 0 12px 0; font-size: 24px; font-weight: 400; line-height: 1.3;">${title}</h2>
                   </td>
                 </tr>
                 
                 <!-- Message Section -->
                 <tr>
-                  <td style="padding: 0 40px;">
+                  <td class="email-padding" style="padding: 0 40px;">
                     <p style="margin: 0 0 12px 0; font-size: 15px; font-weight: 400; color: #374151; line-height: 1.6;">
                       ${message}
                     </p>
@@ -73,7 +101,7 @@ export function generateNotificationEmailBase(
                 ${actionUrl && actionLabel ? `
                   <!-- Action Button Section -->
                   <tr>
-                    <td align="center" style="padding: 16px 40px 40px 40px;">
+                    <td align="center" class="email-button-padding" style="padding: 16px 40px 40px 40px;">
                       <table cellpadding="0" cellspacing="0" border="0">
                         <tr>
                           <td align="center" style="background-color: #111827; border-radius: 6px;">
@@ -89,13 +117,13 @@ export function generateNotificationEmailBase(
                 ` : `
                   <!-- Spacer when no button -->
                   <tr>
-                    <td style="padding: 0 40px 40px 40px;"></td>
+                    <td class="email-padding" style="padding: 0 40px 40px 40px;"></td>
                   </tr>
                 `}
                 
                 <!-- Footer Section -->
                 <tr>
-                  <td style="padding: 32px 40px; border-top: 1px solid #e5e7eb;">
+                  <td class="email-footer-padding" style="padding: 32px 40px; border-top: 1px solid #e5e7eb;">
                     <table cellpadding="0" cellspacing="0" border="0" width="100%">
                       <tr>
                         <td align="center" style="color: #9ca3af; font-size: 12px; font-weight: 400; line-height: 1.6;">

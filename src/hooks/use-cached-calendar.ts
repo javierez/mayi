@@ -235,12 +235,20 @@ export function useSimpleCalendar(
     );
   }, [currentRange, loadedRange, lastFilterIds, filterByUserIds]);
 
-  // Fetch 4 weeks of data
-  const fetch4Weeks = useCallback(async () => {
+  // Fetch appointments for the date range (6 months before, 7 months after = ~13 months total)
+  const fetchAppointments = useCallback(async () => {
     // Prevent concurrent fetches
     if (isFetchingRef.current) {
+      console.log("⏸️ [useCachedCalendar] fetchAppointments skipped - already fetching");
       return;
     }
+
+    console.log("🚀 [useCachedCalendar] Starting fetchAppointments", {
+      startDate: currentRange.startDate.toISOString(),
+      endDate: currentRange.endDate.toISOString(),
+      rangeMonths: "6 months before + 7 months after (~13 months)",
+      filterByUserIds: filterByUserIds?.length ?? 0,
+    });
 
     isFetchingRef.current = true;
     setLoading(true);
@@ -253,6 +261,12 @@ export function useSimpleCalendar(
         filterByUserIds,
       );
 
+      console.log("📥 [useCachedCalendar] Received result from server", {
+        success: result.success,
+        appointmentCount: result.appointments?.length ?? 0,
+        error: result.error,
+      });
+
       if (result.success) {
         const calendarEvents = result.appointments.map(
           transformToCalendarEvent,
@@ -260,17 +274,22 @@ export function useSimpleCalendar(
         setAppointments(calendarEvents);
         setLoadedRange(currentRange);
         setLastFilterIds(filterByUserIds);
+        console.log("✅ [useCachedCalendar] Appointments updated", {
+          count: calendarEvents.length,
+        });
       } else {
         setError(result.error ?? "Error desconocido");
         setAppointments([]);
+        console.error("❌ [useCachedCalendar] Server returned error:", result.error);
       }
     } catch (err) {
       setError("Error al cargar las citas");
       setAppointments([]);
-      console.error("Error fetching 4-week appointments:", err);
+      console.error("❌ [useCachedCalendar] Exception in fetchAppointments:", err);
     } finally {
       setLoading(false);
       isFetchingRef.current = false;
+      console.log("🏁 [useCachedCalendar] fetchAppointments completed, loading set to false");
     }
   }, [currentRange, filterByUserIds]);
 
@@ -322,29 +341,42 @@ export function useSimpleCalendar(
   // Fetch data when range changes or on initial load
   useEffect(() => {
     if (!isWithinLoadedRange) {
-      void fetch4Weeks();
+      void fetchAppointments();
     }
-  }, [isWithinLoadedRange, fetch4Weeks]);
+  }, [isWithinLoadedRange, fetchAppointments]);
 
   // Refetch function - ensures loading state is properly managed even on errors
   const refetch = useCallback(async () => {
+    console.log("🔄 [useCachedCalendar] refetch called", {
+      isFetching: isFetchingRef.current,
+      loading,
+      currentRange: {
+        start: currentRange.startDate.toISOString(),
+        end: currentRange.endDate.toISOString(),
+        rangeMonths: "6 months before + 7 months after (~13 months)",
+      },
+    });
+    
     // Reset fetching flag if it's stuck (safety measure)
     if (isFetchingRef.current && loading) {
-      console.warn("Refetch called while already fetching, resetting state");
+      console.warn("⚠️ [useCachedCalendar] Refetch called while already fetching, resetting state");
       isFetchingRef.current = false;
       setLoading(false);
     }
     
     try {
-      await fetch4Weeks();
+      console.log("📡 [useCachedCalendar] Calling fetchAppointments...");
+      await fetchAppointments();
+      console.log("✅ [useCachedCalendar] fetchAppointments completed successfully");
     } catch (error) {
       // Ensure loading state is reset even if fetch fails
       isFetchingRef.current = false;
       setLoading(false);
       setError(error instanceof Error ? error.message : "Error al recargar las citas");
-      console.error("Error in refetch:", error);
+      console.error("❌ [useCachedCalendar] Error in refetch:", error);
+      throw error; // Re-throw to allow caller to handle
     }
-  }, [fetch4Weeks, loading]);
+  }, [fetchAppointments, loading, currentRange]);
 
   // Custom date range fetch
   const fetchByDateRange = useCallback(

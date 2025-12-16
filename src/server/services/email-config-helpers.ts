@@ -370,13 +370,47 @@ export function shouldSendEmailForNotification(
 }
 
 /**
- * Calculate reminder timeframe based on due date and current time
+ * Calculate reminder timeframe based on due date, due time, and current time
+ * Combines dueDate and dueTime to get the actual deadline datetime
  */
 export function getReminderTimeframe(
   dueDate: Date,
   now: Date = new Date(),
+  dueTime?: string | null,
 ): "1_week" | "48h" | "24h" | "12h" | "2h" | "1h" | null {
-  const diffMs = dueDate.getTime() - now.getTime();
+  // Combine dueDate and dueTime to get the actual deadline datetime
+  let actualDueDateTime: Date;
+  
+  if (dueTime) {
+    // Parse dueTime (format: "HH:MM" or "HH:MM:SS")
+    const timeParts = dueTime.split(":").map(Number);
+    const hours = timeParts[0] ?? 23;
+    const minutes = timeParts[1] ?? 59;
+    
+    // Create datetime in local timezone using the date from dueDate and time from dueTime
+    actualDueDateTime = new Date(
+      dueDate.getFullYear(),
+      dueDate.getMonth(),
+      dueDate.getDate(),
+      hours,
+      minutes,
+      0,
+      0
+    );
+  } else {
+    // No dueTime provided, use end of day (23:59:59.999)
+    actualDueDateTime = new Date(
+      dueDate.getFullYear(),
+      dueDate.getMonth(),
+      dueDate.getDate(),
+      23,
+      59,
+      59,
+      999
+    );
+  }
+
+  const diffMs = actualDueDateTime.getTime() - now.getTime();
   const diffHours = diffMs / (1000 * 60 * 60);
   const diffDays = diffHours / 24;
   

@@ -39,9 +39,9 @@ export function generateTaskNotificationEmail(
     if (metadata.completerName || metadata.completedByName) {
       const completerName = metadata.completerName ?? metadata.completedByName ?? "";
       taskDetailsSections.push(`
-        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px;">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
           <tr>
-            <td style="padding: 10px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px;">
+            <td style="padding: 10px;">
               <table cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
                   <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Completado por</td>
@@ -60,9 +60,9 @@ export function generateTaskNotificationEmail(
     if (metadata.assignerName || metadata.assignedByName) {
       const assignerName = metadata.assignerName ?? metadata.assignedByName ?? "";
       taskDetailsSections.push(`
-        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px;">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
           <tr>
-            <td style="padding: 10px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px;">
+            <td style="padding: 10px;">
               <table cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
                   <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Asignado por</td>
@@ -143,9 +143,9 @@ export function generateTaskNotificationEmail(
     }
     
     taskDetailsSections.push(`
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
         <tr>
-          <td style="padding: 10px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px;">
+          <td style="padding: 10px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
                 <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Fecha límite</td>
@@ -160,7 +160,7 @@ export function generateTaskNotificationEmail(
     `);
   }
 
-  // Urgency and Category sections - displayed side by side
+  // Urgency and Category sections - displayed as separate full-width boxes
   if (metadata.urgency || metadata.category) {
     const urgencyLabels: Record<number, string> = {
       1: "Baja",
@@ -174,48 +174,45 @@ export function generateTaskNotificationEmail(
       ? metadata.category.charAt(0).toUpperCase() + metadata.category.slice(1).toLowerCase()
       : null;
 
-    taskDetailsSections.push(`
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px;">
-        <tr>
-          ${metadata.urgency ? `
-            <td width="50%" style="padding-right: 4px; vertical-align: top;">
+    // Urgency section - full width
+    if (metadata.urgency) {
+      taskDetailsSections.push(`
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
+          <tr>
+            <td style="padding: 10px;">
               <table cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
-                  <td style="padding: 10px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px;">
-                    <table cellpadding="0" cellspacing="0" border="0" width="100%">
-                      <tr>
-                        <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Urgencia</td>
-                      </tr>
-                      <tr>
-                        <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">${urgencyLabel}</td>
-                      </tr>
-                    </table>
-                  </td>
+                  <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Urgencia</td>
+                </tr>
+                <tr>
+                  <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">${urgencyLabel}</td>
                 </tr>
               </table>
             </td>
-          ` : ""}
-          ${metadata.category ? `
-            <td width="${metadata.urgency ? "50%" : "100%"}" style="${metadata.urgency ? "padding-left: 4px;" : ""} vertical-align: top;">
+          </tr>
+        </table>
+      `);
+    }
+
+    // Category section - full width
+    if (metadata.category) {
+      taskDetailsSections.push(`
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
+          <tr>
+            <td style="padding: 10px;">
               <table cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
-                  <td style="padding: 10px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px;">
-                    <table cellpadding="0" cellspacing="0" border="0" width="100%">
-                      <tr>
-                        <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Categoría</td>
-                      </tr>
-                      <tr>
-                        <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">${formattedCategory}</td>
-                      </tr>
-                    </table>
-                  </td>
+                  <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Categoría</td>
+                </tr>
+                <tr>
+                  <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">${formattedCategory}</td>
                 </tr>
               </table>
             </td>
-          ` : ""}
-        </tr>
-      </table>
-    `);
+          </tr>
+        </table>
+      `);
+    }
   }
 
   // Combine structured sections
@@ -268,9 +265,9 @@ export function generateTaskNotificationEmail(
     const displayName = `${contactName} (${label})`;
 
     return `
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
         <tr>
-          <td style="padding: 10px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px;">
+          <td style="padding: 10px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
                 <td style="font-size: 12px; font-weight: 500; color: #111827; line-height: 1.3; padding-bottom: 6px;">
@@ -381,7 +378,7 @@ export function generateTaskNotificationEmail(
               
               <!-- Task Description -->
               <tr>
-                <td style="padding: 0 40px;">
+                <td class="email-padding" style="padding: 0 40px;">
                   <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 400; color: #374151; line-height: 1.5;">
                     ${taskDescription}
                   </p>
@@ -389,7 +386,7 @@ export function generateTaskNotificationEmail(
               </tr>
               
               <tr>
-                <td style="padding: 0 40px;">
+                <td class="email-padding" style="padding: 0 40px;">
     `;
     
     // Insert after the title closing tag, before the message section
@@ -405,7 +402,7 @@ export function generateTaskNotificationEmail(
         `</h2></td></tr>
               <!-- Task Description -->
               <tr>
-                <td style="padding: 0 40px;">
+                <td class="email-padding" style="padding: 0 40px;">
                   <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 400; color: #374151; line-height: 1.5;">
                     ${taskDescription}
                   </p>
@@ -430,13 +427,13 @@ export function generateTaskNotificationEmail(
               
               <!-- Additional Task Content -->
               <tr>
-                <td style="padding: 0 40px;">
+                <td class="email-padding" style="padding: 0 40px;">
                   ${allContentHtml}
                 </td>
               </tr>
               
               <tr>
-                <td style="padding: 0 40px;">
+                <td class="email-padding" style="padding: 0 40px;">
     `;
     
       // Insert after the message paragraph closing tag, before the next section
@@ -450,7 +447,7 @@ export function generateTaskNotificationEmail(
       if (finalHtml === baseHtml || finalHtml === baseHtml.replace(/(<\/h2>\s*<\/td>\s*<\/tr>)/, `</h2></td></tr>
               <!-- Task Description -->
               <tr>
-                <td style="padding: 0 40px;">
+                <td class="email-padding" style="padding: 0 40px;">
                   <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 400; color: #374151; line-height: 1.5;">
                     ${taskDescription}
                   </p>
@@ -461,7 +458,7 @@ export function generateTaskNotificationEmail(
           /(<!-- Action Button Section -->|<!-- Spacer when no button -->)/,
           `<!-- Additional Task Content -->
               <tr>
-                <td style="padding: 0 40px 16px 40px;">
+                <td class="email-padding" style="padding: 0 40px 16px 40px;">
                   ${allContentHtml}
                 </td>
               </tr>
@@ -628,7 +625,7 @@ function generatePropertyCardHtmlForTask(
 
   // Build property card HTML using TABLES for email compatibility
   return `
-    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 20px 0; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: #ffffff;">
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 20px 0; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; background: #ffffff;">
       <tr>
         <td>
           <a href="${propertyUrl}" style="text-decoration: none; color: inherit; display: block;">

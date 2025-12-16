@@ -39,6 +39,7 @@ export function routeToTemplate(
     if (notificationType === "task_due_soon") {
       const metadata = notification.metadata as {
         dueDate?: string;
+        dueTime?: string;
         timeframe?: string;
         [key: string]: unknown;
       };
@@ -47,7 +48,7 @@ export function routeToTemplate(
       let timeframe = metadata.timeframe;
       if (!timeframe && metadata.dueDate) {
         const dueDate = new Date(metadata.dueDate);
-        const calculated = getReminderTimeframe(dueDate);
+        const calculated = getReminderTimeframe(dueDate, new Date(), metadata.dueTime);
         if (calculated) {
           timeframe = calculated;
         }

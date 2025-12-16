@@ -256,9 +256,9 @@ export async function GET(request: NextRequest) {
       // Get settings for this account
       const settings = await getEmailSettingsForAccount(BigInt(accountId));
       
-      // Calculate reminder timeframe
+      // Calculate reminder timeframe (combining dueDate and dueTime)
       const dueDate = new Date(task.dueDate);
-      const timeframe = getReminderTimeframe(dueDate, now);
+      const timeframe = getReminderTimeframe(dueDate, now, task.dueTime ?? undefined);
       
       if (!timeframe) continue;
 

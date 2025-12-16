@@ -1003,10 +1003,12 @@ export default function AppointmentsPage() {
           // Don't refetch on close - only refetch when onUpdate is called (status changes, deletes)
         }}
         onUpdate={async () => {
+          console.log("🔄 [CalendarPage] onUpdate called, starting refetch...");
           try {
             await refetch();
+            console.log("✅ [CalendarPage] Refetch completed successfully");
           } catch (error) {
-            console.error("Error updating calendar after appointment change:", error);
+            console.error("❌ [CalendarPage] Error in refetch:", error);
             // Loading state should be handled by refetch, but ensure we don't get stuck
           }
         }}

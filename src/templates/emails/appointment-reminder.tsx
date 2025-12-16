@@ -36,7 +36,7 @@ export function generateAppointmentReminderEmail(
 
   // Determine reminder timeframe
   const timeframe = metadata.reminderTimeframe ?? metadata.reminderType ?? "24h";
-  const isUrgent = timeframe === "1h" || timeframe === "30min" || timeframe === "travel_time";
+  const isUrgent = timeframe === "1h" || timeframe === "30min" || timeframe === "30_min" || timeframe === "travel_time";
 
   // Build subject based on timeframe
   let subject = notification.title;
@@ -119,15 +119,15 @@ export function generateAppointmentReminderEmail(
   if (timeRemainingLabel && timeRemainingValue) {
     const urgentStyle = isUrgent ? "color: #dc2626; font-weight: 600;" : "";
     reminderDetailsSections.push(`
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 12px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid ${isUrgent ? "#fecaca" : "#e5e7eb"}; border-radius: 6px; background: ${isUrgent ? "#fef2f2" : "#ffffff"};">
         <tr>
-          <td style="padding: 16px; background: ${isUrgent ? "#fef2f2" : "#ffffff"}; border: 1px solid ${isUrgent ? "#fecaca" : "#e5e7eb"}; border-radius: 8px;">
+          <td style="padding: 10px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td style="font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 8px;">${timeRemainingLabel}</td>
+                <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">${timeRemainingLabel}</td>
               </tr>
               <tr>
-                <td style="font-size: 15px; font-weight: 400; color: #111827; line-height: 1.5; ${urgentStyle}">${timeRemainingValue}</td>
+                <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4; ${urgentStyle}">${timeRemainingValue}</td>
               </tr>
             </table>
           </td>
@@ -164,15 +164,15 @@ export function generateAppointmentReminderEmail(
     }
 
     reminderDetailsSections.push(`
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 12px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
         <tr>
-          <td style="padding: 16px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
+          <td style="padding: 10px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td style="font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 8px;">Fecha y hora</td>
+                <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Fecha y hora</td>
               </tr>
               <tr>
-                <td style="font-size: 15px; font-weight: 400; color: #111827; line-height: 1.5;">${dateTimeText}</td>
+                <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">${dateTimeText}</td>
               </tr>
             </table>
           </td>
@@ -184,15 +184,15 @@ export function generateAppointmentReminderEmail(
   // Appointment type section (full width)
   if (appointmentTypeLabel) {
     reminderDetailsSections.push(`
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 12px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
         <tr>
-          <td style="padding: 16px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
+          <td style="padding: 10px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td style="font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 8px;">Tipo de cita</td>
+                <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Tipo de cita</td>
               </tr>
               <tr>
-                <td style="font-size: 15px; font-weight: 400; color: #111827; line-height: 1.5;">${appointmentTypeLabel}</td>
+                <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">${appointmentTypeLabel}</td>
               </tr>
             </table>
           </td>
@@ -204,15 +204,15 @@ export function generateAppointmentReminderEmail(
   // Notes section (full width)
   if (metadata.location) {
     reminderDetailsSections.push(`
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 12px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
         <tr>
-          <td style="padding: 16px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
+          <td style="padding: 10px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td style="font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 8px;">Notas</td>
+                <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Notas</td>
               </tr>
               <tr>
-                <td style="font-size: 15px; font-weight: 400; color: #111827; line-height: 1.5;">${metadata.location}</td>
+                <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">${metadata.location}</td>
               </tr>
             </table>
           </td>
@@ -224,15 +224,15 @@ export function generateAppointmentReminderEmail(
   // Travel time section for travel_time reminder
   if (timeframe === "travel_time" && metadata.travelTime) {
     reminderDetailsSections.push(`
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 12px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
         <tr>
-          <td style="padding: 16px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
+          <td style="padding: 10px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td style="font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 8px;">Tiempo de viaje estimado</td>
+                <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Tiempo de viaje estimado</td>
               </tr>
               <tr>
-                <td style="font-size: 15px; font-weight: 400; color: #111827; line-height: 1.5;">${metadata.travelTime} minutos</td>
+                <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">${metadata.travelTime} minutos</td>
               </tr>
             </table>
           </td>
@@ -267,15 +267,15 @@ export function generateAppointmentReminderEmail(
     if (tips.length > 0) {
       const tipsHtml = tips.map(tip => `<li style="margin-bottom: 4px;">${tip}</li>`).join("");
       reminderDetailsSections.push(`
-        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 12px;">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #fde68a; border-radius: 6px; background: #fffbeb;">
           <tr>
-            <td style="padding: 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px;">
+            <td style="padding: 10px;">
               <table cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
-                  <td style="font-size: 11px; font-weight: 600; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 8px;">💡 Recordatorios</td>
+                  <td style="font-size: 10px; font-weight: 600; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">💡 Recordatorios</td>
                 </tr>
                 <tr>
-                  <td style="font-size: 14px; font-weight: 400; color: #78350f; line-height: 1.5;">
+                  <td style="font-size: 14px; font-weight: 400; color: #78350f; line-height: 1.4;">
                     <ul style="margin: 0; padding-left: 20px;">
                       ${tipsHtml}
                     </ul>
@@ -293,7 +293,7 @@ export function generateAppointmentReminderEmail(
   let structuredMessageHtml = "";
   if (reminderDetailsSections.length > 0) {
     structuredMessageHtml = `
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 4px 0 8px 0;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 2px 0 6px 0;">
         <tr>
           <td>
             ${reminderDetailsSections.join("")}
@@ -343,23 +343,23 @@ export function generateAppointmentReminderEmail(
     const displayName = `${contactName} (${label})`;
 
     return `
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 8px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
         <tr>
-          <td style="padding: 12px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
+          <td style="padding: 10px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td style="font-size: 12px; font-weight: 500; color: #111827; line-height: 1.4; padding-bottom: 8px;">
+                <td style="font-size: 12px; font-weight: 500; color: #111827; line-height: 1.3; padding-bottom: 6px;">
                   ${displayName}
                 </td>
               </tr>
               <tr>
                 <td>
-                  <table cellpadding="0" cellspacing="6" border="0">
+                  <table cellpadding="0" cellspacing="4" border="0">
                     <tr>
                       ${phone ? `
                         <td>
                           <a href="tel:${phone.replace(/\s/g, "")}"
-                             style="display: inline-block; padding: 6px 12px; background: #ffffff; color: #111827; text-decoration: none; font-size: 13px; font-weight: 500; border-radius: 6px; border: 1px solid #e5e7eb;">
+                             style="display: inline-block; padding: 5px 10px; background: #ffffff; color: #111827; text-decoration: none; font-size: 12px; font-weight: 500; border-radius: 4px; border: 1px solid #e5e7eb;">
                             📞 Llamar
                           </a>
                         </td>
@@ -367,7 +367,7 @@ export function generateAppointmentReminderEmail(
                       ${email ? `
                         <td>
                           <a href="mailto:${email}"
-                             style="display: inline-block; padding: 6px 12px; background: #ffffff; color: #111827; text-decoration: none; font-size: 13px; font-weight: 500; border-radius: 6px; border: 1px solid #e5e7eb;">
+                             style="display: inline-block; padding: 5px 10px; background: #ffffff; color: #111827; text-decoration: none; font-size: 12px; font-weight: 500; border-radius: 4px; border: 1px solid #e5e7eb;">
                             ✉️ Email
                           </a>
                         </td>
@@ -422,7 +422,7 @@ export function generateAppointmentReminderEmail(
 
   if (contactCards.length > 0) {
     contactCardsHtml = `
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 12px 0;">
         <tr>
           <td>
             ${contactCards.join("")}
@@ -452,13 +452,13 @@ export function generateAppointmentReminderEmail(
 
               <!-- Additional Reminder Content -->
               <tr>
-                <td style="padding: 0 40px;">
+                <td class="email-padding" style="padding: 0 40px;">
                   ${allContentHtml}
                 </td>
               </tr>
 
               <tr>
-                <td style="padding: 0 40px;">
+                <td class="email-padding" style="padding: 0 40px;">
     `;
 
     // Insert after the message paragraph closing tag, before the next section
@@ -473,7 +473,7 @@ export function generateAppointmentReminderEmail(
         /(<!-- Action Button Section -->|<!-- Spacer when no button -->)/,
         `<!-- Additional Reminder Content -->
               <tr>
-                <td style="padding: 0 40px 20px 40px;">
+                <td class="email-padding" style="padding: 0 40px 16px 40px;">
                   ${allContentHtml}
                 </td>
               </tr>
@@ -594,7 +594,7 @@ function generatePropertyCardHtml(
     }
     badgesHtml = `
       <tr>
-        <td style="padding: 8px 12px 0 12px;">
+        <td style="padding: 6px 10px 0 10px;">
           ${badges.join("")}
         </td>
       </tr>
@@ -623,7 +623,7 @@ function generatePropertyCardHtml(
 
     detailsHtml = `
       <tr>
-        <td style="padding: 8px 12px; font-size: 12px; color: #6b7280;">
+        <td style="padding: 6px 10px; font-size: 11px; color: #6b7280;">
           ${details.join(" &nbsp;•&nbsp; ")}
         </td>
       </tr>
@@ -632,7 +632,7 @@ function generatePropertyCardHtml(
 
   // Build property card HTML
   return `
-    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 32px 0; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; background: #ffffff;">
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 20px 0; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; background: #ffffff;">
       <tr>
         <td>
           <a href="${propertyUrl}" style="text-decoration: none; color: inherit; display: block;">
@@ -645,15 +645,15 @@ function generatePropertyCardHtml(
                       src="${validImageUrl}"
                       alt="${listing.street ?? listing.title ?? "Property"}"
                       width="100%"
-                      style="display: block; width: 100%; height: auto; max-height: 200px; object-fit: cover;"
+                      style="display: block; width: 100%; height: auto; max-height: 160px; object-fit: cover;"
                     />
                   </td>
                 </tr>
               ` : `
                 <tr>
-                  <td style="padding: 40px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); text-align: center; color: white;">
-                    <div style="font-size: 48px; margin-bottom: 8px;">🏠</div>
-                    ${propertyTypeLabel ? `<div style="font-size: 13px; font-weight: 400; opacity: 0.9;">${propertyTypeLabel}</div>` : ""}
+                  <td style="padding: 30px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); text-align: center; color: white;">
+                    <div style="font-size: 40px; margin-bottom: 6px;">🏠</div>
+                    ${propertyTypeLabel ? `<div style="font-size: 12px; font-weight: 400; opacity: 0.9;">${propertyTypeLabel}</div>` : ""}
                   </td>
                 </tr>
               `}
@@ -663,14 +663,14 @@ function generatePropertyCardHtml(
 
               <!-- Title and Price Row -->
               <tr>
-                <td style="padding: 12px;">
+                <td style="padding: 10px;">
                   <table cellpadding="0" cellspacing="0" border="0" width="100%">
                     <tr>
-                      <td style="font-size: 16px; font-weight: 600; color: #111827; line-height: 1.3;">
+                      <td style="font-size: 15px; font-weight: 600; color: #111827; line-height: 1.3;">
                         ${listing.street ?? listing.title ?? "Propiedad"}
                       </td>
                       ${displayPrice ? `
-                        <td align="right" style="font-size: 16px; font-weight: 600; color: #111827; line-height: 1.3; white-space: nowrap;">
+                        <td align="right" style="font-size: 15px; font-weight: 600; color: #111827; line-height: 1.3; white-space: nowrap;">
                           ${formatPriceEmail(displayPrice)}€${isRent ? "/mes" : ""}
                         </td>
                       ` : ""}
@@ -682,7 +682,7 @@ function generatePropertyCardHtml(
               <!-- Location Row -->
               ${(listing.city || listing.province) ? `
                 <tr>
-                  <td style="padding: 0 12px 8px 12px; font-size: 12px; color: #6b7280;">
+                  <td style="padding: 0 10px 6px 10px; font-size: 11px; color: #6b7280;">
                     📍 ${[listing.city, listing.province].filter(Boolean).join(", ")}
                   </td>
                 </tr>
@@ -694,7 +694,7 @@ function generatePropertyCardHtml(
               <!-- Reference Number -->
               ${listing.referenceNumber ? `
                 <tr>
-                  <td style="padding: 8px 12px 12px 12px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; color: #9ca3af; text-transform: uppercase;">
+                  <td style="padding: 6px 10px 10px 10px; font-size: 9px; font-weight: 600; letter-spacing: 0.1em; color: #9ca3af; text-transform: uppercase;">
                     REF: ${listing.referenceNumber}
                   </td>
                 </tr>
