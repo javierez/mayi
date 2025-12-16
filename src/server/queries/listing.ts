@@ -1724,7 +1724,10 @@ export async function getListingCompactById(
         squareMeter: properties.squareMeter,
         builtSurfaceArea: properties.builtSurfaceArea,
         city: locations.city,
+        province: locations.province,
+        street: properties.street,
         agentName: users.name,
+        isBankOwned: listings.isBankOwned,
         isOwned: sql<boolean>`CASE WHEN ${listingContacts.contactId} IS NOT NULL THEN true ELSE false END`,
         imageUrl: propertyImages.imageUrl,
       })

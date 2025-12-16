@@ -553,7 +553,10 @@ async function fetchAppointmentRelatedData(
           squareMeter: listing.squareMeter,
           builtSurfaceArea: builtSurfaceArea ?? undefined,
           city: listing.city,
+          province: listing.province ?? undefined,
+          street: listing.street ?? undefined,
           agentName: listing.agentName,
+          isBankOwned: listing.isBankOwned ?? undefined,
           imageUrl: listing.imageUrl,
           imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
         };
