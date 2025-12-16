@@ -1107,25 +1107,26 @@ export default function AppointmentForm({
     const endTime = data.endTime ?? startTime;
 
     // Create start and end Date objects (parse DD-MM-YYYY format)
+    // IMPORTANT: Use Date.UTC to match server storage format (see createLocalDateTime in appointments.ts)
     const startDateParts = startDate.split("-").map(Number);
     const endDateParts = endDate.split("-").map(Number);
     const startTimeParts = startTime.split(":").map(Number);
     const endTimeParts = endTime.split(":").map(Number);
     
-    const startDateTime = new Date(
+    const startDateTime = new Date(Date.UTC(
       startDateParts[2] ?? 0, // year
       (startDateParts[1] ?? 1) - 1, // month (0-indexed)
       startDateParts[0] ?? 1, // day
       startTimeParts[0] ?? 0,
       startTimeParts[1] ?? 0
-    );
-    const endDateTime = new Date(
+    ));
+    const endDateTime = new Date(Date.UTC(
       endDateParts[2] ?? 0, // year
       (endDateParts[1] ?? 1) - 1, // month (0-indexed)
       endDateParts[0] ?? 1, // day
       endTimeParts[0] ?? 0,
       endTimeParts[1] ?? 0
-    );
+    ));
 
     return {
       contactId: data.contactId ?? BigInt(0),
@@ -1156,20 +1157,20 @@ export default function AppointmentForm({
         ? `${selectedContact.firstName} ${selectedContact.lastName}`
         : "New Contact",
       propertyAddress: selectedListing?.title ?? undefined,
-      // Parse DD-MM-YYYY format dates
+      // Parse DD-MM-YYYY format dates - use Date.UTC to match server storage format
       startTime: (() => {
         if (!formData.startDate || !formData.startTime) {
           return new Date();
         }
         const dateParts = formData.startDate.split("-").map(Number);
         const timeParts = formData.startTime.split(":").map(Number);
-        return new Date(
+        return new Date(Date.UTC(
           dateParts[2] ?? 0, // year
           (dateParts[1] ?? 1) - 1, // month (0-indexed)
           dateParts[0] ?? 1, // day
           timeParts[0] ?? 0,
           timeParts[1] ?? 0
-        );
+        ));
       })(),
       endTime: (() => {
         const endDate = formData.endDate ?? formData.startDate;
@@ -1179,13 +1180,13 @@ export default function AppointmentForm({
         }
         const dateParts = endDate.split("-").map(Number);
         const timeParts = endTime.split(":").map(Number);
-        return new Date(
+        return new Date(Date.UTC(
           dateParts[2] ?? 0, // year
           (dateParts[1] ?? 1) - 1, // month (0-indexed)
           dateParts[0] ?? 1, // day
           timeParts[0] ?? 0,
           timeParts[1] ?? 0
-        );
+        ));
       })(),
       status: "Scheduled" as const,
       type: formData.appointmentType ?? "Visita",
