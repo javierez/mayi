@@ -550,11 +550,14 @@ export async function buildIdealistaPropertyPayload(
       }),
 
     // Furnished (only for rent)
+    // IMPORTANT: featuresEquippedWithFurniture is ONLY processed by Idealista if featuresEquippedKitchen is true
     ...(operationType === "rent" &&
       listing.isFurnished !== null && {
         featuresEquippedKitchen:
           listing.furnishedKitchen ?? listing.isFurnished,
-        ...(listing.isFurnished && { featuresEquippedWithFurniture: true }),
+        // Only include featuresEquippedWithFurniture if featuresEquippedKitchen will be true
+        ...((listing.furnishedKitchen ?? listing.isFurnished) &&
+          listing.isFurnished && { featuresEquippedWithFurniture: true }),
       }),
 
     // Windows location (only for Spain) - DB has 'exterior' boolean field

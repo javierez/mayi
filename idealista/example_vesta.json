@@ -309,7 +309,6 @@
       "propertyFeatures": {
         "featuresType": "premises_commercial",
         "featuresAreaConstructed": 544,
-        "featuresAreaUsable": 0,
         "featuresBathroomNumber": 1,
         "featuresParkingAvailable": false,
         "featuresStorage": false,
@@ -713,7 +712,6 @@
         "featuresOrientationEast": true,
         "featuresBuiltYear": 1975,
         "featuresEquippedKitchen": false,
-        "featuresEquippedWithFurniture": true,
         "featuresWindowsLocation": "exterior"
       },
       "propertyDescriptions": [

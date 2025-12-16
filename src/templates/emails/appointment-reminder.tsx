@@ -56,29 +56,35 @@ export function generateAppointmentReminderEmail(
     Viaje: "Viaje",
     Tarea: "Tarea",
   };
+  // Determine if this is a visit appointment (case-insensitive check)
+  const isVisitAppointment = metadata.appointmentType?.toLowerCase() === "visita";
   const appointmentTypeLabel = metadata.appointmentType
     ? appointmentTypeLabels[metadata.appointmentType] ?? metadata.appointmentType
-    : "Cita";
+    : isVisitAppointment ? "Visita" : "Cita";
 
   // Customize subject based on timeframe
+  // Use "Visita" instead of "Cita" when appointment type is "visita"
+  const appointmentNoun = appointmentTypeLabel === "Visita" ? "Visita" : "Cita";
+  const appointmentNounLower = appointmentTypeLabel === "Visita" ? "visita" : "cita";
+  
   if (metadata.appointmentTitle) {
     switch (timeframe) {
       case "24h":
       case "1_day":
-        subject = `Recordatorio: Cita mañana - ${appointmentTypeLabel}`;
+        subject = `Recordatorio: ${appointmentNoun} mañana - ${appointmentTypeLabel}`;
         break;
       case "12h":
-        subject = `Recordatorio: Cita en 12 horas - ${appointmentTypeLabel}`;
+        subject = `Recordatorio: ${appointmentNoun} en 12 horas - ${appointmentTypeLabel}`;
         break;
       case "1h":
-        subject = `⏰ Tu cita es en 1 hora - ${appointmentTypeLabel}`;
+        subject = `⏰ Tu ${appointmentNounLower} es en 1 hora - ${appointmentTypeLabel}`;
         break;
       case "30min":
       case "30_min":
-        subject = `⏰ Tu cita es en 30 minutos - ${appointmentTypeLabel}`;
+        subject = `⏰ Tu ${appointmentNounLower} es en 30 minutos - ${appointmentTypeLabel}`;
         break;
       case "travel_time":
-        subject = `🚗 Es hora de salir - Cita: ${appointmentTypeLabel}`;
+        subject = `🚗 Es hora de salir - ${appointmentNoun}: ${appointmentTypeLabel}`;
         break;
       default:
         subject = `Recordatorio: ${appointmentTypeLabel}`;
@@ -91,24 +97,66 @@ export function generateAppointmentReminderEmail(
   // Time remaining section based on timeframe
   let timeRemainingLabel = "";
   let timeRemainingValue = "";
+  
+  // Calculate actual time remaining from appointment start time
+  const calculateTimeRemaining = (): string => {
+    if (!metadata.datetimeStart) return "";
+    
+    const startDate = new Date(metadata.datetimeStart);
+    const now = new Date();
+    const timeDiff = startDate.getTime() - now.getTime();
+    
+    if (timeDiff <= 0) return "La cita ya comenzó";
+    
+    const totalMinutes = Math.floor(timeDiff / (1000 * 60));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    if (hours > 0 && minutes > 0) {
+      return `${hours} ${hours === 1 ? "hora" : "horas"} y ${minutes} ${minutes === 1 ? "minuto" : "minutos"}`;
+    } else if (hours > 0) {
+      return `${hours} ${hours === 1 ? "hora" : "horas"}`;
+    } else if (minutes > 0) {
+      return `${minutes} ${minutes === 1 ? "minuto" : "minutos"}`;
+    } else {
+      return "Menos de 1 minuto";
+    }
+  };
+  
   switch (timeframe) {
     case "24h":
     case "1_day":
       timeRemainingLabel = "Tiempo restante";
-      timeRemainingValue = "Tu cita es mañana";
+      // Check if it's actually tomorrow (within 24-48 hours)
+      if (metadata.datetimeStart) {
+        const startDate = new Date(metadata.datetimeStart);
+        const now = new Date();
+        const hoursUntil = (startDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+        
+        if (hoursUntil >= 24 && hoursUntil < 48) {
+          // Use "visita" instead of "cita" when appointment type is "visita"
+          const appointmentNoun24h = appointmentTypeLabel === "Visita" ? "visita" : "cita";
+          timeRemainingValue = `Tu ${appointmentNoun24h} es mañana`;
+        } else {
+          timeRemainingValue = calculateTimeRemaining();
+        }
+      } else {
+        const appointmentNoun24h = appointmentTypeLabel === "Visita" ? "visita" : "cita";
+        timeRemainingValue = `Tu ${appointmentNoun24h} es mañana`;
+      }
       break;
     case "12h":
       timeRemainingLabel = "Tiempo restante";
-      timeRemainingValue = "12 horas";
+      timeRemainingValue = calculateTimeRemaining();
       break;
     case "1h":
       timeRemainingLabel = "Tiempo restante";
-      timeRemainingValue = "1 hora";
+      timeRemainingValue = calculateTimeRemaining();
       break;
     case "30min":
     case "30_min":
       timeRemainingLabel = "Tiempo restante";
-      timeRemainingValue = "30 minutos";
+      timeRemainingValue = calculateTimeRemaining();
       break;
     case "travel_time":
       timeRemainingLabel = "Estado";
@@ -117,7 +165,6 @@ export function generateAppointmentReminderEmail(
   }
 
   if (timeRemainingLabel && timeRemainingValue) {
-    const urgentStyle = isUrgent ? "color: #dc2626; font-weight: 600;" : "";
     reminderDetailsSections.push(`
       <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid ${isUrgent ? "#fecaca" : "#e5e7eb"}; border-radius: 6px; background: ${isUrgent ? "#fef2f2" : "#ffffff"};">
         <tr>
@@ -127,7 +174,7 @@ export function generateAppointmentReminderEmail(
                 <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">${timeRemainingLabel}</td>
               </tr>
               <tr>
-                <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4; ${urgentStyle}">${timeRemainingValue}</td>
+                <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">${timeRemainingValue}</td>
               </tr>
             </table>
           </td>
@@ -183,13 +230,15 @@ export function generateAppointmentReminderEmail(
 
   // Appointment type section (full width)
   if (appointmentTypeLabel) {
+    // Use "visita" instead of "cita" when appointment type is "visita"
+    const appointmentTypeLabelText = appointmentTypeLabel === "Visita" ? "Tipo de visita" : "Tipo de cita";
     reminderDetailsSections.push(`
       <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
         <tr>
           <td style="padding: 10px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Tipo de cita</td>
+                <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">${appointmentTypeLabelText}</td>
               </tr>
               <tr>
                 <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">${appointmentTypeLabel}</td>
@@ -243,6 +292,8 @@ export function generateAppointmentReminderEmail(
 
   // Preparation tips section for urgent reminders
   if (isUrgent) {
+    // Use "visita" instead of "cita" when appointment type is "visita"
+    const appointmentNounTips = appointmentTypeLabel === "Visita" ? "visita" : "cita";
     let tips: string[] = [];
     if (timeframe === "travel_time") {
       tips = [
@@ -253,12 +304,12 @@ export function generateAppointmentReminderEmail(
     } else if (timeframe === "30min" || timeframe === "30_min") {
       tips = [
         "Prepárate para salir pronto",
-        "Revisa los detalles de la cita",
+        `Revisa los detalles de la ${appointmentNounTips}`,
         "Confirma la dirección",
       ];
     } else if (timeframe === "1h") {
       tips = [
-        "Revisa los detalles de la cita",
+        `Revisa los detalles de la ${appointmentNounTips}`,
         "Prepara todo lo necesario",
         "Planifica tu ruta",
       ];
@@ -304,11 +355,13 @@ export function generateAppointmentReminderEmail(
   }
 
   // Determine action label
-  let actionLabel = "Ver cita";
+  // Use "visita" instead of "cita" when appointment type is "visita"
+  const appointmentNounAction = appointmentTypeLabel === "Visita" ? "visita" : "cita";
+  let actionLabel = `Ver ${appointmentNounAction}`;
   if (timeframe === "travel_time") {
     actionLabel = "Ver direcciones";
   } else if (isUrgent) {
-    actionLabel = "Ver detalles de la cita";
+    actionLabel = `Ver detalles de la ${appointmentNounAction}`;
   }
 
   // Update action URL to point to calendar
@@ -496,7 +549,7 @@ export function generateAppointmentReminderEmail(
  */
 function generatePropertyCardHtml(
   listing: {
-    listingId?: string;
+    listingId?: bigint | string;
     listingType?: string;
     price?: string;
     title?: string | null;
@@ -584,13 +637,16 @@ function generatePropertyCardHtml(
 
   // Generate badges HTML
   let badgesHtml = "";
-  if (propertyTypeLabel || listingTypeLabel) {
+  if (propertyTypeLabel || listingTypeLabel || listing.isBankOwned) {
     const badges: string[] = [];
     if (propertyTypeLabel) {
       badges.push(`<span style="display: inline-block; background: #f3f4f6; color: #374151; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; margin-right: 8px;">${propertyTypeLabel}</span>`);
     }
     if (listingTypeLabel) {
       badges.push(`<span style="display: inline-block; background: #3b82f6; color: #ffffff; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; margin-right: 8px;">${listingTypeLabel}</span>`);
+    }
+    if (listing.isBankOwned) {
+      badges.push(`<span style="display: inline-block; background: #f59e0b; color: #ffffff; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">Piso de Banco</span>`);
     }
     badgesHtml = `
       <tr>

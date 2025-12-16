@@ -12,6 +12,7 @@ import {
   getAppointmentsByDateRangeSecure,
   getListingAppointments,
   softDeleteAppointment,
+  deleteAppointment,
   getAppointmentByIdWithAuth,
   getAppointmentByIdSecure,
 } from "~/server/queries/appointment";
@@ -735,6 +736,87 @@ export async function deleteAppointmentAction(
         error instanceof Error
           ? error.message
           : "Error desconocido al eliminar la cita",
+    };
+  }
+}
+
+// Server action to hard delete an appointment (permanently remove from database)
+export async function hardDeleteAppointmentAction(
+  appointmentId: bigint,
+  listingId?: bigint,
+  contactId?: bigint,
+) {
+  try {
+    // PATTERN: Always get account ID for security
+    await getCurrentUserAccountId();
+    const currentUser = await getCurrentUser();
+
+    // Fetch the appointment FIRST to get all data needed for notification
+    const appointment = await getAppointmentByIdWithAuth(Number(appointmentId));
+
+    if (!appointment?.appointments) {
+      return {
+        success: false,
+        error: "Cita no encontrada",
+      };
+    }
+
+    // Send cancellation notification BEFORE hard delete
+    // This is critical - once hard deleted, we lose the appointment data
+    try {
+      const accountId = await getCurrentUserAccountId();
+      await notifyAppointmentCancelled(
+        appointment.appointments,
+        currentUser.id,
+        BigInt(accountId),
+      );
+    } catch (error) {
+      console.error("Error creating appointment cancellation notification:", error);
+      // Don't fail delete operation if notification fails
+    }
+
+    // Hard delete the appointment (permanently remove from database)
+    await deleteAppointment(Number(appointmentId));
+
+    // Sync deletion to Google Calendar
+    // Sync to assignee's calendar (if assigned), otherwise creator's
+    const syncUserId = appointment.appointments.assignedTo ?? currentUser.id;
+    try {
+      await syncToGoogle(syncUserId, appointmentId, "delete");
+    } catch (error) {
+      console.error(
+        "Failed to sync appointment deletion to Google Calendar:",
+        error,
+      );
+      // Don't fail the delete operation if Google Calendar sync fails
+    }
+
+    // Refresh calendar data
+    revalidatePath("/calendario");
+
+    // Refresh property page if listingId is provided or available from appointment
+    const appointmentListingId = appointment.appointments.listingId;
+    if (listingId ?? appointmentListingId) {
+      revalidatePath(`/propiedades/${listingId ?? appointmentListingId}`);
+    }
+
+    // Refresh contact page if contactId is provided or available from appointment
+    const appointmentContactId = appointment.appointments.contactId;
+    if (contactId ?? appointmentContactId) {
+      revalidatePath(`/contactos/${contactId ?? appointmentContactId}`);
+    }
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Failed to hard delete appointment:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error desconocido al eliminar permanentemente la cita",
     };
   }
 }

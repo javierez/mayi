@@ -79,18 +79,61 @@ export async function GET(request: NextRequest) {
     const now = getSpainTimeAsUTC();
     const remindersCreated: number[] = [];
     const tasksNotified: number[] = [];
+    
+    // Logging for debugging
+    const logs: string[] = [];
+    const structuredLogs: {
+      header: { startTime: string; spainTime: string };
+      appointments: Array<{
+        id: number;
+        title: string;
+        type: string;
+        startsAt: string;
+        timeUntil: string;
+        status: string;
+        details: string[];
+      }>;
+      tasks: Array<{
+        id: number;
+        title: string;
+        status: string;
+        details: string[];
+      }>;
+      summary: { remindersCreated: number; tasksNotified: number; completed: string };
+    } = {
+      header: {
+        startTime: now.toISOString(),
+        spainTime: `${now.getUTCHours()}:${now.getUTCMinutes().toString().padStart(2, '0')}`,
+      },
+      appointments: [],
+      tasks: [],
+      summary: {
+        remindersCreated: 0,
+        tasksNotified: 0,
+        completed: "",
+      },
+    };
+    
+    const log = (msg: string) => {
+      console.log(`[CRON] ${msg}`);
+      logs.push(msg);
+    };
+    
+    log(`🕐 Cron started at Spain time: ${now.toISOString()} (UTC hours: ${now.getUTCHours()}:${now.getUTCMinutes().toString().padStart(2, '0')})`);
 
     // ===== APPOINTMENT REMINDERS =====
 
     // Calculate time windows for different reminder timeframes
     const in24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const in25Hours = new Date(now.getTime() + 25 * 60 * 60 * 1000); // Extended for 24h window
 
-    // Find appointments starting within next 24 hours
+    // Find appointments starting within next 25 hours (to catch 24h window)
     const upcomingAppointments = await db
       .select({
         appointmentId: appointments.appointmentId,
         userId: appointments.userId,
         contactId: appointments.contactId,
+        listingId: appointments.listingId,
         assignedTo: appointments.assignedTo,
         title: appointments.title,
         datetimeStart: appointments.datetimeStart,
@@ -107,14 +150,29 @@ export async function GET(request: NextRequest) {
           eq(appointments.isActive, true),
           eq(appointments.status, "Scheduled"),
           gte(appointments.datetimeStart, now),
-          lte(appointments.datetimeStart, in24Hours),
+          lte(appointments.datetimeStart, in25Hours),
         ),
       );
+
+    log(`📅 Found ${upcomingAppointments.length} upcoming appointments in next 25 hours`);
 
     // Process each appointment and check which reminder timeframe applies
     for (const appointment of upcomingAppointments) {
       const accountId = appointment.accountId;
-      if (!accountId || typeof accountId !== "bigint") continue;
+      if (!accountId || typeof accountId !== "bigint") {
+        const skipMsg = `⚠️ Skipping appointment ${appointment.appointmentId}: no accountId`;
+        log(`  ${skipMsg}`);
+        structuredLogs.appointments.push({
+          id: Number(appointment.appointmentId),
+          title: appointment.title,
+          type: appointment.type ?? "visita",
+          startsAt: new Date(appointment.datetimeStart).toISOString(),
+          timeUntil: "N/A",
+          status: "⚠️ Skipped (no accountId)",
+          details: [skipMsg],
+        });
+        continue;
+      }
 
       // Get settings for this account
       const settings = await getEmailSettingsForAccount(BigInt(accountId));
@@ -124,86 +182,162 @@ export async function GET(request: NextRequest) {
       const hoursUntilStart = timeUntilStart / (1000 * 60 * 60);
       const minutesUntilStart = timeUntilStart / (1000 * 60);
 
+      // Normalize appointment type to lowercase to match settings keys
+      // Database stores "Visita", "Firma" but settings use "visita", "firma"
+      const appointmentTypeRaw = appointment.type ?? "visita";
+      const appointmentType = appointmentTypeRaw.toLowerCase() as keyof typeof settings.appointments;
+      const startsAtFormatted = `${startTime.getUTCHours()}:${startTime.getUTCMinutes().toString().padStart(2, '0')}`;
+      const timeUntilFormatted = `${hoursUntilStart.toFixed(2)}h / ${Math.round(minutesUntilStart)}min`;
+      
+      // Create structured log entry for this appointment
+      const appointmentLog: typeof structuredLogs.appointments[0] = {
+        id: Number(appointment.appointmentId),
+        title: appointment.title,
+        type: appointmentTypeRaw, // Keep original case for display
+        startsAt: startsAtFormatted,
+        timeUntil: timeUntilFormatted,
+        status: "",
+        details: [],
+      };
+
+      log(`  📌 Appointment #${appointment.appointmentId} "${appointment.title}" (type: ${appointmentTypeRaw})`);
+      log(`     Starts at: ${startsAtFormatted} (in ${timeUntilFormatted})`);
+
       // Determine which reminder timeframe applies (check in order of urgency)
+      // Windows are designed to:
+      // 1. Fire reminders at approximately the right time (with 15-min tolerance for cron)
+      // 2. Avoid gaps where no reminder would fire
+      // 3. Deduplication prevents multiple reminders for the same timeframe
       let reminderTimeframe: "30_min" | "1h" | "12h" | "1_day" | null = null;
       
-      if (minutesUntilStart <= 30 && minutesUntilStart > 15) {
+      // 30min reminder: Fire when 15-45 minutes before (wider window, cron runs every 15 min)
+      if (minutesUntilStart <= 45 && minutesUntilStart > 15) {
         reminderTimeframe = "30_min";
-      } else if (hoursUntilStart <= 1 && hoursUntilStart > 0.5) {
+      } 
+      // 1h reminder: Fire when 45min-1.5hr before (catches appointments 1-2 hours out)
+      else if (hoursUntilStart <= 1.5 && hoursUntilStart > 0.75) {
         reminderTimeframe = "1h";
-      } else if (hoursUntilStart <= 12 && hoursUntilStart > 11) {
+      } 
+      // 12h reminder: Fire when 11-13 hours before (2-hour window centered on 12h)
+      else if (hoursUntilStart <= 13 && hoursUntilStart > 11) {
         reminderTimeframe = "12h";
-      } else if (hoursUntilStart <= 24 && hoursUntilStart > 23) {
+      } 
+      // 24h reminder: Fire when 22-25 hours before (3-hour window to catch 24h mark)
+      else if (hoursUntilStart <= 25 && hoursUntilStart > 22) {
         reminderTimeframe = "1_day";
       }
 
-      if (reminderTimeframe) {
-        // Check if notification already exists for this timeframe
-        const exists = await reminderExistsForEntity(
+      if (!reminderTimeframe) {
+        const gapMsg = `⏳ Not in any reminder window (gap: ${hoursUntilStart.toFixed(2)}h before)`;
+        log(`     ${gapMsg}`);
+        appointmentLog.status = "⏳ Not in reminder window";
+        appointmentLog.details.push(gapMsg);
+        structuredLogs.appointments.push(appointmentLog);
+        continue;
+      }
+      
+      log(`     🎯 In ${reminderTimeframe} window`);
+      appointmentLog.details.push(`🎯 In ${reminderTimeframe} window`);
+
+      // Check if notification already exists for this timeframe
+      const exists = await reminderExistsForEntity(
+        BigInt(accountId),
+        "appointment",
+        appointment.appointmentId,
+        "appointment_reminder",
+        reminderTimeframe,
+      );
+
+      if (exists) {
+        const skipMsg = `⏭️ Skipping: ${reminderTimeframe} reminder already sent`;
+        log(`     ${skipMsg}`);
+        appointmentLog.status = "⏭️ Reminder already sent";
+        appointmentLog.details.push(skipMsg);
+        structuredLogs.appointments.push(appointmentLog);
+        continue;
+      }
+
+      // Check if this reminder is enabled in settings
+      const appointmentSettings = settings.appointments[appointmentType];
+      
+      if (!appointmentSettings || !("notify24h" in appointmentSettings)) {
+        const noSettingsMsg = `⚠️ No settings found for appointment type: ${appointmentType}`;
+        log(`     ${noSettingsMsg}`);
+        appointmentLog.status = "⚠️ No settings found";
+        appointmentLog.details.push(noSettingsMsg);
+        structuredLogs.appointments.push(appointmentLog);
+        continue;
+      }
+
+      let isEnabled = false;
+      switch (reminderTimeframe) {
+        case "1_day":
+          isEnabled = appointmentSettings.notify24h.emailEnabled;
+          break;
+        case "12h":
+          isEnabled = appointmentSettings.notify12h.emailEnabled;
+          break;
+        case "1h":
+          isEnabled = appointmentSettings.notify1h.emailEnabled;
+          break;
+        case "30_min":
+          isEnabled = appointmentSettings.notify30min.emailEnabled;
+          break;
+      }
+
+      if (!isEnabled) {
+        const disabledMsg = `❌ ${reminderTimeframe} reminder DISABLED in settings for ${appointmentType}`;
+        log(`     ${disabledMsg}`);
+        appointmentLog.status = "❌ Reminder disabled";
+        appointmentLog.details.push(disabledMsg);
+        structuredLogs.appointments.push(appointmentLog);
+        continue;
+      }
+
+      log(`     ✅ ${reminderTimeframe} reminder ENABLED - creating notification...`);
+      appointmentLog.details.push(`✅ ${reminderTimeframe} reminder ENABLED - creating notification...`);
+      
+      try {
+        await notifyAppointmentReminder(
+          {
+            appointmentId: appointment.appointmentId,
+            userId: appointment.userId,
+            contactId: appointment.contactId,
+            listingId: appointment.listingId ?? undefined,
+            assignedTo: appointment.assignedTo ?? undefined,
+            title: appointment.title,
+            datetimeStart: appointment.datetimeStart,
+            datetimeEnd: appointment.datetimeEnd,
+            status: "Scheduled",
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
           BigInt(accountId),
-          "appointment",
-          appointment.appointmentId,
-          "appointment_reminder",
           reminderTimeframe,
         );
-
-        if (!exists) {
-          // Check if this reminder is enabled in settings
-          const appointmentType = appointment.type ?? "visita";
-          const appointmentSettings = settings.appointments[appointmentType as keyof typeof settings.appointments];
-          
-          if (appointmentSettings && "notify24h" in appointmentSettings) {
-            let isEnabled = false;
-            switch (reminderTimeframe) {
-              case "1_day":
-                isEnabled = appointmentSettings.notify24h.emailEnabled;
-                break;
-              case "12h":
-                isEnabled = appointmentSettings.notify12h.emailEnabled;
-                break;
-              case "1h":
-                isEnabled = appointmentSettings.notify1h.emailEnabled;
-                break;
-              case "30_min":
-                isEnabled = appointmentSettings.notify30min.emailEnabled;
-                break;
-            }
-
-            if (isEnabled) {
-              try {
-                await notifyAppointmentReminder(
-                  {
-                    appointmentId: appointment.appointmentId,
-                    userId: appointment.userId,
-                    contactId: appointment.contactId,
-                    assignedTo: appointment.assignedTo ?? undefined,
-                    title: appointment.title,
-                    datetimeStart: appointment.datetimeStart,
-                    datetimeEnd: appointment.datetimeEnd,
-                    status: "Scheduled",
-                    isActive: true,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                  },
-                  BigInt(accountId),
-                  reminderTimeframe,
-                );
-                remindersCreated.push(1);
-              } catch (error) {
-                console.error(
-                  `Error creating ${reminderTimeframe} reminder for appointment ${appointment.appointmentId}:`,
-                  error,
-                );
-              }
-            }
-          }
-        }
+        remindersCreated.push(1);
+        const successMsg = `🎉 Successfully created ${reminderTimeframe} reminder!`;
+        log(`     ${successMsg}`);
+        appointmentLog.status = "🎉 Reminder created";
+        appointmentLog.details.push(successMsg);
+        structuredLogs.appointments.push(appointmentLog);
+      } catch (error) {
+        const errorMsg = `💥 Error creating reminder: ${error instanceof Error ? error.message : "Unknown"}`;
+        log(`     ${errorMsg}`);
+        appointmentLog.status = "💥 Error creating reminder";
+        appointmentLog.details.push(errorMsg);
+        structuredLogs.appointments.push(appointmentLog);
+        console.error(
+          `Error creating ${reminderTimeframe} reminder for appointment ${appointment.appointmentId}:`,
+          error,
+        );
       }
 
       // Handle travel time reminders (if trip time is set)
       if (appointment.tripTimeMinutes) {
-        const appointmentType = appointment.type ?? "visita";
-        const appointmentSettings = settings.appointments[appointmentType as keyof typeof settings.appointments];
+        // Use the already normalized appointmentType from above
+        const appointmentSettings = settings.appointments[appointmentType];
         
         if (appointmentSettings && "notifyTravelTime" in appointmentSettings && appointmentSettings.notifyTravelTime.emailEnabled) {
           const travelTimeMs = appointment.tripTimeMinutes * 60 * 1000;
@@ -227,6 +361,7 @@ export async function GET(request: NextRequest) {
                     appointmentId: appointment.appointmentId,
                     userId: appointment.userId,
                     contactId: appointment.contactId,
+                    listingId: appointment.listingId ?? undefined,
                     assignedTo: appointment.assignedTo ?? undefined,
                     title: appointment.title,
                     datetimeStart: appointment.datetimeStart,
@@ -606,11 +741,22 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const summaryMsg = `✅ Cron completed: ${remindersCreated.length} reminders, ${tasksNotified.length} task notifications`;
+    log(summaryMsg);
+    
+    structuredLogs.summary = {
+      remindersCreated: remindersCreated.length,
+      tasksNotified: tasksNotified.length,
+      completed: summaryMsg,
+    };
+    
     return NextResponse.json({
       success: true,
       remindersCreated: remindersCreated.length,
       tasksNotified: tasksNotified.length,
       timestamp: now.toISOString(),
+      logs: logs, // Flat logs for console/Vercel logs
+      structuredLogs: structuredLogs, // Structured logs for better readability
     });
   } catch (error) {
     console.error("Error in cron job:", error);
