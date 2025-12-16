@@ -5,8 +5,8 @@
  * for the upcoming week. Uses TABLE-BASED layouts for maximum
  * email client compatibility.
  *
- * IMPORTANT: Uses BOX-BASED design consistent with task and appointment
- * notification templates for visual consistency across all emails.
+ * IMPORTANT: Uses BOX-BASED design with white backgrounds consistent with
+ * task and appointment notification templates for visual consistency.
  */
 
 import type { Task } from "~/lib/data";
@@ -58,16 +58,13 @@ export function generateWeeklyBriefingEmail(
     subject += ` | ${dateRange}`;
   }
 
-  // Urgency labels and colors
-  const urgencyConfig: Record<
-    number,
-    { label: string; color: string; bgColor: string; borderColor: string }
-  > = {
-    1: { label: "Baja", color: "#6b7280", bgColor: "#f9fafb", borderColor: "#e5e7eb" },
-    2: { label: "Normal", color: "#3b82f6", bgColor: "#eff6ff", borderColor: "#dbeafe" },
-    3: { label: "Alta", color: "#f59e0b", bgColor: "#fffbeb", borderColor: "#fde68a" },
-    4: { label: "Urgente", color: "#f97316", bgColor: "#fff7ed", borderColor: "#fed7aa" },
-    5: { label: "Critica", color: "#dc2626", bgColor: "#fef2f2", borderColor: "#fecaca" },
+  // Urgency labels
+  const urgencyLabels: Record<number, string> = {
+    1: "Baja",
+    2: "Normal",
+    3: "Alta",
+    4: "Urgente",
+    5: "Critica",
   };
 
   // Appointment type labels
@@ -140,33 +137,32 @@ export function generateWeeklyBriefingEmail(
 
   const dayGroups = groupByDay();
 
-  // Default config for fallback
-  const defaultConfig = { label: "Normal", color: "#3b82f6", bgColor: "#eff6ff", borderColor: "#dbeafe" };
-
-  // Build task box HTML (box-based design for weekly view)
+  // Build task box HTML (white box with gray border)
   const buildTaskBox = (task: Task) => {
-    const config = task.urgency
-      ? (urgencyConfig[task.urgency] ?? defaultConfig)
-      : defaultConfig;
+    const urgencyLabel = task.urgency ? (urgencyLabels[task.urgency] ?? "Normal") : "Normal";
     const taskUrl = `${baseUrl}/tareas?taskId=${task.taskId.toString()}`;
     const timeStr = task.dueTime ? `a las ${task.dueTime}` : "";
 
     return `
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid ${config.borderColor}; border-radius: 6px; background: ${config.bgColor};">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
         <tr>
           <td style="padding: 10px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td style="font-size: 10px; font-weight: 600; color: ${config.color}; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">
-                  Tarea · ${config.label}
+                <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">
+                  Tarea
                 </td>
               </tr>
               <tr>
-                <td>
-                  <a href="${taskUrl}" style="color: #111827; text-decoration: none; font-size: 13px; font-weight: 500; line-height: 1.4;">
+                <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">
+                  <a href="${taskUrl}" style="color: #111827; text-decoration: none;">
                     ${task.title}
                   </a>
-                  ${timeStr ? `<span style="color: #9ca3af; font-size: 11px; margin-left: 8px;">${timeStr}</span>` : ""}
+                </td>
+              </tr>
+              <tr>
+                <td style="padding-top: 6px; font-size: 12px; color: #6b7280;">
+                  ${urgencyLabel}${timeStr ? ` · ${timeStr}` : ""}
                 </td>
               </tr>
             </table>
@@ -176,35 +172,38 @@ export function generateWeeklyBriefingEmail(
     `;
   };
 
-  // Build appointment box HTML (box-based design for weekly view)
+  // Build appointment box HTML (white box with gray border)
   const buildAppointmentBox = (appointment: Appointment) => {
     const startDate = new Date(appointment.datetimeStart);
     const endDate = new Date(appointment.datetimeEnd);
     const timeStr = `${startDate.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} - ${endDate.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`;
 
     const typeLabel = appointment.type
-      ? (appointmentTypeLabels[appointment.type.toLowerCase()] ??
-        appointment.type)
+      ? (appointmentTypeLabels[appointment.type.toLowerCase()] ?? appointment.type)
       : "Cita";
 
     const appointmentUrl = `${baseUrl}/calendario?appointmentId=${appointment.appointmentId.toString()}`;
 
     return `
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #dbeafe; border-radius: 6px; background: #eff6ff;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
         <tr>
           <td style="padding: 10px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td style="font-size: 10px; font-weight: 600; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">
+                <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">
                   ${typeLabel}
                 </td>
               </tr>
               <tr>
-                <td>
-                  <a href="${appointmentUrl}" style="color: #111827; text-decoration: none; font-size: 13px; font-weight: 500; line-height: 1.4;">
+                <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">
+                  <a href="${appointmentUrl}" style="color: #111827; text-decoration: none;">
                     ${appointment.title}
                   </a>
-                  <span style="color: #9ca3af; font-size: 11px; margin-left: 8px;">${timeStr}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding-top: 6px; font-size: 12px; color: #6b7280;">
+                  ${timeStr}
                 </td>
               </tr>
             </table>
@@ -214,7 +213,7 @@ export function generateWeeklyBriefingEmail(
     `;
   };
 
-  // Build day section HTML (box-based)
+  // Build day section HTML (white boxes)
   const buildDaySection = (group: DayGroup, isFirst: boolean) => {
     const capitalizedDay =
       group.dayLabel.charAt(0).toUpperCase() + group.dayLabel.slice(1);
@@ -234,7 +233,7 @@ export function generateWeeklyBriefingEmail(
       <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 16px; ${!isFirst ? "border-top: 1px solid #f3f4f6; padding-top: 16px;" : ""}">
         <!-- Day Header Box -->
         <tr>
-          <td style="padding-bottom: 10px;">
+          <td style="padding-bottom: 8px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
               <tr>
                 <td style="padding: 10px;">
@@ -243,10 +242,8 @@ export function generateWeeklyBriefingEmail(
                       <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">
                         ${capitalizedDay}
                       </td>
-                      <td align="right">
-                        <span style="display: inline-block; padding: 2px 8px; background: #f3f4f6; color: #6b7280; font-size: 11px; font-weight: 500; border-radius: 8px;">
-                          ${itemCount} ${itemCount === 1 ? "item" : "items"}
-                        </span>
+                      <td align="right" style="font-size: 14px; font-weight: 400; color: #111827;">
+                        ${itemCount}
                       </td>
                     </tr>
                   </table>
@@ -266,22 +263,27 @@ export function generateWeeklyBriefingEmail(
     `;
   };
 
-  // Build summary stats (box-based)
+  // Build summary stats (white boxes)
   const buildSummaryStats = () => {
-    const criticalCount = tasks.filter((t) => t.urgency === 5).length;
-    const urgentCount = tasks.filter(
-      (t) => t.urgency === 3 || t.urgency === 4,
-    ).length;
-
     const stats: string[] = [];
 
     if (hasTasks) {
       stats.push(`
-        <table cellpadding="0" cellspacing="0" border="0" style="display: inline-block; margin-right: 8px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
+        <table cellpadding="0" cellspacing="0" border="0" width="48%" style="border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
           <tr>
-            <td style="padding: 12px 16px; text-align: center;">
-              <div style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Tareas</div>
-              <div style="font-size: 22px; font-weight: 600; color: #111827; line-height: 1;">${taskCount}</div>
+            <td style="padding: 10px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">
+                    Tareas
+                  </td>
+                </tr>
+                <tr>
+                  <td style="font-size: 22px; font-weight: 600; color: #111827; line-height: 1;">
+                    ${taskCount}
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
         </table>
@@ -290,35 +292,21 @@ export function generateWeeklyBriefingEmail(
 
     if (hasAppointments) {
       stats.push(`
-        <table cellpadding="0" cellspacing="0" border="0" style="display: inline-block; margin-right: 8px; border: 1px solid #dbeafe; border-radius: 6px; background: #eff6ff;">
+        <table cellpadding="0" cellspacing="0" border="0" width="48%" style="border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
           <tr>
-            <td style="padding: 12px 16px; text-align: center;">
-              <div style="font-size: 10px; font-weight: 600; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Citas</div>
-              <div style="font-size: 22px; font-weight: 600; color: #3b82f6; line-height: 1;">${appointmentCount}</div>
-            </td>
-          </tr>
-        </table>
-      `);
-    }
-
-    if (criticalCount > 0) {
-      stats.push(`
-        <table cellpadding="0" cellspacing="0" border="0" style="display: inline-block; margin-right: 8px; border: 1px solid #fecaca; border-radius: 6px; background: #fef2f2;">
-          <tr>
-            <td style="padding: 12px 16px; text-align: center;">
-              <div style="font-size: 10px; font-weight: 600; color: #dc2626; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Criticas</div>
-              <div style="font-size: 22px; font-weight: 600; color: #dc2626; line-height: 1;">${criticalCount}</div>
-            </td>
-          </tr>
-        </table>
-      `);
-    } else if (urgentCount > 0) {
-      stats.push(`
-        <table cellpadding="0" cellspacing="0" border="0" style="display: inline-block; margin-right: 8px; border: 1px solid #fde68a; border-radius: 6px; background: #fffbeb;">
-          <tr>
-            <td style="padding: 12px 16px; text-align: center;">
-              <div style="font-size: 10px; font-weight: 600; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Urgentes</div>
-              <div style="font-size: 22px; font-weight: 600; color: #f59e0b; line-height: 1;">${urgentCount}</div>
+            <td style="padding: 10px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">
+                    Citas
+                  </td>
+                </tr>
+                <tr>
+                  <td style="font-size: 22px; font-weight: 600; color: #111827; line-height: 1;">
+                    ${appointmentCount}
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
         </table>
@@ -328,22 +316,25 @@ export function generateWeeklyBriefingEmail(
     if (stats.length === 0) return "";
 
     return `
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 20px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 16px;">
         <tr>
-          <td align="center">
-            ${stats.join("")}
+          <td>
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                ${stats.map((stat, i) => `<td width="48%" valign="top">${stat}</td>${i < stats.length - 1 ? '<td width="4%"></td>' : ""}`).join("")}
+              </tr>
+            </table>
           </td>
         </tr>
       </table>
     `;
   };
 
-  // Empty state (box-based)
+  // Empty state
   const emptyStateHtml = `
     <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
       <tr>
         <td align="center" style="padding: 32px 20px;">
-          <div style="font-size: 32px; margin-bottom: 12px;">&#127796;</div>
           <p style="margin: 0; color: #6b7280; font-size: 14px;">
             No tienes actividades programadas para esta semana.
           </p>
@@ -519,10 +510,8 @@ export function generateWeeklyBriefingEmail(
       textContent += `${capitalizedDay.toUpperCase()}:\n`;
 
       group.tasks.forEach((task) => {
-        const config = task.urgency
-          ? (urgencyConfig[task.urgency] ?? defaultConfig)
-          : defaultConfig;
-        textContent += `  - [Tarea] ${task.title} [${config.label}]\n`;
+        const urgencyLabel = task.urgency ? (urgencyLabels[task.urgency] ?? "Normal") : "Normal";
+        textContent += `  - [Tarea] ${task.title} [${urgencyLabel}]\n`;
       });
 
       group.appointments.forEach((apt) => {

@@ -10,7 +10,9 @@ import CalendarEvent from "~/components/appointments/calendar-event";
 import type { AppointmentData } from "~/components/appointments/appointment-card";
 import {
   getLocalDateString,
+  getUTCDateString,
   getMinutesFromMidnight,
+  getUTCMinutesFromMidnight,
   isToday as isTodayHelper,
   appointmentOverlapsDay,
 } from "~/lib/utils/date-helpers";
@@ -71,10 +73,10 @@ const calculateEventStyle = (
   const calendarEndMinutes = 24 * 60; // 11:59 PM = 1440 minutes
   const calendarDurationMinutes = calendarEndMinutes - calendarStartMinutes;
 
-  // Use local date strings for comparison (avoids UTC conversion issues)
+  // Use local date string for calendar day (UI-generated), UTC for appointment dates (DB-stored)
   const currentDayStr = getLocalDateString(currentDay);
-  const startDayStr = getLocalDateString(startDateTime);
-  const endDayStr = getLocalDateString(endDateTime);
+  const startDayStr = getUTCDateString(startDateTime);
+  const endDayStr = getUTCDateString(endDateTime);
 
   // Determine if this is the start day, end day, middle day, or single day
   const isStartDay = currentDayStr === startDayStr;
@@ -85,9 +87,9 @@ const calculateEventStyle = (
   let height = 0;
 
   if (isSingleDay) {
-    // Single day event - use actual start and end times
-    const startMinutes = getMinutesFromMidnight(startDateTime);
-    const endMinutes = getMinutesFromMidnight(endDateTime);
+    // Single day event - use actual start and end times (UTC for DB-stored appointments)
+    const startMinutes = getUTCMinutesFromMidnight(startDateTime);
+    const endMinutes = getUTCMinutesFromMidnight(endDateTime);
 
     topPosition = ((startMinutes - calendarStartMinutes) / 60) * 60;
     const durationMinutes = endMinutes - startMinutes;
@@ -98,8 +100,8 @@ const calculateEventStyle = (
       return { top: "0px", height: "0px", display: "none" };
     }
   } else if (isStartDay) {
-    // First day of multi-day event - from start time to midnight
-    const startMinutes = getMinutesFromMidnight(startDateTime);
+    // First day of multi-day event - from start time to midnight (UTC for DB-stored appointments)
+    const startMinutes = getUTCMinutesFromMidnight(startDateTime);
     topPosition = ((startMinutes - calendarStartMinutes) / 60) * 60;
     const remainingMinutes = calendarEndMinutes - startMinutes;
     height = (remainingMinutes / 60) * 60;
@@ -109,8 +111,8 @@ const calculateEventStyle = (
       height = ((calendarEndMinutes - calendarStartMinutes) / 60) * 60;
     }
   } else if (isEndDay) {
-    // Last day of multi-day event - from calendar start to end time
-    const endMinutes = getMinutesFromMidnight(endDateTime);
+    // Last day of multi-day event - from calendar start to end time (UTC for DB-stored appointments)
+    const endMinutes = getUTCMinutesFromMidnight(endDateTime);
     topPosition = 0;
     height = ((endMinutes - calendarStartMinutes) / 60) * 60;
 

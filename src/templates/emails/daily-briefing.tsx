@@ -2,11 +2,10 @@
  * Daily Briefing Email Template
  *
  * Generates a refined daily briefing email with tasks and appointments
- * for today and tomorrow. Uses TABLE-BASED layouts for maximum
- * email client compatibility.
+ * for today. Uses TABLE-BASED layouts for maximum email client compatibility.
  *
- * IMPORTANT: Uses BOX-BASED design consistent with task and appointment
- * notification templates for visual consistency across all emails.
+ * IMPORTANT: Uses BOX-BASED design with white backgrounds consistent with
+ * task and appointment notification templates for visual consistency.
  */
 
 import type { Task } from "~/lib/data";
@@ -51,16 +50,13 @@ export function generateDailyBriefingEmail(
     subject += ` | ${date}`;
   }
 
-  // Urgency labels and colors
-  const urgencyConfig: Record<
-    number,
-    { label: string; color: string; bgColor: string; borderColor: string }
-  > = {
-    1: { label: "Baja", color: "#6b7280", bgColor: "#f9fafb", borderColor: "#e5e7eb" },
-    2: { label: "Normal", color: "#3b82f6", bgColor: "#eff6ff", borderColor: "#dbeafe" },
-    3: { label: "Alta", color: "#f59e0b", bgColor: "#fffbeb", borderColor: "#fde68a" },
-    4: { label: "Urgente", color: "#f97316", bgColor: "#fff7ed", borderColor: "#fed7aa" },
-    5: { label: "Critica", color: "#dc2626", bgColor: "#fef2f2", borderColor: "#fecaca" },
+  // Urgency labels
+  const urgencyLabels: Record<number, string> = {
+    1: "Baja",
+    2: "Normal",
+    3: "Alta",
+    4: "Urgente",
+    5: "Critica",
   };
 
   // Appointment type labels
@@ -73,15 +69,9 @@ export function generateDailyBriefingEmail(
     viaje: "Viaje",
   };
 
-  // Default config for fallback
-  const defaultConfig = { label: "Normal", color: "#3b82f6", bgColor: "#eff6ff", borderColor: "#dbeafe" };
-
-  // Build task box HTML (box-based design)
+  // Build task box HTML (white box with gray border)
   const buildTaskBox = (task: Task) => {
-    const config = task.urgency
-      ? (urgencyConfig[task.urgency] ?? defaultConfig)
-      : defaultConfig;
-
+    const urgencyLabel = task.urgency ? (urgencyLabels[task.urgency] ?? "Normal") : "Normal";
     const dueDateStr = task.dueDate
       ? new Date(task.dueDate).toLocaleDateString("es-ES", {
           weekday: "short",
@@ -93,31 +83,27 @@ export function generateDailyBriefingEmail(
     const taskUrl = `${baseUrl}/tareas?taskId=${task.taskId.toString()}`;
 
     return `
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 8px; border: 1px solid ${config.borderColor}; border-radius: 6px; background: ${config.bgColor};">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
         <tr>
-          <td style="padding: 12px;">
+          <td style="padding: 10px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td style="font-size: 10px; font-weight: 600; color: ${config.color}; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 6px;">
-                  Tarea · ${config.label}
+                <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">
+                  Tarea
                 </td>
               </tr>
               <tr>
-                <td>
-                  <a href="${taskUrl}" style="color: #111827; text-decoration: none; font-size: 14px; font-weight: 500; line-height: 1.4;">
+                <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">
+                  <a href="${taskUrl}" style="color: #111827; text-decoration: none;">
                     ${task.title}
                   </a>
                 </td>
               </tr>
-              ${(dueDateStr || dueTimeStr) ? `
               <tr>
-                <td style="padding-top: 6px;">
-                  <span style="font-size: 12px; color: #6b7280;">
-                    ${dueDateStr}${dueTimeStr ? ` a las ${dueTimeStr}` : ""}
-                  </span>
+                <td style="padding-top: 6px; font-size: 12px; color: #6b7280;">
+                  ${urgencyLabel}${dueDateStr ? ` · ${dueDateStr}` : ""}${dueTimeStr ? ` a las ${dueTimeStr}` : ""}
                 </td>
               </tr>
-              ` : ""}
             </table>
           </td>
         </tr>
@@ -125,7 +111,7 @@ export function generateDailyBriefingEmail(
     `;
   };
 
-  // Build appointment box HTML (box-based design)
+  // Build appointment box HTML (white box with gray border)
   const buildAppointmentBox = (appointment: Appointment) => {
     const startDate = new Date(appointment.datetimeStart);
     const endDate = new Date(appointment.datetimeEnd);
@@ -138,34 +124,31 @@ export function generateDailyBriefingEmail(
     });
 
     const typeLabel = appointment.type
-      ? (appointmentTypeLabels[appointment.type.toLowerCase()] ??
-        appointment.type)
+      ? (appointmentTypeLabels[appointment.type.toLowerCase()] ?? appointment.type)
       : "Cita";
 
     const appointmentUrl = `${baseUrl}/calendario?appointmentId=${appointment.appointmentId.toString()}`;
 
     return `
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 8px; border: 1px solid #dbeafe; border-radius: 6px; background: #eff6ff;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
         <tr>
-          <td style="padding: 12px;">
+          <td style="padding: 10px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td style="font-size: 10px; font-weight: 600; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 6px;">
+                <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">
                   ${typeLabel}
                 </td>
               </tr>
               <tr>
-                <td>
-                  <a href="${appointmentUrl}" style="color: #111827; text-decoration: none; font-size: 14px; font-weight: 500; line-height: 1.4;">
+                <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">
+                  <a href="${appointmentUrl}" style="color: #111827; text-decoration: none;">
                     ${appointment.title}
                   </a>
                 </td>
               </tr>
               <tr>
-                <td style="padding-top: 6px;">
-                  <span style="font-size: 12px; color: #6b7280;">
-                    ${dateStr} | ${timeStr}
-                  </span>
+                <td style="padding-top: 6px; font-size: 12px; color: #6b7280;">
+                  ${dateStr} · ${timeStr}
                 </td>
               </tr>
             </table>
@@ -182,9 +165,9 @@ export function generateDailyBriefingEmail(
       (a, b) => (b.urgency ?? 2) - (a.urgency ?? 2),
     );
     tasksSectionHtml = `
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 20px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 16px;">
         <tr>
-          <td style="padding-bottom: 12px;">
+          <td style="padding-bottom: 8px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
               <tr>
                 <td style="padding: 10px;">
@@ -193,10 +176,8 @@ export function generateDailyBriefingEmail(
                       <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">
                         Tareas pendientes
                       </td>
-                      <td align="right">
-                        <span style="display: inline-block; padding: 2px 8px; background: #f3f4f6; color: #6b7280; font-size: 11px; font-weight: 500; border-radius: 10px;">
-                          ${taskCount}
-                        </span>
+                      <td align="right" style="font-size: 14px; font-weight: 400; color: #111827;">
+                        ${taskCount}
                       </td>
                     </tr>
                   </table>
@@ -223,9 +204,9 @@ export function generateDailyBriefingEmail(
         new Date(b.datetimeStart).getTime(),
     );
     appointmentsSectionHtml = `
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 20px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 16px;">
         <tr>
-          <td style="padding-bottom: 12px;">
+          <td style="padding-bottom: 8px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
               <tr>
                 <td style="padding: 10px;">
@@ -234,10 +215,8 @@ export function generateDailyBriefingEmail(
                       <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px;">
                         Citas programadas
                       </td>
-                      <td align="right">
-                        <span style="display: inline-block; padding: 2px 8px; background: #f3f4f6; color: #6b7280; font-size: 11px; font-weight: 500; border-radius: 10px;">
-                          ${appointmentCount}
-                        </span>
+                      <td align="right" style="font-size: 14px; font-weight: 400; color: #111827;">
+                        ${appointmentCount}
                       </td>
                     </tr>
                   </table>
@@ -255,12 +234,11 @@ export function generateDailyBriefingEmail(
     `;
   }
 
-  // Empty state (box-based)
+  // Empty state
   const emptyStateHtml = `
     <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
       <tr>
         <td align="center" style="padding: 32px 20px;">
-          <div style="font-size: 32px; margin-bottom: 12px;">&#9728;</div>
           <p style="margin: 0; color: #6b7280; font-size: 14px;">
             No tienes actividades programadas para hoy.
           </p>
@@ -418,9 +396,7 @@ export function generateDailyBriefingEmail(
     if (hasTasks) {
       textContent += `TAREAS PENDIENTES (${taskCount}):\n`;
       tasks.forEach((task) => {
-        const config = task.urgency
-          ? (urgencyConfig[task.urgency] ?? defaultConfig)
-          : defaultConfig;
+        const urgencyLabel = task.urgency ? (urgencyLabels[task.urgency] ?? "Normal") : "Normal";
         const dueDateStr = task.dueDate
           ? new Date(task.dueDate).toLocaleDateString("es-ES", {
               weekday: "short",
@@ -428,7 +404,7 @@ export function generateDailyBriefingEmail(
               month: "short",
             })
           : "";
-        textContent += `- ${task.title} [${config.label}]${dueDateStr ? ` - ${dueDateStr}` : ""}\n`;
+        textContent += `- ${task.title} [${urgencyLabel}]${dueDateStr ? ` - ${dueDateStr}` : ""}\n`;
       });
       textContent += `\nVer tareas: ${baseUrl}/tareas\n\n`;
     }

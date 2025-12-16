@@ -48,12 +48,23 @@ export function getDayEnd(date: Date): Date {
 
 /**
  * Get date string in YYYY-MM-DD format using local timezone
- * (for consistent date comparisons without timezone conversion)
+ * Use for current time, calendar grid dates, and UI-generated dates
  */
 export function getLocalDateString(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Get date string in YYYY-MM-DD format using UTC
+ * Use for appointment dates (stored as UTC in database)
+ */
+export function getUTCDateString(date: Date): string {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
@@ -74,9 +85,18 @@ export function getLocalTimeComponents(date: Date): {
 
 /**
  * Get total minutes from midnight in local timezone
+ * Use for current time indicator positioning
  */
 export function getMinutesFromMidnight(date: Date): number {
   return date.getHours() * 60 + date.getMinutes();
+}
+
+/**
+ * Get total minutes from midnight using UTC
+ * Use for appointment positioning (stored as UTC in database)
+ */
+export function getUTCMinutesFromMidnight(date: Date): number {
+  return date.getUTCHours() * 60 + date.getUTCMinutes();
 }
 
 /**
@@ -114,13 +134,14 @@ export function formatDate(date: Date, locale: string = 'es-ES'): string {
 }
 
 /**
- * Format time for display using local time components directly
- * This avoids timezone conversion issues when dates are stored as local time
+ * Format time for display using UTC components
+ * CRITICAL: Times are stored as UTC in the database (see createLocalDateTime)
+ * Using getUTCHours/getUTCMinutes ensures consistent display regardless of browser timezone
  */
-export function formatTime(date: Date, locale: string = 'es-ES'): string {
-  // Use local time components directly to avoid timezone conversion issues
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
+export function formatTime(date: Date, _locale: string = 'es-ES'): string {
+  // Use UTC components - times are stored as UTC in the database
+  const hours = date.getUTCHours().toString().padStart(2, '0');
+  const minutes = date.getUTCMinutes().toString().padStart(2, '0');
   return `${hours}:${minutes}`;
 }
 

@@ -139,11 +139,19 @@ const isCurrentMonth = (date: Date, currentMonth: Date) => {
   );
 };
 
-// Helper to get date string (using local time, not UTC)
+// Helper to get date string using local time (for calendar UI dates)
 const getDateString = (date: Date): string => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Helper to get date string using UTC (for appointment dates stored as UTC)
+const getUTCDateString = (date: Date): string => {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 };
 
@@ -165,11 +173,12 @@ const formatWeekday = (index: number) => {
     .toUpperCase();
 };
 
-// Helper to format time using local time components (avoiding timezone conversion)
-// This ensures times display as stored (local time), not converted through timezones
+// Helper to format time using UTC components
+// CRITICAL: Times are stored as UTC (see createLocalDateTime in appointments.ts)
+// Using getUTCHours/getUTCMinutes ensures consistent display regardless of browser timezone
 const formatTime = (date: Date) => {
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const hours = date.getUTCHours().toString().padStart(2, '0');
+  const minutes = date.getUTCMinutes().toString().padStart(2, '0');
   return `${hours}:${minutes}`;
 };
 
@@ -189,18 +198,20 @@ const SPANNING_EVENT_HEIGHT = 20; // Height of each spanning bar in pixels
 const SPANNING_EVENT_GAP = 2; // Gap between stacked bars
 const MAX_SPANNING_ROWS = 2; // Max visible spanning rows before "+N more"
 
-// Check if event spans multiple days
+// Check if event spans multiple days (using UTC since appointments are stored as UTC)
 function isMultiDayEvent(event: CalendarEvent): boolean {
   const start = new Date(event.startTime);
   const end = new Date(event.endTime);
-  const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-  const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-  return startDay.getTime() !== endDay.getTime();
+  // Use UTC date components since appointments are stored as UTC
+  const startDay = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
+  const endDay = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
+  return startDay !== endDay;
 }
 
 // Get the column index (0-6) for a date within a specific week
+// Uses UTC for the appointment date, local for calendar days
 function getDayIndexInWeek(date: Date, weekDays: Date[]): number {
-  const dateStr = getDateString(date);
+  const dateStr = getUTCDateString(date);
   return weekDays.findIndex((d) => getDateString(d) === dateStr);
 }
 
@@ -216,19 +227,19 @@ function calculateSpanningSegments(
   const eventStart = new Date(event.startTime);
   const eventEnd = new Date(event.endTime);
 
-  // Normalize to day boundaries
-  const eventStartDay = new Date(
-    eventStart.getFullYear(),
-    eventStart.getMonth(),
-    eventStart.getDate()
-  );
-  const eventEndDay = new Date(
-    eventEnd.getFullYear(),
-    eventEnd.getMonth(),
-    eventEnd.getDate()
-  );
+  // Normalize event to day boundaries using UTC (appointments stored as UTC)
+  const eventStartDay = new Date(Date.UTC(
+    eventStart.getUTCFullYear(),
+    eventStart.getUTCMonth(),
+    eventStart.getUTCDate()
+  ));
+  const eventEndDay = new Date(Date.UTC(
+    eventEnd.getUTCFullYear(),
+    eventEnd.getUTCMonth(),
+    eventEnd.getUTCDate()
+  ));
 
-  // Clamp event to calendar visible range
+  // Clamp event to calendar visible range (local dates for calendar UI)
   const calStart = new Date(
     calendarStartDate.getFullYear(),
     calendarStartDate.getMonth(),
@@ -544,11 +555,12 @@ export function MonthlyCalendarView({
     return assignStackPositions(segments);
   }, [multiDayEvents, weeks]);
 
-  // Group single-day appointments by date
+  // Group single-day appointments by date (using UTC since appointments are stored as UTC)
   const singleDayByDate = React.useMemo(() => {
     const grouped: Record<string, CalendarEvent[]> = {};
     singleDayEvents.forEach((apt) => {
-      const dateStr = getDateString(apt.startTime);
+      // Use UTC date string since appointments are stored as UTC in database
+      const dateStr = getUTCDateString(apt.startTime);
       grouped[dateStr] ??= [];
       const dateGroup = grouped[dateStr];
       if (dateGroup) {

@@ -42,8 +42,9 @@ interface AppointmentFormData {
   assignedTo?: string; // FK → users.id (who is assigned to the appointment)
 }
 
-// Helper function to create a Date from date and time strings using local time components
-// This prevents timezone conversion issues when the server timezone differs from user timezone
+// Helper function to create a Date from date and time strings using UTC
+// CRITICAL: Uses Date.UTC to ensure consistent storage regardless of server timezone
+// In production (UTC server) vs local (Spain server), this ensures the same time is stored
 // Date string format: DD-MM-YYYY
 function createLocalDateTime(dateStr: string, timeStr: string): Date {
   // Parse date string (DD-MM-YYYY)
@@ -67,8 +68,10 @@ function createLocalDateTime(dateStr: string, timeStr: string): Date {
     throw new Error(`Invalid date/time values: ${dateStr} ${timeStr}`);
   }
   
-  // Create Date object using local time components (month is 0-indexed in Date constructor)
-  return new Date(year, month - 1, day, hours, minutes ?? 0, 0, 0);
+  // IMPORTANT: Use Date.UTC to create a UTC timestamp
+  // This ensures the time components are stored exactly as entered,
+  // regardless of the server's timezone (UTC in production, local in dev)
+  return new Date(Date.UTC(year, month - 1, day, hours, minutes ?? 0, 0, 0));
 }
 
 // Server action for appointment update
