@@ -6,6 +6,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { canEditContacts } from "~/app/actions/permissions/check-permissions";
 import { ContactInformationTab } from "./tabs/contact-information-tab";
 import { ContactTareasTab } from "./tabs/contact-tareas-tab";
+import { ContactPropiedadesTab } from "./tabs/contact-propiedades-tab";
+import { ContactInteresesTab } from "./tabs/contact-intereses-tab";
 import { ContactSolicitudesTab } from "./tabs/contact-solicitudes-tab";
 import { ContactActividadTab } from "./tabs/contact-actividad-tab";
 import { ContactDocumentsManager } from "./contact-documents-manager";
@@ -77,23 +79,37 @@ export function ContactTabs({ contact }: ContactTabsProps) {
     contact.contactType === "propietario";
 
   // Determine which tabs to show based on derived flags
+  const showPropiedades = isOwner; // Show for property owners
+  const showIntereses = isBuyer; // Show for buyers
   const showSolicitudes = isBuyer || isInteresado || isOwner;
-  const showActividad = isBuyer; // Show activity tab for buyers (they have visits)
-  const showArchivos = true; // Show archivos tab for all contacts (personal documents available for all)
+  const showActividad = true; // Show activity timeline for all contacts
+  const showArchivos = true; // Show archivos tab for all contacts
 
   // Active tab state with URL parameter support
   const [activeTab, setActiveTab] = useState(tabParam ?? "informacion");
 
   // Build tabs array based on contact type
+  // Order: Información, Tareas, Propiedades, Intereses, Solicitudes, Actividad, Archivos
   const tabs = [
     { value: "informacion", label: "Información" },
     { value: "tareas", label: "Tareas" },
-    ...(showSolicitudes
-      ? [{ value: "solicitudes", label: "Solicitudes" }]
-      : []),
+    ...(showPropiedades ? [{ value: "propiedades", label: "Propiedades" }] : []),
+    ...(showIntereses ? [{ value: "intereses", label: "Intereses" }] : []),
+    ...(showSolicitudes ? [{ value: "solicitudes", label: "Solicitudes" }] : []),
     ...(showActividad ? [{ value: "actividad", label: "Actividad" }] : []),
     ...(showArchivos ? [{ value: "archivos", label: "Archivos" }] : []),
   ];
+
+  // Calculate grid columns based on number of tabs
+  const tabCount = tabs.length;
+  const gridColsClass =
+    tabCount <= 4
+      ? "md:grid-cols-4"
+      : tabCount <= 5
+        ? "md:grid-cols-5"
+        : tabCount <= 6
+          ? "md:grid-cols-6"
+          : "md:grid-cols-7";
 
   // Function to handle tab changes with URL persistence
   const handleTabChange = (value: string) => {
@@ -110,7 +126,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
         const editPerm = await canEditContacts();
         setCanEditContact(editPerm);
       } catch (error) {
-        console.error("❌ Error fetching contact permissions:", error);
+        console.error("Error fetching contact permissions:", error);
         setCanEditContact(false);
       }
     };
@@ -127,7 +143,9 @@ export function ContactTabs({ contact }: ContactTabsProps) {
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-      <TabsList className="grid h-auto w-full grid-cols-2 gap-2 rounded-lg bg-gray-100 p-1 md:h-10 md:grid-cols-5 md:gap-0">
+      <TabsList
+        className={`grid h-auto w-full grid-cols-2 gap-2 rounded-lg bg-gray-100 p-1 md:h-10 md:gap-0 ${gridColsClass}`}
+      >
         {tabs.map((tab) => (
           <TabsTrigger
             key={tab.value}
@@ -147,6 +165,20 @@ export function ContactTabs({ contact }: ContactTabsProps) {
         <ContactTareasTab contactId={contact.contactId} />
       </TabsContent>
 
+      {/* Propiedades Tab - Show for property owners */}
+      {showPropiedades && (
+        <TabsContent value="propiedades" className="mt-6">
+          <ContactPropiedadesTab contactId={contact.contactId} />
+        </TabsContent>
+      )}
+
+      {/* Intereses Tab - Show for buyers */}
+      {showIntereses && (
+        <TabsContent value="intereses" className="mt-6">
+          <ContactInteresesTab contactId={contact.contactId} />
+        </TabsContent>
+      )}
+
       {/* Solicitudes Tab - Show for demandante, interesado, and propietario */}
       {showSolicitudes && (
         <TabsContent value="solicitudes" className="mt-6">
@@ -154,14 +186,14 @@ export function ContactTabs({ contact }: ContactTabsProps) {
         </TabsContent>
       )}
 
-      {/* Actividad Tab - Show for demandante (buyers with visits) */}
+      {/* Actividad Tab - Show activity timeline for all contacts */}
       {showActividad && (
         <TabsContent value="actividad" className="mt-6">
           <ContactActividadTab contactId={contact.contactId} />
         </TabsContent>
       )}
 
-      {/* Archivos Tab - Show for all contacts (personal documents for all, owner folders for owners) */}
+      {/* Archivos Tab - Show for all contacts */}
       {showArchivos && (
         <TabsContent value="archivos" className="mt-6">
           <ContactDocumentsManager

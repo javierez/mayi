@@ -1728,6 +1728,8 @@ export async function getListingCompactById(
         street: properties.street,
         agentName: users.name,
         isBankOwned: listings.isBankOwned,
+        hasKeys: listings.hasKeys,
+        hasCartel: listings.hasCartel,
         isOwned: sql<boolean>`CASE WHEN ${listingContacts.contactId} IS NOT NULL THEN true ELSE false END`,
         imageUrl: propertyImages.imageUrl,
       })

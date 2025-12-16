@@ -15,18 +15,20 @@ import {
   CollapsibleTrigger,
 } from "~/components/ui/collapsible";
 import type { OverdueTaskNotificationSettings } from "../types";
-import { NotificationOptionRow } from "./notification-option-row";
+import { TaskEventNotificationRow } from "./task-event-notification-row";
 
 interface OverdueTasksSectionProps {
   settings: OverdueTaskNotificationSettings;
   onToggleEmail: (optionKey: keyof OverdueTaskNotificationSettings) => void;
   onToggleSMS: (optionKey: keyof OverdueTaskNotificationSettings) => void;
+  onToggleUrgency: (optionKey: keyof OverdueTaskNotificationSettings, level: number) => void;
 }
 
 export function OverdueTasksSection({
   settings,
   onToggleEmail,
   onToggleSMS,
+  onToggleUrgency,
 }: OverdueTasksSectionProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -68,20 +70,26 @@ export function OverdueTasksSection({
         <CollapsibleContent>
           <CardContent className="pt-0">
             <div className="divide-y divide-gray-100">
-              <NotificationOptionRow
+              <TaskEventNotificationRow
                 option={settings.weeklyDigest}
                 onToggleEmail={() => onToggleEmail("weeklyDigest")}
                 onToggleSMS={() => onToggleSMS("weeklyDigest")}
+                onToggleUrgency={(level) => onToggleUrgency("weeklyDigest", level)}
+                showUrgencySelector={true}
               />
-              <NotificationOptionRow
+              <TaskEventNotificationRow
                 option={settings.dailyDigest}
                 onToggleEmail={() => onToggleEmail("dailyDigest")}
                 onToggleSMS={() => onToggleSMS("dailyDigest")}
+                onToggleUrgency={(level) => onToggleUrgency("dailyDigest", level)}
+                showUrgencySelector={true}
               />
-              <NotificationOptionRow
+              <TaskEventNotificationRow
                 option={settings.notifyWhenOverdue}
                 onToggleEmail={() => onToggleEmail("notifyWhenOverdue")}
                 onToggleSMS={() => onToggleSMS("notifyWhenOverdue")}
+                onToggleUrgency={(level) => onToggleUrgency("notifyWhenOverdue", level)}
+                showUrgencySelector={true}
               />
             </div>
           </CardContent>

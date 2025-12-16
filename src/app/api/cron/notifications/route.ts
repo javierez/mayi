@@ -9,7 +9,7 @@ import {
 } from "~/server/services/notification-service";
 import { sendTaskDigestEmail } from "~/server/services/task-digest-email-service";
 import { reminderExistsForEntity } from "~/server/queries/notification";
-import { getEmailSettingsForAccount, getReminderTimeframe } from "~/server/services/email-config-helpers";
+import { getEmailSettingsForAccount, getReminderTimeframe, shouldIncludeTaskByUrgency, isOverdueDigestEnabled } from "~/server/services/email-config-helpers";
 import type { TaskReminderTimeframe } from "~/types/notifications";
 
 /**
@@ -574,58 +574,92 @@ export async function GET(request: NextRequest) {
       const dueDate = new Date(task.dueDate);
       const isCritical = task.urgency === 5;
       
-      // Check if critical task just became overdue (within last 15 minutes)
-      if (isCritical && dueDate >= recentlyOverdue && dueDate <= now) {
+      // Combine dueDate and dueTime to get actual deadline
+      // If dueTime is set, use it; otherwise default to end of day (23:59)
+      let actualDeadline: Date;
+      if (task.dueTime) {
+        const timeParts = task.dueTime.split(":").map(Number);
+        const hours = timeParts[0] ?? 23;
+        const minutes = timeParts[1] ?? 59;
+        actualDeadline = new Date(
+          dueDate.getFullYear(),
+          dueDate.getMonth(),
+          dueDate.getDate(),
+          hours,
+          minutes,
+          0,
+          0
+        );
+      } else {
+        // No dueTime, use end of day
+        actualDeadline = new Date(
+          dueDate.getFullYear(),
+          dueDate.getMonth(),
+          dueDate.getDate(),
+          23,
+          59,
+          59,
+          999
+        );
+      }
+      
+      // Check if task just became overdue (within last 15 minutes)
+      // Now uses actualDeadline which includes dueTime
+      if (actualDeadline >= recentlyOverdue && actualDeadline <= now) {
         // Check if immediate notification is enabled
         const settings = await getEmailSettingsForAccount(BigInt(accountId));
         if (settings.tasks.overdue.notifyWhenOverdue.emailEnabled) {
-          // Check if notification already exists
-          const exists = await reminderExistsForEntity(
-            BigInt(accountId),
-            "task",
-            task.taskId,
-            "task_overdue",
-            "immediate",
-          );
+          // Check if task urgency matches configured urgency levels
+          const urgencyLevels = settings.tasks.overdue.notifyWhenOverdue.urgencyLevels;
+          if (shouldIncludeTaskByUrgency(task.urgency ?? undefined, urgencyLevels)) {
+            // Check if notification already exists
+            const exists = await reminderExistsForEntity(
+              BigInt(accountId),
+              "task",
+              task.taskId,
+              "task_overdue",
+              "immediate",
+            );
 
-          if (!exists) {
-            try {
-              await notifyTaskOverdue(
-                {
-                  taskId: task.taskId,
-                  userId: task.userId,
-                  title: task.title,
-                  description: task.description,
-                  dueDate: task.dueDate ?? undefined,
-                  dueTime: task.dueTime ?? undefined,
-                  completed: false,
-                  urgency: task.urgency ?? undefined,
-                  category: task.category ?? undefined,
-                  listingId: task.listingId ?? undefined,
-                  contactId: task.contactId ?? undefined,
-                  isActive: true,
-                  createdAt: new Date(),
-                  updatedAt: new Date(),
-                },
-                BigInt(accountId),
-              );
-              // Email is sent inside notifyTaskOverdue
-              tasksNotified.push(1);
-            } catch (error) {
-              console.error(
-                `Error creating immediate overdue notification for task ${task.taskId}:`,
-                error,
-              );
+            if (!exists) {
+              try {
+                await notifyTaskOverdue(
+                  {
+                    taskId: task.taskId,
+                    userId: task.userId,
+                    title: task.title,
+                    description: task.description,
+                    dueDate: task.dueDate ?? undefined,
+                    dueTime: task.dueTime ?? undefined,
+                    completed: false,
+                    urgency: task.urgency ?? undefined,
+                    category: task.category ?? undefined,
+                    listingId: task.listingId ?? undefined,
+                    contactId: task.contactId ?? undefined,
+                    isActive: true,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                  },
+                  BigInt(accountId),
+                );
+                // Email is sent inside notifyTaskOverdue
+                tasksNotified.push(1);
+              } catch (error) {
+                console.error(
+                  `Error creating immediate overdue notification for task ${task.taskId}:`,
+                  error,
+                );
+              }
             }
           }
         }
       }
     }
 
-    // Group tasks by user and urgency for digest emails
+    // Group tasks by user and account for digest emails
     const tasksByUser = new Map<
       string,
-      { accountId: bigint; critical: typeof overdueTasks; normal: typeof overdueTasks }
+      { accountId: bigint; tasks: typeof overdueTasks }
     >();
 
     for (const task of overdueTasks) {
@@ -633,110 +667,237 @@ export async function GET(request: NextRequest) {
       if (!accountId || typeof accountId !== "bigint") continue;
 
       // Skip tasks that were just notified as immediate
+      // Calculate actual deadline including dueTime
       const dueDate = new Date(task.dueDate!);
-      const isCritical = task.urgency === 5;
-      if (isCritical && dueDate >= recentlyOverdue && dueDate <= now) {
-        continue; // Already handled above
+      let taskDeadline: Date;
+      if (task.dueTime) {
+        const timeParts = task.dueTime.split(":").map(Number);
+        const hours = timeParts[0] ?? 23;
+        const minutes = timeParts[1] ?? 59;
+        taskDeadline = new Date(
+          dueDate.getFullYear(),
+          dueDate.getMonth(),
+          dueDate.getDate(),
+          hours,
+          minutes,
+          0,
+          0
+        );
+      } else {
+        taskDeadline = new Date(
+          dueDate.getFullYear(),
+          dueDate.getMonth(),
+          dueDate.getDate(),
+          23,
+          59,
+          59,
+          999
+        );
+      }
+      
+      if (taskDeadline >= recentlyOverdue && taskDeadline <= now) {
+        // Check if this task was handled as immediate notification
+        const settings = await getEmailSettingsForAccount(BigInt(accountId));
+        if (settings.tasks.overdue.notifyWhenOverdue.emailEnabled) {
+          const urgencyLevels = settings.tasks.overdue.notifyWhenOverdue.urgencyLevels;
+          if (shouldIncludeTaskByUrgency(task.urgency ?? undefined, urgencyLevels)) {
+            continue; // Already handled as immediate notification
+          }
+        }
       }
 
       if (!tasksByUser.has(task.userId)) {
         tasksByUser.set(task.userId, {
           accountId: BigInt(accountId),
-          critical: [],
-          normal: [],
+          tasks: [],
         });
       }
 
-      const userTasks = tasksByUser.get(task.userId)!;
-
-      if (isCritical) {
-        userTasks.critical.push(task);
-      } else {
-        userTasks.normal.push(task);
-      }
+      tasksByUser.get(task.userId)!.tasks.push(task);
     }
 
     // Send digest emails
-    for (const [userId, { accountId, critical, normal }] of tasksByUser) {
-      // Send daily digest for critical tasks (urgency = 5)
-      if (critical.length > 0) {
-        try {
-          const criticalTasks = critical.map((task) => ({
-            taskId: task.taskId,
-            userId: task.userId,
-            title: task.title,
-            description: task.description,
-            dueDate: task.dueDate ?? undefined,
-            dueTime: task.dueTime ?? undefined,
-            completed: false,
-            urgency: task.urgency ?? undefined,
-            category: task.category ?? undefined,
-            listingId: task.listingId ?? undefined,
-            contactId: task.contactId ?? undefined,
-            isActive: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          }));
+    for (const [userId, { accountId, tasks: userTasks }] of tasksByUser) {
+      // Get settings for this account
+      const settings = await getEmailSettingsForAccount(accountId);
 
-          const result = await sendTaskDigestEmail(
-            userId,
-            criticalTasks,
-            "daily",
-            accountId,
-          );
-
-          if (result.success) {
-            tasksNotified.push(critical.length);
-            console.log(
-              `✅ Daily digest sent to user ${userId}: ${critical.length} critical tasks`,
+      // Process daily digest
+      const dailyUrgencyLevels = isOverdueDigestEnabled(settings, "daily");
+      if (dailyUrgencyLevels !== null) {
+        // Filter tasks by urgency levels for daily digest
+        const dailyTasks = userTasks.filter((task) => {
+          // Calculate actual deadline including dueTime
+          const dueDate = new Date(task.dueDate!);
+          let taskActualDeadline: Date;
+          if (task.dueTime) {
+            const timeParts = task.dueTime.split(":").map(Number);
+            const hours = timeParts[0] ?? 23;
+            const minutes = timeParts[1] ?? 59;
+            taskActualDeadline = new Date(
+              dueDate.getFullYear(),
+              dueDate.getMonth(),
+              dueDate.getDate(),
+              hours,
+              minutes,
+              0,
+              0
+            );
+          } else {
+            taskActualDeadline = new Date(
+              dueDate.getFullYear(),
+              dueDate.getMonth(),
+              dueDate.getDate(),
+              23,
+              59,
+              59,
+              999
             );
           }
-        } catch (error) {
-          console.error(
-            `Error sending daily digest for user ${userId}:`,
-            error,
-          );
+          
+          // Skip if task is not actually overdue yet (dueTime hasn't passed)
+          if (taskActualDeadline > now) {
+            return false;
+          }
+          
+          // Skip tasks that were just notified as immediate
+          if (taskActualDeadline >= recentlyOverdue && taskActualDeadline <= now) {
+            const notifyUrgencyLevels = settings.tasks.overdue.notifyWhenOverdue.urgencyLevels;
+            if (shouldIncludeTaskByUrgency(task.urgency ?? undefined, notifyUrgencyLevels)) {
+              return false; // Already handled as immediate
+            }
+          }
+          return shouldIncludeTaskByUrgency(task.urgency ?? undefined, dailyUrgencyLevels);
+        });
+
+        if (dailyTasks.length > 0) {
+          try {
+            const formattedTasks = dailyTasks.map((task) => ({
+              taskId: task.taskId,
+              userId: task.userId,
+              title: task.title,
+              description: task.description,
+              dueDate: task.dueDate ?? undefined,
+              dueTime: task.dueTime ?? undefined,
+              completed: false,
+              urgency: task.urgency ?? undefined,
+              category: task.category ?? undefined,
+              listingId: task.listingId ?? undefined,
+              contactId: task.contactId ?? undefined,
+              isActive: true,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }));
+
+            const result = await sendTaskDigestEmail(
+              userId,
+              formattedTasks,
+              "daily",
+              accountId,
+              dailyUrgencyLevels,
+            );
+
+            if (result.success) {
+              tasksNotified.push(dailyTasks.length);
+              console.log(
+                `✅ Daily digest sent to user ${userId}: ${dailyTasks.length} tasks`,
+              );
+            }
+          } catch (error) {
+            console.error(
+              `Error sending daily digest for user ${userId}:`,
+              error,
+            );
+          }
         }
       }
 
-      // Send weekly digest for normal tasks (urgency < 5)
-      if (normal.length > 0) {
-        try {
-          const normalTasks = normal.map((task) => ({
-            taskId: task.taskId,
-            userId: task.userId,
-            title: task.title,
-            description: task.description,
-            dueDate: task.dueDate ?? undefined,
-            dueTime: task.dueTime ?? undefined,
-            completed: false,
-            urgency: task.urgency ?? undefined,
-            category: task.category ?? undefined,
-            listingId: task.listingId ?? undefined,
-            contactId: task.contactId ?? undefined,
-            isActive: true,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          }));
-
-          const result = await sendTaskDigestEmail(
-            userId,
-            normalTasks,
-            "weekly",
-            accountId,
-          );
-
-          if (result.success) {
-            tasksNotified.push(normal.length);
-            console.log(
-              `✅ Weekly digest sent to user ${userId}: ${normal.length} normal tasks`,
+      // Process weekly digest
+      const weeklyUrgencyLevels = isOverdueDigestEnabled(settings, "weekly");
+      if (weeklyUrgencyLevels !== null) {
+        // Filter tasks by urgency levels for weekly digest
+        const weeklyTasks = userTasks.filter((task) => {
+          // Calculate actual deadline including dueTime
+          const dueDate = new Date(task.dueDate!);
+          let taskActualDeadline: Date;
+          if (task.dueTime) {
+            const timeParts = task.dueTime.split(":").map(Number);
+            const hours = timeParts[0] ?? 23;
+            const minutes = timeParts[1] ?? 59;
+            taskActualDeadline = new Date(
+              dueDate.getFullYear(),
+              dueDate.getMonth(),
+              dueDate.getDate(),
+              hours,
+              minutes,
+              0,
+              0
+            );
+          } else {
+            taskActualDeadline = new Date(
+              dueDate.getFullYear(),
+              dueDate.getMonth(),
+              dueDate.getDate(),
+              23,
+              59,
+              59,
+              999
             );
           }
-        } catch (error) {
-          console.error(
-            `Error sending weekly digest for user ${userId}:`,
-            error,
-          );
+          
+          // Skip if task is not actually overdue yet (dueTime hasn't passed)
+          if (taskActualDeadline > now) {
+            return false;
+          }
+          
+          // Skip tasks that were just notified as immediate
+          if (taskActualDeadline >= recentlyOverdue && taskActualDeadline <= now) {
+            const notifyUrgencyLevels = settings.tasks.overdue.notifyWhenOverdue.urgencyLevels;
+            if (shouldIncludeTaskByUrgency(task.urgency ?? undefined, notifyUrgencyLevels)) {
+              return false; // Already handled as immediate
+            }
+          }
+          return shouldIncludeTaskByUrgency(task.urgency ?? undefined, weeklyUrgencyLevels);
+        });
+
+        if (weeklyTasks.length > 0) {
+          try {
+            const formattedTasks = weeklyTasks.map((task) => ({
+              taskId: task.taskId,
+              userId: task.userId,
+              title: task.title,
+              description: task.description,
+              dueDate: task.dueDate ?? undefined,
+              dueTime: task.dueTime ?? undefined,
+              completed: false,
+              urgency: task.urgency ?? undefined,
+              category: task.category ?? undefined,
+              listingId: task.listingId ?? undefined,
+              contactId: task.contactId ?? undefined,
+              isActive: true,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }));
+
+            const result = await sendTaskDigestEmail(
+              userId,
+              formattedTasks,
+              "weekly",
+              accountId,
+              weeklyUrgencyLevels,
+            );
+
+            if (result.success) {
+              tasksNotified.push(weeklyTasks.length);
+              console.log(
+                `✅ Weekly digest sent to user ${userId}: ${weeklyTasks.length} tasks`,
+              );
+            }
+          } catch (error) {
+            console.error(
+              `Error sending weekly digest for user ${userId}:`,
+              error,
+            );
+          }
         }
       }
     }

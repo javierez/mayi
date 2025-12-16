@@ -296,6 +296,7 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
         title: task.title,
         description: task.description,
         dueDate: task.dueDate ? new Date(task.dueDate) : undefined,
+        dueTime: task.dueTime ?? undefined, // Include for accurate time remaining
         completed: task.completed ?? false,
         listingId: task.listingId ? BigInt(task.listingId) : undefined,
         leadId: task.listingContactId

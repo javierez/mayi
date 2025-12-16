@@ -82,6 +82,7 @@ export const createDefaultOverdueNotifications = (): OverdueTaskNotificationSett
     description: "Recibe un resumen los lunes con todas las tareas vencidas",
     emailEnabled: true,
     smsEnabled: false,
+    urgencyLevels: [1, 2, 3, 4], // All except critical, matching current behavior
   },
   dailyDigest: {
     id: "overdue-daily-digest",
@@ -89,6 +90,7 @@ export const createDefaultOverdueNotifications = (): OverdueTaskNotificationSett
     description: "Recibe un resumen diario con las tareas vencidas",
     emailEnabled: false,
     smsEnabled: false,
+    urgencyLevels: [5], // Critical only, matching current behavior
   },
   notifyWhenOverdue: {
     id: "overdue-notify-immediately",
@@ -97,6 +99,7 @@ export const createDefaultOverdueNotifications = (): OverdueTaskNotificationSett
       "Recibe una notificacion inmediata cuando una tarea critica (urgencia 5) pase su fecha limite",
     emailEnabled: true,
     smsEnabled: true,
+    urgencyLevels: [5], // Critical only, matching current description
   },
 });
 

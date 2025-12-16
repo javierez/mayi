@@ -22,6 +22,7 @@ interface BaseTask {
   title: string;
   completed?: boolean | null;
   dueDate?: Date | string | null;
+  dueTime?: string | null; // Added for accurate time remaining calculation
   listingId?: bigint | number | null;
   propertyTitle?: string | null;
   contactId?: bigint | number | null;
@@ -82,7 +83,7 @@ function getUrgencyBgColor(urgency: number | null): string {
   }
 }
 
-// Use shared getRemainingTime from task-utils (note: task-card doesn't have dueTime, so it defaults to end of day)
+// Use shared getRemainingTime from task-utils with dueTime for accurate calculation
 
 export function TaskCard<T extends BaseTask>({
   task,
@@ -152,18 +153,27 @@ export function TaskCard<T extends BaseTask>({
           {task.dueDate && (() => {
             const now = new Date();
             const dueDate = new Date(task.dueDate);
+            // Parse dueTime if available, otherwise default to end of day (23:59)
+            let dueHours = 23;
+            let dueMinutes = 59;
+            if (task.dueTime) {
+              const timeParts = task.dueTime.split(":").map(Number);
+              dueHours = timeParts[0] ?? 23;
+              dueMinutes = timeParts[1] ?? 59;
+            }
             const fullDueDateTime = new Date(
               dueDate.getFullYear(),
               dueDate.getMonth(),
               dueDate.getDate(),
-              23,
-              59,
+              dueHours,
+              dueMinutes,
             );
             const diffMs = fullDueDateTime.getTime() - now.getTime();
-            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-            // Convert string to Date if needed, and call shared function
+            // Use Math.trunc() to round toward zero (prevents -0.5 becoming -1)
+            const diffHours = Math.trunc(diffMs / (1000 * 60 * 60));
+            // Convert string to Date if needed, and call shared function with dueTime
             const dueDateObj = task.dueDate instanceof Date ? task.dueDate : (task.dueDate ? new Date(task.dueDate) : null);
-            const remainingTimeText = getRemainingTime(dueDateObj);
+            const remainingTimeText = getRemainingTime(dueDateObj, task.dueTime ?? null);
 
             // Determine color based on time remaining
             let colorClasses = "";

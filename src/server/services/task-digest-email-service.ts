@@ -9,6 +9,7 @@
 import { sendEmail } from "~/lib/email";
 import { getUserById } from "~/server/queries/users";
 import { generateTaskDigestEmail } from "~/templates/emails/task-digest-notification";
+import { shouldIncludeTaskByUrgency } from "./email-config-helpers";
 import type { Task } from "~/lib/data";
 import { db } from "~/server/db";
 import { notifications } from "~/server/db/schema";
@@ -74,15 +75,25 @@ async function shouldSendDigest(
 
 /**
  * Send digest email for overdue tasks
+ * @param urgencyLevels - Optional array of urgency levels to filter tasks. If provided, only tasks matching these urgency levels will be included.
  */
 export async function sendTaskDigestEmail(
   userId: string,
   tasks: Task[],
   digestType: "weekly" | "daily",
   accountId: bigint,
+  urgencyLevels?: number[] | null,
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    if (tasks.length === 0) {
+    // Filter tasks by urgency levels if provided (safety check)
+    let filteredTasks = tasks;
+    if (urgencyLevels !== undefined && urgencyLevels !== null) {
+      filteredTasks = tasks.filter((task) =>
+        shouldIncludeTaskByUrgency(task.urgency ?? undefined, urgencyLevels),
+      );
+    }
+
+    if (filteredTasks.length === 0) {
       return { success: false, error: "No tasks to send" };
     }
 
@@ -100,7 +111,7 @@ export async function sendTaskDigestEmail(
 
     // Generate email content
     const { subject, html, text } = generateTaskDigestEmail({
-      tasks,
+      tasks: filteredTasks,
       digestType,
     });
 
@@ -119,15 +130,15 @@ export async function sendTaskDigestEmail(
       fromUserId: null,
       type: `task_overdue_digest_${digestType}`,
       title: subject,
-      message: `Se envió un resumen de ${tasks.length} tarea${tasks.length > 1 ? "s" : ""} vencida${tasks.length > 1 ? "s" : ""}.`,
+      message: `Se envió un resumen de ${filteredTasks.length} tarea${filteredTasks.length > 1 ? "s" : ""} vencida${filteredTasks.length > 1 ? "s" : ""}.`,
       actionUrl: "/tareas",
       priority: digestType === "daily" ? "high" : "normal",
       category: "tasks",
       entityType: null,
       entityId: null,
       metadata: {
-        taskCount: tasks.length,
-        taskIds: tasks.map((t) => t.taskId.toString()),
+        taskCount: filteredTasks.length,
+        taskIds: filteredTasks.map((t) => t.taskId.toString()),
         digestType,
       },
       deliveryChannel: "email",
@@ -141,7 +152,7 @@ export async function sendTaskDigestEmail(
     });
 
     console.log(
-      `✅ Task digest email sent to ${user.email}: ${tasks.length} tasks (${digestType})`,
+      `✅ Task digest email sent to ${user.email}: ${filteredTasks.length} tasks (${digestType})`,
     );
 
     return { success: true };

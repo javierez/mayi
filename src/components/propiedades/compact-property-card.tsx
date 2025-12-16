@@ -175,9 +175,9 @@ export function CompactPropertyCard({
         <div className="flex flex-shrink-0 flex-col items-end justify-between">
           <p className="text-base font-semibold">{formattedPrice}€</p>
 
-          {/* Action Buttons - Bottom right corner, shown on hover */}
+          {/* Action Buttons - Bottom right corner, always visible on mobile, shown on hover on desktop */}
           {showActionButtons && (
-            <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            <div className="flex items-center gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
               {canDeactivate && isActive && (
                 <Button
                   variant="ghost"

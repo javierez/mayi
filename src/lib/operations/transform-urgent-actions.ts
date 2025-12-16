@@ -34,6 +34,7 @@ export function transformUrgentActions(
         dueDate: action.dueDate
           ? new Date(action.dueDate)
           : null,
+        dueTime: action.dueTime ?? null, // Include for accurate time remaining
         completed: action.completed ?? false,
         urgency: action.urgency ?? 0,
         status: (action.status as DetailedTask["status"]) ?? "backlog",

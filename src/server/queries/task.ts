@@ -2266,6 +2266,7 @@ export async function getMostUrgentTasks(
         createdBy: tasks.createdBy,
         title: tasks.title,
         dueDate: tasks.dueDate,
+        dueTime: tasks.dueTime, // Added for accurate time remaining calculation
         completed: tasks.completed,
         urgency: tasks.urgency,
         status: tasks.status,

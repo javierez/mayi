@@ -174,14 +174,16 @@ export function shouldSendEmailForNotification(
     // Task overdue
     if (notificationType === "task_overdue") {
       // Check if immediate notification is enabled
-      const metadata = notification.metadata as { urgency?: number };
-      const isCritical = metadata.urgency === 5;
-      
-      if (isCritical) {
-        return settings.tasks.overdue.notifyWhenOverdue.emailEnabled;
+      if (!settings.tasks.overdue.notifyWhenOverdue.emailEnabled) {
+        return false;
       }
-      // For non-critical overdue, handled by digest emails
-      return false;
+      
+      // Check if task urgency matches configured urgency levels
+      const metadata = notification.metadata as { urgency?: number };
+      const taskUrgency = metadata.urgency;
+      const urgencyLevels = settings.tasks.overdue.notifyWhenOverdue.urgencyLevels;
+      
+      return shouldIncludeTaskByUrgency(taskUrgency, urgencyLevels);
     }
     
     // Task reminders (due soon)
@@ -490,5 +492,54 @@ export function shouldBypassQuietHours(notification: Notification): boolean {
   }
   
   return false;
+}
+
+/**
+ * Check if overdue digest is enabled and get configured urgency levels
+ * @returns urgencyLevels array if enabled, null if disabled
+ */
+export function isOverdueDigestEnabled(
+  settings: MailSettings,
+  digestType: "weekly" | "daily",
+): number[] | null {
+  const digestSetting = digestType === "weekly"
+    ? settings.tasks.overdue.weeklyDigest
+    : settings.tasks.overdue.dailyDigest;
+  
+  if (!digestSetting.emailEnabled) {
+    return null;
+  }
+  
+  // Return urgencyLevels if configured, otherwise return null (will be handled as backward compatibility)
+  return digestSetting.urgencyLevels ?? null;
+}
+
+/**
+ * Check if a task should be included based on urgency level filtering
+ * @param taskUrgency - The urgency level of the task (1-5, or undefined)
+ * @param urgencyLevels - Array of urgency levels to include (undefined = include all for backward compatibility)
+ * @returns true if task should be included, false otherwise
+ */
+export function shouldIncludeTaskByUrgency(
+  taskUrgency: number | undefined | null,
+  urgencyLevels: number[] | undefined | null,
+): boolean {
+  // If urgencyLevels is undefined or null, include all tasks (backward compatibility)
+  if (urgencyLevels === undefined || urgencyLevels === null) {
+    return true;
+  }
+  
+  // If urgencyLevels is empty array, user explicitly deselected all - exclude all
+  if (urgencyLevels.length === 0) {
+    return false;
+  }
+  
+  // If task has no urgency, exclude it (can't match any urgency level)
+  if (taskUrgency === undefined || taskUrgency === null) {
+    return false;
+  }
+  
+  // Only include if task urgency is in the configured urgency levels
+  return urgencyLevels.includes(taskUrgency);
 }
 

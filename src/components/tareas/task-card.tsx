@@ -13,6 +13,7 @@ interface TaskCardProps {
     title: string;
     description: string;
     dueDate: Date | null;
+    dueTime?: string | null; // Time portion for accurate remaining time calculation
     urgency: number | null;
     category: string | null;
     status: string;

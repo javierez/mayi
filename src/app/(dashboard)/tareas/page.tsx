@@ -14,6 +14,7 @@ interface Task {
   title: string;
   description: string;
   dueDate: Date | null;
+  dueTime?: string | null; // Time portion for accurate remaining time calculation
   urgency: number | null;
   category: string | null;
   status: string;
@@ -103,6 +104,7 @@ export default function TareasPage() {
           title: result.tasks.title,
           description: result.tasks.description,
           dueDate: result.tasks.dueDate,
+          dueTime: result.tasks.dueTime ?? null, // Include for accurate time remaining
           urgency: result.tasks.urgency,
           category: result.tasks.category,
           status: result.tasks.status ?? "backlog",
@@ -172,6 +174,7 @@ export default function TareasPage() {
         title: result.tasks.title,
         description: result.tasks.description,
         dueDate: result.tasks.dueDate,
+        dueTime: result.tasks.dueTime ?? null, // Include for accurate time remaining
         urgency: result.tasks.urgency,
         category: result.tasks.category,
         status: result.tasks.status ?? "backlog",

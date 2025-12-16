@@ -5,6 +5,7 @@ export interface UrgentAction {
   title: string;
   description?: string;
   dueDate?: string | Date;
+  dueTime?: string | null; // Time portion for accurate remaining time calculation
   datetimeStart?: string | Date;
   datetimeEnd?: string | Date;
   status: string;

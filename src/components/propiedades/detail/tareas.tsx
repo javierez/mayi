@@ -58,6 +58,7 @@ interface Task {
   description: string;
   category?: string;
   dueDate?: Date;
+  dueTime?: string; // Time portion for accurate remaining time calculation
   completed: boolean;
   listingId?: bigint;
   leadId?: bigint;

@@ -541,6 +541,31 @@ async function fetchAppointmentRelatedData(
           }
         }
 
+        // Check if any contact has accepted an offer for this listing
+        let offerAccepted = false;
+        try {
+          const offerAcceptedCheck = await db
+            .select({
+              offerAccepted: listingContacts.offerAccepted,
+            })
+            .from(listingContacts)
+            .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+            .where(
+              and(
+                eq(listingContacts.listingId, listingId),
+                eq(listingContacts.offerAccepted, true),
+                eq(listingContacts.isActive, true),
+                eq(contacts.isActive, true),
+                eq(contacts.accountId, accountId),
+              ),
+            )
+            .limit(1);
+
+          offerAccepted = offerAcceptedCheck.length > 0;
+        } catch (offerError) {
+          console.error("Error checking offerAccepted for appointment notification:", offerError);
+        }
+
         listingData = {
           listingId: listing.listingId.toString(),
           title: listing.title,
@@ -557,6 +582,9 @@ async function fetchAppointmentRelatedData(
           street: listing.street ?? undefined,
           agentName: listing.agentName,
           isBankOwned: listing.isBankOwned ?? undefined,
+          hasKeys: listing.hasKeys ?? undefined,
+          hasCartel: listing.hasCartel ?? undefined,
+          offerAccepted: offerAccepted || undefined,
           imageUrl: listing.imageUrl,
           imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
         };

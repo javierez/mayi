@@ -294,25 +294,69 @@ export function generateAppointmentReminderEmail(
   if (isUrgent) {
     // Use "visita" instead of "cita" when appointment type is "visita"
     const appointmentNounTips = appointmentTypeLabel === "Visita" ? "visita" : "cita";
+    const listing = metadata.listing;
     let tips: string[] = [];
-    if (timeframe === "travel_time") {
-      tips = [
-        "Verifica que tengas todo lo necesario",
-        "Revisa el tráfico antes de salir",
-        "Lleva los documentos requeridos",
-      ];
-    } else if (timeframe === "30min" || timeframe === "30_min") {
-      tips = [
-        "Prepárate para salir pronto",
-        `Revisa los detalles de la ${appointmentNounTips}`,
-        "Confirma la dirección",
-      ];
-    } else if (timeframe === "1h") {
-      tips = [
-        `Revisa los detalles de la ${appointmentNounTips}`,
-        "Prepara todo lo necesario",
-        "Planifica tu ruta",
-      ];
+    
+    // Appointment-type-specific recommendations
+    const appointmentTypeLower = metadata.appointmentType?.toLowerCase();
+    
+    if (appointmentTypeLower === "visita") {
+      // For property visit appointments
+      // Data-driven tip: check if we have keys
+      if (listing && (listing.hasKeys === false || listing.hasKeys === null)) {
+        tips.push("⚠️ Verifica si tienes las llaves o coordina con el propietario");
+      }
+      // Standard visit tips
+      tips.push("Confirma la dirección de la propiedad");
+      tips.push("Ten a mano la ficha del inmueble");
+      tips.push("Prepara respuestas a preguntas frecuentes del cliente");
+    } else if (appointmentTypeLower === "firma") {
+      // For signing appointments
+      tips.push("Verifica que tengas todos los documentos necesarios");
+      tips.push("Confirma DNI/NIE de todas las partes");
+      tips.push("Revisa los términos del contrato antes de la firma");
+      tips.push("Lleva copias adicionales por si acaso");
+    } else if (appointmentTypeLower === "reunion" || appointmentTypeLower === "reunión") {
+      // For meeting appointments
+      tips.push("Prepara los puntos a tratar");
+      tips.push("Ten a mano la documentación relevante");
+      tips.push("Confirma la asistencia de los participantes");
+    } else if (appointmentTypeLower === "cierre") {
+      // For closing appointments
+      tips.push("Verifica que toda la documentación esté lista");
+      tips.push("Confirma los detalles de la entrega de llaves");
+      tips.push("Revisa el estado de los pagos y transferencias");
+      tips.push("Prepara el acta de entrega");
+    } else if (appointmentTypeLower === "viaje") {
+      // For travel appointments
+      tips.push("Confirma la dirección de destino");
+      tips.push("Calcula el tiempo de viaje con margen");
+      tips.push("Ten el contacto del cliente a mano");
+    } else if (appointmentTypeLower === "llamada") {
+      // For call appointments
+      tips.push("Ten a mano la información del cliente");
+      tips.push("Prepara los puntos a discutir");
+      tips.push("Asegúrate de estar en un lugar tranquilo");
+    } else if (appointmentTypeLower === "tarea") {
+      // For task appointments
+      tips.push("Revisa los detalles de la tarea");
+      tips.push("Ten los materiales necesarios listos");
+      tips.push("Reserva tiempo suficiente para completarla");
+    } else {
+      // Generic tips for unknown types
+      if (timeframe === "travel_time") {
+        tips.push("Verifica que tengas todo lo necesario");
+        tips.push("Revisa el tráfico antes de salir");
+      } else {
+        tips.push(`Revisa los detalles de la ${appointmentNounTips}`);
+        tips.push("Prepara todo lo necesario");
+        tips.push("Confirma la hora y lugar");
+      }
+    }
+    
+    // Add travel-specific tip for travel_time reminders (except for llamada type)
+    if (timeframe === "travel_time" && appointmentTypeLower !== "llamada") {
+      tips.push("Revisa el tráfico antes de salir");
     }
 
     if (tips.length > 0) {

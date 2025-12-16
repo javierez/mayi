@@ -8,6 +8,8 @@ import { generateTaskDigestEmail } from "~/templates/emails/task-digest-notifica
 import { generateAppointmentNotificationEmail } from "~/templates/emails/appointment-notification";
 import { generateAppointmentReminderEmail } from "~/templates/emails/appointment-reminder";
 import { generateAppointmentBriefingEmail } from "~/templates/emails/appointment-briefing";
+import { generateDailyBriefingEmail } from "~/templates/emails/daily-briefing";
+import { generateWeeklyBriefingEmail } from "~/templates/emails/weekly-briefing";
 import { generateCustomerAppointmentReminderEmail } from "~/templates/emails/customer-appointment-reminder";
 import { generateCustomerPropertyNotificationEmail } from "~/templates/emails/customer-property-notification";
 import { generateCustomerDocumentNotificationEmail } from "~/templates/emails/customer-document-notification";
@@ -463,6 +465,180 @@ export default async function EmailTemplatesPage() {
               },
             ],
             date: new Date().toLocaleDateString("es-ES"),
+          }),
+        },
+      ],
+    },
+    {
+      id: "briefings",
+      title: "Resúmenes Combinados",
+      icon: "FileText",
+      templates: [
+        {
+          id: "daily-briefing",
+          name: "Resumen Diario",
+          description: "Resumen diario combinado de tareas y citas para hoy",
+          icon: "Calendar",
+          preview: generateDailyBriefingEmail({
+            tasks: [
+              {
+                taskId: exampleTask?.taskId ?? BigInt(158),
+                userId: exampleTask?.userId ?? "user-1",
+                title: exampleTask?.title ?? "Revisar documentación de propiedad",
+                description: exampleTask?.description ?? "Verificar todos los documentos",
+                dueDate: new Date(),
+                dueTime: exampleTask?.dueTime ?? "10:00",
+                urgency: exampleTask?.urgency ?? 3,
+                completed: false,
+                isActive: true,
+                createdAt: exampleTask?.createdAt ?? new Date(),
+                updatedAt: exampleTask?.updatedAt ?? new Date(),
+              },
+              {
+                taskId: BigInt(159),
+                userId: exampleTask?.userId ?? "user-1",
+                title: "Llamar a cliente para seguimiento",
+                description: "Seguimiento de interés en propiedad",
+                dueDate: new Date(),
+                dueTime: "14:30",
+                urgency: 2,
+                completed: false,
+                isActive: true,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ],
+            appointments: [
+              {
+                appointmentId: BigInt(1),
+                userId: exampleTask?.userId ?? "user-1",
+                title: "Visita a propiedad en Centro",
+                type: "visita",
+                datetimeStart: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
+                datetimeEnd: new Date(Date.now() + 3 * 60 * 60 * 1000), // 3 hours from now
+                contactId: null,
+                status: "scheduled",
+                isActive: true,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+              {
+                appointmentId: BigInt(2),
+                userId: exampleTask?.userId ?? "user-1",
+                title: "Reunión con propietario",
+                type: "reunion",
+                datetimeStart: new Date(Date.now() + 5 * 60 * 60 * 1000), // 5 hours from now
+                datetimeEnd: new Date(Date.now() + 6 * 60 * 60 * 1000), // 6 hours from now
+                contactId: null,
+                status: "scheduled",
+                isActive: true,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ],
+            includeTasks: true,
+            includeAppointments: true,
+            date: new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" }),
+          }),
+        },
+        {
+          id: "weekly-briefing",
+          name: "Resumen Semanal",
+          description: "Resumen semanal combinado de tareas y citas para la próxima semana",
+          icon: "Calendar",
+          preview: generateWeeklyBriefingEmail({
+            tasks: [
+              {
+                taskId: exampleTask?.taskId ?? BigInt(158),
+                userId: exampleTask?.userId ?? "user-1",
+                title: exampleTask?.title ?? "Revisar documentación de propiedad",
+                description: exampleTask?.description ?? "Verificar todos los documentos",
+                dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // Tomorrow
+                dueTime: exampleTask?.dueTime ?? "10:00",
+                urgency: exampleTask?.urgency ?? 3,
+                completed: false,
+                isActive: true,
+                createdAt: exampleTask?.createdAt ?? new Date(),
+                updatedAt: exampleTask?.updatedAt ?? new Date(),
+              },
+              {
+                taskId: BigInt(159),
+                userId: exampleTask?.userId ?? "user-1",
+                title: "Llamar a cliente para seguimiento",
+                description: "Seguimiento de interés en propiedad",
+                dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // Day after tomorrow
+                dueTime: "14:30",
+                urgency: 2,
+                completed: false,
+                isActive: true,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+              {
+                taskId: BigInt(160),
+                userId: exampleTask?.userId ?? "user-1",
+                title: "Preparar presentación de oferta",
+                description: "Documentos para presentar oferta al propietario",
+                dueDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), // 4 days from now
+                dueTime: "09:00",
+                urgency: 4,
+                completed: false,
+                isActive: true,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ],
+            appointments: [
+              {
+                appointmentId: BigInt(1),
+                userId: exampleTask?.userId ?? "user-1",
+                title: "Visita a propiedad en Centro",
+                type: "visita",
+                datetimeStart: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000), // Tomorrow at 2pm
+                datetimeEnd: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000), // Tomorrow at 3pm
+                contactId: null,
+                status: "scheduled",
+                isActive: true,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+              {
+                appointmentId: BigInt(2),
+                userId: exampleTask?.userId ?? "user-1",
+                title: "Reunión con propietario",
+                type: "reunion",
+                datetimeStart: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 10 * 60 * 60 * 1000), // Day after tomorrow at 10am
+                datetimeEnd: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 11 * 60 * 60 * 1000), // Day after tomorrow at 11am
+                contactId: null,
+                status: "scheduled",
+                isActive: true,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+              {
+                appointmentId: BigInt(3),
+                userId: exampleTask?.userId ?? "user-1",
+                title: "Firma de contrato",
+                type: "firma",
+                datetimeStart: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000 + 16 * 60 * 60 * 1000), // 5 days from now at 4pm
+                datetimeEnd: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000 + 17 * 60 * 60 * 1000), // 5 days from now at 5pm
+                contactId: null,
+                status: "scheduled",
+                isActive: true,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              },
+            ],
+            includeTasks: true,
+            includeAppointments: true,
+            dateRange: (() => {
+              const startDate = new Date();
+              const endDate = new Date();
+              endDate.setDate(endDate.getDate() + 7);
+              const startStr = startDate.toLocaleDateString("es-ES", { day: "numeric", month: "long" });
+              const endStr = endDate.toLocaleDateString("es-ES", { day: "numeric", month: "long" });
+              return `Semana del ${startStr} al ${endStr}`;
+            })(),
           }),
         },
       ],

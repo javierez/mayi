@@ -115,6 +115,34 @@ export const MailConfiguration = () => {
     setHasChanges(true);
   };
 
+  const handleOverdueUrgencyToggle = (
+    optionKey: keyof OverdueTaskNotificationSettings,
+    level: number,
+  ) => {
+    setSettings((prev) => {
+      const currentOption = prev.tasks.overdue[optionKey];
+      const currentUrgencyLevels = currentOption.urgencyLevels ?? [];
+      const newUrgencyLevels = currentUrgencyLevels.includes(level)
+        ? currentUrgencyLevels.filter((l) => l !== level)
+        : [...currentUrgencyLevels, level].sort((a, b) => a - b);
+
+      return {
+        ...prev,
+        tasks: {
+          ...prev.tasks,
+          overdue: {
+            ...prev.tasks.overdue,
+            [optionKey]: {
+              ...currentOption,
+              urgencyLevels: newUrgencyLevels,
+            },
+          },
+        },
+      };
+    });
+    setHasChanges(true);
+  };
+
   const handleTaskEventToggle = (
     optionKey: keyof TaskEventNotificationSettings,
     channel: "email" | "sms",
@@ -430,6 +458,9 @@ export const MailConfiguration = () => {
               }
               onToggleSMS={(optionKey) =>
                 handleOverdueToggle(optionKey, "sms")
+              }
+              onToggleUrgency={(optionKey, level) =>
+                handleOverdueUrgencyToggle(optionKey, level)
               }
             />
 

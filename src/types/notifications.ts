@@ -270,6 +270,9 @@ export interface AppointmentNotificationMetadata extends Record<string, unknown>
     imageUrls?: string[];
     street?: string | null;
     isBankOwned?: boolean | null;
+    hasKeys?: boolean | null;
+    hasCartel?: boolean | null;
+    offerAccepted?: boolean;
   };
   // Contact data for email display (backward compatibility)
   contact?: {
