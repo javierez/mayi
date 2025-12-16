@@ -13,6 +13,41 @@ import { getEmailSettingsForAccount, getReminderTimeframe } from "~/server/servi
 import type { TaskReminderTimeframe } from "~/types/notifications";
 
 /**
+ * Get current time adjusted for Spain timezone (Europe/Madrid).
+ * 
+ * CRITICAL: Appointments are stored with local time values in UTC format
+ * (e.g., 14:00 Spain time is stored as 14:00 UTC).
+ * To compare correctly, we need "now" to also use Spain time values in UTC format.
+ * 
+ * This function converts the real UTC time to Spain local time,
+ * then creates a Date with those values as UTC - matching how appointments are stored.
+ */
+function getSpainTimeAsUTC(): Date {
+  const now = new Date();
+  
+  // Format current time in Spain timezone
+  const spainTimeStr = now.toLocaleString('en-GB', { 
+    timeZone: 'Europe/Madrid',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  
+  // Parse the Spain time string (format: "DD/MM/YYYY, HH:mm:ss")
+  const [datePart, timePart] = spainTimeStr.split(', ');
+  const [day, month, year] = datePart!.split('/').map(Number);
+  const [hour, minute, second] = timePart!.split(':').map(Number);
+  
+  // Create a Date with Spain time values stored as UTC
+  // This matches how appointments are stored (local time values in UTC format)
+  return new Date(Date.UTC(year!, month! - 1, day!, hour!, minute!, second!));
+}
+
+/**
  * Cron job handler for scheduled notification reminders
  * Runs every 15 minutes via Vercel Cron
  * 
@@ -39,7 +74,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const now = new Date();
+    // Use Spain timezone for comparisons since appointments are stored
+    // with local time values in UTC format
+    const now = getSpainTimeAsUTC();
     const remindersCreated: number[] = [];
     const tasksNotified: number[] = [];
 

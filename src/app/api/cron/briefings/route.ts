@@ -5,10 +5,45 @@ import { eq } from "drizzle-orm";
 import { sendBriefingEmail } from "~/server/services/briefing-email-service";
 
 /**
+ * Get current time components in Spain timezone (Europe/Madrid).
+ * Returns day of week (0=Sunday, 1=Monday) and hour (0-23) in Spain local time.
+ */
+function getSpainTimeComponents(): { dayOfWeek: number; hour: number } {
+  const now = new Date();
+  
+  // Get day of week in Spain timezone
+  const dayFormatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Madrid',
+    weekday: 'short'
+  });
+  const dayStr = dayFormatter.format(now);
+  const dayMap: Record<string, number> = {
+    'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6
+  };
+  
+  // Get hour in Spain timezone
+  const hourFormatter = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Madrid',
+    hour: '2-digit',
+    hour12: false
+  });
+  const hourStr = hourFormatter.format(now);
+  
+  return {
+    dayOfWeek: dayMap[dayStr] ?? 0,
+    hour: parseInt(hourStr, 10)
+  };
+}
+
+/**
  * Cron job handler for weekly and daily briefings
  * 
- * Weekly: Runs Monday at 9:00 AM UTC
- * Daily: Runs every day at 9:00 AM UTC
+ * Weekly: Runs Monday at 9:00 AM Spain time (Europe/Madrid)
+ * Daily: Runs every day at 9:00 AM Spain time (Europe/Madrid)
+ * 
+ * Note: Vercel cron runs at 7 AM UTC to ensure we catch 9 AM Spain time
+ * (which is 7 AM UTC in summer / 8 AM UTC in winter).
+ * The code checks Spain local time to determine when to send.
  * 
  * Sends briefing emails based on MailSettings configuration.
  */
@@ -31,19 +66,20 @@ export async function GET(request: NextRequest) {
     }
 
     const now = new Date();
-    const dayOfWeek = now.getUTCDay(); // 0 = Sunday, 1 = Monday
-    const hour = now.getUTCHours();
+    // Use Spain timezone for determining when to send briefings
+    const { dayOfWeek, hour } = getSpainTimeComponents();
     
-    // Determine which briefings to send
-    const shouldSendWeekly = dayOfWeek === 1 && hour >= 9; // Monday 9 AM or later
-    const shouldSendDaily = hour >= 9; // 9 AM or later any day
+    // Determine which briefings to send (based on Spain local time)
+    const shouldSendWeekly = dayOfWeek === 1 && hour >= 9; // Monday 9 AM Spain or later
+    const shouldSendDaily = hour >= 9; // 9 AM Spain or later any day
 
     if (!shouldSendWeekly && !shouldSendDaily) {
       return NextResponse.json({
         success: true,
-        message: "Not time for briefings yet",
+        message: "Not time for briefings yet (Spain time)",
         weekly: false,
         daily: false,
+        spainTime: { dayOfWeek, hour },
       });
     }
 
