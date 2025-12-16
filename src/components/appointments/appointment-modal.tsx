@@ -27,13 +27,46 @@ interface AppointmentFormData {
   appointmentType: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje";
 }
 
+// Type for appointment data returned from server
+type ServerAppointmentData = {
+  appointmentId: bigint;
+  userId: string;
+  assignedTo: string | null;
+  contactId: bigint | null;
+  listingId: bigint | null;
+  listingContactId: bigint | null;
+  dealId: bigint | null;
+  prospectId: bigint | null;
+  datetimeStart: Date | string;
+  datetimeEnd: Date | string;
+  tripTimeMinutes: number | null;
+  status: string;
+  title: string | null;
+  notes: string | null;
+  type: string | null;
+  isActive: boolean | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  contactFirstName: string | null;
+  contactLastName: string | null;
+  propertyStreet: string | null;
+  propertyTitle: string | null;
+  city: string | null;
+  creatorName: string | null;
+  creatorFirstName: string | null;
+  creatorLastName: string | null;
+  agentName: string | null;
+  agentFirstName: string | null;
+  agentLastName: string | null;
+};
+
 interface AppointmentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialData?: Partial<AppointmentFormData>;
   title?: string;
   description?: string;
-  onSuccess?: () => void; // Callback to refresh data after successful creation/edit
+  onSuccess?: (appointmentId: bigint, appointmentData: ServerAppointmentData | null) => void; // Callback with appointment data
   mode?: "create" | "edit"; // New prop to distinguish between create and edit modes
   appointmentId?: bigint; // Required for edit mode
   // Optimistic update functions
@@ -67,16 +100,16 @@ export default function AppointmentModal({
 
   const modalTitle = title ?? defaultTitle;
   const modalDescription = description ?? defaultDescription;
-  // Handle successful appointment creation
-  const handleSubmit = (appointmentId: bigint) => {
-    console.log("Appointment created with ID:", appointmentId);
+  // Handle successful appointment creation/update
+  const handleSubmit = (appointmentId: bigint, appointmentData: ServerAppointmentData | null) => {
+    console.log("Appointment created/updated with ID:", appointmentId, "Data:", appointmentData);
 
     // Close modal
     handleClose();
 
-    // Trigger refresh callback
+    // Trigger success callback with appointment data
     if (onSuccess) {
-      onSuccess();
+      onSuccess(appointmentId, appointmentData);
     }
   };
 

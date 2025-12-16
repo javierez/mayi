@@ -97,9 +97,42 @@ interface Listing {
 }
 
 // Props interface
+// Type for appointment data returned from server (matches RawAppointment structure)
+type ServerAppointmentData = {
+  appointmentId: bigint;
+  userId: string;
+  assignedTo: string | null;
+  contactId: bigint | null;
+  listingId: bigint | null;
+  listingContactId: bigint | null;
+  dealId: bigint | null;
+  prospectId: bigint | null;
+  datetimeStart: Date | string;
+  datetimeEnd: Date | string;
+  tripTimeMinutes: number | null;
+  status: string;
+  title: string | null;
+  notes: string | null;
+  type: string | null;
+  isActive: boolean | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  contactFirstName: string | null;
+  contactLastName: string | null;
+  propertyStreet: string | null;
+  propertyTitle: string | null;
+  city: string | null;
+  creatorName: string | null;
+  creatorFirstName: string | null;
+  creatorLastName: string | null;
+  agentName: string | null;
+  agentFirstName: string | null;
+  agentLastName: string | null;
+};
+
 interface AppointmentFormProps {
   initialData?: Partial<AppointmentFormData>;
-  onSubmit?: (appointmentId: bigint) => void;
+  onSubmit?: (appointmentId: bigint, appointmentData: ServerAppointmentData | null) => void;
   onCancel?: () => void;
   mode?: "create" | "edit"; // New prop to distinguish between create and edit modes
   appointmentId?: bigint; // Required for edit mode
@@ -1233,15 +1266,13 @@ export default function AppointmentForm({
       }
 
       if (result.success) {
-        // Convert optimistic event to real event instead of removing
-        if (tempEventId && updateOptimisticEvent && result.appointmentId) {
-          const realEventData = transformServerResponseToCalendarEvent(
-            result.appointmentId,
-          );
-          updateOptimisticEvent(tempEventId, realEventData);
+        // Remove optimistic event since we'll add the real server data
+        if (tempEventId && removeOptimisticEvent) {
+          removeOptimisticEvent(tempEventId);
         }
         if (isMountedRef.current) {
-          onSubmit?.(result.appointmentId!);
+          // Pass both appointmentId and full appointment data
+          onSubmit?.(result.appointmentId!, result.appointment ?? null);
         }
       } else {
         // Remove optimistic event on error

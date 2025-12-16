@@ -150,6 +150,7 @@ export default function AppointmentsPage() {
     addOptimisticEvent,
     removeOptimisticEvent,
     updateOptimisticEvent,
+    addServerEvent,
   } = useWeeklyAppointments(
     weekStart,
     selectedAgents.length > 0 ? selectedAgents : undefined,
@@ -1032,12 +1033,17 @@ export default function AppointmentsPage() {
         initialData={initialData}
         mode={editMode}
         appointmentId={editingAppointmentId ?? undefined}
-        onSuccess={() => {
-          // Small delay to allow revalidatePath to propagate in production
-          // before fetching fresh data from server
-          setTimeout(() => {
+        onSuccess={(appointmentId, appointmentData) => {
+          // Add the appointment data directly to state - no refetch needed!
+          // This eliminates the caching race condition entirely
+          if (appointmentData) {
+            // Type assertion: ServerAppointmentData matches the flexible type expected by addServerEvent
+            addServerEvent(appointmentData as Parameters<typeof addServerEvent>[0]);
+          } else {
+            // Fallback: if server didn't return data, refetch (shouldn't happen normally)
+            console.warn("Server didn't return appointment data, falling back to refetch");
             void refetch();
-          }, 150);
+          }
         }}
         addOptimisticEvent={addOptimisticEvent}
         removeOptimisticEvent={removeOptimisticEvent}

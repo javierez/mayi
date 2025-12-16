@@ -13,6 +13,7 @@ import {
   getListingAppointments,
   softDeleteAppointment,
   getAppointmentByIdWithAuth,
+  getAppointmentByIdSecure,
 } from "~/server/queries/appointment";
 import { findOrCreateLeadForAppointment } from "~/server/queries/lead-status-sync";
 import { syncToGoogle } from "~/lib/google-calendar-sync";
@@ -158,12 +159,27 @@ export async function updateAppointmentAction(
       // Don't fail the appointment update if Google Calendar sync fails
     }
 
+    // Fetch the full appointment data with all joins for the calendar
+    const fullAppointment = await getAppointmentByIdSecure(Number(appointmentId));
+
+    if (!fullAppointment) {
+      // If we can't fetch the full data, still return success with just the ID
+      // The client can handle this gracefully
+      console.warn("Could not fetch full appointment data after update");
+      return {
+        success: true,
+        appointmentId: result.appointmentId,
+        appointment: null,
+      };
+    }
+
     // Refresh calendar data
     revalidatePath("/calendario");
 
     return {
       success: true,
       appointmentId: result.appointmentId,
+      appointment: fullAppointment,
     };
   } catch (error) {
     console.error("Failed to update appointment:", error);
@@ -284,12 +300,27 @@ export async function createAppointmentAction(formData: AppointmentFormData) {
       // Don't fail the appointment creation if Google Calendar sync fails
     }
 
+    // Fetch the full appointment data with all joins for the calendar
+    const fullAppointment = await getAppointmentByIdSecure(Number(result.appointmentId));
+
+    if (!fullAppointment) {
+      // If we can't fetch the full data, still return success with just the ID
+      // The client can handle this gracefully
+      console.warn("Could not fetch full appointment data after creation");
+      return {
+        success: true,
+        appointmentId: result.appointmentId,
+        appointment: null,
+      };
+    }
+
     // Refresh calendar data
     revalidatePath("/calendario");
 
     return {
       success: true,
       appointmentId: result.appointmentId,
+      appointment: fullAppointment,
     };
   } catch (error) {
     console.error("Failed to create appointment:", error);

@@ -71,6 +71,37 @@ interface UseSimpleCalendarReturn {
     tempId: bigint,
     updates: Partial<CalendarEvent>,
   ) => void;
+  addServerEvent: (rawAppointment: RawAppointment | {
+    appointmentId: bigint | string | number;
+    userId: string;
+    assignedTo: string | null;
+    contactId: bigint | string | number | null;
+    listingId: bigint | string | number | null;
+    listingContactId: bigint | string | number | null;
+    dealId: bigint | string | number | null;
+    prospectId: bigint | string | number | null;
+    datetimeStart: Date | string;
+    datetimeEnd: Date | string;
+    tripTimeMinutes: number | null;
+    status: string;
+    title: string | null;
+    notes: string | null;
+    type: string | null;
+    isActive: boolean | null;
+    createdAt: Date | string;
+    updatedAt: Date | string;
+    contactFirstName: string | null;
+    contactLastName: string | null;
+    propertyStreet: string | null;
+    propertyTitle: string | null;
+    city: string | null;
+    creatorName: string | null;
+    creatorFirstName: string | null;
+    creatorLastName: string | null;
+    agentName: string | null;
+    agentFirstName: string | null;
+    agentLastName: string | null;
+  }) => void;
 }
 
 // Constants
@@ -358,6 +389,90 @@ export function useSimpleCalendar(
     [],
   );
 
+  // Add a server-confirmed event directly to the appointments state
+  // This is used after create/update to add the real data without refetching
+  // Accepts a flexible type that matches server response (dates may be strings)
+  const addServerEvent = useCallback((rawAppointment: RawAppointment | {
+    appointmentId: bigint | string | number;
+    userId: string;
+    assignedTo: string | null;
+    contactId: bigint | string | number | null;
+    listingId: bigint | string | number | null;
+    listingContactId: bigint | string | number | null;
+    dealId: bigint | string | number | null;
+    prospectId: bigint | string | number | null;
+    datetimeStart: Date | string;
+    datetimeEnd: Date | string;
+    tripTimeMinutes: number | null;
+    status: string;
+    title: string | null;
+    notes: string | null;
+    type: string | null;
+    isActive: boolean | null;
+    createdAt: Date | string;
+    updatedAt: Date | string;
+    contactFirstName: string | null;
+    contactLastName: string | null;
+    propertyStreet: string | null;
+    propertyTitle: string | null;
+    city: string | null;
+    creatorName: string | null;
+    creatorFirstName: string | null;
+    creatorLastName: string | null;
+    agentName: string | null;
+    agentFirstName: string | null;
+    agentLastName: string | null;
+  }) => {
+    // Normalize the data to match RawAppointment format (ensure dates are Date objects)
+    const normalized: RawAppointment = {
+      ...rawAppointment,
+      appointmentId: ensureBigInt(rawAppointment.appointmentId) ?? BigInt(0),
+      contactId: ensureBigInt(rawAppointment.contactId),
+      listingId: ensureBigInt(rawAppointment.listingId),
+      listingContactId: ensureBigInt(rawAppointment.listingContactId),
+      dealId: ensureBigInt(rawAppointment.dealId),
+      prospectId: ensureBigInt(rawAppointment.prospectId),
+      datetimeStart: ensureDate(rawAppointment.datetimeStart),
+      datetimeEnd: ensureDate(rawAppointment.datetimeEnd),
+      createdAt: ensureDate(rawAppointment.createdAt),
+      updatedAt: ensureDate(rawAppointment.updatedAt),
+    };
+    
+    const calendarEvent = transformToCalendarEvent(normalized);
+    
+    // Check if appointment matches current filter (if filter is active)
+    // Server filters by assignedTo field when filterByUserIds is provided
+    if (filterByUserIds && filterByUserIds.length > 0) {
+      const appointmentAssignedTo = normalized.assignedTo ?? normalized.userId;
+      if (!filterByUserIds.includes(appointmentAssignedTo)) {
+        // Appointment doesn't match current filter, don't add it
+        console.log("📋 [useCachedCalendar] Appointment doesn't match current filter, skipping addServerEvent", {
+          appointmentId: normalized.appointmentId.toString(),
+          assignedTo: appointmentAssignedTo,
+          filterByUserIds,
+        });
+        return;
+      }
+    }
+    
+    setAppointments((prev) => {
+      // Check if appointment already exists (by ID) and update it, otherwise add it
+      const existingIndex = prev.findIndex(
+        (event) => event.appointmentId.toString() === calendarEvent.appointmentId.toString(),
+      );
+      
+      if (existingIndex >= 0) {
+        // Update existing appointment
+        const updated = [...prev];
+        updated[existingIndex] = calendarEvent;
+        return updated;
+      } else {
+        // Add new appointment
+        return [...prev, calendarEvent];
+      }
+    });
+  }, [filterByUserIds]);
+
   // Merge server events with optimistic events
   const mergedAppointments = useMemo(() => {
     return mergeAndSortEvents(appointments, optimisticEvents);
@@ -451,6 +566,7 @@ export function useSimpleCalendar(
     addOptimisticEvent,
     removeOptimisticEvent,
     updateOptimisticEvent,
+    addServerEvent,
   };
 }
 

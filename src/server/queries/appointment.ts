@@ -665,6 +665,90 @@ export async function getAppointmentsByDateRangeSecure(
 }
 
 /**
+ * Get a single appointment by ID with all joined data (secure version)
+ * Returns the same structure as getAppointmentsByDateRangeSecure for consistency
+ */
+export async function getAppointmentByIdSecure(appointmentId: number) {
+  try {
+    const accountId = await getCurrentUserAccountId();
+
+    // First get all user IDs that belong to this account
+    const accountUsers = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.accountId, BigInt(accountId)));
+
+    const userIds = accountUsers.map((u) => u.id);
+
+    if (userIds.length === 0) {
+      return null;
+    }
+
+    const [appointment] = await db
+      .select({
+        appointmentId: appointments.appointmentId,
+        userId: appointments.userId,
+        assignedTo: appointments.assignedTo,
+        contactId: appointments.contactId,
+        listingId: appointments.listingId,
+        listingContactId: appointments.listingContactId,
+        dealId: appointments.dealId,
+        prospectId: appointments.prospectId,
+        datetimeStart: appointments.datetimeStart,
+        datetimeEnd: appointments.datetimeEnd,
+        tripTimeMinutes: appointments.tripTimeMinutes,
+        status: appointments.status,
+        title: appointments.title,
+        notes: appointments.notes,
+        type: appointments.type,
+        isActive: appointments.isActive,
+        createdAt: appointments.createdAt,
+        updatedAt: appointments.updatedAt,
+        // Add contact name from joined table
+        contactFirstName: contacts.firstName,
+        contactLastName: contacts.lastName,
+        // Add property address and title from joined listings/properties tables
+        propertyStreet: properties.street,
+        propertyTitle: properties.title,
+        city: locations.city,
+        // Add creator user information
+        creatorName: sql<string>`creator_user.name`,
+        creatorFirstName: sql<string>`creator_user.first_name`,
+        creatorLastName: sql<string>`creator_user.last_name`,
+        // Add assigned user information (for filtering)
+        agentName: sql<string | null>`assigned_user.name`,
+        agentFirstName: sql<string | null>`assigned_user.first_name`,
+        agentLastName: sql<string | null>`assigned_user.last_name`,
+      })
+      .from(appointments)
+      .leftJoin(contacts, eq(appointments.contactId, contacts.contactId))
+      .leftJoin(listings, eq(appointments.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .leftJoin(
+        sql`users AS creator_user`,
+        sql`${appointments.userId} = creator_user.id`,
+      )
+      .leftJoin(
+        sql`users AS assigned_user`,
+        sql`${appointments.assignedTo} = assigned_user.id`,
+      )
+      .where(
+        and(
+          eq(appointments.appointmentId, BigInt(appointmentId)),
+          inArray(appointments.userId, userIds),
+          eq(appointments.isActive, true),
+        ),
+      );
+
+    return appointment ?? null;
+  } catch (error) {
+    console.error("Error fetching appointment by ID:", error);
+    throw error;
+  }
+}
+
+/**
  * Get appointments for current user's account
  */
 export async function getUserAppointmentsSecure(userId: string) {
