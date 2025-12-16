@@ -109,10 +109,10 @@ export default function CalendarEvent({
     : "";
 
   const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat("es-ES", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
+    // Use local time components directly to avoid timezone conversion issues
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
   };
 
   const formatTripTime = (minutes?: number) => {
@@ -321,10 +321,10 @@ export function CompactCalendarEvent({
     : "";
 
   const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat("es-ES", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
+    // Use local time components directly to avoid timezone conversion issues
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
   };
 
   const handleClick = (e: React.MouseEvent) => {

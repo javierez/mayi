@@ -114,13 +114,14 @@ export function formatDate(date: Date, locale: string = 'es-ES'): string {
 }
 
 /**
- * Format time for display (uses local timezone automatically via Intl)
+ * Format time for display using local time components directly
+ * This avoids timezone conversion issues when dates are stored as local time
  */
 export function formatTime(date: Date, locale: string = 'es-ES'): string {
-  return new Intl.DateTimeFormat(locale, {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date);
+  // Use local time components directly to avoid timezone conversion issues
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
 }
 
 /**
