@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Dialog,
@@ -124,7 +124,6 @@ export function useAppointmentModal() {
     {},
   );
   const searchParams = useSearchParams();
-  const router = useRouter();
 
   useEffect(() => {
     // Check for 'new=true' URL parameter
@@ -205,7 +204,10 @@ export function useAppointmentModal() {
       ? `${window.location.pathname}?${currentParams.toString()}`
       : window.location.pathname;
 
-    router.replace(newUrl, { scroll: false });
+    // Use window.history.replaceState instead of router.replace to avoid
+    // triggering Next.js navigation/caching that can interfere with refetch
+    // in production. This only updates the browser URL without navigation side effects.
+    window.history.replaceState(null, "", newUrl);
   };
 
   return {
