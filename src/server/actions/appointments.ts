@@ -21,7 +21,6 @@ import {
   notifyAppointmentScheduled,
   notifyAppointmentRescheduled,
   notifyAppointmentCancelled,
-  notifyAppointmentCompleted,
 } from "~/server/services/notification-service";
 
 // Form data structure from PRP
@@ -463,8 +462,6 @@ export async function updateAppointmentStatusAction(
       const accountId = await getCurrentUserAccountId();
       if (status === "Cancelled") {
         await notifyAppointmentCancelled(appointment, currentUser.id, BigInt(accountId));
-      } else if (status === "Completed") {
-        await notifyAppointmentCompleted(appointment, currentUser.id, BigInt(accountId));
       }
     } catch (error) {
       console.error("Error creating appointment status notification:", error);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { getAppointmentsByDateRangeAction } from "~/server/actions/appointments";
 
 // Re-export types from use-appointments for compatibility
@@ -209,6 +209,8 @@ export function useSimpleCalendar(
   const [lastFilterIds, setLastFilterIds] = useState<string[] | undefined>(
     filterByUserIds,
   );
+  // Track if we're currently fetching to prevent concurrent refetches
+  const isFetchingRef = useRef(false);
 
   // Calculate year range (±6 months)
   const currentRange = useMemo(
@@ -235,6 +237,12 @@ export function useSimpleCalendar(
 
   // Fetch 4 weeks of data
   const fetch4Weeks = useCallback(async () => {
+    // Prevent concurrent fetches
+    if (isFetchingRef.current) {
+      return;
+    }
+
+    isFetchingRef.current = true;
     setLoading(true);
     setError(null);
 
@@ -262,6 +270,7 @@ export function useSimpleCalendar(
       console.error("Error fetching 4-week appointments:", err);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
   }, [currentRange, filterByUserIds]);
 
@@ -317,10 +326,25 @@ export function useSimpleCalendar(
     }
   }, [isWithinLoadedRange, fetch4Weeks]);
 
-  // Refetch function
+  // Refetch function - ensures loading state is properly managed even on errors
   const refetch = useCallback(async () => {
-    await fetch4Weeks();
-  }, [fetch4Weeks]);
+    // Reset fetching flag if it's stuck (safety measure)
+    if (isFetchingRef.current && loading) {
+      console.warn("Refetch called while already fetching, resetting state");
+      isFetchingRef.current = false;
+      setLoading(false);
+    }
+    
+    try {
+      await fetch4Weeks();
+    } catch (error) {
+      // Ensure loading state is reset even if fetch fails
+      isFetchingRef.current = false;
+      setLoading(false);
+      setError(error instanceof Error ? error.message : "Error al recargar las citas");
+      console.error("Error in refetch:", error);
+    }
+  }, [fetch4Weeks, loading]);
 
   // Custom date range fetch
   const fetchByDateRange = useCallback(

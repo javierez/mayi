@@ -1,4 +1,9 @@
 import { type getMostUrgentTasksWithAuth } from "~/server/queries/task";
+import {
+  getDayStart,
+  getDayEnd,
+  isSameDay,
+} from "~/lib/utils/date-helpers";
 
 export type DetailedTask = Awaited<ReturnType<typeof getMostUrgentTasksWithAuth>>[0];
 
@@ -21,29 +26,64 @@ export function getInitials(
   return "U";
 }
 
-export function getRemainingTime(dueDate?: Date | null) {
+export function getRemainingTime(dueDate?: Date | null, dueTime?: string | null) {
   if (!dueDate) return null;
 
   const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const taskDate = new Date(
-    dueDate.getFullYear(),
-    dueDate.getMonth(),
-    dueDate.getDate(),
-  );
+  
+  // Combine dueDate and dueTime to get the actual deadline datetime
+  // If dueTime is provided, use it; otherwise default to end of day
+  let actualDueDateTime: Date;
+  
+  if (dueTime) {
+    // Parse dueTime (format: "HH:MM" or "HH:MM:SS")
+    const timeParts = dueTime.split(":").map(Number);
+    const hours = timeParts[0] ?? 23;
+    const minutes = timeParts[1] ?? 59;
+    
+    // Create datetime in local timezone using the date from dueDate and time from dueTime
+    actualDueDateTime = new Date(
+      dueDate.getFullYear(),
+      dueDate.getMonth(),
+      dueDate.getDate(),
+      hours,
+      minutes,
+      0,
+      0
+    );
+  } else {
+    // No dueTime provided, use end of day
+    actualDueDateTime = getDayEnd(dueDate);
+  }
 
-  const fullDueDateTime = new Date(
-    dueDate.getFullYear(),
-    dueDate.getMonth(),
-    dueDate.getDate(),
-    23,
-    59,
-  );
+  const today = getDayStart(now);
+  const taskDate = getDayStart(dueDate);
 
-  const diffMs = fullDueDateTime.getTime() - now.getTime();
+  const diffMs = actualDueDateTime.getTime() - now.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
+
+  // Log time difference calculation
+  console.log("⏰ getRemainingTime calculation:", {
+    dueDate: dueDate.toISOString(),
+    dueTime: dueTime ?? "none",
+    dueDateLocal: `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}-${String(dueDate.getDate()).padStart(2, '0')}`,
+    actualDueDateTime: actualDueDateTime.toISOString(),
+    actualDueDateTimeLocal: actualDueDateTime.toLocaleString(),
+    now: now.toISOString(),
+    nowLocal: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+    diffMs,
+    diffDays,
+    diffHours,
+    diffMinutes,
+    isOverdue: diffMs < 0,
+    isToday: isSameDay(dueDate, now),
+    taskDate: taskDate.toISOString(),
+    taskDateLocal: taskDate.toLocaleDateString(),
+    today: today.toISOString(),
+    todayLocal: today.toLocaleDateString(),
+  });
 
   if (diffMs < 0) {
     const overdueDays = Math.abs(diffDays);
@@ -57,7 +97,7 @@ export function getRemainingTime(dueDate?: Date | null) {
     }
   }
 
-  if (taskDate.getTime() === today.getTime()) {
+  if (isSameDay(dueDate, now)) {
     if (diffHours > 0) {
       return `${diffHours} hora${diffHours !== 1 ? "s" : ""} restantes`;
     } else if (diffMinutes > 0) {

@@ -8,6 +8,12 @@ import { cn } from "~/lib/utils";
 import { ChevronLeft, ChevronRight, RefreshCw, Loader } from "lucide-react";
 import CalendarEvent from "~/components/appointments/calendar-event";
 import type { AppointmentData } from "~/components/appointments/appointment-card";
+import {
+  getLocalDateString,
+  getMinutesFromMidnight,
+  isToday as isTodayHelper,
+  appointmentOverlapsDay,
+} from "~/lib/utils/date-helpers";
 
 interface CalendarWeeklyViewProps {
   appointments: AppointmentData[];
@@ -53,14 +59,7 @@ const formatMonthYear = (date: Date) => {
   }).format(date);
 };
 
-const isToday = (date: Date) => {
-  const today = new Date();
-  return (
-    date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear()
-  );
-};
+// Use isTodayHelper from date-helpers instead
 
 // Helper to calculate event position and height for a specific day
 const calculateEventStyle = (
@@ -72,10 +71,10 @@ const calculateEventStyle = (
   const calendarEndMinutes = 24 * 60; // 11:59 PM = 1440 minutes
   const calendarDurationMinutes = calendarEndMinutes - calendarStartMinutes;
 
-  // Get date strings for comparison (YYYY-MM-DD)
-  const currentDayStr = currentDay.toISOString().split("T")[0];
-  const startDayStr = startDateTime.toISOString().split("T")[0];
-  const endDayStr = endDateTime.toISOString().split("T")[0];
+  // Use local date strings for comparison (avoids UTC conversion issues)
+  const currentDayStr = getLocalDateString(currentDay);
+  const startDayStr = getLocalDateString(startDateTime);
+  const endDayStr = getLocalDateString(endDateTime);
 
   // Determine if this is the start day, end day, middle day, or single day
   const isStartDay = currentDayStr === startDayStr;
@@ -87,9 +86,8 @@ const calculateEventStyle = (
 
   if (isSingleDay) {
     // Single day event - use actual start and end times
-    const startMinutes =
-      startDateTime.getHours() * 60 + startDateTime.getMinutes();
-    const endMinutes = endDateTime.getHours() * 60 + endDateTime.getMinutes();
+    const startMinutes = getMinutesFromMidnight(startDateTime);
+    const endMinutes = getMinutesFromMidnight(endDateTime);
 
     topPosition = ((startMinutes - calendarStartMinutes) / 60) * 60;
     const durationMinutes = endMinutes - startMinutes;
@@ -101,8 +99,7 @@ const calculateEventStyle = (
     }
   } else if (isStartDay) {
     // First day of multi-day event - from start time to midnight
-    const startMinutes =
-      startDateTime.getHours() * 60 + startDateTime.getMinutes();
+    const startMinutes = getMinutesFromMidnight(startDateTime);
     topPosition = ((startMinutes - calendarStartMinutes) / 60) * 60;
     const remainingMinutes = calendarEndMinutes - startMinutes;
     height = (remainingMinutes / 60) * 60;
@@ -113,7 +110,7 @@ const calculateEventStyle = (
     }
   } else if (isEndDay) {
     // Last day of multi-day event - from calendar start to end time
-    const endMinutes = endDateTime.getHours() * 60 + endDateTime.getMinutes();
+    const endMinutes = getMinutesFromMidnight(endDateTime);
     topPosition = 0;
     height = ((endMinutes - calendarStartMinutes) / 60) * 60;
 
@@ -156,7 +153,7 @@ export function CalendarWeeklyView({
 
   // Calculate current time position in pixels (uses state for live updates)
   const currentTimePosition = (() => {
-    const minutes = currentTime.getHours() * 60 + currentTime.getMinutes();
+    const minutes = getMinutesFromMidnight(currentTime);
     const calendarStartMinutes = 6 * 60; // 6:00 AM
 
     // If before 6 AM, return 0
@@ -171,7 +168,7 @@ export function CalendarWeeklyView({
     // Calculate position fresh for initial scroll (don't depend on state to avoid re-scrolling)
     const calculateScrollPosition = () => {
       const now = new Date();
-      const minutes = now.getHours() * 60 + now.getMinutes();
+      const minutes = getMinutesFromMidnight(now);
       const calendarStartMinutes = 6 * 60;
       return Math.max(0, minutes - calendarStartMinutes);
     };
@@ -261,9 +258,9 @@ export function CalendarWeeklyView({
             {getWeekDays(weekStart).map((day, dayIdx) => (
               <div
                 key={dayIdx}
-                className={cn(
+                  className={cn(
                   "relative flex h-10 flex-col items-center justify-center sm:h-12 md:h-14",
-                  isToday(day) && "bg-blue-50",
+                  isTodayHelper(day) && "bg-blue-50",
                 )}
               >
                 <div className="text-[8px] text-muted-foreground sm:text-[10px] md:text-xs">
@@ -272,7 +269,7 @@ export function CalendarWeeklyView({
                 <div
                   className={cn(
                     "flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-medium sm:h-6 sm:w-6 sm:text-xs md:h-8 md:w-8 md:text-sm",
-                    isToday(day) && "bg-blue-600 text-white",
+                    isTodayHelper(day) && "bg-blue-600 text-white",
                   )}
                 >
                   {formatShortDate(day)}
@@ -304,7 +301,7 @@ export function CalendarWeeklyView({
                   key={dayIdx}
                   className={cn(
                     "relative flex flex-col border-r",
-                    isToday(day) && "bg-blue-50/30",
+                    isTodayHelper(day) && "bg-blue-50/30",
                   )}
                 >
                   {/* Hour slots */}
@@ -341,16 +338,11 @@ export function CalendarWeeklyView({
                     appointments
                       .filter((app) => {
                         // Show event if it overlaps with this day at all
-                        const dayStart = new Date(day);
-                        dayStart.setHours(0, 0, 0, 0);
-                        const dayEnd = new Date(day);
-                        dayEnd.setHours(23, 59, 59, 999);
-
-                        const appStart = new Date(app.datetimeStart);
-                        const appEnd = new Date(app.datetimeEnd);
-
-                        // Event overlaps if it starts before day ends AND ends after day starts
-                        return appStart <= dayEnd && appEnd >= dayStart;
+                        return appointmentOverlapsDay(
+                          new Date(app.datetimeStart),
+                          new Date(app.datetimeEnd),
+                          day
+                        );
                       })
                       .map((app) => {
                         const eventStyle = calculateEventStyle(
@@ -383,7 +375,7 @@ export function CalendarWeeklyView({
                       })}
 
                   {/* Current time indicator - only on today's column */}
-                  {isToday(day) && (
+                  {isTodayHelper(day) && (
                     <div
                       className="pointer-events-none absolute left-0 right-0 z-20 flex items-center"
                       style={{ top: `${currentTimePosition}px` }}

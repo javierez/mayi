@@ -44,7 +44,7 @@ export function StickyNotificationButton() {
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[420px] p-0 border-0 shadow-lg"
+        className="w-[calc(100vw-2rem)] max-w-[420px] p-0 border-0 shadow-lg"
         align="end"
         side="top"
         sideOffset={8}
@@ -57,7 +57,7 @@ export function StickyNotificationButton() {
           </div>
           
           {/* Notifications List */}
-          <ScrollArea className="max-h-[400px]">
+          <ScrollArea className="max-h-[60vh] sm:max-h-[400px]">
             {loading && notifications.length === 0 ? (
               <div className="flex items-center justify-center py-8">
                 <p className="text-sm text-gray-500">Cargando...</p>
@@ -65,15 +65,15 @@ export function StickyNotificationButton() {
             ) : notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 px-4">
                 <Bell className="h-8 w-8 text-gray-300" />
-                <p className="mt-2 text-sm font-medium text-gray-900">
+                <p className="mt-2 text-sm font-medium text-gray-900 text-center">
                   No hay notificaciones
                 </p>
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-gray-500 text-center">
                   Te notificaremos cuando haya algo nuevo
                 </p>
               </div>
             ) : (
-              <div className="space-y-1">
+              <div className="space-y-1 p-1">
                 {notifications.map((notification) => (
                   <NotificationItem
                     key={notification.notificationId.toString()}

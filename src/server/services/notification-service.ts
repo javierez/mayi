@@ -100,7 +100,6 @@ function determinePriority(type: NotificationType): NotificationPriority {
     case "appointment_rescheduled":
       return "normal";
     case "appointment_cancelled":
-    case "appointment_completed":
       return "low";
     default:
       return "normal";
@@ -140,8 +139,6 @@ function buildTitle(
       return `Cita reagendada: ${entityTitle}`;
     case "appointment_cancelled":
       return `Cita cancelada: ${entityTitle}`;
-    case "appointment_completed":
-      return `Cita completada: ${entityTitle}`;
     case "appointment_reminder":
       const reminderType = context?.reminderType as
         | AppointmentReminderTimeframe
@@ -226,12 +223,6 @@ function buildMessage(
         return `${cancellerName} ha cancelado la cita.`;
       }
       return "La cita ha sido cancelada.";
-    case "appointment_completed":
-      const completerName = context.completerName as string | undefined;
-      if (completerName) {
-        return `${completerName} ha marcado la cita como completada.`;
-      }
-      return "La cita ha sido completada.";
     case "appointment_reminder":
       const reminderType = context.reminderType as
         | AppointmentReminderTimeframe
@@ -472,6 +463,227 @@ async function fetchTaskRelatedData(
       }
     } catch (error) {
       console.error("Error fetching contact data for notification:", error);
+    }
+  }
+
+  return { listing: listingData, contact: contactData, owner: ownerData, buyer: buyerData };
+}
+
+/**
+ * Fetch related data (listing, contact, owner, buyer) for an appointment
+ * Reuses the same logic as fetchTaskRelatedData for consistency
+ */
+async function fetchAppointmentRelatedData(
+  listingId: bigint | null | undefined,
+  contactId: bigint | null | undefined,
+  accountId: bigint,
+): Promise<{
+  listing: AppointmentNotificationMetadata["listing"];
+  contact: AppointmentNotificationMetadata["contact"];
+  owner: AppointmentNotificationMetadata["owner"];
+  buyer: AppointmentNotificationMetadata["buyer"];
+}> {
+  let listingData: AppointmentNotificationMetadata["listing"] | undefined;
+  let contactData: AppointmentNotificationMetadata["contact"] | undefined;
+  let ownerData: AppointmentNotificationMetadata["owner"] | undefined;
+  let buyerData: AppointmentNotificationMetadata["buyer"] | undefined;
+
+  // Fetch listing data if listingId exists
+  if (listingId) {
+    try {
+      const { getListingCompactByIdWithAuth } = await import("~/server/queries/listing");
+      const { getPropertyImages } = await import("~/server/queries/property_images");
+      const { db } = await import("~/server/db");
+      const { listings, listingContacts, contacts } = await import("~/server/db/schema");
+      const { eq, and } = await import("drizzle-orm");
+
+      const listing = await getListingCompactByIdWithAuth(listingId);
+      if (listing) {
+        // Get propertyId from listing
+        const [listingWithProperty] = await db
+          .select({
+            propertyId: listings.propertyId,
+          })
+          .from(listings)
+          .where(eq(listings.listingId, listingId))
+          .limit(1);
+
+        // Fetch multiple property images (limit to 5 for email)
+        let imageUrls: string[] = [];
+        if (listingWithProperty?.propertyId) {
+          try {
+            const propertyImages = await getPropertyImages(listingWithProperty.propertyId, true);
+            imageUrls = propertyImages
+              .slice(0, 5) // Limit to 5 images for email
+              .map((img) => img.imageUrl)
+              .filter((url): url is string => url !== null && url !== undefined);
+          } catch (imageError) {
+            console.error("Error fetching property images for appointment notification:", imageError);
+            // Fallback to single image if available
+            if (listing.imageUrl) {
+              imageUrls = [listing.imageUrl];
+            }
+          }
+        } else if (listing.imageUrl) {
+          // Fallback to single image if propertyId not found
+          imageUrls = [listing.imageUrl];
+        }
+
+        // Convert builtSurfaceArea to number if it's a string
+        const builtSurfaceAreaRaw = listing.builtSurfaceArea;
+        let builtSurfaceArea: number | null | undefined = null;
+        if (builtSurfaceAreaRaw !== null && builtSurfaceAreaRaw !== undefined) {
+          if (typeof builtSurfaceAreaRaw === "string") {
+            const parsed = parseFloat(builtSurfaceAreaRaw);
+            builtSurfaceArea = isNaN(parsed) ? null : parsed;
+          } else {
+            builtSurfaceArea = builtSurfaceAreaRaw;
+          }
+        }
+
+        listingData = {
+          listingId: listing.listingId.toString(),
+          title: listing.title,
+          referenceNumber: listing.referenceNumber,
+          price: listing.price,
+          listingType: listing.listingType,
+          propertyType: listing.propertyType,
+          bedrooms: listing.bedrooms,
+          bathrooms: listing.bathrooms,
+          squareMeter: listing.squareMeter,
+          builtSurfaceArea: builtSurfaceArea ?? undefined,
+          city: listing.city,
+          agentName: listing.agentName,
+          imageUrl: listing.imageUrl,
+          imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+        };
+
+        // Always fetch owner from listingContacts when listingId exists
+        try {
+          const [ownerContact] = await db
+            .select({
+              contactId: contacts.contactId,
+              firstName: contacts.firstName,
+              lastName: contacts.lastName,
+              email: contacts.email,
+              phone: contacts.phone,
+            })
+            .from(listingContacts)
+            .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+            .where(
+              and(
+                eq(listingContacts.listingId, listingId),
+                eq(listingContacts.contactType, "owner"),
+                eq(listingContacts.isActive, true),
+                eq(contacts.isActive, true),
+                eq(contacts.accountId, accountId),
+              ),
+            )
+            .limit(1);
+
+          if (ownerContact) {
+            ownerData = {
+              contactId: ownerContact.contactId.toString(),
+              firstName: ownerContact.firstName,
+              lastName: ownerContact.lastName,
+              email: ownerContact.email ?? undefined,
+              phone: ownerContact.phone ?? undefined,
+            };
+          }
+        } catch (ownerError) {
+          console.error("Error fetching owner contact for appointment notification:", ownerError);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching listing data for appointment notification:", error);
+    }
+  }
+
+  // Fetch contact data if contactId exists
+  if (contactId) {
+    try {
+      const { getContactByIdWithAuth } = await import("~/server/queries/contact");
+      const contact = await getContactByIdWithAuth(Number(contactId));
+      if (contact) {
+        const { db } = await import("~/server/db");
+        const { listingContacts, contacts } = await import("~/server/db/schema");
+        const { eq, and } = await import("drizzle-orm");
+
+        // If listingId exists, check if this contact is owner or buyer for THIS listing
+        if (listingId) {
+          // Join with contacts to filter by accountId
+          const ownerCheck = await db
+            .select()
+            .from(listingContacts)
+            .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+            .where(
+              and(
+                eq(listingContacts.listingId, listingId),
+                eq(listingContacts.contactId, contactId),
+                eq(listingContacts.contactType, "owner"),
+                eq(listingContacts.isActive, true),
+                eq(contacts.isActive, true),
+                eq(contacts.accountId, accountId),
+              ),
+            )
+            .limit(1);
+
+          const buyerCheck = await db
+            .select()
+            .from(listingContacts)
+            .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+            .where(
+              and(
+                eq(listingContacts.listingId, listingId),
+                eq(listingContacts.contactId, contactId),
+                eq(listingContacts.contactType, "buyer"),
+                eq(listingContacts.isActive, true),
+                eq(contacts.isActive, true),
+                eq(contacts.accountId, accountId),
+              ),
+            )
+            .limit(1);
+
+          const isOwner = ownerCheck.length > 0;
+          const isBuyer = buyerCheck.length > 0;
+
+          // If contact is the buyer, add them to buyerData
+          if (isBuyer) {
+            buyerData = {
+              contactId: contact.contactId.toString(),
+              firstName: contact.firstName,
+              lastName: contact.lastName,
+              email: contact.email ?? undefined,
+              phone: contact.phone ?? undefined,
+            };
+          }
+          // If they're neither owner nor buyer, treat as generic contact
+          if (!isOwner && !isBuyer) {
+            contactData = {
+              contactId: contact.contactId.toString(),
+              firstName: contact.firstName,
+              lastName: contact.lastName,
+              email: contact.email ?? undefined,
+              phone: contact.phone ?? undefined,
+              isOwner: false,
+              isBuyer: false,
+            };
+          }
+        } else {
+          // No listingId: just return as generic contact
+          contactData = {
+            contactId: contact.contactId.toString(),
+            firstName: contact.firstName,
+            lastName: contact.lastName,
+            email: contact.email ?? undefined,
+            phone: contact.phone ?? undefined,
+            isOwner: false,
+            isBuyer: false,
+          };
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching contact data for appointment notification:", error);
     }
   }
 
@@ -1099,11 +1311,24 @@ export async function notifyAppointmentScheduled(
     // Notify the assigned user, or the creator if no one is assigned
     const targetUserId = appointment.assignedTo ?? appointment.userId;
 
+    // Fetch related data (listing, contact, owner, buyer) for rich email templates
+    const { listing, contact, owner, buyer } = await fetchAppointmentRelatedData(
+      appointment.listingId,
+      appointment.contactId,
+      accountId,
+    );
+
     const metadata: AppointmentNotificationMetadata = {
       appointmentTitle: appointment.title,
       datetimeStart: appointment.datetimeStart.toISOString(),
       datetimeEnd: appointment.datetimeEnd.toISOString(),
       appointmentType: appointment.type ?? undefined,
+      location: appointment.notes ?? undefined,
+      // Enriched data for email templates
+      listing,
+      contact,
+      owner,
+      buyer,
     };
 
     const notification = await createNotificationInternal({
@@ -1159,11 +1384,25 @@ export async function notifyAppointmentRescheduled(
   try {
     const targetUserId = appointment.assignedTo ?? appointment.userId;
 
+    // Fetch related data (listing, contact, owner, buyer) for rich email templates
+    const { listing, contact, owner, buyer } = await fetchAppointmentRelatedData(
+      appointment.listingId,
+      appointment.contactId,
+      accountId,
+    );
+
     const metadata: AppointmentNotificationMetadata = {
       appointmentTitle: appointment.title,
       datetimeStart: appointment.datetimeStart.toISOString(),
       datetimeEnd: appointment.datetimeEnd.toISOString(),
       previousDatetime: previousDateTime.toISOString(),
+      appointmentType: appointment.type ?? undefined,
+      location: appointment.notes ?? undefined,
+      // Enriched data for email templates
+      listing,
+      contact,
+      owner,
+      buyer,
     };
 
     const notification = await createNotificationInternal({
@@ -1267,84 +1506,6 @@ export async function notifyAppointmentCancelled(
 }
 
 /**
- * Create notification when an appointment is completed
- */
-export async function notifyAppointmentCompleted(
-  appointment: Appointment,
-  completedById: string,
-  accountId: bigint,
-): Promise<void> {
-  try {
-    const assignedUserId = appointment.assignedTo ?? appointment.userId;
-    const creatorUserId = appointment.userId;
-
-    const metadata: AppointmentNotificationMetadata = {
-      appointmentTitle: appointment.title,
-      datetimeStart: appointment.datetimeStart.toISOString(),
-      datetimeEnd: appointment.datetimeEnd.toISOString(),
-      appointmentType: appointment.type ?? undefined,
-    };
-
-    const notificationData = {
-      accountId,
-      fromUserId: completedById,
-      type: "appointment_completed" as const,
-      title: buildTitle("appointment_completed", appointment.title),
-      message: buildMessage("appointment_completed", {
-        completerName: completedById ? undefined : "Sistema",
-      }),
-      actionUrl: buildActionUrl("appointment", appointment.appointmentId),
-      priority: determinePriority("appointment_completed"),
-      category: "appointments" as const,
-      entityType: "appointment" as const,
-      entityId: appointment.appointmentId,
-      metadata,
-    };
-
-    // Notify assigned user
-    const assignedNotification = await createNotificationInternal({
-      ...notificationData,
-      userId: assignedUserId,
-    });
-    await sendPushAfterNotification(
-      assignedUserId,
-      accountId,
-      {
-        notificationId: assignedNotification.notificationId,
-        title: assignedNotification.title,
-        message: assignedNotification.message,
-        actionUrl: assignedNotification.actionUrl,
-      },
-      "appointment",
-      appointment.appointmentId,
-    );
-
-    // Notify creator (if different from assigned user)
-    if (creatorUserId !== assignedUserId) {
-      const creatorNotification = await createNotificationInternal({
-        ...notificationData,
-        userId: creatorUserId,
-      });
-      await sendPushAfterNotification(
-        creatorUserId,
-        accountId,
-        {
-          notificationId: creatorNotification.notificationId,
-          title: creatorNotification.title,
-          message: creatorNotification.message,
-          actionUrl: creatorNotification.actionUrl,
-        },
-        "appointment",
-        appointment.appointmentId,
-      );
-    }
-  } catch (error) {
-    console.error("Error creating appointment completed notification:", error);
-    throw error;
-  }
-}
-
-/**
  * Create reminder notification for an upcoming appointment
  */
 export async function notifyAppointmentReminder(
@@ -1355,12 +1516,25 @@ export async function notifyAppointmentReminder(
   try {
     const targetUserId = appointment.assignedTo ?? appointment.userId;
 
+    // Fetch related data (listing, contact, owner, buyer) for rich email templates
+    const { listing, contact, owner, buyer } = await fetchAppointmentRelatedData(
+      appointment.listingId,
+      appointment.contactId,
+      accountId,
+    );
+
     const metadata: AppointmentNotificationMetadata = {
       appointmentTitle: appointment.title,
       datetimeStart: appointment.datetimeStart.toISOString(),
       datetimeEnd: appointment.datetimeEnd.toISOString(),
       reminderType: timeframe,
       appointmentType: appointment.type ?? undefined,
+      location: appointment.notes ?? undefined,
+      // Enriched data for email templates
+      listing,
+      contact,
+      owner,
+      buyer,
     };
 
     const notification = await createNotificationInternal({

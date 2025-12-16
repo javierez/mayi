@@ -39,15 +39,15 @@ export function generateTaskNotificationEmail(
     if (metadata.completerName || metadata.completedByName) {
       const completerName = metadata.completerName ?? metadata.completedByName ?? "";
       taskDetailsSections.push(`
-        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 12px;">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px;">
           <tr>
-            <td style="padding: 16px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
+            <td style="padding: 10px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px;">
               <table cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
-                  <td style="font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 8px;">Completado por</td>
+                  <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Completado por</td>
                 </tr>
                 <tr>
-                  <td style="font-size: 15px; font-weight: 400; color: #111827; line-height: 1.5;">${completerName}</td>
+                  <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">${completerName}</td>
                 </tr>
               </table>
             </td>
@@ -60,15 +60,15 @@ export function generateTaskNotificationEmail(
     if (metadata.assignerName || metadata.assignedByName) {
       const assignerName = metadata.assignerName ?? metadata.assignedByName ?? "";
       taskDetailsSections.push(`
-        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 12px;">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px;">
           <tr>
-            <td style="padding: 16px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
+            <td style="padding: 10px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px;">
               <table cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
-                  <td style="font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 8px;">Asignado por</td>
+                  <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Asignado por</td>
                 </tr>
                 <tr>
-                  <td style="font-size: 15px; font-weight: 400; color: #111827; line-height: 1.5;">${assignerName}</td>
+                  <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">${assignerName}</td>
                 </tr>
               </table>
             </td>
@@ -128,30 +128,30 @@ export function generateTaskNotificationEmail(
       }
     } else {
       // For non-overdue tasks, show remaining time
-      if (timeDiff > 0) {
-        const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        
-        if (days > 0 && hours > 0) {
+    if (timeDiff > 0) {
+      const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      
+      if (days > 0 && hours > 0) {
           timeText = ` (${days} ${days === 1 ? "día" : "días"} y ${hours} ${hours === 1 ? "hora" : "horas"} restantes)`;
-        } else if (days > 0) {
+      } else if (days > 0) {
           timeText = ` (${days} ${days === 1 ? "día" : "días"} restantes)`;
-        } else if (hours > 0) {
+      } else if (hours > 0) {
           timeText = ` (${hours} ${hours === 1 ? "hora" : "horas"} restantes)`;
         }
       }
     }
     
     taskDetailsSections.push(`
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 12px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px;">
         <tr>
-          <td style="padding: 16px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
+          <td style="padding: 10px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td style="font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 8px;">Fecha límite</td>
+                <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Fecha límite</td>
               </tr>
               <tr>
-                <td style="font-size: 15px; font-weight: 400; color: #111827; line-height: 1.5;">${dueDateText}${timeText}</td>
+                <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">${dueDateText}${timeText}</td>
               </tr>
             </table>
           </td>
@@ -175,19 +175,19 @@ export function generateTaskNotificationEmail(
       : null;
 
     taskDetailsSections.push(`
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 12px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px;">
         <tr>
           ${metadata.urgency ? `
-            <td width="50%" style="padding-right: 6px; vertical-align: top;">
+            <td width="50%" style="padding-right: 4px; vertical-align: top;">
               <table cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
-                  <td style="padding: 16px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
+                  <td style="padding: 10px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px;">
                     <table cellpadding="0" cellspacing="0" border="0" width="100%">
                       <tr>
-                        <td style="font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 8px;">Urgencia</td>
+                        <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Urgencia</td>
                       </tr>
                       <tr>
-                        <td style="font-size: 15px; font-weight: 400; color: #111827; line-height: 1.5;">${urgencyLabel}</td>
+                        <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">${urgencyLabel}</td>
                       </tr>
                     </table>
                   </td>
@@ -196,16 +196,16 @@ export function generateTaskNotificationEmail(
             </td>
           ` : ""}
           ${metadata.category ? `
-            <td width="${metadata.urgency ? "50%" : "100%"}" style="${metadata.urgency ? "padding-left: 6px;" : ""} vertical-align: top;">
+            <td width="${metadata.urgency ? "50%" : "100%"}" style="${metadata.urgency ? "padding-left: 4px;" : ""} vertical-align: top;">
               <table cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
-                  <td style="padding: 16px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
+                  <td style="padding: 10px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px;">
                     <table cellpadding="0" cellspacing="0" border="0" width="100%">
                       <tr>
-                        <td style="font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 8px;">Categoría</td>
+                        <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Categoría</td>
                       </tr>
                       <tr>
-                        <td style="font-size: 15px; font-weight: 400; color: #111827; line-height: 1.5;">${formattedCategory}</td>
+                        <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">${formattedCategory}</td>
                       </tr>
                     </table>
                   </td>
@@ -221,7 +221,7 @@ export function generateTaskNotificationEmail(
   // Combine structured sections
   if (taskDetailsSections.length > 0) {
     structuredMessageHtml = `
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 4px 0 8px 0;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 2px 0 6px 0;">
         <tr>
           <td>
             ${taskDetailsSections.join("")}
@@ -268,23 +268,23 @@ export function generateTaskNotificationEmail(
     const displayName = `${contactName} (${label})`;
 
     return `
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 8px;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px;">
         <tr>
-          <td style="padding: 12px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px;">
+          <td style="padding: 10px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td style="font-size: 12px; font-weight: 500; color: #111827; line-height: 1.4; padding-bottom: 8px;">
+                <td style="font-size: 12px; font-weight: 500; color: #111827; line-height: 1.3; padding-bottom: 6px;">
                   ${displayName}
                 </td>
               </tr>
               <tr>
                 <td>
-                  <table cellpadding="0" cellspacing="6" border="0">
+                  <table cellpadding="0" cellspacing="4" border="0">
                     <tr>
                       ${phone ? `
                         <td>
                           <a href="tel:${phone.replace(/\s/g, "")}" 
-                             style="display: inline-block; padding: 6px 12px; background: #ffffff; color: #111827; text-decoration: none; font-size: 13px; font-weight: 500; border-radius: 6px; border: 1px solid #e5e7eb;">
+                             style="display: inline-block; padding: 5px 10px; background: #ffffff; color: #111827; text-decoration: none; font-size: 12px; font-weight: 500; border-radius: 4px; border: 1px solid #e5e7eb;">
                             📞 Llamar
                           </a>
                         </td>
@@ -292,7 +292,7 @@ export function generateTaskNotificationEmail(
                       ${email ? `
                         <td>
                           <a href="mailto:${email}" 
-                             style="display: inline-block; padding: 6px 12px; background: #ffffff; color: #111827; text-decoration: none; font-size: 13px; font-weight: 500; border-radius: 6px; border: 1px solid #e5e7eb;">
+                             style="display: inline-block; padding: 5px 10px; background: #ffffff; color: #111827; text-decoration: none; font-size: 12px; font-weight: 500; border-radius: 4px; border: 1px solid #e5e7eb;">
                             ✉️ Email
                           </a>
                         </td>
@@ -350,7 +350,7 @@ export function generateTaskNotificationEmail(
 
   if (contactCards.length > 0) {
     contactCardsHtml = `
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 16px 0;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 12px 0;">
         <tr>
           <td>
             ${contactCards.join("")}
@@ -382,7 +382,7 @@ export function generateTaskNotificationEmail(
               <!-- Task Description -->
               <tr>
                 <td style="padding: 0 40px;">
-                  <p style="margin: 0 0 12px 0; font-size: 15px; font-weight: 400; color: #374151; line-height: 1.6;">
+                  <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 400; color: #374151; line-height: 1.5;">
                     ${taskDescription}
                   </p>
                 </td>
@@ -406,7 +406,7 @@ export function generateTaskNotificationEmail(
               <!-- Task Description -->
               <tr>
                 <td style="padding: 0 40px;">
-                  <p style="margin: 0 0 12px 0; font-size: 15px; font-weight: 400; color: #374151; line-height: 1.6;">
+                  <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 400; color: #374151; line-height: 1.5;">
                     ${taskDescription}
                   </p>
                 </td>
@@ -451,7 +451,7 @@ export function generateTaskNotificationEmail(
               <!-- Task Description -->
               <tr>
                 <td style="padding: 0 40px;">
-                  <p style="margin: 0 0 12px 0; font-size: 15px; font-weight: 400; color: #374151; line-height: 1.6;">
+                  <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 400; color: #374151; line-height: 1.5;">
                     ${taskDescription}
                   </p>
                 </td>
@@ -461,7 +461,7 @@ export function generateTaskNotificationEmail(
           /(<!-- Action Button Section -->|<!-- Spacer when no button -->)/,
           `<!-- Additional Task Content -->
               <tr>
-                <td style="padding: 0 40px 20px 40px;">
+                <td style="padding: 0 40px 16px 40px;">
                   ${allContentHtml}
                 </td>
               </tr>
@@ -590,7 +590,7 @@ function generatePropertyCardHtmlForTask(
     }
     badgesHtml = `
       <tr>
-        <td style="padding: 8px 12px 0 12px;">
+        <td style="padding: 6px 10px 0 10px;">
           ${badges.join("")}
         </td>
       </tr>
@@ -619,7 +619,7 @@ function generatePropertyCardHtmlForTask(
     
     detailsHtml = `
       <tr>
-        <td style="padding: 8px 12px; font-size: 12px; color: #6b7280;">
+        <td style="padding: 6px 10px; font-size: 11px; color: #6b7280;">
           ${details.join(" &nbsp;•&nbsp; ")}
         </td>
       </tr>
@@ -628,7 +628,7 @@ function generatePropertyCardHtmlForTask(
 
   // Build property card HTML using TABLES for email compatibility
   return `
-    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 32px 0; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; background: #ffffff;">
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 20px 0; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: #ffffff;">
       <tr>
         <td>
           <a href="${propertyUrl}" style="text-decoration: none; color: inherit; display: block;">
@@ -641,15 +641,15 @@ function generatePropertyCardHtmlForTask(
                       src="${validImageUrl}" 
                       alt="${listing.street ?? listing.title ?? "Property"}" 
                       width="100%"
-                      style="display: block; width: 100%; height: auto; max-height: 200px; object-fit: cover;"
+                      style="display: block; width: 100%; height: auto; max-height: 160px; object-fit: cover;"
                     />
                   </td>
                 </tr>
               ` : `
                 <tr>
-                  <td style="padding: 40px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); text-align: center; color: white;">
-                    <div style="font-size: 48px; margin-bottom: 8px;">🏠</div>
-                    ${propertyTypeLabel ? `<div style="font-size: 13px; font-weight: 400; opacity: 0.9;">${propertyTypeLabel}</div>` : ""}
+                  <td style="padding: 30px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); text-align: center; color: white;">
+                    <div style="font-size: 40px; margin-bottom: 6px;">🏠</div>
+                    ${propertyTypeLabel ? `<div style="font-size: 12px; font-weight: 400; opacity: 0.9;">${propertyTypeLabel}</div>` : ""}
                   </td>
                 </tr>
               `}
@@ -659,14 +659,14 @@ function generatePropertyCardHtmlForTask(
               
               <!-- Title and Price Row -->
               <tr>
-                <td style="padding: 12px;">
+                <td style="padding: 10px;">
                   <table cellpadding="0" cellspacing="0" border="0" width="100%">
                     <tr>
-                      <td style="font-size: 16px; font-weight: 600; color: #111827; line-height: 1.3;">
+                      <td style="font-size: 15px; font-weight: 600; color: #111827; line-height: 1.3;">
                         ${listing.street ?? listing.title ?? "Propiedad"}
                       </td>
                       ${displayPrice ? `
-                        <td align="right" style="font-size: 16px; font-weight: 600; color: #111827; line-height: 1.3; white-space: nowrap;">
+                        <td align="right" style="font-size: 15px; font-weight: 600; color: #111827; line-height: 1.3; white-space: nowrap;">
                           ${formatPriceEmail(displayPrice)}€${isRent ? "/mes" : ""}
                         </td>
                       ` : ""}
@@ -678,7 +678,7 @@ function generatePropertyCardHtmlForTask(
               <!-- Location Row -->
               ${(listing.city || listing.province) ? `
                 <tr>
-                  <td style="padding: 0 12px 8px 12px; font-size: 12px; color: #6b7280;">
+                  <td style="padding: 0 10px 6px 10px; font-size: 11px; color: #6b7280;">
                     📍 ${[listing.city, listing.province].filter(Boolean).join(", ")}
                   </td>
                 </tr>
@@ -690,7 +690,7 @@ function generatePropertyCardHtmlForTask(
               <!-- Reference Number -->
               ${listing.referenceNumber ? `
                 <tr>
-                  <td style="padding: 8px 12px 12px 12px; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; color: #9ca3af; text-transform: uppercase;">
+                  <td style="padding: 6px 10px 10px 10px; font-size: 9px; font-weight: 600; letter-spacing: 0.1em; color: #9ca3af; text-transform: uppercase;">
                     REF: ${listing.referenceNumber}
                   </td>
                 </tr>

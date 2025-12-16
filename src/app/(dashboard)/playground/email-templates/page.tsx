@@ -265,6 +265,10 @@ export default async function EmailTemplatesPage() {
   }
 
   function createAppointmentNotification(type: Notification["type"]): Notification {
+    const assignedByName = exampleTask?.userFirstName && exampleTask?.userLastName
+      ? `${exampleTask.userFirstName} ${exampleTask.userLastName}`
+      : exampleTask?.userName ?? "Usuario";
+
     return {
       notificationId: BigInt(2),
       accountId: BigInt(1),
@@ -272,10 +276,14 @@ export default async function EmailTemplatesPage() {
       fromUserId: exampleTask?.createdBy ?? "user-2",
       type,
       title: type === "appointment_scheduled"
-        ? "Cita programada: Visita a propiedad"
+        ? "Nueva cita: Visita a propiedad"
+        : type === "appointment_rescheduled"
+        ? "Cita reagendada: Visita a propiedad"
         : "Recordatorio: Visita a propiedad",
       message: type === "appointment_scheduled"
         ? "Se ha programado una nueva cita para ti."
+        : type === "appointment_rescheduled"
+        ? "Tu cita ha sido reprogramada."
         : "Tu cita es pronto.",
       actionUrl: "/calendario?appointmentId=456",
       priority: "normal",
@@ -301,6 +309,22 @@ export default async function EmailTemplatesPage() {
         datetimeEnd: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString(),
         appointmentType: "visita",
         reminderType: "24h",
+        scheduledByName: assignerName ?? assignedByName,
+        rescheduledByName: assignerName ?? assignedByName,
+        location: "Calle Principal 123, León",
+        // Include rich data like production
+        listing: listingData,
+        contact: contactData,
+        owner: contactData ? {
+          contactId: contactData.contactId,
+          firstName: contactData.firstName,
+          lastName: contactData.lastName,
+          email: contactData.email,
+          phone: contactData.phone,
+        } : undefined,
+        previousDatetime: type === "appointment_rescheduled"
+          ? new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString()
+          : undefined,
       },
     };
   }

@@ -50,6 +50,13 @@ import {
 import type { AppointmentData } from "./appointment-card";
 import { AppointmentComments } from "./appointment-comments";
 import {
+  isSameDay as isSameDayHelper,
+  formatDate,
+  formatTime,
+  formatShortDate,
+  getLocalTimeComponents,
+} from "~/lib/utils/date-helpers";
+import {
   createAppointmentCommentAction,
   updateAppointmentCommentAction,
   deleteAppointmentCommentAction,
@@ -154,6 +161,7 @@ export function AppointmentDetailSheet({
   const [optimisticStatus, setOptimisticStatus] = useState<string | null>(null);
   const [comments, setComments] = useState<AppointmentCommentWithUser[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
 
   // Inline title editing state
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -180,6 +188,7 @@ export function AppointmentDetailSheet({
     if (!isOpen) {
       setIsEditingTitle(false);
       setEditedTitle("");
+      setIsStatusMenuOpen(false);
     }
   }, [isOpen]);
 
@@ -218,21 +227,7 @@ export function AppointmentDetailSheet({
     icon: <CalendarIcon className="h-4 w-4" />,
   };
 
-  // Date/time formatting
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat("es-ES", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }).format(date);
-  };
-
-  const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat("es-ES", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
-  };
+  // Date/time formatting - using helpers from date-helpers
 
   // Handle status update
   const handleStatusUpdate = async (
@@ -243,6 +238,9 @@ export function AppointmentDetailSheet({
       | "Rescheduled"
       | "NoShow",
   ) => {
+    // Close the dropdown menu immediately
+    setIsStatusMenuOpen(false);
+    
     // Optimistically update the status
     setOptimisticStatus(newStatus);
     setIsUpdatingStatus(true);
@@ -360,13 +358,18 @@ export function AppointmentDetailSheet({
   const handleEditClick = () => {
     if (!onEdit) return;
 
+    // Use local time components in DD-MM-YYYY format to avoid timezone conversion issues
+    const startTimeComponents = getLocalTimeComponents(appointment.datetimeStart);
+    const endTimeComponents = getLocalTimeComponents(appointment.datetimeEnd);
+    const startDate = appointment.datetimeStart;
+    const endDate = appointment.datetimeEnd;
+
     const initialData: Partial<AppointmentFormData> = {
       contactId: appointment.contactId,
-      // Use local time components in DD-MM-YYYY format to avoid timezone conversion issues
-      startDate: `${String(appointment.datetimeStart.getDate()).padStart(2, '0')}-${String(appointment.datetimeStart.getMonth() + 1).padStart(2, '0')}-${appointment.datetimeStart.getFullYear()}`,
-      startTime: `${String(appointment.datetimeStart.getHours()).padStart(2, '0')}:${String(appointment.datetimeStart.getMinutes()).padStart(2, '0')}`,
-      endDate: `${String(appointment.datetimeEnd.getDate()).padStart(2, '0')}-${String(appointment.datetimeEnd.getMonth() + 1).padStart(2, '0')}-${appointment.datetimeEnd.getFullYear()}`,
-      endTime: `${String(appointment.datetimeEnd.getHours()).padStart(2, '0')}:${String(appointment.datetimeEnd.getMinutes()).padStart(2, '0')}`,
+      startDate: `${String(startDate.getDate()).padStart(2, '0')}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${startDate.getFullYear()}`,
+      startTime: `${String(startTimeComponents.hours).padStart(2, '0')}:${String(startTimeComponents.minutes).padStart(2, '0')}`,
+      endDate: `${String(endDate.getDate()).padStart(2, '0')}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${endDate.getFullYear()}`,
+      endTime: `${String(endTimeComponents.hours).padStart(2, '0')}:${String(endTimeComponents.minutes).padStart(2, '0')}`,
       tripTimeMinutes: appointment.tripTimeMinutes,
       title: appointment.title,
       notes: appointment.notes,
@@ -537,30 +540,34 @@ export function AppointmentDetailSheet({
             <p className="text-sm text-muted-foreground">{appointment.type}</p>
 
             {/* Status Dropdown */}
-            <DropdownMenu>
+            <DropdownMenu open={isStatusMenuOpen} onOpenChange={setIsStatusMenuOpen}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-7 px-2 text-xs"
-                  disabled={!canEditAppointment}
+                  disabled={!canEditAppointment || isUpdatingStatus}
                 >
-                  <span
-                    className={cn(
-                      "rounded-full px-2 py-0.5",
-                      currentStatus === "Scheduled" &&
-                        "bg-gray-100 text-gray-700",
-                      currentStatus === "Completed" &&
-                        "bg-gray-200 text-gray-800",
-                      currentStatus === "Cancelled" &&
-                        "bg-gray-50 text-gray-400 line-through",
-                      currentStatus === "Rescheduled" &&
-                        "bg-gray-150 text-gray-700",
-                      currentStatus === "NoShow" && "bg-gray-100 text-gray-500",
-                    )}
-                  >
-                    {STATUS_LABELS[currentStatus as VisitStatus]}
-                  </span>
+                  {isUpdatingStatus ? (
+                    <Loader className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-0.5",
+                        currentStatus === "Scheduled" &&
+                          "bg-gray-100 text-gray-700",
+                        currentStatus === "Completed" &&
+                          "bg-gray-200 text-gray-800",
+                        currentStatus === "Cancelled" &&
+                          "bg-gray-50 text-gray-400 line-through",
+                        currentStatus === "Rescheduled" &&
+                          "bg-gray-150 text-gray-700",
+                        currentStatus === "NoShow" && "bg-gray-100 text-gray-500",
+                      )}
+                    >
+                      {STATUS_LABELS[currentStatus as VisitStatus]}
+                    </span>
+                  )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
@@ -618,10 +625,7 @@ export function AppointmentDetailSheet({
             {(() => {
               const startDate = appointment.datetimeStart;
               const endDate = appointment.datetimeEnd;
-              const isSameDay =
-                startDate.getFullYear() === endDate.getFullYear() &&
-                startDate.getMonth() === endDate.getMonth() &&
-                startDate.getDate() === endDate.getDate();
+              const isSameDay = isSameDayHelper(startDate, endDate);
 
               if (isSameDay) {
                 return (
@@ -641,12 +645,6 @@ export function AppointmentDetailSheet({
               }
 
               // Different days - show combined date+time format
-              const formatShortDate = (date: Date) =>
-                new Intl.DateTimeFormat("es-ES", {
-                  day: "2-digit",
-                  month: "short",
-                }).format(date);
-
               return (
                 <div className="flex items-center gap-2 text-sm">
                   <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />

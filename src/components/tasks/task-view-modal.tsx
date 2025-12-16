@@ -621,7 +621,7 @@ export function TaskViewModal({
                     <div className="flex items-center gap-1.5 text-xs text-gray-500">
                       <Clock className="h-3.5 w-3.5 text-gray-400 shrink-0" />
                       <span>
-                        {getRemainingTime(task.dueDate) ?? formatDateTime(task.dueDate, rawTaskData?.tasks.dueTime ?? null)}
+                        {getRemainingTime(task.dueDate, rawTaskData?.tasks.dueTime ?? null) ?? formatDateTime(task.dueDate, rawTaskData?.tasks.dueTime ?? null)}
                       </span>
                     </div>
                   )}

@@ -14,7 +14,6 @@ export type NotificationType =
   | "appointment_scheduled"
   | "appointment_rescheduled"
   | "appointment_cancelled"
-  | "appointment_completed"
   | "appointment_reminder";
 
 export type NotificationCategory =
@@ -105,7 +104,6 @@ export const notificationTypeSchema = z.enum([
   "appointment_scheduled",
   "appointment_rescheduled",
   "appointment_cancelled",
-  "appointment_completed",
   "appointment_reminder",
 ]);
 
@@ -253,4 +251,49 @@ export interface AppointmentNotificationMetadata extends Record<string, unknown>
   rescheduledByName?: string;
   cancelledByName?: string;
   location?: string;
+  // Listing data for email display
+  listing?: {
+    listingId: string;
+    title: string | null;
+    referenceNumber: string | null;
+    price: string;
+    listingType: string;
+    propertyType: string | null;
+    bedrooms: number | null;
+    bathrooms: string | null;
+    squareMeter: number | null;
+    builtSurfaceArea?: number | null;
+    city: string | null;
+    province?: string | null;
+    agentName: string | null;
+    imageUrl: string | null;
+    imageUrls?: string[];
+    street?: string | null;
+  };
+  // Contact data for email display (backward compatibility)
+  contact?: {
+    contactId: string;
+    firstName: string;
+    lastName: string;
+    email?: string | null;
+    phone?: string | null;
+    isOwner?: boolean;
+    isBuyer?: boolean;
+  };
+  // Owner contact data (from listingContacts table)
+  owner?: {
+    contactId: string;
+    firstName: string;
+    lastName: string;
+    email?: string | null;
+    phone?: string | null;
+  };
+  // Buyer contact data (from listingContacts table)
+  buyer?: {
+    contactId: string;
+    firstName: string;
+    lastName: string;
+    email?: string | null;
+    phone?: string | null;
+  };
 }

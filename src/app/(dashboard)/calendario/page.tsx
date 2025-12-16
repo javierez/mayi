@@ -1002,7 +1002,14 @@ export default function AppointmentsPage() {
           setSelectedEvent(null);
           // Don't refetch on close - only refetch when onUpdate is called (status changes, deletes)
         }}
-        onUpdate={async () => await refetch()}
+        onUpdate={async () => {
+          try {
+            await refetch();
+          } catch (error) {
+            console.error("Error updating calendar after appointment change:", error);
+            // Loading state should be handled by refetch, but ensure we don't get stuck
+          }
+        }}
         onEdit={handleEditAppointment}
         permissions={{
           canEdit: hasEditCalendarPermission,
