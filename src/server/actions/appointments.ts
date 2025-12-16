@@ -328,17 +328,21 @@ export async function getUserAppointmentsAction() {
 
 // Server action to get appointments by date range
 export async function getAppointmentsByDateRangeAction(
-  startDate: Date,
-  endDate: Date,
+  startDate: Date | string,
+  endDate: Date | string,
   filterByUserIds?: string[],
 ) {
   try {
     // PATTERN: Always get account ID for security
     await getCurrentUserAccountId();
 
+    // Ensure dates are Date objects (they might be serialized as strings in production)
+    const start = startDate instanceof Date ? startDate : new Date(startDate);
+    const end = endDate instanceof Date ? endDate : new Date(endDate);
+
     const appointments = await getAppointmentsByDateRangeSecure(
-      startDate,
-      endDate,
+      start,
+      end,
       filterByUserIds,
     );
 

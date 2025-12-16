@@ -138,6 +138,19 @@ function transformToOptimisticEvent(
   };
 }
 
+// Helper to ensure value is a Date (handles serialized strings from server actions)
+function ensureDate(value: Date | string): Date {
+  if (value instanceof Date) return value;
+  return new Date(value);
+}
+
+// Helper to ensure value is a BigInt (handles serialized values from server actions)
+function ensureBigInt(value: bigint | string | number | null): bigint | null {
+  if (value === null) return null;
+  if (typeof value === "bigint") return value;
+  return BigInt(value);
+}
+
 function transformToCalendarEvent(
   rawAppointment: RawAppointment,
 ): CalendarEvent {
@@ -146,21 +159,26 @@ function transformToCalendarEvent(
       ? `${rawAppointment.contactFirstName} ${rawAppointment.contactLastName}`
       : `Contact ${rawAppointment.contactId}`;
 
+  // Ensure dates and bigints are properly parsed (production server actions serialize them)
+  const appointmentId = ensureBigInt(rawAppointment.appointmentId as bigint | string | number) ?? BigInt(0);
+  const startTime = ensureDate(rawAppointment.datetimeStart as Date | string);
+  const endTime = ensureDate(rawAppointment.datetimeEnd as Date | string);
+
   console.log("🔄 [Hook] Transforming appointment:", {
-    appointmentId: rawAppointment.appointmentId.toString(),
+    appointmentId: appointmentId.toString(),
     userId: rawAppointment.userId,
     contactName,
   });
 
   return {
-    appointmentId: rawAppointment.appointmentId,
+    appointmentId,
     userId: rawAppointment.userId,
     contactName,
     propertyAddress: rawAppointment.propertyStreet ?? undefined,
     propertyTitle: rawAppointment.propertyTitle ?? undefined,
     city: rawAppointment.city ?? undefined,
-    startTime: rawAppointment.datetimeStart,
-    endTime: rawAppointment.datetimeEnd,
+    startTime,
+    endTime,
     status:
       (rawAppointment.status as
         | "Scheduled"
@@ -172,11 +190,11 @@ function transformToCalendarEvent(
     title: rawAppointment.title ?? undefined,
     tripTimeMinutes: rawAppointment.tripTimeMinutes ?? undefined,
     notes: rawAppointment.notes ?? undefined,
-    contactId: rawAppointment.contactId,
-    listingId: rawAppointment.listingId,
-    listingContactId: rawAppointment.listingContactId,
-    dealId: rawAppointment.dealId,
-    prospectId: rawAppointment.prospectId,
+    contactId: ensureBigInt(rawAppointment.contactId as bigint | string | number | null),
+    listingId: ensureBigInt(rawAppointment.listingId as bigint | string | number | null),
+    listingContactId: ensureBigInt(rawAppointment.listingContactId as bigint | string | number | null),
+    dealId: ensureBigInt(rawAppointment.dealId as bigint | string | number | null),
+    prospectId: ensureBigInt(rawAppointment.prospectId as bigint | string | number | null),
     agentName: rawAppointment.agentName,
     isOptimistic: false,
   };
@@ -268,15 +286,22 @@ export function useSimpleCalendar(
       });
 
       if (result.success) {
-        const calendarEvents = result.appointments.map(
-          transformToCalendarEvent,
-        );
-        setAppointments(calendarEvents);
-        setLoadedRange(currentRange);
-        setLastFilterIds(filterByUserIds);
-        console.log("✅ [useCachedCalendar] Appointments updated", {
-          count: calendarEvents.length,
-        });
+        try {
+          const calendarEvents = result.appointments.map(
+            transformToCalendarEvent,
+          );
+          setAppointments(calendarEvents);
+          setLoadedRange(currentRange);
+          setLastFilterIds(filterByUserIds);
+          console.log("✅ [useCachedCalendar] Appointments updated", {
+            count: calendarEvents.length,
+          });
+        } catch (transformError) {
+          console.error("❌ [useCachedCalendar] Error transforming appointments:", transformError);
+          console.error("Raw appointments data:", result.appointments);
+          setError("Error al procesar las citas");
+          setAppointments([]);
+        }
       } else {
         setError(result.error ?? "Error desconocido");
         setAppointments([]);
