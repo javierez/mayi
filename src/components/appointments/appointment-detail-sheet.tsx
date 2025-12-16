@@ -54,7 +54,6 @@ import {
   formatDate,
   formatTime,
   formatShortDate,
-  getLocalTimeComponents,
 } from "~/lib/utils/date-helpers";
 import {
   createAppointmentCommentAction,
@@ -377,18 +376,16 @@ export function AppointmentDetailSheet({
   const handleEditClick = () => {
     if (!onEdit) return;
 
-    // Use local time components in DD-MM-YYYY format to avoid timezone conversion issues
-    const startTimeComponents = getLocalTimeComponents(appointment.datetimeStart);
-    const endTimeComponents = getLocalTimeComponents(appointment.datetimeEnd);
+    // Use UTC components since appointments are stored as UTC in the database
     const startDate = appointment.datetimeStart;
     const endDate = appointment.datetimeEnd;
 
     const initialData: Partial<AppointmentFormData> = {
       contactId: appointment.contactId,
-      startDate: `${String(startDate.getDate()).padStart(2, '0')}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${startDate.getFullYear()}`,
-      startTime: `${String(startTimeComponents.hours).padStart(2, '0')}:${String(startTimeComponents.minutes).padStart(2, '0')}`,
-      endDate: `${String(endDate.getDate()).padStart(2, '0')}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${endDate.getFullYear()}`,
-      endTime: `${String(endTimeComponents.hours).padStart(2, '0')}:${String(endTimeComponents.minutes).padStart(2, '0')}`,
+      startDate: `${String(startDate.getUTCDate()).padStart(2, '0')}-${String(startDate.getUTCMonth() + 1).padStart(2, '0')}-${startDate.getUTCFullYear()}`,
+      startTime: `${String(startDate.getUTCHours()).padStart(2, '0')}:${String(startDate.getUTCMinutes()).padStart(2, '0')}`,
+      endDate: `${String(endDate.getUTCDate()).padStart(2, '0')}-${String(endDate.getUTCMonth() + 1).padStart(2, '0')}-${endDate.getUTCFullYear()}`,
+      endTime: `${String(endDate.getUTCHours()).padStart(2, '0')}:${String(endDate.getUTCMinutes()).padStart(2, '0')}`,
       tripTimeMinutes: appointment.tripTimeMinutes,
       title: appointment.title,
       notes: appointment.notes,

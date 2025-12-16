@@ -23,8 +23,17 @@ interface CalendarListViewProps {
   appointmentTasksMap: Record<number, unknown[]>;
 }
 
-// Helper to get date string in DD-MM-YYYY (using local time, not UTC)
+// Helper to get date string in DD-MM-YYYY using UTC (for appointment dates stored as UTC)
 const getDateString = (date: Date): string => {
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const year = date.getUTCFullYear();
+  return `${day}-${month}-${year}`;
+};
+
+// Helper to get local date string for today/tomorrow/yesterday comparison
+// These should use local time since they represent the user's current day
+const getLocalDateString = (date: Date): string => {
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();
@@ -32,6 +41,7 @@ const getDateString = (date: Date): string => {
 };
 
 // Helper to format date for display in separators
+// Compares appointment UTC date with user's local today/tomorrow/yesterday
 const formatDateSeparator = (date: Date) => {
   const today = new Date();
   const tomorrow = new Date(today);
@@ -39,19 +49,23 @@ const formatDateSeparator = (date: Date) => {
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  const isToday = getDateString(date) === getDateString(today);
-  const isTomorrow = getDateString(date) === getDateString(tomorrow);
-  const isYesterday = getDateString(date) === getDateString(yesterday);
+  // Compare appointment date (UTC) with local dates for "Hoy/Mañana/Ayer" display
+  const appointmentDateStr = getDateString(date);
+  const isToday = appointmentDateStr === getLocalDateString(today);
+  const isTomorrow = appointmentDateStr === getLocalDateString(tomorrow);
+  const isYesterday = appointmentDateStr === getLocalDateString(yesterday);
 
   if (isToday) return "Hoy";
   if (isTomorrow) return "Mañana";
   if (isYesterday) return "Ayer";
 
+  // For display, create a date using UTC components to show correct date
+  const displayDate = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
   return new Intl.DateTimeFormat("es-ES", {
     weekday: "long",
     day: "numeric",
     month: "long",
-  }).format(date);
+  }).format(displayDate);
 };
 
 export function CalendarListView({
