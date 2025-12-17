@@ -322,13 +322,14 @@ export function shouldSendEmailForNotification(
     
     // Appointment reminders
     if (notificationType === "appointment_reminder") {
-      const metadata = notification.metadata as { 
-        reminderType?: string; 
+      const metadata = notification.metadata as {
+        reminderType?: string;
         appointmentType?: string;
       };
       const reminderType = metadata.reminderType;
-      const appointmentType = metadata.appointmentType ?? "visita";
-      
+      // Convert to lowercase to match settings keys (visita, firma, etc.)
+      const appointmentType = (metadata.appointmentType ?? "visita").toLowerCase();
+
       // Get appointment type settings
       const appointmentSettings = settings.appointments[appointmentType as keyof typeof settings.appointments];
       if (!appointmentSettings || !("notify24h" in appointmentSettings)) {
@@ -418,12 +419,14 @@ export function shouldSendEmailForNotification(
     const metadata = notification.metadata;
     if (metadata.isCustomerNotification) {
       const reminderTimeframe = metadata.reminderTimeframe as string | undefined;
-      const appointmentType = metadata.appointmentType as string | undefined;
-      
-      if (!reminderTimeframe || !appointmentType) {
+      const appointmentTypeRaw = metadata.appointmentType as string | undefined;
+
+      if (!reminderTimeframe || !appointmentTypeRaw) {
         return false;
       }
-      
+
+      // Convert to lowercase to match settings keys (visita, firma, etc.)
+      const appointmentType = appointmentTypeRaw.toLowerCase();
       const aptSettings = settings.customers.appointments[appointmentType as keyof typeof settings.customers.appointments];
       if (!aptSettings) {
         return false;
