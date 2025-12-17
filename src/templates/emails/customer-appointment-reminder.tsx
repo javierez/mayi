@@ -76,6 +76,9 @@ export function generateCustomerAppointmentReminderEmail(
   message += `\n\n${metadata.appointmentTitle}`;
 
   // Add datetime information
+  // NOTE: Appointments are stored with local Spain time values in UTC format
+  // (e.g., 14:00 Spain time is stored as 14:00 UTC). To display correctly,
+  // we use timeZone: "UTC" to show the raw stored values, which are actually Madrid times.
   if (metadata.datetimeStart) {
     const startDate = new Date(metadata.datetimeStart);
     const formattedDate = startDate.toLocaleDateString("es-ES", {
@@ -83,10 +86,12 @@ export function generateCustomerAppointmentReminderEmail(
       year: "numeric",
       month: "long",
       day: "numeric",
+      timeZone: "UTC",
     });
     const formattedTime = startDate.toLocaleTimeString("es-ES", {
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "UTC",
     });
     message += `\n\n📅 Fecha y hora: ${formattedDate} a las ${formattedTime}`;
 
@@ -95,6 +100,7 @@ export function generateCustomerAppointmentReminderEmail(
       const endTime = endDate.toLocaleTimeString("es-ES", {
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: "UTC",
       });
       message += ` - ${endTime}`;
     }

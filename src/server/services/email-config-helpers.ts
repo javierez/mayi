@@ -19,6 +19,77 @@ export async function getEmailSettingsForAccount(
 }
 
 /**
+ * Account email sender configuration for customer-facing emails
+ */
+export interface AccountEmailSenderConfig {
+  displayName: string;
+  replyToEmail: string | null;
+}
+
+/**
+ * Get email sender configuration for an account
+ * Uses account.name for display name and account.email for reply-to
+ */
+export async function getAccountEmailSenderConfig(
+  accountId: bigint,
+): Promise<AccountEmailSenderConfig> {
+  const { getAccountById } = await import("~/server/queries/accounts");
+  const account = await getAccountById(accountId);
+
+  return {
+    displayName: account?.name ?? "Vesta CRM",
+    replyToEmail: account?.email ?? null,
+  };
+}
+
+/**
+ * Account branding configuration for customer-facing emails
+ */
+export interface AccountBrandingConfig {
+  displayName: string;
+  replyToEmail: string | null;
+  logoUrl: string | null;
+}
+
+/**
+ * Get branding configuration for an account (for customer-facing emails)
+ * Includes logo from website_config table
+ */
+export async function getAccountBrandingConfig(
+  accountId: bigint,
+): Promise<AccountBrandingConfig> {
+  const { db } = await import("~/server/db");
+  const { accounts, websiteProperties } = await import("~/server/db/schema");
+  const { eq } = await import("drizzle-orm");
+
+  // Get account name and email
+  const accountResult = await db
+    .select({
+      name: accounts.name,
+      email: accounts.email,
+    })
+    .from(accounts)
+    .where(eq(accounts.accountId, accountId))
+    .limit(1);
+
+  // Get logo from websiteProperties
+  const logoResult = await db
+    .select({ logo: websiteProperties.logo })
+    .from(websiteProperties)
+    .where(eq(websiteProperties.accountId, accountId))
+    .limit(1);
+
+  const account = accountResult[0];
+  const websiteConfig = logoResult[0];
+
+  return {
+    displayName: account?.name ?? "Vesta CRM",
+    replyToEmail: account?.email ?? null,
+    logoUrl: websiteConfig?.logo ?? null,
+  };
+}
+
+/**
  * Check if current time is within quiet hours
  */
 export function isQuietHours(settings: MailSettings, now: Date = new Date()): boolean {

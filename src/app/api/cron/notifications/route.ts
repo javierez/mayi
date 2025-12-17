@@ -1,14 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "~/server/db";
-import { appointments, tasks, users } from "~/server/db/schema";
+import { appointments, tasks, users, contacts, listings, properties } from "~/server/db/schema";
 import { eq, and, gte, lte, isNotNull } from "drizzle-orm";
+import { createNotificationInternal } from "~/server/queries/notification";
 import {
   notifyAppointmentReminder,
   notifyTaskDueSoon,
   notifyTaskOverdue,
 } from "~/server/services/notification-service";
 import { sendTaskDigestEmail } from "~/server/services/task-digest-email-service";
-import { reminderExistsForEntity } from "~/server/queries/notification";
+import { sendCustomerAppointmentReminder } from "~/server/services/customer-email-service";
+import { reminderExistsForEntity, customerReminderExistsForEntity } from "~/server/queries/notification";
 import { getEmailSettingsForAccount, getReminderTimeframe, shouldIncludeTaskByUrgency, isOverdueDigestEnabled } from "~/server/services/email-config-helpers";
 import type { TaskReminderTimeframe } from "~/types/notifications";
 
@@ -99,7 +101,7 @@ export async function GET(request: NextRequest) {
         status: string;
         details: string[];
       }>;
-      summary: { remindersCreated: number; tasksNotified: number; completed: string };
+      summary: { remindersCreated: number; customerRemindersCreated: number; tasksNotified: number; completed: string };
     } = {
       header: {
         startTime: now.toISOString(),
@@ -109,6 +111,7 @@ export async function GET(request: NextRequest) {
       tasks: [],
       summary: {
         remindersCreated: 0,
+        customerRemindersCreated: 0,
         tasksNotified: 0,
         completed: "",
       },
@@ -124,7 +127,6 @@ export async function GET(request: NextRequest) {
     // ===== APPOINTMENT REMINDERS =====
 
     // Calculate time windows for different reminder timeframes
-    const in24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     const in25Hours = new Date(now.getTime() + 25 * 60 * 60 * 1000); // Extended for 24h window
 
     // Find appointments starting within next 25 hours (to catch 24h window)
@@ -142,9 +144,23 @@ export async function GET(request: NextRequest) {
         type: appointments.type,
         tripTimeMinutes: appointments.tripTimeMinutes,
         accountId: users.accountId,
+        // Agent info (for customer emails)
+        agentName: users.name,
+        agentPhone: users.phone,
+        agentEmail: users.email,
+        // Contact info (customer for customer emails)
+        customerEmail: contacts.email,
+        customerFirstName: contacts.firstName,
+        customerLastName: contacts.lastName,
+        // Property info
+        propertyStreet: properties.street,
+        propertyAddressDetails: properties.addressDetails,
       })
       .from(appointments)
       .innerJoin(users, eq(appointments.userId, users.id))
+      .leftJoin(contacts, eq(appointments.contactId, contacts.contactId))
+      .leftJoin(listings, eq(appointments.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(
         and(
           eq(appointments.isActive, true),
@@ -387,6 +403,137 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // ===== CUSTOMER APPOINTMENT REMINDERS =====
+    // Send reminder emails directly to customers (contacts) for their upcoming appointments
+
+    // Helper to add delay between API calls to avoid rate limiting (Resend: 2 req/sec)
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+    const customerRemindersCreated: number[] = [];
+    log(`\n📧 Processing customer appointment reminders...`);
+
+    for (const appointment of upcomingAppointments) {
+      const accountId = appointment.accountId;
+      if (!accountId || typeof accountId !== "bigint") continue;
+
+      // Skip if no contact or no customer email
+      if (!appointment.contactId || !appointment.customerEmail) {
+        continue;
+      }
+
+      const startTime = new Date(appointment.datetimeStart);
+      const timeUntilStart = startTime.getTime() - now.getTime();
+      const hoursUntilStart = timeUntilStart / (1000 * 60 * 60);
+      const minutesUntilStart = timeUntilStart / (1000 * 60);
+
+      // Determine customer reminder timeframe (same windows as internal reminders)
+      let customerReminderTimeframe: "24h" | "12h" | "1h" | "30min" | "travel_time" | null = null;
+
+      // 30min reminder
+      if (minutesUntilStart <= 45 && minutesUntilStart > 15) {
+        customerReminderTimeframe = "30min";
+      }
+      // 1h reminder
+      else if (hoursUntilStart <= 1.5 && hoursUntilStart > 0.75) {
+        customerReminderTimeframe = "1h";
+      }
+      // 12h reminder
+      else if (hoursUntilStart <= 13 && hoursUntilStart > 11) {
+        customerReminderTimeframe = "12h";
+      }
+      // 24h reminder
+      else if (hoursUntilStart <= 25 && hoursUntilStart > 22) {
+        customerReminderTimeframe = "24h";
+      }
+
+      if (!customerReminderTimeframe) {
+        continue;
+      }
+
+      // Check if customer reminder already exists for this timeframe
+      const customerReminderExists = await customerReminderExistsForEntity(
+        BigInt(accountId),
+        "appointment",
+        appointment.appointmentId,
+        customerReminderTimeframe,
+      );
+
+      if (customerReminderExists) {
+        log(`  ⏭️ Customer reminder ${customerReminderTimeframe} already sent for appointment #${appointment.appointmentId}`);
+        continue;
+      }
+
+      // Normalize appointment type for customer email
+      const appointmentTypeRaw = appointment.type ?? "visita";
+      const appointmentTypeNormalized = appointmentTypeRaw.toLowerCase() as "visita" | "firma" | "reunion" | "llamada" | "cierre" | "viaje";
+
+      // Build property address
+      let propertyAddress: string | undefined = undefined;
+      if (appointment.propertyStreet) {
+        propertyAddress = appointment.propertyStreet;
+        if (appointment.propertyAddressDetails) {
+          propertyAddress += `, ${appointment.propertyAddressDetails}`;
+        }
+      }
+
+      log(`  📤 Sending ${customerReminderTimeframe} customer reminder for appointment #${appointment.appointmentId} to ${appointment.customerEmail}`);
+
+      try {
+        // Add delay to avoid Resend rate limiting (2 req/sec limit)
+        await delay(600);
+
+        // Send the customer reminder email
+        const result = await sendCustomerAppointmentReminder(
+          appointment.customerEmail,
+          BigInt(accountId),
+          {
+            appointmentTitle: appointment.title,
+            appointmentType: appointmentTypeNormalized,
+            datetimeStart: appointment.datetimeStart.toISOString(),
+            datetimeEnd: appointment.datetimeEnd?.toISOString(),
+            reminderTimeframe: customerReminderTimeframe,
+            contactName: appointment.agentName,
+            contactPhone: appointment.agentPhone ?? undefined,
+            contactEmail: appointment.agentEmail,
+            propertyAddress,
+            travelTime: appointment.tripTimeMinutes ?? undefined,
+          },
+        );
+
+        if (result.success) {
+          // Create a notification record to prevent duplicate sends
+          await createNotificationInternal({
+            accountId: BigInt(accountId),
+            userId: null, // Customer notifications don't have a userId
+            fromUserId: appointment.userId,
+            type: "customer_appointment_reminder",
+            title: `Recordatorio de cita enviado a ${appointment.customerFirstName ?? "cliente"}`,
+            message: `Recordatorio ${customerReminderTimeframe} enviado a ${appointment.customerEmail}`,
+            category: "appointments",
+            entityType: "appointment",
+            entityId: appointment.appointmentId,
+            metadata: {
+              reminderTimeframe: customerReminderTimeframe,
+              customerEmail: appointment.customerEmail,
+              appointmentType: appointmentTypeNormalized,
+            },
+            deliveryChannel: "email",
+          });
+
+          customerRemindersCreated.push(1);
+          log(`  ✅ Customer reminder sent successfully`);
+        } else {
+          log(`  ❌ Customer reminder not sent: ${result.error}`);
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : "Unknown error";
+        log(`  💥 Error sending customer reminder: ${errorMsg}`);
+        console.error(`Error sending customer reminder for appointment ${appointment.appointmentId}:`, error);
+      }
+    }
+
+    log(`📧 Customer reminders sent: ${customerRemindersCreated.length}`);
+
     // ===== TASK REMINDERS =====
 
     // Calculate time windows for different reminder timeframes
@@ -406,6 +553,7 @@ export async function GET(request: NextRequest) {
         category: tasks.category,
         listingId: tasks.listingId,
         contactId: tasks.contactId,
+        createdBy: tasks.createdBy,
         accountId: users.accountId,
       })
       .from(tasks)
@@ -519,6 +667,7 @@ export async function GET(request: NextRequest) {
                 category: task.category ?? undefined,
                 listingId: task.listingId ?? undefined,
                 contactId: task.contactId ?? undefined,
+                createdBy: task.createdBy ?? undefined,
                 isActive: true,
                 createdAt: new Date(),
                 updatedAt: new Date(),
@@ -885,18 +1034,20 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const summaryMsg = `✅ Cron completed: ${remindersCreated.length} reminders, ${tasksNotified.length} task notifications`;
+    const summaryMsg = `✅ Cron completed: ${remindersCreated.length} internal reminders, ${customerRemindersCreated.length} customer reminders, ${tasksNotified.length} task notifications`;
     log(summaryMsg);
-    
+
     structuredLogs.summary = {
       remindersCreated: remindersCreated.length,
+      customerRemindersCreated: customerRemindersCreated.length,
       tasksNotified: tasksNotified.length,
       completed: summaryMsg,
     };
-    
+
     return NextResponse.json({
       success: true,
       remindersCreated: remindersCreated.length,
+      customerRemindersCreated: customerRemindersCreated.length,
       tasksNotified: tasksNotified.length,
       timestamp: now.toISOString(),
       logs: logs, // Flat logs for console/Vercel logs

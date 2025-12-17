@@ -14,7 +14,9 @@ export type NotificationType =
   | "appointment_scheduled"
   | "appointment_rescheduled"
   | "appointment_cancelled"
-  | "appointment_reminder";
+  | "appointment_reminder"
+  // Customer notifications (sent to contacts/customers, not internal users)
+  | "customer_appointment_reminder";
 
 export type NotificationCategory =
   | "tasks"
@@ -105,6 +107,7 @@ export const notificationTypeSchema = z.enum([
   "appointment_rescheduled",
   "appointment_cancelled",
   "appointment_reminder",
+  "customer_appointment_reminder",
 ]);
 
 export const notificationCategorySchema = z.enum([
@@ -185,6 +188,7 @@ export interface TaskNotificationMetadata extends Record<string, unknown> {
     imageUrl: string | null;
     imageUrls?: string[];
     street?: string | null;
+    isBankOwned?: boolean | null;
   };
   // Contact data for email display (backward compatibility)
   contact?: {

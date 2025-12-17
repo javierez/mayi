@@ -32,12 +32,13 @@ export function TaskEventNotificationRow({
             {option.label}
           </Label>
           <p className="mt-0.5 text-xs text-gray-500">{option.description}</p>
-          {/* Show urgency selector only when option is enabled and showUrgencySelector is true */}
-          {showUrgencySelector && isEnabled && onToggleUrgency && (
+          {/* Show urgency selector when showUrgencySelector is true - even when disabled to allow pre-configuration */}
+          {showUrgencySelector && onToggleUrgency && (
             <div className="mt-2">
               <UrgencySelector
                 urgencyLevels={urgencyLevels}
                 onToggle={onToggleUrgency}
+                disabled={!isEnabled}
               />
             </div>
           )}

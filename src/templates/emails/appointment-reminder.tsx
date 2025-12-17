@@ -99,11 +99,31 @@ export function generateAppointmentReminderEmail(
   let timeRemainingValue = "";
   
   // Calculate actual time remaining from appointment start time
+  // NOTE: Appointments are stored with local Spain time values in UTC format.
+  // We need "now" to also use Spain time values in UTC format for correct comparison.
+  const getSpainTimeAsUTC = (): Date => {
+    const now = new Date();
+    const spainTimeStr = now.toLocaleString('en-GB', { 
+      timeZone: 'Europe/Madrid',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+    const [datePart, timePart] = spainTimeStr.split(', ');
+    const [day, month, year] = datePart!.split('/').map(Number);
+    const [hour, minute, second] = timePart!.split(':').map(Number);
+    return new Date(Date.UTC(year!, month! - 1, day!, hour!, minute!, second!));
+  };
+
   const calculateTimeRemaining = (): string => {
     if (!metadata.datetimeStart) return "";
     
     const startDate = new Date(metadata.datetimeStart);
-    const now = new Date();
+    const now = getSpainTimeAsUTC();
     const timeDiff = startDate.getTime() - now.getTime();
     
     if (timeDiff <= 0) return "La cita ya comenzó";
@@ -130,7 +150,7 @@ export function generateAppointmentReminderEmail(
       // Check if it's actually tomorrow (within 24-48 hours)
       if (metadata.datetimeStart) {
         const startDate = new Date(metadata.datetimeStart);
-        const now = new Date();
+        const now = getSpainTimeAsUTC();
         const hoursUntil = (startDate.getTime() - now.getTime()) / (1000 * 60 * 60);
         
         if (hoursUntil >= 24 && hoursUntil < 48) {
@@ -184,6 +204,9 @@ export function generateAppointmentReminderEmail(
   }
 
   // Date and time section
+  // NOTE: Appointments are stored with local Spain time values in UTC format
+  // (e.g., 14:00 Spain time is stored as 14:00 UTC). To display correctly,
+  // we use timeZone: "UTC" to show the raw stored values, which are actually Madrid times.
   if (metadata.datetimeStart) {
     const startDate = new Date(metadata.datetimeStart);
     const formattedDate = startDate.toLocaleDateString("es-ES", {
@@ -191,11 +214,13 @@ export function generateAppointmentReminderEmail(
       year: "numeric",
       month: "long",
       day: "numeric",
+      timeZone: "UTC",
     });
     const capitalizedDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
     const formattedTime = startDate.toLocaleTimeString("es-ES", {
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: "UTC",
     });
 
     let dateTimeText = `${capitalizedDate} a las ${formattedTime}`;
@@ -206,6 +231,7 @@ export function generateAppointmentReminderEmail(
       const endTime = endDate.toLocaleTimeString("es-ES", {
         hour: "2-digit",
         minute: "2-digit",
+        timeZone: "UTC",
       });
       dateTimeText += ` - ${endTime}`;
     }

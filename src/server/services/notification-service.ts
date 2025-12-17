@@ -330,7 +330,10 @@ async function fetchTaskRelatedData(
           squareMeter: listing.squareMeter,
           builtSurfaceArea: builtSurfaceArea ?? undefined,
           city: listing.city,
+          province: listing.province ?? undefined,
+          street: listing.street ?? undefined,
           agentName: listing.agentName,
+          isBankOwned: listing.isBankOwned ?? undefined,
           imageUrl: listing.imageUrl,
           imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
         };
@@ -1021,6 +1024,7 @@ export async function notifyTaskDeleted(
 
     const metadata: TaskNotificationMetadata = {
       taskTitle: task.title,
+      taskDescription: task.description,
       dueDate: task.dueDate?.toISOString(),
       dueTime: task.dueTime ?? undefined,
       urgency: task.urgency ?? undefined,
@@ -1197,6 +1201,24 @@ export async function notifyTaskDueSoon(
       accountId,
     );
 
+    // Fetch creator/assigner information if available
+    let assignerEmail: string | undefined;
+    let assignerPhone: string | undefined;
+    let assignerName: string | undefined;
+    if (task.createdBy) {
+      try {
+        const { getUserByIdWithAuth } = await import("~/server/queries/users");
+        const creator = await getUserByIdWithAuth(task.createdBy);
+        if (creator) {
+          assignerEmail = creator.email ?? undefined;
+          assignerPhone = creator.phone ?? undefined;
+          assignerName = creator.name ?? undefined;
+        }
+      } catch (error) {
+        console.error("Error fetching creator data for due soon notification:", error);
+      }
+    }
+
     const metadata: TaskNotificationMetadata = {
       taskTitle: task.title,
       taskDescription: task.description,
@@ -1210,6 +1232,10 @@ export async function notifyTaskDueSoon(
       contact: contactData,
       owner: ownerData,
       buyer: buyerData,
+      assignerEmail,
+      assignerPhone,
+      assignerName,
+      assignedByName: assignerName, // For backward compatibility with template
     };
 
     const notification = await createNotificationInternal({
@@ -1512,11 +1538,24 @@ export async function notifyAppointmentCancelled(
   try {
     const targetUserId = appointment.assignedTo ?? appointment.userId;
 
+    // Fetch related data (listing, contact, owner, buyer) for rich email templates
+    const { listing, contact, owner, buyer } = await fetchAppointmentRelatedData(
+      appointment.listingId,
+      appointment.contactId,
+      accountId,
+    );
+
     const metadata: AppointmentNotificationMetadata = {
       appointmentTitle: appointment.title,
       datetimeStart: appointment.datetimeStart.toISOString(),
       datetimeEnd: appointment.datetimeEnd.toISOString(),
       appointmentType: appointment.type ?? undefined,
+      location: appointment.notes ?? undefined,
+      // Enriched data for email templates
+      listing,
+      contact,
+      owner,
+      buyer,
     };
 
     const notification = await createNotificationInternal({

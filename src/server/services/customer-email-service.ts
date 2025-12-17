@@ -9,7 +9,7 @@
  */
 
 import { sendEmail } from "~/lib/email";
-import { getEmailSettingsForAccount } from "./email-config-helpers";
+import { getEmailSettingsForAccount, getAccountEmailSenderConfig } from "./email-config-helpers";
 import type { MailSettings } from "~/components/admin/account/mail-configuration/types";
 import { generateCustomerAppointmentReminderEmail } from "~/templates/emails/customer-appointment-reminder";
 import { generateCustomerPropertyNotificationEmail } from "~/templates/emails/customer-property-notification";
@@ -195,6 +195,7 @@ export async function sendCustomerDealNotification(
 
 /**
  * Send customer appointment reminder email
+ * Emails are sent from the agency's identity using account.name and account.email
  */
 export async function sendCustomerAppointmentReminder(
   customerEmail: string,
@@ -210,18 +211,23 @@ export async function sendCustomerAppointmentReminder(
       return { success: false, error: "Customer appointment reminder not enabled in settings" };
     }
 
+    // Get account email sender configuration (uses account.name and account.email)
+    const emailSenderConfig = await getAccountEmailSenderConfig(accountId);
+
     // Generate email
     const emailContent = generateCustomerAppointmentReminderEmail(metadata);
 
-    // Send email
+    // Send email with account-specific sender identity
     await sendEmail({
       to: customerEmail,
       subject: emailContent.subject,
       html: emailContent.html,
       text: emailContent.text,
+      fromName: emailSenderConfig.displayName,
+      replyTo: emailSenderConfig.replyToEmail ?? undefined,
     });
 
-    console.log(`✅ Customer appointment reminder sent to ${customerEmail}`);
+    console.log(`✅ Customer appointment reminder sent to ${customerEmail} from "${emailSenderConfig.displayName}"`);
     return { success: true };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";

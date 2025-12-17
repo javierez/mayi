@@ -395,6 +395,33 @@ export async function reminderExistsForEntity(
 }
 
 /**
+ * Check if a customer reminder email has already been sent for an appointment
+ * Used to prevent duplicate customer reminder emails
+ */
+export async function customerReminderExistsForEntity(
+  accountId: bigint,
+  entityType: string,
+  entityId: bigint,
+  reminderTimeframe: string,
+): Promise<boolean> {
+  const result = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(notifications)
+    .where(
+      and(
+        eq(notifications.accountId, accountId),
+        eq(notifications.entityType, entityType),
+        eq(notifications.entityId, entityId),
+        eq(notifications.type, "customer_appointment_reminder"),
+        sql`${notifications.metadata}->>'reminderTimeframe' = ${reminderTimeframe}`,
+        eq(notifications.isActive, true),
+      ),
+    );
+
+  return (result[0]?.count ?? 0) > 0;
+}
+
+/**
  * Get notification IDs that have been sent for a specific entity and type
  * Used for deduplication in cron jobs
  */

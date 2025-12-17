@@ -9,12 +9,14 @@ export interface EmailOptions {
   subject: string;
   text: string;
   html: string;
+  fromName?: string;  // Display name for sender (e.g., "Inmobiliaria Garcia")
+  replyTo?: string;   // Reply-to email address
 }
 
 /**
  * Send an email using Resend
  */
-export async function sendEmail({ to, subject, text, html }: EmailOptions) {
+export async function sendEmail({ to, subject, text, html, fromName, replyTo }: EmailOptions) {
   if (!resend || !env.RESEND_API_KEY) {
     console.warn(
       "⚠️ Email service not configured. Set RESEND_API_KEY to enable email functionality.",
@@ -24,6 +26,8 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions) {
     if (env.NODE_ENV === "development") {
       console.log("\n📧 Email (Development Mode):");
       console.log(`To: ${to}`);
+      console.log(`From: ${fromName ?? "Vesta CRM"}`);
+      if (replyTo) console.log(`Reply-To: ${replyTo}`);
       console.log(`Subject: ${subject}`);
       console.log(`Text: ${text}`);
       console.log(`HTML: ${html}`);
@@ -35,12 +39,19 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions) {
   }
 
   try {
-    // Use configured email or fallback to default
-    const fromEmail =
-      env.RESEND_FROM_EMAIL ?? "Vesta CRM <noreply@vesta-crm.com>";
+    // Build from address with custom display name if provided
+    let fromEmail: string;
+    if (fromName) {
+      // Use custom display name with Vesta's verified noreply domain
+      fromEmail = `${fromName} <noreply@mail.vesta-crm.com>`;
+    } else {
+      // Use configured email or fallback to default
+      fromEmail = env.RESEND_FROM_EMAIL ?? "Vesta CRM <noreply@mail.vesta-crm.com>";
+    }
 
     console.log(`[Email] RESEND_FROM_EMAIL env value:`, env.RESEND_FROM_EMAIL);
     console.log(`[Email] Using fromEmail:`, fromEmail);
+    if (replyTo) console.log(`[Email] Reply-To:`, replyTo);
     console.log(`[Email] Attempting to send email to ${to} from ${fromEmail}`);
 
     const result = await resend.emails.send({
@@ -49,6 +60,7 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions) {
       subject,
       text,
       html,
+      ...(replyTo && { replyTo }),  // Only include replyTo if provided
     });
 
     // Log full result for debugging

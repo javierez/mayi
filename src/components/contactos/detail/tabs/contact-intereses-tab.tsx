@@ -9,11 +9,7 @@ import {
 import { CompactPropertyCard } from "~/components/propiedades/compact-property-card";
 import { EmptyState } from "~/components/propiedades/detail/activity/empty-states";
 import { ExpandableSection } from "~/components/propiedades/detail/activity/expandable-section";
-import {
-  getContactActivityByListing,
-  getContactVisitsSummaryAsBuyer,
-  getContactRelatedContactsForBuyerListings,
-} from "~/server/queries/activity";
+import { getContactVisitsSummaryAsBuyer } from "~/server/queries/activity";
 import {
   canEditCalendar,
   canDeleteCalendar,
@@ -34,7 +30,6 @@ import { Card } from "~/components/ui/card";
 import { Home } from "lucide-react";
 import type { ContactVisitWithDetails } from "~/types/activity";
 import { cn } from "~/lib/utils";
-import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 
 interface ContactInteresesTabProps {
   contactId: bigint;
@@ -66,10 +61,6 @@ export function ContactInteresesTab({ contactId }: ContactInteresesTabProps) {
   const [editMode, setEditMode] = useState<"create" | "edit">("create");
   const [editingAppointmentId, setEditingAppointmentId] = useState<bigint | null>(null);
 
-  // Delete confirmation modal state
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [listingToDelete, setListingToDelete] = useState<bigint | null>(null);
-
   // Fetch permissions
   useEffect(() => {
     const fetchPermissions = async () => {
@@ -92,11 +83,7 @@ export function ContactInteresesTab({ contactId }: ContactInteresesTabProps) {
   // Fetch activity data for buyer interests
   const fetchActivityData = useCallback(async () => {
     try {
-      const [, visitsData] = await Promise.all([
-        getContactActivityByListing(contactId),
-        getContactVisitsSummaryAsBuyer(contactId),
-        getContactRelatedContactsForBuyerListings(contactId),
-      ]);
+      const visitsData = await getContactVisitsSummaryAsBuyer(contactId);
       setVisits(visitsData);
     } catch (error) {
       console.error("Error fetching buyer activity data:", error);
@@ -141,34 +128,17 @@ export function ContactInteresesTab({ contactId }: ContactInteresesTabProps) {
     }));
   };
 
-  // Handle delete interest click (show confirmation modal)
-  const handleDeleteInterest = (listingId: bigint) => {
-    setListingToDelete(listingId);
-    setDeleteConfirmOpen(true);
-  };
-
-  // Handle delete interest confirmation (actually perform the deletion)
-  const handleDeleteInterestConfirm = async () => {
-    if (!listingToDelete) return;
-
+  // Handle delete interest (remove listing-contact relationship)
+  const handleDeleteInterest = async (listingId: bigint) => {
     try {
-      await removeListingContactRelationshipWithAuth(
-        Number(contactId),
-        Number(listingToDelete),
-        "buyer",
-      );
+      await removeListingContactRelationshipWithAuth(Number(contactId), Number(listingId), "buyer");
       setInteresesListings((prev) =>
-        prev.filter(
-          (listing) => listing.listingId?.toString() !== listingToDelete.toString(),
-        ),
+        prev.filter((listing) => listing.listingId?.toString() !== listingId.toString()),
       );
       toast.success("Interés eliminado correctamente");
     } catch (error) {
       console.error("Error deleting interest:", error);
       toast.error("Error al eliminar el interés");
-    } finally {
-      setListingToDelete(null);
-      setDeleteConfirmOpen(false);
     }
   };
 
@@ -332,32 +302,6 @@ export function ContactInteresesTab({ contactId }: ContactInteresesTabProps) {
         addOptimisticEvent={undefined}
         removeOptimisticEvent={undefined}
         updateOptimisticEvent={undefined}
-      />
-
-      {/* Delete confirmation dialog */}
-      <ConfirmDialog
-        open={deleteConfirmOpen}
-        onOpenChange={setDeleteConfirmOpen}
-        title="Eliminar interés"
-        description={
-          listingToDelete
-            ? (() => {
-                const listing = interesesListings.find(
-                  (l) => l.listingId?.toString() === listingToDelete.toString(),
-                );
-                const address = listing
-                  ? [listing.street, listing.city].filter(Boolean).join(", ") ||
-                    listing.title ||
-                    "esta propiedad"
-                  : "esta propiedad";
-                return `¿Estás seguro de que quieres eliminar el interés en ${address}? Esta acción no se puede deshacer.`;
-              })()
-            : "¿Estás seguro de que quieres eliminar este interés? Esta acción no se puede deshacer."
-        }
-        onConfirm={handleDeleteInterestConfirm}
-        confirmText="Eliminar"
-        cancelText="Cancelar"
-        confirmVariant="destructive"
       />
     </div>
   );
