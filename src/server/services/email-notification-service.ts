@@ -152,10 +152,21 @@ export async function sendNotificationEmailIfNeeded(
       } else {
         const isEnabled = shouldSendEmailForNotification(notification, settings);
         const isQuiet = isQuietHours(settings);
+        const metadata = notification.metadata as { urgency?: number } | undefined;
+        const taskUrgency = metadata?.urgency;
+        const urgencyLevels = notification.type === "task_completed" 
+          ? settings.tasks.events.taskCompleted.urgencyLevels 
+          : undefined;
+        
         console.log(`[Email] Skipping email for notification ${notification.notificationId} (type: ${notification.type}):`, {
           isEnabledInSettings: isEnabled,
           isQuietHours: isQuiet,
           alreadyDelivered: notification.isDelivered && notification.deliveryChannel === "email",
+          taskUrgency: taskUrgency,
+          configuredUrgencyLevels: urgencyLevels,
+          emailEnabled: notification.type === "task_completed" 
+            ? settings.tasks.events.taskCompleted.emailEnabled 
+            : undefined,
         });
       }
       return { success: false, error: "Email not needed for this notification" };

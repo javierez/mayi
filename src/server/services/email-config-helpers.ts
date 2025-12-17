@@ -165,9 +165,10 @@ export function shouldSendEmailForNotification(
         const metadata = notification.metadata as { urgency?: number };
         const taskUrgency = metadata.urgency;
         
-        // If task has no urgency, don't send
+        // If task has no urgency, still send email (treat as "any urgency level")
+        // This handles cases where tasks don't have urgency set but urgency filtering is configured
         if (taskUrgency === undefined || taskUrgency === null) {
-          return false;
+          return true;
         }
         
         // Only send if task urgency is in the configured urgency levels
@@ -180,6 +181,7 @@ export function shouldSendEmailForNotification(
     if (notificationType === "task_completed") {
       // Check if email is enabled
       if (!settings.tasks.events.taskCompleted.emailEnabled) {
+        console.log(`[Email Config] task_completed email disabled in settings for notification ${notification.notificationId}`);
         return false;
       }
       
@@ -190,6 +192,7 @@ export function shouldSendEmailForNotification(
       if (urgencyLevels !== undefined) {
         // If empty array, user explicitly deselected all - don't send
         if (urgencyLevels.length === 0) {
+          console.log(`[Email Config] task_completed urgencyLevels is empty array for notification ${notification.notificationId}`);
           return false;
         }
         
@@ -197,16 +200,21 @@ export function shouldSendEmailForNotification(
         const metadata = notification.metadata as { urgency?: number };
         const taskUrgency = metadata.urgency;
         
-        // If task has no urgency, don't send
+        // If task has no urgency, still send email (treat as "any urgency level")
+        // This handles cases where tasks don't have urgency set but urgency filtering is configured
         if (taskUrgency === undefined || taskUrgency === null) {
-          return false;
+          console.log(`[Email Config] task_completed task has no urgency, allowing email for notification ${notification.notificationId}`);
+          return true;
         }
         
         // Only send if task urgency is in the configured urgency levels
-        return urgencyLevels.includes(taskUrgency);
+        const isIncluded = urgencyLevels.includes(taskUrgency);
+        console.log(`[Email Config] task_completed urgency check for notification ${notification.notificationId}: taskUrgency=${taskUrgency}, configuredLevels=[${urgencyLevels.join(',')}], included=${isIncluded}`);
+        return isIncluded;
       }
       
       // If urgencyLevels is undefined (not configured), send for all (backward compatibility)
+      console.log(`[Email Config] task_completed urgencyLevels not configured, allowing email for notification ${notification.notificationId}`);
       return true;
     }
     if (notificationType === "task_reassigned") {
