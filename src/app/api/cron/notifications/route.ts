@@ -596,6 +596,8 @@ export async function GET(request: NextRequest) {
     // Calculate time windows for different reminder timeframes
     const taskIn1Week = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
+    log(`\n📋 Processing tasks due soon (within next week)...`);
+
     // Find tasks due within next week (not completed)
     const upcomingTasks = await db
       .select({
@@ -625,10 +627,15 @@ export async function GET(request: NextRequest) {
         ),
       );
 
+    log(`📋 Found ${upcomingTasks.length} upcoming tasks due within next week`);
+
     // Process each task and check which reminder timeframe applies
     for (const task of upcomingTasks) {
       const accountId = task.accountId;
-      if (!accountId || typeof accountId !== "bigint" || !task.dueDate) continue;
+      if (!accountId || typeof accountId !== "bigint" || !task.dueDate) {
+        log(`   ⚠️  Task #${task.taskId} "${task.title}" - Skipped: invalid accountId or dueDate`);
+        continue;
+      }
 
       // Get settings for this account
       const settings = await getEmailSettingsForAccount(BigInt(accountId));
@@ -637,7 +644,12 @@ export async function GET(request: NextRequest) {
       const dueDate = new Date(task.dueDate);
       const timeframe = getReminderTimeframe(dueDate, now, task.dueTime ?? undefined);
       
-      if (!timeframe) continue;
+      if (!timeframe) {
+        const dueDateStr = dueDate.toISOString().split('T')[0];
+        const dueTimeStr = task.dueTime ?? 'no time';
+        log(`   ⏳ Task #${task.taskId} "${task.title}" - Not in any reminder window (due: ${dueDateStr} ${dueTimeStr})`);
+        continue;
+      }
 
       // Map timeframe to notification timeframe string
       let notificationTimeframe: string;
@@ -673,77 +685,87 @@ export async function GET(request: NextRequest) {
         notificationTimeframe,
       );
 
-      if (!exists) {
-        // Check if this reminder is enabled in settings
-        const urgency = task.urgency ?? 1;
-        let category: "critical" | "urgent" | "other";
-        if (urgency === 5) {
-          category = "critical";
-        } else if (urgency === 3 || urgency === 4) {
-          category = "urgent";
-        } else {
-          category = "other";
-        }
+      if (exists) {
+        log(`   ✅ Task #${task.taskId} "${task.title}" - Already notified for ${notificationTimeframe} timeframe`);
+        continue;
+      }
 
-        const categorySettings = settings.tasks[category];
-        let isEnabled = false;
-        
-        switch (timeframe) {
-          case "1_week":
-            isEnabled = categorySettings.dueIn1Week.emailEnabled;
-            break;
-          case "48h":
-            isEnabled = categorySettings.dueIn48h.emailEnabled;
-            break;
-          case "24h":
-            isEnabled = categorySettings.dueIn24h.emailEnabled;
-            break;
-          case "12h":
-            isEnabled = categorySettings.dueIn12h.emailEnabled;
-            break;
-          case "2h":
-            isEnabled = categorySettings.dueIn2h.emailEnabled;
-            break;
-          case "1h":
-            isEnabled = categorySettings.dueIn1h.emailEnabled;
-            break;
-        }
+      // Check if this reminder is enabled in settings
+      const urgency = task.urgency ?? 1;
+      let category: "critical" | "urgent" | "other";
+      if (urgency === 5) {
+        category = "critical";
+      } else if (urgency === 3 || urgency === 4) {
+        category = "urgent";
+      } else {
+        category = "other";
+      }
 
-        if (isEnabled) {
-          try {
-            await notifyTaskDueSoon(
-              {
-                taskId: task.taskId,
-                userId: task.userId,
-                title: task.title,
-                description: task.description,
-                dueDate: task.dueDate ?? undefined,
-                dueTime: task.dueTime ?? undefined,
-                completed: false,
-                urgency: task.urgency ?? undefined,
-                category: task.category ?? undefined,
-                listingId: task.listingId ?? undefined,
-                contactId: task.contactId ?? undefined,
-                createdBy: task.createdBy ?? undefined,
-                isActive: true,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              },
-              BigInt(accountId),
-              notificationTimeframe as TaskReminderTimeframe,
-            );
-            tasksNotified.push(1);
-          } catch (error) {
-            console.error(
-              `Error creating ${timeframe} reminder for task ${task.taskId}:`,
-              error,
-            );
-          }
-        }
+      const categorySettings = settings.tasks[category];
+      let isEnabled = false;
+      
+      switch (timeframe) {
+        case "1_week":
+          isEnabled = categorySettings.dueIn1Week.emailEnabled;
+          break;
+        case "48h":
+          isEnabled = categorySettings.dueIn48h.emailEnabled;
+          break;
+        case "24h":
+          isEnabled = categorySettings.dueIn24h.emailEnabled;
+          break;
+        case "12h":
+          isEnabled = categorySettings.dueIn12h.emailEnabled;
+          break;
+        case "2h":
+          isEnabled = categorySettings.dueIn2h.emailEnabled;
+          break;
+        case "1h":
+          isEnabled = categorySettings.dueIn1h.emailEnabled;
+          break;
+      }
+
+      if (!isEnabled) {
+        log(`   ⚙️  Task #${task.taskId} "${task.title}" - ${notificationTimeframe} reminder disabled in settings (category: ${category})`);
+        continue;
+      }
+
+      try {
+        await notifyTaskDueSoon(
+          {
+            taskId: task.taskId,
+            userId: task.userId,
+            title: task.title,
+            description: task.description,
+            dueDate: task.dueDate ?? undefined,
+            dueTime: task.dueTime ?? undefined,
+            completed: false,
+            urgency: task.urgency ?? undefined,
+            category: task.category ?? undefined,
+            listingId: task.listingId ?? undefined,
+            contactId: task.contactId ?? undefined,
+            createdBy: task.createdBy ?? undefined,
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          BigInt(accountId),
+          notificationTimeframe as TaskReminderTimeframe,
+        );
+        tasksNotified.push(1);
+        log(`   📬 Task #${task.taskId} "${task.title}" - Created ${notificationTimeframe} reminder notification`);
+      } catch (error) {
+        console.error(
+          `Error creating ${timeframe} reminder for task ${task.taskId}:`,
+          error,
+        );
+        log(`   ❌ Task #${task.taskId} "${task.title}" - Error creating ${notificationTimeframe} reminder: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 
     // Find overdue tasks (past due date, not completed)
+    log(`\n⏰ Processing overdue tasks...`);
+    
     const overdueTasks = await db
       .select({
         taskId: tasks.taskId,
@@ -771,11 +793,16 @@ export async function GET(request: NextRequest) {
         ),
       );
 
+    log(`⏰ Found ${overdueTasks.length} overdue tasks`);
+
     // Check for overdue tasks that need immediate notification
     // Send immediate notification for any overdue task that hasn't been notified yet
     for (const task of overdueTasks) {
       const accountId = task.accountId;
-      if (!accountId || typeof accountId !== "bigint" || !task.dueDate) continue;
+      if (!accountId || typeof accountId !== "bigint" || !task.dueDate) {
+        log(`   ⚠️  Overdue Task #${task.taskId} "${task.title}" - Skipped: invalid accountId or dueDate`);
+        continue;
+      }
 
       const dueDate = new Date(task.dueDate);
       
@@ -817,22 +844,34 @@ export async function GET(request: NextRequest) {
       if (actualDeadline <= now) {
         // Check if immediate notification is enabled
         const settings = await getEmailSettingsForAccount(BigInt(accountId));
-        if (settings.tasks.overdue.notifyWhenOverdue.emailEnabled) {
-          // Check if task urgency matches configured urgency levels
-          const urgencyLevels = settings.tasks.overdue.notifyWhenOverdue.urgencyLevels;
-          if (shouldIncludeTaskByUrgency(task.urgency ?? undefined, urgencyLevels)) {
-            // Check if notification already exists
-            const exists = await reminderExistsForEntity(
-              BigInt(accountId),
-              "task",
-              task.taskId,
-              "task_overdue",
-              "immediate",
-            );
+        if (!settings.tasks.overdue.notifyWhenOverdue.emailEnabled) {
+          log(`   ⚙️  Overdue Task #${task.taskId} "${task.title}" - Overdue notifications disabled in settings`);
+          continue;
+        }
+        
+        // Check if task urgency matches configured urgency levels
+        const urgencyLevels = settings.tasks.overdue.notifyWhenOverdue.urgencyLevels;
+        if (!shouldIncludeTaskByUrgency(task.urgency ?? undefined, urgencyLevels)) {
+          log(`   ⚙️  Overdue Task #${task.taskId} "${task.title}" - Urgency ${task.urgency ?? 'none'} not in configured levels [${urgencyLevels?.join(',') ?? 'all'}]`);
+          continue;
+        }
+        
+        // Check if notification already exists
+        const exists = await reminderExistsForEntity(
+          BigInt(accountId),
+          "task",
+          task.taskId,
+          "task_overdue",
+          "immediate",
+        );
 
-            if (!exists) {
-              try {
-                await notifyTaskOverdue(
+        if (exists) {
+          log(`   ✅ Overdue Task #${task.taskId} "${task.title}" - Already notified`);
+          continue;
+        }
+
+        try {
+          await notifyTaskOverdue(
                   {
                     taskId: task.taskId,
                     userId: task.userId,
@@ -854,15 +893,18 @@ export async function GET(request: NextRequest) {
                 );
                 // Email is sent inside notifyTaskOverdue
                 tasksNotified.push(1);
+                log(`   📬 Overdue Task #${task.taskId} "${task.title}" - Created overdue notification`);
               } catch (error) {
                 console.error(
                   `Error creating immediate overdue notification for task ${task.taskId}:`,
                   error,
                 );
+                log(`   ❌ Overdue Task #${task.taskId} "${task.title}" - Error creating notification: ${error instanceof Error ? error.message : 'Unknown error'}`);
               }
-            }
-          }
-        }
+      } else {
+        const dueDateStr = dueDate.toISOString().split('T')[0];
+        const dueTimeStr = task.dueTime ?? 'end of day';
+        log(`   ⏳ Task #${task.taskId} "${task.title}" - Not yet overdue (deadline: ${dueDateStr} ${dueTimeStr})`);
       }
     }
 
