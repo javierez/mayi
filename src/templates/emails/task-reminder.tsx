@@ -295,8 +295,8 @@ export function generateTaskReminderEmail(
                       ${phone ? `
                         <td>
                           <a href="tel:${phone.replace(/\s/g, "")}" 
-                             style="display: inline-block; padding: 5px 10px; background: #ffffff; color: #111827; text-decoration: none; font-size: 12px; font-weight: 500; border-radius: 4px; border: 1px solid #e5e7eb;">
-                            📞 Llamar
+                             style="display: inline-block; padding: 8px 14px; background: #ffffff; color: #111827; text-decoration: none; font-size: 15px; font-weight: 500; border-radius: 6px; border: 1px solid #e5e7eb;">
+                            📞 ${phone}
                           </a>
                         </td>
                       ` : ""}
