@@ -205,19 +205,30 @@ export function generateCustomerAppointmentReminderEmail(
     return addressParts.length > 0 ? addressParts.join(", ") : null;
   };
 
+  // Disclaimer about being late or not making it (placed at top)
+  reminderDetailsSections.push(`
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px;">
+      <tr>
+        <td style="padding: 10px; font-size: 12px; color: #6b7280; font-style: italic; line-height: 1.5; text-align: center;">
+          Si vas a llegar tarde o no puedes asistir, por favor responde a este correo para avisarnos.
+        </td>
+      </tr>
+    </table>
+  `);
+
   const fullPropertyAddress = buildFullPropertyAddress();
   if (fullPropertyAddress) {
     const addressContent = metadata.directionsUrl
-      ? `<a href="${metadata.directionsUrl}" target="_blank" style="color: #2563eb; text-decoration: underline; font-size: 14px; font-weight: 400; line-height: 1.4;">${fullPropertyAddress}</a>`
+      ? `<a href="${metadata.directionsUrl}" target="_blank" style="color: #111827; text-decoration: underline; font-size: 14px; font-weight: 400; line-height: 1.4;">${fullPropertyAddress}</a>`
       : `<span style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">${fullPropertyAddress}</span>`;
 
     reminderDetailsSections.push(`
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #dbeafe; border-radius: 6px; background: #eff6ff;">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
         <tr>
           <td style="padding: 10px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
               <tr>
-                <td style="font-size: 10px; font-weight: 600; color: #1e40af; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">📍 Dirección de la cita</td>
+                <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">📍 Dirección de la cita</td>
               </tr>
               <tr>
                 <td>${addressContent}</td>
@@ -225,7 +236,7 @@ export function generateCustomerAppointmentReminderEmail(
               ${metadata.directionsUrl ? `
               <tr>
                 <td style="padding-top: 8px;">
-                  <a href="${metadata.directionsUrl}" target="_blank" style="display: inline-block; padding: 6px 12px; background: #2563eb; color: #ffffff; text-decoration: none; font-size: 12px; font-weight: 500; border-radius: 4px;">
+                  <a href="${metadata.directionsUrl}" target="_blank" style="display: inline-block; padding: 5px 10px; background: #ffffff; color: #111827; text-decoration: none; font-size: 12px; font-weight: 500; border-radius: 4px; border: 1px solid #e5e7eb;">
                     Ver en Google Maps
                   </a>
                 </td>
@@ -386,17 +397,6 @@ export function generateCustomerAppointmentReminderEmail(
     }
   }
 
-  // Disclaimer about being late or not making it
-  reminderDetailsSections.push(`
-    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; margin-top: 10px;">
-      <tr>
-        <td style="padding: 10px; font-size: 12px; color: #6b7280; font-style: italic; line-height: 1.5; text-align: center;">
-          Si vas a llegar tarde o no puedes asistir, por favor responde a este correo para avisarnos.
-        </td>
-      </tr>
-    </table>
-  `);
-
   // Combine structured sections
   let structuredMessageHtml = "";
   if (reminderDetailsSections.length > 0) {
@@ -431,7 +431,7 @@ export function generateCustomerAppointmentReminderEmail(
                       ${metadata.contactPhone ? `
                         <td>
                           <a href="tel:${metadata.contactPhone.replace(/\s/g, "")}"
-                             style="display: inline-block; padding: 8px 14px; background: #ffffff; color: #111827; text-decoration: none; font-size: 15px; font-weight: 500; border-radius: 6px; border: 1px solid #e5e7eb;">
+                             style="display: inline-block; padding: 5px 10px; background: #ffffff; color: #111827; text-decoration: none; font-size: 12px; font-weight: 500; border-radius: 4px; border: 1px solid #e5e7eb;">
                             📞 ${metadata.contactPhone}
                           </a>
                         </td>
@@ -440,7 +440,7 @@ export function generateCustomerAppointmentReminderEmail(
                         <td>
                           <a href="mailto:${metadata.contactEmail}"
                              style="display: inline-block; padding: 5px 10px; background: #ffffff; color: #111827; text-decoration: none; font-size: 12px; font-weight: 500; border-radius: 4px; border: 1px solid #e5e7eb;">
-                            Email
+                            ✉️ Email
                           </a>
                         </td>
                       ` : ""}
@@ -710,15 +710,6 @@ function generatePropertyCardHtml(
               </td>
             </tr>
 
-            <!-- Full Address Row -->
-            ${(listing.street || listing.city || listing.province) ? `
-              <tr>
-                <td style="padding: 0 10px 6px 10px; font-size: 12px; color: #4b5563; line-height: 1.4;">
-                  ${[listing.street, listing.city, listing.province].filter(Boolean).join(", ")}
-                </td>
-              </tr>
-            ` : ""}
-
             <!-- Details Row -->
             ${detailsHtml}
 
@@ -734,20 +725,5 @@ function generatePropertyCardHtml(
         </td>
       </tr>
     </table>
-
-    <!-- Property Link Box (separate from card) -->
-    ${listing.propertyUrl ? `
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 8px 0 12px 0;">
-        <tr>
-          <td align="center">
-            <a href="${listing.propertyUrl}"
-               target="_blank"
-               style="display: inline-block; padding: 10px 24px; background: #3b82f6; color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 600; border-radius: 6px; text-align: center;">
-              Ver ficha de la propiedad
-            </a>
-          </td>
-        </tr>
-      </table>
-    ` : ""}
   `;
 }
