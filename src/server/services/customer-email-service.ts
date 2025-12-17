@@ -9,9 +9,9 @@
  */
 
 import { sendEmail } from "~/lib/email";
-import { getEmailSettingsForAccount, getAccountEmailSenderConfig } from "./email-config-helpers";
+import { getEmailSettingsForAccount, getAccountBrandingConfig } from "./email-config-helpers";
 import type { MailSettings } from "~/components/admin/account/mail-configuration/types";
-import { generateCustomerAppointmentReminderEmail } from "~/templates/emails/customer-appointment-reminder";
+import { generateCustomerAppointmentReminderEmail, type CustomerAppointmentReminderMetadata } from "~/templates/emails/customer-appointment-reminder";
 import { generateCustomerPropertyNotificationEmail } from "~/templates/emails/customer-property-notification";
 import { generateCustomerDocumentNotificationEmail } from "~/templates/emails/customer-document-notification";
 import { generateCustomerDealNotificationEmail } from "~/templates/emails/customer-deal-notification";
@@ -196,26 +196,36 @@ export async function sendCustomerDealNotification(
 /**
  * Send customer appointment reminder email
  * Emails are sent from the agency's identity using account.name and account.email
+ * Email template uses account's logo from website_config
  */
 export async function sendCustomerAppointmentReminder(
   customerEmail: string,
   accountId: bigint,
-  metadata: Parameters<typeof generateCustomerAppointmentReminderEmail>[0],
+  metadata: CustomerAppointmentReminderMetadata,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const settings = await getEmailSettingsForAccount(accountId);
 
     // Check if notification is enabled
-    const appointmentType = metadata.appointmentType || "visita";
+    const appointmentType = metadata.appointmentType ?? "visita";
     if (!isCustomerNotificationEnabled(settings, metadata.reminderTimeframe, "appointments", appointmentType)) {
       return { success: false, error: "Customer appointment reminder not enabled in settings" };
     }
 
-    // Get account email sender configuration (uses account.name and account.email)
-    const emailSenderConfig = await getAccountEmailSenderConfig(accountId);
+    // Get account branding configuration (includes logo from website_config)
+    const brandingConfig = await getAccountBrandingConfig(accountId);
 
-    // Generate email
-    const emailContent = generateCustomerAppointmentReminderEmail(metadata);
+    // Add branding to metadata for the email template
+    const metadataWithBranding: CustomerAppointmentReminderMetadata = {
+      ...metadata,
+      branding: {
+        logoUrl: brandingConfig.logoUrl,
+        accountName: brandingConfig.displayName,
+      },
+    };
+
+    // Generate email with account branding
+    const emailContent = generateCustomerAppointmentReminderEmail(metadataWithBranding);
 
     // Send email with account-specific sender identity
     await sendEmail({
@@ -223,11 +233,11 @@ export async function sendCustomerAppointmentReminder(
       subject: emailContent.subject,
       html: emailContent.html,
       text: emailContent.text,
-      fromName: emailSenderConfig.displayName,
-      replyTo: emailSenderConfig.replyToEmail ?? undefined,
+      fromName: brandingConfig.displayName,
+      replyTo: brandingConfig.replyToEmail ?? undefined,
     });
 
-    console.log(`✅ Customer appointment reminder sent to ${customerEmail} from "${emailSenderConfig.displayName}"`);
+    console.log(`✅ Customer appointment reminder sent to ${customerEmail} from "${brandingConfig.displayName}"`);
     return { success: true };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";

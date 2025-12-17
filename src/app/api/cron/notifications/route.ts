@@ -10,6 +10,7 @@ import {
 } from "~/server/services/notification-service";
 import { sendTaskDigestEmail } from "~/server/services/task-digest-email-service";
 import { sendCustomerAppointmentReminder } from "~/server/services/customer-email-service";
+import { getListingCompactById } from "~/server/queries/listing";
 import { reminderExistsForEntity, customerReminderExistsForEntity } from "~/server/queries/notification";
 import { getEmailSettingsForAccount, getReminderTimeframe, shouldIncludeTaskByUrgency, isOverdueDigestEnabled } from "~/server/services/email-config-helpers";
 import type { TaskReminderTimeframe } from "~/types/notifications";
@@ -467,12 +468,64 @@ export async function GET(request: NextRequest) {
       const appointmentTypeRaw = appointment.type ?? "visita";
       const appointmentTypeNormalized = appointmentTypeRaw.toLowerCase() as "visita" | "firma" | "reunion" | "llamada" | "cierre" | "viaje";
 
-      // Build property address
+      // Build property address from basic query data
       let propertyAddress: string | undefined = undefined;
       if (appointment.propertyStreet) {
         propertyAddress = appointment.propertyStreet;
         if (appointment.propertyAddressDetails) {
           propertyAddress += `, ${appointment.propertyAddressDetails}`;
+        }
+      }
+
+      // Fetch listing data for property card (reusing getListingCompactById)
+      let listingData: {
+        listingId?: string;
+        title?: string | null;
+        street?: string | null;
+        propertyType?: string | null;
+        listingType?: string;
+        price?: string;
+        bedrooms?: number | null;
+        bathrooms?: string | number | null;
+        squareMeter?: number | null;
+        builtSurfaceArea?: number | null;
+        city?: string | null;
+        province?: string | null;
+        referenceNumber?: string | null;
+        imageUrl?: string | null;
+      } | undefined = undefined;
+
+      if (appointment.listingId) {
+        try {
+          const listing = await getListingCompactById(
+            appointment.listingId,
+            Number(accountId),
+          );
+          if (listing) {
+            listingData = {
+              listingId: listing.listingId?.toString(),
+              title: listing.title,
+              street: listing.street,
+              propertyType: listing.propertyType,
+              listingType: listing.listingType,
+              price: listing.price,
+              bedrooms: listing.bedrooms,
+              bathrooms: listing.bathrooms,
+              squareMeter: listing.squareMeter,
+              builtSurfaceArea: listing.builtSurfaceArea ? Number(listing.builtSurfaceArea) : null,
+              city: listing.city,
+              province: listing.province,
+              referenceNumber: listing.referenceNumber,
+              imageUrl: listing.imageUrl,
+            };
+            // Update property address from listing if not already set
+            if (!propertyAddress && listing.street) {
+              propertyAddress = listing.street;
+            }
+          }
+        } catch (listingError) {
+          console.error(`Error fetching listing data for customer reminder:`, listingError);
+          // Continue without listing data - email will still be sent
         }
       }
 
@@ -497,6 +550,7 @@ export async function GET(request: NextRequest) {
             contactEmail: appointment.agentEmail,
             propertyAddress,
             travelTime: appointment.tripTimeMinutes ?? undefined,
+            listing: listingData,
           },
         );
 
