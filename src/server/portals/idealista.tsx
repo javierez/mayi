@@ -1,5 +1,7 @@
 "use server";
 
+import { Client as FTPClient } from "basic-ftp";
+import { Readable } from "stream";
 import { db } from "~/server/db";
 import { listings, properties } from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -92,6 +94,60 @@ async function uploadIdealistaJsonToS3(
       success: false,
       error: error instanceof Error ? error.message : "Unknown S3 error",
     };
+  }
+}
+
+/**
+ * Upload Idealista JSON export to FTP
+ * Per Idealista requirements, filename must contain the customerCode
+ */
+async function uploadIdealistaJsonToFTP(
+  jsonContent: string,
+  customerCode: string,
+): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  const ftpHost = process.env.IDEALISTA_FTP_HOST;
+  const ftpUser = process.env.IDEALISTA_FTP_USER;
+  const ftpPassword = process.env.IDEALISTA_FTP_PASSWORD;
+
+  if (!ftpHost || !ftpUser || !ftpPassword) {
+    console.warn("Idealista FTP credentials not configured, skipping FTP upload");
+    return {
+      success: false,
+      error: "FTP credentials not configured",
+    };
+  }
+
+  const client = new FTPClient();
+
+  try {
+    await client.access({
+      host: ftpHost,
+      user: ftpUser,
+      password: ftpPassword,
+      secure: false,
+    });
+
+    // Filename must contain customerCode per Idealista requirements
+    const filename = `${customerCode}.json`;
+    const buffer = Buffer.from(jsonContent, "utf-8");
+    const stream = Readable.from(buffer);
+
+    await client.uploadFrom(stream, filename);
+
+    console.log(`Successfully uploaded ${filename} to Idealista FTP`);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error uploading to Idealista FTP:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "FTP upload failed",
+    };
+  } finally {
+    client.close();
   }
 }
 
@@ -853,7 +909,7 @@ export async function toggleIdealistaListing(
 }
 
 /**
- * Export all Idealista-enabled listings to JSON and save to S3
+ * Export all Idealista-enabled listings to JSON and save to S3 and FTP
  */
 export async function exportToIdealista(
   accountId: number,
@@ -870,6 +926,8 @@ export async function exportToIdealista(
   propertyCount?: number;
   s3Url?: string;
   s3Key?: string;
+  ftpUploaded?: boolean;
+  ftpError?: string;
   error?: string;
 }> {
   // Track reference numbers for cleanup
@@ -897,12 +955,20 @@ export async function exportToIdealista(
       // Continue anyway - S3 save is not critical
     }
 
+    // Upload to Idealista FTP
+    const ftpResult = await uploadIdealistaJsonToFTP(jsonContent, customerCode);
+    if (!ftpResult.success) {
+      console.error("Failed to upload to Idealista FTP:", ftpResult.error);
+      // Continue anyway - we still have S3 backup
+    }
+
     // Log activity
     try {
       const currentUser = await getCurrentUser();
       console.log(
         `User ${currentUser.id} exported ${exportData.customerProperties.length} properties to Idealista for account ${accountId}`,
-        s3Result.success ? `(saved to ${s3Result.s3Key})` : "(S3 save failed)",
+        s3Result.success ? `(S3: ${s3Result.s3Key})` : "(S3 failed)",
+        ftpResult.success ? "(FTP: success)" : "(FTP failed)",
       );
     } catch (activityError) {
       console.error("Error logging Idealista export activity:", activityError);
@@ -922,6 +988,8 @@ export async function exportToIdealista(
       propertyCount: exportData.customerProperties.length,
       s3Url: s3Result.s3Url,
       s3Key: s3Result.s3Key,
+      ftpUploaded: ftpResult.success,
+      ftpError: ftpResult.error,
     };
   } catch (error) {
     console.error("Error exporting to Idealista:", error);

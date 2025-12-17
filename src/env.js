@@ -39,6 +39,10 @@ export const env = createEnv({
     RESEND_FROM_EMAIL: z.string().optional(), // Email address to send from (e.g., "Vesta CRM <noreply@yourdomain.com>")
     // Fotocasa Configuration
     FOTOCASA_ID: z.string().uuid(),
+    // Idealista FTP Configuration
+    IDEALISTA_FTP_HOST: z.string().optional(),
+    IDEALISTA_FTP_USER: z.string().optional(),
+    IDEALISTA_FTP_PASSWORD: z.string().optional(),
     // Twilio Configuration (for SMS 2FA)
     TWILIO_ACCOUNT_SID: z.string(),
     TWILIO_AUTH_TOKEN: z.string(),
@@ -96,6 +100,10 @@ export const env = createEnv({
     RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
     // Fotocasa Configuration
     FOTOCASA_ID: process.env.FOTOCASA_ID,
+    // Idealista FTP Configuration
+    IDEALISTA_FTP_HOST: process.env.IDEALISTA_FTP_HOST,
+    IDEALISTA_FTP_USER: process.env.IDEALISTA_FTP_USER,
+    IDEALISTA_FTP_PASSWORD: process.env.IDEALISTA_FTP_PASSWORD,
     // Twilio Configuration
     TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
     TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
