@@ -52,6 +52,7 @@ export interface CustomerAppointmentReminderMetadata {
     referenceNumber?: string | null;
     imageUrl?: string | null;
     imageUrls?: string[];
+    propertyUrl?: string | null;
   };
   // Branding (from account)
   branding?: CustomerEmailBranding;
@@ -179,7 +180,7 @@ export function generateCustomerAppointmentReminderEmail(
 
   if (timeRemainingLabel && timeRemainingValue) {
     reminderDetailsSections.push(`
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid ${isUrgent ? "#fecaca" : "#e5e7eb"}; border-radius: 6px; background: ${isUrgent ? "#fef2f2" : "#ffffff"};">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
         <tr>
           <td style="padding: 10px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -189,6 +190,47 @@ export function generateCustomerAppointmentReminderEmail(
               <tr>
                 <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">${timeRemainingValue}</td>
               </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    `);
+  }
+
+  // Property address section with Google Maps link (placed at top)
+  const buildFullPropertyAddress = (): string | null => {
+    if (!metadata.listing) return null;
+    const { street, city, province } = metadata.listing;
+    const addressParts = [street, city, province].filter(Boolean);
+    return addressParts.length > 0 ? addressParts.join(", ") : null;
+  };
+
+  const fullPropertyAddress = buildFullPropertyAddress();
+  if (fullPropertyAddress) {
+    const addressContent = metadata.directionsUrl
+      ? `<a href="${metadata.directionsUrl}" target="_blank" style="color: #2563eb; text-decoration: underline; font-size: 14px; font-weight: 400; line-height: 1.4;">${fullPropertyAddress}</a>`
+      : `<span style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">${fullPropertyAddress}</span>`;
+
+    reminderDetailsSections.push(`
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #dbeafe; border-radius: 6px; background: #eff6ff;">
+        <tr>
+          <td style="padding: 10px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-size: 10px; font-weight: 600; color: #1e40af; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">📍 Dirección de la cita</td>
+              </tr>
+              <tr>
+                <td>${addressContent}</td>
+              </tr>
+              ${metadata.directionsUrl ? `
+              <tr>
+                <td style="padding-top: 8px;">
+                  <a href="${metadata.directionsUrl}" target="_blank" style="display: inline-block; padding: 6px 12px; background: #2563eb; color: #ffffff; text-decoration: none; font-size: 12px; font-weight: 500; border-radius: 4px;">
+                    Ver en Google Maps
+                  </a>
+                </td>
+              </tr>
+              ` : ""}
             </table>
           </td>
         </tr>
@@ -322,15 +364,15 @@ export function generateCustomerAppointmentReminderEmail(
     if (tips.length > 0) {
       const tipsHtml = tips.map(tip => `<li style="margin-bottom: 4px;">${tip}</li>`).join("");
       reminderDetailsSections.push(`
-        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #fde68a; border-radius: 6px; background: #fffbeb;">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
           <tr>
             <td style="padding: 10px;">
               <table cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
-                  <td style="font-size: 10px; font-weight: 600; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Recordatorios</td>
+                  <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">Recordatorios</td>
                 </tr>
                 <tr>
-                  <td style="font-size: 14px; font-weight: 400; color: #78350f; line-height: 1.4;">
+                  <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">
                     <ul style="margin: 0; padding-left: 20px;">
                       ${tipsHtml}
                     </ul>
@@ -343,6 +385,17 @@ export function generateCustomerAppointmentReminderEmail(
       `);
     }
   }
+
+  // Disclaimer about being late or not making it
+  reminderDetailsSections.push(`
+    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; margin-top: 10px;">
+      <tr>
+        <td style="padding: 10px; font-size: 12px; color: #6b7280; font-style: italic; line-height: 1.5; text-align: center;">
+          Si vas a llegar tarde o no puedes asistir, por favor responde a este correo para avisarnos.
+        </td>
+      </tr>
+    </table>
+  `);
 
   // Combine structured sections
   let structuredMessageHtml = "";
@@ -499,6 +552,7 @@ function generatePropertyCardHtml(
     referenceNumber?: string | null;
     imageUrl?: string | null;
     imageUrls?: string[];
+    propertyUrl?: string | null;
   },
 ): string {
   const formatPriceEmail = (price: string | number | undefined) => {
@@ -620,7 +674,7 @@ function generatePropertyCardHtml(
                 <td style="background: #f9fafb;">
                   <img
                     src="${validImageUrl}"
-                    alt="${listing.street ?? listing.title ?? "Propiedad"}"
+                    alt="${[listing.street, listing.city, listing.province].filter(Boolean).join(", ") || listing.title || "Propiedad"}"
                     width="100%"
                     style="display: block; width: 100%; height: auto; max-height: 160px; object-fit: cover;"
                   />
@@ -638,13 +692,13 @@ function generatePropertyCardHtml(
             <!-- Content Section -->
             ${badgesHtml}
 
-            <!-- Title and Price Row -->
+            <!-- Title Row -->
             <tr>
-              <td style="padding: 10px;">
+              <td style="padding: 10px 10px 4px 10px;">
                 <table cellpadding="0" cellspacing="0" border="0" width="100%">
                   <tr>
                     <td style="font-size: 15px; font-weight: 600; color: #111827; line-height: 1.3;">
-                      ${listing.street ?? listing.title ?? "Propiedad"}
+                      ${listing.title ?? "Propiedad"}
                     </td>
                     ${displayPrice ? `
                       <td align="right" style="font-size: 15px; font-weight: 600; color: #111827; line-height: 1.3; white-space: nowrap;">
@@ -656,11 +710,11 @@ function generatePropertyCardHtml(
               </td>
             </tr>
 
-            <!-- Location Row -->
-            ${(listing.city || listing.province) ? `
+            <!-- Full Address Row -->
+            ${(listing.street || listing.city || listing.province) ? `
               <tr>
-                <td style="padding: 0 10px 6px 10px; font-size: 11px; color: #6b7280;">
-                  ${[listing.city, listing.province].filter(Boolean).join(", ")}
+                <td style="padding: 0 10px 6px 10px; font-size: 12px; color: #4b5563; line-height: 1.4;">
+                  ${[listing.street, listing.city, listing.province].filter(Boolean).join(", ")}
                 </td>
               </tr>
             ` : ""}
@@ -680,5 +734,20 @@ function generatePropertyCardHtml(
         </td>
       </tr>
     </table>
+
+    <!-- Property Link Box (separate from card) -->
+    ${listing.propertyUrl ? `
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 8px 0 12px 0;">
+        <tr>
+          <td align="center">
+            <a href="${listing.propertyUrl}"
+               target="_blank"
+               style="display: inline-block; padding: 10px 24px; background: #3b82f6; color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 600; border-radius: 6px; text-align: center;">
+              Ver ficha de la propiedad
+            </a>
+          </td>
+        </tr>
+      </table>
+    ` : ""}
   `;
 }

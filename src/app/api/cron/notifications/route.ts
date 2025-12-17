@@ -52,11 +52,11 @@ function getSpainTimeAsUTC(): Date {
 
 /**
  * Cron job handler for scheduled notification reminders
- * Runs every 15 minutes via Vercel Cron
- * 
+ * Runs every 10 minutes via Vercel Cron
+ *
  * Creates notifications for:
- * - Appointments starting in 30min, 1hr, 1day
- * - Tasks due tomorrow or today
+ * - Appointments starting in 30min, 1hr, 12hr, 24hr
+ * - Tasks due soon (1h, 2h, 12h, 24h, 48h, 1 week)
  * - Tasks that are overdue
  */
 export async function GET(request: NextRequest) {
@@ -223,25 +223,30 @@ export async function GET(request: NextRequest) {
 
       // Determine which reminder timeframe applies (check in order of urgency)
       // Windows are designed to:
-      // 1. Fire reminders at approximately the right time (with 15-min tolerance for cron)
-      // 2. Avoid gaps where no reminder would fire
+      // 1. Provide CONTINUOUS coverage from 5min to 26h (no gaps)
+      // 2. Fire reminders at semantically appropriate times
       // 3. Deduplication prevents multiple reminders for the same timeframe
+      // With 10-min cron interval, windows are:
+      // - 30min: 5min-40min (last-minute reminder)
+      // - 1h: 40min-2h (around 1 hour reminder)
+      // - 12h: 2h-18h (half-day reminder, covers the mid-range gap)
+      // - 24h: 18h-26h (day-before reminder)
       let reminderTimeframe: "30_min" | "1h" | "12h" | "1_day" | null = null;
-      
-      // 30min reminder: Fire when 15-45 minutes before (wider window, cron runs every 15 min)
-      if (minutesUntilStart <= 45 && minutesUntilStart > 15) {
+
+      // 30min reminder: Fire when 5-40 minutes before (catches last-minute appointments)
+      if (minutesUntilStart <= 40 && minutesUntilStart > 5) {
         reminderTimeframe = "30_min";
-      } 
-      // 1h reminder: Fire when 45min-1.5hr before (catches appointments 1-2 hours out)
-      else if (hoursUntilStart <= 1.5 && hoursUntilStart > 0.75) {
+      }
+      // 1h reminder: Fire when 40min-2h before
+      else if (hoursUntilStart <= 2 && hoursUntilStart > 40 / 60) {
         reminderTimeframe = "1h";
-      } 
-      // 12h reminder: Fire when 11-13 hours before (2-hour window centered on 12h)
-      else if (hoursUntilStart <= 13 && hoursUntilStart > 11) {
+      }
+      // 12h reminder: Fire when 2h-18h before (fills the gap, semantically "half-day")
+      else if (hoursUntilStart <= 18 && hoursUntilStart > 2) {
         reminderTimeframe = "12h";
-      } 
-      // 24h reminder: Fire when 22-25 hours before (3-hour window to catch 24h mark)
-      else if (hoursUntilStart <= 25 && hoursUntilStart > 22) {
+      }
+      // 24h reminder: Fire when 18h-26h before (day-before reminder)
+      else if (hoursUntilStart <= 26 && hoursUntilStart > 18) {
         reminderTimeframe = "1_day";
       }
 
@@ -430,23 +435,24 @@ export async function GET(request: NextRequest) {
       const hoursUntilStart = timeUntilStart / (1000 * 60 * 60);
       const minutesUntilStart = timeUntilStart / (1000 * 60);
 
-      // Determine customer reminder timeframe (same windows as internal reminders)
+      // Determine customer reminder timeframe (same continuous windows as internal reminders)
+      // Windows provide continuous coverage from 5min to 26h
       let customerReminderTimeframe: "24h" | "12h" | "1h" | "30min" | "travel_time" | null = null;
 
-      // 30min reminder
-      if (minutesUntilStart <= 45 && minutesUntilStart > 15) {
+      // 30min reminder: 5-40 minutes before
+      if (minutesUntilStart <= 40 && minutesUntilStart > 5) {
         customerReminderTimeframe = "30min";
       }
-      // 1h reminder
-      else if (hoursUntilStart <= 1.5 && hoursUntilStart > 0.75) {
+      // 1h reminder: 40min-2h before
+      else if (hoursUntilStart <= 2 && hoursUntilStart > 40 / 60) {
         customerReminderTimeframe = "1h";
       }
-      // 12h reminder
-      else if (hoursUntilStart <= 13 && hoursUntilStart > 11) {
+      // 12h reminder: 2h-18h before
+      else if (hoursUntilStart <= 18 && hoursUntilStart > 2) {
         customerReminderTimeframe = "12h";
       }
-      // 24h reminder
-      else if (hoursUntilStart <= 25 && hoursUntilStart > 22) {
+      // 24h reminder: 18h-26h before
+      else if (hoursUntilStart <= 26 && hoursUntilStart > 18) {
         customerReminderTimeframe = "24h";
       }
 

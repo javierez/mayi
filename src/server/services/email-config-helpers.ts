@@ -456,6 +456,14 @@ export function shouldSendEmailForNotification(
 /**
  * Calculate reminder timeframe based on due date, due time, and current time
  * Combines dueDate and dueTime to get the actual deadline datetime
+ *
+ * Windows provide continuous coverage from 10min to infinity:
+ * - 1h: 10min-2h (catches last-minute tasks, triggers 1h reminder)
+ * - 2h: 2h-12h
+ * - 12h: 12h-24h
+ * - 24h: 24h-48h
+ * - 48h: 48h-7days
+ * - 1_week: >= 7 days
  */
 export function getReminderTimeframe(
   dueDate: Date,
@@ -464,13 +472,13 @@ export function getReminderTimeframe(
 ): "1_week" | "48h" | "24h" | "12h" | "2h" | "1h" | null {
   // Combine dueDate and dueTime to get the actual deadline datetime
   let actualDueDateTime: Date;
-  
+
   if (dueTime) {
     // Parse dueTime (format: "HH:MM" or "HH:MM:SS")
     const timeParts = dueTime.split(":").map(Number);
     const hours = timeParts[0] ?? 23;
     const minutes = timeParts[1] ?? 59;
-    
+
     // Create datetime in local timezone using the date from dueDate and time from dueTime
     actualDueDateTime = new Date(
       dueDate.getFullYear(),
@@ -479,7 +487,7 @@ export function getReminderTimeframe(
       hours,
       minutes,
       0,
-      0
+      0,
     );
   } else {
     // No dueTime provided, use end of day (23:59:59.999)
@@ -490,14 +498,20 @@ export function getReminderTimeframe(
       23,
       59,
       59,
-      999
+      999,
     );
   }
 
   const diffMs = actualDueDateTime.getTime() - now.getTime();
   const diffHours = diffMs / (1000 * 60 * 60);
+  const diffMinutes = diffMs / (1000 * 60);
   const diffDays = diffHours / 24;
-  
+
+  // Return null if task is overdue or less than 10 minutes away
+  if (diffMinutes < 10) {
+    return null;
+  }
+
   if (diffDays >= 7) {
     return "1_week";
   }
@@ -513,10 +527,11 @@ export function getReminderTimeframe(
   if (diffHours >= 2) {
     return "2h";
   }
-  if (diffHours >= 1) {
+  // 1h window: covers 10min to 2h (since there's no 30min setting, use 1h for close tasks)
+  if (diffMinutes >= 10) {
     return "1h";
   }
-  
+
   return null;
 }
 
