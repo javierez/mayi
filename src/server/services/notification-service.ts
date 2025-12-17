@@ -268,13 +268,13 @@ async function fetchTaskRelatedData(
   // Fetch listing data if listingId exists
   if (listingId) {
     try {
-      const { getListingCompactByIdWithAuth } = await import("~/server/queries/listing");
+      const { getListingCompactById } = await import("~/server/queries/listing");
       const { getPropertyImages } = await import("~/server/queries/property_images");
       const { db } = await import("~/server/db");
       const { listings, listingContacts, contacts } = await import("~/server/db/schema");
       const { eq, and } = await import("drizzle-orm");
       
-      const listing = await getListingCompactByIdWithAuth(listingId);
+      const listing = await getListingCompactById(listingId, Number(accountId));
       if (listing) {
         // Get propertyId from listing
         const [listingWithProperty] = await db
@@ -382,8 +382,8 @@ async function fetchTaskRelatedData(
   // Fetch contact data if contactId exists
   if (contactId) {
     try {
-      const { getContactByIdWithAuth } = await import("~/server/queries/contact");
-      const contact = await getContactByIdWithAuth(Number(contactId));
+      const { getContactById } = await import("~/server/queries/contact");
+      const contact = await getContactById(Number(contactId), Number(accountId));
       if (contact) {
         const { db } = await import("~/server/db");
         const { listingContacts, contacts } = await import("~/server/db/schema");
@@ -494,13 +494,13 @@ async function fetchAppointmentRelatedData(
   // Fetch listing data if listingId exists
   if (listingId) {
     try {
-      const { getListingCompactByIdWithAuth } = await import("~/server/queries/listing");
+      const { getListingCompactById } = await import("~/server/queries/listing");
       const { getPropertyImages } = await import("~/server/queries/property_images");
       const { db } = await import("~/server/db");
       const { listings, listingContacts, contacts } = await import("~/server/db/schema");
       const { eq, and } = await import("drizzle-orm");
 
-      const listing = await getListingCompactByIdWithAuth(listingId);
+      const listing = await getListingCompactById(listingId, Number(accountId));
       if (listing) {
         // Get propertyId from listing
         const [listingWithProperty] = await db
@@ -636,8 +636,8 @@ async function fetchAppointmentRelatedData(
   // Fetch contact data if contactId exists
   if (contactId) {
     try {
-      const { getContactByIdWithAuth } = await import("~/server/queries/contact");
-      const contact = await getContactByIdWithAuth(Number(contactId));
+      const { getContactById } = await import("~/server/queries/contact");
+      const contact = await getContactById(Number(contactId), Number(accountId));
       if (contact) {
         const { db } = await import("~/server/db");
         const { listingContacts, contacts } = await import("~/server/db/schema");
@@ -747,8 +747,8 @@ export async function notifyTaskAssigned(
     let assignerName: string | undefined;
     if (assignerId) {
       try {
-        const { getUserByIdWithAuth } = await import("~/server/queries/users");
-        const assigner = await getUserByIdWithAuth(assignerId);
+        const { getUserByIdAndAccount } = await import("~/server/queries/users");
+        const assigner = await getUserByIdAndAccount(assignerId, Number(accountId));
         if (assigner) {
           assignerEmail = assigner.email ?? undefined;
           assignerPhone = assigner.phone ?? undefined;
@@ -925,8 +925,8 @@ export async function notifyTaskReassigned(
     let assignerName: string | undefined;
     if (reassignerId) {
       try {
-        const { getUserByIdWithAuth } = await import("~/server/queries/users");
-        const reassigner = await getUserByIdWithAuth(reassignerId);
+        const { getUserByIdAndAccount } = await import("~/server/queries/users");
+        const reassigner = await getUserByIdAndAccount(reassignerId, Number(accountId));
         if (reassigner) {
           assignerEmail = reassigner.email ?? undefined;
           assignerPhone = reassigner.phone ?? undefined;
@@ -1095,8 +1095,8 @@ export async function notifyTaskCompleted(
     let completerName: string | undefined;
     if (completedById) {
       try {
-        const { getUserByIdWithAuth } = await import("~/server/queries/users");
-        const completer = await getUserByIdWithAuth(completedById);
+        const { getUserByIdAndAccount } = await import("~/server/queries/users");
+        const completer = await getUserByIdAndAccount(completedById, Number(accountId));
         if (completer) {
           completerEmail = completer.email ?? undefined;
           completerPhone = completer.phone ?? undefined;
@@ -1207,8 +1207,8 @@ export async function notifyTaskDueSoon(
     let assignerName: string | undefined;
     if (task.createdBy) {
       try {
-        const { getUserByIdWithAuth } = await import("~/server/queries/users");
-        const creator = await getUserByIdWithAuth(task.createdBy);
+        const { getUserByIdAndAccount } = await import("~/server/queries/users");
+        const creator = await getUserByIdAndAccount(task.createdBy, Number(accountId));
         if (creator) {
           assignerEmail = creator.email ?? undefined;
           assignerPhone = creator.phone ?? undefined;
@@ -1306,8 +1306,8 @@ export async function notifyTaskOverdue(
     let assignerName: string | undefined;
     if (task.createdBy) {
       try {
-        const { getUserByIdWithAuth } = await import("~/server/queries/users");
-        const creator = await getUserByIdWithAuth(task.createdBy);
+        const { getUserByIdAndAccount } = await import("~/server/queries/users");
+        const creator = await getUserByIdAndAccount(task.createdBy, Number(accountId));
         if (creator) {
           assignerEmail = creator.email ?? undefined;
           assignerPhone = creator.phone ?? undefined;

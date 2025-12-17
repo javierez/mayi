@@ -29,23 +29,31 @@ import { normalizeSearchText, normalizePhoneForSearch } from "../../lib/search-u
 /**
  * Creates comprehensive search conditions for contact fields.
  * Searches across firstName, lastName, email, phone, and nif with proper normalization.
+ * Both the search query and database columns are normalized to handle accent-insensitive matching.
  */
 function createContactSearchConditions(searchQuery: string) {
   const normalizedQuery = normalizeSearchText(searchQuery);
   const normalizedPhone = normalizePhoneForSearch(searchQuery);
 
-  // Build conditions for each field
+  // PostgreSQL function to normalize text (remove accents) - matches JavaScript normalizeSearchText
+  // Uses translate to map accented characters to unaccented equivalents
+  // Common Spanish/European accented characters: áàäâãåéèëêíìïîóòöôõúùüûñç
+  const accentMap = "áàäâãåéèëêíìïîóòöôõúùüûñçÁÀÄÂÃÅÉÈËÊÍÌÏÎÓÒÖÔÕÚÙÜÛÑÇ";
+  const unaccentMap = "aaaaaaeeeeiiiioooouuuncAAAAAAEEEEIIIIOOOOUUUNC";
+
+  // Build conditions for each field with accent normalization
   const conditions = [
     // Name search (case-insensitive, accent-normalized)
-    sql`LOWER(${contacts.firstName}) LIKE ${`%${normalizedQuery}%`}`,
-    sql`LOWER(${contacts.lastName}) LIKE ${`%${normalizedQuery}%`}`,
+    // Use translate to remove accents from database columns
+    sql`LOWER(TRANSLATE(${contacts.firstName}, ${accentMap}, ${unaccentMap})) LIKE ${`%${normalizedQuery}%`}`,
+    sql`LOWER(TRANSLATE(${contacts.lastName}, ${accentMap}, ${unaccentMap})) LIKE ${`%${normalizedQuery}%`}`,
     // Combined name search for word-order independence
-    sql`LOWER(CONCAT(${contacts.firstName}, ' ', ${contacts.lastName})) LIKE ${`%${normalizedQuery}%`}`,
-    sql`LOWER(CONCAT(${contacts.lastName}, ' ', ${contacts.firstName})) LIKE ${`%${normalizedQuery}%`}`,
-    // Email search (case-insensitive)
-    sql`LOWER(${contacts.email}) LIKE ${`%${normalizedQuery}%`}`,
-    // NIF search (case-insensitive)
-    sql`LOWER(${contacts.nif}) LIKE ${`%${normalizedQuery}%`}`,
+    sql`LOWER(TRANSLATE(CONCAT(${contacts.firstName}, ' ', ${contacts.lastName}), ${accentMap}, ${unaccentMap})) LIKE ${`%${normalizedQuery}%`}`,
+    sql`LOWER(TRANSLATE(CONCAT(${contacts.lastName}, ' ', ${contacts.firstName}), ${accentMap}, ${unaccentMap})) LIKE ${`%${normalizedQuery}%`}`,
+    // Email search (case-insensitive, accent-normalized)
+    sql`LOWER(TRANSLATE(${contacts.email}, ${accentMap}, ${unaccentMap})) LIKE ${`%${normalizedQuery}%`}`,
+    // NIF search (case-insensitive, accent-normalized)
+    sql`LOWER(TRANSLATE(${contacts.nif}, ${accentMap}, ${unaccentMap})) LIKE ${`%${normalizedQuery}%`}`,
   ];
 
   // Add phone search if query looks like it could contain phone digits
