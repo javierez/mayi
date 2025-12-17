@@ -471,6 +471,8 @@ export function getReminderTimeframe(
   dueTime?: string | null,
 ): "1_week" | "48h" | "24h" | "12h" | "2h" | "1h" | null {
   // Combine dueDate and dueTime to get the actual deadline datetime
+  // IMPORTANT: Use UTC methods to match how `now` is created (Spain time stored as UTC)
+  // Task dueDates are stored as dates (YYYY-MM-DD) and should be interpreted consistently
   let actualDueDateTime: Date;
 
   if (dueTime) {
@@ -479,27 +481,28 @@ export function getReminderTimeframe(
     const hours = timeParts[0] ?? 23;
     const minutes = timeParts[1] ?? 59;
 
-    // Create datetime in local timezone using the date from dueDate and time from dueTime
-    actualDueDateTime = new Date(
-      dueDate.getFullYear(),
-      dueDate.getMonth(),
-      dueDate.getDate(),
+    // Create datetime using UTC to match how `now` is created
+    // dueDate from DB is typically stored as YYYY-MM-DD 00:00:00 UTC
+    actualDueDateTime = new Date(Date.UTC(
+      dueDate.getUTCFullYear(),
+      dueDate.getUTCMonth(),
+      dueDate.getUTCDate(),
       hours,
       minutes,
       0,
       0,
-    );
+    ));
   } else {
     // No dueTime provided, use end of day (23:59:59.999)
-    actualDueDateTime = new Date(
-      dueDate.getFullYear(),
-      dueDate.getMonth(),
-      dueDate.getDate(),
+    actualDueDateTime = new Date(Date.UTC(
+      dueDate.getUTCFullYear(),
+      dueDate.getUTCMonth(),
+      dueDate.getUTCDate(),
       23,
       59,
       59,
       999,
-    );
+    ));
   }
 
   const diffMs = actualDueDateTime.getTime() - now.getTime();

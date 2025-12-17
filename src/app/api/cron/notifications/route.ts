@@ -234,7 +234,7 @@ export async function GET(request: NextRequest) {
       let reminderTimeframe: "30_min" | "1h" | "12h" | "1_day" | null = null;
 
       // 30min reminder: Fire when 5-40 minutes before (catches last-minute appointments)
-      if (minutesUntilStart <= 40 && minutesUntilStart > 5) {
+      if (minutesUntilStart <= 40 && minutesUntilStart >= 5) {
         reminderTimeframe = "30_min";
       }
       // 1h reminder: Fire when 40min-2h before
@@ -440,7 +440,7 @@ export async function GET(request: NextRequest) {
       let customerReminderTimeframe: "24h" | "12h" | "1h" | "30min" | "travel_time" | null = null;
 
       // 30min reminder: 5-40 minutes before
-      if (minutesUntilStart <= 40 && minutesUntilStart > 5) {
+      if (minutesUntilStart <= 40 && minutesUntilStart >= 5) {
         customerReminderTimeframe = "30min";
       }
       // 1h reminder: 40min-2h before

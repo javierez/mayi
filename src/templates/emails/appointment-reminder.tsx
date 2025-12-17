@@ -186,7 +186,7 @@ export function generateAppointmentReminderEmail(
 
   if (timeRemainingLabel && timeRemainingValue) {
     reminderDetailsSections.push(`
-      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid ${isUrgent ? "#fecaca" : "#e5e7eb"}; border-radius: 6px; background: ${isUrgent ? "#fef2f2" : "#ffffff"};">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
         <tr>
           <td style="padding: 10px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%">
@@ -388,15 +388,15 @@ export function generateAppointmentReminderEmail(
     if (tips.length > 0) {
       const tipsHtml = tips.map(tip => `<li style="margin-bottom: 4px;">${tip}</li>`).join("");
       reminderDetailsSections.push(`
-        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #fde68a; border-radius: 6px; background: #fffbeb;">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-bottom: 6px; border: 1px solid #e5e7eb; border-radius: 6px; background: #ffffff;">
           <tr>
             <td style="padding: 10px;">
               <table cellpadding="0" cellspacing="0" border="0" width="100%">
                 <tr>
-                  <td style="font-size: 10px; font-weight: 600; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">💡 Recordatorios</td>
+                  <td style="font-size: 10px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 4px;">💡 Recordatorios</td>
                 </tr>
                 <tr>
-                  <td style="font-size: 14px; font-weight: 400; color: #78350f; line-height: 1.4;">
+                  <td style="font-size: 14px; font-weight: 400; color: #111827; line-height: 1.4;">
                     <ul style="margin: 0; padding-left: 20px;">
                       ${tipsHtml}
                     </ul>
