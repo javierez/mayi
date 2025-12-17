@@ -596,9 +596,25 @@ export async function GET(request: NextRequest) {
     // Calculate time windows for different reminder timeframes
     const taskIn1Week = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
+    // Start of today for date comparison - same approach as overdue tasks
+    // Since dueDate stores just the date at 00:00:00, we need to include today's tasks
+    // Use UTC methods to match getSpainTimeAsUTC() representation
+    const startOfToday = new Date(
+      Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+        0,
+        0,
+        0,
+        0
+      )
+    );
+
     log(`\n📋 Processing tasks due soon (within next week)...`);
 
     // Find tasks due within next week (not completed)
+    // Note: Use startOfToday to include tasks due today - getReminderTimeframe will filter by actual deadline
     const upcomingTasks = await db
       .select({
         taskId: tasks.taskId,
@@ -622,7 +638,7 @@ export async function GET(request: NextRequest) {
           eq(tasks.isActive, true),
           eq(tasks.completed, false),
           isNotNull(tasks.dueDate),
-          gte(tasks.dueDate, now),
+          gte(tasks.dueDate, startOfToday),
           lte(tasks.dueDate, taskIn1Week),
         ),
       );
