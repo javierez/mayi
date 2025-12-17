@@ -538,15 +538,15 @@ export function AppointmentDetailSheet({
               )}
             </SheetTitle>
 
-            {/* Custom Close Button */}
+            {/* Close Button */}
             <SheetClose asChild>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 w-7 shrink-0 p-0 opacity-70 transition-opacity hover:opacity-100"
+                className="h-8 w-8 shrink-0 p-0 text-muted-foreground/60 transition-colors hover:text-muted-foreground sm:h-7 sm:w-7"
               >
                 <X className="h-4 w-4" />
-                <span className="sr-only">Close</span>
+                <span className="sr-only">Cerrar</span>
               </Button>
             </SheetClose>
           </div>

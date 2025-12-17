@@ -81,7 +81,6 @@ export default function WorkQueueCard({
     title: string;
   } | null>(null);
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
-  const [expandedPhones, setExpandedPhones] = useState<Set<string>>(new Set());
   const [selectedTaskForView, setSelectedTaskForView] = useState<{
     taskId: number;
     task: DetailedTask;
@@ -554,17 +553,6 @@ export default function WorkQueueCard({
     });
   };
 
-  const togglePhoneExpanded = (appointmentId: string) => {
-    setExpandedPhones((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(appointmentId)) {
-        newSet.delete(appointmentId);
-      } else {
-        newSet.add(appointmentId);
-      }
-      return newSet;
-    });
-  };
 
   return (
     <Card className={`${standalone ? "shadow-lg" : ""} ${className}`}>
@@ -716,8 +704,6 @@ export default function WorkQueueCard({
                               (appointment.contactId && Number(appointment.contactId) === Number(appointmentContactId));
 
                             const isSelected = listingMatches && contactMatches;
-                            const appointmentIdStr = appointment.appointmentId.toString();
-                            const isPhoneExpanded = expandedPhones.has(appointmentIdStr);
 
                             return (
                               <motion.div
@@ -788,30 +774,18 @@ export default function WorkQueueCard({
                                       {appointment.contactName}
                                     </h3>
                                     {appointment.contactPhone && (
-                                      <div className="group/phone flex items-center gap-1 text-xs text-gray-700">
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (isPhoneExpanded) {
-                                              // If already expanded, trigger the call
-                                              window.location.href = `tel:${appointment.contactPhone}`;
-                                            } else {
-                                              // First click: expand the number
-                                              togglePhoneExpanded(appointmentIdStr);
-                                            }
-                                          }}
-                                          className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-transparent shadow-md transition-shadow hover:shadow-lg"
-                                        >
+                                      <a
+                                        href={`tel:${appointment.contactPhone}`}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="group/phone flex items-center gap-1 text-xs text-gray-700"
+                                      >
+                                        <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-transparent shadow-md transition-shadow group-hover/phone:shadow-lg">
                                           <Phone className="h-2.5 w-2.5 fill-current" />
-                                        </button>
-                                        <span
-                                          className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
-                                            isPhoneExpanded ? "max-w-[150px]" : "max-w-0 sm:group-hover/phone:max-w-[150px]"
-                                          }`}
-                                        >
+                                        </span>
+                                        <span className="whitespace-nowrap transition-all duration-300 sm:max-w-0 sm:overflow-hidden sm:group-hover/phone:max-w-[150px]">
                                           {appointment.contactPhone}
                                         </span>
-                                      </div>
+                                      </a>
                                     )}
                                   </div>
 

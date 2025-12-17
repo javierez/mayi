@@ -437,7 +437,8 @@ export async function GET(request: NextRequest) {
 
       // Determine customer reminder timeframe (same continuous windows as internal reminders)
       // Windows provide continuous coverage from 5min to 26h
-      let customerReminderTimeframe: "24h" | "12h" | "1h" | "30min" | "travel_time" | null = null;
+      // Note: travel_time is not implemented for customer reminders (only internal reminders)
+      let customerReminderTimeframe: "24h" | "12h" | "1h" | "30min" | null = null;
 
       // 30min reminder: 5-40 minutes before
       if (minutesUntilStart <= 40 && minutesUntilStart >= 5) {
@@ -473,9 +474,43 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
+      // Get settings for this account (needed for customer notification settings check)
+      const settings = await getEmailSettingsForAccount(BigInt(accountId));
+
       // Normalize appointment type for customer email
       const appointmentTypeRaw = appointment.type ?? "visita";
       const appointmentTypeNormalized = appointmentTypeRaw.toLowerCase() as "visita" | "firma" | "reunion" | "llamada" | "cierre" | "viaje";
+
+      // Check if this customer reminder is enabled in settings
+      const customerSettings = settings.customers?.appointments?.[appointmentTypeNormalized];
+      if (!customerSettings) {
+        log(`  ⚠️ No customer settings found for appointment type: ${appointmentTypeNormalized}`);
+        continue;
+      }
+
+      let isCustomerReminderEnabled = false;
+      switch (customerReminderTimeframe) {
+        case "24h":
+          isCustomerReminderEnabled = customerSettings.notify24h?.emailEnabled ?? false;
+          break;
+        case "12h":
+          isCustomerReminderEnabled = customerSettings.notify12h?.emailEnabled ?? false;
+          break;
+        case "1h":
+          isCustomerReminderEnabled = customerSettings.notify1h?.emailEnabled ?? false;
+          break;
+        case "30min":
+          isCustomerReminderEnabled = customerSettings.notify30min?.emailEnabled ?? false;
+          break;
+        // Note: travel_time is not implemented for customer reminders
+      }
+
+      if (!isCustomerReminderEnabled) {
+        log(`  ❌ Customer ${customerReminderTimeframe} reminder DISABLED in settings for ${appointmentTypeNormalized}`);
+        continue;
+      }
+
+      log(`  ✅ Customer ${customerReminderTimeframe} reminder ENABLED for ${appointmentTypeNormalized}`);
 
       // Build property address from basic query data
       let propertyAddress: string | undefined = undefined;

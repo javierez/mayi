@@ -473,7 +473,7 @@ export function generateCustomerAppointmentReminderEmail(
   // Generate base email
   const branding: CustomerEmailBranding = metadata.branding ?? {
     logoUrl: null,
-    accountName: "Vesta CRM",
+    accountName: "Su Agencia Inmobiliaria",
   };
 
   const { html: baseHtml, text: baseText } = generateCustomerNotificationEmailBase(

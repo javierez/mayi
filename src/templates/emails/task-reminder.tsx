@@ -70,36 +70,92 @@ export function generateTaskReminderEmail(
   // Build structured HTML sections for task details using TABLE layout
   const taskDetailsSections: string[] = [];
 
-  // Time remaining section based on timeframe
-  let timeRemainingLabel = "";
-  let timeRemainingValue = "";
-  
-  switch (timeframe) {
-    case "1_week":
-      timeRemainingLabel = "Tiempo restante";
-      timeRemainingValue = "1 semana";
-      break;
-    case "48h":
-      timeRemainingLabel = "Tiempo restante";
-      timeRemainingValue = "48 horas";
-      break;
-    case "24h":
-      timeRemainingLabel = "Tiempo restante";
-      timeRemainingValue = "24 horas";
-      break;
-    case "12h":
-      timeRemainingLabel = "Tiempo restante";
-      timeRemainingValue = "12 horas";
-      break;
-    case "2h":
-      timeRemainingLabel = "Tiempo restante";
-      timeRemainingValue = "2 horas";
-      break;
-    case "1h":
-      timeRemainingLabel = "Tiempo restante";
-      timeRemainingValue = "1 hora";
-      break;
-  }
+  // Helper function to get Spain time as UTC (matching how tasks are stored)
+  // NOTE: Tasks store dates with local Spain time values in UTC format.
+  // We need "now" to also use Spain time values in UTC format for correct comparison.
+  const getSpainTimeAsUTC = (): Date => {
+    const now = new Date();
+    const spainTimeStr = now.toLocaleString('en-GB', { 
+      timeZone: 'Europe/Madrid',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+    const [datePart, timePart] = spainTimeStr.split(', ');
+    const [day, month, year] = datePart!.split('/').map(Number);
+    const [hour, minute, second] = timePart!.split(':').map(Number);
+    return new Date(Date.UTC(year!, month! - 1, day!, hour!, minute!, second!));
+  };
+
+  // Calculate actual time remaining from task due date/time
+  const calculateTimeRemaining = (): string => {
+    if (!metadata.dueDate) return "";
+    
+    // Parse due date
+    const dueDate = new Date(metadata.dueDate);
+    
+    // Combine dueDate and dueTime to get actual deadline
+    let actualDeadline: Date;
+    if (metadata.dueTime) {
+      const timeParts = metadata.dueTime.split(":").map(Number);
+      const hours = timeParts[0] ?? 23;
+      const minutes = timeParts[1] ?? 59;
+      actualDeadline = new Date(Date.UTC(
+        dueDate.getUTCFullYear(),
+        dueDate.getUTCMonth(),
+        dueDate.getUTCDate(),
+        hours,
+        minutes,
+        0,
+        0
+      ));
+    } else {
+      // No dueTime, use end of day (23:59)
+      actualDeadline = new Date(Date.UTC(
+        dueDate.getUTCFullYear(),
+        dueDate.getUTCMonth(),
+        dueDate.getUTCDate(),
+        23,
+        59,
+        59,
+        999
+      ));
+    }
+    
+    const now = getSpainTimeAsUTC();
+    const timeDiff = actualDeadline.getTime() - now.getTime();
+    
+    if (timeDiff <= 0) return "La tarea ya venció";
+    
+    const totalMinutes = Math.floor(timeDiff / (1000 * 60));
+    const totalHours = Math.floor(totalMinutes / 60);
+    const days = Math.floor(totalHours / 24);
+    const hours = totalHours % 24;
+    const minutes = totalMinutes % 60;
+    
+    if (days > 0) {
+      if (hours > 0) {
+        return `${days} ${days === 1 ? "día" : "días"} y ${hours} ${hours === 1 ? "hora" : "horas"}`;
+      }
+      return `${days} ${days === 1 ? "día" : "días"}`;
+    } else if (hours > 0 && minutes > 0) {
+      return `${hours} ${hours === 1 ? "hora" : "horas"} y ${minutes} ${minutes === 1 ? "minuto" : "minutos"}`;
+    } else if (hours > 0) {
+      return `${hours} ${hours === 1 ? "hora" : "horas"}`;
+    } else if (minutes > 0) {
+      return `${minutes} ${minutes === 1 ? "minuto" : "minutos"}`;
+    } else {
+      return "Menos de 1 minuto";
+    }
+  };
+
+  // Time remaining section - dynamically calculated
+  const timeRemainingLabel = "Tiempo restante";
+  const timeRemainingValue = calculateTimeRemaining();
 
   if (timeRemainingValue) {
     const urgencyColor = isCritical ? "#dc2626" : isUrgent ? "#f59e0b" : "#6b7280";
