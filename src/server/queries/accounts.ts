@@ -664,3 +664,97 @@ export async function updateAccountTaskPreferences(
     throw error;
   }
 }
+
+// ============================================================================
+// FOTOCASA LEADS SYNC FUNCTIONS
+// ============================================================================
+
+/**
+ * Get all accounts with Fotocasa enabled and API key configured
+ * Used by the Fotocasa leads sync cron job
+ */
+export async function getAccountsWithFotocasaEnabled(): Promise<
+  Array<{
+    accountId: bigint;
+    apiKey: string;
+    lastLeadSyncAt: Date | null;
+  }>
+> {
+  try {
+    const activeAccounts = await db
+      .select()
+      .from(accounts)
+      .where(eq(accounts.isActive, true));
+
+    const fotocasaAccounts = activeAccounts
+      .map((account) => {
+        const portalSettings =
+          (account.portalSettings as Record<string, unknown>) ?? {};
+        const fotocasa =
+          (portalSettings.fotocasa as Record<string, unknown>) ?? {};
+
+        const enabled = fotocasa.enabled as boolean;
+        const apiKey = fotocasa.apiKey as string | undefined;
+        const lastLeadSyncAt = fotocasa.lastLeadSyncAt as string | undefined;
+
+        if (enabled && apiKey) {
+          return {
+            accountId: account.accountId,
+            apiKey,
+            lastLeadSyncAt: lastLeadSyncAt ? new Date(lastLeadSyncAt) : null,
+          };
+        }
+        return null;
+      })
+      .filter((acc): acc is NonNullable<typeof acc> => acc !== null);
+
+    console.log(
+      `Found ${fotocasaAccounts.length} accounts with Fotocasa enabled`,
+    );
+    return fotocasaAccounts;
+  } catch (error) {
+    console.error("Error getting Fotocasa-enabled accounts:", error);
+    return [];
+  }
+}
+
+/**
+ * Update the last lead sync timestamp for an account
+ * Called after successful Fotocasa leads sync
+ */
+export async function updateAccountFotocasaLastSync(
+  accountId: number | bigint,
+  syncTime: Date,
+): Promise<void> {
+  try {
+    const account = await getAccountById(accountId);
+    if (!account) {
+      console.warn(`Account not found for ID: ${accountId}`);
+      return;
+    }
+
+    const portalSettings =
+      (account.portalSettings as Record<string, unknown>) ?? {};
+    const fotocasa =
+      (portalSettings.fotocasa as Record<string, unknown>) ?? {};
+
+    const updatedFotocasa = {
+      ...fotocasa,
+      lastLeadSyncAt: syncTime.toISOString(),
+    };
+
+    await db
+      .update(accounts)
+      .set({
+        portalSettings: { ...portalSettings, fotocasa: updatedFotocasa },
+        updatedAt: new Date(),
+      })
+      .where(eq(accounts.accountId, BigInt(accountId)));
+
+    console.log(
+      `Updated Fotocasa lastLeadSyncAt for account ${accountId}: ${syncTime.toISOString()}`,
+    );
+  } catch (error) {
+    console.error("Error updating Fotocasa last sync:", error);
+  }
+}

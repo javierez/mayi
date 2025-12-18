@@ -20,6 +20,15 @@ import type {
 } from "~/types/notifications";
 import type { Task } from "~/lib/data";
 import type { Appointment } from "~/lib/data";
+// Database and ORM
+import { db } from "~/server/db";
+import { listings, listingContacts, contacts } from "~/server/db/schema";
+import { eq, and } from "drizzle-orm";
+// Query functions
+import { getListingCompactById } from "~/server/queries/listing";
+import { getPropertyImages } from "~/server/queries/property_images";
+import { getContactById } from "~/server/queries/contact";
+import { getUserByIdAndAccount } from "~/server/queries/users";
 
 /**
  * Helper function to send push notification after creating DB notification
@@ -49,6 +58,41 @@ async function sendPushAfterNotification(
   } catch (pushError) {
     console.error("Error sending push notification:", pushError);
     // Don't throw - push failures shouldn't break notification creation
+  }
+}
+
+/**
+ * Determine notification recipient based on notification type and context
+ */
+type NotificationRecipientContext =
+  | { type: "task_assigned" | "task_updated" | "task_reassigned" | "task_deleted"; assigneeId: string }
+  | { type: "task_completed"; task: Task }
+  | { type: "task_due_soon" | "task_overdue"; task: Task }
+  | {
+      type: "appointment_scheduled" | "appointment_rescheduled" | "appointment_cancelled" | "appointment_reminder";
+      appointment: Appointment;
+    };
+
+function getNotificationRecipient(context: NotificationRecipientContext): string | null {
+  switch (context.type) {
+    case "task_assigned":
+    case "task_updated":
+    case "task_reassigned":
+    case "task_deleted":
+      return context.assigneeId;
+
+    case "task_completed":
+      return context.task.createdBy ?? null;
+
+    case "task_due_soon":
+    case "task_overdue":
+      return context.task.userId ?? null;
+
+    case "appointment_scheduled":
+    case "appointment_rescheduled":
+    case "appointment_cancelled":
+    case "appointment_reminder":
+      return context.appointment.assignedTo ?? context.appointment.userId ?? null;
   }
 }
 
@@ -242,7 +286,7 @@ function buildMessage(
 // ===== TASK NOTIFICATIONS =====
 
 /**
- * Helper function to fetch listing and contact data for task notifications
+ * Helper function to fetch listing and contact data for notifications
  * 
  * Logic:
  * - If listingId exists: fetch listing card + always fetch owner from listingContacts
@@ -250,16 +294,23 @@ function buildMessage(
  * - If both listingId + contactId exist: check if contactId is owner; if not, they're buyer
  *   Also fetch the actual owner from listingContacts
  */
-async function fetchTaskRelatedData(
+interface FetchRelatedDataOptions {
+  includeAppointmentFields?: boolean; // adds hasKeys, hasCartel, offerAccepted
+}
+
+interface RelatedEntityData {
+  listing?: TaskNotificationMetadata["listing"] | AppointmentNotificationMetadata["listing"];
+  contact?: TaskNotificationMetadata["contact"] | AppointmentNotificationMetadata["contact"];
+  owner?: TaskNotificationMetadata["owner"] | AppointmentNotificationMetadata["owner"];
+  buyer?: TaskNotificationMetadata["buyer"] | AppointmentNotificationMetadata["buyer"];
+}
+
+async function fetchRelatedEntityData(
   listingId: bigint | null | undefined,
   contactId: bigint | null | undefined,
   accountId: bigint,
-): Promise<{
-  listing: TaskNotificationMetadata["listing"];
-  contact: TaskNotificationMetadata["contact"];
-  owner: TaskNotificationMetadata["owner"];
-  buyer: TaskNotificationMetadata["buyer"];
-}> {
+  options?: FetchRelatedDataOptions,
+): Promise<RelatedEntityData> {
   let listingData: TaskNotificationMetadata["listing"] | undefined;
   let contactData: TaskNotificationMetadata["contact"] | undefined;
   let ownerData: TaskNotificationMetadata["owner"] | undefined;
@@ -268,12 +319,6 @@ async function fetchTaskRelatedData(
   // Fetch listing data if listingId exists
   if (listingId) {
     try {
-      const { getListingCompactById } = await import("~/server/queries/listing");
-      const { getPropertyImages } = await import("~/server/queries/property_images");
-      const { db } = await import("~/server/db");
-      const { listings, listingContacts, contacts } = await import("~/server/db/schema");
-      const { eq, and } = await import("drizzle-orm");
-      
       const listing = await getListingCompactById(listingId, Number(accountId));
       if (listing) {
         // Get propertyId from listing
@@ -318,6 +363,33 @@ async function fetchTaskRelatedData(
           }
         }
 
+        // Check if any contact has accepted an offer for this listing (appointments only)
+        let offerAccepted = false;
+        if (options?.includeAppointmentFields) {
+          try {
+            const offerAcceptedCheck = await db
+              .select({
+                offerAccepted: listingContacts.offerAccepted,
+              })
+              .from(listingContacts)
+              .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+              .where(
+                and(
+                  eq(listingContacts.listingId, listingId),
+                  eq(listingContacts.offerAccepted, true),
+                  eq(listingContacts.isActive, true),
+                  eq(contacts.isActive, true),
+                  eq(contacts.accountId, accountId),
+                ),
+              )
+              .limit(1);
+
+            offerAccepted = offerAcceptedCheck.length > 0;
+          } catch (offerError) {
+            console.error("Error checking offerAccepted for appointment notification:", offerError);
+          }
+        }
+
         listingData = {
           listingId: listing.listingId.toString(),
           title: listing.title,
@@ -336,6 +408,11 @@ async function fetchTaskRelatedData(
           isBankOwned: listing.isBankOwned ?? undefined,
           imageUrl: listing.imageUrl,
           imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+          ...(options?.includeAppointmentFields && {
+            hasKeys: listing.hasKeys ?? undefined,
+            hasCartel: listing.hasCartel ?? undefined,
+            offerAccepted: offerAccepted || undefined,
+          }),
         };
 
         // Always fetch owner from listingContacts when listingId exists
@@ -382,13 +459,8 @@ async function fetchTaskRelatedData(
   // Fetch contact data if contactId exists
   if (contactId) {
     try {
-      const { getContactById } = await import("~/server/queries/contact");
       const contact = await getContactById(Number(contactId), Number(accountId));
       if (contact) {
-        const { db } = await import("~/server/db");
-        const { listingContacts, contacts } = await import("~/server/db/schema");
-        const { eq, and } = await import("drizzle-orm");
-
         // If listingId exists, check if this contact is owner or buyer for THIS listing
         if (listingId) {
           // Join with contacts to filter by accountId
@@ -473,8 +545,30 @@ async function fetchTaskRelatedData(
 }
 
 /**
- * Fetch related data (listing, contact, owner, buyer) for an appointment
- * Reuses the same logic as fetchTaskRelatedData for consistency
+ * Fetch related data for task notifications
+ * Wrapper around fetchRelatedEntityData for type safety
+ */
+async function fetchTaskRelatedData(
+  listingId: bigint | null | undefined,
+  contactId: bigint | null | undefined,
+  accountId: bigint,
+): Promise<{
+  listing: TaskNotificationMetadata["listing"];
+  contact: TaskNotificationMetadata["contact"];
+  owner: TaskNotificationMetadata["owner"];
+  buyer: TaskNotificationMetadata["buyer"];
+}> {
+  return (await fetchRelatedEntityData(listingId, contactId, accountId)) as {
+    listing: TaskNotificationMetadata["listing"];
+    contact: TaskNotificationMetadata["contact"];
+    owner: TaskNotificationMetadata["owner"];
+    buyer: TaskNotificationMetadata["buyer"];
+  };
+}
+
+/**
+ * Fetch related data for appointment notifications
+ * Wrapper around fetchRelatedEntityData with appointment-specific fields
  */
 async function fetchAppointmentRelatedData(
   listingId: bigint | null | undefined,
@@ -486,242 +580,12 @@ async function fetchAppointmentRelatedData(
   owner: AppointmentNotificationMetadata["owner"];
   buyer: AppointmentNotificationMetadata["buyer"];
 }> {
-  let listingData: AppointmentNotificationMetadata["listing"] | undefined;
-  let contactData: AppointmentNotificationMetadata["contact"] | undefined;
-  let ownerData: AppointmentNotificationMetadata["owner"] | undefined;
-  let buyerData: AppointmentNotificationMetadata["buyer"] | undefined;
-
-  // Fetch listing data if listingId exists
-  if (listingId) {
-    try {
-      const { getListingCompactById } = await import("~/server/queries/listing");
-      const { getPropertyImages } = await import("~/server/queries/property_images");
-      const { db } = await import("~/server/db");
-      const { listings, listingContacts, contacts } = await import("~/server/db/schema");
-      const { eq, and } = await import("drizzle-orm");
-
-      const listing = await getListingCompactById(listingId, Number(accountId));
-      if (listing) {
-        // Get propertyId from listing
-        const [listingWithProperty] = await db
-          .select({
-            propertyId: listings.propertyId,
-          })
-          .from(listings)
-          .where(eq(listings.listingId, listingId))
-          .limit(1);
-
-        // Fetch multiple property images (limit to 5 for email)
-        let imageUrls: string[] = [];
-        if (listingWithProperty?.propertyId) {
-          try {
-            const propertyImages = await getPropertyImages(listingWithProperty.propertyId, true);
-            imageUrls = propertyImages
-              .slice(0, 5) // Limit to 5 images for email
-              .map((img) => img.imageUrl)
-              .filter((url): url is string => url !== null && url !== undefined);
-          } catch (imageError) {
-            console.error("Error fetching property images for appointment notification:", imageError);
-            // Fallback to single image if available
-            if (listing.imageUrl) {
-              imageUrls = [listing.imageUrl];
-            }
-          }
-        } else if (listing.imageUrl) {
-          // Fallback to single image if propertyId not found
-          imageUrls = [listing.imageUrl];
-        }
-
-        // Convert builtSurfaceArea to number if it's a string
-        const builtSurfaceAreaRaw = listing.builtSurfaceArea;
-        let builtSurfaceArea: number | null | undefined = null;
-        if (builtSurfaceAreaRaw !== null && builtSurfaceAreaRaw !== undefined) {
-          if (typeof builtSurfaceAreaRaw === "string") {
-            const parsed = parseFloat(builtSurfaceAreaRaw);
-            builtSurfaceArea = isNaN(parsed) ? null : parsed;
-          } else {
-            builtSurfaceArea = builtSurfaceAreaRaw;
-          }
-        }
-
-        // Check if any contact has accepted an offer for this listing
-        let offerAccepted = false;
-        try {
-          const offerAcceptedCheck = await db
-            .select({
-              offerAccepted: listingContacts.offerAccepted,
-            })
-            .from(listingContacts)
-            .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
-            .where(
-              and(
-                eq(listingContacts.listingId, listingId),
-                eq(listingContacts.offerAccepted, true),
-                eq(listingContacts.isActive, true),
-                eq(contacts.isActive, true),
-                eq(contacts.accountId, accountId),
-              ),
-            )
-            .limit(1);
-
-          offerAccepted = offerAcceptedCheck.length > 0;
-        } catch (offerError) {
-          console.error("Error checking offerAccepted for appointment notification:", offerError);
-        }
-
-        listingData = {
-          listingId: listing.listingId.toString(),
-          title: listing.title,
-          referenceNumber: listing.referenceNumber,
-          price: listing.price,
-          listingType: listing.listingType,
-          propertyType: listing.propertyType,
-          bedrooms: listing.bedrooms,
-          bathrooms: listing.bathrooms,
-          squareMeter: listing.squareMeter,
-          builtSurfaceArea: builtSurfaceArea ?? undefined,
-          city: listing.city,
-          province: listing.province ?? undefined,
-          street: listing.street ?? undefined,
-          agentName: listing.agentName,
-          isBankOwned: listing.isBankOwned ?? undefined,
-          hasKeys: listing.hasKeys ?? undefined,
-          hasCartel: listing.hasCartel ?? undefined,
-          offerAccepted: offerAccepted || undefined,
-          imageUrl: listing.imageUrl,
-          imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
-        };
-
-        // Always fetch owner from listingContacts when listingId exists
-        try {
-          const [ownerContact] = await db
-            .select({
-              contactId: contacts.contactId,
-              firstName: contacts.firstName,
-              lastName: contacts.lastName,
-              email: contacts.email,
-              phone: contacts.phone,
-            })
-            .from(listingContacts)
-            .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
-            .where(
-              and(
-                eq(listingContacts.listingId, listingId),
-                eq(listingContacts.contactType, "owner"),
-                eq(listingContacts.isActive, true),
-                eq(contacts.isActive, true),
-                eq(contacts.accountId, accountId),
-              ),
-            )
-            .limit(1);
-
-          if (ownerContact) {
-            ownerData = {
-              contactId: ownerContact.contactId.toString(),
-              firstName: ownerContact.firstName,
-              lastName: ownerContact.lastName,
-              email: ownerContact.email ?? undefined,
-              phone: ownerContact.phone ?? undefined,
-            };
-          }
-        } catch (ownerError) {
-          console.error("Error fetching owner contact for appointment notification:", ownerError);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching listing data for appointment notification:", error);
-    }
-  }
-
-  // Fetch contact data if contactId exists
-  if (contactId) {
-    try {
-      const { getContactById } = await import("~/server/queries/contact");
-      const contact = await getContactById(Number(contactId), Number(accountId));
-      if (contact) {
-        const { db } = await import("~/server/db");
-        const { listingContacts, contacts } = await import("~/server/db/schema");
-        const { eq, and } = await import("drizzle-orm");
-
-        // If listingId exists, check if this contact is owner or buyer for THIS listing
-        if (listingId) {
-          // Join with contacts to filter by accountId
-          const ownerCheck = await db
-            .select()
-            .from(listingContacts)
-            .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
-            .where(
-              and(
-                eq(listingContacts.listingId, listingId),
-                eq(listingContacts.contactId, contactId),
-                eq(listingContacts.contactType, "owner"),
-                eq(listingContacts.isActive, true),
-                eq(contacts.isActive, true),
-                eq(contacts.accountId, accountId),
-              ),
-            )
-            .limit(1);
-
-          const buyerCheck = await db
-            .select()
-            .from(listingContacts)
-            .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
-            .where(
-              and(
-                eq(listingContacts.listingId, listingId),
-                eq(listingContacts.contactId, contactId),
-                eq(listingContacts.contactType, "buyer"),
-                eq(listingContacts.isActive, true),
-                eq(contacts.isActive, true),
-                eq(contacts.accountId, accountId),
-              ),
-            )
-            .limit(1);
-
-          const isOwner = ownerCheck.length > 0;
-          const isBuyer = buyerCheck.length > 0;
-
-          // If contact is the buyer, add them to buyerData
-          if (isBuyer) {
-            buyerData = {
-              contactId: contact.contactId.toString(),
-              firstName: contact.firstName,
-              lastName: contact.lastName,
-              email: contact.email ?? undefined,
-              phone: contact.phone ?? undefined,
-            };
-          }
-          // If they're neither owner nor buyer, treat as generic contact
-          if (!isOwner && !isBuyer) {
-            contactData = {
-              contactId: contact.contactId.toString(),
-              firstName: contact.firstName,
-              lastName: contact.lastName,
-              email: contact.email ?? undefined,
-              phone: contact.phone ?? undefined,
-              isOwner: false,
-              isBuyer: false,
-            };
-          }
-        } else {
-          // No listingId: just return as generic contact
-          contactData = {
-            contactId: contact.contactId.toString(),
-            firstName: contact.firstName,
-            lastName: contact.lastName,
-            email: contact.email ?? undefined,
-            phone: contact.phone ?? undefined,
-            isOwner: false,
-            isBuyer: false,
-          };
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching contact data for appointment notification:", error);
-    }
-  }
-
-  return { listing: listingData, contact: contactData, owner: ownerData, buyer: buyerData };
+  return (await fetchRelatedEntityData(listingId, contactId, accountId, { includeAppointmentFields: true })) as {
+    listing: AppointmentNotificationMetadata["listing"];
+    contact: AppointmentNotificationMetadata["contact"];
+    owner: AppointmentNotificationMetadata["owner"];
+    buyer: AppointmentNotificationMetadata["buyer"];
+  };
 }
 
 /**
@@ -747,7 +611,6 @@ export async function notifyTaskAssigned(
     let assignerName: string | undefined;
     if (assignerId) {
       try {
-        const { getUserByIdAndAccount } = await import("~/server/queries/users");
         const assigner = await getUserByIdAndAccount(assignerId, Number(accountId));
         if (assigner) {
           assignerEmail = assigner.email ?? undefined;
@@ -779,9 +642,14 @@ export async function notifyTaskAssigned(
       assignedByName: assignerName, // Also set for backward compatibility
     };
 
+    const recipientId = getNotificationRecipient({ type: "task_assigned", assigneeId });
+    if (!recipientId) {
+      return;
+    }
+
     const notification = await createNotificationInternal({
       accountId,
-      userId: assigneeId,
+      userId: recipientId,
       fromUserId: assignerId,
       type: "task_assigned",
       title: buildTitle("task_assigned", task.title),
@@ -797,7 +665,7 @@ export async function notifyTaskAssigned(
     });
 
     await sendPushAfterNotification(
-      assigneeId,
+      recipientId,
       accountId,
       {
         notificationId: notification.notificationId,
@@ -860,9 +728,14 @@ export async function notifyTaskUpdated(
       updatedFields,
     };
 
+    const recipientId = getNotificationRecipient({ type: "task_updated", assigneeId });
+    if (!recipientId) {
+      return;
+    }
+
     const notification = await createNotificationInternal({
       accountId,
-      userId: assigneeId,
+      userId: recipientId,
       fromUserId: editorId,
       type: "task_updated",
       title: buildTitle("task_updated", task.title),
@@ -879,7 +752,7 @@ export async function notifyTaskUpdated(
     });
 
     await sendPushAfterNotification(
-      assigneeId,
+      recipientId,
       accountId,
       {
         notificationId: notification.notificationId,
@@ -925,7 +798,6 @@ export async function notifyTaskReassigned(
     let assignerName: string | undefined;
     if (reassignerId) {
       try {
-        const { getUserByIdAndAccount } = await import("~/server/queries/users");
         const reassigner = await getUserByIdAndAccount(reassignerId, Number(accountId));
         if (reassigner) {
           assignerEmail = reassigner.email ?? undefined;
@@ -958,9 +830,14 @@ export async function notifyTaskReassigned(
       assignedByName: assignerName, // Also set for backward compatibility
     };
 
+    const recipientId = getNotificationRecipient({ type: "task_reassigned", assigneeId: newAssigneeId });
+    if (!recipientId) {
+      return;
+    }
+
     const notification = await createNotificationInternal({
       accountId,
-      userId: newAssigneeId,
+      userId: recipientId,
       fromUserId: reassignerId,
       type: "task_reassigned",
       title: buildTitle("task_reassigned", task.title),
@@ -976,7 +853,7 @@ export async function notifyTaskReassigned(
     });
 
     await sendPushAfterNotification(
-      newAssigneeId,
+      recipientId,
       accountId,
       {
         notificationId: notification.notificationId,
@@ -1038,9 +915,14 @@ export async function notifyTaskDeleted(
       deletedByName: deleterId ?? undefined,
     };
 
+    const recipientId = getNotificationRecipient({ type: "task_deleted", assigneeId });
+    if (!recipientId) {
+      return;
+    }
+
     const notification = await createNotificationInternal({
       accountId,
-      userId: assigneeId,
+      userId: recipientId,
       fromUserId: deleterId,
       type: "task_deleted",
       title: buildTitle("task_deleted", task.title),
@@ -1056,7 +938,7 @@ export async function notifyTaskDeleted(
     });
 
     await sendPushAfterNotification(
-      assigneeId,
+      recipientId,
       accountId,
       {
         notificationId: notification.notificationId,
@@ -1095,7 +977,6 @@ export async function notifyTaskCompleted(
     let completerName: string | undefined;
     if (completedById) {
       try {
-        const { getUserByIdAndAccount } = await import("~/server/queries/users");
         const completer = await getUserByIdAndAccount(completedById, Number(accountId));
         if (completer) {
           completerEmail = completer.email ?? undefined;
@@ -1145,7 +1026,7 @@ export async function notifyTaskCompleted(
 
     // Notify the creator of the task (task.createdBy) when it's completed
     // The creator should be notified, not the assignee, so they know their task was completed
-    const recipientId = task.createdBy;
+    const recipientId = getNotificationRecipient({ type: "task_completed", task });
     
     if (recipientId) {
       console.log(`[Task Completed Notification] Task ID: ${task.taskId}, Task userId (assigned to): ${task.userId ?? 'null'}, Task createdBy (recipient): ${recipientId}, Completed by: ${completedById}`);
@@ -1207,7 +1088,6 @@ export async function notifyTaskDueSoon(
     let assignerName: string | undefined;
     if (task.createdBy) {
       try {
-        const { getUserByIdAndAccount } = await import("~/server/queries/users");
         const creator = await getUserByIdAndAccount(task.createdBy, Number(accountId));
         if (creator) {
           assignerEmail = creator.email ?? undefined;
@@ -1238,9 +1118,14 @@ export async function notifyTaskDueSoon(
       assignedByName: assignerName, // For backward compatibility with template
     };
 
+    const recipientId = getNotificationRecipient({ type: "task_due_soon", task });
+    if (!recipientId) {
+      return;
+    }
+
     const notification = await createNotificationInternal({
       accountId,
-      userId: task.userId,
+      userId: recipientId,
       fromUserId: null, // System notification
       type: "task_due_soon",
       title: buildTitle("task_due_soon", task.title, { timeframe }),
@@ -1258,7 +1143,7 @@ export async function notifyTaskDueSoon(
     });
 
     await sendPushAfterNotification(
-      task.userId,
+      recipientId,
       accountId,
       {
         notificationId: notification.notificationId,
@@ -1289,10 +1174,6 @@ export async function notifyTaskOverdue(
   accountId: bigint,
 ): Promise<void> {
   try {
-    if (!task.userId) {
-      return;
-    }
-
     // Fetch listing and contact data
     const { listing: listingData, contact: contactData, owner: ownerData, buyer: buyerData } = await fetchTaskRelatedData(
       task.listingId,
@@ -1306,7 +1187,6 @@ export async function notifyTaskOverdue(
     let assignerName: string | undefined;
     if (task.createdBy) {
       try {
-        const { getUserByIdAndAccount } = await import("~/server/queries/users");
         const creator = await getUserByIdAndAccount(task.createdBy, Number(accountId));
         if (creator) {
           assignerEmail = creator.email ?? undefined;
@@ -1339,9 +1219,14 @@ export async function notifyTaskOverdue(
       reminderType: "immediate", // Mark as immediate notification for deduplication
     };
 
+    const recipientId = getNotificationRecipient({ type: "task_overdue", task });
+    if (!recipientId) {
+      return;
+    }
+
     const notification = await createNotificationInternal({
       accountId,
-      userId: task.userId,
+      userId: recipientId,
       fromUserId: null, // System notification
       type: "task_overdue",
       title: buildTitle("task_overdue", task.title),
@@ -1355,7 +1240,7 @@ export async function notifyTaskOverdue(
     });
 
     await sendPushAfterNotification(
-      task.userId,
+      recipientId,
       accountId,
       {
         notificationId: notification.notificationId,
@@ -1389,8 +1274,10 @@ export async function notifyAppointmentScheduled(
   accountId: bigint,
 ): Promise<void> {
   try {
-    // Notify the assigned user, or the creator if no one is assigned
-    const targetUserId = appointment.assignedTo ?? appointment.userId;
+    const targetUserId = getNotificationRecipient({ type: "appointment_scheduled", appointment });
+    if (!targetUserId) {
+      return;
+    }
 
     // Fetch related data (listing, contact, owner, buyer) for rich email templates
     const { listing, contact, owner, buyer } = await fetchAppointmentRelatedData(
@@ -1463,7 +1350,10 @@ export async function notifyAppointmentRescheduled(
   accountId: bigint,
 ): Promise<void> {
   try {
-    const targetUserId = appointment.assignedTo ?? appointment.userId;
+    const targetUserId = getNotificationRecipient({ type: "appointment_rescheduled", appointment });
+    if (!targetUserId) {
+      return;
+    }
 
     // Fetch related data (listing, contact, owner, buyer) for rich email templates
     const { listing, contact, owner, buyer } = await fetchAppointmentRelatedData(
@@ -1536,7 +1426,10 @@ export async function notifyAppointmentCancelled(
   accountId: bigint,
 ): Promise<void> {
   try {
-    const targetUserId = appointment.assignedTo ?? appointment.userId;
+    const targetUserId = getNotificationRecipient({ type: "appointment_cancelled", appointment });
+    if (!targetUserId) {
+      return;
+    }
 
     // Fetch related data (listing, contact, owner, buyer) for rich email templates
     const { listing, contact, owner, buyer } = await fetchAppointmentRelatedData(
@@ -1608,7 +1501,10 @@ export async function notifyAppointmentReminder(
   timeframe: AppointmentReminderTimeframe,
 ): Promise<void> {
   try {
-    const targetUserId = appointment.assignedTo ?? appointment.userId;
+    const targetUserId = getNotificationRecipient({ type: "appointment_reminder", appointment });
+    if (!targetUserId) {
+      return;
+    }
 
     // Fetch related data (listing, contact, owner, buyer) for rich email templates
     const { listing, contact, owner, buyer } = await fetchAppointmentRelatedData(
