@@ -33,6 +33,7 @@ interface ContactInformationTabProps {
     nif?: string;
     source?: string;
     email?: string;
+    address?: string;
     phone?: string;
     phoneNotes?: string;
     secondaryPhone?: string;
@@ -66,6 +67,7 @@ export function ContactInformationTab({
   const [nif, setNif] = useState(contact.nif ?? "");
   const [source, setSource] = useState(contact.source ?? "");
   const [email, setEmail] = useState(contact.email ?? "");
+  const [address, setAddress] = useState(contact.address ?? "");
   const [phone, setPhone] = useState(contact.phone ?? "");
   const [phoneNotes, setPhoneNotes] = useState(contact.phoneNotes ?? "");
   const [secondaryPhone, setSecondaryPhone] = useState(
@@ -122,6 +124,7 @@ export function ContactInformationTab({
         case "contactDetails":
           contactData = {
             email,
+            address,
             phone,
             phoneNotes,
             secondaryPhone,
@@ -301,6 +304,8 @@ export function ContactInformationTab({
         <ContactDetailsCard
           email={email}
           setEmail={setEmail}
+          address={address}
+          setAddress={setAddress}
           phone={phone}
           setPhone={setPhone}
           phoneNotes={phoneNotes}

@@ -1350,6 +1350,7 @@ export async function getContactByIdWithType(
         nif: contacts.nif,
         source: contacts.source,
         email: contacts.email,
+        address: contacts.address,
         phone: contacts.phone,
         phoneNotes: contacts.phoneNotes,
         secondaryPhone: contacts.secondaryPhone,

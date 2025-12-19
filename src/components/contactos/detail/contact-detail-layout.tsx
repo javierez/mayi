@@ -56,8 +56,14 @@ export function ContactDetailLayout({ contact }: ContactDetailLayoutProps) {
     contactId: contact.contactId,
     firstName: contact.firstName,
     lastName: contact.lastName,
+    nif: (contact.nif as string | undefined) ?? undefined,
+    source: (contact.source as string | undefined) ?? undefined,
     email: contact.email ?? undefined,
+    address: (contact.address as string | undefined) ?? undefined,
     phone: contact.phone ?? undefined,
+    phoneNotes: (contact.phoneNotes as string | undefined) ?? undefined,
+    secondaryPhone: (contact.secondaryPhone as string | undefined) ?? undefined,
+    secondaryPhoneNotes: (contact.secondaryPhoneNotes as string | undefined) ?? undefined,
     contactType: (contact.contactType ?? undefined) as
       | "demandante"
       | "propietario"

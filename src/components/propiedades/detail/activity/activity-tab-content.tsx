@@ -49,6 +49,8 @@ import {
 } from "lucide-react";
 import { OfferComparisonCard } from "~/components/offer-comparison-card";
 import { AppointmentTimeline } from "~/components/appointment-timeline";
+import { getDealIdAction } from "~/server/actions/arras";
+import { navigateToPage } from "~/lib/navigation";
 
 type ActiveView = "visits" | "contacts" | null;
 type VisitStatus =
@@ -105,6 +107,7 @@ function AcceptedOfferCard({
   onUpdate,
   permissions,
 }: AcceptedOfferCardProps) {
+  const router = useRouter();
   const [isUpdatingOffer, setIsUpdatingOffer] = useState(false);
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
 
@@ -243,9 +246,19 @@ function AcceptedOfferCard({
             variant="ghost"
             size="sm"
             className="h-9 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            onClick={() => {
-              // TODO: Implement contract generation
-              toast.error("Funcionalidad en desarrollo");
+            onClick={async () => {
+              const result = await getDealIdAction(
+                Number(listingId),
+                Number(contact.listingContactId),
+              );
+              if (result.success && result.dealId) {
+                navigateToPage(
+                  `/propiedades/${listingId}/contrato-arras/${result.dealId}`,
+                  router,
+                );
+              } else {
+                toast.error(result.error ?? "No se pudo obtener el deal");
+              }
             }}
           >
             <FileText className="mr-2 h-4 w-4" />

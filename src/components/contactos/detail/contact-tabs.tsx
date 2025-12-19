@@ -20,6 +20,7 @@ interface ContactTabsProps {
     nif?: string;
     source?: string;
     email?: string;
+    address?: string;
     phone?: string;
     phoneNotes?: string;
     secondaryPhone?: string;

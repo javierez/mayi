@@ -11,6 +11,8 @@ type ModuleName = "basicInfo" | "contactDetails" | "notes";
 interface ContactDetailsCardProps {
   email: string;
   setEmail: (value: string) => void;
+  address: string;
+  setAddress: (value: string) => void;
   phone: string;
   setPhone: (value: string) => void;
   phoneNotes: string;
@@ -29,6 +31,8 @@ interface ContactDetailsCardProps {
 export function ContactDetailsCard({
   email,
   setEmail,
+  address,
+  setAddress,
   phone,
   setPhone,
   phoneNotes,
@@ -72,6 +76,22 @@ export function ContactDetailsCard({
             disabled={!canEdit}
             className="h-8 text-gray-500"
             placeholder="contacto@email.com"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="address" className="text-sm">
+            Dirección
+          </Label>
+          <Input
+            id="address"
+            value={address}
+            onChange={(e) => {
+              setAddress(e.target.value);
+              onUpdateModule(true);
+            }}
+            disabled={!canEdit}
+            className="h-8 text-gray-500 placeholder:text-gray-300"
+            placeholder="Calle, número, ciudad..."
           />
         </div>
         <div className="space-y-1.5">

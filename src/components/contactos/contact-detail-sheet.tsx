@@ -57,6 +57,7 @@ import { deleteListingContactActivityAction } from "~/server/actions/listing-con
 import { canDeleteAllTasks } from "~/app/actions/permissions/check-permissions";
 import { Plus } from "lucide-react";
 import AppointmentModal from "~/components/appointments/appointment-modal";
+import { getDealIdAction } from "~/server/actions/arras";
 
 interface ContactDetailSheetProps {
   contact: ContactSheetData | null;
@@ -771,9 +772,22 @@ export function ContactDetailSheet({
                       variant="ghost"
                       size="sm"
                       className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
-                      onClick={() => {
-                        // TODO: Implement contract generation
-                        toast.error("Funcionalidad en desarrollo");
+                      onClick={async () => {
+                        const result = await getDealIdAction(
+                          Number(listingId),
+                          Number(contact.listingContactId),
+                        );
+                        if (result.success && result.dealId) {
+                          navigateToPage(
+                            `/propiedades/${listingId}/contrato-arras/${result.dealId}`,
+                            router,
+                          );
+                          onClose();
+                        } else {
+                          toast.error(
+                            result.error ?? "No se pudo obtener el deal",
+                          );
+                        }
                       }}
                     >
                       <FileText className="mr-2 h-4 w-4 shrink-0" />
