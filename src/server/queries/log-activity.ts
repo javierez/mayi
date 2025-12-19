@@ -257,15 +257,29 @@ export async function logListingContactActivity<
   userId: string;
   action: T;
   details: ListingContactActivityDetailsMap[T];
+  createdAt?: Date | string; // Optional: use lead date for Fotocasa imports
 }): Promise<bigint> {
-  const { listingContactId, userId, action, details } = params;
+  const { listingContactId, userId, action, details, createdAt } = params;
 
-  const [result] = await db.insert(listingContactActivity).values({
+  const insertValues: {
+    listingContactId: bigint;
+    userId: string;
+    action: string;
+    details: Record<string, unknown>;
+    createdAt?: Date;
+  } = {
     listingContactId,
     userId,
     action,
     details: details as unknown as Record<string, unknown>,
-  }).returning({ id: listingContactActivity.id });
+  };
+
+  // Only set createdAt if provided, otherwise let database use default
+  if (createdAt) {
+    insertValues.createdAt = new Date(createdAt);
+  }
+
+  const [result] = await db.insert(listingContactActivity).values(insertValues).returning({ id: listingContactActivity.id });
 
   return result!.id;
 }
@@ -854,15 +868,29 @@ export async function logContactActivity<T extends ContactActivityAction>(params
   userId: string;
   action: T;
   details: ContactActivityDetailsMap[T];
+  createdAt?: Date | string; // Optional: use lead date for Fotocasa imports
 }): Promise<bigint> {
-  const { contactId, userId, action, details } = params;
+  const { contactId, userId, action, details, createdAt } = params;
 
-  const [result] = await db.insert(contactActivity).values({
+  const insertValues: {
+    contactId: bigint;
+    userId: string;
+    action: string;
+    details: Record<string, unknown>;
+    createdAt?: Date;
+  } = {
     contactId,
     userId,
     action,
     details: details as unknown as Record<string, unknown>,
-  }).returning({ id: contactActivity.id });
+  };
+
+  // Only set createdAt if provided, otherwise let database use default
+  if (createdAt) {
+    insertValues.createdAt = new Date(createdAt);
+  }
+
+  const [result] = await db.insert(contactActivity).values(insertValues).returning({ id: contactActivity.id });
 
   return result!.id;
 }
@@ -873,41 +901,23 @@ export async function logContactActivity<T extends ContactActivityAction>(params
 export async function logContactCreated(params: {
   contactId: bigint;
   userId: string;
-  firstName: string;
-  lastName?: string;
-  email?: string;
-  phone?: string;
   source: string;
   accountId: number;
-  channel?:
-    | "website"
-    | "phone"
-    | "email"
-    | "walk-in"
-    | "portal"
-    | "referral"
-    | "social_media"
-    | "event"
-    | "other";
-  campaign?: string;
-  initialNotes?: string;
+  leadDate: string; // Original date from Fotocasa API
 }) {
   return logContactActivity({
     contactId: params.contactId,
     userId: params.userId,
     action: "contact_created",
     details: {
-      firstName: params.firstName,
-      lastName: params.lastName,
-      email: params.email,
-      phone: params.phone,
+      notes: "Contacto automáticamente creado desde Fotocasa",
+      topic: "Contacto Registrado",
       source: params.source,
-      channel: params.channel,
-      createdBy: params.userId,
-      campaign: params.campaign,
-      initialNotes: params.initialNotes,
       accountId: params.accountId,
+      createdBy: params.userId,
+      createdAt: params.leadDate,
     },
+    createdAt: params.leadDate, // Use original lead date for table's created_at column
   });
 }
 

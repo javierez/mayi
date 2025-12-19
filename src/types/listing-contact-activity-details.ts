@@ -117,7 +117,7 @@ export interface ContactMergedDetails {
 
 export interface CallLoggedDetails {
   direction: "inbound" | "outbound";
-  phoneNumber: string;
+  phoneNumber?: string; // Optional - already in contact record
   duration: number; // Seconds
   outcome: "interested" | "not_interested" | "callback" | "no_answer" | "voicemail";
   interestLevel?: 1 | 2 | 3 | 4 | 5;
@@ -126,6 +126,13 @@ export interface CallLoggedDetails {
   concerns?: string[]; // Issues raised by contact
   nextSteps?: string;
   recordingUrl?: string; // Call recording URL if available
+  // Fotocasa-specific fields
+  notes?: string;
+  topic?: string;
+  activityType?: string;
+  isPending?: boolean;
+  createdAt?: string;
+  fotocasaLeadId?: string;
 }
 
 export interface EmailSentDetails {
@@ -157,14 +164,21 @@ export interface WhatsAppSentDetails {
 }
 
 export interface MessageReceivedDetails {
-  channel: "email" | "phone" | "whatsapp" | "portal" | "sms" | "other";
-  from: string; // Sender identifier
-  content: string; // Message content
+  channel?: "email" | "phone" | "whatsapp" | "portal" | "sms" | "other"; // Optional - can infer from context
+  from?: string; // Optional - already in contact record
+  content?: string; // Message content (optional - Fotocasa uses notes instead)
   sentiment?: "positive" | "neutral" | "negative";
   urgency?: "low" | "normal" | "high";
-  requiresResponse: boolean;
+  requiresResponse?: boolean; // Optional - can infer from context
   responseDeadline?: string; // ISO timestamp
-  relatedTo?: string; // What the message is about
+  relatedTo?: string; // Optional - can infer from listing_contact
+  // Fotocasa-specific fields
+  notes?: string; // For Fotocasa: contains the message content
+  topic?: string;
+  activityType?: string;
+  isPending?: boolean;
+  createdAt?: string;
+  fotocasaLeadId?: string;
 }
 
 // ============================================================================

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "../db";
-import { contacts, listingContacts, listings, properties, users, userRoles } from "../db/schema";
+import { contacts, listingContacts, listings, properties, users, userRoles, listingContactActivity } from "../db/schema";
 import { eq, and, sql, or } from "drizzle-orm";
 import type { FotocasaLead, ImportLeadResult } from "~/types/fotocasa-leads";
 import {
@@ -207,6 +207,46 @@ export async function listingContactExists(
 }
 
 /**
+ * Check if a listing_contact_activity already exists for a specific Fotocasa lead ID
+ * This prevents duplicate activity logs when the same lead is processed multiple times
+ */
+/**
+ * Check if a listing_contact_activity already exists for a specific Fotocasa lead ID
+ * This prevents duplicate activity logs when the same lead is processed multiple times
+ * 
+ * @param listingContactId - The listing_contact ID
+ * @param fotocasaLeadId - The Fotocasa lead UUID
+ * @returns true if activity already exists, false otherwise
+ */
+async function listingContactActivityExists(
+  listingContactId: bigint,
+  fotocasaLeadId: string,
+): Promise<boolean> {
+  const logger = getFotocasaLeadsLogger();
+  try {
+    const result = await db
+      .select({ id: listingContactActivity.id })
+      .from(listingContactActivity)
+      .where(
+        and(
+          eq(listingContactActivity.listingContactId, listingContactId),
+          sql`${listingContactActivity.details}->>'fotocasaLeadId' = ${fotocasaLeadId}`,
+        ),
+      )
+      .limit(1);
+
+    const exists = result.length > 0;
+    if (exists) {
+      logger.debug(`Activity already exists for lead ${fotocasaLeadId} on listing_contact ${listingContactId.toString()}`);
+    }
+    return exists;
+  } catch (error) {
+    logger.error(`Error checking listing_contact_activity for lead ${fotocasaLeadId}:`, error);
+    return false; // On error, return false to allow logging (fail open)
+  }
+}
+
+/**
  * Find a listing by reference number for an account
  * Joins listings with properties to match by referenceNumber
  */
@@ -239,6 +279,69 @@ export async function findListingByReference(
 }
 
 /**
+ * Find the earliest lead date for a contact (by email/phone) across all leads
+ */
+function findEarliestContactDate(
+  leads: FotocasaLead[],
+  email: string | null | undefined,
+  phone: string | null | undefined,
+): string | null {
+  const normalizedPhone = normalizePhone(phone);
+  const trimmedEmail = email?.trim()?.toLowerCase();
+
+  let earliestDate: string | null = null;
+
+  for (const lead of leads) {
+    const leadEmail = lead.contactDetails.email?.trim()?.toLowerCase();
+    const leadPhone = normalizePhone(lead.contactDetails.phone);
+
+    const emailMatch = trimmedEmail && leadEmail && leadEmail === trimmedEmail;
+    const phoneMatch = normalizedPhone && leadPhone && leadPhone === normalizedPhone;
+
+    if (emailMatch || phoneMatch) {
+      if (!earliestDate || lead.date < earliestDate) {
+        earliestDate = lead.date;
+      }
+    }
+  }
+
+  return earliestDate;
+}
+
+/**
+ * Find the earliest lead date for a listing_contact (by contact email/phone + listing reference) across all leads
+ */
+function findEarliestListingContactDate(
+  leads: FotocasaLead[],
+  email: string | null | undefined,
+  phone: string | null | undefined,
+  listingReference: string,
+): string | null {
+  const normalizedPhone = normalizePhone(phone);
+  const trimmedEmail = email?.trim()?.toLowerCase();
+
+  let earliestDate: string | null = null;
+
+  for (const lead of leads) {
+    if (lead.reference !== listingReference) continue;
+
+    const leadEmail = lead.contactDetails.email?.trim()?.toLowerCase();
+    const leadPhone = normalizePhone(lead.contactDetails.phone);
+
+    const emailMatch = trimmedEmail && leadEmail && leadEmail === trimmedEmail;
+    const phoneMatch = normalizedPhone && leadPhone && leadPhone === normalizedPhone;
+
+    if (emailMatch || phoneMatch) {
+      if (!earliestDate || lead.date < earliestDate) {
+        earliestDate = lead.date;
+      }
+    }
+  }
+
+  return earliestDate;
+}
+
+/**
  * Import a single Fotocasa lead
  * - Checks if Fotocasa lead was already imported (by fotocasaLeadId)
  * - Checks if contact already exists (by email/phone) - uses existing if found
@@ -247,6 +350,7 @@ export async function findListingByReference(
 export async function importFotocasaLead(
   accountId: bigint,
   lead: FotocasaLead,
+  allLeads?: FotocasaLead[], // All leads in the batch to find minimum dates
 ): Promise<ImportLeadResult> {
   const logger = getFotocasaLeadsLogger();
   
@@ -391,6 +495,12 @@ export async function importFotocasaLead(
       // Extract phone prefix and number
       const phoneData = extractPhonePrefix(lead.contactDetails.phone);
       
+      // Find the earliest lead date for this contact across all leads in the batch
+      const earliestDate = allLeads
+        ? findEarliestContactDate(allLeads, lead.contactDetails.email, lead.contactDetails.phone)
+        : null;
+      const contactCreatedAt = earliestDate ? new Date(earliestDate) : new Date(lead.date);
+      
       // Create new contact
       const [newContact] = await db
         .insert(contacts)
@@ -404,6 +514,7 @@ export async function importFotocasaLead(
           source,
           additionalInfo,
           isActive: true,
+          createdAt: contactCreatedAt, // Use earliest lead date across all leads for this contact
         })
         .returning();
 
@@ -425,17 +536,14 @@ export async function importFotocasaLead(
       try {
         const systemUserId = await getSystemUserIdForAccount(accountId);
         if (systemUserId) {
+          // Use the earliest lead date (same as contact.created_at) for the activity
+          const activityLeadDate = earliestDate ?? lead.date;
           await logContactCreated({
             contactId,
             userId: systemUserId,
-            firstName,
-            lastName,
-            email: lead.contactDetails.email,
-            phone: lead.contactDetails.phone,
             source,
             accountId: Number(accountId),
-            channel: "portal",
-            initialNotes: lead.message,
+            leadDate: activityLeadDate,
           });
         } else {
           logger.warn(
@@ -497,6 +605,12 @@ export async function importFotocasaLead(
           // Determine status based on lead type and message content
           const contactStatus = determineContactStatus(lead.type, lead.message);
           
+          // Find the earliest lead date for this listing_contact across all leads in the batch
+          const earliestDate = allLeads && lead.reference
+            ? findEarliestListingContactDate(allLeads, lead.contactDetails.email, lead.contactDetails.phone, lead.reference)
+            : null;
+          const listingContactCreatedAt = earliestDate ? new Date(earliestDate) : new Date(lead.date);
+          
           // Create new listing_contact using reference as listingId
           const [newListingContact] = await db
             .insert(listingContacts)
@@ -507,6 +621,7 @@ export async function importFotocasaLead(
               source,
               status: contactStatus,
               isActive: true,
+              createdAt: listingContactCreatedAt, // Use earliest lead date across all leads for this listing_contact
             })
             .returning();
 
@@ -524,15 +639,20 @@ export async function importFotocasaLead(
           }
         }
 
-        // Log listing_contact_activity for every lead interaction
+        // Log listing_contact_activity for every lead interaction (with deduplication)
         if (listingContactId) {
           try {
-            const systemUserId = await getSystemUserIdForAccount(accountId);
-            if (!systemUserId) {
-              logger.warn(
-                `Skipping listing_contact_activity log for listing_contact ${listingContactId.toString()} - no system user found`,
-              );
+            // Check if activity for this lead already exists
+            const activityExists = await listingContactActivityExists(listingContactId, lead.id);
+            if (activityExists) {
+              logger.debug(`Activity for lead ${lead.id} already exists, skipping`);
             } else {
+              const systemUserId = await getSystemUserIdForAccount(accountId);
+              if (!systemUserId) {
+                logger.warn(
+                  `Skipping listing_contact_activity log for listing_contact ${listingContactId.toString()} - no system user found`,
+                );
+              } else {
               if (lead.type.includes('CALL')) {
                 // For CALL types, use call_logged action
                 const outcome = lead.contactDetails.attendedCall 
@@ -544,13 +664,18 @@ export async function importFotocasaLead(
                   userId: systemUserId,
                   action: "call_logged",
                   details: {
+                    notes: "Llamada registrada desde Fotocasa",
+                    topic: "Llamada Fotocasa",
+                    activityType: "call",
+                    isPending: !lead.contactDetails.attendedCall,
                     direction: "inbound" as const,
-                    phoneNumber: lead.contactDetails.phone ?? "",
                     duration: lead.contactDetails.duration ?? 0,
                     outcome,
                     recordingUrl: lead.contactDetails.audioUrl,
-                    nextSteps: lead.message ?? undefined,
+                    createdAt: lead.date,
+                    fotocasaLeadId: lead.id,
                   },
+                  createdAt: lead.date, // Use original lead date for table's created_at column
                 });
               } else {
                 // For PROPERTY types, use message_received action
@@ -559,14 +684,17 @@ export async function importFotocasaLead(
                   userId: systemUserId,
                   action: "message_received",
                   details: {
-                    channel: "portal" as const,
-                    from: lead.contactDetails.name ?? lead.contactDetails.email ?? lead.contactDetails.phone ?? "Unknown",
-                    content: lead.message ?? `Lead recibido desde ${lead.site}`,
-                    requiresResponse: true,
-                    relatedTo: lead.reference ? `Propiedad ${lead.reference}` : undefined,
+                    notes: lead.message ?? `Lead recibido desde ${lead.site}`,
+                    topic: "Mensaje Fotocasa",
+                    activityType: "mail",
+                    isPending: true,
+                    createdAt: lead.date,
+                    fotocasaLeadId: lead.id,
                   },
+                  createdAt: lead.date, // Use original lead date for table's created_at column
                 });
               }
+            }
             }
           } catch (activityError) {
             // Log error but don't fail the import
@@ -643,7 +771,7 @@ export async function importFotocasaLeads(
   });
 
   for (const lead of sortedLeads) {
-    const importResult = await importFotocasaLead(accountId, lead);
+    const importResult = await importFotocasaLead(accountId, lead, sortedLeads);
 
     if (importResult.success) {
       if (importResult.skipped) {

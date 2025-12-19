@@ -16,34 +16,12 @@
 // ============================================================================
 
 export interface ContactCreatedDetails {
-  firstName: string;
-  lastName?: string;
-  email?: string;
-  phone?: string;
-  source: string; // How contact was acquired (e.g., "Website", "Walk-In", "Referral", "Portal")
-  channel?:
-    | "website"
-    | "phone"
-    | "email"
-    | "walk-in"
-    | "portal"
-    | "referral"
-    | "social_media"
-    | "event"
-    | "other";
-  createdBy: string; // User ID who created contact
-  campaign?: string; // Marketing campaign if applicable
-  referrer?: string; // Person/entity who referred
-  utmParams?: {
-    // Web tracking parameters
-    source?: string;
-    medium?: string;
-    campaign?: string;
-    term?: string;
-    content?: string;
-  };
-  initialNotes?: string;
+  notes: string; // "Contacto automáticamente creado desde Fotocasa"
+  topic: string; // "Contacto Registrado"
+  source: string; // "fotocasa" | "milanuncios"
   accountId: number; // FK to accounts (multi-tenant)
+  createdBy: string; // User ID who created contact
+  createdAt: string; // Original lead date from Fotocasa API (ISO timestamp)
 }
 
 export interface ContactDeactivatedDetails {
