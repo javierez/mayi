@@ -30,10 +30,16 @@ function getSpainTimeAsUTC(): Date {
   });
   
   const [datePart, timePart] = spainTimeStr.split(', ');
-  const [day, month, year] = datePart!.split('/').map(Number);
-  const [hour, minute, second] = timePart!.split(':').map(Number);
-  
-  return new Date(Date.UTC(year!, month! - 1, day!, hour!, minute!, second!));
+  const dateParts = datePart?.split('/').map(Number) ?? [];
+  const timeParts = timePart?.split(':').map(Number) ?? [];
+  const day = dateParts[0] ?? 1;
+  const month = dateParts[1] ?? 1;
+  const year = dateParts[2] ?? 2000;
+  const hour = timeParts[0] ?? 0;
+  const minute = timeParts[1] ?? 0;
+  const second = timeParts[2] ?? 0;
+
+  return new Date(Date.UTC(year, month - 1, day, hour, minute, second));
 }
 
 // Helper: Get Spain time components (same as briefings cron)
@@ -268,12 +274,12 @@ export async function GET(request: NextRequest) {
           'Authorization': `Bearer ${cronSecret}`
         }
       });
-      const result = await response.json();
-      
+      const result: unknown = await response.json();
+
       return NextResponse.json({
         ...debugInfo,
         cronTriggered: trigger,
-        cronResult: result
+        cronResult: result as Record<string, unknown>
       });
     } catch (error) {
       return NextResponse.json({

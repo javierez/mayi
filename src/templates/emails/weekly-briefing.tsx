@@ -79,7 +79,7 @@ export function generateWeeklyBriefingEmail(
 
   // Group items by day
   const groupByDay = (): DayGroup[] => {
-    const groups: Map<string, DayGroup> = new Map();
+    const groups = new Map<string, DayGroup>();
 
     // Process tasks
     if (hasTasks) {

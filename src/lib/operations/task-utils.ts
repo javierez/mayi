@@ -1,6 +1,5 @@
 import { type getMostUrgentTasksWithAuth } from "~/server/queries/task";
 import {
-  getDayStart,
   getDayEnd,
   isSameDay,
 } from "~/lib/utils/date-helpers";
@@ -48,11 +47,17 @@ function getSpainNow(): Date {
   
   // Parse the Spain time string (format: "DD/MM/YYYY, HH:mm:ss")
   const [datePart, timePart] = spainTimeStr.split(', ');
-  const [day, month, year] = datePart!.split('/').map(Number);
-  const [hour, minute, second] = timePart!.split(':').map(Number);
-  
+  const dateParts = datePart?.split('/').map(Number) ?? [];
+  const timeParts = timePart?.split(':').map(Number) ?? [];
+  const day = dateParts[0] ?? 1;
+  const month = dateParts[1] ?? 1;
+  const year = dateParts[2] ?? 2000;
+  const hour = timeParts[0] ?? 0;
+  const minute = timeParts[1] ?? 0;
+  const second = timeParts[2] ?? 0;
+
   // Create a Date with Spain time values
-  return new Date(year!, month! - 1, day!, hour!, minute!, second!);
+  return new Date(year, month - 1, day, hour, minute, second);
 }
 
 export function getRemainingTime(dueDate?: Date | null, dueTime?: string | null) {
@@ -85,9 +90,6 @@ export function getRemainingTime(dueDate?: Date | null, dueTime?: string | null)
     // No dueTime provided, use end of day
     actualDueDateTime = getDayEnd(dueDate);
   }
-
-  const today = getDayStart(now);
-  const taskDate = getDayStart(dueDate);
 
   const diffMs = actualDueDateTime.getTime() - now.getTime();
   // Use Math.trunc() instead of Math.floor() to round toward zero

@@ -1038,8 +1038,7 @@ export default function AppointmentsPage() {
           // Add the appointment data directly to state - no refetch needed!
           // This eliminates the caching race condition entirely
           if (appointmentData) {
-            // Type assertion: ServerAppointmentData is compatible with addServerEvent's flexible type
-            addServerEvent(appointmentData as any);
+            addServerEvent(appointmentData);
           } else {
             // Fallback: if server didn't return data, refetch (shouldn't happen normally)
             console.warn("Server didn't return appointment data, falling back to refetch");

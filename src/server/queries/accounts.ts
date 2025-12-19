@@ -677,6 +677,7 @@ export async function getAccountsWithFotocasaEnabled(): Promise<
   Array<{
     accountId: bigint;
     apiKey: string;
+    publisherId: string | null;
     lastLeadSyncAt: Date | null;
   }>
 > {
@@ -695,12 +696,14 @@ export async function getAccountsWithFotocasaEnabled(): Promise<
 
         const enabled = fotocasa.enabled as boolean;
         const apiKey = fotocasa.apiKey as string | undefined;
+        const publisherId = fotocasa.publisherId as string | undefined;
         const lastLeadSyncAt = fotocasa.lastLeadSyncAt as string | undefined;
 
         if (enabled && apiKey) {
           return {
             accountId: account.accountId,
             apiKey,
+            publisherId: publisherId ?? null,
             lastLeadSyncAt: lastLeadSyncAt ? new Date(lastLeadSyncAt) : null,
           };
         }

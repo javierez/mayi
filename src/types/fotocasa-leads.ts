@@ -9,7 +9,8 @@ export type FotocasaLeadType =
   | "MINISITE"
   | "PROMOTION"
   | "TYPOLOGY"
-  | "CALL_TRACKING";
+  | "CALL_TRACKING"
+  | "CALL_TRACKING_AD";
 
 // Fotocasa transaction type enum
 export type FotocasaTransactionType =
@@ -23,7 +24,7 @@ export type FotocasaTransactionType =
 
 // Contact details from Fotocasa lead
 export interface FotocasaContactDetails {
-  name: string;
+  name?: string;
   email?: string;
   phone?: string;
   // Call tracking specific fields
@@ -47,7 +48,7 @@ export interface FotocasaLead {
 
 // Zod schema for contact details
 export const fotocasaContactDetailsSchema = z.object({
-  name: z.string(),
+  name: z.string().optional(),
   email: z.string().optional(),
   phone: z.string().optional(),
   audioUrl: z.string().optional(),
@@ -68,6 +69,7 @@ export const fotocasaLeadSchema = z.object({
     "PROMOTION",
     "TYPOLOGY",
     "CALL_TRACKING",
+    "CALL_TRACKING_AD",
   ]),
   transactionType: z
     .enum([
@@ -105,4 +107,9 @@ export interface ImportLeadResult {
   skipped?: boolean;
   skipReason?: string;
   error?: string;
+  // Database operation tracking
+  contactCreated?: boolean;
+  contactUpdated?: boolean;
+  listingContactCreated?: boolean;
+  listingContactSkipped?: boolean;
 }

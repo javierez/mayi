@@ -245,14 +245,6 @@ export const MailConfiguration = () => {
     setHasChanges(true);
   };
 
-  const handleQuietHoursUpdate = (newSettings: MailSettings["quietHours"]) => {
-    setSettings((prev) => ({
-      ...prev,
-      quietHours: newSettings,
-    }));
-    setHasChanges(true);
-  };
-
   const handleCustomerAppointmentToggle = (
     appointmentType: keyof Omit<MailSettings["customers"]["appointments"], never>,
     optionKey: keyof CustomerAppointmentNotificationSettings,

@@ -25,6 +25,7 @@ interface DraftContact {
   email?: string | null;
   phone?: string | null;
   additionalInfo?: Record<string, unknown> | null;
+  source?: string | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -134,6 +135,28 @@ export default function ContactDraftsPage() {
     return info.join(" • ");
   };
 
+  // Check if contact is an unidentified CALL_TRACKING contact
+  const isUnidentifiedCallTracking = (contact: DraftContact): boolean => {
+    // Check if source is from Fotocasa
+    const fotocasaSources = ['fotocasa', 'habitaclia', 'milanuncios'];
+    if (!contact.source || !fotocasaSources.includes(contact.source.toLowerCase())) {
+      return false;
+    }
+
+    // Check if it's a CALL_TRACKING lead type
+    const fotocasaType = contact.additionalInfo?.fotocasaType as string | undefined;
+    if (fotocasaType !== 'CALL_TRACKING') {
+      return false;
+    }
+
+    // Check if it has no listing_contacts (already filtered by query, but double-check)
+    if (contact.buyerCount > 0 || contact.ownerCount > 0) {
+      return false;
+    }
+
+    return true;
+  };
+
   if (loading) {
     return <ContactDraftsSkeleton />;
   }
@@ -178,10 +201,14 @@ export default function ContactDraftsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {draftContacts.map((contact) => (
+                {draftContacts.map((contact) => {
+                  const isUnidentified = isUnidentifiedCallTracking(contact);
+                  return (
                   <TableRow
                     key={contact.contactId.toString()}
-                    className="cursor-pointer hover:bg-muted/50"
+                    className={`cursor-pointer hover:bg-muted/50 ${
+                      isUnidentified ? "border-l-4 border-l-rose-400/60" : ""
+                    }`}
                     onClick={() =>
                       router.push(`/contactos/${contact.contactId}`)
                     }
@@ -223,7 +250,8 @@ export default function ContactDraftsPage() {
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>

@@ -250,6 +250,7 @@ export async function getDraftContacts(accountId: number) {
         contacts.secondaryPhone,
         contacts.secondaryPhoneNotes,
         contacts.additionalInfo,
+        contacts.source,
         contacts.isActive,
         contacts.createdAt,
         contacts.updatedAt,

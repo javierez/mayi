@@ -86,9 +86,15 @@ export function generateTaskReminderEmail(
       hour12: false
     });
     const [datePart, timePart] = spainTimeStr.split(', ');
-    const [day, month, year] = datePart!.split('/').map(Number);
-    const [hour, minute, second] = timePart!.split(':').map(Number);
-    return new Date(Date.UTC(year!, month! - 1, day!, hour!, minute!, second!));
+    const dateParts = datePart?.split('/').map(Number) ?? [];
+    const timeParts = timePart?.split(':').map(Number) ?? [];
+    const day = dateParts[0] ?? 1;
+    const month = dateParts[1] ?? 1;
+    const year = dateParts[2] ?? 2000;
+    const hour = timeParts[0] ?? 0;
+    const minute = timeParts[1] ?? 0;
+    const second = timeParts[2] ?? 0;
+    return new Date(Date.UTC(year, month - 1, day, hour, minute, second));
   };
 
   // Calculate actual time remaining from task due date/time

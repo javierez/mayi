@@ -575,6 +575,8 @@ export const contacts = pgTable("contacts", {
   phoneNotes: text("phone_notes"), // Notes for primary phone number
   secondaryPhone: varchar("secondary_phone", { length: 20 }),
   secondaryPhoneNotes: text("secondary_phone_notes"), // Notes for secondary phone number
+  phonePrefix: varchar("phone_prefix", { length: 10 }).default("+34"), // Phone country code prefix
+  secondaryPhonePrefix: varchar("secondary_phone_prefix", { length: 10 }).default("+34"), // Secondary phone prefix
   rating: smallint("rating"), // Contact rating (e.g., 1-5 scale for quality/importance)
   additionalInfo: jsonb("additional_info").default({}),
   orgId: bigint("org_id", { mode: "bigint" }), // Nullable FK to organizations

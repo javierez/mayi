@@ -365,7 +365,7 @@ export default function AppointmentForm({
   appointmentId,
   addOptimisticEvent,
   removeOptimisticEvent,
-  updateOptimisticEvent,
+  updateOptimisticEvent: _updateOptimisticEvent,
 }: AppointmentFormProps) {
   // Skip contact selection step if contactId is provided
   const initialStep = initialData.contactId ? 1 : 0;
@@ -1145,60 +1145,6 @@ export default function AppointmentForm({
       listingContactId: data.leadId,
       dealId: data.dealId,
       prospectId: data.prospectId,
-    };
-  };
-
-  // Transform server response to CalendarEvent format
-  const transformServerResponseToCalendarEvent = (appointmentId: bigint) => {
-    return {
-      appointmentId,
-      contactId: formData.contactId!,
-      contactName: selectedContact
-        ? `${selectedContact.firstName} ${selectedContact.lastName}`
-        : "New Contact",
-      propertyAddress: selectedListing?.title ?? undefined,
-      // Parse DD-MM-YYYY format dates - use Date.UTC to match server storage format
-      startTime: (() => {
-        if (!formData.startDate || !formData.startTime) {
-          return new Date();
-        }
-        const dateParts = formData.startDate.split("-").map(Number);
-        const timeParts = formData.startTime.split(":").map(Number);
-        return new Date(Date.UTC(
-          dateParts[2] ?? 0, // year
-          (dateParts[1] ?? 1) - 1, // month (0-indexed)
-          dateParts[0] ?? 1, // day
-          timeParts[0] ?? 0,
-          timeParts[1] ?? 0
-        ));
-      })(),
-      endTime: (() => {
-        const endDate = formData.endDate ?? formData.startDate;
-        const endTime = formData.endTime ?? formData.startTime;
-        if (!endDate || !endTime) {
-          return new Date();
-        }
-        const dateParts = endDate.split("-").map(Number);
-        const timeParts = endTime.split(":").map(Number);
-        return new Date(Date.UTC(
-          dateParts[2] ?? 0, // year
-          (dateParts[1] ?? 1) - 1, // month (0-indexed)
-          dateParts[0] ?? 1, // day
-          timeParts[0] ?? 0,
-          timeParts[1] ?? 0
-        ));
-      })(),
-      status: "Scheduled" as const,
-      type: formData.appointmentType ?? "Visita",
-      title: formData.title ?? "",
-      tripTimeMinutes: formData.tripTimeMinutes,
-      notes: formData.notes,
-      listingId: formData.listingId,
-      listingContactId: formData.leadId,
-      dealId: formData.dealId,
-      prospectId: formData.prospectId,
-      agentName: undefined,
-      isOptimistic: false,
     };
   };
 

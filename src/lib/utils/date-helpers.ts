@@ -114,10 +114,10 @@ export function createLocalDate(
   year: number,
   month: number, // 1-12 (not 0-indexed)
   day: number,
-  hours: number = 0,
-  minutes: number = 0,
-  seconds: number = 0,
-  milliseconds: number = 0
+  hours = 0,
+  minutes = 0,
+  seconds = 0,
+  milliseconds = 0
 ): Date {
   return new Date(year, month - 1, day, hours, minutes, seconds, milliseconds);
 }
@@ -125,7 +125,7 @@ export function createLocalDate(
 /**
  * Format date for display (uses local timezone automatically via Intl)
  */
-export function formatDate(date: Date, locale: string = 'es-ES'): string {
+export function formatDate(date: Date, locale = 'es-ES'): string {
   return new Intl.DateTimeFormat(locale, {
     day: '2-digit',
     month: 'short',
@@ -138,7 +138,7 @@ export function formatDate(date: Date, locale: string = 'es-ES'): string {
  * CRITICAL: Times are stored as UTC in the database (see createLocalDateTime)
  * Using getUTCHours/getUTCMinutes ensures consistent display regardless of browser timezone
  */
-export function formatTime(date: Date, _locale: string = 'es-ES'): string {
+export function formatTime(date: Date, _locale = 'es-ES'): string {
   // Use UTC components - times are stored as UTC in the database
   const hours = date.getUTCHours().toString().padStart(2, '0');
   const minutes = date.getUTCMinutes().toString().padStart(2, '0');
@@ -148,7 +148,7 @@ export function formatTime(date: Date, _locale: string = 'es-ES'): string {
 /**
  * Format short date for display (day + month, no year)
  */
-export function formatShortDate(date: Date, locale: string = 'es-ES'): string {
+export function formatShortDate(date: Date, locale = 'es-ES'): string {
   return new Intl.DateTimeFormat(locale, {
     day: '2-digit',
     month: 'short',

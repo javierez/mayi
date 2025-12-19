@@ -315,6 +315,7 @@ export async function getPortalConfigurationAction(
       fotocasa: {
         enabled: (fotocasaSettings?.enabled as boolean) ?? false,
         apiKey: (fotocasaSettings?.apiKey as string | undefined) ?? "",
+        publisherId: (fotocasaSettings?.publisherId as string | undefined) ?? "",
       },
       idealista: {
         enabled: (idealistaSettings?.enabled as boolean) ?? false,

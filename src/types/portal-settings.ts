@@ -5,6 +5,7 @@ export interface PortalConfigurationData {
   fotocasa?: {
     enabled: boolean;
     apiKey?: string;
+    publisherId?: string; // Agency's unique publisher ID for fetching leads
     customSettings?: Record<string, unknown>;
   };
   idealista?: {
@@ -28,6 +29,7 @@ export interface PortalConfigurationInput {
   fotocasa?: {
     enabled: boolean;
     apiKey?: string;
+    publisherId?: string; // Agency's unique publisher ID for fetching leads
   };
   idealista?: {
     enabled: boolean;
@@ -50,6 +52,7 @@ export const portalConfigurationSchema = z.object({
     .object({
       enabled: z.boolean(),
       apiKey: z.string().optional(),
+      publisherId: z.string().optional(), // Agency's unique publisher ID for fetching leads
     })
     .optional(),
   idealista: z

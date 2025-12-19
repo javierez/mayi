@@ -29,7 +29,7 @@ interface AppointmentFormData {
 }
 
 // Type for appointment data returned from server
-type ServerAppointmentData = {
+export type ServerAppointmentData = {
   appointmentId: bigint;
   userId: string;
   assignedTo: string | null;

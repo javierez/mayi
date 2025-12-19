@@ -27,7 +27,9 @@ import AppointmentModal, {
 } from "~/components/appointments/appointment-modal";
 import { AppointmentDetailSheet } from "~/components/appointments/appointment-detail-sheet";
 import { Card } from "~/components/ui/card";
-import { Home } from "lucide-react";
+import { ConfirmDialog } from "~/components/ui/confirm-dialog";
+import { Button } from "~/components/ui/button";
+import { Home, Plus } from "lucide-react";
 import type { ContactVisitWithDetails } from "~/types/activity";
 import { cn } from "~/lib/utils";
 
@@ -60,6 +62,17 @@ export function ContactInteresesTab({ contactId }: ContactInteresesTabProps) {
   } = useAppointmentModal();
   const [editMode, setEditMode] = useState<"create" | "edit">("create");
   const [editingAppointmentId, setEditingAppointmentId] = useState<bigint | null>(null);
+
+  // Modal state for creating new appointments from listing
+  const [isCreateAppointmentModalOpen, setIsCreateAppointmentModalOpen] = useState(false);
+  const [createAppointmentListingId, setCreateAppointmentListingId] = useState<bigint | null>(null);
+
+  // Delete confirmation modal state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [listingToDelete, setListingToDelete] = useState<{
+    listingId: bigint;
+    address: string;
+  } | null>(null);
 
   // Fetch permissions
   useEffect(() => {
@@ -119,6 +132,18 @@ export function ContactInteresesTab({ contactId }: ContactInteresesTabProps) {
     openModal(initialData);
   };
 
+  // Handle opening modal for creating new appointments
+  const handleScheduleVisitForListing = (listingId: bigint) => {
+    setCreateAppointmentListingId(listingId);
+    setIsCreateAppointmentModalOpen(true);
+  };
+
+  // Handle appointment creation success
+  const handleAppointmentCreateSuccess = async () => {
+    router.refresh();
+    await fetchActivityData();
+  };
+
   // Handle listing card toggle
   const toggleListing = (listingId: bigint) => {
     const listingIdStr = listingId.toString();
@@ -128,17 +153,39 @@ export function ContactInteresesTab({ contactId }: ContactInteresesTabProps) {
     }));
   };
 
-  // Handle delete interest (remove listing-contact relationship)
-  const handleDeleteInterest = async (listingId: bigint) => {
+  // Handle delete interest - show confirmation modal
+  const handleDeleteInterest = (listingId: bigint) => {
+    // Find the listing to get its address for the confirmation message
+    const listing = interesesListings.find(
+      (l) => l.listingId?.toString() === listingId.toString()
+    );
+    const address = [listing?.street, listing?.city].filter(Boolean).join(", ") || "Sin dirección";
+    
+    setListingToDelete({ listingId, address });
+    setDeleteConfirmOpen(true);
+  };
+
+  // Confirm delete interest (actually remove listing-contact relationship)
+  const confirmDeleteInterest = async () => {
+    if (!listingToDelete) return;
+    
     try {
-      await removeListingContactRelationshipWithAuth(Number(contactId), Number(listingId), "buyer");
+      await removeListingContactRelationshipWithAuth(
+        Number(contactId),
+        Number(listingToDelete.listingId),
+        "buyer"
+      );
       setInteresesListings((prev) =>
-        prev.filter((listing) => listing.listingId?.toString() !== listingId.toString()),
+        prev.filter(
+          (listing) => listing.listingId?.toString() !== listingToDelete.listingId.toString()
+        ),
       );
       toast.success("Interés eliminado correctamente");
     } catch (error) {
       console.error("Error deleting interest:", error);
       toast.error("Error al eliminar el interés");
+    } finally {
+      setListingToDelete(null);
     }
   };
 
@@ -268,6 +315,8 @@ export function ContactInteresesTab({ contactId }: ContactInteresesTabProps) {
                 listingVisits={listingVisits}
                 listingId={listingId}
                 onAppointmentClick={setSelectedAppointment}
+                onScheduleVisit={() => handleScheduleVisitForListing(listingId)}
+                canEditCalendar={hasEditCalendarPermission}
               />
             )}
           </Card>
@@ -303,6 +352,31 @@ export function ContactInteresesTab({ contactId }: ContactInteresesTabProps) {
         removeOptimisticEvent={undefined}
         updateOptimisticEvent={undefined}
       />
+
+      {/* Appointment Modal for creating new appointments */}
+      <AppointmentModal
+        open={isCreateAppointmentModalOpen}
+        onOpenChange={setIsCreateAppointmentModalOpen}
+        initialData={{
+          listingId: createAppointmentListingId ?? undefined,
+          appointmentType: "Visita",
+          contactId: contactId,
+        }}
+        mode="create"
+        onSuccess={handleAppointmentCreateSuccess}
+      />
+
+      {/* Delete confirmation dialog */}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Eliminar interés"
+        description={`¿Estás seguro de que quieres eliminar el interés en "${listingToDelete?.address}"? Esta acción no se puede deshacer.`}
+        onConfirm={confirmDeleteInterest}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        confirmVariant="destructive"
+      />
     </div>
   );
 }
@@ -312,10 +386,14 @@ function VisitsContent({
   listingVisits,
   listingId,
   onAppointmentClick,
+  onScheduleVisit,
+  canEditCalendar,
 }: {
   listingVisits: ContactVisitWithDetails[];
   listingId: bigint;
   onAppointmentClick: (appointment: AppointmentData) => void;
+  onScheduleVisit: () => void;
+  canEditCalendar: boolean;
 }) {
   const urgentVisits = listingVisits
     .filter((v) => v.status === "NoShow" || v.status === "Rescheduled")
@@ -355,7 +433,21 @@ function VisitsContent({
 
   if (listingVisits.length === 0) {
     return (
-      <div className="border-t border-gray-200 bg-gray-50 p-4">
+      <div className="space-y-4 border-t border-gray-200 bg-gray-50 p-4">
+        {/* Add Visit Button */}
+        {canEditCalendar && (
+          <div className="flex justify-end">
+            <Button
+              onClick={onScheduleVisit}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Añadir visita
+            </Button>
+          </div>
+        )}
         <EmptyState type="completed-visits" />
       </div>
     );
@@ -363,6 +455,21 @@ function VisitsContent({
 
   return (
     <div className="space-y-4 border-t border-gray-200 bg-gray-50 p-4">
+      {/* Add Visit Button */}
+      {canEditCalendar && (
+        <div className="flex justify-end">
+          <Button
+            onClick={onScheduleVisit}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Añadir visita
+          </Button>
+        </div>
+      )}
+
       <div className="space-y-6">
         {urgentVisits.length > 0 && (
           <div className="space-y-3">

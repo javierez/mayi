@@ -76,7 +76,7 @@ export function PortalConfiguration() {
   const form = useForm<PortalConfigurationInput>({
     resolver: zodResolver(portalConfigurationSchema),
     defaultValues: {
-      fotocasa: { enabled: false, apiKey: "" },
+      fotocasa: { enabled: false, apiKey: "", publisherId: "" },
       idealista: { enabled: false, apiKey: "" },
       general: { watermarkEnabled: false },
     },
@@ -232,9 +232,10 @@ export function PortalConfiguration() {
                   </div>
                 </div>
 
-                {/* API Key Card */}
+                {/* API Key & Publisher ID Cards */}
                 {form.watch("fotocasa.enabled") && (
                   <div className="space-y-4">
+                    {/* API Key Card */}
                     <div className="rounded-2xl bg-white p-6 shadow-md">
                       <FormField
                         control={form.control}
@@ -246,7 +247,7 @@ export function PortalConfiguration() {
                               API Key
                             </FormLabel>
                             <FormDescription className="text-sm text-gray-500">
-                              Introduce tu clave API de Fotocasa para conectar tu cuenta
+                              Introduce tu clave API de Fotocasa para publicar propiedades
                             </FormDescription>
                             <FormControl>
                               <Input
@@ -254,6 +255,34 @@ export function PortalConfiguration() {
                                 value={field.value ?? ""}
                                 type="text"
                                 placeholder="Introduce tu API Key de Fotocasa"
+                                className="h-10 font-mono"
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Publisher ID Card */}
+                    <div className="rounded-2xl bg-white p-6 shadow-md">
+                      <FormField
+                        control={form.control}
+                        name="fotocasa.publisherId"
+                        render={({ field }) => (
+                          <FormItem className="space-y-3">
+                            <FormLabel className="flex items-center gap-2 text-sm font-medium">
+                              <Globe className="h-4 w-4 text-gray-500" />
+                              Publisher ID
+                            </FormLabel>
+                            <FormDescription className="text-sm text-gray-500">
+                              Tu identificador de publisher para recibir leads de Fotocasa
+                            </FormDescription>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                value={field.value ?? ""}
+                                type="text"
+                                placeholder="ej: 25f21de9-87f3-4c6f-9f55-742dc8e85551"
                                 className="h-10 font-mono"
                               />
                             </FormControl>
@@ -270,7 +299,7 @@ export function PortalConfiguration() {
                         </div>
                         <div className="flex-1">
                           <p className="text-sm text-blue-900">
-                            ¿No tienes una API Key? Solicítala desde tu cuenta de Fotocasa
+                            ¿No tienes estos datos? Solicítalos desde tu cuenta de Fotocasa
                           </p>
                         </div>
                       </div>
