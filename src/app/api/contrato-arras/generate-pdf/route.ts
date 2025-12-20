@@ -118,6 +118,22 @@ export async function POST(request: NextRequest) {
 
     const page = (await browser.newPage()) as Page;
 
+    // Add debugging listeners
+    page.on("console", (msg) => console.log("🖥️ PAGE CONSOLE:", msg.type(), msg.text()));
+    page.on("pageerror", (err) => console.error("❌ PAGE ERROR:", err.message));
+    page.on("requestfailed", (req) => console.error("❌ REQUEST FAILED:", req.url(), req.failure()?.errorText));
+
+    // Track pending requests
+    const pendingRequests = new Set<string>();
+    page.on("request", (req) => {
+      pendingRequests.add(req.url());
+      console.log("📤 REQUEST START:", req.url().substring(0, 100));
+    });
+    page.on("requestfinished", (req) => {
+      pendingRequests.delete(req.url());
+      console.log("✅ REQUEST DONE:", req.url().substring(0, 100));
+    });
+
     // Disable cache to ensure fresh content
     await page.setCacheEnabled(false);
 
@@ -144,11 +160,21 @@ export async function POST(request: NextRequest) {
       templateUrl.toString().substring(0, 200) + "...",
     );
 
+    // Log pending requests every 5 seconds
+    const pendingInterval = setInterval(() => {
+      console.log("⏳ PENDING REQUESTS:", pendingRequests.size, Array.from(pendingRequests).map(u => u.substring(0, 80)));
+    }, 5000);
+
     // Navigate to the template page
-    const response = await page.goto(templateUrl.toString(), {
-      waitUntil: "networkidle0",
-      timeout: 60000,
-    });
+    let response;
+    try {
+      response = await page.goto(templateUrl.toString(), {
+        waitUntil: "networkidle0",
+        timeout: 60000,
+      });
+    } finally {
+      clearInterval(pendingInterval);
+    }
 
     if (!response?.ok()) {
       throw new Error(

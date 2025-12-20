@@ -473,6 +473,84 @@ export async function getArrasDocumentDataAction(
 }
 
 /**
+ * Create ToriPark rental contract - simplified version without signatures
+ */
+export async function createToriParkRentalContractAction(
+  formData: Omit<ArrasContractFormData, "sellerSignature" | "buyerSignature">,
+): Promise<{
+  success: boolean;
+  dealId?: bigint;
+  error?: string;
+}> {
+  try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      throw new Error("Authentication required");
+    }
+    const { db: secureDb } = await getSecureDb();
+
+    // Validate required fields (no signatures required for ToriPark)
+    if (!formData.sellerNif || !formData.buyerNif) {
+      throw new Error("NIF/DNI is required for both parties");
+    }
+
+    if (!formData.sellerAddress || !formData.buyerAddress) {
+      throw new Error("Address is required for both parties");
+    }
+
+    // Get the deal data for reference number
+    const dealData = await getArrasContractData(Number(formData.dealId));
+    if (!dealData) {
+      throw new Error("Deal not found or access denied");
+    }
+
+    console.log(`📂 Creating ToriPark rental contract for deal ${formData.dealId}`);
+
+    // Update deal with rental information (no signatures to upload)
+    await secureDb
+      .update(deals)
+      .set({
+        arrasAmount: formData.arrasAmount.toString(),
+        arrasType: formData.arrasType,
+        arrasSigningDate: formData.signingDate,
+        expectedDeedDate: formData.deedDeadline,
+        specialConditions: formData.specialConditions ?? null,
+        finalPrice: formData.totalPrice.toString(),
+        updatedAt: new Date(),
+      })
+      .where(eq(deals.dealId, formData.dealId));
+
+    console.log(`✅ Deal ${formData.dealId} updated with rental information`);
+
+    // Log the activity
+    try {
+      await logArrasSigned({
+        listingId: dealData.listing.listingId,
+        userId: currentUser.id,
+        dealId: formData.dealId,
+      });
+      console.log("📝 Logged rental contract activity");
+    } catch (logError) {
+      console.error("⚠️ Failed to log rental contract activity:", logError);
+    }
+
+    return {
+      success: true,
+      dealId: formData.dealId,
+    };
+  } catch (error) {
+    console.error("Error creating ToriPark rental contract:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to create rental contract",
+    };
+  }
+}
+
+/**
  * Check if arras contract already exists for a deal
  */
 export async function checkExistingArrasContractAction(

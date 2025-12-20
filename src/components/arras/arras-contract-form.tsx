@@ -7,6 +7,7 @@ import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
 import { Checkbox } from "~/components/ui/checkbox";
+import { Switch } from "~/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -17,8 +18,12 @@ import {
 import { SignaturePad } from "~/components/visits/signature-pad";
 import { ArrasBreadcrumb } from "./arras-breadcrumb";
 import { ShareArrasPdfModal } from "./share-arras-pdf-modal";
+import { ShareToriParkPdfModal } from "./share-toripark-pdf-modal";
 import { toast } from "sonner";
-import { createArrasContractAction } from "~/server/actions/arras";
+import {
+  createArrasContractAction,
+  createToriParkRentalContractAction,
+} from "~/server/actions/arras";
 import { Save, Loader, Eye, Download, Share2, AlertCircle } from "lucide-react";
 import type { ArrasContractPageData, ArrasType, PaymentMethod } from "~/types/arras";
 
@@ -51,6 +56,10 @@ function ToriParkRentalForm({ data }: ArrasContractFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  // Share modal state
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareDocumentUrl, setShareDocumentUrl] = useState<string | null>(null);
 
   // Landlord (Arrendador) - same as seller
   const [landlordName, setLandlordName] = useState(
@@ -103,10 +112,6 @@ function ToriParkRentalForm({ data }: ArrasContractFormProps) {
   });
   const [checkOutTime, setCheckOutTime] = useState("21:00");
 
-  // Signatures
-  const [landlordSignature, setLandlordSignature] = useState<string | null>(null);
-  const [tenantSignature, setTenantSignature] = useState<string | null>(null);
-
   // Validation
   const validationErrors = useMemo(() => {
     const errors: Record<string, string> = {};
@@ -122,15 +127,12 @@ function ToriParkRentalForm({ data }: ArrasContractFormProps) {
     if (!checkInTime) errors.checkInTime = "Hora de entrada requerida";
     if (!checkOutDate) errors.checkOutDate = "Fecha de salida requerida";
     if (!checkOutTime) errors.checkOutTime = "Hora de salida requerida";
-    if (!landlordSignature) errors.landlordSignature = "Firma del arrendador requerida";
-    if (!tenantSignature) errors.tenantSignature = "Firma del arrendatario requerida";
 
     return errors;
   }, [
     landlordName, landlordNif, landlordAddress,
     tenantName, tenantNif, tenantAddress,
     rentalPrice, checkInDate, checkInTime, checkOutDate, checkOutTime,
-    landlordSignature, tenantSignature,
   ]);
 
   const isFormValid = Object.keys(validationErrors).length === 0;
@@ -150,9 +152,8 @@ function ToriParkRentalForm({ data }: ArrasContractFormProps) {
 
     setIsLoading(true);
     try {
-      // For now, use the existing createArrasContractAction
-      // This would need to be updated to handle rental contracts differently
-      const result = await createArrasContractAction({
+      // Use ToriPark-specific action that doesn't require signatures
+      const result = await createToriParkRentalContractAction({
         dealId: data.deal.dealId,
         listingId: data.deal.listingId,
         sellerName: landlordName,
@@ -174,14 +175,64 @@ function ToriParkRentalForm({ data }: ArrasContractFormProps) {
         deedDeadline: new Date(checkOutDate),
         hasFinancingCondition: false,
         specialConditions: `Entrada: ${checkInDate} ${checkInTime} / Salida: ${checkOutDate} ${checkOutTime}`,
-        sellerSignature: landlordSignature!,
-        buyerSignature: tenantSignature!,
         gdprConsent: true,
       });
 
       if (result.success) {
         toast.success("Contrato de alquiler creado correctamente");
-        router.push(`/propiedades/${data.listing.listingId}`);
+
+        // Generate PDF and show share modal
+        try {
+          console.log("📄 [ToriPark] Generating PDF...");
+          const response = await fetch("/api/contrato-arras/generate-pdf", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              dealId: data.deal.dealId.toString(),
+              saveToS3: true,
+              formData: {
+                sellerName: landlordName,
+                sellerNif: landlordNif,
+                sellerAddress: landlordAddress,
+                buyerName: tenantName,
+                buyerNif: tenantNif,
+                buyerAddress: tenantAddress,
+                totalPrice: rentalPrice,
+                arrasAmount: deposit,
+                arrasType: "penitenciales",
+                paymentMethod: "transferencia",
+                signingDate: new Date(),
+                signingLocation: data.property.city ?? "",
+                deedDeadline: new Date(checkOutDate),
+                hasFinancingCondition: false,
+                specialConditions: `Entrada: ${checkInDate} ${checkInTime} / Salida: ${checkOutDate} ${checkOutTime}`,
+                gdprConsent: true,
+              },
+            }),
+          });
+
+          if (response.ok) {
+            const pdfData = (await response.json()) as {
+              success: boolean;
+              documentUrl: string;
+            };
+
+            if (pdfData.success && pdfData.documentUrl) {
+              setShareDocumentUrl(pdfData.documentUrl);
+              setShareModalOpen(true);
+              toast.success("Documento generado. Puedes compartirlo.");
+            } else {
+              router.push(`/propiedades/${data.listing.listingId}`);
+            }
+          } else {
+            toast.info("Contrato guardado, pero no se pudo generar el PDF");
+            router.push(`/propiedades/${data.listing.listingId}`);
+          }
+        } catch (pdfError) {
+          console.error("❌ [ToriPark] PDF generation error:", pdfError);
+          toast.info("Contrato guardado, pero no se pudo generar el PDF");
+          router.push(`/propiedades/${data.listing.listingId}`);
+        }
       } else {
         toast.error(result.error ?? "Error al crear el contrato");
       }
@@ -460,26 +511,6 @@ function ToriParkRentalForm({ data }: ArrasContractFormProps) {
             </div>
           </div>
 
-          {/* Signatures */}
-          <div className="space-y-4 rounded-lg border bg-white p-4 sm:p-5">
-            <h2 className="text-base font-semibold text-gray-900">Firmas</h2>
-            <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
-              <SignaturePad
-                label="Firma del Arrendador"
-                onSignatureChange={setLandlordSignature}
-                required
-              />
-              <SignaturePad
-                label="Firma del Arrendatario"
-                onSignatureChange={setTenantSignature}
-                required
-              />
-            </div>
-            <p className="text-center text-xs text-gray-600">
-              Ambas partes deben firmar para completar el contrato.
-            </p>
-          </div>
-
           {/* Validation Warning */}
           {!isFormValid && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
@@ -568,6 +599,35 @@ function ToriParkRentalForm({ data }: ArrasContractFormProps) {
             </div>
           </div>
         </form>
+
+        {/* Share Modal */}
+        {shareDocumentUrl && (
+          <ShareToriParkPdfModal
+            open={shareModalOpen}
+            onOpenChange={(open) => {
+              setShareModalOpen(open);
+              if (!open) {
+                router.push(`/propiedades/${data.listing.listingId}`);
+              }
+            }}
+            documentUrl={shareDocumentUrl}
+            contractData={{
+              landlordName,
+              landlordPhone,
+              landlordEmail,
+              tenantName,
+              tenantPhone,
+              tenantEmail,
+              propertyAddress: data.property.street ?? "Propiedad",
+              rentalPrice: rentalPrice.toString(),
+              deposit: deposit.toString(),
+              checkInDate,
+              checkInTime,
+              checkOutDate,
+              checkOutTime,
+            }}
+          />
+        )}
       </div>
     </div>
   );

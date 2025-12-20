@@ -164,13 +164,16 @@ export default function ArrasTemplatePage() {
             padding: 0 !important;
           }
 
-          .arras-document {
+          .arras-document,
+          .toripark-document {
             width: 210mm !important;
             min-height: 297mm !important;
             margin: 0 !important;
             box-sizing: border-box !important;
             transform: none !important;
             max-width: none !important;
+            background: white !important;
+            background-image: none !important;
           }
 
           /* Ensure sections don't break awkwardly */
