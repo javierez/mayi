@@ -18,7 +18,7 @@ interface DocumentPageProps {
   }>;
 }
 
-export default async function CertificadoEnergeticoPage({
+export default async function CertificadosPage({
   params,
 }: DocumentPageProps) {
   const unwrappedParams = await params;
@@ -48,7 +48,7 @@ export default async function CertificadoEnergeticoPage({
         street={breadcrumbData.street ?? ""}
         referenceNumber={breadcrumbData.referenceNumber ?? ""}
         documentFolder={{
-          name: "Certificado Energético",
+          name: "Certificados",
           propertyId: headerData.listingId.toString(),
         }}
       />

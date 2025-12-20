@@ -39,7 +39,16 @@ interface DocumentsPageProps {
     street?: string | null;
     city?: string | null;
   };
-  folderType: "documentacion-inicial" | "visitas" | "otros" | "planos";
+  folderType:
+    | "documentacion-inicial"
+    | "documentacion-legal"
+    | "certificados"
+    | "impuestos-pagos"
+    | "contratos"
+    | "hipoteca"
+    | "visitas"
+    | "planos"
+    | "otros";
 }
 
 export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
@@ -54,9 +63,14 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
   // Map folder types for API calls
   const folderTypeMap = {
     "documentacion-inicial": "initial-docs",
+    "documentacion-legal": "legal-docs",
+    certificados: "certificados",
+    "impuestos-pagos": "impuestos-pagos",
+    contratos: "contratos",
+    hipoteca: "hipoteca",
     visitas: "visitas",
-    otros: "others",
     planos: "planos",
+    otros: "others",
   } as const;
 
   const apiFolderType = folderTypeMap[folderType];

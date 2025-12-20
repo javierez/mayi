@@ -999,7 +999,7 @@ export function ActivityTabContent({
             <div>
               <div className="mb-4">
                 <h3 className="mb-1 text-sm font-medium text-gray-900">
-                  Timeline de {acceptedOfferContact.firstName}{" "}
+                  Historial de {acceptedOfferContact.firstName}{" "}
                   {acceptedOfferContact.lastName}
                 </h3>
                 <p className="text-xs text-muted-foreground">

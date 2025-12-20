@@ -30,7 +30,13 @@ export async function POST(
     const file = formData.get("file") as File;
     const folderType = formData.get("folderType") as
       | "initial-docs"
+      | "legal-docs"
+      | "certificados"
+      | "impuestos-pagos"
+      | "contratos"
+      | "hipoteca"
       | "visitas"
+      | "planos"
       | "others"
       | "carteles";
 
@@ -44,7 +50,13 @@ export async function POST(
     // Map folder types to document tags for database storage
     const documentTagMap = {
       "initial-docs": "documentacion-inicial",
+      "legal-docs": "documentacion-legal",
+      certificados: "certificados",
+      "impuestos-pagos": "impuestos-pagos",
+      contratos: "contratos",
+      hipoteca: "hipoteca",
       visitas: "visitas",
+      planos: "planos",
       others: "otros",
       carteles: "carteles",
     };
@@ -106,7 +118,13 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const folderType = searchParams.get("folderType") as
       | "initial-docs"
+      | "legal-docs"
+      | "certificados"
+      | "impuestos-pagos"
+      | "contratos"
+      | "hipoteca"
       | "visitas"
+      | "planos"
       | "others"
       | "carteles"
       | null;
@@ -121,16 +139,35 @@ export async function GET(
     // Map folder types to document tags for database query
     const documentTagMap = {
       "initial-docs": "documentacion-inicial",
+      "legal-docs": "documentacion-legal",
+      certificados: "certificados",
+      "impuestos-pagos": "impuestos-pagos",
+      contratos: "contratos",
+      hipoteca: "hipoteca",
       visitas: "visitas",
+      planos: "planos",
       others: "otros",
       carteles: "carteles",
     };
 
     const documentTag = documentTagMap[folderType];
-    const documents = await getDocumentsByFolderType(
+    let documents = await getDocumentsByFolderType(
       listing.propertyId,
       documentTag,
     );
+
+    // For contratos folder, also fetch arras and alquiler contracts
+    if (folderType === "contratos") {
+      const [arrasContracts, alquilerContracts] = await Promise.all([
+        getDocumentsByFolderType(listing.propertyId, "contrato-arras"),
+        getDocumentsByFolderType(listing.propertyId, "contrato-alquiler"),
+      ]);
+      // Merge and sort by upload date
+      documents = [...documents, ...arrasContracts, ...alquilerContracts].sort(
+        (a, b) =>
+          new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime(),
+      );
+    }
 
     // Convert BigInt values to strings for JSON serialization
     const serializedDocuments = documents.map((doc) => ({

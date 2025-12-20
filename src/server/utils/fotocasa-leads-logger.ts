@@ -116,3 +116,4 @@ export function resetFotocasaLeadsLogger(accountId?: bigint): void {
   currentLogger = new FotocasaLeadsLogger(accountId);
 }
 
+

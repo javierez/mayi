@@ -384,7 +384,18 @@ export async function uploadDocument(
   dealId?: bigint,
   appointmentId?: bigint,
   propertyId?: bigint,
-  folderType?: "initial-docs" | "visitas" | "others" | "carteles",
+  folderType?:
+    | "initial-docs"
+    | "legal-docs"
+    | "certificados"
+    | "impuestos-pagos"
+    | "contratos"
+    | "hipoteca"
+    | "visitas"
+    | "planos"
+    | "others"
+    | "carteles"
+    | "arras",
   documentHash?: string,
   documentTimestamp?: Date,
 ): Promise<Document> {

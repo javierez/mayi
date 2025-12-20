@@ -155,7 +155,18 @@ export async function uploadDocumentToS3(
   referenceNumber: string,
   documentOrder: number,
   documentTag?: string,
-  folderType?: "initial-docs" | "visitas" | "others" | "carteles",
+  folderType?:
+    | "initial-docs"
+    | "legal-docs"
+    | "certificados"
+    | "impuestos-pagos"
+    | "contratos"
+    | "hipoteca"
+    | "visitas"
+    | "planos"
+    | "others"
+    | "carteles"
+    | "arras",
 ): Promise<{
   fileUrl: string;
   s3key: string;

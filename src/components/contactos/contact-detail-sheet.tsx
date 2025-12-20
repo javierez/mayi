@@ -37,6 +37,7 @@ import {
   reactivateListingContactAction,
   updateOfferStatusAction,
   addOfferToListingContactAction,
+  generateArrasContractAction,
 } from "~/server/actions/listing-contacts";
 import { OfferComparisonCard } from "~/components/offer-comparison-card";
 import { ListingContactComments } from "~/components/contactos/listing-contact-comments";
@@ -182,6 +183,7 @@ export function ContactDetailSheet({
     listingId?: bigint;
     appointmentType?: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje";
   }>({});
+  const [isGeneratingArras, setIsGeneratingArras] = useState(false);
 
   // Fetch comments when sheet opens
   useEffect(() => {
@@ -445,7 +447,7 @@ export function ContactDetailSheet({
       if (result.success) {
         const message =
           accepted === null
-            ? "Decisión revocada correctamente"
+            ? "Oferta cancelada correctamente"
             : accepted
               ? "Oferta aceptada correctamente"
               : "Oferta rechazada";
@@ -516,6 +518,62 @@ export function ContactDetailSheet({
       toast.error("Error al registrar la oferta");
     } finally {
       setIsSubmittingOffer(false);
+    }
+  };
+
+  // Handle generating arras contract
+  const handleGenerateArrasContract = async (options: {
+    reactivateFirst?: boolean;
+    autoCompleteVisit?: boolean;
+  }) => {
+    if (
+      !confirm(
+        "Se establecerá la oferta al precio del inmueble y se aceptará automáticamente. ¿Deseas continuar?",
+      )
+    ) {
+      return;
+    }
+
+    setIsGeneratingArras(true);
+
+    try {
+      // Parse listing price from string to number
+      const parsedPrice = parseFloat(listingPrice.replace(/[^0-9.-]+/g, ""));
+
+      if (isNaN(parsedPrice) || parsedPrice <= 0) {
+        toast.error("Precio del inmueble inválido");
+        return;
+      }
+
+      const result = await generateArrasContractAction(
+        contact.listingContactId,
+        listingId,
+        contact.contact.contactId,
+        parsedPrice,
+        {
+          reactivateFirst: options.reactivateFirst,
+          autoCompleteVisit: options.autoCompleteVisit,
+          appointmentId: options.autoCompleteVisit
+            ? contact.upcomingAppointmentId
+            : undefined,
+        },
+      );
+
+      if (result.success && result.dealId) {
+        toast.success("Contrato de arras generado correctamente");
+        navigateToPage(
+          `/propiedades/${listingId}/contrato-arras/${result.dealId}`,
+          router,
+        );
+        onClose();
+      } else {
+        toast.error(result.error ?? "Error al generar el contrato de arras");
+      }
+    } catch (error) {
+      console.error("Error generating arras contract:", error);
+      toast.error("Error al generar el contrato de arras");
+    } finally {
+      setIsGeneratingArras(false);
     }
   };
 
@@ -683,22 +741,40 @@ export function ContactDetailSheet({
                   </p>
                 </div>
                 {permissions.canEditContacts && (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="h-10 w-full sm:h-9"
-                    onClick={() => {
-                      void handleReactivateContact();
-                    }}
-                    disabled={isReactivating}
-                  >
-                    {isReactivating ? (
-                      <Loader className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Check className="mr-2 h-4 w-4" />
-                    )}
-                    Reactivar Contacto
-                  </Button>
+                  <>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="h-10 w-full sm:h-9"
+                      onClick={() => {
+                        void handleReactivateContact();
+                      }}
+                      disabled={isReactivating}
+                    >
+                      {isReactivating ? (
+                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Check className="mr-2 h-4 w-4" />
+                      )}
+                      Reactivar Contacto
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-10 w-full sm:h-9"
+                      onClick={() => {
+                        void handleGenerateArrasContract({ reactivateFirst: true });
+                      }}
+                      disabled={isGeneratingArras}
+                    >
+                      {isGeneratingArras ? (
+                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <FileText className="mr-2 h-4 w-4" />
+                      )}
+                      Reactivar y Generar Contrato Arras
+                    </Button>
+                  </>
                 )}
               </div>
             )}
@@ -730,6 +806,24 @@ export function ContactDetailSheet({
                   >
                     <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
                     <span className="truncate">Registrar Visita</span>
+                  </Button>
+                )}
+                {permissions.canEditContacts && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
+                    onClick={() => {
+                      void handleGenerateArrasContract({ autoCompleteVisit: true });
+                    }}
+                    disabled={isGeneratingArras}
+                  >
+                    {isGeneratingArras ? (
+                      <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <FileText className="mr-2 h-4 w-4 shrink-0" />
+                    )}
+                    <span className="truncate">Generar Contrato Arras</span>
                   </Button>
                 )}
                 {!contact.hasOffer && permissions.canEditContacts && (
@@ -800,7 +894,7 @@ export function ContactDetailSheet({
                       onClick={() => {
                         if (
                           confirm(
-                            "¿Estás seguro de que deseas revocar la aceptación de esta oferta?",
+                            "¿Estás seguro de que deseas cancelar esta oferta?",
                           )
                         ) {
                           void handleUpdateOfferStatus(null);
@@ -813,7 +907,7 @@ export function ContactDetailSheet({
                       ) : (
                         <X className="mr-2 h-4 w-4 shrink-0" />
                       )}
-                      <span className="truncate">Revocar Decisión</span>
+                      <span className="truncate">Cancelar oferta</span>
                     </Button>
                   </div>
                 )}
@@ -851,7 +945,7 @@ export function ContactDetailSheet({
                         onClick={() => {
                           if (
                             confirm(
-                              "¿Estás seguro de que deseas revocar el rechazo de esta oferta?",
+                              "¿Estás seguro de que deseas cancelar esta oferta?",
                             )
                           ) {
                             void handleUpdateOfferStatus(null);
@@ -864,7 +958,7 @@ export function ContactDetailSheet({
                         ) : (
                           <X className="mr-2 h-4 w-4 shrink-0" />
                         )}
-                        <span className="truncate">Revocar Decisión</span>
+                        <span className="truncate">Cancelar oferta</span>
                       </Button>
                       <Button
                         variant="ghost"
@@ -900,22 +994,40 @@ export function ContactDetailSheet({
                   <span className="truncate">Añadir visita</span>
                 </Button>
                 {permissions.canEditContacts && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-10 w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700 sm:h-9"
-                    onClick={() => {
-                      void handleDeactivateContact();
-                    }}
-                    disabled={isDeactivating}
-                  >
-                    {isDeactivating ? (
-                      <Loader className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <UserX className="mr-2 h-4 w-4 shrink-0" />
-                    )}
-                    <span className="truncate">Dar de baja</span>
-                  </Button>
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
+                      onClick={() => {
+                        void handleGenerateArrasContract({});
+                      }}
+                      disabled={isGeneratingArras}
+                    >
+                      {isGeneratingArras ? (
+                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <FileText className="mr-2 h-4 w-4 shrink-0" />
+                      )}
+                      <span className="truncate">Generar Contrato Arras</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-10 w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700 sm:h-9"
+                      onClick={() => {
+                        void handleDeactivateContact();
+                      }}
+                      disabled={isDeactivating}
+                    >
+                      {isDeactivating ? (
+                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <UserX className="mr-2 h-4 w-4 shrink-0" />
+                      )}
+                      <span className="truncate">Dar de baja</span>
+                    </Button>
+                  </>
                 )}
               </div>
             )}
@@ -961,6 +1073,24 @@ export function ContactDetailSheet({
                   <Button
                     variant="ghost"
                     size="sm"
+                    className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
+                    onClick={() => {
+                      void handleGenerateArrasContract({});
+                    }}
+                    disabled={isGeneratingArras}
+                  >
+                    {isGeneratingArras ? (
+                      <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <FileText className="mr-2 h-4 w-4 shrink-0" />
+                    )}
+                    <span className="truncate">Generar Contrato Arras</span>
+                  </Button>
+                )}
+                {permissions.canEditContacts && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="h-10 w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700 sm:h-9"
                     onClick={() => {
                       void handleDeactivateContact();
@@ -995,6 +1125,22 @@ export function ContactDetailSheet({
                     <Button
                       variant="ghost"
                       size="sm"
+                      className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
+                      onClick={() => {
+                        void handleGenerateArrasContract({});
+                      }}
+                      disabled={isGeneratingArras}
+                    >
+                      {isGeneratingArras ? (
+                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <FileText className="mr-2 h-4 w-4 shrink-0" />
+                      )}
+                      <span className="truncate">Generar Contrato Arras</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="h-10 w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700 sm:h-9"
                       onClick={() => {
                         void handleDeactivateContact();
@@ -1025,22 +1171,40 @@ export function ContactDetailSheet({
                   <span className="truncate">Añadir visita</span>
                 </Button>
                 {permissions.canEditContacts && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-10 w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700 sm:h-9"
-                    onClick={() => {
-                      void handleDeactivateContact();
-                    }}
-                    disabled={isDeactivating}
-                  >
-                    {isDeactivating ? (
-                      <Loader className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <UserX className="mr-2 h-4 w-4 shrink-0" />
-                    )}
-                    <span className="truncate">Dar de baja</span>
-                  </Button>
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-10 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 sm:h-9"
+                      onClick={() => {
+                        void handleGenerateArrasContract({});
+                      }}
+                      disabled={isGeneratingArras}
+                    >
+                      {isGeneratingArras ? (
+                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <FileText className="mr-2 h-4 w-4 shrink-0" />
+                      )}
+                      <span className="truncate">Generar Contrato Arras</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-10 w-full justify-start text-red-600 hover:bg-red-50 hover:text-red-700 sm:h-9"
+                      onClick={() => {
+                        void handleDeactivateContact();
+                      }}
+                      disabled={isDeactivating}
+                    >
+                      {isDeactivating ? (
+                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <UserX className="mr-2 h-4 w-4 shrink-0" />
+                      )}
+                      <span className="truncate">Dar de baja</span>
+                    </Button>
+                  </>
                 )}
               </div>
             )}

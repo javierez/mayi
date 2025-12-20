@@ -332,7 +332,7 @@ export async function POST(request: NextRequest) {
           contractData.property.propertyId
             ? BigInt(contractData.property.propertyId)
             : undefined,
-          "others", // folderType
+          "arras", // folderType
           documentHash,
           documentTimestamp,
         );

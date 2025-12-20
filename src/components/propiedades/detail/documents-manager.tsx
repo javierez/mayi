@@ -34,12 +34,48 @@ export function DocumentsManager({
 }: DocumentsManagerProps) {
   const router = useRouter();
 
-  // Folder configurations - these would be fetched from API in a real implementation
+  // Folder configurations for compraventa documentation
   const folders: Folder[] = [
     {
       id: "documentacion-inicial",
       name: "Inicial",
-      description: "Hoja de encargo, valoración.",
+      description: "Hoja de encargo, valoración, DNI/NIE propietario.",
+      documents: [],
+    },
+    {
+      id: "documentacion-legal",
+      name: "Documentación Legal",
+      description: "Escritura, Nota Simple, Catastro.",
+      documents: [],
+    },
+    {
+      id: "certificados",
+      name: "Certificados",
+      description: "CEE, Cédula habitabilidad, ITE, Comunidad.",
+      documents: [],
+    },
+    {
+      id: "impuestos-pagos",
+      name: "Impuestos y Pagos",
+      description: "IBI, ITP, Plusvalía Municipal.",
+      documents: [],
+    },
+    {
+      id: "contratos",
+      name: "Contratos",
+      description: "Arras, Escritura de compraventa.",
+      documents: [],
+    },
+    {
+      id: "hipoteca",
+      name: "Hipoteca",
+      description: "Deuda pendiente, cancelación registral.",
+      documents: [],
+    },
+    {
+      id: "planos",
+      name: "Planos",
+      description: "Planos de la propiedad.",
       documents: [],
     },
     {
@@ -49,21 +85,9 @@ export function DocumentsManager({
       documents: [],
     },
     {
-      id: "planos",
-      name: "Planos",
-      description: "Planos de la propiedad",
-      documents: [],
-    },
-    {
-      id: "certificado-energetico",
-      name: "Certificado Energético",
-      description: "Certificado y consumos",
-      documents: [],
-    },
-    {
       id: "otros",
       name: "Otros",
-      description: "Otros documentos",
+      description: "Otros documentos.",
       documents: [],
     },
   ];
@@ -78,7 +102,7 @@ export function DocumentsManager({
       {/* Folders grid */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {folders.map((folder) => {
-          const isEnergyFolder = folder.id === "certificado-energetico";
+          const isCertificatesFolder = folder.id === "certificados";
           return (
             <Card
               key={folder.id}
@@ -99,7 +123,7 @@ export function DocumentsManager({
                     </p>
                   </div>
                 </div>
-                {isEnergyFolder && (
+                {isCertificatesFolder && (
                   <ZapIcon className="absolute right-2 top-2 h-3.5 w-3.5 fill-current text-green-600 opacity-60" />
                 )}
               </CardContent>
