@@ -23,7 +23,12 @@ import { toast } from "sonner";
 import {
   createArrasContractAction,
   createToriParkRentalContractAction,
+  updateContactFieldsFromArrasAction,
 } from "~/server/actions/arras";
+import {
+  ConfirmChangesModal,
+  type FieldChange,
+} from "./confirm-changes-modal";
 import { Save, Loader, Eye, Download, Share2, AlertCircle } from "lucide-react";
 import type { ArrasContractPageData, ArrasType, PaymentMethod } from "~/types/arras";
 
@@ -138,21 +143,146 @@ function ToriParkRentalForm({ data }: ArrasContractFormProps) {
   const isFormValid = Object.keys(validationErrors).length === 0;
   const errorCount = Object.keys(validationErrors).length;
 
-  const handleBack = () => {
-    router.push(`/propiedades/${data.listing.listingId}`);
-  };
+  // Confirm changes modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingChanges, setPendingChanges] = useState<FieldChange[]>([]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Track original values for change detection (name excluded)
+  const originalValues = useMemo(
+    () => ({
+      landlord: data.seller
+        ? {
+            contactId: data.seller.contactId,
+            nif: data.seller.nif ?? "",
+            address: [
+              data.seller.address,
+              data.seller.postalCode,
+              data.seller.city,
+            ]
+              .filter(Boolean)
+              .join(", "),
+            phone: data.seller.phone ?? "",
+            email: data.seller.email ?? "",
+          }
+        : null,
+      tenant: {
+        contactId: data.buyer.contactId,
+        nif: data.buyer.nif ?? "",
+        address: [data.buyer.address, data.buyer.postalCode, data.buyer.city]
+          .filter(Boolean)
+          .join(", "),
+        phone: data.buyer.phone ?? "",
+        email: data.buyer.email ?? "",
+      },
+    }),
+    [data],
+  );
 
-    if (!isFormValid) {
-      toast.error(`Faltan ${errorCount} campos obligatorios`);
-      return;
+  // Detect changes: newlyFilled vs modified
+  const detectChanges = useMemo(() => {
+    const newlyFilled: FieldChange[] = [];
+    const modified: FieldChange[] = [];
+
+    const checkField = (
+      contactType: "seller" | "buyer",
+      contactId: bigint | undefined,
+      field: "nif" | "address" | "phone" | "email",
+      label: string,
+      original: string,
+      current: string,
+    ) => {
+      if (!contactId) return;
+      const trimmedOriginal = original.trim();
+      const trimmedCurrent = current.trim();
+
+      if (!trimmedOriginal && trimmedCurrent) {
+        newlyFilled.push({
+          field,
+          label,
+          originalValue: trimmedOriginal,
+          newValue: trimmedCurrent,
+          contactType,
+          contactId,
+        });
+      } else if (trimmedOriginal && trimmedCurrent !== trimmedOriginal) {
+        modified.push({
+          field,
+          label,
+          originalValue: trimmedOriginal,
+          newValue: trimmedCurrent,
+          contactType,
+          contactId,
+        });
+      }
+    };
+
+    // Check landlord fields (if landlord exists)
+    if (originalValues.landlord) {
+      checkField("seller", originalValues.landlord.contactId, "nif", "NIF Arrendador", originalValues.landlord.nif, landlordNif);
+      checkField("seller", originalValues.landlord.contactId, "address", "Dirección Arrendador", originalValues.landlord.address, landlordAddress);
+      checkField("seller", originalValues.landlord.contactId, "phone", "Teléfono Arrendador", originalValues.landlord.phone, landlordPhone);
+      checkField("seller", originalValues.landlord.contactId, "email", "Email Arrendador", originalValues.landlord.email, landlordEmail);
     }
 
+    // Check tenant fields
+    checkField("buyer", originalValues.tenant.contactId, "nif", "NIF Arrendatario", originalValues.tenant.nif, tenantNif);
+    checkField("buyer", originalValues.tenant.contactId, "address", "Dirección Arrendatario", originalValues.tenant.address, tenantAddress);
+    checkField("buyer", originalValues.tenant.contactId, "phone", "Teléfono Arrendatario", originalValues.tenant.phone, tenantPhone);
+    checkField("buyer", originalValues.tenant.contactId, "email", "Email Arrendatario", originalValues.tenant.email, tenantEmail);
+
+    return { newlyFilled, modified };
+  }, [
+    originalValues,
+    landlordNif, landlordAddress, landlordPhone, landlordEmail,
+    tenantNif, tenantAddress, tenantPhone, tenantEmail,
+  ]);
+
+  // Helper function to save contact changes and submit
+  const saveContactChangesAndSubmit = async (changesToSave: FieldChange[]) => {
     setIsLoading(true);
+
     try {
-      // Use ToriPark-specific action that doesn't require signatures
+      // STEP 1: Update contacts with changed fields
+      if (changesToSave.length > 0) {
+        const landlordChanges = changesToSave.filter((c) => c.contactType === "seller");
+        const tenantChanges = changesToSave.filter((c) => c.contactType === "buyer");
+
+        const updates: Array<{
+          contactId: string;
+          fields: Partial<{ nif: string; address: string; phone: string; email: string }>;
+        }> = [];
+
+        if (landlordChanges.length > 0 && originalValues.landlord) {
+          const fields: Partial<{ nif: string; address: string; phone: string; email: string }> = {};
+          for (const change of landlordChanges) {
+            fields[change.field] = change.newValue;
+          }
+          updates.push({
+            contactId: originalValues.landlord.contactId.toString(),
+            fields,
+          });
+        }
+
+        if (tenantChanges.length > 0) {
+          const fields: Partial<{ nif: string; address: string; phone: string; email: string }> = {};
+          for (const change of tenantChanges) {
+            fields[change.field] = change.newValue;
+          }
+          updates.push({
+            contactId: originalValues.tenant.contactId.toString(),
+            fields,
+          });
+        }
+
+        if (updates.length > 0) {
+          const updateResult = await updateContactFieldsFromArrasAction({ updates });
+          if (updateResult.success && updateResult.updatedCount > 0) {
+            toast.success("Datos actualizados en la ficha del contacto");
+          }
+        }
+      }
+
+      // STEP 2: Create the rental contract
       const result = await createToriParkRentalContractAction({
         dealId: data.deal.dealId,
         listingId: data.deal.listingId,
@@ -183,7 +313,6 @@ function ToriParkRentalForm({ data }: ArrasContractFormProps) {
 
         // Generate PDF and show share modal
         try {
-          console.log("📄 [ToriPark] Generating PDF...");
           const response = await fetch("/api/contrato-arras/generate-pdf", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -229,7 +358,7 @@ function ToriParkRentalForm({ data }: ArrasContractFormProps) {
             router.push(`/propiedades/${data.listing.listingId}`);
           }
         } catch (pdfError) {
-          console.error("❌ [ToriPark] PDF generation error:", pdfError);
+          console.error("PDF generation error:", pdfError);
           toast.info("Contrato guardado, pero no se pudo generar el PDF");
           router.push(`/propiedades/${data.listing.listingId}`);
         }
@@ -242,6 +371,38 @@ function ToriParkRentalForm({ data }: ArrasContractFormProps) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Handler for confirming changes in the modal
+  const handleConfirmChanges = async () => {
+    setShowConfirmModal(false);
+    const allChanges = [...detectChanges.newlyFilled, ...pendingChanges];
+    await saveContactChangesAndSubmit(allChanges);
+  };
+
+  const handleBack = () => {
+    router.push(`/propiedades/${data.listing.listingId}`);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!isFormValid) {
+      toast.error(`Faltan ${errorCount} campos obligatorios`);
+      return;
+    }
+
+    const { newlyFilled, modified } = detectChanges;
+
+    // If there are modified fields (existing values changed), show confirmation modal
+    if (modified.length > 0) {
+      setPendingChanges(modified);
+      setShowConfirmModal(true);
+      return;
+    }
+
+    // No modified fields - proceed directly with saving (including newlyFilled)
+    await saveContactChangesAndSubmit(newlyFilled);
   };
 
   const handleGeneratePdf = async () => {
@@ -600,6 +761,15 @@ function ToriParkRentalForm({ data }: ArrasContractFormProps) {
           </div>
         </form>
 
+        {/* Confirm Changes Modal */}
+        <ConfirmChangesModal
+          open={showConfirmModal}
+          onOpenChange={setShowConfirmModal}
+          changes={pendingChanges}
+          onConfirm={handleConfirmChanges}
+          isLoading={isLoading}
+        />
+
         {/* Share Modal */}
         {shareDocumentUrl && (
           <ShareToriParkPdfModal
@@ -731,6 +901,162 @@ function StandardArrasContractForm({ data }: ArrasContractFormProps) {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [shareDocumentUrl, setShareDocumentUrl] = useState<string | null>(null);
 
+  // Confirm changes modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingChanges, setPendingChanges] = useState<FieldChange[]>([]);
+
+  // Track original values for change detection (name excluded per user decision)
+  const originalValues = useMemo(
+    () => ({
+      seller: data.seller
+        ? {
+            contactId: data.seller.contactId,
+            nif: data.seller.nif ?? "",
+            address: [
+              data.seller.address,
+              data.seller.postalCode,
+              data.seller.city,
+            ]
+              .filter(Boolean)
+              .join(", "),
+            phone: data.seller.phone ?? "",
+            email: data.seller.email ?? "",
+          }
+        : null,
+      buyer: {
+        contactId: data.buyer.contactId,
+        nif: data.buyer.nif ?? "",
+        address: [data.buyer.address, data.buyer.postalCode, data.buyer.city]
+          .filter(Boolean)
+          .join(", "),
+        phone: data.buyer.phone ?? "",
+        email: data.buyer.email ?? "",
+      },
+    }),
+    [data],
+  );
+
+  // Detect changes: newlyFilled (empty -> filled) vs modified (changed existing value)
+  const detectChanges = useMemo(() => {
+    const newlyFilled: FieldChange[] = [];
+    const modified: FieldChange[] = [];
+
+    const checkField = (
+      contactType: "seller" | "buyer",
+      contactId: bigint | undefined,
+      field: "nif" | "address" | "phone" | "email",
+      label: string,
+      original: string,
+      current: string,
+    ) => {
+      if (!contactId) return;
+      const trimmedOriginal = original.trim();
+      const trimmedCurrent = current.trim();
+
+      if (!trimmedOriginal && trimmedCurrent) {
+        newlyFilled.push({
+          field,
+          label,
+          originalValue: trimmedOriginal,
+          newValue: trimmedCurrent,
+          contactType,
+          contactId,
+        });
+      } else if (trimmedOriginal && trimmedCurrent !== trimmedOriginal) {
+        modified.push({
+          field,
+          label,
+          originalValue: trimmedOriginal,
+          newValue: trimmedCurrent,
+          contactType,
+          contactId,
+        });
+      }
+    };
+
+    // Check seller fields (if seller exists)
+    if (originalValues.seller) {
+      checkField(
+        "seller",
+        originalValues.seller.contactId,
+        "nif",
+        "NIF Vendedor",
+        originalValues.seller.nif,
+        sellerNif,
+      );
+      checkField(
+        "seller",
+        originalValues.seller.contactId,
+        "address",
+        "Dirección Vendedor",
+        originalValues.seller.address,
+        sellerAddress,
+      );
+      checkField(
+        "seller",
+        originalValues.seller.contactId,
+        "phone",
+        "Teléfono Vendedor",
+        originalValues.seller.phone,
+        sellerPhone,
+      );
+      checkField(
+        "seller",
+        originalValues.seller.contactId,
+        "email",
+        "Email Vendedor",
+        originalValues.seller.email,
+        sellerEmail,
+      );
+    }
+
+    // Check buyer fields
+    checkField(
+      "buyer",
+      originalValues.buyer.contactId,
+      "nif",
+      "NIF Comprador",
+      originalValues.buyer.nif,
+      buyerNif,
+    );
+    checkField(
+      "buyer",
+      originalValues.buyer.contactId,
+      "address",
+      "Dirección Comprador",
+      originalValues.buyer.address,
+      buyerAddress,
+    );
+    checkField(
+      "buyer",
+      originalValues.buyer.contactId,
+      "phone",
+      "Teléfono Comprador",
+      originalValues.buyer.phone,
+      buyerPhone,
+    );
+    checkField(
+      "buyer",
+      originalValues.buyer.contactId,
+      "email",
+      "Email Comprador",
+      originalValues.buyer.email,
+      buyerEmail,
+    );
+
+    return { newlyFilled, modified };
+  }, [
+    originalValues,
+    sellerNif,
+    sellerAddress,
+    sellerPhone,
+    sellerEmail,
+    buyerNif,
+    buyerAddress,
+    buyerPhone,
+    buyerEmail,
+  ]);
+
   // Validation logic for full form (including signatures)
   const validationErrors = useMemo((): ValidationErrors => {
     const errors: ValidationErrors = {};
@@ -860,24 +1186,58 @@ function StandardArrasContractForm({ data }: ArrasContractFormProps) {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    console.log("📝 [ArrasContract] Submit initiated", {
-      dealId: data.deal.dealId.toString(),
-      isFormValid,
-      errorCount,
-    });
-
-    if (!isFormValid) {
-      logValidationErrors();
-      return;
-    }
-
+  // Helper function to save contact changes and submit the contract
+  const saveContactChangesAndSubmit = async (
+    changesToSave: FieldChange[],
+  ) => {
     setIsLoading(true);
 
     try {
-      console.log("📤 [ArrasContract] Calling createArrasContractAction...");
+      // ========================================
+      // STEP 1: Update contacts with changed fields (BEFORE creating contract)
+      // ========================================
+      if (changesToSave.length > 0) {
+        const sellerChanges = changesToSave.filter((c) => c.contactType === "seller");
+        const buyerChanges = changesToSave.filter((c) => c.contactType === "buyer");
+
+        const updates: Array<{
+          contactId: string;
+          fields: Partial<{ nif: string; address: string; phone: string; email: string }>;
+        }> = [];
+
+        if (sellerChanges.length > 0 && originalValues.seller) {
+          const fields: Partial<{ nif: string; address: string; phone: string; email: string }> = {};
+          for (const change of sellerChanges) {
+            fields[change.field] = change.newValue;
+          }
+          updates.push({
+            contactId: originalValues.seller.contactId.toString(),
+            fields,
+          });
+        }
+
+        if (buyerChanges.length > 0) {
+          const fields: Partial<{ nif: string; address: string; phone: string; email: string }> = {};
+          for (const change of buyerChanges) {
+            fields[change.field] = change.newValue;
+          }
+          updates.push({
+            contactId: originalValues.buyer.contactId.toString(),
+            fields,
+          });
+        }
+
+        if (updates.length > 0) {
+          const updateResult = await updateContactFieldsFromArrasAction({ updates });
+          if (updateResult.success && updateResult.updatedCount > 0) {
+            toast.success("Datos actualizados en la ficha del contacto");
+          }
+        }
+      }
+
+      // ========================================
+      // STEP 2: Create the arras contract
+      // ========================================
       const result = await createArrasContractAction({
         dealId: data.deal.dealId,
         listingId: data.deal.listingId,
@@ -902,8 +1262,8 @@ function StandardArrasContractForm({ data }: ArrasContractFormProps) {
         hasFinancingCondition,
         financingDeadline: financingDeadline ? new Date(financingDeadline) : undefined,
         specialConditions: specialConditions ?? undefined,
-        sellerSignature: sellerSignature!, // Validated in isFormValid
-        buyerSignature: buyerSignature!, // Validated in isFormValid
+        sellerSignature: sellerSignature!,
+        buyerSignature: buyerSignature!,
         gdprConsent,
       });
 
@@ -961,6 +1321,35 @@ function StandardArrasContractForm({ data }: ArrasContractFormProps) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Handler for confirming changes in the modal
+  const handleConfirmChanges = async () => {
+    setShowConfirmModal(false);
+    // Combine all pending changes (modified) with newly filled
+    const allChanges = [...detectChanges.newlyFilled, ...pendingChanges];
+    await saveContactChangesAndSubmit(allChanges);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!isFormValid) {
+      logValidationErrors();
+      return;
+    }
+
+    const { newlyFilled, modified } = detectChanges;
+
+    // If there are modified fields (existing values changed), show confirmation modal
+    if (modified.length > 0) {
+      setPendingChanges(modified);
+      setShowConfirmModal(true);
+      return;
+    }
+
+    // No modified fields - proceed directly with saving (including newlyFilled)
+    await saveContactChangesAndSubmit(newlyFilled);
   };
 
   const handleBack = () => {
@@ -1588,6 +1977,15 @@ function StandardArrasContractForm({ data }: ArrasContractFormProps) {
             </div>
           </div>
         </form>
+
+        {/* Confirm Changes Modal */}
+        <ConfirmChangesModal
+          open={showConfirmModal}
+          onOpenChange={setShowConfirmModal}
+          changes={pendingChanges}
+          onConfirm={handleConfirmChanges}
+          isLoading={isLoading}
+        />
 
         {/* Share Modal */}
         {shareDocumentUrl && (

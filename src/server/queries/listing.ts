@@ -1816,13 +1816,6 @@ export async function getAccountWebsite(accountId: number) {
 // Get detailed listing information including all related data
 // This query is optimized for the property characteristics form
 export async function getListingDetails(listingId: number, accountId: number) {
-  console.log("🔍 getListingDetails called with:", {
-    listingId,
-    listingIdType: typeof listingId,
-    listingIdBigInt: BigInt(listingId),
-    accountId,
-  });
-
   try {
     const query = db
       .select({
@@ -2144,34 +2137,12 @@ export async function getListingDetails(listingId: number, accountId: number) {
       );
 
     // Log the SQL query for debugging
-    console.log("📝 SQL Query:", query.toSQL());
-
     const [listingDetails] = await query;
 
     if (!listingDetails) {
       throw new Error("Listing not found");
     }
 
-    console.log("📊 Raw query result - deal fields:", {
-      dealId: listingDetails.dealId,
-      dealIdType: typeof listingDetails.dealId,
-      dealStatus: listingDetails.dealStatus,
-      dealArrasDate: listingDetails.dealArrasDate,
-      dealActualDeedDate: listingDetails.dealActualDeedDate,
-      dealCloseDate: listingDetails.dealCloseDate,
-      listingIdFromResult: listingDetails.listingId,
-      listingIdFromResultType: typeof listingDetails.listingId,
-      allDealFields: {
-        dealId: listingDetails.dealId,
-        dealStatus: listingDetails.dealStatus,
-        dealArrasDate: listingDetails.dealArrasDate,
-        dealArrasSigningDate: listingDetails.dealArrasSigningDate,
-        dealExpectedDeedDate: listingDetails.dealExpectedDeedDate,
-        dealActualDeedDate: listingDetails.dealActualDeedDate,
-        dealCloseDate: listingDetails.dealCloseDate,
-        dealKeyHandoverDate: listingDetails.dealKeyHandoverDate,
-      },
-    });
 
     // Fetch owners for this listing
     const owners = await getCurrentListingOwners(listingId, accountId);

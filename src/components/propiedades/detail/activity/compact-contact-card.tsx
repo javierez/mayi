@@ -91,6 +91,80 @@ export function CompactContactCard({
     }
   };
 
+  // Determine single badge based on priority (sales funnel order)
+  const getBadgeInfo = (): {
+    text: string;
+    className: string;
+    isClickable: boolean;
+  } => {
+    // 1. Offer accepted (deal closing - highest priority)
+    if (offerAccepted === true) {
+      return {
+        text: "Oferta aceptada",
+        className: "bg-green-100 text-green-800",
+        isClickable: false,
+      };
+    }
+    // 2. Offer rejected
+    if (offerAccepted === false) {
+      return {
+        text: "Oferta rechazada",
+        className: "bg-rose-100 text-rose-800",
+        isClickable: false,
+      };
+    }
+    // 3. Pending offer (needs decision)
+    if (hasOffer) {
+      return {
+        text: "Oferta pendiente",
+        className: "bg-amber-100 text-amber-800",
+        isClickable: false,
+      };
+    }
+    // 4. Upcoming visit scheduled
+    if (hasUpcomingVisit) {
+      return {
+        text: "Visita pendiente",
+        className: "bg-blue-100 text-blue-800",
+        isClickable: false,
+      };
+    }
+    // 5. Missed visit (needs rescheduling)
+    if (hasMissedVisit && !hasCancelledVisit) {
+      return {
+        text: "Visita perdida",
+        className:
+          "cursor-pointer border-2 border-dashed border-amber-400 bg-white text-amber-700 transition-colors hover:border-amber-500 hover:bg-amber-50",
+        isClickable: true,
+      };
+    }
+    // 6. Cancelled visit (needs rescheduling)
+    if (hasCancelledVisit) {
+      return {
+        text: "Visita cancelada",
+        className:
+          "cursor-pointer border-2 border-dashed border-orange-400 bg-white text-orange-700 transition-colors hover:border-orange-500 hover:bg-orange-50",
+        isClickable: true,
+      };
+    }
+    // 7. Completed visit without offer
+    if (hasCompletedVisit) {
+      return {
+        text: "Visita completada",
+        className: "bg-gray-100 text-gray-700",
+        isClickable: false,
+      };
+    }
+    // 8. No visits at all
+    return {
+      text: "Sin visitas",
+      className: "bg-gray-100 text-gray-700",
+      isClickable: true,
+    };
+  };
+
+  const badgeInfo = getBadgeInfo();
+
   return (
     <div
       onClick={handleCardClick}
@@ -217,102 +291,14 @@ export function CompactContactCard({
 
       {/* Badge - Top right */}
       <div className="absolute right-2 top-2">
-        {/* Visit status badge */}
         <span
-          onClick={
-            (!hasUpcomingVisit &&
-              !hasMissedVisit &&
-              !hasCompletedVisit &&
-              !hasCancelledVisit &&
-              !hasOffer &&
-              offerAccepted === null) ||
-            (hasMissedVisit &&
-              !hasUpcomingVisit &&
-              !hasOffer &&
-              offerAccepted === null) ||
-            (hasCancelledVisit &&
-              !hasUpcomingVisit &&
-              !hasOffer &&
-              offerAccepted === null)
-              ? handleCreateVisit
-              : undefined
-          }
+          onClick={badgeInfo.isClickable ? handleCreateVisit : undefined}
           className={cn(
             "inline-flex h-5 min-w-[120px] items-center justify-center gap-1 rounded-full px-2 py-0 text-xs font-medium",
-            // Visita pendiente - upcoming visit scheduled (highest priority)
-            hasUpcomingVisit && "bg-blue-100 text-blue-800",
-            // Oferta aceptada - offer accepted (deal closing!)
-            offerAccepted === true && "bg-green-100 text-green-800",
-            // Oferta rechazada - offer rejected
-            offerAccepted === false && "bg-rose-100 text-rose-800",
-            // Oferta pendiente - has pending offer (needs decision)
-            hasOffer &&
-              !hasUpcomingVisit &&
-              offerAccepted === null &&
-              "bg-amber-100 text-amber-800",
-            // Visita cancelada - has cancelled visit, clickable to reschedule
-            hasCancelledVisit &&
-              !hasUpcomingVisit &&
-              !hasOffer &&
-              offerAccepted === null &&
-              "cursor-pointer border-2 border-dashed border-orange-400 bg-white text-orange-700 transition-colors hover:border-orange-500 hover:bg-orange-50",
-            // Visita perdida - missed visit, clickable to reschedule
-            hasMissedVisit &&
-              !hasUpcomingVisit &&
-              !hasCancelledVisit &&
-              !hasOffer &&
-              offerAccepted === null &&
-              "cursor-pointer border-2 border-dashed border-amber-400 bg-white text-amber-700 transition-colors hover:border-amber-500 hover:bg-amber-50",
-            // Visita completada - completed visit without offer yet
-            hasCompletedVisit &&
-              !hasOffer &&
-              !hasUpcomingVisit &&
-              !hasMissedVisit &&
-              !hasCancelledVisit &&
-              offerAccepted === null &&
-              "bg-gray-100 text-gray-700",
-            // Sin visitas - no visits at all and no offer
-            !hasUpcomingVisit &&
-              !hasMissedVisit &&
-              !hasCompletedVisit &&
-              !hasCancelledVisit &&
-              !hasOffer &&
-              offerAccepted === null &&
-              "bg-gray-100 text-gray-700",
+            badgeInfo.className,
           )}
         >
-          {hasUpcomingVisit && "Visita pendiente"}
-          {offerAccepted === true && "Oferta aceptada"}
-          {offerAccepted === false && "Oferta rechazada"}
-          {hasOffer &&
-            !hasUpcomingVisit &&
-            offerAccepted === null &&
-            "Oferta pendiente"}
-          {hasCancelledVisit &&
-            !hasUpcomingVisit &&
-            !hasOffer &&
-            offerAccepted === null &&
-            "Visita cancelada"}
-          {hasMissedVisit &&
-            !hasUpcomingVisit &&
-            !hasCancelledVisit &&
-            !hasOffer &&
-            offerAccepted === null &&
-            "Visita perdida"}
-          {hasCompletedVisit &&
-            !hasOffer &&
-            !hasUpcomingVisit &&
-            !hasMissedVisit &&
-            !hasCancelledVisit &&
-            offerAccepted === null &&
-            "Visita completada"}
-          {!hasUpcomingVisit &&
-            !hasMissedVisit &&
-            !hasCompletedVisit &&
-            !hasCancelledVisit &&
-            !hasOffer &&
-            offerAccepted === null &&
-            "Sin visitas"}
+          {badgeInfo.text}
         </span>
       </div>
     </div>

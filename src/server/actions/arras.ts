@@ -8,6 +8,7 @@ import {
   checkExistingArrasContract,
   getArrasSignatures,
 } from "~/server/queries/arras";
+import { updateContactWithAuth } from "~/server/queries/contact";
 import { uploadDocument } from "~/app/actions/upload";
 import { logArrasSigned } from "~/server/queries/log-activity";
 import type {
@@ -627,6 +628,63 @@ export async function getDealIdAction(
       success: false,
       error:
         error instanceof Error ? error.message : "Failed to get deal ID",
+    };
+  }
+}
+
+/**
+ * Update contact fields from arras contract form
+ * Used to save newly filled or modified contact data back to the contacts table
+ */
+export async function updateContactFieldsFromArrasAction(input: {
+  updates: Array<{
+    contactId: string;
+    fields: Partial<{
+      nif: string;
+      address: string;
+      phone: string;
+      email: string;
+    }>;
+  }>;
+}): Promise<{
+  success: boolean;
+  updatedCount: number;
+  error?: string;
+}> {
+  try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      throw new Error("Authentication required");
+    }
+
+    let updatedCount = 0;
+
+    for (const update of input.updates) {
+      if (Object.keys(update.fields).length === 0) {
+        continue;
+      }
+
+      try {
+        await updateContactWithAuth(Number(update.contactId), update.fields);
+        updatedCount++;
+      } catch (updateError) {
+        console.error(`Failed to update contact ${update.contactId}:`, updateError);
+      }
+    }
+
+    return {
+      success: true,
+      updatedCount,
+    };
+  } catch (error) {
+    console.error("Error updating contact fields from arras:", error);
+    return {
+      success: false,
+      updatedCount: 0,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to update contact fields",
     };
   }
 }

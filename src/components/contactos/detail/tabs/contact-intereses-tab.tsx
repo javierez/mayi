@@ -2,13 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import {
-  AppointmentCard,
-  type AppointmentData,
-} from "~/components/appointments/appointment-card";
+import { type AppointmentData } from "~/components/appointments/appointment-card";
 import { CompactPropertyCard } from "~/components/propiedades/compact-property-card";
-import { EmptyState } from "~/components/propiedades/detail/activity/empty-states";
-import { ExpandableSection } from "~/components/propiedades/detail/activity/expandable-section";
+import { AppointmentTimeline } from "~/components/appointment-timeline";
 import { getContactVisitsSummaryAsBuyer } from "~/server/queries/activity";
 import {
   canEditCalendar,
@@ -29,9 +25,27 @@ import { AppointmentDetailSheet } from "~/components/appointments/appointment-de
 import { Card } from "~/components/ui/card";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { Button } from "~/components/ui/button";
-import { Home, Plus } from "lucide-react";
+import { Input } from "~/components/ui/input";
+import {
+  Home,
+  Plus,
+  ThumbsUp,
+  ThumbsDown,
+  CalendarPlus,
+  FileText,
+  X,
+  Loader,
+  Check,
+} from "lucide-react";
 import type { ContactVisitWithDetails } from "~/types/activity";
 import { cn } from "~/lib/utils";
+import { OfferComparisonCard } from "~/components/offer-comparison-card";
+import {
+  updateOfferStatusAction,
+  addOfferToListingContactAction,
+} from "~/server/actions/listing-contacts";
+import { getDealIdAction } from "~/server/actions/arras";
+import { navigateToPage } from "~/lib/navigation";
 
 interface ContactInteresesTabProps {
   contactId: bigint;
@@ -73,6 +87,10 @@ export function ContactInteresesTab({ contactId }: ContactInteresesTabProps) {
     listingId: bigint;
     address: string;
   } | null>(null);
+
+  // Offer operation states - track per listing
+  const [updatingOfferListingId, setUpdatingOfferListingId] = useState<string | null>(null);
+  const [submittingOfferListingId, setSubmittingOfferListingId] = useState<string | null>(null);
 
   // Fetch permissions
   useEffect(() => {
@@ -208,6 +226,105 @@ export function ContactInteresesTab({ contactId }: ContactInteresesTabProps) {
     }
   };
 
+  // Handle updating offer status (accept/reject/cancel)
+  const handleUpdateOfferStatus = async (
+    listingContactId: bigint,
+    listingId: bigint,
+    accepted: boolean | null,
+  ) => {
+    const listingIdStr = listingId.toString();
+    setUpdatingOfferListingId(listingIdStr);
+
+    try {
+      const result = await updateOfferStatusAction(
+        listingContactId,
+        accepted,
+        listingId,
+        contactId,
+      );
+
+      if (result.success) {
+        const message =
+          accepted === null
+            ? "Oferta cancelada correctamente"
+            : accepted
+              ? "Oferta aceptada correctamente"
+              : "Oferta rechazada";
+        toast.success(message);
+
+        // Update local state
+        setInteresesListings((prev) =>
+          prev.map((listing) =>
+            listing.listingId?.toString() === listingIdStr
+              ? { ...listing, offerAccepted: accepted }
+              : listing,
+          ) as unknown as PropertyListing[],
+        );
+      } else {
+        toast.error(result.error ?? "Error al actualizar el estado de la oferta");
+      }
+    } catch (error) {
+      console.error("Error updating offer status:", error);
+      toast.error("Error al actualizar el estado de la oferta");
+    } finally {
+      setUpdatingOfferListingId(null);
+    }
+  };
+
+  // Handle adding an offer
+  const handleAddOffer = async (
+    listingContactId: bigint,
+    listingId: bigint,
+    amount: number,
+  ) => {
+    const listingIdStr = listingId.toString();
+    setSubmittingOfferListingId(listingIdStr);
+
+    try {
+      const result = await addOfferToListingContactAction(
+        listingContactId,
+        amount,
+        listingId,
+        contactId,
+      );
+
+      if (result.success) {
+        toast.success("Oferta registrada correctamente");
+
+        // Update local state
+        setInteresesListings((prev) =>
+          prev.map((listing) =>
+            listing.listingId?.toString() === listingIdStr
+              ? { ...listing, offer: amount, offerAccepted: null }
+              : listing,
+          ) as unknown as PropertyListing[],
+        );
+      } else {
+        toast.error(result.error ?? "Error al registrar la oferta");
+      }
+    } catch (error) {
+      console.error("Error adding offer:", error);
+      toast.error("Error al registrar la oferta");
+    } finally {
+      setSubmittingOfferListingId(null);
+    }
+  };
+
+  // Handle navigating to arras contract
+  const handleNavigateToArrasContract = async (listingId: bigint, listingContactId: bigint) => {
+    try {
+      const result = await getDealIdAction(Number(listingId), Number(listingContactId));
+      if (result.success && result.dealId) {
+        navigateToPage(`/propiedades/${listingId}/contrato-arras/${result.dealId}`, router);
+      } else {
+        toast.error(result.error ?? "No se pudo obtener el deal");
+      }
+    } catch (error) {
+      console.error("Error getting deal ID:", error);
+      toast.error("Error al obtener el contrato");
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -264,6 +381,12 @@ export function ContactInteresesTab({ contactId }: ContactInteresesTabProps) {
         const isExpanded = expandedListings[listingIdStr] ?? false;
         const isActive = (listing as Record<string, unknown>).listingContactIsActive ?? true;
 
+        // Extract offer information
+        const offer = (listing as Record<string, unknown>).offer as number | null | undefined;
+        const offerAccepted = (listing as Record<string, unknown>).offerAccepted as boolean | null | undefined;
+        const hasOffer = offer != null && offer > 0;
+        const listingPrice = listing.price?.toString() ?? "0";
+
         // Convert PropertyListing to CompactPropertyCard props
         const listingForCard = {
           listingId,
@@ -309,14 +432,33 @@ export function ContactInteresesTab({ contactId }: ContactInteresesTabProps) {
               onDeactivate={handleDeactivateInterest}
             />
 
-            {/* Expanded Content - Grouped Visit Cards */}
-            {isExpanded && (
+            {/* Expanded Content - Offer Info + Action Buttons + Grouped Visit Cards */}
+            {isExpanded && listingContactId && (
               <VisitsContent
                 listingVisits={listingVisits}
                 listingId={listingId}
+                listingContactId={listingContactId}
                 onAppointmentClick={setSelectedAppointment}
                 onScheduleVisit={() => handleScheduleVisitForListing(listingId)}
                 canEditCalendar={hasEditCalendarPermission}
+                canEditContacts={hasEditContactsPermission}
+                // Offer props
+                offer={offer ?? null}
+                offerAccepted={offerAccepted ?? null}
+                hasOffer={hasOffer}
+                listingPrice={listingPrice}
+                // Offer handlers
+                onUpdateOfferStatus={(accepted) =>
+                  handleUpdateOfferStatus(listingContactId, listingId, accepted)
+                }
+                onAddOffer={(amount) => handleAddOffer(listingContactId, listingId, amount)}
+                onNavigateToArras={() => handleNavigateToArrasContract(listingId, listingContactId)}
+                onScheduleFirma={() => {
+                  setCreateAppointmentListingId(listingId);
+                  setIsCreateAppointmentModalOpen(true);
+                }}
+                isUpdatingOffer={updatingOfferListingId === listingIdStr}
+                isSubmittingOffer={submittingOfferListingId === listingIdStr}
               />
             )}
           </Card>
@@ -381,177 +523,300 @@ export function ContactInteresesTab({ contactId }: ContactInteresesTabProps) {
   );
 }
 
-// Sub-component for visits content
+// Offer input mini component
+function OfferInputCard({
+  label,
+  onSubmit,
+  isSubmitting,
+}: {
+  label: string;
+  onSubmit: (amount: number) => Promise<void>;
+  isSubmitting: boolean;
+}) {
+  const [inputValue, setInputValue] = useState("");
+  const [rawValue, setRawValue] = useState<number>(0);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency: "EUR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const numericValue = e.target.value.replace(/\D/g, "");
+    const numberValue = numericValue === "" ? 0 : parseInt(numericValue, 10);
+    setRawValue(numberValue);
+    if (numericValue === "") {
+      setInputValue("");
+    } else {
+      setInputValue(formatCurrency(numberValue));
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (rawValue <= 0) {
+      toast.error("Por favor, ingresa una oferta válida");
+      return;
+    }
+    await onSubmit(rawValue);
+    setInputValue("");
+    setRawValue(0);
+  };
+
+  return (
+    <div className="space-y-2">
+      <h4 className="text-sm font-semibold text-gray-900">{label}</h4>
+      <div className="flex items-center gap-2">
+        <Input
+          type="text"
+          placeholder="0 €"
+          value={inputValue}
+          onChange={handleInputChange}
+          disabled={isSubmitting}
+          className="h-9 min-w-0 flex-1 border-gray-200 bg-white"
+        />
+        <Button
+          size="sm"
+          onClick={handleSubmit}
+          disabled={isSubmitting || rawValue <= 0}
+          className="h-9 w-9 shrink-0 p-0"
+        >
+          {isSubmitting ? (
+            <Loader className="h-4 w-4 animate-spin" />
+          ) : (
+            <Check className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Sub-component for visits content with offer info and actions
 function VisitsContent({
   listingVisits,
-  listingId,
-  onAppointmentClick,
+  listingId: _listingId,
+  listingContactId: _listingContactId,
+  onAppointmentClick: _onAppointmentClick,
   onScheduleVisit,
   canEditCalendar,
+  canEditContacts,
+  // Offer props
+  offer,
+  offerAccepted,
+  hasOffer,
+  listingPrice,
+  // Offer handlers
+  onUpdateOfferStatus,
+  onAddOffer,
+  onNavigateToArras,
+  onScheduleFirma,
+  isUpdatingOffer,
+  isSubmittingOffer,
 }: {
   listingVisits: ContactVisitWithDetails[];
   listingId: bigint;
+  listingContactId: bigint;
   onAppointmentClick: (appointment: AppointmentData) => void;
   onScheduleVisit: () => void;
   canEditCalendar: boolean;
+  canEditContacts: boolean;
+  // Offer props
+  offer: number | null;
+  offerAccepted: boolean | null;
+  hasOffer: boolean;
+  listingPrice: string;
+  // Offer handlers
+  onUpdateOfferStatus: (accepted: boolean | null) => Promise<void>;
+  onAddOffer: (amount: number) => Promise<void>;
+  onNavigateToArras: () => Promise<void>;
+  onScheduleFirma: () => void;
+  isUpdatingOffer: boolean;
+  isSubmittingOffer: boolean;
 }) {
-  const urgentVisits = listingVisits
-    .filter((v) => v.status === "NoShow" || v.status === "Rescheduled")
-    .sort((a, b) => new Date(b.datetimeStart).getTime() - new Date(a.datetimeStart).getTime());
+  // Sort visits: most recent first
+  const sortedVisits = [...listingVisits].sort(
+    (a, b) => new Date(b.datetimeStart).getTime() - new Date(a.datetimeStart).getTime(),
+  );
 
-  const activeVisits = listingVisits
-    .filter((v) => v.status === "Scheduled")
-    .sort((a, b) => new Date(a.datetimeStart).getTime() - new Date(b.datetimeStart).getTime());
-
-  const completedVisits = listingVisits
-    .filter((v) => v.status === "Completed")
-    .sort((a, b) => new Date(b.datetimeStart).getTime() - new Date(a.datetimeStart).getTime());
-
-  const cancelledVisits = listingVisits
-    .filter((v) => v.status === "Cancelled")
-    .sort((a, b) => new Date(b.datetimeStart).getTime() - new Date(a.datetimeStart).getTime());
-
-  const mapToAppointmentData = (visit: ContactVisitWithDetails): AppointmentData => ({
+  // Convert to timeline format
+  const timelineAppointments = sortedVisits.map((visit) => ({
     appointmentId: visit.appointmentId,
-    type: visit.type ?? "",
-    status: (visit.status ?? "Completed") as
-      | "Completed"
-      | "Scheduled"
-      | "Cancelled"
-      | "Rescheduled"
-      | "NoShow",
+    type: visit.type,
+    status: visit.status,
     datetimeStart: visit.datetimeStart,
     datetimeEnd: visit.datetimeEnd,
-    tripTimeMinutes: visit.tripTimeMinutes ?? undefined,
-    notes: visit.notes ?? undefined,
-    contactId: visit.contactId ?? undefined,
-    contactName: `${visit.contactFirstName ?? ""} ${visit.contactLastName ?? ""}`.trim(),
-    propertyAddress: undefined,
-    agentName: visit.agentName ?? undefined,
-    isOptimistic: false,
-  });
+    notes: visit.notes,
+  }));
 
-  if (listingVisits.length === 0) {
-    return (
-      <div className="space-y-4 border-t border-gray-200 bg-gray-50 p-4">
-        {/* Add Visit Button */}
-        {canEditCalendar && (
-          <div className="flex justify-end">
-            <Button
-              onClick={onScheduleVisit}
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Añadir visita
-            </Button>
-          </div>
-        )}
-        <EmptyState type="completed-visits" />
-      </div>
-    );
-  }
+  // Render offer section based on state
+  const renderOfferSection = () => {
+    // Offer Accepted - show comparison + action buttons
+    if (offerAccepted === true && offer) {
+      return (
+        <div className="space-y-3">
+          <OfferComparisonCard offer={offer} listingPrice={listingPrice} />
+          {canEditContacts && (
+            <div className="space-y-2 border-t pt-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                onClick={onScheduleFirma}
+              >
+                <CalendarPlus className="mr-2 h-4 w-4" />
+                Programar Firma
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                onClick={() => void onNavigateToArras()}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Generar Contrato Arras
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                onClick={() => {
+                  if (confirm("¿Estás seguro de que deseas cancelar esta oferta?")) {
+                    void onUpdateOfferStatus(null);
+                  }
+                }}
+                disabled={isUpdatingOffer}
+              >
+                {isUpdatingOffer ? (
+                  <Loader className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <X className="mr-2 h-4 w-4" />
+                )}
+                Cancelar oferta
+              </Button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Offer Rejected - show comparison + new offer input + cancel
+    if (offerAccepted === false && offer) {
+      return (
+        <div className="space-y-3">
+          <OfferComparisonCard offer={offer} listingPrice={listingPrice} />
+          {canEditContacts && (
+            <div className="space-y-3 border-t pt-3">
+              <OfferInputCard
+                label="Nueva Oferta"
+                onSubmit={onAddOffer}
+                isSubmitting={isSubmittingOffer}
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                onClick={() => {
+                  if (confirm("¿Estás seguro de que deseas cancelar esta oferta?")) {
+                    void onUpdateOfferStatus(null);
+                  }
+                }}
+                disabled={isUpdatingOffer}
+              >
+                {isUpdatingOffer ? (
+                  <Loader className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <X className="mr-2 h-4 w-4" />
+                )}
+                Cancelar oferta
+              </Button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Offer Pending (not accepted/rejected) - show comparison + accept/reject buttons
+    if (hasOffer && offer) {
+      return (
+        <div className="space-y-3">
+          <OfferComparisonCard offer={offer} listingPrice={listingPrice} />
+          {canEditContacts && (
+            <div className="flex items-center gap-2 border-t pt-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 min-w-0 flex-1 justify-center gap-2 text-gray-700 shadow-sm transition-all hover:bg-gray-100 hover:text-gray-900 hover:shadow-md"
+                onClick={() => void onUpdateOfferStatus(true)}
+                disabled={isUpdatingOffer}
+              >
+                {isUpdatingOffer ? (
+                  <Loader className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ThumbsUp className="h-4 w-4" />
+                )}
+                Aceptar
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 min-w-0 flex-1 justify-center gap-2 text-gray-700 shadow-sm transition-all hover:bg-gray-100 hover:text-gray-900 hover:shadow-md"
+                onClick={() => void onUpdateOfferStatus(false)}
+                disabled={isUpdatingOffer}
+              >
+                {isUpdatingOffer ? (
+                  <Loader className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ThumbsDown className="h-4 w-4" />
+                )}
+                Rechazar
+              </Button>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // No offer - show offer input
+    if (canEditContacts) {
+      return (
+        <OfferInputCard
+          label="Registrar Oferta"
+          onSubmit={onAddOffer}
+          isSubmitting={isSubmittingOffer}
+        />
+      );
+    }
+
+    return null;
+  };
 
   return (
     <div className="space-y-4 border-t border-gray-200 bg-gray-50 p-4">
-      {/* Add Visit Button */}
-      {canEditCalendar && (
-        <div className="flex justify-end">
+      {/* Offer Section */}
+      {renderOfferSection()}
+
+      {/* Historial header with Add Visit Button */}
+      <div className="flex items-center justify-between border-t border-gray-200 pt-4">
+        <h4 className="text-sm font-semibold text-gray-900">Historial de Visitas</h4>
+        {canEditCalendar && (
           <Button
             onClick={onScheduleVisit}
-            variant="outline"
+            variant="ghost"
             size="sm"
-            className="gap-2"
+            className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-gray-900"
           >
-            <Plus className="h-4 w-4" />
-            Añadir visita
+            <Plus className="h-3.5 w-3.5" />
+            Añadir
           </Button>
-        </div>
-      )}
-
-      <div className="space-y-6">
-        {urgentVisits.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 px-1">
-              <div className="h-2 w-2 rounded-full bg-rose-500" />
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-rose-700">
-                Requieren Atención ({urgentVisits.length})
-              </h3>
-            </div>
-            <div className="space-y-3 pl-4">
-              {urgentVisits.map((visit) => (
-                <AppointmentCard
-                  key={visit.appointmentId.toString()}
-                  appointment={mapToAppointmentData(visit)}
-                  onClick={onAppointmentClick}
-                  navigateToVisit={false}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeVisits.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 px-1">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-emerald-700">
-                Próximas Visitas ({activeVisits.length})
-              </h3>
-            </div>
-            <div className="space-y-3">
-              {activeVisits.map((visit) => (
-                <AppointmentCard
-                  key={visit.appointmentId.toString()}
-                  appointment={mapToAppointmentData(visit)}
-                  onClick={onAppointmentClick}
-                  navigateToVisit={false}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {completedVisits.length > 0 && (
-          <ExpandableSection
-            title="Completadas"
-            count={completedVisits.length}
-            defaultExpanded={false}
-            storageKey={`contact-intereses-completed-${listingId}`}
-          >
-            <div className="space-y-3">
-              {completedVisits.map((visit) => (
-                <AppointmentCard
-                  key={visit.appointmentId.toString()}
-                  appointment={mapToAppointmentData(visit)}
-                  onClick={onAppointmentClick}
-                  navigateToVisit={false}
-                />
-              ))}
-            </div>
-          </ExpandableSection>
-        )}
-
-        {cancelledVisits.length > 0 && (
-          <ExpandableSection
-            title="Canceladas"
-            count={cancelledVisits.length}
-            defaultExpanded={false}
-            storageKey={`contact-intereses-cancelled-${listingId}`}
-          >
-            <div className="space-y-3">
-              {cancelledVisits.map((visit) => (
-                <AppointmentCard
-                  key={visit.appointmentId.toString()}
-                  appointment={mapToAppointmentData(visit)}
-                  onClick={onAppointmentClick}
-                  navigateToVisit={false}
-                />
-              ))}
-            </div>
-          </ExpandableSection>
         )}
       </div>
+
+      {/* Visit History Timeline */}
+      <AppointmentTimeline appointments={timelineAppointments} />
     </div>
   );
 }

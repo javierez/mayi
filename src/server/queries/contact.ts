@@ -1580,6 +1580,8 @@ export async function getBuyerListings(contactId: number, accountId: number) {
         // Listing contact fields
         listingContactId: listingContacts.listingContactId,
         listingContactIsActive: listingContacts.isActive,
+        offer: listingContacts.offer,
+        offerAccepted: listingContacts.offerAccepted,
 
         // Property fields
         referenceNumber: properties.referenceNumber,

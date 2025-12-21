@@ -100,9 +100,10 @@ export function AppointmentTimeline({
               className={`rounded-lg border bg-white p-3 shadow-sm transition-all hover:shadow-md ${isLast ? "" : "mb-6"}`}
             >
               <div className="space-y-2">
-                {/* Date and time */}
+                {/* Type + Date and status */}
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-gray-900">
+                    {appointment.type ?? "Cita"} el{" "}
                     {format(appointment.datetimeStart, "d 'de' MMMM, yyyy", {
                       locale: es,
                     })}
@@ -112,17 +113,11 @@ export function AppointmentTimeline({
                   </Badge>
                 </div>
 
+                {/* Time */}
                 <div className="text-xs text-muted-foreground">
                   {format(appointment.datetimeStart, "HH:mm", { locale: es })} -{" "}
                   {format(appointment.datetimeEnd, "HH:mm", { locale: es })}
                 </div>
-
-                {/* Appointment type */}
-                {appointment.type && (
-                  <div className="text-sm font-medium text-gray-700">
-                    {appointment.type}
-                  </div>
-                )}
 
                 {/* Notes preview */}
                 {appointment.notes && (

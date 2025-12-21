@@ -19,6 +19,7 @@ import {
   countDistinct,
   desc,
   inArray,
+  notInArray,
   gte,
   lte,
   between,
@@ -303,6 +304,7 @@ export async function getActiveDealForListing(
         and(
           eq(deals.listingId, BigInt(listingId)),
           eq(properties.accountId, BigInt(accountId)),
+          notInArray(deals.status, ["Lost", "Closed"]),
         ),
       )
       .orderBy(desc(deals.createdAt))
@@ -313,6 +315,124 @@ export async function getActiveDealForListing(
     console.error("Error fetching active deal for listing:", error);
     throw error;
   }
+}
+
+// Get ALL active deals for a listing (for contract selection)
+export async function getActiveDealsForListing(
+  listingId: number,
+  accountId: number,
+) {
+  try {
+    const activeDeals = await db
+      .select({
+        dealId: deals.dealId,
+        listingId: deals.listingId,
+        listingContactId: deals.listingContactId,
+        status: deals.status,
+        arrasSigningDate: deals.arrasSigningDate,
+        // Buyer info
+        buyerFirstName: contacts.firstName,
+        buyerLastName: contacts.lastName,
+        // Offer amount from listing_contacts
+        offer: listingContacts.offer,
+      })
+      .from(deals)
+      .innerJoin(listings, eq(deals.listingId, listings.listingId))
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(
+        listingContacts,
+        eq(deals.listingContactId, listingContacts.listingContactId),
+      )
+      .leftJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .where(
+        and(
+          eq(deals.listingId, BigInt(listingId)),
+          eq(properties.accountId, BigInt(accountId)),
+          notInArray(deals.status, ["Lost", "Closed"]),
+        ),
+      )
+      .orderBy(desc(deals.createdAt));
+
+    return activeDeals;
+  } catch (error) {
+    console.error("Error fetching active deals for listing:", error);
+    throw error;
+  }
+}
+
+export async function getActiveDealsForListingWithAuth(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return getActiveDealsForListing(listingId, accountId);
+}
+
+// Get active listing_contacts that DON'T have a deal yet (for contract generation)
+export async function getListingContactsWithoutDeals(
+  listingId: number,
+  accountId: number,
+) {
+  try {
+    // Get all listingContactIds that already have deals (not Lost/Closed)
+    const existingDealContactIds = await db
+      .select({ listingContactId: deals.listingContactId })
+      .from(deals)
+      .innerJoin(listings, eq(deals.listingId, listings.listingId))
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(
+        and(
+          eq(deals.listingId, BigInt(listingId)),
+          eq(properties.accountId, BigInt(accountId)),
+          notInArray(deals.status, ["Lost", "Closed"]),
+        ),
+      );
+
+    const dealContactIds = existingDealContactIds
+      .map((d) => d.listingContactId)
+      .filter((id): id is bigint => id !== null);
+
+    // Get active listing_contacts that are not owners and don't have deals
+    const contactsWithoutDeals = await db
+      .select({
+        listingContactId: listingContacts.listingContactId,
+        listingId: listingContacts.listingId,
+        contactId: listingContacts.contactId,
+        contactType: listingContacts.contactType,
+        offer: listingContacts.offer,
+        offerAccepted: listingContacts.offerAccepted,
+        // Contact info
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+      })
+      .from(listingContacts)
+      .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
+      .where(
+        and(
+          eq(listingContacts.listingId, BigInt(listingId)),
+          eq(listingContacts.isActive, true),
+          eq(contacts.accountId, BigInt(accountId)),
+          // Exclude owners - they are sellers, not buyers
+          or(
+            eq(listingContacts.contactType, "buyer"),
+            eq(listingContacts.contactType, "lead"),
+            eq(listingContacts.contactType, "interested"),
+          ),
+          // Exclude contacts that already have active deals
+          dealContactIds.length > 0
+            ? notInArray(listingContacts.listingContactId, dealContactIds)
+            : undefined,
+        ),
+      )
+      .orderBy(desc(listingContacts.createdAt));
+
+    return contactsWithoutDeals;
+  } catch (error) {
+    console.error("Error fetching listing contacts without deals:", error);
+    throw error;
+  }
+}
+
+export async function getListingContactsWithoutDealsWithAuth(listingId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return getListingContactsWithoutDeals(listingId, accountId);
 }
 
 // List all deals (with pagination)

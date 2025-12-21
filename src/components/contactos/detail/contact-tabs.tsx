@@ -96,7 +96,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
     { value: "tareas", label: "Tareas" },
     ...(showPropiedades ? [{ value: "propiedades", label: "Propiedades" }] : []),
     ...(showIntereses ? [{ value: "intereses", label: "Intereses" }] : []),
-    ...(showSolicitudes ? [{ value: "solicitudes", label: "Solicitudes" }] : []),
+    ...(showSolicitudes ? [{ value: "solicitudes", label: "Búsquedas" }] : []),
     ...(showActividad ? [{ value: "actividad", label: "Actividad" }] : []),
     ...(showArchivos ? [{ value: "archivos", label: "Archivos" }] : []),
   ];
