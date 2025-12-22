@@ -76,6 +76,14 @@ interface UnifiedCommentItemProps {
 }
 
 /**
+ * Truncate text to max length with ellipsis
+ */
+function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength - 1) + "…";
+}
+
+/**
  * Source badge component for displaying the origin of a comment
  */
 function SourceBadge({ comment, hideListingBadge }: { comment: UnifiedComment; hideListingBadge?: boolean }) {
@@ -86,18 +94,29 @@ function SourceBadge({ comment, hideListingBadge }: { comment: UnifiedComment; h
       const appointmentLabel = comment.appointmentMeta
         ? `${comment.appointmentMeta.type ?? "Cita"} - ${format(comment.appointmentMeta.datetimeStart, "d MMM yyyy", { locale: es })}`
         : "Cita";
+      const hasListingInfo = comment.appointmentMeta?.propertyAddress;
+      const listingAddress = hasListingInfo ? truncateText(comment.appointmentMeta!.propertyAddress!, 30) : null;
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-400">
-          <Calendar className="h-3 w-3" />
-          {appointmentLabel}
-        </span>
+        <div className="flex flex-wrap items-center gap-1">
+          <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-400">
+            <Calendar className="h-3 w-3" />
+            {appointmentLabel}
+          </span>
+          {!hideListingBadge && listingAddress && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-500" title={comment.appointmentMeta!.propertyAddress!}>
+              <Home className="h-3 w-3" />
+              {listingAddress}
+            </span>
+          )}
+        </div>
       );
     case "listing_contact":
       // No badge when already in listing context
       if (hideListingBadge) return null;
-      const listingLabel = comment.listingContactMeta?.propertyAddress ?? "Propiedad";
+      const fullLabel = comment.listingContactMeta?.propertyAddress ?? "Propiedad";
+      const listingLabel = truncateText(fullLabel, 30);
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-500">
+        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-500" title={fullLabel}>
           <Home className="h-3 w-3" />
           {listingLabel}
         </span>
