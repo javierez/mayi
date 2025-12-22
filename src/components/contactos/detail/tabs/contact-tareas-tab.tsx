@@ -5,20 +5,28 @@ import { toast } from "sonner";
 import { ContactTareas } from "../contact-tareas";
 import { ContactComments } from "../contact-comments";
 import { useSession } from "~/lib/auth-client";
-import type { UserCommentWithUser } from "~/types/user-comments";
+import type { UnifiedComment, CommentSource } from "~/types/unified-comments";
 import {
   updateContactTaskWithAuth,
   deleteContactTaskWithAuth,
 } from "~/server/queries/task";
-import {
-  getUserCommentsByContactIdWithAuth,
-  getContactTasksWithAuth,
-} from "~/server/queries/user-comments";
+import { getContactTasksWithAuth } from "~/server/queries/user-comments";
+import { getAllContactCommentsWithAuth } from "~/server/queries/unified-comments";
 import {
   createUserCommentAction,
   updateUserCommentAction,
   deleteUserCommentAction,
 } from "~/server/actions/user-comments";
+import {
+  createAppointmentCommentAction,
+  updateAppointmentCommentAction,
+  deleteAppointmentCommentAction,
+} from "~/server/actions/appointment-comments";
+import {
+  createListingContactCommentAction,
+  updateListingContactCommentAction,
+  deleteListingContactCommentAction,
+} from "~/server/actions/listing-contact-comments";
 
 // Task interface matching what ContactTareas expects
 interface Task {
@@ -51,10 +59,8 @@ interface ContactTareasTabProps {
 export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
   const { data: session } = useSession();
 
-  // State for contact comments
-  const [contactComments, setContactComments] = useState<UserCommentWithUser[]>(
-    [],
-  );
+  // State for unified comments (from all sources)
+  const [contactComments, setContactComments] = useState<UnifiedComment[]>([]);
   const [, setIsLoadingComments] = useState(false);
 
   // State for tasks
@@ -132,23 +138,44 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
     );
   };
 
-  // Comment update functions
-  const handleAddComment = async (tempComment: UserCommentWithUser) => {
+  // Unified comment handler - routes to correct action based on source
+  const handleAddComment = async (tempComment: UnifiedComment) => {
     // Add comment optimistically
     setContactComments((prev) => [tempComment, ...prev]);
 
-    // Return result of server action
+    // Route to correct action based on source
     try {
-      const result = await createUserCommentAction({
-        contactId: tempComment.contactId,
-        content: tempComment.content,
-        parentId: tempComment.parentId,
-      });
+      let result: { success: boolean; error?: string };
+
+      switch (tempComment.source) {
+        case "contact":
+          result = await createUserCommentAction({
+            contactId: tempComment.contactId!,
+            content: tempComment.content,
+            parentId: tempComment.parentId,
+          });
+          break;
+        case "appointment":
+          result = await createAppointmentCommentAction({
+            appointmentId: tempComment.appointmentId!,
+            content: tempComment.content,
+            parentId: tempComment.parentId,
+          });
+          break;
+        case "listing_contact":
+          result = await createListingContactCommentAction({
+            listingContactId: tempComment.listingContactId!,
+            content: tempComment.content,
+            parentId: tempComment.parentId,
+          });
+          break;
+        default:
+          result = { success: false, error: "Unknown comment source" };
+      }
 
       if (result.success) {
-        // Refetch comments to get server data
-        const freshComments =
-          await getUserCommentsByContactIdWithAuth(contactId);
+        // Refetch all comments to get server data
+        const freshComments = await getAllContactCommentsWithAuth(contactId);
         setContactComments(freshComments);
       }
 
@@ -162,12 +189,17 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
     }
   };
 
-  const handleEditComment = async (commentId: bigint, content: string) => {
-    // Find original comment
+  // Unified edit handler - routes to correct action based on source
+  const handleEditComment = async (
+    commentId: bigint,
+    content: string,
+    source: CommentSource,
+  ) => {
+    // Find original comment for potential revert
     const findCommentById = (
-      comments: UserCommentWithUser[],
+      comments: UnifiedComment[],
       id: bigint,
-    ): UserCommentWithUser | null => {
+    ): UnifiedComment | null => {
       for (const comment of comments) {
         if (comment.commentId === id) return comment;
         const replyFound = findCommentById(comment.replies, id);
@@ -180,9 +212,7 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
     if (!originalComment) return { success: false, error: "Comment not found" };
 
     // Optimistic update
-    const updateComment = (
-      comments: UserCommentWithUser[],
-    ): UserCommentWithUser[] => {
+    const updateComment = (comments: UnifiedComment[]): UnifiedComment[] => {
       return comments.map((comment) => {
         if (comment.commentId === commentId) {
           return { ...comment, content };
@@ -197,10 +227,30 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
     setContactComments((prev) => updateComment(prev));
 
     try {
-      const result = await updateUserCommentAction({
-        commentId,
-        content,
-      });
+      let result: { success: boolean; error?: string };
+
+      switch (source) {
+        case "contact":
+          result = await updateUserCommentAction({
+            commentId,
+            content,
+          });
+          break;
+        case "appointment":
+          result = await updateAppointmentCommentAction({
+            commentId,
+            content,
+          });
+          break;
+        case "listing_contact":
+          result = await updateListingContactCommentAction({
+            commentId,
+            content,
+          });
+          break;
+        default:
+          result = { success: false, error: "Unknown comment source" };
+      }
 
       if (!result.success) {
         // Revert on failure
@@ -243,14 +293,13 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
     }
   };
 
-  const handleDeleteComment = async (commentId: bigint) => {
+  // Unified delete handler - routes to correct action based on source
+  const handleDeleteComment = async (commentId: bigint, source: CommentSource) => {
     // Store original state for revert
     const previousComments = contactComments;
 
     // Optimistic delete
-    const deleteComment = (
-      comments: UserCommentWithUser[],
-    ): UserCommentWithUser[] => {
+    const deleteComment = (comments: UnifiedComment[]): UnifiedComment[] => {
       return comments
         .filter((c) => c.commentId !== commentId)
         .map((comment) => ({
@@ -262,12 +311,25 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
     setContactComments((prev) => deleteComment(prev));
 
     try {
-      const result = await deleteUserCommentAction(commentId);
+      let result: { success: boolean; error?: string };
+
+      switch (source) {
+        case "contact":
+          result = await deleteUserCommentAction(commentId);
+          break;
+        case "appointment":
+          result = await deleteAppointmentCommentAction(commentId);
+          break;
+        case "listing_contact":
+          result = await deleteListingContactCommentAction(commentId);
+          break;
+        default:
+          result = { success: false, error: "Unknown comment source" };
+      }
 
       if (result.success) {
         // Refetch to ensure consistency
-        const freshComments =
-          await getUserCommentsByContactIdWithAuth(contactId);
+        const freshComments = await getAllContactCommentsWithAuth(contactId);
         setContactComments(freshComments);
       } else {
         // Revert on failure
@@ -327,12 +389,13 @@ export function ContactTareasTab({ contactId }: ContactTareasTabProps) {
     }
   };
 
-  // Load comments and tasks for the contact
+  // Load unified comments and tasks for the contact
   useEffect(() => {
     const loadCommentsAndTasks = async () => {
       setIsLoadingComments(true);
       try {
-        const comments = await getUserCommentsByContactIdWithAuth(contactId);
+        // Fetch unified comments from all sources
+        const comments = await getAllContactCommentsWithAuth(contactId);
         setContactComments(comments);
       } catch (error) {
         console.error("Error loading comments:", error);

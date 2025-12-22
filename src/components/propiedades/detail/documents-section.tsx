@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { DocumentsPage } from "./documents-page";
 import { Button } from "~/components/ui/button";
 import { Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "~/lib/utils";
 
 interface Document {
   docId: bigint;
@@ -68,47 +67,50 @@ export function DocumentsSection({
     }
   };
 
-  const handleFiles = async (files: FileList) => {
-    if (!files || files.length === 0) return;
+  const handleFiles = useCallback(
+    async (files: FileList) => {
+      if (!files || files.length === 0) return;
 
-    setIsUploading(true);
+      setIsUploading(true);
 
-    try {
-      const apiFolderType = folderTypeMap[folderType];
+      try {
+        const apiFolderType = folderTypeMap[folderType];
 
-      // Upload all files
-      const uploadPromises = Array.from(files).map(async (file) => {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("folderType", apiFolderType);
+        // Upload all files
+        const uploadPromises = Array.from(files).map(async (file) => {
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("folderType", apiFolderType);
 
-        const response = await fetch(
-          `/api/properties/${listing.listingId}/documents`,
-          {
-            method: "POST",
-            body: formData,
-          },
+          const response = await fetch(
+            `/api/properties/${listing.listingId}/documents`,
+            {
+              method: "POST",
+              body: formData,
+            },
+          );
+
+          if (!response.ok) {
+            throw new Error(`Failed to upload ${file.name}`);
+          }
+
+          return response.json() as Promise<Document>;
+        });
+
+        const uploadedDocuments = await Promise.all(uploadPromises);
+        handleDocumentsUploaded(uploadedDocuments);
+        toast.success(
+          `${uploadedDocuments.length} documento(s) subido(s) correctamente`,
         );
-
-        if (!response.ok) {
-          throw new Error(`Failed to upload ${file.name}`);
-        }
-
-        return response.json() as Promise<Document>;
-      });
-
-      const uploadedDocuments = await Promise.all(uploadPromises);
-      handleDocumentsUploaded(uploadedDocuments);
-      toast.success(
-        `${uploadedDocuments.length} documento(s) subido(s) correctamente`,
-      );
-    } catch (error) {
-      console.error("Error uploading files:", error);
-      toast.error("Error al subir los archivos");
-    } finally {
-      setIsUploading(false);
-    }
-  };
+      } catch (error) {
+        console.error("Error uploading files:", error);
+        toast.error("Error al subir los archivos");
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [folderType, listing.listingId, handleDocumentsUploaded],
+  );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -117,46 +119,72 @@ export function DocumentsSection({
     }
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  };
+  // Full-screen drag-and-drop detection
+  useEffect(() => {
+    let dragCounter = 0;
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  };
+    const handleDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter++;
+      if (e.dataTransfer?.types.includes("Files")) {
+        setIsDragOver(true);
+      }
+    };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter === 0) {
+        setIsDragOver(false);
+      }
+    };
 
-    const files = e.dataTransfer.files;
-    if (files) {
-      void handleFiles(files);
-    }
-  };
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter = 0;
+      setIsDragOver(false);
+
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        void handleFiles(files);
+      }
+    };
+
+    document.addEventListener("dragenter", handleDragEnter);
+    document.addEventListener("dragleave", handleDragLeave);
+    document.addEventListener("dragover", handleDragOver);
+    document.addEventListener("drop", handleDrop);
+
+    return () => {
+      document.removeEventListener("dragenter", handleDragEnter);
+      document.removeEventListener("dragleave", handleDragLeave);
+      document.removeEventListener("dragover", handleDragOver);
+      document.removeEventListener("drop", handleDrop);
+    };
+  }, [handleFiles]);
 
   return (
     <>
-      <div
-        className={cn(
-          "rounded-lg transition-all duration-200",
-          isDragOver &&
-            "border-2 border-dashed border-blue-300 bg-blue-50 p-4",
-        )}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        {isDragOver && (
-          <div className="py-8 text-center text-blue-600">
-            <Upload className="mx-auto mb-2 h-8 w-8" />
-            <p className="text-sm font-medium">
-              Suelta los archivos aquí para subirlos
+      {/* Full-screen drop overlay */}
+      {isDragOver && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-blue-500/20 backdrop-blur-sm">
+          <div className="rounded-2xl border-4 border-dashed border-blue-400 bg-white/90 px-16 py-12 text-center shadow-2xl">
+            <Upload className="mx-auto mb-4 h-16 w-16 text-blue-500" />
+            <p className="text-xl font-semibold text-blue-700">
+              Suelta los archivos aquí
+            </p>
+            <p className="mt-2 text-sm text-blue-500">
+              para subirlos a esta carpeta
             </p>
           </div>
-        )}
+        </div>
+      )}
+
+      <div className="rounded-lg">
         <DocumentsPage
           listing={listing}
           folderType={folderType}
