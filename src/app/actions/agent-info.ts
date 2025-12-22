@@ -20,6 +20,7 @@ export async function getAgentNameAction(accountId: bigint): Promise<{
   accountType?: string;
   taxId?: string;
   website?: string;
+  signatureUrl?: string; // Account's default signature URL
   error?: string;
 }> {
   try {
@@ -31,6 +32,7 @@ export async function getAgentNameAction(accountId: bigint): Promise<{
         collegiateNumber: accounts.collegiateNumber,
         taxId: accounts.taxId,
         website: accounts.website,
+        signatureUrl: accounts.signatureUrl,
       })
       .from(accounts)
       .where(eq(accounts.accountId, accountId));

@@ -10,7 +10,7 @@ import { PropertyBreadcrumb } from "~/components/propiedades/detail/property-bre
 import { PropertyHeader } from "~/components/propiedades/detail/property-header";
 import { DocumentsSection } from "~/components/propiedades/detail/documents-section";
 import { Button } from "~/components/ui/button";
-import { FilePlus, FileCheck, ChevronRight } from "lucide-react";
+import { FilePlus } from "lucide-react";
 
 interface DocumentPageProps {
   params: Promise<{
@@ -74,27 +74,12 @@ export default async function DocumentacionInicialPage({
 
       {/* Hoja Encargo generation button */}
       <div className="mb-6">
-        {hasExistingHojaEncargo ? (
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-700">
-              <FileCheck className="h-4 w-4" />
-              <span>Hoja de Encargo generada</span>
-            </div>
-            <Link href={`/propiedades/${listingId}/hoja-encargo`}>
-              <Button variant="outline" size="sm" className="rounded-2xl">
-                Ver o regenerar
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-        ) : (
-          <Link href={`/propiedades/${listingId}/hoja-encargo`}>
-            <Button variant="outline" className="rounded-2xl">
-              <FilePlus className="mr-2 h-4 w-4" />
-              Generar Hoja Encargo
-            </Button>
-          </Link>
-        )}
+        <Link href={`/propiedades/${listingId}/hoja-encargo`}>
+          <Button variant="outline" className="rounded-2xl">
+            <FilePlus className="mr-2 h-4 w-4" />
+            {hasExistingHojaEncargo ? "Regenerar Hoja Encargo" : "Generar Hoja Encargo"}
+          </Button>
+        </Link>
       </div>
 
       <DocumentsSection

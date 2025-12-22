@@ -1,8 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
 import { getBrandAsset } from "~/app/actions/brand-upload";
+import {
+  formatPercentageWithText,
+  formatCurrencyWithText,
+  formatNumberWithText,
+} from "~/lib/number-to-spanish";
 import { getCurrentUserAccountIdAction } from "~/app/actions/settings";
 import {
   getAgentNameAction,
@@ -347,11 +351,19 @@ export function NotaEncargoDocument({ data }: Props) {
 
             <div className="flex">
               <span className="min-w-[140px] font-bold">
-                El propietario/a o representante de la parte vendedora, entrega
-                las llaves de la finca descrita:
+                Llaves entregadas por propietario/representante:
               </span>
               <span className="ml-2 flex-1 border-b border-black pb-0.5">
                 {data.property.hasKeys ? "Sí" : "No"}
+              </span>
+            </div>
+
+            <div className="flex">
+              <span className="min-w-[140px] font-bold">
+                Autorización entrega de llaves:
+              </span>
+              <span className="ml-2 flex-1 border-b border-black pb-0.5">
+                {data.terms.allowKeyDelivery ? "Sí" : "No"}
               </span>
             </div>
 
@@ -361,6 +373,15 @@ export function NotaEncargoDocument({ data }: Props) {
               </span>
               <span className="ml-2 flex-1 border-b border-black pb-0.5">
                 {data.terms.allowVisits ? "Sí" : "No"}
+              </span>
+            </div>
+
+            <div className="flex">
+              <span className="min-w-[140px] font-bold">
+                Autorización publicación en portales:
+              </span>
+              <span className="ml-2 flex-1 border-b border-black pb-0.5">
+                {data.terms.allowPortalPublication ? "Sí" : "No"}
               </span>
             </div>
           </div>
@@ -404,8 +425,8 @@ export function NotaEncargoDocument({ data }: Props) {
             <div className="mb-3 text-justify leading-relaxed">
               <strong>A)</strong> De las cantidades recibidas, sobre el precio
               de la operación, &ldquo;EL CLIENTE&rdquo;, abonará el{" "}
-              <strong>{data.terms.commissionPercentage}% + I.V.A.</strong> con un
-              mínimo de <strong>{data.terms.minimumCommission} €</strong>, como
+              <strong>{formatPercentageWithText(data.terms.commissionPercentage)} + I.V.A.</strong> con un
+              mínimo de <strong>{formatCurrencyWithText(data.terms.minimumCommission)}</strong>, como
               honorarios a {accountType === "company" ? "" : "D/ª "}
               <strong>{agentName}</strong>, siendo autorizada expresamente a que
               sean satisfechos reteniéndolos de las cantidades recibidas a
@@ -441,8 +462,7 @@ export function NotaEncargoDocument({ data }: Props) {
               <strong>A)</strong> El encargo de esta operación tiene una
               duración de{" "}
               <strong>
-                {data.terms.durationMonths === 12 ? "doce" : data.terms.durationMonths}{" "}
-                meses
+                {formatNumberWithText(data.terms.durationMonths)} meses
               </strong>{" "}
               prorrogables, por el mismo período de tiempo, por ambas partes,
               transcurrido este plazo sin haberse llevado a cabo, de no mediar
@@ -564,13 +584,11 @@ export function NotaEncargoDocument({ data }: Props) {
               <div className="mb-4 text-[12pt] font-bold">EL CLIENTE</div>
               {data.signatures.ownerSignatureUrl ? (
                 <div className="mb-2 flex h-24 items-center justify-center">
-                  <Image
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
                     src={data.signatures.ownerSignatureUrl}
                     alt="Firma del cliente"
-                    width={200}
-                    height={80}
                     className="max-h-20 w-auto object-contain"
-                    unoptimized
                   />
                 </div>
               ) : (
@@ -583,18 +601,14 @@ export function NotaEncargoDocument({ data }: Props) {
             <div className="w-56 text-center">
               <div className="mb-4 text-[12pt] font-bold">
                 {accountType === "company" ? agentName : "Dª. " + agentName}
-                <br />
-                <span className="text-sm font-normal">(Agente)</span>
               </div>
               {data.signatures.agentSignatureUrl ? (
                 <div className="mb-2 flex h-24 items-center justify-center">
-                  <Image
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
                     src={data.signatures.agentSignatureUrl}
                     alt="Firma del agente"
-                    width={200}
-                    height={80}
                     className="max-h-20 w-auto object-contain"
-                    unoptimized
                   />
                 </div>
               ) : (

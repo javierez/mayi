@@ -156,6 +156,19 @@ export async function GET(
       documentTag,
     );
 
+    // For initial-docs folder, also fetch hoja-encargo documents
+    if (folderType === "initial-docs") {
+      const hojaEncargoDocuments = await getDocumentsByFolderType(
+        listing.propertyId,
+        "hoja-encargo",
+      );
+      // Merge and sort by upload date
+      documents = [...documents, ...hojaEncargoDocuments].sort(
+        (a, b) =>
+          new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime(),
+      );
+    }
+
     // For contratos folder, also fetch arras and alquiler contracts
     if (folderType === "contratos") {
       const [arrasContracts, alquilerContracts] = await Promise.all([

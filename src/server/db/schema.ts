@@ -27,6 +27,9 @@ export const accounts = pgTable("accounts", {
   website: varchar("website", { length: 255 }),
   // Account type - company or person
   accountType: varchar("account_type", { length: 20 }).default("company"), // company or person
+  // Agent/Signature configuration for documents
+  defaultSigningAgentId: varchar("default_signing_agent_id", { length: 36 }), // FK → users.id - Default agent who signs documents
+  signatureUrl: varchar("signature_url", { length: 2048 }), // S3 URL for the default signature image
   // Legal information fields
   taxId: varchar("tax_id", { length: 50 }), // Tax identification number (CIF/NIF)
   collegiateNumber: varchar("collegiate_number", { length: 50 }), // Professional collegiate number (API registration)
@@ -546,6 +549,12 @@ export const listings = pgTable("listings", {
   // Progress Stage Tracking
   fichaCompletedAt: timestamp("ficha_completed_at"), // When all mandatory fields were first completed (24% stage)
 
+  // Hoja de Encargo Authorizations
+  allowSignage: boolean("allow_signage").default(true), // Authorization to place advertising signage on property
+  allowVisits: boolean("allow_visits").default(true), // Authorization for property visits by interested parties
+  allowKeyDelivery: boolean("allow_key_delivery").default(true), // Owner authorizes/commits to deliver keys to agency
+  allowPortalPublication: boolean("allow_portal_publication").default(true), // Authorization to publish on real estate portals
+
   // System Fields
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -582,6 +591,7 @@ export const contacts = pgTable("contacts", {
   additionalInfo: jsonb("additional_info").default({}),
   orgId: bigint("org_id", { mode: "bigint" }), // Nullable FK to organizations
   source: varchar("source", { length: 100 }), // Contact source (e.g., "Website", "Walk-In", "Referral")
+  gdprConsent: boolean("gdpr_consent").default(false), // GDPR consent for commercial communications
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

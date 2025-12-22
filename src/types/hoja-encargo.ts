@@ -14,6 +14,8 @@ export interface HojaEncargoFormData {
   ownerPostalCode: string;
   ownerPhone: string;
   ownerEmail: string;
+  // Property (Inmueble)
+  propertyDescription?: string;
   // Terms (Condiciones del Encargo)
   commissionPercentage: number;
   minimumCommission: number;
@@ -22,6 +24,8 @@ export interface HojaEncargoFormData {
   // Authorizations
   allowSignage: boolean;
   allowVisits: boolean;
+  allowKeyDelivery: boolean;
+  allowPortalPublication: boolean;
   gdprConsent: boolean;
   // Signatures (optional, base64 data URL)
   ownerSignature?: string;
@@ -65,6 +69,7 @@ export interface HojaEncargoPageData {
     email: string | null;
     phone: string | null;
     address: string | null;
+    gdprConsent: boolean | null;
   } | null;
   agency: {
     accountId: bigint;
@@ -78,6 +83,7 @@ export interface HojaEncargoPageData {
     taxId: string | null;
     collegiateNumber: string | null;
     logo: string | null;
+    signatureUrl: string | null; // Account's default signature URL
   };
   terms: {
     commission: number;
@@ -86,6 +92,8 @@ export interface HojaEncargoPageData {
     exclusivity: boolean;
     allowSignage: boolean;
     allowVisits: boolean;
+    allowKeyDelivery: boolean;
+    allowPortalPublication: boolean;
     communications: boolean;
   } | null;
   existingDocument: {
@@ -140,6 +148,8 @@ export interface HojaEncargoDocumentData {
     exclusivity: boolean;
     allowSignage: boolean;
     allowVisits: boolean;
+    allowKeyDelivery: boolean;
+    allowPortalPublication: boolean;
   };
   signatures: {
     ownerSignatureUrl?: string;

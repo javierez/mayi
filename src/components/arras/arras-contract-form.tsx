@@ -722,6 +722,29 @@ function ToriParkRentalForm({ data }: ArrasContractFormProps) {
             </div>
           </div>
 
+          {/* Agent Signature Section */}
+          <div className="space-y-4 rounded-lg border bg-white p-4 sm:p-5">
+            <h2 className="text-base font-semibold text-gray-900">
+              Firma del Agente
+            </h2>
+            {data.agency?.signatureUrl ? (
+              <div className="flex h-[150px] items-center justify-center rounded-lg border border-gray-200 bg-gray-50 p-4">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={data.agency.signatureUrl}
+                  alt="Firma del agente"
+                  className="max-h-[130px] object-contain"
+                />
+              </div>
+            ) : (
+              <div className="flex h-[150px] items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50">
+                <p className="text-xs text-gray-400">
+                  Sin firma configurada en ajustes de cuenta
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Validation Warning */}
           {!isFormValid && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">

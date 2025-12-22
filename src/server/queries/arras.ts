@@ -10,6 +10,7 @@ import {
   documents,
   users,
   locations,
+  accounts,
 } from "../db/schema";
 import { eq, and, aliasedTable, desc } from "drizzle-orm";
 import { getCurrentUserAccountId } from "../../lib/dal";
@@ -107,6 +108,13 @@ export async function getArrasContractData(
           firstName: users.firstName,
           lastName: users.lastName,
         },
+        // Agency data (for signature URL)
+        agency: {
+          accountId: accounts.accountId,
+          accountType: accounts.accountType,
+          name: accounts.name,
+          signatureUrl: accounts.signatureUrl,
+        },
       })
       .from(deals)
       .innerJoin(listings, eq(deals.listingId, listings.listingId))
@@ -136,6 +144,8 @@ export async function getArrasContractData(
       .leftJoin(users, eq(listings.agentId, users.id))
       // Join locations for city and province
       .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      // Join accounts for agency signature
+      .leftJoin(accounts, eq(properties.accountId, accounts.accountId))
       .where(
         and(
           eq(deals.dealId, BigInt(dealId)),
@@ -213,6 +223,12 @@ export async function getArrasContractData(
         name: result.agent?.name ?? null,
         firstName: result.agent?.firstName ?? null,
         lastName: result.agent?.lastName ?? null,
+      },
+      agency: {
+        accountId: result.agency?.accountId ?? BigInt(0),
+        accountType: result.agency?.accountType ?? "company",
+        name: result.agency?.name ?? "",
+        signatureUrl: result.agency?.signatureUrl ?? null,
       },
       existingContract,
     };

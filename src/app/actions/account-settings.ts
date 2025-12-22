@@ -2,12 +2,23 @@
 
 import { db } from "~/server/db";
 import { accounts, users } from "~/server/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { z } from "zod";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import {
   accountConfigurationSchema,
   type AccountConfigurationInput,
 } from "~/types/account-settings";
+import { getDynamicBucketNameForAccount } from "~/lib/s3-bucket";
+
+// S3 client for signature upload
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION!,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
 
 /**
  * Get current user's account ID from their user ID
@@ -43,6 +54,9 @@ export async function getAccountDetailsAction(accountId: bigint): Promise<{
     phone: string | null;
     email: string | null;
     website: string | null;
+    accountType: string | null;
+    defaultSigningAgentId: string | null;
+    signatureUrl: string | null;
     taxId: string | null;
     collegiateNumber: string | null;
     registryDetails: string | null;
@@ -113,6 +127,9 @@ export async function getAccountDetailsAction(accountId: bigint): Promise<{
       phone: account.phone,
       email: account.email,
       website: account.website,
+      accountType: account.accountType,
+      defaultSigningAgentId: account.defaultSigningAgentId,
+      signatureUrl: account.signatureUrl,
       taxId: account.taxId,
       collegiateNumber: account.collegiateNumber,
       registryDetails: account.registryDetails,
@@ -170,6 +187,9 @@ export async function updateAccountConfigurationAction(
       phone: validatedData.phone ?? null,
       email: validatedData.email ?? null,
       website: validatedData.website ?? null,
+      accountType: validatedData.accountType ?? "company",
+      defaultSigningAgentId: validatedData.defaultSigningAgentId ?? null,
+      signatureUrl: validatedData.signatureUrl ?? null,
       taxId: validatedData.taxId ?? null,
       collegiateNumber: validatedData.collegiateNumber ?? null,
       registryDetails: validatedData.registryDetails ?? null,
@@ -205,6 +225,149 @@ export async function updateAccountConfigurationAction(
     return {
       success: false,
       error: "Error al actualizar la configuración de la cuenta",
+    };
+  }
+}
+
+/**
+ * Get agents for the current account (for agent selector dropdown)
+ */
+export async function getAgentsForAccountAction(accountId: bigint): Promise<{
+  success: boolean;
+  data?: Array<{
+    id: string;
+    name: string;
+    firstName: string | null;
+    lastName: string | null;
+  }>;
+  error?: string;
+}> {
+  try {
+    const agents = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        firstName: users.firstName,
+        lastName: users.lastName,
+      })
+      .from(users)
+      .where(and(eq(users.accountId, accountId), eq(users.isActive, true)))
+      .orderBy(users.name);
+
+    return { success: true, data: agents };
+  } catch (error) {
+    console.error("❌ Error getting agents for account:", error);
+    return {
+      success: false,
+      error: "Error al obtener los agentes de la cuenta",
+    };
+  }
+}
+
+/**
+ * Update signature settings (accountType, defaultSigningAgentId)
+ * This is separate from main account config to avoid full form validation
+ */
+export async function updateSignatureSettingsAction(
+  accountId: bigint,
+  settings: {
+    accountType?: "company" | "person";
+    defaultSigningAgentId?: string | null;
+  },
+): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const updateData: Partial<typeof accounts.$inferInsert> = {
+      updatedAt: new Date(),
+    };
+
+    if (settings.accountType !== undefined) {
+      updateData.accountType = settings.accountType;
+    }
+    if (settings.defaultSigningAgentId !== undefined) {
+      updateData.defaultSigningAgentId = settings.defaultSigningAgentId ?? null;
+    }
+
+    await db
+      .update(accounts)
+      .set(updateData)
+      .where(eq(accounts.accountId, accountId));
+
+    return { success: true };
+  } catch (error) {
+    console.error("❌ Error updating signature settings:", error);
+    return {
+      success: false,
+      error: "Error al actualizar la configuración de firma",
+    };
+  }
+}
+
+/**
+ * Upload signature image to S3 for an account
+ * Saves to: {bucket}/legal/signature.png
+ */
+export async function uploadAccountSignatureAction(
+  accountId: bigint,
+  signatureDataUrl: string,
+): Promise<{
+  success: boolean;
+  signatureUrl?: string;
+  error?: string;
+}> {
+  try {
+    if (!signatureDataUrl.startsWith("data:image/")) {
+      return {
+        success: false,
+        error: "Formato de firma inválido",
+      };
+    }
+
+    // Get bucket name for this account
+    const bucketName = await getDynamicBucketNameForAccount(accountId);
+
+    // Convert data URL to buffer
+    const base64Data = signatureDataUrl.replace(/^data:image\/\w+;base64,/, "");
+    const buffer = Buffer.from(base64Data, "base64");
+
+    // Determine content type
+    const contentType = signatureDataUrl.match(/^data:(image\/\w+);base64,/)?.[1] ?? "image/png";
+
+    // Create the S3 key: legal/signature.png
+    const signatureKey = "legal/signature.png";
+
+    // Upload to S3
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: bucketName,
+        Key: signatureKey,
+        Body: buffer,
+        ContentType: contentType,
+      }),
+    );
+
+    // Build the public S3 URL
+    const signatureUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${signatureKey}`;
+
+    // Update the account with the signature URL
+    await db
+      .update(accounts)
+      .set({
+        signatureUrl,
+        updatedAt: new Date(),
+      })
+      .where(eq(accounts.accountId, accountId));
+
+    console.log(`✅ Signature uploaded for account ${accountId}: ${signatureUrl}`);
+
+    return { success: true, signatureUrl };
+  } catch (error) {
+    console.error("❌ Error uploading account signature:", error);
+    return {
+      success: false,
+      error: "Error al subir la firma",
     };
   }
 }

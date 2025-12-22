@@ -103,6 +103,12 @@ export interface ArrasContractPageData {
     firstName: string | null;
     lastName: string | null;
   };
+  agency: {
+    accountId: bigint;
+    accountType: string;
+    name: string;
+    signatureUrl: string | null;
+  };
   existingContract: {
     docId: bigint;
     filename: string;
@@ -167,6 +173,7 @@ export interface ArrasDocumentData {
     }>;
     website?: string;
     email?: string;
+    signatureUrl?: string; // Account's default signature URL for agent
   };
   location: string;
   date: string;

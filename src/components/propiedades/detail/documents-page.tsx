@@ -10,6 +10,7 @@ import {
   MoreVertical,
   FolderIcon,
   X,
+  Share2,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -20,6 +21,8 @@ import {
 import { DocumentsPageSkeleton } from "./skeletons";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { deleteDocumentAction } from "~/app/actions/upload";
+import { getHojaEncargoShareDataAction } from "~/server/actions/hoja-encargo";
+import { ShareHojaEncargoModal } from "~/components/hoja-encargo/share-hoja-encargo-modal";
 import { toast } from "sonner";
 
 interface Document {
@@ -59,6 +62,16 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
     null,
   );
   const [isDeleting, setIsDeleting] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareData, setShareData] = useState<{
+    documentUrl: string;
+    ownerName: string;
+    ownerPhone?: string;
+    ownerEmail?: string;
+    propertyAddress: string;
+    commissionPercentage: string;
+    durationMonths: string;
+  } | null>(null);
 
   // Map folder types for API calls
   const folderTypeMap = {
@@ -134,6 +147,36 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
       setIsDeleting(false);
       setDocumentToDelete(null);
       setDeleteConfirmOpen(false);
+    }
+  };
+
+  const isHojaEncargoDocument = (filename: string) => {
+    return filename.startsWith("Hoja-Encargo");
+  };
+
+  const handleShareClick = async (document: Document) => {
+    try {
+      const result = await getHojaEncargoShareDataAction(
+        Number(listing.listingId),
+      );
+
+      if (result.success && result.data) {
+        setShareData({
+          documentUrl: document.fileUrl,
+          ownerName: result.data.ownerName,
+          ownerPhone: result.data.ownerPhone,
+          ownerEmail: result.data.ownerEmail,
+          propertyAddress: result.data.propertyAddress,
+          commissionPercentage: result.data.commissionPercentage,
+          durationMonths: result.data.durationMonths,
+        });
+        setShareModalOpen(true);
+      } else {
+        toast.error(result.error ?? "Error al obtener datos para compartir");
+      }
+    } catch (error) {
+      console.error("Error fetching share data:", error);
+      toast.error("Error al preparar el documento para compartir");
     }
   };
 
@@ -234,6 +277,14 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
                             <Download className="mr-2 h-4 w-4" />
                             Descargar
                           </DropdownMenuItem>
+                          {isHojaEncargoDocument(document.filename) && (
+                            <DropdownMenuItem
+                              onClick={() => handleShareClick(document)}
+                            >
+                              <Share2 className="mr-2 h-4 w-4" />
+                              Compartir
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             className="text-red-600"
                             onClick={() => handleDeleteClick(document)}
@@ -276,6 +327,23 @@ export function DocumentsPage({ listing, folderType }: DocumentsPageProps) {
         cancelText="Cancelar"
         confirmVariant="destructive"
       />
+
+      {/* Share hoja encargo modal */}
+      {shareData && (
+        <ShareHojaEncargoModal
+          open={shareModalOpen}
+          onOpenChange={setShareModalOpen}
+          documentUrl={shareData.documentUrl}
+          contractData={{
+            ownerName: shareData.ownerName,
+            ownerPhone: shareData.ownerPhone,
+            ownerEmail: shareData.ownerEmail,
+            propertyAddress: shareData.propertyAddress,
+            commissionPercentage: shareData.commissionPercentage,
+            durationMonths: shareData.durationMonths,
+          }}
+        />
+      )}
     </div>
   );
 }

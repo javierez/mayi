@@ -27,6 +27,10 @@ export default function NotaEncargoTemplate() {
           const parsedData = JSON.parse(dataParam) as HojaEncargoDocumentData;
           setData(parsedData);
           console.log("📄 Loaded hoja encargo data from URL parameter");
+          console.log("📝 Template received signature:", {
+            agentSignatureUrl: parsedData.signatures?.agentSignatureUrl ?? "MISSING",
+            ownerSignatureUrl: parsedData.signatures?.ownerSignatureUrl ?? "MISSING",
+          });
         }
         // Mode 2: Fetch from server using listingId (for preview)
         else if (listingIdParam) {
@@ -37,6 +41,10 @@ export default function NotaEncargoTemplate() {
           if (result.success && result.data) {
             setData(result.data);
             console.log("📄 Loaded hoja encargo data from server");
+            console.log("📝 Template received signature (from server):", {
+              agentSignatureUrl: result.data.signatures?.agentSignatureUrl ?? "MISSING",
+              ownerSignatureUrl: result.data.signatures?.ownerSignatureUrl ?? "MISSING",
+            });
           } else {
             setError(result.error ?? "Failed to load data");
           }

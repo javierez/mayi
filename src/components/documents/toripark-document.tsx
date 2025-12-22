@@ -32,7 +32,15 @@ export function ToriParkDocument({ data }: Props) {
   >(data.branding?.offices ?? []);
   const [website, setWebsite] = useState<string>(data.branding?.website ?? "");
   const [propertyImages, setPropertyImages] = useState<string[]>([]);
+  const [imageOrientations, setImageOrientations] = useState<Record<string, "portrait" | "landscape">>({});
   const { data: session } = useSession();
+
+  // Detect image orientation on load
+  const handleImageLoad = (url: string, event: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = event.currentTarget;
+    const orientation = img.naturalHeight > img.naturalWidth ? "portrait" : "landscape";
+    setImageOrientations((prev) => ({ ...prev, [url]: orientation }));
+  };
 
   useEffect(() => {
     if (data.branding?.logoUrl) {
@@ -448,7 +456,7 @@ export function ToriParkDocument({ data }: Props) {
               {/* Tenant Signature - Empty for manual signing */}
               <div className="flex flex-col">
                 <div className="relative rounded border border-black p-3 print:p-2">
-                  <div className="mb-3 h-20 border-b border-black print:mb-2 print:h-16"></div>
+                  <div className="mb-3 h-20 print:mb-2 print:h-16"></div>
                   <div className="-mt-[4px] print:mt-[-2px]">
                     <div className="text-[9.5pt] font-semibold">
                       Fdo: {tenantName}
@@ -467,27 +475,71 @@ export function ToriParkDocument({ data }: Props) {
         </div>
 
         {/* ANEXO - Property Images */}
-        {propertyImages.length > 0 && (
-          <div className="anexo-section mx-auto max-w-[794px] px-10 py-6 font-sans text-[10pt] leading-[1.3] print:mx-0 print:max-w-none print:px-10 print:py-4">
-            <div className="mb-4 text-center print:mb-3">
-              <div className="text-[14pt] font-bold">ANEXO - FOTOGRAFÍAS</div>
-            </div>
+        {propertyImages.length > 0 && (() => {
+          // Group images by orientation
+          const portraitImages = propertyImages.filter((url) => imageOrientations[url] === "portrait");
+          const landscapeImages = propertyImages.filter((url) => imageOrientations[url] === "landscape");
+          const unknownImages = propertyImages.filter((url) => !imageOrientations[url]);
 
-            <div className="grid grid-cols-2 gap-3 print:gap-2">
-              {propertyImages.map((imageUrl, index) => (
-                <div key={index} className="overflow-hidden rounded border border-black">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={imageUrl}
-                    alt={`Fotografía ${index + 1}`}
-                    className="h-auto w-full object-cover"
-                    style={{ maxHeight: "180px" }}
-                  />
+          return (
+            <div className="anexo-section mx-auto max-w-[794px] px-10 py-6 font-sans text-[10pt] leading-[1.3] print:mx-0 print:max-w-none print:px-10 print:py-4">
+              <div className="mb-4 text-center print:mb-3">
+                <div className="text-[14pt] font-bold">ANEXO - FOTOGRAFÍAS</div>
+              </div>
+
+              {/* Landscape images: 2 per row with 16:10 aspect ratio */}
+              {landscapeImages.length > 0 && (
+                <div className="mb-3 grid grid-cols-2 gap-2 print:gap-1">
+                  {landscapeImages.map((imageUrl, index) => (
+                    <div key={`landscape-${index}`} className="relative overflow-hidden rounded border border-black" style={{ aspectRatio: "16/10" }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={imageUrl}
+                        alt={`Fotografía ${index + 1}`}
+                        className="absolute inset-0 h-full w-full object-cover"
+                        onLoad={(e) => handleImageLoad(imageUrl, e)}
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
+
+              {/* Portrait images: 3 per row with 3:4 aspect ratio */}
+              {portraitImages.length > 0 && (
+                <div className="mb-3 grid grid-cols-3 gap-2 print:gap-1">
+                  {portraitImages.map((imageUrl, index) => (
+                    <div key={`portrait-${index}`} className="relative overflow-hidden rounded border border-black" style={{ aspectRatio: "3/4" }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={imageUrl}
+                        alt={`Fotografía ${index + 1}`}
+                        className="absolute inset-0 h-full w-full object-cover"
+                        onLoad={(e) => handleImageLoad(imageUrl, e)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Unknown orientation (loading): show in 2-col grid with onLoad detection */}
+              {unknownImages.length > 0 && (
+                <div className="grid grid-cols-2 gap-2 print:gap-1">
+                  {unknownImages.map((imageUrl, index) => (
+                    <div key={`unknown-${index}`} className="relative overflow-hidden rounded border border-black" style={{ aspectRatio: "16/10" }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={imageUrl}
+                        alt={`Fotografía ${index + 1}`}
+                        className="absolute inset-0 h-full w-full object-cover"
+                        onLoad={(e) => handleImageLoad(imageUrl, e)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
     </>
   );

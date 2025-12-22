@@ -23,6 +23,11 @@ export const accountConfigurationSchema = z.object({
   privacyEmail: z.string().email("Email inválido").optional().or(z.literal("")),
   dpoEmail: z.string().email("Email inválido").optional().or(z.literal("")),
 
+  // Signature Configuration
+  accountType: z.enum(["company", "person"]).optional(),
+  defaultSigningAgentId: z.string().optional(),
+  signatureUrl: z.string().optional(),
+
   // Settings
   preferences: z.record(z.any()).optional(),
   terms: z

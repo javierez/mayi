@@ -280,9 +280,20 @@ Saludos cordiales`;
         </div>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cerrar
           </Button>
+          <a
+            href={documentUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex"
+          >
+            <Button>
+              <FileText className="mr-2 h-4 w-4" />
+              Ver documento
+            </Button>
+          </a>
         </DialogFooter>
       </DialogContent>
     </Dialog>

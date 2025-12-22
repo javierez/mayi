@@ -536,6 +536,36 @@ export function ArrasDocument({ data }: Props) {
             </div>
           </div>
 
+          {/* Agency Mediator Signature */}
+          {data.branding?.signatureUrl && (
+            <div className="mt-6 border-t border-gray-200 pt-4 print:mt-4 print:pt-3">
+              <div className="mx-auto max-w-xs">
+                <div className="mb-1 text-center text-[9pt] font-semibold text-gray-700">
+                  MEDIACIÓN INMOBILIARIA
+                </div>
+                <div className="relative rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  <div className="mb-2 flex h-16 items-center justify-center print:h-14">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={data.branding.signatureUrl}
+                      alt="Firma del Agente"
+                      className="max-h-16 max-w-full object-contain print:max-h-14"
+                      style={{ width: "auto", height: "auto" }}
+                    />
+                  </div>
+                  <div className="text-center text-[9pt] font-medium">
+                    {agentName}
+                  </div>
+                  {collegiateNumber && accountType !== "company" && (
+                    <div className="text-center text-[8pt] text-gray-600">
+                      Colegiado: {collegiateNumber}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Agency Mediation Notice */}
           <div className="mt-6 border-t border-gray-200 pt-3 print:mt-4 print:pt-2">
             <p className="text-center text-[8pt] italic text-gray-600">

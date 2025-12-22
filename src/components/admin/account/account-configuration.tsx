@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition, useCallback } from "react";
 import { useSession } from "~/lib/auth-client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { motion } from "framer-motion";
 import { cn } from "~/lib/utils";
 import {
   Form,
@@ -17,7 +18,6 @@ import {
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import { Switch } from "~/components/ui/switch";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import {
   Building,
@@ -30,17 +30,29 @@ import {
   RefreshCw,
   Image,
   Info,
+  PenTool,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
   getAccountDetailsAction,
   updateAccountConfigurationAction,
   getCurrentUserAccountId,
+  getAgentsForAccountAction,
+  uploadAccountSignatureAction,
+  updateSignatureSettingsAction,
 } from "~/app/actions/account-settings";
 import {
   accountConfigurationSchema,
   type AccountConfigurationInput,
 } from "~/types/account-settings";
+import { SignaturePad } from "~/components/visits/signature-pad";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 interface AccountTab {
   id: string;
@@ -74,7 +86,20 @@ const navigationItems: AccountTab[] = [
     description: "Configuraciones adicionales",
     icon: Settings,
   },
+  {
+    id: "signature",
+    label: "Firma",
+    description: "Tipo de cuenta y firma",
+    icon: PenTool,
+  },
 ];
+
+interface Agent {
+  id: string;
+  name: string;
+  firstName: string | null;
+  lastName: string | null;
+}
 
 export function AccountConfiguration() {
   const { data: session } = useSession();
@@ -86,6 +111,10 @@ export function AccountConfiguration() {
   const [activeSection, setActiveSection] = useState("basic");
   const [showLogoInput, setShowLogoInput] = useState(false);
   const [visibleDescriptions, setVisibleDescriptions] = useState<Set<string>>(new Set());
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [isUploadingSignature, setIsUploadingSignature] = useState(false);
+  const [currentSignatureUrl, setCurrentSignatureUrl] = useState<string | null>(null);
+  const [showSignaturePad, setShowSignaturePad] = useState(false);
 
   const toggleDescription = useCallback((fieldName: string) => {
     setVisibleDescriptions(prev => {
@@ -110,6 +139,9 @@ export function AccountConfiguration() {
       phone: "",
       email: "",
       website: "",
+      accountType: "company",
+      defaultSigningAgentId: "",
+      signatureUrl: "",
       taxId: "",
       collegiateNumber: "",
       registryDetails: "",
@@ -142,10 +174,15 @@ export function AccountConfiguration() {
         }
 
         setAccountId(userAccountId);
-        const result = await getAccountDetailsAction(userAccountId);
 
-        if (result.success && result.data) {
-          const data = result.data;
+        // Load account details and agents in parallel
+        const [accountResult, agentsResult] = await Promise.all([
+          getAccountDetailsAction(userAccountId),
+          getAgentsForAccountAction(userAccountId),
+        ]);
+
+        if (accountResult.success && accountResult.data) {
+          const data = accountResult.data;
           form.reset({
             name: data.name,
             shortName: data.shortName ?? "",
@@ -155,6 +192,9 @@ export function AccountConfiguration() {
             phone: data.phone ?? "",
             email: data.email ?? "",
             website: data.website ?? "",
+            accountType: (data.accountType as "company" | "person") ?? "company",
+            defaultSigningAgentId: data.defaultSigningAgentId ?? "",
+            signatureUrl: data.signatureUrl ?? "",
             taxId: data.taxId ?? "",
             collegiateNumber: data.collegiateNumber ?? "",
             registryDetails: data.registryDetails ?? "",
@@ -171,6 +211,11 @@ export function AccountConfiguration() {
               communications: false,
             },
           });
+          setCurrentSignatureUrl(data.signatureUrl ?? null);
+        }
+
+        if (agentsResult.success && agentsResult.data) {
+          setAgents(agentsResult.data);
         }
       } catch (error) {
         console.error("Error loading account configuration:", error);
@@ -227,6 +272,63 @@ export function AccountConfiguration() {
         toast.error("Error inesperado al guardar la configuración");
       }
     });
+  };
+
+  // Handle signature upload
+  const handleSignatureChange = async (signatureDataUrl: string | null) => {
+    if (!signatureDataUrl || !accountId) return;
+
+    setIsUploadingSignature(true);
+    try {
+      const result = await uploadAccountSignatureAction(accountId, signatureDataUrl);
+      if (result.success && result.signatureUrl) {
+        setCurrentSignatureUrl(result.signatureUrl);
+        form.setValue("signatureUrl", result.signatureUrl);
+        setShowSignaturePad(false);
+        toast.success("Firma guardada correctamente");
+      } else {
+        toast.error(result.error ?? "Error al guardar la firma");
+      }
+    } catch (error) {
+      console.error("Error uploading signature:", error);
+      toast.error("Error al subir la firma");
+    } finally {
+      setIsUploadingSignature(false);
+    }
+  };
+
+  // Handle account type change - saves immediately
+  const handleAccountTypeChange = async (newType: "company" | "person") => {
+    if (!accountId) return;
+
+    form.setValue("accountType", newType);
+
+    try {
+      const result = await updateSignatureSettingsAction(accountId, { accountType: newType });
+      if (!result.success) {
+        toast.error(result.error ?? "Error al guardar");
+      }
+    } catch (error) {
+      console.error("Error saving account type:", error);
+    }
+  };
+
+  // Handle agent selection change - saves immediately
+  const handleAgentChange = async (agentId: string) => {
+    if (!accountId) return;
+
+    form.setValue("defaultSigningAgentId", agentId);
+
+    try {
+      const result = await updateSignatureSettingsAction(accountId, { defaultSigningAgentId: agentId });
+      if (result.success) {
+        toast.success("Agente guardado");
+      } else {
+        toast.error(result.error ?? "Error al guardar");
+      }
+    } catch (error) {
+      console.error("Error saving agent:", error);
+    }
   };
 
   if (isLoading) {
@@ -873,31 +975,57 @@ export function AccountConfiguration() {
                           name="terms.exclusivity"
                           render={({ field }) => (
                             <FormItem className="rounded-lg p-4 shadow-md">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5">
-                                  <FormLabel className="text-base">
-                                    Exclusividad
-                                  </FormLabel>
-                                  <button
-                                    type="button"
-                                    onClick={() => toggleDescription("terms.exclusivity")}
-                                    className="focus:outline-none"
-                                  >
-                                    <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
-                                  </button>
-                                </div>
-                                <FormControl>
-                                  <Switch
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
+                              <div className="flex items-center gap-1.5 mb-2">
+                                <FormLabel className="text-base">
+                                  Tipo de contrato
+                                </FormLabel>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleDescription("terms.exclusivity")}
+                                  className="focus:outline-none"
+                                >
+                                  <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                                </button>
                               </div>
                               {visibleDescriptions.has("terms.exclusivity") && (
-                                <FormDescription className="text-xs mt-2">
+                                <FormDescription className="text-xs mb-2">
                                   Contrato de exclusividad por defecto
                                 </FormDescription>
                               )}
+                              <FormControl>
+                                <div className="relative h-10 w-full rounded-lg bg-gray-100 p-1">
+                                  <motion.div
+                                    className="absolute left-1 top-1 h-8 rounded-md bg-white shadow-sm"
+                                    animate={{
+                                      width: "calc(50% - 4px)",
+                                      x: field.value ? "100%" : "0%",
+                                    }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                  />
+                                  <div className="relative flex h-full">
+                                    <button
+                                      type="button"
+                                      onClick={() => field.onChange(false)}
+                                      className={cn(
+                                        "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
+                                        !field.value ? "text-gray-900" : "text-gray-600",
+                                      )}
+                                    >
+                                      Normal
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => field.onChange(true)}
+                                      className={cn(
+                                        "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
+                                        field.value ? "text-gray-900" : "text-gray-600",
+                                      )}
+                                    >
+                                      Exclusividad
+                                    </button>
+                                  </div>
+                                </div>
+                              </FormControl>
                             </FormItem>
                           )}
                         />
@@ -907,36 +1035,236 @@ export function AccountConfiguration() {
                           name="terms.communications"
                           render={({ field }) => (
                             <FormItem className="rounded-lg p-4 shadow-md">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5">
-                                  <FormLabel className="text-base">
-                                    Comunicaciones
-                                  </FormLabel>
-                                  <button
-                                    type="button"
-                                    onClick={() => toggleDescription("terms.communications")}
-                                    className="focus:outline-none"
-                                  >
-                                    <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
-                                  </button>
-                                </div>
-                                <FormControl>
-                                  <Switch
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
+                              <div className="flex items-center gap-1.5 mb-2">
+                                <FormLabel className="text-base">
+                                  Comunicaciones comerciales
+                                </FormLabel>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleDescription("terms.communications")}
+                                  className="focus:outline-none"
+                                >
+                                  <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                                </button>
                               </div>
                               {visibleDescriptions.has("terms.communications") && (
-                                <FormDescription className="text-xs mt-2">
+                                <FormDescription className="text-xs mb-2">
                                   Permitir comunicaciones comerciales por defecto
                                 </FormDescription>
                               )}
+                              <FormControl>
+                                <div className="relative h-10 w-full rounded-lg bg-gray-100 p-1">
+                                  <motion.div
+                                    className="absolute left-1 top-1 h-8 rounded-md bg-white shadow-sm"
+                                    animate={{
+                                      width: "calc(50% - 4px)",
+                                      x: field.value ? "0%" : "100%",
+                                    }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                  />
+                                  <div className="relative flex h-full">
+                                    <button
+                                      type="button"
+                                      onClick={() => field.onChange(true)}
+                                      className={cn(
+                                        "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
+                                        field.value ? "text-gray-900" : "text-gray-600",
+                                      )}
+                                    >
+                                      Sí
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => field.onChange(false)}
+                                      className={cn(
+                                        "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
+                                        !field.value ? "text-gray-900" : "text-gray-600",
+                                      )}
+                                    >
+                                      No
+                                    </button>
+                                  </div>
+                                </div>
+                              </FormControl>
                             </FormItem>
                           )}
                         />
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Signature Section */}
+            {activeSection === "signature" && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                    <PenTool className="h-4 w-4 text-gray-500" />
+                    Configuración de Firma
+                  </h2>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Tipo de cuenta y firma para documentos
+                  </p>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Account Type Toggle */}
+                  <div className="rounded-lg border border-gray-200 p-6">
+                    <h3 className="mb-4 text-base font-medium text-gray-900">
+                      Tipo de Cuenta
+                    </h3>
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <span className="text-sm font-medium text-gray-600">
+                          ¿Cómo opera tu cuenta?
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => toggleDescription("accountType")}
+                          className="focus:outline-none"
+                        >
+                          <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                        </button>
+                      </div>
+                      {visibleDescriptions.has("accountType") && (
+                        <p className="text-xs text-gray-500 mb-2">
+                          Empresa: se mostrará el nombre de la empresa en documentos.
+                          Persona Física: se mostrará tu nombre personal.
+                        </p>
+                      )}
+                      <div className="relative h-10 w-full rounded-lg bg-gray-100 p-1">
+                        <motion.div
+                          className="absolute left-1 top-1 h-8 rounded-md bg-white shadow-sm"
+                          animate={{
+                            width: "calc(50% - 4px)",
+                            x: form.watch("accountType") === "person" ? "100%" : "0%",
+                          }}
+                          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        />
+                        <div className="relative flex h-full">
+                          <button
+                            type="button"
+                            onClick={() => handleAccountTypeChange("company")}
+                            className={cn(
+                              "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
+                              form.watch("accountType") === "company" ? "text-gray-900" : "text-gray-600",
+                            )}
+                          >
+                            Empresa
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleAccountTypeChange("person")}
+                            className={cn(
+                              "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
+                              form.watch("accountType") === "person" ? "text-gray-900" : "text-gray-600",
+                            )}
+                          >
+                            Persona Física
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Default Signing Agent - only for Persona Física */}
+                  {form.watch("accountType") === "person" && (
+                    <div className="rounded-lg border border-gray-200 p-6">
+                      <h3 className="mb-4 text-base font-medium text-gray-900">
+                        Agente Firmante
+                      </h3>
+                      <div>
+                        <div className="flex items-center gap-1 mb-1">
+                          <span className="text-sm font-medium">Agente por defecto</span>
+                          <button
+                            type="button"
+                            onClick={() => toggleDescription("defaultSigningAgentId")}
+                            className="focus:outline-none"
+                          >
+                            <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
+                          </button>
+                        </div>
+                        {visibleDescriptions.has("defaultSigningAgentId") && (
+                          <p className="text-xs text-gray-500 mb-2">
+                            Este agente será el firmante por defecto en los documentos
+                          </p>
+                        )}
+                        <Select
+                          value={form.watch("defaultSigningAgentId") ?? ""}
+                          onValueChange={handleAgentChange}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Seleccionar agente..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {agents.map((agent) => (
+                              <SelectItem key={agent.id} value={agent.id}>
+                                {agent.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Signature Pad */}
+                  <div className="rounded-lg border border-gray-200 p-6">
+                    <h3 className="mb-4 text-base font-medium text-gray-900">
+                      Firma Digital
+                    </h3>
+                    <p className="mb-4 text-sm text-gray-500">
+                      Esta firma se usará como predeterminada en los documentos generados.
+                    </p>
+
+                    {currentSignatureUrl && !showSignaturePad ? (
+                      <div className="group relative inline-block">
+                        <div className="rounded-lg border border-gray-200 bg-white p-4">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={currentSignatureUrl}
+                            alt="Firma actual"
+                            className="max-h-24 object-contain"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowSignaturePad(true)}
+                          className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                        >
+                          <RefreshCw className="h-6 w-6 text-white" />
+                          <span className="ml-2 text-sm text-white">Actualizar</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        {isUploadingSignature && (
+                          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 rounded-lg">
+                            <Loader2 className="h-6 w-6 animate-spin text-gray-500" />
+                            <span className="ml-2 text-sm text-gray-500">Guardando firma...</span>
+                          </div>
+                        )}
+                        <SignaturePad
+                          label="Dibujar firma"
+                          onSignatureChange={handleSignatureChange}
+                          required={false}
+                        />
+                        {currentSignatureUrl && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowSignaturePad(false)}
+                            className="mt-2"
+                          >
+                            Cancelar
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

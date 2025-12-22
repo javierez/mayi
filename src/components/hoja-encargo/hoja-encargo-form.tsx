@@ -52,7 +52,8 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
       : "",
   );
   const [ownerNif, setOwnerNif] = useState(data.owner?.nif ?? "");
-  const [ownerAddress, setOwnerAddress] = useState(data.owner?.address ?? "");
+  const [ownerAddress, setOwnerAddress] = useState(data.owner?.address ?? ""); // Full address for display
+  const [ownerStreetAddress, setOwnerStreetAddress] = useState(""); // Street only for template
   const [ownerCity, setOwnerCity] = useState("");
   const [ownerPostalCode, setOwnerPostalCode] = useState("");
   const [ownerPhone, setOwnerPhone] = useState(data.owner?.phone ?? "");
@@ -79,8 +80,19 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
   const [allowVisits, setAllowVisits] = useState(
     data.terms?.allowVisits ?? true,
   );
+  const [allowKeyDelivery, setAllowKeyDelivery] = useState(
+    data.terms?.allowKeyDelivery ?? true,
+  );
+  const [allowPortalPublication, setAllowPortalPublication] = useState(
+    data.terms?.allowPortalPublication ?? true,
+  );
   const [gdprConsent, setGdprConsent] = useState(
     data.terms?.communications ?? false,
+  );
+
+  // Property description (editable)
+  const [propertyDescription, setPropertyDescription] = useState(
+    data.listing.shortDescription ?? data.listing.description ?? "",
   );
 
   // Timeline
@@ -89,9 +101,8 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
     data.property.city ?? "",
   );
 
-  // Signatures (optional)
+  // Owner signature (agent signature comes from account settings)
   const [ownerSignature, setOwnerSignature] = useState<string | null>(null);
-  const [agentSignature, setAgentSignature] = useState<string | null>(null);
 
   // Share modal
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -187,19 +198,28 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
 
   // Handle Google Places autocomplete selection for owner address
   const handleOwnerAddressSelected = (locationData: LocationData) => {
-    // Build the full address with street + number
-    const streetWithNumber =
-      locationData.addressComponents.streetNumber &&
-      locationData.addressComponents.route
-        ? `${locationData.addressComponents.route} ${locationData.addressComponents.streetNumber}`
-        : locationData.addressComponents.route ?? locationData.address;
+    // Store full address for display in the input
+    setOwnerAddress(locationData.address);
 
-    setOwnerAddress(streetWithNumber);
+    // Build street-only address for template (Domicilio field)
+    const streetParts: string[] = [];
+    if (locationData.addressComponents.route) {
+      streetParts.push(locationData.addressComponents.route);
+    }
+    if (locationData.addressComponents.streetNumber) {
+      streetParts.push(locationData.addressComponents.streetNumber);
+    }
+    const streetOnly = streetParts.length > 0
+      ? streetParts.join(", ")
+      : locationData.address;
+    setOwnerStreetAddress(streetOnly);
 
-    // Auto-fill city and postal code if available
+    // Extract city for Vecino/a de field
     if (locationData.addressComponents.locality) {
       setOwnerCity(locationData.addressComponents.locality);
     }
+
+    // Extract postal code
     if (locationData.addressComponents.postalCode) {
       setOwnerPostalCode(locationData.addressComponents.postalCode);
     }
@@ -253,20 +273,23 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
     ownerContactId: data.owner?.contactId ?? BigInt(0),
     ownerName,
     ownerNif,
-    ownerAddress,
+    ownerAddress: ownerStreetAddress || ownerAddress, // Use street-only if extracted, else full address
     ownerCity,
     ownerPostalCode,
     ownerPhone,
     ownerEmail,
+    propertyDescription,
     commissionPercentage,
     minimumCommission,
     durationMonths,
     exclusivity,
     allowSignage,
     allowVisits,
+    allowKeyDelivery,
+    allowPortalPublication,
     gdprConsent,
     ownerSignature: ownerSignature ?? undefined,
-    agentSignature: agentSignature ?? undefined,
+    // Agent signature comes from account settings (signatureUrl), not passed here
     signingDate,
     signingLocation,
   });
@@ -276,27 +299,27 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
     setIsLoading(true);
 
     try {
-      // Update owner contact if there are changes
-      if (changesToSave.length > 0 && originalValues.owner) {
-        const fields: Partial<{ nif: string; address: string; phone: string; email: string }> = {};
+      // Update owner contact if there are changes or gdprConsent changed
+      if (originalValues.owner) {
+        const fields: Partial<{ nif: string; address: string; phone: string; email: string; gdprConsent: boolean }> = {};
         for (const change of changesToSave) {
           fields[change.field] = change.newValue;
         }
+        // Always include gdprConsent
+        fields.gdprConsent = gdprConsent;
 
         const updateResult = await updateOwnerContactFromHojaEncargoAction({
           contactId: originalValues.owner.contactId.toString(),
           fields,
         });
 
-        if (updateResult.success) {
+        if (updateResult.success && changesToSave.length > 0) {
           toast.success("Datos del propietario actualizados");
         }
       }
 
-      // Create hoja encargo (upload signatures if provided)
-      if (ownerSignature ?? agentSignature) {
-        await createHojaEncargoAction(getFormData());
-      }
+      // Always create hoja encargo to save authorization fields and signatures
+      await createHojaEncargoAction(getFormData());
 
       // Generate PDF and save to S3
       const response = await fetch("/api/nota-encargo/generate-pdf", {
@@ -513,6 +536,19 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
                     : "—"}
                 </p>
               </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="propertyDescription" className="mb-1 block text-xs text-gray-500">
+                  Descripción del inmueble
+                </label>
+                <textarea
+                  id="propertyDescription"
+                  value={propertyDescription}
+                  onChange={(e) => setPropertyDescription(e.target.value)}
+                  placeholder="Descripción del inmueble para el documento..."
+                  rows={2}
+                  className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
             </div>
           </div>
 
@@ -681,6 +717,80 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
                 </div>
               </div>
 
+              {/* Entrega de llaves */}
+              <div>
+                <p className="mb-2 text-xs text-gray-500">Entrega de llaves</p>
+                <div className="relative h-10 w-full rounded-lg bg-gray-100 p-1">
+                  <motion.div
+                    className="absolute left-1 top-1 h-8 rounded-md bg-white shadow-sm"
+                    animate={{
+                      width: "calc(50% - 4px)",
+                      x: allowKeyDelivery ? "0%" : "100%",
+                    }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  />
+                  <div className="relative flex h-full">
+                    <button
+                      type="button"
+                      onClick={() => setAllowKeyDelivery(true)}
+                      className={cn(
+                        "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
+                        allowKeyDelivery ? "text-gray-900" : "text-gray-600",
+                      )}
+                    >
+                      Sí
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAllowKeyDelivery(false)}
+                      className={cn(
+                        "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
+                        !allowKeyDelivery ? "text-gray-900" : "text-gray-600",
+                      )}
+                    >
+                      No
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Publicación en portales */}
+              <div>
+                <p className="mb-2 text-xs text-gray-500">Publicación en portales inmobiliarios</p>
+                <div className="relative h-10 w-full rounded-lg bg-gray-100 p-1">
+                  <motion.div
+                    className="absolute left-1 top-1 h-8 rounded-md bg-white shadow-sm"
+                    animate={{
+                      width: "calc(50% - 4px)",
+                      x: allowPortalPublication ? "0%" : "100%",
+                    }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  />
+                  <div className="relative flex h-full">
+                    <button
+                      type="button"
+                      onClick={() => setAllowPortalPublication(true)}
+                      className={cn(
+                        "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
+                        allowPortalPublication ? "text-gray-900" : "text-gray-600",
+                      )}
+                    >
+                      Sí
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAllowPortalPublication(false)}
+                      className={cn(
+                        "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
+                        !allowPortalPublication ? "text-gray-900" : "text-gray-600",
+                      )}
+                    >
+                      No
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               {/* Comunicaciones comerciales */}
               <div>
                 <p className="mb-2 text-xs text-gray-500">Comunicaciones comerciales (RGPD)</p>
@@ -749,11 +859,25 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
                 onSignatureChange={setOwnerSignature}
                 required={false}
               />
-              <SignaturePad
-                label="Firma del Agente"
-                onSignatureChange={setAgentSignature}
-                required={false}
-              />
+              <div>
+                <p className="mb-2 text-sm font-medium text-gray-700">Firma del Agente</p>
+                {data.agency.signatureUrl ? (
+                  <div className="flex h-[200px] items-center justify-center rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={data.agency.signatureUrl}
+                      alt="Firma del agente"
+                      className="max-h-[180px] object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50">
+                    <p className="text-xs text-gray-400">
+                      Sin firma configurada en ajustes de cuenta
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -820,7 +944,7 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
                 ) : (
                   <>
                     <Share2 className="mr-2 h-4 w-4" />
-                    Compartir
+                    Guardar y Compartir
                   </>
                 )}
               </Button>

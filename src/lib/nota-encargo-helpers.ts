@@ -10,6 +10,8 @@ export interface TermsData {
   communications: boolean;
   allowSignage: boolean;
   allowVisits: boolean;
+  allowKeyDelivery: boolean;
+  allowPortalPublication: boolean;
 }
 
 // Re-export HojaEncargoDocumentData as NotaEncargoPDFData for backward compatibility
@@ -248,6 +250,8 @@ export function transformToNotaEncargoPDF(
       exclusivity: termsData.exclusivity,
       allowSignage: termsData.allowSignage,
       allowVisits: termsData.allowVisits,
+      allowKeyDelivery: termsData.allowKeyDelivery,
+      allowPortalPublication: termsData.allowPortalPublication,
     },
 
     signatures: {

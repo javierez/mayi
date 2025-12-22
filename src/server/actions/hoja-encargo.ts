@@ -112,6 +112,10 @@ export async function getHojaEncargoFormDataAction(
           shortDescription: listings.shortDescription,
           description: listings.description,
           hasKeys: listings.hasKeys,
+          allowSignage: listings.allowSignage,
+          allowVisits: listings.allowVisits,
+          allowKeyDelivery: listings.allowKeyDelivery,
+          allowPortalPublication: listings.allowPortalPublication,
         },
         property: {
           propertyId: properties.propertyId,
@@ -141,6 +145,7 @@ export async function getHojaEncargoFormDataAction(
           taxId: accounts.taxId,
           collegiateNumber: accounts.collegiateNumber,
           logo: accounts.logo,
+          signatureUrl: accounts.signatureUrl,
           terms: accounts.terms,
         },
       })
@@ -163,6 +168,11 @@ export async function getHojaEncargoFormDataAction(
       throw new Error("Listing not found or you don't have access to it");
     }
 
+    console.log("📋 getHojaEncargoFormDataAction - Account signature:", {
+      signatureUrl: listingData.account.signatureUrl ?? "NULL",
+      accountId: listingData.account.accountId.toString(),
+    });
+
     // Get owner contact
     const [ownerData] = await db
       .select({
@@ -174,6 +184,7 @@ export async function getHojaEncargoFormDataAction(
         email: contacts.email,
         phone: contacts.phone,
         address: contacts.address,
+        gdprConsent: contacts.gdprConsent,
       })
       .from(listingContacts)
       .innerJoin(contacts, eq(listingContacts.contactId, contacts.contactId))
@@ -203,19 +214,22 @@ export async function getHojaEncargoFormDataAction(
       agentPersonName = earliestUser?.name ?? null;
     }
 
-    // Parse account terms
+    // Parse account terms (used as defaults)
     const accountTerms = listingData.account.terms as Record<string, unknown> | null;
-    const terms = accountTerms
-      ? {
-          commission: (accountTerms.commission as number) ?? 3,
-          minCommission: (accountTerms.min_commission as number) ?? 1500,
-          duration: (accountTerms.duration as number) ?? 12,
-          exclusivity: (accountTerms.exclusivity as boolean) ?? false,
-          allowSignage: (accountTerms.allowSignage as boolean) ?? true,
-          allowVisits: (accountTerms.allowVisits as boolean) ?? true,
-          communications: (accountTerms.communications as boolean) ?? false,
-        }
-      : null;
+    // Prioritize database values over account defaults
+    const terms = {
+      commission: (accountTerms?.commission as number) ?? 3,
+      minCommission: (accountTerms?.min_commission as number) ?? 1500,
+      duration: (accountTerms?.duration as number) ?? 12,
+      exclusivity: (accountTerms?.exclusivity as boolean) ?? false,
+      // Use listing-specific values if set, otherwise fall back to account defaults
+      allowSignage: listingData.listing.allowSignage ?? (accountTerms?.allowSignage as boolean) ?? true,
+      allowVisits: listingData.listing.allowVisits ?? (accountTerms?.allowVisits as boolean) ?? true,
+      allowKeyDelivery: listingData.listing.allowKeyDelivery ?? (accountTerms?.allowKeyDelivery as boolean) ?? true,
+      allowPortalPublication: listingData.listing.allowPortalPublication ?? (accountTerms?.allowPortalPublication as boolean) ?? true,
+      // Use contact-specific value if set, otherwise fall back to account defaults
+      communications: ownerData?.gdprConsent ?? (accountTerms?.communications as boolean) ?? false,
+    };
 
     return {
       success: true,
@@ -256,6 +270,7 @@ export async function getHojaEncargoFormDataAction(
               email: ownerData.email,
               phone: ownerData.phone,
               address: ownerData.address,
+              gdprConsent: ownerData.gdprConsent,
             }
           : null,
         agency: {
@@ -270,6 +285,7 @@ export async function getHojaEncargoFormDataAction(
           taxId: listingData.account.taxId,
           collegiateNumber: listingData.account.collegiateNumber,
           logo: listingData.account.logo,
+          signatureUrl: listingData.account.signatureUrl,
         },
         terms,
         existingDocument,
@@ -431,36 +447,19 @@ export async function createHojaEncargoAction(
         - Tag: firma-encargo-propietario`);
     }
 
-    // Upload agent signature if provided
-    if (formData.agentSignature) {
-      const agentSignatureFile = await convertSignatureToFile(
-        formData.agentSignature,
-        "agent",
-        referenceNumber,
-        "Agente",
-        formData.signingDate,
-      );
+    // Agent signature comes from account settings (signatureUrl), no upload needed
 
-      const agentDocument = await uploadDocument(
-        agentSignatureFile,
-        currentUser.id,
-        referenceNumber,
-        2,
-        "firma-encargo-agente",
-        undefined, // contactId
-        formData.listingId,
-        undefined, // listingContactId
-        undefined, // dealId
-        undefined, // appointmentId
-        listingData.propertyId,
-        "initial-docs",
-      );
-
-      console.log(`✅ Agent signature stored:
-        - Document ID: ${agentDocument.docId}
-        - S3 URL: ${agentDocument.fileUrl}
-        - Tag: firma-encargo-agente`);
-    }
+    // Update listing with authorization fields
+    await db
+      .update(listings)
+      .set({
+        allowSignage: formData.allowSignage,
+        allowVisits: formData.allowVisits,
+        allowKeyDelivery: formData.allowKeyDelivery,
+        allowPortalPublication: formData.allowPortalPublication,
+        updatedAt: new Date(),
+      })
+      .where(eq(listings.listingId, formData.listingId));
 
     console.log(`✅ Hoja encargo created for listing ${formData.listingId}`);
 
@@ -564,8 +563,13 @@ export async function getHojaEncargoDocumentDataAction(
     // Build owner address
     const ownerAddress = formData?.ownerAddress ?? pageData.owner?.address ?? "";
 
-    // Get hoja encargo signatures if they exist
-    const signatures = await getHojaEncargoSignatures(listingId);
+    // Get owner signature if exists (agent signature comes from account settings)
+    const ownerSignature = await getHojaEncargoOwnerSignature(listingId);
+
+    console.log("📝 Hoja Encargo Signatures:", {
+      ownerSignature: ownerSignature ? "present" : "missing",
+      agentSignatureUrl: pageData.agency.signatureUrl ?? "missing",
+    });
 
     const documentData: HojaEncargoDocumentData = {
       documentNumber,
@@ -600,7 +604,7 @@ export async function getHojaEncargoDocumentDataAction(
       },
       property: {
         description:
-          pageData.listing.shortDescription ?? pageData.listing.description ?? "No especificado",
+          formData?.propertyDescription ?? pageData.listing.shortDescription ?? pageData.listing.description ?? "No especificado",
         fullAddress,
         cadastralReference: pageData.property.cadastralReference ?? undefined,
         surfaceArea: pageData.property.builtSurfaceArea ?? pageData.property.squareMeters?.toString(),
@@ -618,10 +622,12 @@ export async function getHojaEncargoDocumentDataAction(
         exclusivity: formData?.exclusivity ?? pageData.terms?.exclusivity ?? false,
         allowSignage: formData?.allowSignage ?? pageData.terms?.allowSignage ?? true,
         allowVisits: formData?.allowVisits ?? pageData.terms?.allowVisits ?? true,
+        allowKeyDelivery: formData?.allowKeyDelivery ?? pageData.terms?.allowKeyDelivery ?? true,
+        allowPortalPublication: formData?.allowPortalPublication ?? pageData.terms?.allowPortalPublication ?? true,
       },
       signatures: {
-        ownerSignatureUrl: signatures.ownerSignatureUrl ?? undefined,
-        agentSignatureUrl: signatures.agentSignatureUrl ?? undefined,
+        ownerSignatureUrl: ownerSignature ?? undefined,
+        agentSignatureUrl: pageData.agency.signatureUrl ?? undefined,
         location,
         date,
       },
@@ -646,43 +652,30 @@ export async function getHojaEncargoDocumentDataAction(
 }
 
 /**
- * Get hoja encargo signature documents for a listing
+ * Get owner signature document for a listing (agent signature comes from account settings)
  */
-async function getHojaEncargoSignatures(
+async function getHojaEncargoOwnerSignature(
   listingId: number,
-): Promise<{
-  ownerSignatureUrl: string | null;
-  agentSignatureUrl: string | null;
-}> {
+): Promise<string | null> {
   try {
-    const signatures = await db
+    const [signature] = await db
       .select({
         fileUrl: documents.fileUrl,
-        documentTag: documents.documentTag,
       })
       .from(documents)
       .where(
         and(
           eq(documents.listingId, BigInt(listingId)),
+          eq(documents.documentTag, "firma-encargo-propietario"),
           eq(documents.isActive, true),
         ),
-      );
+      )
+      .limit(1);
 
-    let ownerSignatureUrl: string | null = null;
-    let agentSignatureUrl: string | null = null;
-
-    for (const sig of signatures) {
-      if (sig.documentTag === "firma-encargo-propietario") {
-        ownerSignatureUrl = sig.fileUrl;
-      } else if (sig.documentTag === "firma-encargo-agente") {
-        agentSignatureUrl = sig.fileUrl;
-      }
-    }
-
-    return { ownerSignatureUrl, agentSignatureUrl };
+    return signature?.fileUrl ?? null;
   } catch (error) {
-    console.error("Error fetching hoja encargo signatures:", error);
-    return { ownerSignatureUrl: null, agentSignatureUrl: null };
+    console.error("Error fetching owner signature:", error);
+    return null;
   }
 }
 
@@ -698,6 +691,7 @@ export async function updateOwnerContactFromHojaEncargoAction(input: {
     postalCode: string;
     phone: string;
     email: string;
+    gdprConsent: boolean;
   }>;
 }): Promise<{
   success: boolean;
@@ -724,6 +718,77 @@ export async function updateOwnerContactFromHojaEncargoAction(input: {
         error instanceof Error
           ? error.message
           : "Failed to update contact fields",
+    };
+  }
+}
+
+/**
+ * Get hoja encargo share data for the share modal
+ */
+export async function getHojaEncargoShareDataAction(
+  listingId: number,
+): Promise<{
+  success: boolean;
+  data?: {
+    ownerName: string;
+    ownerPhone?: string;
+    ownerEmail?: string;
+    propertyAddress: string;
+    commissionPercentage: string;
+    durationMonths: string;
+    documentUrl?: string;
+  };
+  error?: string;
+}> {
+  try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      throw new Error("Authentication required");
+    }
+
+    const result = await getHojaEncargoFormDataAction(listingId);
+    if (!result.success || !result.data) {
+      throw new Error(result.error ?? "Failed to fetch data");
+    }
+
+    const { owner, property, terms, existingDocument } = result.data;
+
+    // Build owner name
+    const ownerName = owner
+      ? [owner.firstName, owner.lastName].filter(Boolean).join(" ")
+      : "Propietario";
+
+    // Build property address
+    const propertyAddress = [
+      property.street,
+      property.addressDetails,
+      property.postalCode,
+      property.city,
+      property.province,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    return {
+      success: true,
+      data: {
+        ownerName,
+        ownerPhone: owner?.phone ?? undefined,
+        ownerEmail: owner?.email ?? undefined,
+        propertyAddress,
+        commissionPercentage: (terms?.commission ?? 3).toString(),
+        durationMonths: (terms?.duration ?? 12).toString(),
+        documentUrl: existingDocument?.fileUrl,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching hoja encargo share data:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch share data",
     };
   }
 }
