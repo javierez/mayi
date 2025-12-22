@@ -43,6 +43,8 @@ export function HojaEncargoButton({
     communications: boolean;
     allowSignage: boolean;
     allowVisits: boolean;
+    allowKeyDelivery: boolean;
+    allowPortalPublication: boolean;
   }) => {
     try {
       console.log("🚀 Starting Nota de Encargo generation...");

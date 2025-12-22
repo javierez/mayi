@@ -485,6 +485,24 @@ export function NotaEncargoDocument({ data }: Props) {
               {accountType === "company" ? "" : "D/ª "}
               <strong>{agentName}</strong>.
             </div>
+            {data.terms.exclusivity && (
+              <div className="mb-3 text-justify leading-relaxed">
+                <strong>C) OBLIGACIONES DE LA PROPIEDAD:</strong>
+                <br />
+                La propiedad se compromete, a partir de la firma del presente
+                documento, a realizar las gestiones de venta única y
+                exclusivamente a través de la inmobiliaria, y en consecuencia no
+                podrá enajenar por mediación de otro tercero.
+                <br />
+                <br />
+                Si incumpliese esta obligación voluntariamente aceptada,
+                vendiendo a través de un tercero, la propiedad habrá de abonar a
+                la inmobiliaria los honorarios pactados en este contrato, en
+                compensación por los gastos y perjuicios ocasionados, ya que la
+                inmobiliaria realiza gestiones, asesora y publicita, con el fin
+                indicado.
+              </div>
+            )}
           </div>
 
           <div className="my-6">

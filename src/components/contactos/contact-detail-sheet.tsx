@@ -639,6 +639,22 @@ export function ContactDetailSheet({
       icon: <Handshake className="h-4 w-4" />,
       title: "Oferta Pendiente",
     };
+  } else if (contact.hasMissedVisit && !contact.hasCancelledVisit) {
+    console.log("✅ [Badge Status] Matched: MISSED VISIT");
+    badgeType = "missed";
+    badgeConfig = {
+      color: "bg-red-100 text-red-800 hover:bg-red-200",
+      icon: <Clock className="h-4 w-4" />,
+      title: "Visita Perdida",
+    };
+  } else if (contact.hasCancelledVisit) {
+    console.log("✅ [Badge Status] Matched: CANCELLED VISIT");
+    badgeType = "cancelled";
+    badgeConfig = {
+      color: "bg-orange-100 text-orange-800 hover:bg-orange-200",
+      icon: <X className="h-4 w-4" />,
+      title: "Visita Cancelada",
+    };
   } else if (contact.hasCompletedVisit) {
     console.log("✅ [Badge Status] Matched: COMPLETED VISIT", {
       hasOffer: contact.hasOffer,
@@ -649,22 +665,6 @@ export function ContactDetailSheet({
       color: "bg-gray-100 text-gray-700 hover:bg-gray-200",
       icon: <Check className="h-4 w-4" />,
       title: "Visita Completada",
-    };
-  } else if (contact.hasCancelledVisit) {
-    console.log("✅ [Badge Status] Matched: CANCELLED VISIT");
-    badgeType = "cancelled";
-    badgeConfig = {
-      color: "bg-orange-100 text-orange-800 hover:bg-orange-200",
-      icon: <X className="h-4 w-4" />,
-      title: "Visita Cancelada",
-    };
-  } else if (contact.hasMissedVisit) {
-    console.log("✅ [Badge Status] Matched: MISSED VISIT");
-    badgeType = "missed";
-    badgeConfig = {
-      color: "bg-red-100 text-red-800 hover:bg-red-200",
-      icon: <Clock className="h-4 w-4" />,
-      title: "Visita Perdida",
     };
   } else {
     console.log("✅ [Badge Status] Matched: NONE (no visits)");
@@ -715,7 +715,7 @@ export function ContactDetailSheet({
           </div>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 mt-1 sm:mt-2">
+        <ScrollArea className="min-h-0 flex-1 mt-1 sm:mt-2">
           <div className="space-y-3 px-4 pb-4 sm:space-y-4 sm:px-6 sm:pb-6">
             {/* Badge Status - Only show if not "none" */}
             {badgeType !== "none" && (

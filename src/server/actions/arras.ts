@@ -321,7 +321,6 @@ export async function getArrasDocumentDataAction(
     }> = [];
     let website: string | null = null;
     const email: string | null = null;
-    let signatureUrl: string | null = null;
     let userAccountId: number | null = null;
 
     try {

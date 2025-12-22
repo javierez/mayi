@@ -59,7 +59,8 @@ interface ContactDocumentsPageProps {
     | "certificado-energetico"
     | "escrituras"
     | "carteles"
-    | "documentos-personales";
+    | "documentos-personales"
+    | "contratos";
   initialDocuments?: Document[]; // Optional initial documents from server
 }
 
@@ -89,6 +90,7 @@ export function ContactDocumentsPage({
     escrituras: "escrituras",
     carteles: "carteles",
     "documentos-personales": "documentos-personales",
+    contratos: "contratos",
   } as const;
 
   const apiFolderType = folderTypeMap[folderType];

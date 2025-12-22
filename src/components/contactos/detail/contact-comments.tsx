@@ -12,23 +12,20 @@ import {
   Trash2,
   Loader2,
   CheckCircle2,
+  Calendar,
+  Home,
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import { clsx } from "clsx";
-import type { UserCommentWithUser } from "~/types/user-comments";
+import type { UnifiedComment, CommentSource } from "~/types/unified-comments";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
 import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whisper-button";
 
-// Extended UserComment type with status
-interface CommentWithStatus extends UserCommentWithUser {
-  status?: "sending" | "sent" | "error";
-}
-
 interface ContactCommentsProps {
   contactId: bigint;
-  initialComments?: UserCommentWithUser[];
+  initialComments?: UnifiedComment[];
   currentUserId?: string;
   currentUser?: {
     id: string;
@@ -36,19 +33,21 @@ interface ContactCommentsProps {
     image?: string;
   };
   onAddComment: (
-    comment: UserCommentWithUser,
+    comment: UnifiedComment,
   ) => Promise<{ success: boolean; error?: string }>;
   onEditComment: (
     commentId: bigint,
     content: string,
+    source: CommentSource,
   ) => Promise<{ success: boolean; error?: string }>;
   onDeleteComment: (
     commentId: bigint,
+    source: CommentSource,
   ) => Promise<{ success: boolean; error?: string }>;
 }
 
-interface UserCommentItemProps {
-  comment: CommentWithStatus;
+interface UnifiedCommentItemProps {
+  comment: UnifiedComment;
   isReply?: boolean;
   currentUserId?: string;
   replyingTo: bigint | null;
@@ -63,16 +62,46 @@ interface UserCommentItemProps {
   setEditContent: (content: string) => void;
   isPending: boolean;
   isDeleting: boolean;
-  handleAddReply: (parentId: bigint) => Promise<void>;
-  handleEditComment: (commentId: bigint) => Promise<void>;
-  handleDeleteComment: (commentId: bigint) => Promise<void>;
-  startEditingComment: (comment: UserCommentWithUser) => void;
+  handleAddReply: (parentId: bigint, parentSource: CommentSource, parentComment: UnifiedComment) => Promise<void>;
+  handleEditComment: (commentId: bigint, source: CommentSource) => Promise<void>;
+  handleDeleteComment: (commentId: bigint, source: CommentSource) => Promise<void>;
+  startEditingComment: (comment: UnifiedComment) => void;
   cancelEditing: () => void;
-  setCommentToDelete: (id: bigint | null) => void;
+  setCommentToDelete: (data: { id: bigint; source: CommentSource } | null) => void;
   setDeleteConfirmOpen: (open: boolean) => void;
 }
 
-function UserCommentItem({
+/**
+ * Source badge component for displaying the origin of a comment
+ */
+function SourceBadge({ comment }: { comment: UnifiedComment }) {
+  switch (comment.source) {
+    case "contact":
+      return null; // No badge for direct contact notes
+    case "appointment":
+      const appointmentLabel = comment.appointmentMeta
+        ? `${comment.appointmentMeta.type ?? "Cita"} - ${format(comment.appointmentMeta.datetimeStart, "d MMM yyyy", { locale: es })}`
+        : "Cita";
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+          <Calendar className="h-3 w-3" />
+          {appointmentLabel}
+        </span>
+      );
+    case "listing_contact":
+      const listingLabel = comment.listingContactMeta?.propertyAddress ?? "Propiedad";
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+          <Home className="h-3 w-3" />
+          {listingLabel}
+        </span>
+      );
+    default:
+      return null;
+  }
+}
+
+function UnifiedCommentItem({
   comment,
   isReply = false,
   currentUserId,
@@ -93,7 +122,7 @@ function UserCommentItem({
   cancelEditing,
   setCommentToDelete,
   setDeleteConfirmOpen,
-}: UserCommentItemProps) {
+}: UnifiedCommentItemProps) {
   return (
     <div className={clsx("max-w-full", isReply && "ml-12 pl-4")}>
       <div className="flex space-x-3 max-w-full">
@@ -150,7 +179,7 @@ function UserCommentItem({
 
                     <button
                       onClick={() => {
-                        setCommentToDelete(comment.commentId);
+                        setCommentToDelete({ id: comment.commentId, source: comment.source });
                         setDeleteConfirmOpen(true);
                       }}
                       className="rounded p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
@@ -186,14 +215,18 @@ function UserCommentItem({
                 )}
               </div>
 
-              <span
-                className={clsx("text-gray-500", isReply ? "text-xs" : "text-xs")}
-              >
-                {formatDistanceToNow(comment.createdAt, {
-                  addSuffix: true,
-                  locale: es,
-                })}
-              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={clsx("text-gray-500", isReply ? "text-xs" : "text-xs")}
+                >
+                  {formatDistanceToNow(comment.createdAt, {
+                    addSuffix: true,
+                    locale: es,
+                  })}
+                </span>
+                {/* Source badge - only show for top-level comments */}
+                {!isReply && <SourceBadge comment={comment} />}
+              </div>
             </div>
             {editingComment === comment.commentId ? (
               <div className="mt-2">
@@ -220,7 +253,7 @@ function UserCommentItem({
                   </Button>
                   <Button
                     size="sm"
-                    onClick={() => handleEditComment(comment.commentId)}
+                    onClick={() => handleEditComment(comment.commentId, comment.source)}
                     disabled={!editContent.trim()}
                   >
                     Guardar
@@ -283,7 +316,7 @@ function UserCommentItem({
                   </Button>
                   <Button
                     size="sm"
-                    onClick={() => handleAddReply(comment.commentId)}
+                    onClick={() => handleAddReply(comment.commentId, comment.source, comment)}
                     disabled={
                       !(
                         replyContents[comment.commentId.toString()] ?? ""
@@ -299,7 +332,7 @@ function UserCommentItem({
           {comment.replies.length > 0 && (
             <div className="mt-3 space-y-3">
               {comment.replies.map((reply) => (
-                <UserCommentItem
+                <UnifiedCommentItem
                   key={reply.commentId.toString()}
                   comment={reply}
                   isReply={true}
@@ -341,7 +374,7 @@ export function ContactComments({
   onDeleteComment,
 }: ContactCommentsProps) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [commentToDelete, setCommentToDelete] = useState<bigint | null>(null);
+  const [commentToDelete, setCommentToDelete] = useState<{ id: bigint; source: CommentSource } | null>(null);
 
   // Generate initials from user name
   const getCurrentUserInitials = () => {
@@ -359,15 +392,15 @@ export function ContactComments({
   const [optimisticComments, addOptimisticComment] = useOptimistic(
     initialComments.map((comment) => ({ ...comment, status: "sent" as const })),
     (
-      state: CommentWithStatus[],
+      state: UnifiedComment[],
       action: {
         type: string;
-        comment?: CommentWithStatus;
+        comment?: UnifiedComment;
         commentId?: string;
         status?: "sending" | "sent" | "error";
-        updatedComment?: CommentWithStatus;
+        updatedComment?: UnifiedComment;
         parentId?: string;
-        reply?: CommentWithStatus;
+        reply?: UnifiedComment;
         content?: string;
       },
     ) => {
@@ -462,12 +495,12 @@ export function ContactComments({
   const [editingComment, setEditingComment] = useState<bigint | null>(null);
   const [editContent, setEditContent] = useState("");
 
+  // Handle adding a new top-level comment (always "contact" source)
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
 
-    const tempComment: CommentWithStatus = {
+    const tempComment: UnifiedComment = {
       commentId: BigInt(Date.now()),
-      contactId,
       userId: currentUserId ?? "temp",
       content: newComment,
       parentId: null,
@@ -481,6 +514,8 @@ export function ContactComments({
         image: currentUser?.image,
       },
       replies: [],
+      source: "contact", // New top-level comments are always contact notes
+      contactId: contactId,
       status: "sending",
     };
 
@@ -523,14 +558,15 @@ export function ContactComments({
     });
   };
 
-  const handleAddReply = async (parentId: bigint) => {
+  // Handle adding a reply - inherits source from parent comment
+  const handleAddReply = async (parentId: bigint, parentSource: CommentSource, parentComment: UnifiedComment) => {
     const content = replyContents[parentId.toString()] ?? "";
     if (!content.trim()) return;
 
     // Create reply with current user info and sending status
-    const tempReply: CommentWithStatus = {
+    // Reply inherits source and source-specific IDs from parent
+    const tempReply: UnifiedComment = {
       commentId: BigInt(Date.now()),
-      contactId,
       userId: currentUserId ?? "temp",
       content: content,
       parentId: parentId,
@@ -544,6 +580,14 @@ export function ContactComments({
         image: currentUser?.image,
       },
       replies: [],
+      source: parentSource, // Inherit source from parent
+      // Inherit source-specific IDs from parent
+      contactId: parentComment.contactId,
+      appointmentId: parentComment.appointmentId,
+      listingContactId: parentComment.listingContactId,
+      // Inherit metadata for display
+      appointmentMeta: parentComment.appointmentMeta,
+      listingContactMeta: parentComment.listingContactMeta,
       status: "sending",
     };
 
@@ -591,7 +635,7 @@ export function ContactComments({
     });
   };
 
-  const handleEditComment = async (commentId: bigint) => {
+  const handleEditComment = async (commentId: bigint, source: CommentSource) => {
     if (!editContent.trim()) return;
 
     // Store edit content and exit edit mode immediately for instant UX
@@ -602,7 +646,7 @@ export function ContactComments({
     // Call parent function - parent handles optimistic updates
     startTransition(async () => {
       try {
-        const result = await onEditComment(commentId, newContent);
+        const result = await onEditComment(commentId, newContent, source);
 
         if (!result.success) {
           toast.error(result.error ?? "Error al editar la nota");
@@ -616,11 +660,11 @@ export function ContactComments({
     });
   };
 
-  const handleDeleteComment = async (commentId: bigint) => {
+  const handleDeleteComment = async (commentId: bigint, source: CommentSource) => {
     // Call parent function - parent handles optimistic updates
     startDeleteTransition(async () => {
       try {
-        const result = await onDeleteComment(commentId);
+        const result = await onDeleteComment(commentId, source);
 
         if (!result.success) {
           toast.error(result.error ?? "Error al eliminar la nota");
@@ -634,7 +678,7 @@ export function ContactComments({
     });
   };
 
-  const startEditingComment = (comment: UserCommentWithUser) => {
+  const startEditingComment = (comment: UnifiedComment) => {
     setEditingComment(comment.commentId);
     setEditContent(comment.content);
   };
@@ -697,7 +741,7 @@ export function ContactComments({
           optimisticComments.map((comment) => (
             <Card key={comment.commentId.toString()}>
               <CardContent className="p-4">
-                <UserCommentItem
+                <UnifiedCommentItem
                   comment={comment}
                   currentUserId={currentUserId}
                   replyingTo={replyingTo}
@@ -733,7 +777,7 @@ export function ContactComments({
             return "¿Estás seguro de que quieres eliminar esta nota? Esta acción no se puede deshacer.";
 
           const comment = optimisticComments.find(
-            (c) => c.commentId === commentToDelete,
+            (c) => c.commentId === commentToDelete.id,
           );
           const replyCount = comment?.replies?.length ?? 0;
 
@@ -745,7 +789,7 @@ export function ContactComments({
         })()}
         onConfirm={() => {
           if (commentToDelete) {
-            void handleDeleteComment(commentToDelete);
+            void handleDeleteComment(commentToDelete.id, commentToDelete.source);
             setCommentToDelete(null);
           }
         }}

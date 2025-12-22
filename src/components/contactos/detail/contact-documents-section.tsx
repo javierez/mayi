@@ -12,7 +12,8 @@ interface ContactDocumentsSectionProps {
     | "certificado-energetico"
     | "escrituras"
     | "carteles"
-    | "documentos-personales";
+    | "documentos-personales"
+    | "contratos";
   initialDocuments?: Array<{
     docId: string;
     filename: string;

@@ -35,7 +35,7 @@ export function ContactNotesCard({
     >
       <ModernSaveIndicator state={saveState} onSave={onSave} />
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold tracking-wide">COMENTARIOS DEL CONTACTO</h3>
+        <h3 className="text-sm font-semibold tracking-wide">DESCRIPCIÓN DEL CONTACTO</h3>
       </div>
       <div className="space-y-3">
         <div className="relative space-y-1.5">

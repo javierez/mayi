@@ -38,6 +38,8 @@ const termsSchema = z.object({
   communications: z.boolean(),
   allowSignage: z.boolean(),
   allowVisits: z.boolean(),
+  allowKeyDelivery: z.boolean(),
+  allowPortalPublication: z.boolean(),
 });
 
 type TermsFormData = z.infer<typeof termsSchema>;
@@ -64,6 +66,8 @@ export function TermsModal({ isOpen, onClose, onContinue }: TermsModalProps) {
       communications: false,
       allowSignage: true,
       allowVisits: true,
+      allowKeyDelivery: false,
+      allowPortalPublication: true,
     },
   });
 
@@ -94,6 +98,8 @@ export function TermsModal({ isOpen, onClose, onContinue }: TermsModalProps) {
           communications: (terms.communications as boolean) ?? false,
           allowSignage: (terms.allowSignage as boolean) ?? true,
           allowVisits: (terms.allowVisits as boolean) ?? true,
+          allowKeyDelivery: (terms.allowKeyDelivery as boolean) ?? false,
+          allowPortalPublication: (terms.allowPortalPublication as boolean) ?? true,
         });
       }
     } catch (error) {
@@ -321,6 +327,48 @@ export function TermsModal({ isOpen, onClose, onContinue }: TermsModalProps) {
                           <FormLabel>Autorización para visitas</FormLabel>
                           <FormDescription>
                             Autorizar visitas de posibles compradores
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="allowKeyDelivery"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                        <div className="space-y-0.5">
+                          <FormLabel>Entrega de llaves</FormLabel>
+                          <FormDescription>
+                            Autorizar la entrega de llaves para visitas
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="allowPortalPublication"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                        <div className="space-y-0.5">
+                          <FormLabel>Publicación en portales</FormLabel>
+                          <FormDescription>
+                            Autorizar publicación en portales inmobiliarios
                           </FormDescription>
                         </div>
                         <FormControl>

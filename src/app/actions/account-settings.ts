@@ -333,7 +333,7 @@ export async function uploadAccountSignatureAction(
     const buffer = Buffer.from(base64Data, "base64");
 
     // Determine content type
-    const contentType = signatureDataUrl.match(/^data:(image\/\w+);base64,/)?.[1] ?? "image/png";
+    const contentType = /^data:(image\/\w+);base64,/.exec(signatureDataUrl)?.[1] ?? "image/png";
 
     // Create the S3 key: legal/signature.png
     const signatureKey = "legal/signature.png";

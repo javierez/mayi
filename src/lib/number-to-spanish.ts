@@ -19,7 +19,7 @@ const HUNDREDS = [
 ];
 
 // Feminine forms for currency (euros is masculine, but keeping for completeness)
-const HUNDREDS_FEMININE = [
+const _HUNDREDS_FEMININE = [
   "", "ciento", "doscientas", "trescientas", "cuatrocientas", "quinientas",
   "seiscientas", "setecientas", "ochocientas", "novecientas"
 ];

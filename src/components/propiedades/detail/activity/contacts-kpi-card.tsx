@@ -59,7 +59,7 @@ export function ContactsKPICard({
 
         {/* Label */}
         <span className="mb-3 text-xs uppercase tracking-widest text-muted-foreground">
-          Contactos
+          Conexiones
         </span>
 
         {/* Breakdown Stats */}

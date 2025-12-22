@@ -79,6 +79,8 @@ const mockData: HojaEncargoDocumentData = {
     exclusivity: false,
     allowSignage: true,
     allowVisits: true,
+    allowKeyDelivery: false,
+    allowPortalPublication: true,
   },
 
   signatures: {
@@ -114,6 +116,8 @@ export default function NotaEncargoPlayground() {
     communications: false,
     allowSignage: true,
     allowVisits: true,
+    allowKeyDelivery: false,
+    allowPortalPublication: true,
   };
 
   // Load real data when requested

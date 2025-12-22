@@ -32,6 +32,13 @@ export function ContactDocumentsManager({
     description: "DNI, NIF, documentos personales",
   };
 
+  // Contracts folder - always available for all contacts
+  const contractsFolder: Folder = {
+    id: "contratos",
+    name: "Contratos",
+    description: "Contratos de arras, alquiler",
+  };
+
   // Owner-specific folders - only show if contact is owner
   const ownerFolders: Folder[] = isOwner
     ? [
@@ -120,6 +127,7 @@ export function ContactDocumentsManager({
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {renderFolderCard(personalDocumentsFolder)}
+          {renderFolderCard(contractsFolder)}
         </div>
       </div>
 
