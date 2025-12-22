@@ -559,8 +559,8 @@ async function getListingContactCommentReplies(
 }
 
 /**
- * Get unified comments for a specific listing-contact relationship
- * Fetches both listing contact comments and appointment comments
+ * Get comments for a specific listing-contact relationship
+ * Fetches listing contact comments and appointment comments
  * where both listingId AND contactId match
  */
 export async function getListingContactUnifiedComments(
@@ -582,6 +582,120 @@ export async function getListingContactUnifiedComments(
   );
 
   return allComments;
+}
+
+/**
+ * Helper: Get appointment comments for appointments matching both listingId and contactId
+ */
+async function getAppointmentCommentsForListingContact(
+  listingId: bigint,
+  contactId: bigint,
+  accountId: number,
+): Promise<UnifiedComment[]> {
+  try {
+    // Find appointments where BOTH listingId AND contactId match
+    const matchingAppointments = await db
+      .select({
+        appointmentId: appointments.appointmentId,
+        type: appointments.type,
+        datetimeStart: appointments.datetimeStart,
+        title: appointments.title,
+      })
+      .from(appointments)
+      .where(
+        and(
+          eq(appointments.listingId, listingId),
+          eq(appointments.contactId, contactId),
+          eq(appointments.isActive, true),
+        ),
+      );
+
+    if (matchingAppointments.length === 0) return [];
+
+    // Create metadata map (no listing info needed - we hide it in this context)
+    const appointmentMetaMap = new Map(
+      matchingAppointments.map((a) => [
+        a.appointmentId.toString(),
+        {
+          appointmentId: a.appointmentId,
+          type: a.type,
+          datetimeStart: a.datetimeStart,
+          title: a.title,
+          listingId: null as bigint | null,
+          propertyAddress: null as string | null,
+        },
+      ]),
+    );
+
+    const appointmentIds = matchingAppointments.map((a) => a.appointmentId);
+
+    // Batch fetch top-level comments
+    const comments = await db
+      .select({
+        commentId: appointmentComments.commentId,
+        appointmentId: appointmentComments.appointmentId,
+        userId: appointmentComments.userId,
+        content: appointmentComments.content,
+        parentId: appointmentComments.parentId,
+        isDeleted: sql<boolean>`COALESCE(${appointmentComments.isDeleted}, false)`,
+        createdAt: appointmentComments.createdAt,
+        updatedAt: appointmentComments.updatedAt,
+        user: {
+          id: users.id,
+          name: users.name,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          image: users.image,
+          initials: sql<string>`CONCAT(LEFT(${users.firstName}, 1), LEFT(${users.lastName}, 1))`,
+        },
+      })
+      .from(appointmentComments)
+      .innerJoin(users, eq(appointmentComments.userId, users.id))
+      .where(
+        and(
+          inArray(appointmentComments.appointmentId, appointmentIds),
+          eq(appointmentComments.isDeleted, false),
+          isNull(appointmentComments.parentId),
+        ),
+      )
+      .orderBy(desc(appointmentComments.createdAt));
+
+    // Get replies and transform
+    const result: UnifiedComment[] = [];
+    for (const comment of comments) {
+      const replies = await getAppointmentCommentReplies(
+        comment.commentId,
+        comment.appointmentId,
+        appointmentMetaMap,
+        accountId,
+      );
+      const meta = appointmentMetaMap.get(comment.appointmentId.toString());
+
+      result.push({
+        ...comment,
+        parentId: comment.parentId ?? null,
+        source: "appointment" as CommentSource,
+        appointmentId: comment.appointmentId,
+        appointmentMeta: meta
+          ? {
+              appointmentId: meta.appointmentId,
+              type: meta.type,
+              datetimeStart: meta.datetimeStart,
+              title: meta.title,
+              listingId: meta.listingId,
+              propertyAddress: meta.propertyAddress,
+            }
+          : undefined,
+        replies,
+        status: "sent",
+      });
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error fetching appointment comments for listing-contact:", error);
+    return [];
+  }
 }
 
 /**
@@ -707,137 +821,3 @@ async function getListingContactCommentsForListingContact(
   }
 }
 
-/**
- * Helper: Get appointment comments for appointments matching both listingId and contactId
- */
-async function getAppointmentCommentsForListingContact(
-  listingId: bigint,
-  contactId: bigint,
-  accountId: number,
-): Promise<UnifiedComment[]> {
-  try {
-    // Get property info for the listing
-    const listingInfo = await db
-      .select({
-        propertyStreet: properties.street,
-        city: locations.city,
-      })
-      .from(listings)
-      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
-      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
-      .where(
-        and(
-          eq(listings.listingId, listingId),
-          eq(properties.accountId, BigInt(accountId)),
-        ),
-      )
-      .limit(1);
-
-    const propertyAddress = listingInfo[0]
-      ? [listingInfo[0].propertyStreet, listingInfo[0].city].filter(Boolean).join(", ")
-      : null;
-
-    // Find appointments where BOTH listingId AND contactId match
-    const matchingAppointments = await db
-      .select({
-        appointmentId: appointments.appointmentId,
-        type: appointments.type,
-        datetimeStart: appointments.datetimeStart,
-        title: appointments.title,
-      })
-      .from(appointments)
-      .where(
-        and(
-          eq(appointments.listingId, listingId),
-          eq(appointments.contactId, contactId),
-          eq(appointments.isActive, true),
-        ),
-      );
-
-    if (matchingAppointments.length === 0) return [];
-
-    // Create metadata map
-    const appointmentMetaMap = new Map(
-      matchingAppointments.map((a) => [
-        a.appointmentId.toString(),
-        {
-          appointmentId: a.appointmentId,
-          type: a.type,
-          datetimeStart: a.datetimeStart,
-          title: a.title,
-          listingId,
-          propertyAddress,
-        },
-      ]),
-    );
-
-    const appointmentIds = matchingAppointments.map((a) => a.appointmentId);
-
-    // Batch fetch top-level comments
-    const comments = await db
-      .select({
-        commentId: appointmentComments.commentId,
-        appointmentId: appointmentComments.appointmentId,
-        userId: appointmentComments.userId,
-        content: appointmentComments.content,
-        parentId: appointmentComments.parentId,
-        isDeleted: sql<boolean>`COALESCE(${appointmentComments.isDeleted}, false)`,
-        createdAt: appointmentComments.createdAt,
-        updatedAt: appointmentComments.updatedAt,
-        user: {
-          id: users.id,
-          name: users.name,
-          firstName: users.firstName,
-          lastName: users.lastName,
-          image: users.image,
-          initials: sql<string>`CONCAT(LEFT(${users.firstName}, 1), LEFT(${users.lastName}, 1))`,
-        },
-      })
-      .from(appointmentComments)
-      .innerJoin(users, eq(appointmentComments.userId, users.id))
-      .where(
-        and(
-          inArray(appointmentComments.appointmentId, appointmentIds),
-          eq(appointmentComments.isDeleted, false),
-          isNull(appointmentComments.parentId),
-        ),
-      )
-      .orderBy(desc(appointmentComments.createdAt));
-
-    // Get replies and transform
-    const result: UnifiedComment[] = [];
-    for (const comment of comments) {
-      const replies = await getAppointmentCommentReplies(
-        comment.commentId,
-        comment.appointmentId,
-        appointmentMetaMap,
-        accountId,
-      );
-      const meta = appointmentMetaMap.get(comment.appointmentId.toString());
-
-      result.push({
-        ...comment,
-        parentId: comment.parentId ?? null,
-        source: "appointment" as CommentSource,
-        appointmentId: comment.appointmentId,
-        appointmentMeta: meta
-          ? {
-              appointmentId: meta.appointmentId,
-              type: meta.type,
-              datetimeStart: meta.datetimeStart,
-              title: meta.title,
-              listingId: meta.listingId,
-              propertyAddress: meta.propertyAddress,
-            }
-          : undefined,
-        replies,
-        status: "sent",
-      });
-    }
-
-    return result;
-  } catch (error) {
-    console.error("Error fetching appointment comments for listing-contact:", error);
-    return [];
-  }
-}

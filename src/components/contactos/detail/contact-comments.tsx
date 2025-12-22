@@ -382,6 +382,7 @@ export function ContactComments({
   currentUserId,
   currentUser,
   defaultSource = "contact",
+  hideListingBadge,
   onAddComment,
   onEditComment,
   onDeleteComment,
@@ -775,6 +776,7 @@ export function ContactComments({
                   cancelEditing={cancelEditing}
                   setCommentToDelete={setCommentToDelete}
                   setDeleteConfirmOpen={setDeleteConfirmOpen}
+                  hideListingBadge={hideListingBadge}
                 />
               </CardContent>
             </Card>

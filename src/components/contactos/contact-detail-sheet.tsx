@@ -1398,6 +1398,7 @@ export function ContactDetailSheet({
                         image: session.user.image ?? undefined,
                       } : undefined}
                       defaultSource="listing_contact"
+                      hideListingBadge={true}
                       onAddComment={handleAddComment}
                       onEditComment={handleEditComment}
                       onDeleteComment={handleDeleteComment}
