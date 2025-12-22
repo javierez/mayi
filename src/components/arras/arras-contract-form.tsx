@@ -826,7 +826,7 @@ function ToriParkRentalForm({ data }: ArrasContractFormProps) {
                 ) : (
                   <>
                     <Save className="mr-2 h-4 w-4" />
-                    Firmar Contrato
+                    Generar y guardar
                   </>
                 )}
               </Button>
@@ -2083,7 +2083,7 @@ function StandardArrasContractForm({ data }: ArrasContractFormProps) {
                 ) : (
                   <>
                     <Save className="mr-2 h-4 w-4" />
-                    Firmar Contrato
+                    Generar y guardar
                   </>
                 )}
               </Button>

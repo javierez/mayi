@@ -59,15 +59,15 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
   const [ownerPhone, setOwnerPhone] = useState(data.owner?.phone ?? "");
   const [ownerEmail, setOwnerEmail] = useState(data.owner?.email ?? "");
 
-  // Terms state (with defaults from account)
+  // Terms state (with defaults from account) - stored as strings to allow clearing inputs
   const [commissionPercentage, setCommissionPercentage] = useState(
-    data.terms?.commission ?? 3,
+    (data.terms?.commission ?? 3).toString(),
   );
   const [minimumCommission, setMinimumCommission] = useState(
-    data.terms?.minCommission ?? 1500,
+    (data.terms?.minCommission ?? 1500).toString(),
   );
   const [durationMonths, setDurationMonths] = useState(
-    data.terms?.duration ?? 12,
+    (data.terms?.duration ?? 12).toString(),
   );
   const [exclusivity, setExclusivity] = useState(
     data.terms?.exclusivity ?? false,
@@ -173,6 +173,11 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
     return { newlyFilled, modified };
   }, [originalValues, ownerNif, ownerAddress, ownerPhone, ownerEmail]);
 
+  // Parse numeric values for validation and submission
+  const commissionValue = parseFloat(commissionPercentage) || 0;
+  const minimumCommissionValue = parseFloat(minimumCommission) || 0;
+  const durationValue = parseInt(durationMonths) || 0;
+
   // Validation
   const validationErrors = useMemo((): ValidationErrors => {
     const errors: ValidationErrors = {};
@@ -180,13 +185,13 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
     if (!ownerName.trim()) errors.ownerName = "Nombre del propietario requerido";
     if (!ownerNif.trim()) errors.ownerNif = "NIF del propietario requerido";
     if (!ownerAddress.trim()) errors.ownerAddress = "Dirección del propietario requerida";
-    if (commissionPercentage <= 0) errors.commissionPercentage = "Comisión debe ser mayor a 0";
-    if (minimumCommission < 0) errors.minimumCommission = "Comisión mínima inválida";
-    if (durationMonths <= 0) errors.durationMonths = "Duración debe ser mayor a 0";
+    if (commissionValue <= 0) errors.commissionPercentage = "Comisión debe ser mayor a 0";
+    if (minimumCommissionValue < 0) errors.minimumCommission = "Comisión mínima inválida";
+    if (durationValue <= 0) errors.durationMonths = "Duración debe ser mayor a 0";
     if (!signingLocation.trim()) errors.signingLocation = "Lugar de firma requerido";
 
     return errors;
-  }, [ownerName, ownerNif, ownerAddress, commissionPercentage, minimumCommission, durationMonths, signingLocation]);
+  }, [ownerName, ownerNif, ownerAddress, commissionValue, minimumCommissionValue, durationValue, signingLocation]);
 
   const isFormValid = Object.keys(validationErrors).length === 0;
   const errorCount = Object.keys(validationErrors).length;
@@ -279,9 +284,9 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
     ownerPhone,
     ownerEmail,
     propertyDescription,
-    commissionPercentage,
-    minimumCommission,
-    durationMonths,
+    commissionPercentage: commissionValue,
+    minimumCommission: minimumCommissionValue,
+    durationMonths: durationValue,
     exclusivity,
     allowSignage,
     allowVisits,
@@ -569,7 +574,7 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
                   min="0"
                   max="100"
                   value={commissionPercentage}
-                  onChange={(e) => setCommissionPercentage(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => setCommissionPercentage(e.target.value)}
                   className={`h-10 border-0 shadow-md ${validationErrors.commissionPercentage ? "ring-1 ring-red-500" : ""}`}
                 />
               </div>
@@ -582,7 +587,7 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
                   type="number"
                   min="0"
                   value={minimumCommission}
-                  onChange={(e) => setMinimumCommission(parseInt(e.target.value) || 0)}
+                  onChange={(e) => setMinimumCommission(e.target.value)}
                   className="h-10 border-0 shadow-md"
                 />
               </div>
@@ -595,7 +600,7 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
                   type="number"
                   min="1"
                   value={durationMonths}
-                  onChange={(e) => setDurationMonths(parseInt(e.target.value) || 12)}
+                  onChange={(e) => setDurationMonths(e.target.value)}
                   className={`h-10 border-0 shadow-md ${validationErrors.durationMonths ? "ring-1 ring-red-500" : ""}`}
                 />
               </div>
@@ -977,8 +982,8 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
               ownerPhone,
               ownerEmail,
               propertyAddress: propertyFullAddress,
-              commissionPercentage: commissionPercentage.toString(),
-              durationMonths: durationMonths.toString(),
+              commissionPercentage,
+              durationMonths,
             }}
           />
         )}

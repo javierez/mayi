@@ -77,7 +77,7 @@ export default async function DocumentacionInicialPage({
         <Link href={`/propiedades/${listingId}/hoja-encargo`}>
           <Button variant="outline" className="rounded-2xl">
             <FilePlus className="mr-2 h-4 w-4" />
-            {hasExistingHojaEncargo ? "Regenerar Hoja Encargo" : "Generar Hoja Encargo"}
+            {hasExistingHojaEncargo ? "Volver a Generar Hoja Encargo" : "Generar Hoja Encargo"}
           </Button>
         </Link>
       </div>
