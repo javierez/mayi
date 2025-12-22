@@ -360,12 +360,12 @@ export function ToriParkDocument({ data }: Props) {
 
             {/* Landlord */}
             <div className="mb-3 rounded border border-gray-400 bg-gray-50 p-2.5 print:bg-transparent">
-              <p><strong>ARRENDADORA:</strong> {landlordName}, con D.N.I {landlordNif}, domicilio en {landlordAddress}, mayor de edad con plena capacidad para contratar.</p>
+              <p><strong>Como ARRENDADORA:</strong> {landlordName}, con D.N.I {landlordNif}, domicilio en {landlordAddress}, mayor de edad, con plena capacidad para contratar.</p>
             </div>
 
             {/* Tenant */}
             <div className="rounded border border-gray-400 bg-gray-50 p-2.5 print:bg-transparent">
-              <p><strong>Como ARRENDATARIO/A:</strong> {tenantName}, con N.I.F: {tenantNif}, con domicilio en {tenantAddress}, mayor de edad, con plena capacidad legal para contratar, actuando en su propio nombre.</p>
+              <p><strong>Como ARRENDATARIO/A:</strong> {tenantName}, con D.N.I / N.I.E.: {tenantNif}, con domicilio en {tenantAddress}, mayor de edad, con plena capacidad legal para contratar, actuando en su propio nombre.</p>
             </div>
           </div>
 
