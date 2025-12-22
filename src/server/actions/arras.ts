@@ -177,7 +177,7 @@ export async function createArrasContractAction(
       referenceNumber,
       1,
       "firma-arras-vendedor",
-      undefined, // contactId
+      dealData.buyer.contactId, // Store buyer's contactId so document appears in their profile
       dealData.listing.listingId,
       undefined, // listingContactId
       formData.dealId,
@@ -206,7 +206,7 @@ export async function createArrasContractAction(
       referenceNumber,
       2,
       "firma-arras-comprador",
-      undefined, // contactId
+      dealData.buyer.contactId, // Store buyer's contactId so document appears in their profile
       dealData.listing.listingId,
       undefined, // listingContactId
       formData.dealId,

@@ -12,6 +12,9 @@ export interface AppointmentMetadata {
   type: string | null; // "Visita", "Reunión", "Firma", etc.
   datetimeStart: Date; // For display: "15 Dic 2024"
   title: string | null; // Appointment title
+  // Listing info if appointment is related to a property
+  listingId?: bigint | null;
+  propertyAddress?: string | null;
 }
 
 // Metadata for listing contact comments (for display label)

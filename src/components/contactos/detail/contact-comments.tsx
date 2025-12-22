@@ -25,6 +25,7 @@ import { PushToTalkWhisperButton } from "~/components/shared/push-to-talk-whispe
 
 interface ContactCommentsProps {
   contactId: bigint;
+  listingContactId?: bigint; // For listing_contact source
   initialComments?: UnifiedComment[];
   currentUserId?: string;
   currentUser?: {
@@ -32,6 +33,8 @@ interface ContactCommentsProps {
     name?: string;
     image?: string;
   };
+  defaultSource?: CommentSource; // Source for new top-level comments (default: "contact")
+  hideListingBadge?: boolean; // Hide listing badges when already in listing context
   onAddComment: (
     comment: UnifiedComment,
   ) => Promise<{ success: boolean; error?: string }>;
@@ -69,12 +72,13 @@ interface UnifiedCommentItemProps {
   cancelEditing: () => void;
   setCommentToDelete: (data: { id: bigint; source: CommentSource } | null) => void;
   setDeleteConfirmOpen: (open: boolean) => void;
+  hideListingBadge?: boolean;
 }
 
 /**
  * Source badge component for displaying the origin of a comment
  */
-function SourceBadge({ comment }: { comment: UnifiedComment }) {
+function SourceBadge({ comment, hideListingBadge }: { comment: UnifiedComment; hideListingBadge?: boolean }) {
   switch (comment.source) {
     case "contact":
       return null; // No badge for direct contact notes
@@ -83,15 +87,17 @@ function SourceBadge({ comment }: { comment: UnifiedComment }) {
         ? `${comment.appointmentMeta.type ?? "Cita"} - ${format(comment.appointmentMeta.datetimeStart, "d MMM yyyy", { locale: es })}`
         : "Cita";
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-400">
           <Calendar className="h-3 w-3" />
           {appointmentLabel}
         </span>
       );
     case "listing_contact":
+      // No badge when already in listing context
+      if (hideListingBadge) return null;
       const listingLabel = comment.listingContactMeta?.propertyAddress ?? "Propiedad";
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-500">
           <Home className="h-3 w-3" />
           {listingLabel}
         </span>
@@ -122,6 +128,7 @@ function UnifiedCommentItem({
   cancelEditing,
   setCommentToDelete,
   setDeleteConfirmOpen,
+  hideListingBadge,
 }: UnifiedCommentItemProps) {
   return (
     <div className={clsx("max-w-full", isReply && "ml-12 pl-4")}>
@@ -267,7 +274,7 @@ function UnifiedCommentItem({
             {/* Source badge - bottom right, only for top-level comments */}
             {!isReply && comment.source !== "contact" && (
               <div className="mt-2 flex justify-end">
-                <SourceBadge comment={comment} />
+                <SourceBadge comment={comment} hideListingBadge={hideListingBadge} />
               </div>
             )}
           </div>
@@ -357,6 +364,7 @@ function UnifiedCommentItem({
                   cancelEditing={cancelEditing}
                   setCommentToDelete={setCommentToDelete}
                   setDeleteConfirmOpen={setDeleteConfirmOpen}
+                  hideListingBadge={hideListingBadge}
                 />
               ))}
             </div>
@@ -369,9 +377,11 @@ function UnifiedCommentItem({
 
 export function ContactComments({
   contactId,
+  listingContactId,
   initialComments = [],
   currentUserId,
   currentUser,
+  defaultSource = "contact",
   onAddComment,
   onEditComment,
   onDeleteComment,
@@ -517,8 +527,9 @@ export function ContactComments({
         image: currentUser?.image,
       },
       replies: [],
-      source: "contact", // New top-level comments are always contact notes
-      contactId: contactId,
+      source: defaultSource, // Use configured source for new top-level comments
+      contactId: defaultSource === "contact" ? contactId : undefined,
+      listingContactId: defaultSource === "listing_contact" ? listingContactId : undefined,
       status: "sending",
     };
 
@@ -742,7 +753,7 @@ export function ContactComments({
           </Card>
         ) : (
           optimisticComments.map((comment) => (
-            <Card key={comment.commentId.toString()}>
+            <Card key={`${comment.source}-${comment.commentId.toString()}`}>
               <CardContent className="p-4">
                 <UnifiedCommentItem
                   comment={comment}

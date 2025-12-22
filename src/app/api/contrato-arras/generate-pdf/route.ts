@@ -324,7 +324,7 @@ export async function POST(request: NextRequest) {
           referenceNumber,
           1, // documentOrder
           documentTag, // documentTag
-          undefined, // contactId
+          contractData.buyer.contactId, // Store buyer's contactId so document appears in their profile
           BigInt(contractData.listing.listingId),
           undefined, // listingContactId
           BigInt(dealIdNumber), // dealId

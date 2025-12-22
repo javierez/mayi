@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import {
@@ -77,6 +77,7 @@ export function ContactDocumentsPage({
   );
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   // Track which listing groups are expanded (default: all closed)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -95,6 +96,8 @@ export function ContactDocumentsPage({
 
   const apiFolderType = folderTypeMap[folderType];
   const isPersonalDocuments = folderType === "documentos-personales";
+  const isContratos = folderType === "contratos";
+  const supportsUpload = isPersonalDocuments || isContratos;
 
   // Handler functions
   const handleDownload = (document: Document) => {
@@ -220,47 +223,50 @@ export function ContactDocumentsPage({
     }
   };
 
-  const handleFiles = async (files: FileList) => {
-    if (!files || files.length === 0) return;
+  const handleFiles = useCallback(
+    async (files: FileList) => {
+      if (!files || files.length === 0) return;
 
-    setIsUploading(true);
+      setIsUploading(true);
 
-    try {
-      // Upload all files
-      const uploadPromises = Array.from(files).map(async (file) => {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("folderType", "documentos-personales");
+      try {
+        // Upload all files
+        const uploadPromises = Array.from(files).map(async (file) => {
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("folderType", apiFolderType);
 
-        const response = await fetch(
-          `/api/contacts/${contactId.toString()}/documents`,
-          {
-            method: "POST",
-            body: formData,
-          },
+          const response = await fetch(
+            `/api/contacts/${contactId.toString()}/documents`,
+            {
+              method: "POST",
+              body: formData,
+            },
+          );
+
+          if (!response.ok) {
+            throw new Error(`Failed to upload ${file.name}`);
+          }
+
+          return response.json() as Promise<Document>;
+        });
+
+        const uploadedDocuments = await Promise.all(uploadPromises);
+
+        // Add new documents to the list
+        setDocuments((prev) => [...uploadedDocuments, ...prev]);
+        toast.success(
+          `${uploadedDocuments.length} documento(s) subido(s) correctamente`,
         );
-
-        if (!response.ok) {
-          throw new Error(`Failed to upload ${file.name}`);
-        }
-
-        return response.json() as Promise<Document>;
-      });
-
-      const uploadedDocuments = await Promise.all(uploadPromises);
-      
-      // Add new documents to the list
-      setDocuments((prev) => [...uploadedDocuments, ...prev]);
-      toast.success(
-        `${uploadedDocuments.length} documento(s) subido(s) correctamente`,
-      );
-    } catch (error) {
-      console.error("Error uploading files:", error);
-      toast.error("Error al subir los archivos");
-    } finally {
-      setIsUploading(false);
-    }
-  };
+      } catch (error) {
+        console.error("Error uploading files:", error);
+        toast.error("Error al subir los archivos");
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [contactId, apiFolderType],
+  );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -271,11 +277,79 @@ export function ContactDocumentsPage({
     e.target.value = "";
   };
 
-  // For personal documents, don't group by listing - show all documents directly
-  if (isPersonalDocuments) {
+  // Full-screen drag-and-drop detection (only for folders that support upload)
+  useEffect(() => {
+    if (!supportsUpload) return;
+
+    let dragCounter = 0;
+
+    const handleDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter++;
+      if (e.dataTransfer?.types.includes("Files")) {
+        setIsDragOver(true);
+      }
+    };
+
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter === 0) {
+        setIsDragOver(false);
+      }
+    };
+
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+    };
+
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter = 0;
+      setIsDragOver(false);
+
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        void handleFiles(files);
+      }
+    };
+
+    document.addEventListener("dragenter", handleDragEnter);
+    document.addEventListener("dragleave", handleDragLeave);
+    document.addEventListener("dragover", handleDragOver);
+    document.addEventListener("drop", handleDrop);
+
+    return () => {
+      document.removeEventListener("dragenter", handleDragEnter);
+      document.removeEventListener("dragleave", handleDragLeave);
+      document.removeEventListener("dragover", handleDragOver);
+      document.removeEventListener("drop", handleDrop);
+    };
+  }, [supportsUpload, handleFiles]);
+
+  // For personal documents or contratos, don't group by listing - show all documents directly
+  if (supportsUpload) {
+    const emptyMessage = isPersonalDocuments
+      ? "No hay documentos personales"
+      : "No hay contratos";
+    const emptySubMessage = isPersonalDocuments
+      ? "Los documentos personales se mostrarán aquí cuando se suban"
+      : "Los contratos se mostrarán aquí cuando se suban";
+
     return (
-      <div className="relative">
-        <div className="space-y-3 pb-20">
+      <>
+        {/* Full-screen drop overlay */}
+        {isDragOver && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/5 backdrop-blur-[2px]">
+            <div className="rounded-lg border border-dashed border-gray-300 bg-white/80 px-12 py-8 text-center">
+              <Upload className="mx-auto mb-3 h-8 w-8 text-gray-400" />
+              <p className="text-sm text-gray-500">Soltar archivos</p>
+            </div>
+          </div>
+        )}
+
+        <div className="relative">
+          <div className="space-y-3 pb-20">
           {isLoading ? (
             <DocumentsPageSkeleton />
           ) : (
@@ -339,12 +413,8 @@ export function ContactDocumentsPage({
               {documents.length === 0 && !isLoading && (
                 <div className="py-12 text-center">
                   <FolderIcon className="mx-auto mb-4 h-12 w-12 fill-current text-gray-400" />
-                  <p className="text-gray-500">
-                    No hay documentos personales
-                  </p>
-                  <p className="mt-1 text-sm text-gray-400">
-                    Los documentos personales se mostrarán aquí cuando se suban
-                  </p>
+                  <p className="text-gray-500">{emptyMessage}</p>
+                  <p className="mt-1 text-sm text-gray-400">{emptySubMessage}</p>
                 </div>
               )}
             </>
@@ -392,7 +462,8 @@ export function ContactDocumentsPage({
           cancelText="Cancelar"
           confirmVariant="destructive"
         />
-      </div>
+        </div>
+      </>
     );
   }
 

@@ -165,16 +165,22 @@ async function getAppointmentCommentsForContact(
   accountId: number,
 ): Promise<UnifiedComment[]> {
   try {
-    // 1. Get all appointments for this contact with metadata for labels
+    // 1. Get all appointments for this contact with metadata for labels (including listing info)
     const contactAppointments = await db
       .select({
         appointmentId: appointments.appointmentId,
         type: appointments.type,
         datetimeStart: appointments.datetimeStart,
         title: appointments.title,
+        listingId: appointments.listingId,
+        propertyStreet: properties.street,
+        city: locations.city,
       })
       .from(appointments)
       .innerJoin(contacts, eq(appointments.contactId, contacts.contactId))
+      .leftJoin(listings, eq(appointments.listingId, listings.listingId))
+      .leftJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
       .where(
         and(
           eq(appointments.contactId, contactId),
@@ -194,6 +200,8 @@ async function getAppointmentCommentsForContact(
           type: a.type,
           datetimeStart: a.datetimeStart,
           title: a.title,
+          listingId: a.listingId,
+          propertyAddress: [a.propertyStreet, a.city].filter(Boolean).join(", ") || null,
         },
       ]),
     );
@@ -253,6 +261,8 @@ async function getAppointmentCommentsForContact(
               type: meta.type,
               datetimeStart: meta.datetimeStart,
               title: meta.title,
+              listingId: meta.listingId,
+              propertyAddress: meta.propertyAddress,
             }
           : undefined,
         replies,
@@ -280,6 +290,8 @@ async function getAppointmentCommentReplies(
       type: string | null;
       datetimeStart: Date;
       title: string | null;
+      listingId: bigint | null;
+      propertyAddress: string | null;
     }
   >,
   _accountId: number,
@@ -327,6 +339,8 @@ async function getAppointmentCommentReplies(
             type: meta.type,
             datetimeStart: meta.datetimeStart,
             title: meta.title,
+            listingId: meta.listingId,
+            propertyAddress: meta.propertyAddress,
           }
         : undefined,
       replies: [],
@@ -540,6 +554,290 @@ async function getListingContactCommentReplies(
     }));
   } catch (error) {
     console.error("Error fetching listing contact comment replies:", error);
+    return [];
+  }
+}
+
+/**
+ * Get unified comments for a specific listing-contact relationship
+ * Fetches both listing contact comments and appointment comments
+ * where both listingId AND contactId match
+ */
+export async function getListingContactUnifiedComments(
+  listingId: bigint,
+  contactId: bigint,
+  listingContactId: bigint,
+): Promise<UnifiedComment[]> {
+  const accountId = await getCurrentUserAccountId();
+
+  // Fetch both types in parallel
+  const [listingContactCommentsList, appointmentCommentsList] = await Promise.all([
+    getListingContactCommentsForListingContact(listingContactId, listingId, accountId),
+    getAppointmentCommentsForListingContact(listingId, contactId, accountId),
+  ]);
+
+  // Merge and sort by createdAt descending
+  const allComments = [...listingContactCommentsList, ...appointmentCommentsList].sort(
+    (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+  );
+
+  return allComments;
+}
+
+/**
+ * Helper: Get listing contact comments for a specific listingContactId
+ */
+async function getListingContactCommentsForListingContact(
+  listingContactId: bigint,
+  listingId: bigint,
+  accountId: number,
+): Promise<UnifiedComment[]> {
+  try {
+    // Get property info for the listing
+    const listingInfo = await db
+      .select({
+        listingId: listings.listingId,
+        propertyStreet: properties.street,
+        propertyTitle: properties.title,
+        city: locations.city,
+      })
+      .from(listings)
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .where(
+        and(
+          eq(listings.listingId, listingId),
+          eq(properties.accountId, BigInt(accountId)),
+        ),
+      )
+      .limit(1);
+
+    const propertyAddress = listingInfo[0]
+      ? [listingInfo[0].propertyStreet, listingInfo[0].city].filter(Boolean).join(", ")
+      : "";
+    const propertyTitle = listingInfo[0]?.propertyTitle ?? null;
+
+    // Get listing contact type
+    const lcInfo = await db
+      .select({ contactType: listingContacts.contactType })
+      .from(listingContacts)
+      .where(eq(listingContacts.listingContactId, listingContactId))
+      .limit(1);
+
+    const contactType = lcInfo[0]?.contactType ?? "buyer";
+
+    // Get top-level comments
+    const comments = await db
+      .select({
+        commentId: listingContactComments.commentId,
+        listingContactId: listingContactComments.listingContactId,
+        userId: listingContactComments.userId,
+        content: listingContactComments.content,
+        category: sql<string | null>`${listingContactComments.category}`,
+        parentId: listingContactComments.parentId,
+        isDeleted: sql<boolean>`COALESCE(${listingContactComments.isDeleted}, false)`,
+        createdAt: listingContactComments.createdAt,
+        updatedAt: listingContactComments.updatedAt,
+        user: {
+          id: users.id,
+          name: users.name,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          image: users.image,
+          initials: sql<string>`CONCAT(LEFT(${users.firstName}, 1), LEFT(${users.lastName}, 1))`,
+        },
+      })
+      .from(listingContactComments)
+      .innerJoin(users, eq(listingContactComments.userId, users.id))
+      .where(
+        and(
+          eq(listingContactComments.listingContactId, listingContactId),
+          eq(listingContactComments.isDeleted, false),
+          isNull(listingContactComments.parentId),
+        ),
+      )
+      .orderBy(desc(listingContactComments.createdAt));
+
+    // Create metadata map for replies
+    const metaMap = new Map([
+      [
+        listingContactId.toString(),
+        {
+          listingContactId,
+          listingId,
+          propertyAddress,
+          propertyTitle,
+          contactType,
+        },
+      ],
+    ]);
+
+    // Get replies and transform
+    const result: UnifiedComment[] = [];
+    for (const comment of comments) {
+      const replies = await getListingContactCommentReplies(
+        comment.commentId,
+        listingContactId,
+        metaMap,
+        accountId,
+      );
+
+      result.push({
+        ...comment,
+        parentId: comment.parentId ?? null,
+        source: "listing_contact" as CommentSource,
+        listingContactId: comment.listingContactId,
+        category: comment.category,
+        listingContactMeta: {
+          listingContactId,
+          listingId,
+          propertyAddress,
+          propertyTitle,
+          contactType,
+        },
+        replies,
+        status: "sent",
+      });
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error fetching listing contact comments:", error);
+    return [];
+  }
+}
+
+/**
+ * Helper: Get appointment comments for appointments matching both listingId and contactId
+ */
+async function getAppointmentCommentsForListingContact(
+  listingId: bigint,
+  contactId: bigint,
+  accountId: number,
+): Promise<UnifiedComment[]> {
+  try {
+    // Get property info for the listing
+    const listingInfo = await db
+      .select({
+        propertyStreet: properties.street,
+        city: locations.city,
+      })
+      .from(listings)
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .where(
+        and(
+          eq(listings.listingId, listingId),
+          eq(properties.accountId, BigInt(accountId)),
+        ),
+      )
+      .limit(1);
+
+    const propertyAddress = listingInfo[0]
+      ? [listingInfo[0].propertyStreet, listingInfo[0].city].filter(Boolean).join(", ")
+      : null;
+
+    // Find appointments where BOTH listingId AND contactId match
+    const matchingAppointments = await db
+      .select({
+        appointmentId: appointments.appointmentId,
+        type: appointments.type,
+        datetimeStart: appointments.datetimeStart,
+        title: appointments.title,
+      })
+      .from(appointments)
+      .where(
+        and(
+          eq(appointments.listingId, listingId),
+          eq(appointments.contactId, contactId),
+          eq(appointments.isActive, true),
+        ),
+      );
+
+    if (matchingAppointments.length === 0) return [];
+
+    // Create metadata map
+    const appointmentMetaMap = new Map(
+      matchingAppointments.map((a) => [
+        a.appointmentId.toString(),
+        {
+          appointmentId: a.appointmentId,
+          type: a.type,
+          datetimeStart: a.datetimeStart,
+          title: a.title,
+          listingId,
+          propertyAddress,
+        },
+      ]),
+    );
+
+    const appointmentIds = matchingAppointments.map((a) => a.appointmentId);
+
+    // Batch fetch top-level comments
+    const comments = await db
+      .select({
+        commentId: appointmentComments.commentId,
+        appointmentId: appointmentComments.appointmentId,
+        userId: appointmentComments.userId,
+        content: appointmentComments.content,
+        parentId: appointmentComments.parentId,
+        isDeleted: sql<boolean>`COALESCE(${appointmentComments.isDeleted}, false)`,
+        createdAt: appointmentComments.createdAt,
+        updatedAt: appointmentComments.updatedAt,
+        user: {
+          id: users.id,
+          name: users.name,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          image: users.image,
+          initials: sql<string>`CONCAT(LEFT(${users.firstName}, 1), LEFT(${users.lastName}, 1))`,
+        },
+      })
+      .from(appointmentComments)
+      .innerJoin(users, eq(appointmentComments.userId, users.id))
+      .where(
+        and(
+          inArray(appointmentComments.appointmentId, appointmentIds),
+          eq(appointmentComments.isDeleted, false),
+          isNull(appointmentComments.parentId),
+        ),
+      )
+      .orderBy(desc(appointmentComments.createdAt));
+
+    // Get replies and transform
+    const result: UnifiedComment[] = [];
+    for (const comment of comments) {
+      const replies = await getAppointmentCommentReplies(
+        comment.commentId,
+        comment.appointmentId,
+        appointmentMetaMap,
+        accountId,
+      );
+      const meta = appointmentMetaMap.get(comment.appointmentId.toString());
+
+      result.push({
+        ...comment,
+        parentId: comment.parentId ?? null,
+        source: "appointment" as CommentSource,
+        appointmentId: comment.appointmentId,
+        appointmentMeta: meta
+          ? {
+              appointmentId: meta.appointmentId,
+              type: meta.type,
+              datetimeStart: meta.datetimeStart,
+              title: meta.title,
+              listingId: meta.listingId,
+              propertyAddress: meta.propertyAddress,
+            }
+          : undefined,
+        replies,
+        status: "sent",
+      });
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error fetching appointment comments for listing-contact:", error);
     return [];
   }
 }

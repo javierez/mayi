@@ -40,14 +40,19 @@ import {
   generateArrasContractAction,
 } from "~/server/actions/listing-contacts";
 import { OfferComparisonCard } from "~/components/offer-comparison-card";
-import { ListingContactComments } from "~/components/contactos/listing-contact-comments";
-import { getListingContactCommentsByIdWithAuth } from "~/server/queries/listing-contact-comments";
+import { ContactComments } from "~/components/contactos/detail/contact-comments";
+import { getListingContactUnifiedComments } from "~/server/queries/unified-comments";
 import {
   createListingContactCommentAction,
   updateListingContactCommentAction,
   deleteListingContactCommentAction,
 } from "~/server/actions/listing-contact-comments";
-import type { ListingContactCommentWithUser } from "~/types/listing-contact-comments";
+import {
+  createAppointmentCommentAction,
+  updateAppointmentCommentAction,
+  deleteAppointmentCommentAction,
+} from "~/server/actions/appointment-comments";
+import type { UnifiedComment, CommentSource } from "~/types/unified-comments";
 import { useSession } from "~/lib/auth-client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { ListingContactActivityTimeline } from "~/components/contactos/listing-contact-activity-timeline";
@@ -170,7 +175,7 @@ export function ContactDetailSheet({
   const [isReactivating, setIsReactivating] = useState(false);
   const [isUpdatingOffer, setIsUpdatingOffer] = useState(false);
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
-  const [comments, setComments] = useState<ListingContactCommentWithUser[]>([]);
+  const [comments, setComments] = useState<UnifiedComment[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const [activeTab, setActiveTab] = useState<"comments" | "actions">("actions");
   const [activities, setActivities] = useState<ListingContactActivityWithUser[]>([]);
@@ -204,7 +209,11 @@ export function ContactDetailSheet({
         isActive: contact.isActive,
       });
       setIsLoadingComments(true);
-      getListingContactCommentsByIdWithAuth(contact.listingContactId)
+      getListingContactUnifiedComments(
+        listingId,
+        contact.contact.contactId,
+        contact.listingContactId,
+      )
         .then((data) => setComments(data))
         .catch((error) => {
           console.error("Error loading comments:", error);
@@ -212,7 +221,7 @@ export function ContactDetailSheet({
         })
         .finally(() => setIsLoadingComments(false));
     }
-  }, [isOpen, contact]);
+  }, [isOpen, contact, listingId]);
 
   // Fetch delete permissions
   useEffect(() => {
@@ -279,20 +288,37 @@ export function ContactDetailSheet({
     }
   };
 
-  // Comment handlers
-  const handleAddComment = async (tempComment: ListingContactCommentWithUser) => {
+  // Unified comment handler - routes to correct action based on source
+  const handleAddComment = async (tempComment: UnifiedComment) => {
     try {
-      const result = await createListingContactCommentAction({
-        listingContactId: tempComment.listingContactId,
-        content: tempComment.content,
-        category: tempComment.category ?? null,
-        parentId: tempComment.parentId,
-      });
+      let result: { success: boolean; error?: string };
 
-      if (result.success) {
-        // Refresh comments
-        const freshComments = await getListingContactCommentsByIdWithAuth(
-          tempComment.listingContactId,
+      switch (tempComment.source) {
+        case "listing_contact":
+          result = await createListingContactCommentAction({
+            listingContactId: tempComment.listingContactId!,
+            content: tempComment.content,
+            category: tempComment.category ?? null,
+            parentId: tempComment.parentId,
+          });
+          break;
+        case "appointment":
+          result = await createAppointmentCommentAction({
+            appointmentId: tempComment.appointmentId!,
+            content: tempComment.content,
+            parentId: tempComment.parentId,
+          });
+          break;
+        default:
+          result = { success: false, error: "Unknown comment source" };
+      }
+
+      if (result.success && contact) {
+        // Refresh unified comments
+        const freshComments = await getListingContactUnifiedComments(
+          listingId,
+          contact.contact.contactId,
+          contact.listingContactId,
         );
         setComments(freshComments);
       }
@@ -304,21 +330,37 @@ export function ContactDetailSheet({
     }
   };
 
+  // Unified edit handler - routes to correct action based on source
   const handleEditComment = async (
     commentId: bigint,
     content: string,
-    category?: string | null,
+    source: CommentSource,
   ) => {
     try {
-      const result = await updateListingContactCommentAction({
-        commentId,
-        content,
-        category,
-      });
+      let result: { success: boolean; error?: string };
+
+      switch (source) {
+        case "listing_contact":
+          result = await updateListingContactCommentAction({
+            commentId,
+            content,
+          });
+          break;
+        case "appointment":
+          result = await updateAppointmentCommentAction({
+            commentId,
+            content,
+          });
+          break;
+        default:
+          result = { success: false, error: "Unknown comment source" };
+      }
 
       if (result.success && contact) {
-        // Refresh comments
-        const freshComments = await getListingContactCommentsByIdWithAuth(
+        // Refresh unified comments
+        const freshComments = await getListingContactUnifiedComments(
+          listingId,
+          contact.contact.contactId,
           contact.listingContactId,
         );
         setComments(freshComments);
@@ -331,13 +373,27 @@ export function ContactDetailSheet({
     }
   };
 
-  const handleDeleteComment = async (commentId: bigint) => {
+  // Unified delete handler - routes to correct action based on source
+  const handleDeleteComment = async (commentId: bigint, source: CommentSource) => {
     try {
-      const result = await deleteListingContactCommentAction(commentId);
+      let result: { success: boolean; error?: string };
+
+      switch (source) {
+        case "listing_contact":
+          result = await deleteListingContactCommentAction(commentId);
+          break;
+        case "appointment":
+          result = await deleteAppointmentCommentAction(commentId);
+          break;
+        default:
+          result = { success: false, error: "Unknown comment source" };
+      }
 
       if (result.success && contact) {
-        // Refresh comments
-        const freshComments = await getListingContactCommentsByIdWithAuth(
+        // Refresh unified comments
+        const freshComments = await getListingContactUnifiedComments(
+          listingId,
+          contact.contact.contactId,
           contact.listingContactId,
         );
         setComments(freshComments);
@@ -1331,7 +1387,8 @@ export function ContactDetailSheet({
                       <Loader className="h-6 w-6 animate-spin text-gray-400" />
                     </div>
                   ) : (
-                    <ListingContactComments
+                    <ContactComments
+                      contactId={contact.contact.contactId}
                       listingContactId={contact.listingContactId}
                       initialComments={comments}
                       currentUserId={session?.user?.id}
@@ -1340,6 +1397,7 @@ export function ContactDetailSheet({
                         name: session.user.name ?? undefined,
                         image: session.user.image ?? undefined,
                       } : undefined}
+                      defaultSource="listing_contact"
                       onAddComment={handleAddComment}
                       onEditComment={handleEditComment}
                       onDeleteComment={handleDeleteComment}

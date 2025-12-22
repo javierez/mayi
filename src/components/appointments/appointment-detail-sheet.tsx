@@ -12,6 +12,7 @@ import {
   SheetTitle,
   SheetClose,
 } from "~/components/ui/sheet";
+import { ScrollArea } from "~/components/ui/scroll-area";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -513,8 +514,8 @@ export function AppointmentDetailSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-full max-w-full sm:max-w-md [&>button]:hidden">
-        <SheetHeader>
+      <SheetContent className="flex flex-col overflow-hidden w-full max-w-full sm:max-w-md [&>button]:hidden">
+        <SheetHeader className="shrink-0">
           <div className="flex items-center justify-between gap-2">
             <SheetTitle className="flex items-center gap-2 text-base sm:text-lg min-w-0 flex-1">
               <span className="shrink-0">{typeConfig.icon}</span>
@@ -557,7 +558,8 @@ export function AppointmentDetailSheet({
           </div>
         </SheetHeader>
 
-        <div className="mt-3 space-y-3 sm:mt-4 sm:space-y-4">
+        <ScrollArea className="min-h-0 flex-1 mt-3 sm:mt-4">
+          <div className="space-y-3 sm:space-y-4 pr-4">
           {/* Type and Status */}
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">{appointment.type}</p>
@@ -841,7 +843,8 @@ export function AppointmentDetailSheet({
               )
             )}
           </div>
-        </div>
+          </div>
+        </ScrollArea>
       </SheetContent>
     </Sheet>
   );

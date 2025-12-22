@@ -147,6 +147,7 @@ export async function POST(
     const file = formData.get("file") as File;
     const folderType = formData.get("folderType") as
       | "documentos-personales"
+      | "contratos"
       | null;
 
     if (!file || !folderType) {
@@ -156,13 +157,22 @@ export async function POST(
       );
     }
 
-    // Only allow personal documents uploads for contacts
-    if (folderType !== "documentos-personales") {
+    // Only allow personal documents and contratos uploads for contacts
+    const allowedFolderTypes = ["documentos-personales", "contratos"];
+    if (!allowedFolderTypes.includes(folderType)) {
       return NextResponse.json(
-        { error: "Only personal documents can be uploaded for contacts" },
+        { error: "Only personal documents and contratos can be uploaded for contacts" },
         { status: 400 },
       );
     }
+
+    // Map folder type to document tag
+    const documentTagMap: Record<string, string> = {
+      "documentos-personales": "documentos-personales",
+      contratos: "contrato-arras", // Default to contrato-arras for contratos folder
+    };
+
+    const documentTag = documentTagMap[folderType] ?? folderType;
 
     // Generate a reference number for the contact (using contact ID)
     const referenceNumber = `CONTACT_${contactId}`;
@@ -172,14 +182,14 @@ export async function POST(
       session.user.id,
       referenceNumber,
       1, // documentOrder
-      "documentos-personales", // documentTag
+      documentTag, // documentTag
       BigInt(contactId), // contactId
       undefined, // listingId
       undefined, // listingContactId
       undefined, // dealId
       undefined, // appointmentId
       undefined, // propertyId
-      undefined, // folderType (not used for personal docs)
+      undefined, // folderType
     );
 
     // Convert BigInt values to strings for JSON serialization

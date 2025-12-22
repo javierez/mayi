@@ -217,6 +217,13 @@ export function ContractSelectionCards({
                 </button>
               );
             })}
+
+            {/* Empty state when no results */}
+            {filteredDeals.length === 0 && filteredContacts.length === 0 && (
+              <div className="py-8 text-center text-sm text-gray-500">
+                No se encontraron resultados
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
