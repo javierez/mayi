@@ -146,12 +146,13 @@ interface AppointmentFormProps {
   ) => void;
 }
 
-// Helper function to get today's date in DD-MM-YYYY format
-const getTodayDate = () => {
-  const today = new Date();
-  const day = String(today.getDate()).padStart(2, '0');
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const year = today.getFullYear();
+// Helper function to get tomorrow's date in DD-MM-YYYY format
+const getTomorrowDate = () => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const day = String(tomorrow.getDate()).padStart(2, '0');
+  const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+  const year = tomorrow.getFullYear();
   return `${day}-${month}-${year}`;
 };
 
@@ -277,7 +278,7 @@ const generateAppointmentTitle = (
 };
 
 const getInitialFormData = (): Omit<AppointmentFormData, "contactId"> => {
-  const startDate = getTodayDate();
+  const startDate = getTomorrowDate();
   const startTime = getCurrentTime();
   const { endDate, endTime } = calculateEndDateTime(startDate, startTime, 30);
 
@@ -846,7 +847,7 @@ export default function AppointmentForm({
 
         // Auto-update endDate and endTime when startTime changes
         if (field === "startTime" && typeof value === "string") {
-          const startDate = prev.startDate ?? getTodayDate();
+          const startDate = prev.startDate ?? getTomorrowDate();
           const { endDate, endTime } = calculateEndDateTime(startDate, value, 30);
           updates.endDate = endDate;
           updates.endTime = endTime;

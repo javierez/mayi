@@ -559,7 +559,7 @@ export function AppointmentDetailSheet({
         </SheetHeader>
 
         <ScrollArea className="min-h-0 flex-1 mt-3 sm:mt-4">
-          <div className="space-y-3 sm:space-y-4 pr-4">
+          <div className="space-y-3 pb-6 pr-4 sm:space-y-4">
           {/* Type and Status */}
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">{appointment.type}</p>
