@@ -826,21 +826,19 @@ export function AppointmentDetailSheet({
                 <Loader className="h-6 w-6 animate-spin text-gray-400" />
               </div>
             ) : (
-              session?.user && (
-                <AppointmentComments
-                  appointmentId={appointment.appointmentId}
-                  initialComments={comments}
-                  currentUserId={session.user.id}
-                  currentUser={{
-                    id: session.user.id,
-                    name: session.user.name ?? undefined,
-                    image: session.user.image ?? undefined,
-                  }}
-                  onAddComment={handleAddComment}
-                  onEditComment={handleEditComment}
-                  onDeleteComment={handleDeleteComment}
-                />
-              )
+              <AppointmentComments
+                appointmentId={appointment.appointmentId}
+                initialComments={comments}
+                currentUserId={session?.user?.id}
+                currentUser={session?.user ? {
+                  id: session.user.id,
+                  name: session.user.name ?? undefined,
+                  image: session.user.image ?? undefined,
+                } : undefined}
+                onAddComment={handleAddComment}
+                onEditComment={handleEditComment}
+                onDeleteComment={handleDeleteComment}
+              />
             )}
           </div>
           </div>
