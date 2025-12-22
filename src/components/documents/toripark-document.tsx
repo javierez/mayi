@@ -321,7 +321,7 @@ export function ToriParkDocument({ data }: Props) {
           {/* Section 7: Schedule */}
           <div className="mb-4 text-justify text-[9.5pt] leading-[1.45] print:mb-3">
             <p className="mb-2">
-              El horario de disfrute del <span className="font-bold uppercase underline">{agentName}</span> será de <strong>17:00 a 21:00 horas</strong>.
+              El horario de disfrute del <span className="font-bold uppercase underline">{agentName}</span> será el comprendido entre la hora de entrada y la hora de salida estipulada en el presente contrato.
             </p>
             <p className="mb-2">
               Una persona de nuestro equipo estará pendiente de la apertura y del cierre de puertas,

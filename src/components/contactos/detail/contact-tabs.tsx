@@ -93,7 +93,7 @@ export function ContactTabs({ contact }: ContactTabsProps) {
   // Order: Información, Tareas, Propiedades, Intereses, Solicitudes, Actividad, Archivos
   const tabs = [
     { value: "informacion", label: "Información" },
-    { value: "tareas", label: "Tareas" },
+    { value: "tareas", label: "Tareas y Notas" },
     ...(showPropiedades ? [{ value: "propiedades", label: "Propiedades" }] : []),
     ...(showIntereses ? [{ value: "intereses", label: "Intereses" }] : []),
     ...(showSolicitudes ? [{ value: "solicitudes", label: "Búsquedas" }] : []),
