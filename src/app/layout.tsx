@@ -9,6 +9,7 @@ import { OrganizationSchema } from "~/components/seo/OrganizationSchema";
 import { SoftwareApplicationSchema } from "~/components/seo/SoftwareApplicationSchema";
 import { WebSiteSchema } from "~/components/seo/WebSiteSchema";
 import { ServiceWorkerRegistration } from "~/components/notifications/service-worker-registration";
+import { IOSStandaloneRedirect } from "~/components/ios-standalone-redirect";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -78,6 +79,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={`${inter.className} bg-gray-50`}>
+        <IOSStandaloneRedirect />
         <UserRoleProvider>{children}</UserRoleProvider>
         <CookieConsentBanner />
         <ServiceWorkerRegistration />
