@@ -19,22 +19,28 @@ export function IOSStandaloneRedirect() {
     // Only run on client
     if (typeof window === "undefined") return;
 
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const navigatorStandalone = "standalone" in navigator && (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    const mediaStandalone = window.matchMedia("(display-mode: standalone)").matches;
+    const isStandalone = navigatorStandalone || mediaStandalone;
+
+    // Debug logging - remove after confirming it works
+    console.log("[iOS Redirect Debug]", {
+      pathname,
+      isIOS,
+      navigatorStandalone,
+      mediaStandalone,
+      isStandalone,
+      userAgent: navigator.userAgent,
+    });
+
     // Only redirect from root path to avoid loops
     if (pathname !== "/") return;
-
-    // Check if iOS
-    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
     if (!isIOS) return;
-
-    // Check if running in standalone mode (opened from home screen)
-    // navigator.standalone is iOS-specific
-    const isStandalone =
-      ("standalone" in navigator && navigator.standalone === true) ||
-      window.matchMedia("(display-mode: standalone)").matches;
-
     if (!isStandalone) return;
 
     // All conditions met: iOS + standalone + on root path
+    console.log("[iOS Redirect] Redirecting to /operaciones");
     router.replace("/operaciones");
   }, [pathname, router]);
 
