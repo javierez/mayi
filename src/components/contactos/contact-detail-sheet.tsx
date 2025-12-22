@@ -685,8 +685,8 @@ export function ContactDetailSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="flex flex-col w-full max-w-full sm:max-w-md md:max-w-2xl p-0 [&>button]:hidden">
-        <SheetHeader className="px-4 pt-4 sm:px-6 sm:pt-6">
+      <SheetContent className="flex flex-col overflow-hidden w-full max-w-full sm:max-w-md md:max-w-2xl p-0 [&>button]:hidden">
+        <SheetHeader className="shrink-0 px-4 pt-4 sm:px-6 sm:pt-6">
           <div className="flex items-center justify-between gap-2">
             <SheetTitle className="flex items-center gap-2 text-base sm:text-lg break-words min-w-0 flex-1">
               <button

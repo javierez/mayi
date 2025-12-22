@@ -1410,50 +1410,140 @@ export default function AppointmentForm({
 
       case 1: // Details
         return (
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <FloatingLabelInput
+          <div className="space-y-6">
+            {/* Date & Time Rows */}
+            <div className="space-y-4">
+              {/* Start Date & Time Row */}
+              <div className="grid grid-cols-2 gap-4">
+                <FloatingLabelInput
                   id="startDate"
                   value={formData.startDate ? convertInternalToDateInput(formData.startDate) : ""}
                   onChange={handleInputChange("startDate")}
-                  placeholder="Fecha de inicio"
+                  placeholder="Fecha inicio"
                   type="date"
                   required
-                  className="text-sm"
                 />
+                <FloatingLabelInput
+                  id="startTime"
+                  value={formData.startTime ?? ""}
+                  onChange={handleInputChange("startTime")}
+                  placeholder="Hora inicio"
+                  type="time"
+                  required
+                />
+              </div>
 
-              <div className="relative mt-8">
-                <label className="absolute -top-5 left-0 z-10 px-2 text-xs font-medium text-gray-600">
-                  Hora de inicio
-                </label>
-                <Select
-                  value={formData.startTime}
-                  onValueChange={handleInputChange("startTime")}
-                >
-                  <SelectTrigger className="h-9 border border-gray-200 text-sm shadow-md">
-                    <SelectValue placeholder="Seleccionar hora" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <ScrollArea className="h-[200px]">
-                      {generateTimeOptions().map((time, index) => (
-                        <SelectItem key={`${time}-${index}`} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </ScrollArea>
-                  </SelectContent>
-                </Select>
+              {/* End Date & Time Row */}
+              <div className="grid grid-cols-2 gap-4">
+                <FloatingLabelInput
+                  id="endDate"
+                  value={formData.endDate ? convertInternalToDateInput(formData.endDate) : ""}
+                  onChange={(value) => {
+                    updateSourceRef.current = "end";
+                    const newEndDate = convertDateInputToInternal(value);
+                    setFormData((prev) => ({ ...prev, endDate: newEndDate }));
+
+                    // Recalculate duration from new end date
+                    if (formData.startDate && formData.startTime && formData.endTime) {
+                      const { hours, minutes } = calculateDurationFromEndDateTime(
+                        formData.startDate,
+                        formData.startTime,
+                        newEndDate,
+                        formData.endTime,
+                      );
+
+                      const startDateParts = formData.startDate.split("-").map(Number);
+                      const endDateParts = newEndDate.split("-").map(Number);
+                      const startTimeParts = formData.startTime.split(":").map(Number);
+                      const endTimeParts = formData.endTime.split(":").map(Number);
+
+                      const startDateTime = new Date(
+                        startDateParts[2] ?? 0, (startDateParts[1] ?? 1) - 1, startDateParts[0] ?? 1,
+                        startTimeParts[0] ?? 0, startTimeParts[1] ?? 0
+                      );
+                      const endDateTime = new Date(
+                        endDateParts[2] ?? 0, (endDateParts[1] ?? 1) - 1, endDateParts[0] ?? 1,
+                        endTimeParts[0] ?? 0, endTimeParts[1] ?? 0
+                      );
+
+                      if (endDateTime <= startDateTime) {
+                        const corrected = calculateEndDateTime(formData.startDate, formData.startTime, 30);
+                        setFormData((prev) => ({ ...prev, endDate: corrected.endDate, endTime: corrected.endTime }));
+                        setDurationHours(0);
+                        setDurationMinutes(30);
+                      } else {
+                        const totalMinutes = hours * 60 + minutes;
+                        const maxMinutes = 14 * 24 * 60;
+                        if (totalMinutes > maxMinutes) {
+                          const corrected = calculateEndDateTime(formData.startDate, formData.startTime, maxMinutes);
+                          setFormData((prev) => ({ ...prev, endDate: corrected.endDate, endTime: corrected.endTime }));
+                          setDurationHours(Math.floor(maxMinutes / 60));
+                          setDurationMinutes(maxMinutes % 60);
+                        } else {
+                          setDurationHours(hours);
+                          setDurationMinutes(minutes);
+                        }
+                      }
+                    }
+                  }}
+                  placeholder="Fecha fin"
+                  type="date"
+                  required
+                />
+                <FloatingLabelInput
+                  id="endTime"
+                  value={formData.endTime ?? ""}
+                  onChange={(newEndTime) => {
+                    updateSourceRef.current = "end";
+                    setFormData((prev) => ({ ...prev, endTime: newEndTime }));
+
+                    // Recalculate duration from new end time
+                    if (formData.startDate && formData.startTime && formData.endDate) {
+                      const { hours, minutes } = calculateDurationFromEndDateTime(
+                        formData.startDate,
+                        formData.startTime,
+                        formData.endDate,
+                        newEndTime,
+                      );
+
+                      const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
+                      const endDateTime = new Date(`${formData.endDate}T${newEndTime}`);
+
+                      if (endDateTime <= startDateTime) {
+                        const corrected = calculateEndDateTime(formData.startDate, formData.startTime, 30);
+                        setFormData((prev) => ({ ...prev, endDate: corrected.endDate, endTime: corrected.endTime }));
+                        setDurationHours(0);
+                        setDurationMinutes(30);
+                      } else {
+                        const totalMinutes = hours * 60 + minutes;
+                        const maxMinutes = 14 * 24 * 60;
+                        if (totalMinutes > maxMinutes) {
+                          const corrected = calculateEndDateTime(formData.startDate, formData.startTime, maxMinutes);
+                          setFormData((prev) => ({ ...prev, endDate: corrected.endDate, endTime: corrected.endTime }));
+                          setDurationHours(Math.floor(maxMinutes / 60));
+                          setDurationMinutes(maxMinutes % 60);
+                        } else {
+                          setDurationHours(hours);
+                          setDurationMinutes(minutes);
+                        }
+                      }
+                    }
+                  }}
+                  placeholder="Hora fin"
+                  type="time"
+                  required
+                />
               </div>
             </div>
 
-            {/* Duration and End Date/Time Row */}
-            <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-4 md:grid-cols-3">
+            {/* Duration & Trip Time Row */}
+            <div className="grid grid-cols-2 gap-4 pt-4">
               {/* Duration */}
               <div className="relative">
-                <label className="absolute -top-6 left-0 z-10 px-2 text-xs font-medium text-gray-600">
+                <label className="absolute -top-5 left-0 z-10 px-2 text-xs font-medium text-gray-600">
                   Duración
                 </label>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   <Button
                     type="button"
                     variant="outline"
@@ -1464,17 +1554,15 @@ export default function AppointmentForm({
                       let newTotal;
 
                       if (totalMinutes > 8 * 60) {
-                        // If more than 8 hours, decrease by 1 day
                         newTotal = Math.max(8 * 60, totalMinutes - 24 * 60);
                       } else {
-                        // If 8 hours or less, decrease by 15 minutes
                         newTotal = Math.max(0, totalMinutes - 15);
                       }
 
                       setDurationHours(Math.floor(newTotal / 60));
                       setDurationMinutes(newTotal % 60);
                     }}
-                    className="h-9 w-9 p-0 text-lg"
+                    className="h-10 w-10 p-0 text-lg"
                     title="Restar 15 minutos o 1 día"
                   >
                     −
@@ -1488,25 +1576,22 @@ export default function AppointmentForm({
                       setDurationMinutes(m ?? 0);
                     }}
                   >
-                    <SelectTrigger className="h-9 flex-1 border border-gray-200 text-sm shadow-md">
+                    <SelectTrigger className="h-10 flex-1 border border-gray-200 text-sm shadow-md">
                       <SelectValue>
                         {(() => {
                           const totalMinutes = durationHours * 60 + durationMinutes;
                           const totalDays = Math.floor(totalMinutes / (24 * 60));
 
                           if (totalDays >= 1 && totalMinutes % (24 * 60) === 0) {
-                            // Show as days if it's a whole number of days
                             return totalDays === 1 ? "1 día" : `${totalDays} días`;
                           }
 
-                          // Show as HH:mm for durations under 1 day or partial days
                           return `${durationHours.toString().padStart(2, "0")}:${durationMinutes.toString().padStart(2, "0")}`;
                         })()}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <ScrollArea className="h-[200px]">
-                        {/* Generate duration options from 0 to 8 hours in 5-minute increments */}
                         {Array.from({ length: 97 }, (_, i) => i * 5).map((totalMinutes) => {
                           const h = Math.floor(totalMinutes / 60);
                           const m = totalMinutes % 60;
@@ -1517,7 +1602,6 @@ export default function AppointmentForm({
                             </SelectItem>
                           );
                         })}
-                        {/* Add day options from 1 to 14 days */}
                         {Array.from({ length: 14 }, (_, i) => i + 1).map((days) => {
                           const totalMinutes = days * 24 * 60;
                           const h = Math.floor(totalMinutes / 60);
@@ -1542,17 +1626,15 @@ export default function AppointmentForm({
                       let newTotal;
 
                       if (totalMinutes >= 8 * 60) {
-                        // If 8 hours or more, increase by 1 day
-                        newTotal = Math.min(14 * 24 * 60, totalMinutes + 24 * 60); // Max 14 days
+                        newTotal = Math.min(14 * 24 * 60, totalMinutes + 24 * 60);
                       } else {
-                        // If less than 8 hours, increase by 15 minutes (up to 8 hours)
                         newTotal = Math.min(8 * 60, totalMinutes + 15);
                       }
 
                       setDurationHours(Math.floor(newTotal / 60));
                       setDurationMinutes(newTotal % 60);
                     }}
-                    className="h-9 w-9 p-0 text-lg"
+                    className="h-10 w-10 p-0 text-lg"
                     title="Añadir 15 minutos o 1 día"
                   >
                     +
@@ -1560,132 +1642,62 @@ export default function AppointmentForm({
                 </div>
               </div>
 
-              {/* End Date */}
+              {/* Trip Time */}
               <div className="relative">
-                <label className="absolute -top-6 left-0 z-10 px-2 text-xs font-medium text-gray-600">
-                  Fecha de fin
+                <label className="absolute -top-5 left-0 z-10 px-2 text-xs font-medium text-gray-600">
+                  Tiempo de viaje
                 </label>
-                <input
-                  id="endDate"
-                  type="date"
-                  value={formData.endDate ? convertInternalToDateInput(formData.endDate) : ""}
-                  onChange={(e) => {
-                    updateSourceRef.current = "end";
-                    const newEndDate = convertDateInputToInternal(e.target.value);
-                    setFormData((prev) => ({ ...prev, endDate: newEndDate }));
-
-                    // Recalculate duration from new end date
-                    if (formData.startDate && formData.startTime && formData.endTime) {
-                      const { hours, minutes } = calculateDurationFromEndDateTime(
-                        formData.startDate,
-                        formData.startTime,
-                        newEndDate,
-                        formData.endTime,
-                      );
-
-                      // Validate: if end is before or equal to start, auto-correct to start + 30 min
-                      // Parse DD-MM-YYYY format
-                      const startDateParts = formData.startDate.split("-").map(Number);
-                      const endDateParts = newEndDate.split("-").map(Number);
-                      const startTimeParts = formData.startTime.split(":").map(Number);
-                      const endTimeParts = formData.endTime.split(":").map(Number);
-                      
-                      const startDateTime = new Date(
-                        startDateParts[2] ?? 0, (startDateParts[1] ?? 1) - 1, startDateParts[0] ?? 1,
-                        startTimeParts[0] ?? 0, startTimeParts[1] ?? 0
-                      );
-                      const endDateTime = new Date(
-                        endDateParts[2] ?? 0, (endDateParts[1] ?? 1) - 1, endDateParts[0] ?? 1,
-                        endTimeParts[0] ?? 0, endTimeParts[1] ?? 0
-                      );
-
-                      if (endDateTime <= startDateTime) {
-                        // Auto-correct to start + 30 minutes
-                        const corrected = calculateEndDateTime(formData.startDate, formData.startTime, 30);
-                        setFormData((prev) => ({ ...prev, endDate: corrected.endDate, endTime: corrected.endTime }));
-                        setDurationHours(0);
-                        setDurationMinutes(30);
-                      } else {
-                        // Cap duration at 14 days max
-                        const totalMinutes = hours * 60 + minutes;
-                        const maxMinutes = 14 * 24 * 60;
-                        if (totalMinutes > maxMinutes) {
-                          const corrected = calculateEndDateTime(formData.startDate, formData.startTime, maxMinutes);
-                          setFormData((prev) => ({ ...prev, endDate: corrected.endDate, endTime: corrected.endTime }));
-                          setDurationHours(Math.floor(maxMinutes / 60));
-                          setDurationMinutes(maxMinutes % 60);
-                        } else {
-                          setDurationHours(hours);
-                          setDurationMinutes(minutes);
-                        }
-                      }
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const currentValue = formData.tripTimeMinutes ?? 0;
+                      const newValue = Math.max(0, currentValue - 15);
+                      handleInputChange("tripTimeMinutes")(newValue);
+                    }}
+                    className="h-10 w-10 p-0 text-lg"
+                    title="Restar 15 minutos"
+                  >
+                    −
+                  </Button>
+                  <input
+                    id="tripTimeMinutes"
+                    value={
+                      formData.tripTimeMinutes === 0 ||
+                      formData.tripTimeMinutes === undefined
+                        ? ""
+                        : formData.tripTimeMinutes
                     }
-                  }}
-                  required
-                  className="h-9 w-full rounded-md border border-gray-200 px-3 text-sm shadow-md"
-                />
-              </div>
-
-              {/* End Time */}
-              <div className="relative">
-                <label className="absolute -top-6 left-0 z-10 px-2 text-xs font-medium text-gray-600">
-                  Hora de fin
-                </label>
-                <Select
-                  value={formData.endTime}
-                  onValueChange={(newEndTime) => {
-                    updateSourceRef.current = "end";
-                    setFormData((prev) => ({ ...prev, endTime: newEndTime }));
-
-                    // Recalculate duration from new end time
-                    if (formData.startDate && formData.startTime && formData.endDate) {
-                      const { hours, minutes } = calculateDurationFromEndDateTime(
-                        formData.startDate,
-                        formData.startTime,
-                        formData.endDate,
-                        newEndTime,
-                      );
-
-                      // Validate: if end is before or equal to start, auto-correct to start + 30 min
-                      const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
-                      const endDateTime = new Date(`${formData.endDate}T${newEndTime}`);
-
-                      if (endDateTime <= startDateTime) {
-                        // Auto-correct to start + 30 minutes
-                        const corrected = calculateEndDateTime(formData.startDate, formData.startTime, 30);
-                        setFormData((prev) => ({ ...prev, endDate: corrected.endDate, endTime: corrected.endTime }));
-                        setDurationHours(0);
-                        setDurationMinutes(30);
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === "") {
+                        handleInputChange("tripTimeMinutes")(0);
                       } else {
-                        // Cap duration at 14 days max
-                        const totalMinutes = hours * 60 + minutes;
-                        const maxMinutes = 14 * 24 * 60;
-                        if (totalMinutes > maxMinutes) {
-                          const corrected = calculateEndDateTime(formData.startDate, formData.startTime, maxMinutes);
-                          setFormData((prev) => ({ ...prev, endDate: corrected.endDate, endTime: corrected.endTime }));
-                          setDurationHours(Math.floor(maxMinutes / 60));
-                          setDurationMinutes(maxMinutes % 60);
-                        } else {
-                          setDurationHours(hours);
-                          setDurationMinutes(minutes);
-                        }
+                        handleInputChange("tripTimeMinutes")(parseInt(value) || 0);
                       }
-                    }
-                  }}
-                >
-                  <SelectTrigger className="h-9 border border-gray-200 text-sm shadow-md">
-                    <SelectValue placeholder="Seleccionar hora" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <ScrollArea className="h-[200px]">
-                      {generateTimeOptions().map((time, index) => (
-                        <SelectItem key={`end-${time}-${index}`} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </ScrollArea>
-                  </SelectContent>
-                </Select>
+                    }}
+                    placeholder="-"
+                    type="number"
+                    min="0"
+                    className="h-10 flex-1 rounded-md border border-gray-200 bg-background px-3 py-2 text-sm shadow-md placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const currentValue = formData.tripTimeMinutes ?? 0;
+                      const newValue = currentValue + 15;
+                      handleInputChange("tripTimeMinutes")(newValue);
+                    }}
+                    className="h-10 w-10 p-0 text-lg"
+                    title="Añadir 15 minutos"
+                  >
+                    +
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -1842,65 +1854,7 @@ export default function AppointmentForm({
               </div>
             )}
 
-            <div className="relative">
-              <label className="absolute -top-5 left-0 z-10 px-2 text-xs font-medium text-gray-600">
-                Tiempo de viaje (minutos)
-              </label>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const currentValue = formData.tripTimeMinutes ?? 0;
-                    const newValue = Math.max(0, currentValue - 15);
-                    handleInputChange("tripTimeMinutes")(newValue);
-                  }}
-                  className="h-9 w-9 p-0 text-lg"
-                  title="Restar 15 minutos"
-                >
-                  −
-                </Button>
-                <input
-                  id="tripTimeMinutes"
-                  value={
-                    formData.tripTimeMinutes === 0 ||
-                    formData.tripTimeMinutes === undefined
-                      ? ""
-                      : formData.tripTimeMinutes
-                  }
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    // If empty, set to 0
-                    if (value === "") {
-                      handleInputChange("tripTimeMinutes")(0);
-                    } else {
-                      handleInputChange("tripTimeMinutes")(parseInt(value) || 0);
-                    }
-                  }}
-                  placeholder="-"
-                  type="number"
-                  min="0"
-                  className="h-9 flex-1 rounded-md border border-gray-200 bg-background px-3 py-2 text-sm shadow-md ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const currentValue = formData.tripTimeMinutes ?? 0;
-                    const newValue = currentValue + 15;
-                    handleInputChange("tripTimeMinutes")(newValue);
-                  }}
-                  className="h-9 w-9 p-0 text-lg"
-                  title="Añadir 15 minutos"
-                >
-                  +
-                </Button>
-              </div>
-            </div>
-
-            <div className="relative">
+            <div className="relative mt-2">
               <label className="absolute -top-5 left-0 z-10 px-2 text-xs font-medium text-gray-600">
                 Notas
               </label>

@@ -1,15 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { FilePlus, Loader2, Check } from "lucide-react";
+import { FilePlus, Loader2, Check, Search } from "lucide-react";
 import { generateArrasContractAction } from "~/server/actions/listing-contacts";
 import { toast } from "sonner";
 import { cn } from "~/lib/utils";
@@ -59,6 +60,32 @@ export function ContractSelectionCards({
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter deals and contacts based on search query
+  const filteredDeals = useMemo(() => {
+    if (!searchQuery.trim()) return deals;
+    const query = searchQuery.toLowerCase();
+    return deals.filter((deal) =>
+      deal.buyerName.toLowerCase().includes(query)
+    );
+  }, [deals, searchQuery]);
+
+  const filteredContacts = useMemo(() => {
+    if (!searchQuery.trim()) return contactsWithoutDeals;
+    const query = searchQuery.toLowerCase();
+    return contactsWithoutDeals.filter((contact) =>
+      contact.buyerName.toLowerCase().includes(query)
+    );
+  }, [contactsWithoutDeals, searchQuery]);
+
+  // Reset search when modal closes
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      setSearchQuery("");
+    }
+  };
 
   // If no deals and no contacts, show nothing
   if (deals.length === 0 && contactsWithoutDeals.length === 0) {
@@ -109,15 +136,28 @@ export function ContractSelectionCards({
         </Button>
       </div>
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Seleccionar comprador</DialogTitle>
           </DialogHeader>
 
-          <div className="mt-2 divide-y">
+          {/* Search input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Buscar por nombre..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
+          {/* Scrollable list */}
+          <div className="max-h-64 divide-y overflow-y-auto">
             {/* Deals first (ordered by creation date from query) */}
-            {deals.map((deal) => {
+            {filteredDeals.map((deal) => {
               const isLoading = loadingId === `deal-${deal.dealId}`;
               return (
                 <button
@@ -147,7 +187,7 @@ export function ContractSelectionCards({
             })}
 
             {/* Contacts without deals (ordered by creation date from query) */}
-            {contactsWithoutDeals.map((contact) => {
+            {filteredContacts.map((contact) => {
               const isLoading = loadingId === `contact-${contact.listingContactId}`;
               return (
                 <button

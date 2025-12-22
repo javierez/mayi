@@ -15,6 +15,17 @@ interface Document {
   documentKey: string;
 }
 
+type FolderType =
+  | "documentacion-inicial"
+  | "documentacion-legal"
+  | "certificados"
+  | "impuestos-pagos"
+  | "contratos"
+  | "hipoteca"
+  | "visitas"
+  | "planos"
+  | "otros";
+
 interface DocumentsSectionProps {
   listing: {
     listingId: bigint;
@@ -23,17 +34,21 @@ interface DocumentsSectionProps {
     street?: string | null;
     city?: string | null;
   };
-  folderType:
-    | "documentacion-inicial"
-    | "documentacion-legal"
-    | "certificados"
-    | "impuestos-pagos"
-    | "contratos"
-    | "hipoteca"
-    | "visitas"
-    | "planos"
-    | "otros";
+  folderType: FolderType;
 }
+
+// Static folder type mapping - defined outside component to avoid recreating
+const FOLDER_TYPE_MAP: Record<FolderType, string> = {
+  "documentacion-inicial": "initial-docs",
+  "documentacion-legal": "legal-docs",
+  certificados: "certificados",
+  "impuestos-pagos": "impuestos-pagos",
+  contratos: "contratos",
+  hipoteca: "hipoteca",
+  visitas: "visitas",
+  planos: "planos",
+  otros: "others",
+};
 
 export function DocumentsSection({
   listing,
@@ -48,19 +63,6 @@ export function DocumentsSection({
     setRefreshKey((prev) => prev + 1);
   }, []);
 
-  // Map folder types for API calls
-  const folderTypeMap = {
-    "documentacion-inicial": "initial-docs",
-    "documentacion-legal": "legal-docs",
-    certificados: "certificados",
-    "impuestos-pagos": "impuestos-pagos",
-    contratos: "contratos",
-    hipoteca: "hipoteca",
-    visitas: "visitas",
-    planos: "planos",
-    otros: "others",
-  } as const;
-
   const handleFileUpload = () => {
     if (!isUploading) {
       document.getElementById("documents-file-input")?.click();
@@ -74,7 +76,7 @@ export function DocumentsSection({
       setIsUploading(true);
 
       try {
-        const apiFolderType = folderTypeMap[folderType];
+        const apiFolderType = FOLDER_TYPE_MAP[folderType];
 
         // Upload all files
         const uploadPromises = Array.from(files).map(async (file) => {
@@ -171,15 +173,10 @@ export function DocumentsSection({
     <>
       {/* Full-screen drop overlay */}
       {isDragOver && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-blue-500/20 backdrop-blur-sm">
-          <div className="rounded-2xl border-4 border-dashed border-blue-400 bg-white/90 px-16 py-12 text-center shadow-2xl">
-            <Upload className="mx-auto mb-4 h-16 w-16 text-blue-500" />
-            <p className="text-xl font-semibold text-blue-700">
-              Suelta los archivos aquí
-            </p>
-            <p className="mt-2 text-sm text-blue-500">
-              para subirlos a esta carpeta
-            </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/5 backdrop-blur-[2px]">
+          <div className="rounded-lg border border-dashed border-gray-300 bg-white/80 px-12 py-8 text-center">
+            <Upload className="mx-auto mb-3 h-8 w-8 text-gray-400" />
+            <p className="text-sm text-gray-500">Soltar archivos</p>
           </div>
         </div>
       )}

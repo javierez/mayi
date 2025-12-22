@@ -136,7 +136,7 @@ function UnifiedCommentItem({
         <div className="min-w-0 flex-1 max-w-full overflow-hidden">
           <div
             className={clsx(
-              "group relative rounded-2xl px-4 py-3",
+              "group relative m-0.5 rounded-2xl px-4 py-3",
               comment.userId === "temp"
                 ? "bg-blue-50 opacity-70 shadow-sm"
                 : isReply
@@ -215,8 +215,7 @@ function UnifiedCommentItem({
                 )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <span
+              <span
                   className={clsx("text-gray-500", isReply ? "text-xs" : "text-xs")}
                 >
                   {formatDistanceToNow(comment.createdAt, {
@@ -224,9 +223,6 @@ function UnifiedCommentItem({
                     locale: es,
                   })}
                 </span>
-                {/* Source badge - only show for top-level comments */}
-                {!isReply && <SourceBadge comment={comment} />}
-              </div>
             </div>
             {editingComment === comment.commentId ? (
               <div className="mt-2">
@@ -266,6 +262,13 @@ function UnifiedCommentItem({
               >
                 {comment.content}
               </p>
+            )}
+
+            {/* Source badge - bottom right, only for top-level comments */}
+            {!isReply && comment.source !== "contact" && (
+              <div className="mt-2 flex justify-end">
+                <SourceBadge comment={comment} />
+              </div>
             )}
           </div>
 
