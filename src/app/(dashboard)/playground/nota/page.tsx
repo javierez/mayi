@@ -7,9 +7,10 @@ import { Loader2, Download, FileText } from "lucide-react";
 import { getNotaEncargoData } from "~/server/queries/nota-encargo";
 import { transformToNotaEncargoPDF } from "~/lib/nota-encargo-helpers";
 import { cn } from "~/lib/utils";
+import type { HojaEncargoDocumentData } from "~/types/hoja-encargo";
 
-// Mock data for the document
-const mockData = {
+// Mock data for the document (HojaEncargoDocumentData structure)
+const mockData: HojaEncargoDocumentData = {
   documentNumber: "HE-VESTA2024000001-1696123456789",
 
   agency: {
@@ -53,15 +54,17 @@ const mockData = {
     city: "León",
     postalCode: "24001",
     phone: "987 654 321",
+    email: "juan.perez@example.com",
   },
 
   property: {
     description:
       "Piso de 3 habitaciones y 2 baños en zona centro de León, completamente reformado con calefacción central",
-    allowSignage: "Sí",
+    fullAddress: "Calle Mayor 123, 3º B, 24001 León",
+    cadastralReference: "1234567890123456AB",
+    surfaceArea: "120 m²",
     energyCertificate: "Disponible - Certificación E",
-    keyDelivery: "Sí",
-    allowVisits: "Sí",
+    hasKeys: true,
   },
 
   operation: {
@@ -69,13 +72,13 @@ const mockData = {
     price: "185.000",
   },
 
-  commission: {
-    percentage: 3,
-    minimum: "1.500",
-  },
-
-  duration: {
-    months: 12,
+  terms: {
+    commissionPercentage: 3,
+    minimumCommission: "1.500",
+    durationMonths: 12,
+    exclusivity: false,
+    allowSignage: true,
+    allowVisits: true,
   },
 
   signatures: {
@@ -89,7 +92,6 @@ const mockData = {
 
   observations: "",
 
-  hasOtherAgency: false,
   gdprConsent: false,
 };
 

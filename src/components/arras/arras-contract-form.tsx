@@ -31,6 +31,10 @@ import {
 } from "./confirm-changes-modal";
 import { Save, Loader, Eye, Download, Share2, AlertCircle } from "lucide-react";
 import type { ArrasContractPageData, ArrasType, PaymentMethod } from "~/types/arras";
+import {
+  AddressAutocomplete,
+  type LocationData,
+} from "~/components/propiedades/form/address-autocomplete";
 
 // ToriPark account ID for rental contract form
 const TORIPARK_ACCOUNT_ID = "1125899906842626";
@@ -384,6 +388,44 @@ function ToriParkRentalForm({ data }: ArrasContractFormProps) {
     router.push(`/propiedades/${data.listing.listingId}`);
   };
 
+  // Handle Google Places autocomplete for landlord address
+  const handleLandlordAddressSelected = (locationData: LocationData) => {
+    const streetWithNumber =
+      locationData.addressComponents.streetNumber &&
+      locationData.addressComponents.route
+        ? `${locationData.addressComponents.route} ${locationData.addressComponents.streetNumber}`
+        : locationData.addressComponents.route ?? locationData.address;
+
+    const fullAddress = [
+      streetWithNumber,
+      locationData.addressComponents.postalCode,
+      locationData.addressComponents.locality,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    setLandlordAddress(fullAddress);
+  };
+
+  // Handle Google Places autocomplete for tenant address
+  const handleTenantAddressSelected = (locationData: LocationData) => {
+    const streetWithNumber =
+      locationData.addressComponents.streetNumber &&
+      locationData.addressComponents.route
+        ? `${locationData.addressComponents.route} ${locationData.addressComponents.streetNumber}`
+        : locationData.addressComponents.route ?? locationData.address;
+
+    const fullAddress = [
+      streetWithNumber,
+      locationData.addressComponents.postalCode,
+      locationData.addressComponents.locality,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    setTenantAddress(fullAddress);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -509,11 +551,12 @@ function ToriParkRentalForm({ data }: ArrasContractFormProps) {
                 </div>
                 <div className="sm:col-span-2">
                   <Label htmlFor="landlordAddress">Dirección completa *</Label>
-                  <Input
-                    id="landlordAddress"
+                  <AddressAutocomplete
                     value={landlordAddress}
-                    onChange={(e) => setLandlordAddress(e.target.value)}
-                    required
+                    onChange={setLandlordAddress}
+                    onLocationSelected={handleLandlordAddressSelected}
+                    placeholder="Buscar dirección del arrendador..."
+                    className="h-9"
                   />
                 </div>
                 <div>
@@ -562,11 +605,12 @@ function ToriParkRentalForm({ data }: ArrasContractFormProps) {
                 </div>
                 <div className="sm:col-span-2">
                   <Label htmlFor="tenantAddress">Dirección completa *</Label>
-                  <Input
-                    id="tenantAddress"
+                  <AddressAutocomplete
                     value={tenantAddress}
-                    onChange={(e) => setTenantAddress(e.target.value)}
-                    required
+                    onChange={setTenantAddress}
+                    onLocationSelected={handleTenantAddressSelected}
+                    placeholder="Buscar dirección del arrendatario..."
+                    className="h-9"
                   />
                 </div>
                 <div>
@@ -601,8 +645,11 @@ function ToriParkRentalForm({ data }: ArrasContractFormProps) {
                 <Input
                   id="rentalPrice"
                   type="number"
-                  value={rentalPrice}
-                  onChange={(e) => setRentalPrice(parseFloat(e.target.value) || 0)}
+                  value={rentalPrice || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setRentalPrice(val === "" ? 0 : parseFloat(val));
+                  }}
                   min="0"
                   step="1"
                   required
@@ -613,8 +660,11 @@ function ToriParkRentalForm({ data }: ArrasContractFormProps) {
                 <Input
                   id="deposit"
                   type="number"
-                  value={deposit}
-                  onChange={(e) => setDeposit(parseFloat(e.target.value) || 0)}
+                  value={deposit || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setDeposit(val === "" ? 0 : parseFloat(val));
+                  }}
                   min="0"
                   step="1"
                   required
@@ -1356,6 +1406,44 @@ function StandardArrasContractForm({ data }: ArrasContractFormProps) {
     router.push(`/propiedades/${data.listing.listingId}`);
   };
 
+  // Handle Google Places autocomplete for seller address
+  const handleSellerAddressSelected = (locationData: LocationData) => {
+    const streetWithNumber =
+      locationData.addressComponents.streetNumber &&
+      locationData.addressComponents.route
+        ? `${locationData.addressComponents.route} ${locationData.addressComponents.streetNumber}`
+        : locationData.addressComponents.route ?? locationData.address;
+
+    const fullAddress = [
+      streetWithNumber,
+      locationData.addressComponents.postalCode,
+      locationData.addressComponents.locality,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    setSellerAddress(fullAddress);
+  };
+
+  // Handle Google Places autocomplete for buyer address
+  const handleBuyerAddressSelected = (locationData: LocationData) => {
+    const streetWithNumber =
+      locationData.addressComponents.streetNumber &&
+      locationData.addressComponents.route
+        ? `${locationData.addressComponents.route} ${locationData.addressComponents.streetNumber}`
+        : locationData.addressComponents.route ?? locationData.address;
+
+    const fullAddress = [
+      streetWithNumber,
+      locationData.addressComponents.postalCode,
+      locationData.addressComponents.locality,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    setBuyerAddress(fullAddress);
+  };
+
   const handleGeneratePdf = async () => {
     console.log("📄 [ArrasContract] Generate PDF initiated", { isDownloadValid, downloadErrorCount });
 
@@ -1548,11 +1636,12 @@ function StandardArrasContractForm({ data }: ArrasContractFormProps) {
                 </div>
                 <div className="sm:col-span-2">
                   <Label htmlFor="sellerAddress">Direccion completa *</Label>
-                  <Input
-                    id="sellerAddress"
+                  <AddressAutocomplete
                     value={sellerAddress}
-                    onChange={(e) => setSellerAddress(e.target.value)}
-                    required
+                    onChange={setSellerAddress}
+                    onLocationSelected={handleSellerAddressSelected}
+                    placeholder="Buscar dirección del vendedor..."
+                    className="h-9"
                   />
                 </div>
                 <div>
@@ -1601,11 +1690,12 @@ function StandardArrasContractForm({ data }: ArrasContractFormProps) {
                 </div>
                 <div className="sm:col-span-2">
                   <Label htmlFor="buyerAddress">Direccion completa *</Label>
-                  <Input
-                    id="buyerAddress"
+                  <AddressAutocomplete
                     value={buyerAddress}
-                    onChange={(e) => setBuyerAddress(e.target.value)}
-                    required
+                    onChange={setBuyerAddress}
+                    onLocationSelected={handleBuyerAddressSelected}
+                    placeholder="Buscar dirección del comprador..."
+                    className="h-9"
                   />
                 </div>
                 <div>

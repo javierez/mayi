@@ -9,67 +9,18 @@ import {
   getOfficeInfoAction,
 } from "~/app/actions/agent-info";
 import { useSession } from "~/lib/auth-client";
-
-interface NotaEncargoData {
-  documentNumber: string;
-  agency: {
-    agentName: string;
-    collegiateNumber: string;
-    agentNIF: string;
-    website: string;
-    email: string;
-    logo?: string;
-    accountId?: string;
-    offices: Array<{
-      address: string;
-      city: string;
-      postalCode: string;
-      phone: string;
-    }>;
-  };
-  client: {
-    fullName: string;
-    nif: string;
-    address: string;
-    city: string;
-    postalCode: string;
-    phone: string;
-  };
-  property: {
-    description: string;
-    allowSignage: string;
-    energyCertificate: string;
-    keyDelivery: string;
-    allowVisits: string;
-  };
-  operation: {
-    type: string;
-    price: string;
-  };
-  commission: {
-    percentage: number;
-    minimum: string;
-  };
-  duration: {
-    months: number;
-  };
-  signatures: {
-    location: string;
-    date: string;
-  };
-  jurisdiction: {
-    city: string;
-  };
-  observations: string;
-  hasOtherAgency?: boolean;
-  gdprConsent?: boolean;
-}
+import type { HojaEncargoDocumentData } from "~/types/hoja-encargo";
 
 interface Props {
-  data: NotaEncargoData;
+  data: HojaEncargoDocumentData;
 }
 
 export function NotaEncargoDocument({ data }: Props) {
+  // Set ready signal for Puppeteer PDF generation
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+    (window as any).notaEncargoReady = true;
+  }, []);
   const [brandLogo, setBrandLogo] = useState<string | null>(null);
   const [agentName, setAgentName] = useState<string>(data.agency.agentName);
   const [collegiateNumber, setCollegiateNumber] = useState<string>(
@@ -146,93 +97,142 @@ export function NotaEncargoDocument({ data }: Props) {
   }, [session?.user?.id, data.agency.logo]);
 
   return (
-    <div className="bg-white font-sans text-black print:m-0 print:h-[297mm] print:w-[210mm] print:p-0 print:text-[11pt] print:leading-[1.4]">
-      <div className="nota-encargo-document mx-auto min-h-[1123px] max-w-[794px] px-10 py-8 font-sans text-[11pt] leading-[1.4] print:mx-0 print:min-h-0 print:max-w-none print:px-[10mm] print:pb-[10mm] print:pt-[2mm]">
+    <>
+      <style jsx>{`
+        /* Print-specific styles for page break handling */
+        @media print {
+          .nota-encargo-document {
+            /* Allow natural text flow, prevent only bad orphans/widows */
+            orphans: 2;
+            widows: 2;
+          }
+
+          /* Prevent only section headers from being orphaned at bottom of page */
+          .section-header {
+            page-break-after: avoid;
+            break-after: avoid;
+            margin-top: 1em;
+          }
+
+          /* Add spacing at top of pages for continuation content */
+          .nota-encargo-document > * {
+            margin-top: 0;
+          }
+
+          /* Ensure proper spacing after page breaks */
+          * {
+            box-decoration-break: clone;
+            -webkit-box-decoration-break: clone;
+          }
+        }
+
+        /* Add visual margin at page breaks for multi-page documents */
+        @page {
+          margin: 0;
+        }
+      `}</style>
+
+      <div className="bg-white font-sans text-black print:m-0 print:h-[297mm] print:w-[210mm] print:p-0 print:text-[11pt] print:leading-[1.4]">
+        <div className="nota-encargo-document mx-auto min-h-[1123px] max-w-[794px] px-10 py-8 font-sans text-[11pt] leading-[1.4] print:mx-0 print:min-h-0 print:max-w-none print:px-10 print:py-6">
         {/* Header Section */}
-        <div className="mb-6 text-center print:mb-2">
-          {/* Logo Section */}
-          <div className="mb-6 flex items-center justify-center gap-6 p-2 print:mb-2 print:p-0">
+        <div className="mb-6 print:mb-2">
+          {/* Logo and Services Section */}
+          <div className="mb-4 flex items-center justify-between gap-8 pb-3 print:mb-3 print:pb-2">
+            {/* Logo */}
             {brandLogo && (
-              <div className="flex-shrink-0">
-                <Image
-                  src={brandLogo}
-                  alt="Logo de la agencia"
-                  width={80}
-                  height={80}
-                  className="h-20 w-auto drop-shadow-sm"
-                />
+              <div className="flex flex-shrink-0 items-center justify-center p-2 print:p-0">
+                <div className="flex-shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={brandLogo}
+                    alt="Logo de la agencia"
+                    className="h-20 w-auto"
+                    style={{ width: "auto", height: "80px" }}
+                  />
+                </div>
               </div>
             )}
-            <div className="flex-shrink-0">
-              <Image
-                src="https://vesta-configuration-files.s3.us-east-1.amazonaws.com/logos/logo_api.png"
-                alt="API Logo"
-                width={48}
-                height={48}
-                className="h-12 w-auto drop-shadow-sm"
-              />
-            </div>
-          </div>
 
-          {/* Agency Title */}
-          <div className="mb-4 border-b border-gray-200 pb-3 print:mb-3 print:pb-2">
-            <div className="mb-3 text-[16pt] font-bold tracking-wide text-gray-800">
-              AGENCIA DE LA PROPIEDAD INMOBILIARIA
-            </div>
-            <div className="mb-2 text-[13pt] font-semibold text-gray-700">
-              {agentName}
-            </div>
-            {collegiateNumber && accountType !== "company" && (
-              <div className="mb-1 text-[11pt] text-gray-600">
-                Nº Colegiado: {collegiateNumber}
+            {/* Services */}
+            <div className="flex-1 space-y-0.5 text-center text-[8pt] leading-tight text-gray-600">
+              <div className="flex flex-wrap justify-center gap-x-1.5">
+                <span>Compra</span>
+                <span className="text-gray-400">•</span>
+                <span>Venta</span>
+                <span className="text-gray-400">•</span>
+                <span>Alquiler</span>
+                <span className="text-gray-400">•</span>
+                <span>Permutas</span>
               </div>
-            )}
-            <div className="text-[11pt] text-gray-600">
-              {accountType === "company" ? "C.I.F" : "N.I.F"}: {taxId}
-            </div>
-          </div>
-
-          {/* Services Section */}
-          <div className="mb-4 print:mb-3">
-            <div className="space-y-1 text-[10pt] leading-relaxed text-gray-600">
-              <div>Compra • Venta • Alquiler • Permutas</div>
-              <div>
-                Pisos • Chalets • Garajes • Locales • Terrenos y solares
+              <div className="flex flex-wrap justify-center gap-x-1.5">
+                <span>Pisos</span>
+                <span className="text-gray-400">•</span>
+                <span>Chalets</span>
+                <span className="text-gray-400">•</span>
+                <span>Garajes</span>
+                <span className="text-gray-400">•</span>
+                <span>Locales</span>
+                <span className="text-gray-400">•</span>
+                <span>Terrenos y solares</span>
               </div>
               <div>Valoraciones y tasaciones</div>
+              {(website ?? taxId ?? (collegiateNumber && accountType !== "company")) && (
+                <div className="mt-1 flex flex-col items-center pt-1">
+                  <div className="w-2/3 border-t border-gray-300"></div>
+                  <div className="mt-1 flex flex-wrap justify-center gap-x-1.5 text-[7pt]">
+                    {website && (
+                      <span className="font-medium text-blue-600">{website}</span>
+                    )}
+                    {website && taxId && (
+                      <span className="text-gray-400">•</span>
+                    )}
+                    {taxId && (
+                      <span className="text-gray-600">
+                        {accountType === "company" ? "C.I.F" : "N.I.F"}: {taxId}
+                      </span>
+                    )}
+                    {(website ?? taxId) && collegiateNumber && accountType !== "company" && (
+                      <span className="text-gray-400">•</span>
+                    )}
+                    {collegiateNumber && accountType !== "company" && (
+                      <span className="text-gray-600">
+                        Nº Colegiado: {collegiateNumber}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Offices Section */}
-          <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3 print:mb-3 print:p-2">
-            <div className="mb-3 text-[11pt] font-semibold text-gray-800">
-              OFICINAS
+          {offices.length > 0 && (
+            <div className="mb-4 rounded-lg border border-gray-200 bg-gray-50 p-3 print:mb-3 print:p-2">
+              <div className="mb-3 text-[11pt] font-semibold text-gray-800">
+                OFICINAS
+              </div>
+              <div className="space-y-1">
+                {offices.map((office, index) => (
+                  <div key={index} className="text-[10pt] text-gray-700">
+                    {office.address}, {office.postalCode} {office.city}{" "}
+                    <span className="font-medium">(Tel: {office.phone})</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="space-y-1">
-              {offices.map((office, index) => (
-                <div key={index} className="text-[10pt] text-gray-700">
-                  {office.address}, {office.postalCode} {office.city}{" "}
-                  <span className="font-medium">(Tel: {office.phone})</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Website */}
-          <div className="text-[11pt] font-medium text-blue-700">{website}</div>
+          )}
         </div>
 
-        <div className="my-4 border-t-2 border-black print:my-3"></div>
+        {/* Spacer before title */}
+        <div className="h-8 print:h-6"></div>
 
         {/* Document Title */}
-        <div className="my-6 border-y-2 border-gray-300 py-2 text-center print:my-4 print:py-1">
-          <div className="mb-2 text-[16pt] font-bold">NOTA DE ENCARGO</div>
-          <div className="text-[12pt] font-medium">
-            Nº Nota: {data.documentNumber}
+        <div className="my-6 text-center print:my-4">
+          <div className="mb-2 text-[20pt] font-bold">NOTA DE ENCARGO</div>
+          <div className="font-mono text-[8pt] uppercase tracking-widest text-gray-500">
+            {data.documentNumber}
           </div>
         </div>
-
-        <div className="my-4 border-t-2 border-black print:my-3"></div>
 
         {/* Client Data Section */}
         <div className="my-6">
@@ -332,7 +332,7 @@ export function NotaEncargoDocument({ data }: Props) {
                 Autorización colocación de cartel:
               </span>
               <span className="ml-2 flex-1 border-b border-black pb-0.5">
-                {data.property.allowSignage}
+                {data.terms.allowSignage ? "Sí" : "No"}
               </span>
             </div>
 
@@ -351,7 +351,7 @@ export function NotaEncargoDocument({ data }: Props) {
                 las llaves de la finca descrita:
               </span>
               <span className="ml-2 flex-1 border-b border-black pb-0.5">
-                {data.property.keyDelivery}
+                {data.property.hasKeys ? "Sí" : "No"}
               </span>
             </div>
 
@@ -360,7 +360,7 @@ export function NotaEncargoDocument({ data }: Props) {
                 Autorización para realizar visitas:
               </span>
               <span className="ml-2 flex-1 border-b border-black pb-0.5">
-                {data.property.allowVisits}
+                {data.terms.allowVisits ? "Sí" : "No"}
               </span>
             </div>
           </div>
@@ -404,8 +404,8 @@ export function NotaEncargoDocument({ data }: Props) {
             <div className="mb-3 text-justify leading-relaxed">
               <strong>A)</strong> De las cantidades recibidas, sobre el precio
               de la operación, &ldquo;EL CLIENTE&rdquo;, abonará el{" "}
-              <strong>{data.commission.percentage}% + I.V.A.</strong> con un
-              mínimo de <strong>{data.commission.minimum} €</strong>, como
+              <strong>{data.terms.commissionPercentage}% + I.V.A.</strong> con un
+              mínimo de <strong>{data.terms.minimumCommission} €</strong>, como
               honorarios a {accountType === "company" ? "" : "D/ª "}
               <strong>{agentName}</strong>, siendo autorizada expresamente a que
               sean satisfechos reteniéndolos de las cantidades recibidas a
@@ -441,7 +441,7 @@ export function NotaEncargoDocument({ data }: Props) {
               <strong>A)</strong> El encargo de esta operación tiene una
               duración de{" "}
               <strong>
-                {data.duration.months === 12 ? "doce" : data.duration.months}{" "}
+                {data.terms.durationMonths === 12 ? "doce" : data.terms.durationMonths}{" "}
                 meses
               </strong>{" "}
               prorrogables, por el mismo período de tiempo, por ambas partes,
@@ -472,7 +472,7 @@ export function NotaEncargoDocument({ data }: Props) {
             <div className="mb-3 text-justify leading-relaxed">
               &ldquo;EL CLIENTE&rdquo;,{" "}
               <span className="font-bold">
-                {data.hasOtherAgency ? "[SÍ]" : "[NO]"}
+                {data.terms.exclusivity ? "[NO]" : "[SÍ]"}
               </span>
               , tiene encomendada, la venta del mencionado inmueble a otra
               Agencia de la Propiedad Inmobiliaria.
@@ -561,17 +561,45 @@ export function NotaEncargoDocument({ data }: Props) {
 
           <div className="mt-16 flex justify-between px-8">
             <div className="w-56 text-center">
-              <div className="mb-20 text-[12pt] font-bold">EL CLIENTE</div>
+              <div className="mb-4 text-[12pt] font-bold">EL CLIENTE</div>
+              {data.signatures.ownerSignatureUrl ? (
+                <div className="mb-2 flex h-24 items-center justify-center">
+                  <Image
+                    src={data.signatures.ownerSignatureUrl}
+                    alt="Firma del cliente"
+                    width={200}
+                    height={80}
+                    className="max-h-20 w-auto object-contain"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <div className="mb-2 h-24"></div>
+              )}
               <div className="mb-2 h-px w-full border-b-2 border-black"></div>
               <div className="text-sm text-gray-600">Firma</div>
             </div>
 
             <div className="w-56 text-center">
-              <div className="mb-20 text-[12pt] font-bold">
+              <div className="mb-4 text-[12pt] font-bold">
                 {accountType === "company" ? agentName : "Dª. " + agentName}
                 <br />
                 <span className="text-sm font-normal">(Agente)</span>
               </div>
+              {data.signatures.agentSignatureUrl ? (
+                <div className="mb-2 flex h-24 items-center justify-center">
+                  <Image
+                    src={data.signatures.agentSignatureUrl}
+                    alt="Firma del agente"
+                    width={200}
+                    height={80}
+                    className="max-h-20 w-auto object-contain"
+                    unoptimized
+                  />
+                </div>
+              ) : (
+                <div className="mb-2 h-24"></div>
+              )}
               <div className="mb-2 h-px w-full border-b-2 border-black"></div>
               <div className="text-sm text-gray-600">Firma</div>
             </div>
@@ -579,5 +607,6 @@ export function NotaEncargoDocument({ data }: Props) {
         </div>
       </div>
     </div>
+    </>
   );
 }

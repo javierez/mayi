@@ -89,7 +89,12 @@ export function CalendarListView({
     return <div className="py-8 text-center text-red-600">{error}</div>;
   }
 
-  if (appointments.length === 0) {
+  // Filter out "Bloque Visitas" - these are time slots, not real appointments
+  const filteredAppointments = appointments.filter(
+    (a) => a.type !== "Bloque Visitas"
+  );
+
+  if (filteredAppointments.length === 0) {
     return (
       <div className="py-8 text-center text-muted-foreground">
         No se encontraron citas
@@ -100,7 +105,7 @@ export function CalendarListView({
   const now = new Date();
 
   // 🔴 Urgent/Action Required Section
-  const urgentAppointments = appointments
+  const urgentAppointments = filteredAppointments
     .filter((a) => {
       // Include NoShow and Rescheduled
       if (a.status === "NoShow" || a.status === "Rescheduled") return true;
@@ -111,19 +116,19 @@ export function CalendarListView({
     .sort((a, b) => b.datetimeStart.getTime() - a.datetimeStart.getTime());
 
   // 🟢 Active/Upcoming Appointments Section
-  const activeAppointments = appointments
+  const activeAppointments = filteredAppointments
     .filter((a) => a.status === "Scheduled" && a.datetimeEnd >= now)
     .sort((a, b) => a.datetimeStart.getTime() - b.datetimeStart.getTime());
 
   // ✓ Completed Appointments Section
-  const completedAppointments = appointments
+  const completedAppointments = filteredAppointments
     .filter((a) => a.status === "Completed")
     .sort((a, b) => b.datetimeStart.getTime() - a.datetimeStart.getTime());
 
   // ✕ Cancelled Appointments Section
   const fourteenDaysAgo = new Date(now);
   fourteenDaysAgo.setDate(now.getDate() - 14);
-  const cancelledAppointments = appointments
+  const cancelledAppointments = filteredAppointments
     .filter((a) => a.status === "Cancelled" && a.datetimeStart >= fourteenDaysAgo)
     .sort((a, b) => b.datetimeStart.getTime() - a.datetimeStart.getTime());
 

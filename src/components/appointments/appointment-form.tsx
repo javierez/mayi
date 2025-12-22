@@ -23,6 +23,7 @@ import {
   Plus,
   ListTodo,
   Pencil,
+  CalendarRange,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -68,7 +69,7 @@ interface AppointmentFormData {
   tripTimeMinutes?: number;
   title: string; // Appointment title
   notes?: string;
-  appointmentType: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje" | "Tarea";
+  appointmentType: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje" | "Tarea" | "Bloque Visitas";
   assignedTo?: string; // FK → users.id (who is assigned to the appointment)
 }
 
@@ -354,6 +355,12 @@ const appointmentTypes = [
     label: "Tarea",
     color: "bg-rose-100 text-rose-800",
     icon: <ListTodo className="h-4 w-4" />,
+  },
+  {
+    value: "Bloque Visitas",
+    label: "Bloque Visitas",
+    color: "border-2 border-dashed border-blue-400 bg-transparent text-blue-700",
+    icon: <CalendarRange className="h-4 w-4" />,
   },
 ];
 

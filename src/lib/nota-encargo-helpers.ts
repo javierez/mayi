@@ -1,4 +1,5 @@
 import type { NotaEncargoRawData } from "~/server/queries/nota-encargo";
+import type { HojaEncargoDocumentData } from "~/types/hoja-encargo";
 
 // Types for the PDF document structure
 export interface TermsData {
@@ -11,59 +12,8 @@ export interface TermsData {
   allowVisits: boolean;
 }
 
-export interface NotaEncargoPDFData {
-  documentNumber: string;
-  agency: {
-    agentName: string;
-    collegiateNumber: string;
-    agentNIF: string;
-    website: string;
-    email: string;
-    logo?: string;
-    offices: Array<{
-      address: string;
-      city: string;
-      postalCode: string;
-      phone: string;
-    }>;
-  };
-  client: {
-    fullName: string;
-    nif: string;
-    address: string;
-    city: string;
-    postalCode: string;
-    phone: string;
-  };
-  property: {
-    description: string;
-    allowSignage: string;
-    energyCertificate: string;
-    keyDelivery: string;
-    allowVisits: string;
-  };
-  operation: {
-    type: string;
-    price: string;
-  };
-  commission: {
-    percentage: number;
-    minimum: string;
-  };
-  duration: {
-    months: number;
-  };
-  signatures: {
-    location: string;
-    date: string;
-  };
-  jurisdiction: {
-    city: string;
-  };
-  observations: string;
-  hasOtherAgency: boolean;
-  gdprConsent: boolean;
-}
+// Re-export HojaEncargoDocumentData as NotaEncargoPDFData for backward compatibility
+export type NotaEncargoPDFData = HojaEncargoDocumentData;
 
 /**
  * Format energy certificate information
@@ -176,7 +126,7 @@ export function formatClientData(
     postalCode: string | null;
     city: string | null;
   },
-): NotaEncargoPDFData["client"] {
+): HojaEncargoDocumentData["client"] {
   // Build complete address from property information
   const addressParts = [
     propertyAddress.street,
@@ -190,9 +140,10 @@ export function formatClientData(
       "No especificado",
     nif: contactData.contactNif ?? "",
     address: fullAddress,
-    city: propertyAddress.city ?? "", // Use the property's city from locations table
+    city: propertyAddress.city ?? "",
     postalCode: propertyAddress.postalCode ?? "",
     phone: contactData.contactPhone ?? "",
+    email: contactData.contactEmail ?? "",
   };
 }
 
@@ -219,7 +170,7 @@ export function extractListingIdFromPathname(pathname: string): bigint | null {
 export function transformToNotaEncargoPDF(
   rawData: NotaEncargoRawData,
   termsData: TermsData,
-): NotaEncargoPDFData {
+): HojaEncargoDocumentData {
   const documentNumber = generateDocumentNumber(rawData.listingId);
   const currentDate = new Date().toLocaleDateString("es-ES");
   const city = rawData.city ?? "León"; // Default fallback
@@ -242,6 +193,15 @@ export function transformToNotaEncargoPDF(
     },
   );
 
+  // Build full address
+  const addressParts = [
+    rawData.street,
+    rawData.addressDetails,
+    rawData.postalCode,
+    rawData.city,
+  ].filter(Boolean);
+  const fullAddress = addressParts.join(", ");
+
   return {
     documentNumber,
 
@@ -255,7 +215,7 @@ export function transformToNotaEncargoPDF(
         {
           address: rawData.accountAddress ?? "",
           city: city,
-          postalCode: "", // TODO: Extract from address if needed
+          postalCode: "",
           phone: rawData.accountPhone ?? "",
         },
       ],
@@ -266,13 +226,14 @@ export function transformToNotaEncargoPDF(
     property: {
       description:
         rawData.shortDescription ?? rawData.description ?? "No especificado",
-      allowSignage: termsData.allowSignage ? "Sí" : "No",
+      fullAddress,
+      cadastralReference: undefined,
+      surfaceArea: undefined,
       energyCertificate: formatEnergyCertificate(
         rawData.energyConsumptionScale,
         rawData.energyConsumptionValue,
       ),
-      keyDelivery: rawData.hasKeys ? "Sí" : "No",
-      allowVisits: termsData.allowVisits ? "Sí" : "No",
+      hasKeys: rawData.hasKeys,
     },
 
     operation: {
@@ -280,13 +241,13 @@ export function transformToNotaEncargoPDF(
       price: formatPrice(rawData.price, rawData.listingType),
     },
 
-    commission: {
-      percentage: termsData.commission,
-      minimum: termsData.min_commission.toString(),
-    },
-
-    duration: {
-      months: termsData.duration,
+    terms: {
+      commissionPercentage: termsData.commission,
+      minimumCommission: termsData.min_commission.toString(),
+      durationMonths: termsData.duration,
+      exclusivity: termsData.exclusivity,
+      allowSignage: termsData.allowSignage,
+      allowVisits: termsData.allowVisits,
     },
 
     signatures: {
@@ -299,7 +260,6 @@ export function transformToNotaEncargoPDF(
     },
 
     observations: "",
-    hasOtherAgency: !termsData.exclusivity,
     gdprConsent: termsData.communications,
   };
 }

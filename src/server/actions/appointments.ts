@@ -39,7 +39,7 @@ interface AppointmentFormData {
   tripTimeMinutes?: number;
   title: string;
   notes?: string;
-  appointmentType: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje" | "Tarea";
+  appointmentType: "Visita" | "Reunión" | "Firma" | "Cierre" | "Viaje" | "Tarea" | "Bloque Visitas";
   assignedTo?: string; // FK → users.id (who is assigned to the appointment)
 }
 

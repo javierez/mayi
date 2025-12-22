@@ -12,6 +12,7 @@ import {
   Train,
   ListTodo,
   CalendarIcon,
+  CalendarRange,
 } from "lucide-react";
 import {
   Popover,
@@ -71,6 +72,10 @@ const appointmentTypes = {
   Tarea: {
     color: "bg-rose-500",
     icon: ListTodo,
+  },
+  "Bloque Visitas": {
+    color: "bg-transparent border-2 border-dashed border-blue-400",
+    icon: CalendarRange,
   },
 };
 
@@ -451,7 +456,11 @@ function SpanningEventBar({
         onEventClick(event.appointmentId);
       }}
       className={cn(
-        "absolute left-0 z-20 flex items-center gap-1 overflow-hidden px-1.5 text-[10px] font-medium text-white transition-all hover:ring-1 hover:ring-black sm:px-2 sm:text-xs",
+        "absolute left-0 flex items-center gap-1 overflow-hidden px-1.5 text-[10px] font-medium transition-all hover:ring-1 hover:ring-black sm:px-2 sm:text-xs",
+        // "Bloque Visitas" has lower z-index so real appointments appear on top
+        event.type === "Bloque Visitas" ? "z-[5]" : "z-20",
+        // "Bloque Visitas" uses blue text instead of white
+        event.type === "Bloque Visitas" ? "" : "text-white",
         typeConfig.color,
         event.status === "Cancelled" && "opacity-40 line-through",
         event.status === "Completed" && "bg-green-600 opacity-75",
@@ -764,7 +773,9 @@ export function MonthlyCalendarView({
                                                     );
                                                   }}
                                                   className={cn(
-                                                    "group flex w-full items-start gap-1.5 rounded px-2 py-1.5 text-left text-white transition-all hover:ring-1 hover:ring-black",
+                                                    "group flex w-full items-start gap-1.5 rounded px-2 py-1.5 text-left transition-all hover:ring-1 hover:ring-black",
+                                                    // "Bloque Visitas" uses blue text instead of white
+                                                    apt.type === "Bloque Visitas" ? "" : "text-white",
                                                     typeConfig.color,
                                                     apt.status === "Cancelled" &&
                                                       "opacity-40 line-through",
@@ -841,7 +852,11 @@ export function MonthlyCalendarView({
                                         onEventClick(apt.appointmentId);
                                       }}
                                       className={cn(
-                                        "group relative z-10 flex w-full items-start gap-1 rounded px-1 py-0.5 text-left text-white transition-all hover:ring-1 hover:ring-black",
+                                        "group relative flex w-full items-start gap-1 rounded px-1 py-0.5 text-left transition-all hover:ring-1 hover:ring-black",
+                                        // "Bloque Visitas" has lower z-index so real appointments appear on top
+                                        apt.type === "Bloque Visitas" ? "z-[1]" : "z-10",
+                                        // "Bloque Visitas" uses blue text instead of white
+                                        apt.type === "Bloque Visitas" ? "" : "text-white",
                                         typeConfig.color,
                                         apt.status === "Cancelled" &&
                                           "opacity-40 line-through",

@@ -1,77 +1,56 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getCurrentUserAccountId } from "~/lib/dal";
+import { getCurrentUserAccountId, getSecureSession } from "~/lib/dal";
 import { getPuppeteerConfig } from "~/lib/puppeteer-utils";
+import { calculateDocumentHash, embedDocumentMetadata } from "~/lib/pdf-integrity";
+import { uploadDocument } from "~/app/actions/upload";
+import { getHojaEncargoDocumentDataAction } from "~/server/actions/hoja-encargo";
 import type { Page } from "puppeteer-core";
-
-interface NotaEncargoData {
-  documentNumber: string;
-  agency: {
-    agentName: string;
-    collegiateNumber: string;
-    agentNIF: string;
-    website: string;
-    email: string;
-    logo?: string;
-    offices: Array<{
-      address: string;
-      city: string;
-      postalCode: string;
-      phone: string;
-    }>;
-  };
-  client: {
-    fullName: string;
-    nif: string;
-    address: string;
-    city: string;
-    postalCode: string;
-    phone: string;
-  };
-  property: {
-    description: string;
-    allowSignage: string;
-    energyCertificate: string;
-    keyDelivery: string;
-    allowVisits: string;
-  };
-  operation: {
-    type: string;
-    price: string;
-  };
-  commission: {
-    percentage: number;
-    minimum: string;
-  };
-  duration: {
-    months: number;
-  };
-  signatures: {
-    location: string;
-    date: string;
-  };
-  jurisdiction: {
-    city: string;
-  };
-  observations: string;
-  hasOtherAgency?: boolean;
-  gdprConsent?: boolean;
-}
+import type { HojaEncargoFormData, HojaEncargoDocumentData } from "~/types/hoja-encargo";
 
 export async function POST(request: NextRequest) {
   try {
-    const { data } = (await request.json()) as {
-      data: NotaEncargoData;
+    const body = (await request.json()) as {
+      listingId?: string;
+      formData?: Partial<HojaEncargoFormData>;
+      saveToS3?: boolean;
+      // Legacy support for old API
+      data?: HojaEncargoDocumentData;
     };
 
+    const { listingId, formData, saveToS3 = false, data: legacyData } = body;
+
     // Validate input data
-    if (!data) {
+    if (!listingId && !legacyData) {
       return NextResponse.json(
-        { error: "Missing nota encargo data" },
+        { error: "Missing listingId or data" },
         { status: 400 },
       );
     }
 
-    console.log("🚀 Starting Nota de Encargo PDF generation with Puppeteer...");
+    console.log("🚀 Starting Hoja de Encargo PDF generation with Puppeteer...");
+    console.log("📋 Request params:", { listingId, saveToS3, hasFormData: !!formData });
+
+    let documentData: HojaEncargoDocumentData;
+
+    // If using new API with listingId, get data from server action
+    if (listingId) {
+      const result = await getHojaEncargoDocumentDataAction(
+        parseInt(listingId),
+        formData,
+      );
+
+      if (!result.success || !result.data) {
+        return NextResponse.json(
+          { error: result.error ?? "Failed to get document data" },
+          { status: 400 },
+        );
+      }
+
+      documentData = result.data;
+    } else {
+      // Legacy support - use data directly
+      documentData = legacyData!;
+    }
 
     // Get current user's account ID and regular logo
     const accountId = await getCurrentUserAccountId();
@@ -85,12 +64,12 @@ export async function POST(request: NextRequest) {
       hasLogo: !!logo,
     });
 
-    // Add logo to the data
-    const dataWithLogo = {
-      ...data,
+    // Add logo to the data if not already present
+    const dataWithLogo: HojaEncargoDocumentData = {
+      ...documentData,
       agency: {
-        ...data.agency,
-        logo: logo,
+        ...documentData.agency,
+        logo: documentData.agency.logo ?? logo ?? undefined,
       },
     };
 
@@ -112,6 +91,9 @@ export async function POST(request: NextRequest) {
 
     const page = (await browser.newPage()) as Page;
 
+    // Disable cache to ensure fresh content
+    await page.setCacheEnabled(false);
+
     // Set viewport to match A4 print dimensions
     await page.setViewport({
       width: 794, // A4 width in pixels at 96 DPI
@@ -126,6 +108,9 @@ export async function POST(request: NextRequest) {
     // Pass configuration as URL parameters
     templateUrl.searchParams.set("data", JSON.stringify(dataWithLogo));
 
+    // Add cache-busting parameter to force fresh load
+    templateUrl.searchParams.set("_t", Date.now().toString());
+
     console.log(
       "📄 Navigating to nota encargo template URL:",
       templateUrl.toString(),
@@ -134,7 +119,7 @@ export async function POST(request: NextRequest) {
     // Navigate to the template page
     const response = await page.goto(templateUrl.toString(), {
       waitUntil: "networkidle0",
-      timeout: 30000,
+      timeout: 60000, // Match visita timeout for initial page load
     });
 
     if (!response?.ok()) {
@@ -159,18 +144,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Wait for images to load
+    // Wait for images to load and check their status
     try {
+      const imageStatus = await page.evaluate(() => {
+        const images = Array.from(document.querySelectorAll("img"));
+        return images.map((img) => ({
+          src: img.src,
+          complete: img.complete,
+          naturalWidth: img.naturalWidth,
+          naturalHeight: img.naturalHeight,
+          loaded: img.complete && img.naturalWidth > 0,
+        }));
+      });
+
+      console.log("🖼️ Image loading status:", JSON.stringify(imageStatus, null, 2));
+
+      // Wait for all images to actually load (not just complete)
       await page.waitForFunction(
         () => {
           const images = Array.from(document.querySelectorAll("img"));
-          return images.every((img) => img.complete);
+          return images.every((img) => img.complete && img.naturalWidth > 0);
         },
-        { timeout: 10000 },
+        { timeout: 30000 },
       );
       console.log("✅ All images loaded successfully");
+
+      // Additional delay to ensure images are fully rendered
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     } catch {
-      console.warn("⚠️ Image loading timeout, proceeding anyway...");
+      console.warn("⚠️ Image loading timeout, checking status...");
+      const imageStatus = await page.evaluate(() => {
+        const images = Array.from(document.querySelectorAll("img"));
+        return images.map((img) => ({
+          src: img.src,
+          complete: img.complete,
+          naturalWidth: img.naturalWidth,
+          loaded: img.complete && img.naturalWidth > 0,
+        }));
+      });
+      console.warn("Final image status:", JSON.stringify(imageStatus, null, 2));
     }
 
     // Wait for the template ready signal
@@ -196,30 +208,111 @@ export async function POST(request: NextRequest) {
       landscape: false, // Always portrait for legal documents
       printBackground: true,
       margin: {
-        top: "5mm",
-        right: "0mm",
+        top: "7mm",
+        right: "5mm",
         bottom: "10mm",
-        left: "0mm",
+        left: "7mm",
       },
       preferCSSPageSize: true,
     });
 
     await browser.close();
 
-    console.log("✅ Nota de Encargo PDF generated successfully");
+    console.log("✅ Hoja de Encargo PDF generated successfully");
 
-    // Return PDF as response
-    // Convert to Uint8Array which NextResponse accepts
-    const pdfUint8Array = new Uint8Array(pdfBuffer);
+    // Calculate document hash and timestamp
+    console.log("🔐 Calculating document hash...");
+    const documentHash = calculateDocumentHash(Buffer.from(pdfBuffer));
+    const documentTimestamp = new Date();
+
+    console.log("📝 Document integrity:", {
+      hash: documentHash,
+      timestamp: documentTimestamp.toISOString(),
+    });
+
+    // Embed hash and timestamp in PDF metadata
+    console.log("📄 Embedding metadata in PDF...");
+    const pdfWithMetadata = await embedDocumentMetadata(
+      Buffer.from(pdfBuffer),
+      documentHash,
+      documentTimestamp.toISOString(),
+    );
+
+    // Generate descriptive filename
+    const filename = `${dataWithLogo.documentNumber}.pdf`;
+
+    // Only save to S3 if requested
+    if (saveToS3 && listingId) {
+      console.log("💾 Saving PDF to S3 and database...");
+
+      // Get current user session for upload
+      const session = await getSecureSession();
+      if (!session?.user?.id) {
+        throw new Error("User session not found");
+      }
+
+      // Get listing data for property info
+      const { getListingDocumentsData } = await import("~/server/queries/listing");
+      const listingData = await getListingDocumentsData(parseInt(listingId));
+      if (!listingData) {
+        throw new Error("Listing data not found");
+      }
+
+      const referenceNumber = dataWithLogo.documentNumber;
+
+      // Convert PDF buffer to File object for upload
+      const pdfFile = new File([new Uint8Array(pdfWithMetadata)], filename, {
+        type: "application/pdf",
+      });
+
+      try {
+        const savedDocument = await uploadDocument(
+          pdfFile,
+          session.user.id,
+          referenceNumber,
+          1, // documentOrder
+          "hoja-encargo", // documentTag
+          undefined, // contactId
+          BigInt(listingId),
+          undefined, // listingContactId
+          undefined, // dealId
+          undefined, // appointmentId
+          listingData.propertyId ? BigInt(listingData.propertyId) : undefined,
+          "initial-docs", // folderType
+          documentHash,
+          documentTimestamp,
+        );
+
+        console.log("✅ PDF saved successfully:", {
+          docId: savedDocument.docId.toString(),
+          hash: savedDocument.documentHash,
+          timestamp: savedDocument.documentTimestamp?.toISOString(),
+        });
+
+        // Return JSON with document URL for sharing
+        return NextResponse.json({
+          success: true,
+          documentUrl: savedDocument.fileUrl,
+          filename,
+          documentId: savedDocument.docId.toString(),
+        });
+      } catch (uploadError) {
+        console.error("❌ Failed to save PDF to S3:", uploadError);
+        // Fall through to return PDF directly
+      }
+    }
+
+    // Return PDF as response (download mode)
+    const pdfUint8Array = new Uint8Array(pdfWithMetadata);
     return new NextResponse(pdfUint8Array, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="nota-encargo-${dataWithLogo.documentNumber}-${Date.now()}.pdf"`,
+        "Content-Disposition": `attachment; filename="${filename}"`,
       },
     });
   } catch (error) {
-    console.error("❌ Nota de Encargo PDF generation failed:", error);
+    console.error("❌ Hoja de Encargo PDF generation failed:", error);
     return NextResponse.json(
       {
         error: "Failed to generate PDF",

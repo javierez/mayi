@@ -11,6 +11,7 @@ import {
   Train,
   ListTodo,
   CalendarIcon,
+  CalendarRange,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { AppointmentCard, type AppointmentData } from "./appointment-card";
@@ -73,6 +74,11 @@ const appointmentTypes = {
     color: "bg-rose-500",
     icon: <ListTodo className="h-3 w-3" />,
     textColor: "text-white",
+  },
+  "Bloque Visitas": {
+    color: "bg-transparent border-2 border-dashed border-blue-400",
+    icon: <CalendarRange className="h-3 w-3" />,
+    textColor: "text-blue-600",
   },
 };
 
@@ -154,6 +160,8 @@ export default function CalendarEvent({
         return "16, 185, 129"; // emerald-500 RGB
       case "Tarea":
         return "244, 63, 94"; // rose-500 RGB
+      case "Bloque Visitas":
+        return "96, 165, 250"; // blue-400 RGB
       default:
         return "107, 114, 128"; // gray-500 RGB
     }
@@ -192,6 +200,8 @@ export default function CalendarEvent({
         className={cn(
           "calendar-event absolute left-0 right-0 cursor-pointer overflow-hidden px-0.5 py-0.5 shadow-sm transition-all duration-200 hover:ring-1 hover:ring-black sm:left-0.5 sm:right-0.5 sm:px-1 sm:py-1 sm:hover:ring-2 sm:hover:ring-offset-1 md:px-2",
           travelTimeHeight > 0 ? "" : "rounded-sm sm:rounded-lg", // No rounding if travel blocks exist (they handle the rounding)
+          // "Bloque Visitas" has lower z-index so real appointments appear on top
+          event.type === "Bloque Visitas" ? "z-[1]" : "z-10",
           typeConfig.color,
           typeConfig.textColor,
           statusConfig,

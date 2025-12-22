@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { DocumentUploadCard } from "./document-upload-card";
-import { HojaEncargoButton } from "./initial_docs/hoja-encargo-button";
 import { DocumentsPage } from "./documents-page";
 import { Button } from "~/components/ui/button";
 import { Upload, Loader2 } from "lucide-react";
@@ -141,102 +139,61 @@ export function DocumentsSection({
 
   return (
     <>
-      {folderType === "documentacion-inicial" ? (
-        /* Documentación Inicial: Keep original card layout */
-        <div className="mb-8 rounded-xl border bg-white p-6 shadow-sm">
-          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
-            {/* Left: Upload Area */}
-            <div>
-              <h4 className="mb-3 font-medium text-gray-900">
-                Subir Documentos
-              </h4>
-              <DocumentUploadCard
-                listingId={listing.listingId}
-                folderType={folderType}
-                onDocumentsUploaded={handleDocumentsUploaded}
-              />
-            </div>
-
-            {/* Right: Generate Document */}
-            <div>
-              <h4 className="mb-3 font-medium text-gray-900">
-                Generar Documentos
-              </h4>
-              <HojaEncargoButton
-                propertyId={listing.propertyId}
-                onDocumentGenerated={handleDocumentsUploaded}
-              />
-            </div>
+      <div
+        className={cn(
+          "rounded-lg transition-all duration-200",
+          isDragOver &&
+            "border-2 border-dashed border-blue-300 bg-blue-50 p-4",
+        )}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {isDragOver && (
+          <div className="py-8 text-center text-blue-600">
+            <Upload className="mx-auto mb-2 h-8 w-8" />
+            <p className="text-sm font-medium">
+              Suelta los archivos aquí para subirlos
+            </p>
           </div>
-        </div>
-      ) : null}
-
-      {/* Documents list with drag & drop for non-initial folders */}
-      {folderType === "documentacion-inicial" ? (
+        )}
         <DocumentsPage
           listing={listing}
           folderType={folderType}
           key={refreshKey} // Force re-render when documents are uploaded
         />
-      ) : (
-        <>
-          <div
-            className={cn(
-              "rounded-lg transition-all duration-200",
-              isDragOver &&
-                "border-2 border-dashed border-blue-300 bg-blue-50 p-4",
-            )}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
-            {isDragOver && (
-              <div className="py-8 text-center text-blue-600">
-                <Upload className="mx-auto mb-2 h-8 w-8" />
-                <p className="text-sm font-medium">
-                  Suelta los archivos aquí para subirlos
-                </p>
-              </div>
-            )}
-            <DocumentsPage
-              listing={listing}
-              folderType={folderType}
-              key={refreshKey} // Force re-render when documents are uploaded
-            />
-          </div>
+      </div>
 
-          {/* Button right below documents - always visible */}
-          <div className="sticky bottom-0 z-10 flex justify-end py-4">
-            <Button
-              onClick={handleFileUpload}
-              disabled={isUploading}
-              className="flex items-center gap-2"
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Subiendo...
-                </>
-              ) : (
-                <>
-                  <Upload className="h-4 w-4" />
-                  Subir Documentos
-                </>
-              )}
-            </Button>
+      {/* Button right below documents - always visible */}
+      <div className="sticky bottom-0 z-10 flex justify-end py-4">
+        <Button
+          onClick={handleFileUpload}
+          disabled={isUploading}
+          className="flex items-center gap-2"
+        >
+          {isUploading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Subiendo...
+            </>
+          ) : (
+            <>
+              <Upload className="h-4 w-4" />
+              Subir Documentos
+            </>
+          )}
+        </Button>
 
-            {/* Hidden file input */}
-            <input
-              type="file"
-              multiple
-              className="hidden"
-              id="documents-file-input"
-              onChange={handleFileChange}
-              disabled={isUploading}
-            />
-          </div>
-        </>
-      )}
+        {/* Hidden file input */}
+        <input
+          type="file"
+          multiple
+          className="hidden"
+          id="documents-file-input"
+          onChange={handleFileChange}
+          disabled={isUploading}
+        />
+      </div>
     </>
   );
 }
