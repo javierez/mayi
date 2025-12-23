@@ -35,7 +35,11 @@ export const accountConfigurationSchema = z.object({
       commission: z.number().min(0).max(100).optional(),
       min_commission: z.number().min(0).optional(),
       duration: z.number().min(1).optional(),
-      exclusivity: z.boolean().optional(),
+      // Contract type replaces exclusivity boolean
+      contractType: z.enum(["normal", "zona", "exclusiva"]).optional(),
+      // Zona-specific commission settings
+      zona_commission_percentage: z.number().min(0).max(100).optional(),
+      zona_min_commission: z.number().min(0).optional(),
       communications: z.boolean().optional(),
       allowSignage: z.boolean().optional(),
       allowVisits: z.boolean().optional(),

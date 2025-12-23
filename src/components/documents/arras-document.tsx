@@ -268,127 +268,149 @@ export function ArrasDocument({ data }: Props) {
             </div>
           </div>
 
-          {/* CLAUSULAS Section */}
+          {/* ESTIPULACIONES Section */}
           <div className="my-4 print:my-3">
             <div className="section-header mb-3 border-b border-gray-300 pb-1 text-[11pt] font-bold">
-              CLAUSULAS
+              ESTIPULACIONES
             </div>
 
-            {/* PRIMERA */}
+            {/* PRIMERA - Precio y forma de pago */}
             <div className="clause my-3">
-              <p className="mb-1 font-bold">PRIMERA.- OBJETO DEL CONTRATO</p>
+              <p className="mb-1 font-bold">PRIMERA.- PRECIO Y FORMA DE PAGO</p>
               <p className="text-justify">
-                LA PARTE VENDEDORA vende a LA PARTE COMPRADORA, que acepta y adquiere,
-                el inmueble descrito en el expositivo primero, libre de cargas,
-                gravamenes, arrendamientos y ocupantes.
-              </p>
-            </div>
-
-            {/* SEGUNDA */}
-            <div className="clause my-3">
-              <p className="mb-1 font-bold">SEGUNDA.- PRECIO</p>
-              <p className="text-justify">
-                El precio de la compraventa se fija en la cantidad de{" "}
-                <strong>{formatCurrency(data.deal.finalPrice)}</strong> (
-                {data.deal.finalPrice} EUROS), que LA PARTE COMPRADORA pagara de la
-                siguiente forma:
+                El precio de venta del objeto del presente documento se establece en la cantidad de{" "}
+                <strong>{formatCurrency(data.deal.finalPrice)}</strong> ({data.deal.finalPrice} EUROS),
+                que LA PARTE COMPRADORA abonara a LA PARTE VENDEDORA de la siguiente forma:
               </p>
               <ul className="my-2 ml-4 list-disc space-y-1">
                 <li>
-                  En concepto de arras: <strong>{formatCurrency(data.deal.arrasAmount)}</strong>,
-                  mediante {data.deal.paymentMethod === "transferencia"
-                    ? "transferencia bancaria"
+                  En este acto se entrega en concepto de ARRAS la cantidad de{" "}
+                  <strong>{formatCurrency(data.deal.arrasAmount)}</strong>, mediante{" "}
+                  {data.deal.paymentMethod === "transferencia"
+                    ? "TRANSFERENCIA"
                     : data.deal.paymentMethod === "cheque"
-                    ? "cheque nominativo"
-                    : "cheque bancario"}
+                    ? "CHEQUE NOMINATIVO"
+                    : "CHEQUE BANCARIO"}
                   {data.deal.bankAccountIban && (
-                    <> a la cuenta <strong>{data.deal.bankAccountIban}</strong></>
+                    <> en el numero de cuenta <strong>{data.deal.bankAccountIban}</strong></>
                   )}
                   .
                 </li>
                 <li>
-                  El resto,{" "}
+                  El resto pendiente de pago del precio, es decir{" "}
                   <strong>
                     {formatCurrency(
-                      parseFloat(data.deal.finalPrice) -
-                        parseFloat(data.deal.arrasAmount),
+                      parseFloat(data.deal.finalPrice) - parseFloat(data.deal.arrasAmount),
                     )}
                   </strong>
-                  , en el momento de otorgamiento de la escritura publica de
-                  compraventa.
+                  , lo hara efectivo LA PARTE COMPRADORA antes del{" "}
+                  <strong>{formatDate(data.deal.deedDeadline)}</strong>, elevando este contrato
+                  a escritura publica en el mismo acto del pago del resto del precio.
                 </li>
               </ul>
             </div>
 
-            {/* TERCERA */}
+            {/* SEGUNDA - Condicion de pago */}
             <div className="clause my-3">
-              <p className="mb-1 font-bold">TERCERA.- ARRAS {arrasTypeLabel}</p>
+              <p className="mb-1 font-bold">SEGUNDA.- CONDICION DE PAGO</p>
               <p className="text-justify">
-                La cantidad de <strong>{formatCurrency(data.deal.arrasAmount)}</strong>{" "}
-                se entrega en concepto de arras {data.deal.arrasType}, conforme a lo
-                establecido en el articulo 1.454 del Codigo Civil.
+                La venta convenida se entiende condicionada al pago total del precio estipulado
+                y dentro de los plazos fijados, no perfeccionandose hasta que dicho precio de{" "}
+                <strong>{formatCurrency(data.deal.finalPrice)}</strong> haya sido satisfecho en su totalidad.
               </p>
             </div>
 
-            {/* CUARTA */}
+            {/* TERCERA - Entrega del inmueble (libre de cargas) */}
             <div className="clause my-3">
-              <p className="mb-1 font-bold">CUARTA.- DESISTIMIENTO</p>
+              <p className="mb-1 font-bold">TERCERA.- ENTREGA DEL INMUEBLE</p>
+              <p className="text-justify">
+                Con fecha de la referida escritura publica de venta, LA PARTE VENDEDORA debera
+                entregar y transmitir a LA PARTE COMPRADORA la finca objeto de venta
+                {data.encumbrances?.freeOfMortgage !== false && ", libre de hipoteca"}
+                {data.encumbrances?.freeOfEncumbrances !== false && ", cargas y gravamenes"}
+                {data.encumbrances?.freeOfTenants !== false && ", arrendatarios y ocupantes"}
+                {data.encumbrances?.currentOnIbi !== false &&
+                  ", al corriente en el pago del ultimo recibo devengado del Impuesto de Bienes Inmuebles"}
+                {data.encumbrances?.currentOnCommunityFees !== false &&
+                  ", asi como en el de los Gastos de Comunidad si los hubiese"}
+                .
+              </p>
+            </div>
+
+            {/* CUARTA - A cuerpo cierto */}
+            <div className="clause my-3">
+              <p className="mb-1 font-bold">CUARTA.- ENTREGA A CUERPO CIERTO</p>
+              <p className="text-justify">
+                La vivienda se entrega a cuerpo cierto.
+              </p>
+            </div>
+
+            {/* QUINTA - Gastos e impuestos */}
+            <div className="clause my-3">
+              <p className="mb-1 font-bold">QUINTA.- GASTOS E IMPUESTOS</p>
+              <p className="text-justify">
+                Los gastos y honorarios notariales, registrales e impuestos devengados por la
+                formalizacion en Escritura Publica de la presente compraventa y su inscripcion
+                en el Registro de la Propiedad seran por cuenta de LA PARTE COMPRADORA, desde
+                el momento en que se originen. Igualmente, toda clase de impuestos, arbitrios,
+                tasas, exacciones estatales, locales y parafiscales que se produzcan sobre la
+                propiedad, excluido el Impuesto sobre el Incremento del Valor del Terreno de
+                Naturaleza Urbana o Plusvalia municipal que sera abonado por LA PARTE VENDEDORA.
+              </p>
+            </div>
+
+            {/* SEXTA - Cancelacion hipoteca y plusvalia */}
+            <div className="clause my-3">
+              <p className="mb-1 font-bold">SEXTA.- CANCELACION DE CARGAS</p>
+              <p className="text-justify">
+                Los gastos de cancelacion de la hipoteca, caso de existir, el Impuesto sobre
+                el Incremento del Valor del Terreno de Naturaleza Urbana o Plusvalia,
+                corresponderan a LA PARTE VENDEDORA.
+              </p>
+            </div>
+
+            {/* SEPTIMA - Incumplimiento (Arras) */}
+            <div className="clause my-3">
+              <p className="mb-1 font-bold">SEPTIMA.- INCUMPLIMIENTO</p>
+              <p className="text-justify">
+                En caso de incumplimiento de la presente compraventa, de conformidad con el
+                articulo 1.454 del Codigo Civil, se establecen las siguientes penalidades:
+              </p>
               {data.deal.arrasType === "penitenciales" ? (
-                <div className="space-y-2 text-justify">
-                  <p>
-                    Si LA PARTE COMPRADORA desistiere del contrato, perdera la cantidad
-                    entregada en concepto de arras.
-                  </p>
-                  <p>
-                    Si LA PARTE VENDEDORA desistiere del contrato, debera devolver a LA
-                    PARTE COMPRADORA el duplo de la cantidad recibida en concepto de
-                    arras, es decir, <strong>{formatCurrency(parseFloat(data.deal.arrasAmount) * 2)}</strong>.
-                  </p>
-                </div>
+                <ul className="my-2 ml-4 list-decimal space-y-1">
+                  <li>
+                    Si el incumplimiento se debiese a LA PARTE COMPRADORA supondra la perdida
+                    de la cantidad entregada como pago a cuenta en este documento.
+                  </li>
+                  <li>
+                    Si el incumplimiento se debiese a LA PARTE VENDEDORA supondra la devolucion,
+                    por duplicado, de la cantidad entregada como arras en este documento, es decir,{" "}
+                    <strong>{formatCurrency(parseFloat(data.deal.arrasAmount) * 2)}</strong>.
+                  </li>
+                </ul>
               ) : (
-                <p className="text-justify">
-                  Las presentes arras tienen caracter confirmatorio, por lo que
-                  cualquier incumplimiento de las obligaciones contraidas dara derecho a
-                  la parte cumplidora a exigir el cumplimiento del contrato o a
-                  resolverlo con indemnizacion de danos y perjuicios.
+                <p className="mt-2 text-justify">
+                  Las presentes arras tienen caracter confirmatorio, por lo que cualquier
+                  incumplimiento de las obligaciones contraidas dara derecho a la parte
+                  cumplidora a exigir el cumplimiento del contrato o a resolverlo con
+                  indemnizacion de danos y perjuicios.
                 </p>
               )}
             </div>
 
-            {/* QUINTA */}
-            <div className="clause my-3">
-              <p className="mb-1 font-bold">QUINTA.- PLAZO PARA ESCRITURA PUBLICA</p>
-              <p className="text-justify">
-                Ambas partes se comprometen a otorgar escritura publica de compraventa
-                ante Notario, a eleccion de LA PARTE COMPRADORA, antes del dia{" "}
-                <strong>{formatDate(data.deal.deedDeadline)}</strong>.
-              </p>
-            </div>
-
-            {/* SEXTA */}
-            <div className="clause my-3">
-              <p className="mb-1 font-bold">SEXTA.- GASTOS E IMPUESTOS</p>
-              <p className="text-justify">
-                Los gastos de la compraventa se distribuiran conforme a la ley: LA
-                PARTE VENDEDORA abonara la plusvalia municipal, y LA PARTE COMPRADORA
-                los gastos de notaria, registro e impuestos (ITP o IVA segun
-                corresponda).
-              </p>
-            </div>
-
-            {/* SEPTIMA - Condiciones Especiales */}
+            {/* OCTAVA - Condiciones Especiales (optional) */}
             {data.deal.specialConditions && (
               <div className="clause my-3">
-                <p className="mb-1 font-bold">SEPTIMA.- CONDICIONES ESPECIALES</p>
+                <p className="mb-1 font-bold">OCTAVA.- CONDICIONES ESPECIALES</p>
                 <p className="text-justify">{data.deal.specialConditions}</p>
               </div>
             )}
 
-            {/* OCTAVA - Condicion Financiacion */}
+            {/* NOVENA/OCTAVA - Condicion Financiacion (optional) */}
             {data.deal.hasFinancingCondition && (
               <div className="clause my-3">
                 <p className="mb-1 font-bold">
-                  {data.deal.specialConditions ? "OCTAVA" : "SEPTIMA"}.- CONDICION DE
+                  {data.deal.specialConditions ? "NOVENA" : "OCTAVA"}.- CONDICION DE
                   FINANCIACION
                 </p>
                 <p className="text-justify">
@@ -404,59 +426,14 @@ export function ArrasDocument({ data }: Props) {
                 </p>
               </div>
             )}
-
-            {/* NOVENA - GDPR */}
-            <div className="clause my-3">
-              <p className="mb-1 font-bold">
-                {data.deal.specialConditions
-                  ? data.deal.hasFinancingCondition
-                    ? "NOVENA"
-                    : "OCTAVA"
-                  : data.deal.hasFinancingCondition
-                  ? "OCTAVA"
-                  : "SEPTIMA"}
-                .- PROTECCION DE DATOS
-              </p>
-              <p className="text-justify text-[9pt]">
-                De conformidad con el REGLAMENTO (UE) 2016/679 de proteccion de datos,
-                se informa a las partes que sus datos seran tratados con la finalidad
-                de gestionar la presente operacion inmobiliaria. Los datos se
-                conservaran mientras se mantenga la relacion comercial y durante los
-                anos necesarios para cumplir con las obligaciones legales. Ambas
-                partes tienen derecho a acceder, rectificar y suprimir sus datos.
-              </p>
-              <p className="mt-1 text-[9pt]">
-                Consentimiento para comunicaciones comerciales:{" "}
-                <strong>{data.gdprConsent ? "[SI]" : "[NO]"}</strong>
-              </p>
-            </div>
-
-            {/* DECIMA - Jurisdiccion */}
-            <div className="clause my-3">
-              <p className="mb-1 font-bold">
-                {data.deal.specialConditions
-                  ? data.deal.hasFinancingCondition
-                    ? "DECIMA"
-                    : "NOVENA"
-                  : data.deal.hasFinancingCondition
-                  ? "NOVENA"
-                  : "OCTAVA"}
-                .- JURISDICCION
-              </p>
-              <p className="text-justify">
-                Para cualquier controversia que pudiera derivarse del presente
-                contrato, las partes se someten a los Juzgados y Tribunales de{" "}
-                <strong>{data.location}</strong>, con renuncia a cualquier otro fuero
-                que pudiera corresponderles.
-              </p>
-            </div>
           </div>
 
           {/* Firma Section */}
           <div className="signatures-section mt-6 print:mt-4">
-            <p className="mb-4 text-center">
-              Y en prueba de conformidad, firman el presente contrato por duplicado y a
-              un solo efecto, en el lugar y fecha indicados.
+            <p className="mb-4 text-justify">
+              Y en prueba de conformidad con todo lo expuesto y convenido anteriormente,
+              en lo cual se ratifican, firman los comparecientes el presente documento
+              en el lugar y fecha descritos en el encabezamiento.
             </p>
 
             <div className="mt-6 grid grid-cols-2 gap-8 print:mt-4 print:gap-6">

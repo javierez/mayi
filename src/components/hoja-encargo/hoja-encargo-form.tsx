@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "~/components/ui/button";
@@ -20,16 +20,19 @@ import {
 } from "~/components/arras/confirm-changes-modal";
 import { Loader, Eye, Download, Share2, AlertCircle } from "lucide-react";
 import { cn } from "~/lib/utils";
-import type { HojaEncargoPageData } from "~/types/hoja-encargo";
+import type { HojaEncargoPageData, ContractType } from "~/types/hoja-encargo";
 import {
   AddressAutocomplete,
+  geocodeAddress,
   type LocationData,
 } from "~/components/propiedades/form/address-autocomplete";
 
 interface ValidationErrors {
   ownerName?: string;
   ownerNif?: string;
-  ownerAddress?: string;
+  ownerStreetAddress?: string;
+  ownerCity?: string;
+  ownerPostalCode?: string;
   commissionPercentage?: string;
   minimumCommission?: string;
   durationMonths?: string;
@@ -52,10 +55,52 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
       : "",
   );
   const [ownerNif, setOwnerNif] = useState(data.owner?.nif ?? "");
-  const [ownerAddress, setOwnerAddress] = useState(data.owner?.address ?? ""); // Full address for display
-  const [ownerStreetAddress, setOwnerStreetAddress] = useState(""); // Street only for template
+  // Address fields - 3 separate inputs for contract requirements
+  const [ownerStreetAddress, setOwnerStreetAddress] = useState(""); // Street with autocomplete
   const [ownerCity, setOwnerCity] = useState("");
   const [ownerPostalCode, setOwnerPostalCode] = useState("");
+  const [isGeocodingAddress, setIsGeocodingAddress] = useState(false);
+
+  // Auto-geocode existing address on page load to extract components
+  useEffect(() => {
+    const existingAddress = data.owner?.address;
+    if (existingAddress && !ownerStreetAddress && !ownerCity && !ownerPostalCode) {
+      setIsGeocodingAddress(true);
+      void geocodeAddress(existingAddress).then((result) => {
+        if (result) {
+          // Build street address from components including flat/floor
+          const streetParts: string[] = [];
+          if (result.addressComponents.route) {
+            streetParts.push(result.addressComponents.route);
+          }
+          if (result.addressComponents.streetNumber) {
+            streetParts.push(result.addressComponents.streetNumber);
+          }
+          // Include subpremise (flat number, floor, door letter) if available
+          if (result.addressComponents.subpremise) {
+            streetParts.push(result.addressComponents.subpremise);
+          }
+          const streetOnly = streetParts.length > 0
+            ? streetParts.join(", ")
+            : existingAddress;
+
+          setOwnerStreetAddress(streetOnly);
+          setOwnerCity(result.addressComponents.locality);
+          setOwnerPostalCode(result.addressComponents.postalCode);
+
+          // Also set signing location to owner's city if not already set
+          if (!signingLocation && result.addressComponents.locality) {
+            setSigningLocation(result.addressComponents.locality);
+          }
+        } else {
+          // Fallback: put the full address in street field
+          setOwnerStreetAddress(existingAddress);
+        }
+        setIsGeocodingAddress(false);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.owner?.address]);
   const [ownerPhone, setOwnerPhone] = useState(data.owner?.phone ?? "");
   const [ownerEmail, setOwnerEmail] = useState(data.owner?.email ?? "");
 
@@ -69,8 +114,15 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
   const [durationMonths, setDurationMonths] = useState(
     (data.terms?.duration ?? 12).toString(),
   );
-  const [exclusivity, setExclusivity] = useState(
-    data.terms?.exclusivity ?? false,
+  const [contractType, setContractType] = useState<ContractType>(
+    data.terms?.contractType ?? "normal",
+  );
+  // Zona-specific commission fields (only used when contractType === "zona")
+  const [zonaCommissionPercentage, setZonaCommissionPercentage] = useState(
+    (data.terms?.zonaCommissionPercentage ?? 1).toString(),
+  );
+  const [zonaMinimumCommission, setZonaMinimumCommission] = useState(
+    (data.terms?.zonaMinimumCommission ?? 500).toString(),
   );
 
   // Authorizations
@@ -95,11 +147,9 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
     data.listing.shortDescription ?? data.listing.description ?? "",
   );
 
-  // Timeline
+  // Timeline - signing location will be set from owner's city when geocoded
   const [signingDate] = useState(new Date());
-  const [signingLocation, setSigningLocation] = useState(
-    data.property.city ?? "",
-  );
+  const [signingLocation, setSigningLocation] = useState("");
 
   // Owner signature (agent signature comes from account settings)
   const [ownerSignature, setOwnerSignature] = useState<string | null>(null);
@@ -127,6 +177,9 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
     }),
     [data],
   );
+
+  // Combine address fields for change detection
+  const fullOwnerAddress = `${ownerStreetAddress}, ${ownerPostalCode} ${ownerCity}`.trim();
 
   // Detect changes: newlyFilled vs modified
   const detectChanges = useMemo(() => {
@@ -166,12 +219,12 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
     };
 
     checkField("nif", "NIF Propietario", originalValues.owner.nif, ownerNif);
-    checkField("address", "Dirección Propietario", originalValues.owner.address, ownerAddress);
+    checkField("address", "Dirección Propietario", originalValues.owner.address, fullOwnerAddress);
     checkField("phone", "Teléfono Propietario", originalValues.owner.phone, ownerPhone);
     checkField("email", "Email Propietario", originalValues.owner.email, ownerEmail);
 
     return { newlyFilled, modified };
-  }, [originalValues, ownerNif, ownerAddress, ownerPhone, ownerEmail]);
+  }, [originalValues, ownerNif, fullOwnerAddress, ownerPhone, ownerEmail]);
 
   // Parse numeric values for validation and submission
   const commissionValue = parseFloat(commissionPercentage) || 0;
@@ -184,14 +237,16 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
 
     if (!ownerName.trim()) errors.ownerName = "Nombre del propietario requerido";
     if (!ownerNif.trim()) errors.ownerNif = "NIF del propietario requerido";
-    if (!ownerAddress.trim()) errors.ownerAddress = "Dirección del propietario requerida";
+    if (!ownerStreetAddress.trim()) errors.ownerStreetAddress = "Dirección requerida";
+    if (!ownerCity.trim()) errors.ownerCity = "Ciudad requerida";
+    if (!ownerPostalCode.trim()) errors.ownerPostalCode = "Código postal requerido";
     if (commissionValue <= 0) errors.commissionPercentage = "Comisión debe ser mayor a 0";
     if (minimumCommissionValue < 0) errors.minimumCommission = "Comisión mínima inválida";
     if (durationValue <= 0) errors.durationMonths = "Duración debe ser mayor a 0";
     if (!signingLocation.trim()) errors.signingLocation = "Lugar de firma requerido";
 
     return errors;
-  }, [ownerName, ownerNif, ownerAddress, commissionValue, minimumCommissionValue, durationValue, signingLocation]);
+  }, [ownerName, ownerNif, ownerStreetAddress, ownerCity, ownerPostalCode, commissionValue, minimumCommissionValue, durationValue, signingLocation]);
 
   const isFormValid = Object.keys(validationErrors).length === 0;
   const errorCount = Object.keys(validationErrors).length;
@@ -203,10 +258,7 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
 
   // Handle Google Places autocomplete selection for owner address
   const handleOwnerAddressSelected = (locationData: LocationData) => {
-    // Store full address for display in the input
-    setOwnerAddress(locationData.address);
-
-    // Build street-only address for template (Domicilio field)
+    // Build street address including flat/floor if available
     const streetParts: string[] = [];
     if (locationData.addressComponents.route) {
       streetParts.push(locationData.addressComponents.route);
@@ -214,12 +266,16 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
     if (locationData.addressComponents.streetNumber) {
       streetParts.push(locationData.addressComponents.streetNumber);
     }
+    // Include subpremise (flat number, floor, door letter) if available
+    if (locationData.addressComponents.subpremise) {
+      streetParts.push(locationData.addressComponents.subpremise);
+    }
     const streetOnly = streetParts.length > 0
       ? streetParts.join(", ")
       : locationData.address;
     setOwnerStreetAddress(streetOnly);
 
-    // Extract city for Vecino/a de field
+    // Extract city
     if (locationData.addressComponents.locality) {
       setOwnerCity(locationData.addressComponents.locality);
     }
@@ -272,13 +328,17 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
     }
   };
 
+  // Parse zona-specific numeric values
+  const zonaCommissionValue = parseFloat(zonaCommissionPercentage) || 1;
+  const zonaMinimumCommissionValue = parseFloat(zonaMinimumCommission) || 500;
+
   // Get form data object
   const getFormData = () => ({
     listingId: data.listing.listingId,
     ownerContactId: data.owner?.contactId ?? BigInt(0),
     ownerName,
     ownerNif,
-    ownerAddress: ownerStreetAddress || ownerAddress, // Use street-only if extracted, else full address
+    ownerAddress: ownerStreetAddress,
     ownerCity,
     ownerPostalCode,
     ownerPhone,
@@ -287,7 +347,9 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
     commissionPercentage: commissionValue,
     minimumCommission: minimumCommissionValue,
     durationMonths: durationValue,
-    exclusivity,
+    contractType,
+    zonaCommissionPercentage: zonaCommissionValue,
+    zonaMinimumCommission: zonaMinimumCommissionValue,
     allowSignage,
     allowVisits,
     allowKeyDelivery,
@@ -477,17 +539,50 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
                 className={validationErrors.ownerNif ? "border-red-500" : ""}
               />
               <div className="sm:col-span-2">
-                <label htmlFor="ownerAddress" className="mb-1 block text-xs text-gray-500">
+                <label htmlFor="ownerStreetAddress" className="mb-1 block text-xs text-gray-500">
                   Dirección *
                 </label>
                 <AddressAutocomplete
-                  value={ownerAddress}
-                  onChange={setOwnerAddress}
+                  value={ownerStreetAddress}
+                  onChange={setOwnerStreetAddress}
                   onLocationSelected={handleOwnerAddressSelected}
-                  placeholder="Buscar dirección del propietario..."
+                  placeholder={isGeocodingAddress ? "Cargando dirección..." : "Buscar dirección..."}
+                  disabled={isGeocodingAddress}
                   className={cn(
                     "h-10 border-0 shadow-md",
-                    validationErrors.ownerAddress && "ring-1 ring-red-500",
+                    validationErrors.ownerStreetAddress && "ring-1 ring-red-500",
+                  )}
+                />
+              </div>
+              <div>
+                <label htmlFor="ownerCity" className="mb-1 block text-xs text-gray-500">
+                  Ciudad *
+                </label>
+                <Input
+                  id="ownerCity"
+                  value={ownerCity}
+                  onChange={(e) => setOwnerCity(e.target.value)}
+                  placeholder="Ciudad"
+                  disabled={isGeocodingAddress}
+                  className={cn(
+                    "h-10 border-0 shadow-md",
+                    validationErrors.ownerCity && "ring-1 ring-red-500",
+                  )}
+                />
+              </div>
+              <div>
+                <label htmlFor="ownerPostalCode" className="mb-1 block text-xs text-gray-500">
+                  Código postal *
+                </label>
+                <Input
+                  id="ownerPostalCode"
+                  value={ownerPostalCode}
+                  onChange={(e) => setOwnerPostalCode(e.target.value)}
+                  placeholder="Código postal"
+                  disabled={isGeocodingAddress}
+                  className={cn(
+                    "h-10 border-0 shadow-md",
+                    validationErrors.ownerPostalCode && "ring-1 ring-red-500",
                   )}
                 />
               </div>
@@ -611,35 +706,83 @@ export function HojaEncargoForm({ data }: HojaEncargoFormProps) {
                 <motion.div
                   className="absolute left-1 top-1 h-8 rounded-md bg-white shadow-sm"
                   animate={{
-                    width: "calc(50% - 4px)",
-                    x: exclusivity ? "100%" : "0%",
+                    width: "calc(33.333% - 4px)",
+                    x: contractType === "normal"
+                      ? "0%"
+                      : contractType === "zona"
+                        ? "100%"
+                        : "200%",
                   }}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
                 <div className="relative flex h-full">
                   <button
                     type="button"
-                    onClick={() => setExclusivity(false)}
+                    onClick={() => setContractType("normal")}
                     className={cn(
                       "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
-                      !exclusivity ? "text-gray-900" : "text-gray-600",
+                      contractType === "normal" ? "text-gray-900" : "text-gray-600",
                     )}
                   >
                     Normal
                   </button>
                   <button
                     type="button"
-                    onClick={() => setExclusivity(true)}
+                    onClick={() => setContractType("zona")}
                     className={cn(
                       "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
-                      exclusivity ? "text-gray-900" : "text-gray-600",
+                      contractType === "zona" ? "text-gray-900" : "text-gray-600",
                     )}
                   >
-                    Exclusividad
+                    Zona
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setContractType("exclusiva")}
+                    className={cn(
+                      "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
+                      contractType === "exclusiva" ? "text-gray-900" : "text-gray-600",
+                    )}
+                  >
+                    Exclusiva
                   </button>
                 </div>
               </div>
             </div>
+
+            {/* Zona-specific commission fields - only visible when Zona is selected */}
+            {contractType === "zona" && (
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="zonaCommissionPercentage" className="mb-1 block text-xs text-gray-500">
+                    Comisión Zona (%)
+                  </label>
+                  <Input
+                    id="zonaCommissionPercentage"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="100"
+                    value={zonaCommissionPercentage}
+                    onChange={(e) => setZonaCommissionPercentage(e.target.value)}
+                    className="h-10 border-0 shadow-md"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="zonaMinimumCommission" className="mb-1 block text-xs text-gray-500">
+                    Comisión mínima Zona (€)
+                  </label>
+                  <Input
+                    id="zonaMinimumCommission"
+                    type="number"
+                    min="0"
+                    value={zonaMinimumCommission}
+                    onChange={(e) => setZonaMinimumCommission(e.target.value)}
+                    className="h-10 border-0 shadow-md"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Section 5: Authorizations */}

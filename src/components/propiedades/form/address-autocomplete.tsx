@@ -24,6 +24,91 @@ export interface AddressComponents {
   postalCode: string;
   country: string;
   sublocality: string;
+  subpremise: string; // Flat number, floor, door letter (e.g., "3º B")
+}
+
+// Helper to parse address components from geocoding result
+export function parseGeocoderComponents(
+  components: google.maps.GeocoderAddressComponent[],
+): AddressComponents {
+  const addressData: AddressComponents = {
+    streetNumber: "",
+    route: "",
+    locality: "",
+    administrativeAreaLevel1: "",
+    administrativeAreaLevel2: "",
+    postalCode: "",
+    country: "",
+    sublocality: "",
+    subpremise: "",
+  };
+
+  for (const component of components) {
+    const componentType = component.types[0];
+
+    switch (componentType) {
+      case "street_number":
+        addressData.streetNumber = component.long_name;
+        break;
+      case "route":
+        addressData.route = component.long_name;
+        break;
+      case "locality":
+        addressData.locality = component.long_name;
+        break;
+      case "administrative_area_level_1":
+        addressData.administrativeAreaLevel1 = component.long_name;
+        break;
+      case "administrative_area_level_2":
+        addressData.administrativeAreaLevel2 = component.long_name;
+        break;
+      case "postal_code":
+        addressData.postalCode = component.long_name;
+        break;
+      case "country":
+        addressData.country = component.long_name;
+        break;
+      case "sublocality":
+      case "sublocality_level_1":
+      case "sublocality_level_2":
+      case "sublocality_level_3":
+      case "neighborhood":
+        addressData.sublocality = component.long_name;
+        break;
+      case "subpremise":
+        // Flat number, floor, door letter (e.g., "3º B", "Piso 2", "Puerta A")
+        addressData.subpremise = component.long_name;
+        break;
+    }
+  }
+
+  return addressData;
+}
+
+// Helper to geocode an address string and get parsed components
+export async function geocodeAddress(address: string): Promise<LocationData | null> {
+  if (!address.trim()) return null;
+
+  try {
+    // Ensure Google Maps API is loaded first
+    await loadGoogleMapsApi();
+
+    const results = await getGeocode({ address });
+    if (!results[0]) return null;
+
+    const { lat, lng } = await getLatLng(results[0]);
+    const parsedComponents = parseGeocoderComponents(results[0].address_components);
+
+    return {
+      address,
+      lat,
+      lng,
+      addressComponents: parsedComponents,
+    };
+  } catch (error) {
+    console.error("Error geocoding address:", error);
+    return null;
+  }
 }
 
 export interface LocationData {
@@ -102,61 +187,6 @@ export function AddressAutocomplete({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-  const parseAddressComponents = (
-    components: google.maps.GeocoderAddressComponent[],
-  ): AddressComponents => {
-    const addressData: AddressComponents = {
-      streetNumber: "",
-      route: "",
-      locality: "",
-      administrativeAreaLevel1: "",
-      administrativeAreaLevel2: "",
-      postalCode: "",
-      country: "",
-      sublocality: "",
-    };
-
-    console.log("🔍 [GOOGLE MAPS] Analyzing all component types:");
-    for (const component of components) {
-      console.log(`   - ${component.types.join(", ")}: ${component.long_name}`);
-      const componentType = component.types[0];
-
-      switch (componentType) {
-        case "street_number":
-          addressData.streetNumber = component.long_name;
-          break;
-        case "route":
-          addressData.route = component.long_name;
-          break;
-        case "locality":
-          addressData.locality = component.long_name;
-          break;
-        case "administrative_area_level_1":
-          addressData.administrativeAreaLevel1 = component.long_name;
-          break;
-        case "administrative_area_level_2":
-          addressData.administrativeAreaLevel2 = component.long_name;
-          break;
-        case "postal_code":
-          addressData.postalCode = component.long_name;
-          break;
-        case "country":
-          addressData.country = component.long_name;
-          break;
-        case "sublocality":
-        case "sublocality_level_1":
-        case "sublocality_level_2":
-        case "sublocality_level_3":
-        case "neighborhood":
-          console.log(`   ✅ FOUND NEIGHBORHOOD: ${component.long_name}`);
-          addressData.sublocality = component.long_name;
-          break;
-      }
-    }
-
-    return addressData;
-  };
-
   const handleSelect =
     (suggestion: google.maps.places.AutocompletePrediction) => async () => {
       const selectedAddress = suggestion.description;
@@ -179,7 +209,7 @@ export function AddressAutocomplete({
           JSON.stringify(results[0]!.address_components, null, 2),
         );
 
-        const parsedComponents = parseAddressComponents(
+        const parsedComponents = parseGeocoderComponents(
           results[0]!.address_components,
         );
 

@@ -1,17 +1,42 @@
 import type { NotaEncargoRawData } from "~/server/queries/nota-encargo";
-import type { HojaEncargoDocumentData } from "~/types/hoja-encargo";
+import type { HojaEncargoDocumentData, ContractType } from "~/types/hoja-encargo";
 
 // Types for the PDF document structure
 export interface TermsData {
   commission: number;
   min_commission: number;
   duration: number;
-  exclusivity: boolean;
+  contractType: ContractType;
+  // Zona-specific fields
+  zonaCommissionPercentage?: number;
+  zonaMinimumCommission?: number;
   communications: boolean;
   allowSignage: boolean;
   allowVisits: boolean;
   allowKeyDelivery: boolean;
   allowPortalPublication: boolean;
+}
+
+/**
+ * Migrate legacy exclusivity boolean to new contractType enum
+ * This ensures backwards compatibility with existing contracts
+ * @param exclusivity - Legacy boolean exclusivity value
+ * @param contractType - New contractType enum value
+ * @returns The appropriate ContractType
+ */
+export function migrateExclusivityToContractType(
+  exclusivity: boolean | undefined,
+  contractType: ContractType | undefined,
+): ContractType {
+  // If new contractType is already set, use it
+  if (contractType) {
+    return contractType;
+  }
+  // Migrate from legacy boolean
+  if (exclusivity === true) {
+    return "exclusiva";
+  }
+  return "normal"; // Default to normal (exclusivity: false)
 }
 
 // Re-export HojaEncargoDocumentData as NotaEncargoPDFData for backward compatibility
@@ -247,7 +272,9 @@ export function transformToNotaEncargoPDF(
       commissionPercentage: termsData.commission,
       minimumCommission: termsData.min_commission.toString(),
       durationMonths: termsData.duration,
-      exclusivity: termsData.exclusivity,
+      contractType: termsData.contractType,
+      zonaCommissionPercentage: termsData.zonaCommissionPercentage,
+      zonaMinimumCommission: termsData.zonaMinimumCommission?.toString(),
       allowSignage: termsData.allowSignage,
       allowVisits: termsData.allowVisits,
       allowKeyDelivery: termsData.allowKeyDelivery,

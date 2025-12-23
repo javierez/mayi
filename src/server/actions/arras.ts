@@ -458,6 +458,13 @@ export async function getArrasDocumentDataAction(
       location,
       date,
       gdprConsent: formData?.gdprConsent ?? false,
+      encumbrances: {
+        freeOfMortgage: formData?.freeOfMortgage ?? true,
+        freeOfEncumbrances: formData?.freeOfEncumbrances ?? true,
+        freeOfTenants: formData?.freeOfTenants ?? true,
+        currentOnIbi: formData?.currentOnIbi ?? true,
+        currentOnCommunityFees: formData?.currentOnCommunityFees ?? true,
+      },
     };
 
     return { success: true, data: documentData };

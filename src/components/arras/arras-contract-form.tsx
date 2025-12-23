@@ -965,6 +965,13 @@ function StandardArrasContractForm({ data }: ArrasContractFormProps) {
   // Consent
   const [gdprConsent, setGdprConsent] = useState(false);
 
+  // Property encumbrances (libre de cargas) - defaults to true
+  const [freeOfMortgage, setFreeOfMortgage] = useState(true);
+  const [freeOfEncumbrances, setFreeOfEncumbrances] = useState(true);
+  const [freeOfTenants, setFreeOfTenants] = useState(true);
+  const [currentOnIbi, setCurrentOnIbi] = useState(true);
+  const [currentOnCommunityFees, setCurrentOnCommunityFees] = useState(true);
+
   // Signatures
   const [sellerSignature, setSellerSignature] = useState<string | null>(null);
   const [buyerSignature, setBuyerSignature] = useState<string | null>(null);
@@ -1502,6 +1509,12 @@ function StandardArrasContractForm({ data }: ArrasContractFormProps) {
             financingDeadline: financingDeadline ? new Date(financingDeadline) : undefined,
             specialConditions,
             gdprConsent,
+            // Property encumbrances
+            freeOfMortgage,
+            freeOfEncumbrances,
+            freeOfTenants,
+            currentOnIbi,
+            currentOnCommunityFees,
           },
         }),
       });
@@ -1573,6 +1586,12 @@ function StandardArrasContractForm({ data }: ArrasContractFormProps) {
             financingDeadline: financingDeadline ? new Date(financingDeadline) : undefined,
             specialConditions,
             gdprConsent,
+            // Property encumbrances
+            freeOfMortgage,
+            freeOfEncumbrances,
+            freeOfTenants,
+            currentOnIbi,
+            currentOnCommunityFees,
           },
         }),
       });
@@ -1778,6 +1797,68 @@ function StandardArrasContractForm({ data }: ArrasContractFormProps) {
                 <p className="rounded bg-gray-50 p-2 text-sm">
                   {data.property.propertyType ?? "No especificado"}
                 </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Property Status Section (Libre de cargas) */}
+          <div className="space-y-4 rounded-lg border bg-white p-4 sm:p-5">
+            <h2 className="text-base font-semibold text-gray-900">
+              Estado del Inmueble
+            </h2>
+            <p className="text-xs text-gray-600">
+              Declaraciones sobre la situacion juridica del inmueble que se incluiran en el contrato.
+            </p>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="freeOfMortgage"
+                  checked={freeOfMortgage}
+                  onCheckedChange={(checked) => setFreeOfMortgage(checked === true)}
+                />
+                <Label htmlFor="freeOfMortgage" className="text-sm">
+                  Libre de hipoteca
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="freeOfEncumbrances"
+                  checked={freeOfEncumbrances}
+                  onCheckedChange={(checked) => setFreeOfEncumbrances(checked === true)}
+                />
+                <Label htmlFor="freeOfEncumbrances" className="text-sm">
+                  Libre de cargas y gravamenes
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="freeOfTenants"
+                  checked={freeOfTenants}
+                  onCheckedChange={(checked) => setFreeOfTenants(checked === true)}
+                />
+                <Label htmlFor="freeOfTenants" className="text-sm">
+                  Libre de arrendatarios y ocupantes
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="currentOnIbi"
+                  checked={currentOnIbi}
+                  onCheckedChange={(checked) => setCurrentOnIbi(checked === true)}
+                />
+                <Label htmlFor="currentOnIbi" className="text-sm">
+                  Al corriente de pago del IBI
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="currentOnCommunityFees"
+                  checked={currentOnCommunityFees}
+                  onCheckedChange={(checked) => setCurrentOnCommunityFees(checked === true)}
+                />
+                <Label htmlFor="currentOnCommunityFees" className="text-sm">
+                  Al corriente de gastos de comunidad
+                </Label>
               </div>
             </div>
           </div>

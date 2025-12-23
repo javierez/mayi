@@ -9,6 +9,7 @@ import {
   contacts,
   dealParticipants,
   users,
+  locations,
 } from "../db/schema";
 import {
   eq,
@@ -433,6 +434,141 @@ export async function getListingContactsWithoutDeals(
 export async function getListingContactsWithoutDealsWithAuth(listingId: number) {
   const accountId = await getCurrentUserAccountId();
   return getListingContactsWithoutDeals(listingId, accountId);
+}
+
+// Get listings where a specific contact is interested but doesn't have a deal yet
+export async function getContactListingsWithoutDeals(
+  contactId: number,
+  accountId: number,
+) {
+  try {
+    // Get all listingContactIds that already have deals (not Lost/Closed)
+    const existingDealContactIds = await db
+      .select({ listingContactId: deals.listingContactId })
+      .from(deals)
+      .innerJoin(listings, eq(deals.listingId, listings.listingId))
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(
+        listingContacts,
+        eq(deals.listingContactId, listingContacts.listingContactId),
+      )
+      .where(
+        and(
+          eq(listingContacts.contactId, BigInt(contactId)),
+          eq(properties.accountId, BigInt(accountId)),
+          notInArray(deals.status, ["Lost", "Closed"]),
+        ),
+      );
+
+    const dealContactIds = existingDealContactIds
+      .map((d) => d.listingContactId)
+      .filter((id): id is bigint => id !== null);
+
+    // Get active listings where contact is interested but doesn't have deals
+    const listingsWithoutDeals = await db
+      .select({
+        listingContactId: listingContacts.listingContactId,
+        listingId: listingContacts.listingId,
+        contactId: listingContacts.contactId,
+        contactType: listingContacts.contactType,
+        offer: listingContacts.offer,
+        offerAccepted: listingContacts.offerAccepted,
+        // Listing info
+        price: listings.price,
+        listingType: listings.listingType,
+        // Property info
+        title: properties.title,
+        street: properties.street,
+        city: locations.city,
+        referenceNumber: properties.referenceNumber,
+        propertyType: properties.propertyType,
+      })
+      .from(listingContacts)
+      .innerJoin(listings, eq(listingContacts.listingId, listings.listingId))
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .where(
+        and(
+          eq(listingContacts.contactId, BigInt(contactId)),
+          eq(listingContacts.isActive, true),
+          eq(listings.isActive, true),
+          eq(properties.accountId, BigInt(accountId)),
+          // Exclude owners - we want buyer/interested contacts
+          or(
+            eq(listingContacts.contactType, "buyer"),
+            eq(listingContacts.contactType, "lead"),
+            eq(listingContacts.contactType, "interested"),
+          ),
+          // Exclude listings that already have active deals with this contact
+          dealContactIds.length > 0
+            ? notInArray(listingContacts.listingContactId, dealContactIds)
+            : undefined,
+        ),
+      )
+      .orderBy(desc(listingContacts.createdAt));
+
+    return listingsWithoutDeals;
+  } catch (error) {
+    console.error("Error fetching contact listings without deals:", error);
+    throw error;
+  }
+}
+
+export async function getContactListingsWithoutDealsWithAuth(contactId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return getContactListingsWithoutDeals(contactId, accountId);
+}
+
+// Get active deals for a specific contact (across all listings)
+export async function getActiveDealsForContact(
+  contactId: number,
+  accountId: number,
+) {
+  try {
+    const activeDeals = await db
+      .select({
+        dealId: deals.dealId,
+        listingId: deals.listingId,
+        listingContactId: deals.listingContactId,
+        status: deals.status,
+        arrasSigningDate: deals.arrasSigningDate,
+        // Listing/property info
+        price: listings.price,
+        title: properties.title,
+        street: properties.street,
+        city: locations.city,
+        referenceNumber: properties.referenceNumber,
+        propertyType: properties.propertyType,
+        // Offer from listing_contacts
+        offer: listingContacts.offer,
+      })
+      .from(deals)
+      .innerJoin(listings, eq(deals.listingId, listings.listingId))
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(locations, eq(properties.neighborhoodId, locations.neighborhoodId))
+      .leftJoin(
+        listingContacts,
+        eq(deals.listingContactId, listingContacts.listingContactId),
+      )
+      .where(
+        and(
+          eq(listingContacts.contactId, BigInt(contactId)),
+          eq(properties.accountId, BigInt(accountId)),
+          notInArray(deals.status, ["Lost", "Closed"]),
+        ),
+      )
+      .orderBy(desc(deals.createdAt));
+
+    return activeDeals;
+  } catch (error) {
+    console.error("Error fetching active deals for contact:", error);
+    throw error;
+  }
+}
+
+export async function getActiveDealsForContactWithAuth(contactId: number) {
+  const accountId = await getCurrentUserAccountId();
+  return getActiveDealsForContact(contactId, accountId);
 }
 
 // List all deals (with pagination)

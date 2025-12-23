@@ -232,7 +232,9 @@ export function NotaEncargoDocument({ data }: Props) {
 
         {/* Document Title */}
         <div className="my-6 text-center print:my-4">
-          <div className="mb-2 text-[20pt] font-bold">NOTA DE ENCARGO</div>
+          <div className="mb-2 text-[20pt] font-bold">
+            {data.terms.contractType === "zona" ? "NOTA DE ENCARGO ZONA" : "NOTA DE ENCARGO"}
+          </div>
           <div className="font-mono text-[8pt] uppercase tracking-widest text-gray-500">
             {data.documentNumber}
           </div>
@@ -433,15 +435,35 @@ export function NotaEncargoDocument({ data }: Props) {
               cuenta del precio en el momento de otorgarse el contrato de
               compraventa.
             </div>
+            {/* Zona-specific clause B - owner/third party sale commission */}
+            {data.terms.contractType === "zona" && (
+              <div className="mb-3 text-justify leading-relaxed">
+                <strong>B)</strong> En el supuesto de que la operación de
+                compraventa fuera realizada directamente por &ldquo;EL
+                CLIENTE&rdquo; o por terceros durante la vigencia de la presente
+                NOTA DE ENCARGO ZONA, aquel abonará a{" "}
+                {accountType === "company" ? "" : "D/ª "}
+                <strong>{agentName}</strong> el importe correspondiente al{" "}
+                <strong>
+                  {formatPercentageWithText(data.terms.zonaCommissionPercentage ?? 1)} + I.V.A.
+                </strong>
+                , con un mínimo de{" "}
+                <strong>
+                  {formatCurrencyWithText(data.terms.zonaMinimumCommission ?? "500")}
+                </strong>
+                , encargándose la AGENCIA de la totalidad de la gestión de la
+                operación hasta su completa formalización.
+              </div>
+            )}
             <div className="mb-3 text-justify leading-relaxed">
-              <strong>B)</strong> La cantidad o cantidades recibidas como señal
+              <strong>{data.terms.contractType === "zona" ? "C)" : "B)"}</strong> La cantidad o cantidades recibidas como señal
               a cuenta por la compraventa, quedarán en depósito de{" "}
               {accountType === "company" ? "" : "D/ª "}
               <strong>{agentName}</strong> hasta la firma de las Escrituras
               públicas de Compraventa.
             </div>
             <div className="mb-3 text-justify leading-relaxed">
-              <strong>C)</strong> En el supuesto de que{" "}
+              <strong>{data.terms.contractType === "zona" ? "D)" : "C)"}</strong> En el supuesto de que{" "}
               {accountType === "company" ? "" : "D/ª "}
               <strong>{agentName}</strong>, intervenga o redacte contratos de
               compra venta u otra documentación, sobre la compra venta del / los
@@ -485,7 +507,7 @@ export function NotaEncargoDocument({ data }: Props) {
               {accountType === "company" ? "" : "D/ª "}
               <strong>{agentName}</strong>.
             </div>
-            {data.terms.exclusivity && (
+            {data.terms.contractType === "exclusiva" && (
               <div className="mb-3 text-justify leading-relaxed">
                 <strong>C) OBLIGACIONES DE LA PROPIEDAD:</strong>
                 <br />
@@ -510,7 +532,7 @@ export function NotaEncargoDocument({ data }: Props) {
             <div className="mb-3 text-justify leading-relaxed">
               &ldquo;EL CLIENTE&rdquo;,{" "}
               <span className="font-bold">
-                {data.terms.exclusivity ? "[NO]" : "[SÍ]"}
+                {data.terms.contractType === "exclusiva" ? "[NO]" : "[SÍ]"}
               </span>
               , tiene encomendada, la venta del mencionado inmueble a otra
               Agencia de la Propiedad Inmobiliaria.

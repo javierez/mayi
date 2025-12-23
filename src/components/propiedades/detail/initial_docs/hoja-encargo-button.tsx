@@ -8,6 +8,7 @@ import { getNotaEncargoData } from "~/server/queries/nota-encargo";
 import {
   transformToNotaEncargoPDF,
   extractListingIdFromPathname,
+  type TermsData,
 } from "~/lib/nota-encargo-helpers";
 
 interface DocumentRecord {
@@ -35,17 +36,7 @@ export function HojaEncargoButton({
   console.log("🚀 HojaEncargoButton render - isModalOpen:", isModalOpen);
   console.log("🚀 propertyId:", propertyId);
 
-  const handleCreateHojaEncargo = async (terms: {
-    commission: number;
-    min_commission: number;
-    duration: number;
-    exclusivity: boolean;
-    communications: boolean;
-    allowSignage: boolean;
-    allowVisits: boolean;
-    allowKeyDelivery: boolean;
-    allowPortalPublication: boolean;
-  }) => {
+  const handleCreateHojaEncargo = async (terms: TermsData) => {
     try {
       console.log("🚀 Starting Nota de Encargo generation...");
       console.log("Property ID:", propertyId);

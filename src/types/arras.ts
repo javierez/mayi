@@ -35,6 +35,12 @@ export interface ArrasContractFormData {
   financingDeadline?: Date;
   // Conditions
   specialConditions?: string;
+  // Property encumbrances (libre de cargas)
+  freeOfMortgage?: boolean;
+  freeOfEncumbrances?: boolean;
+  freeOfTenants?: boolean;
+  currentOnIbi?: boolean;
+  currentOnCommunityFees?: boolean;
   // Signatures (base64 data URL)
   sellerSignature: string;
   buyerSignature: string;
@@ -178,6 +184,14 @@ export interface ArrasDocumentData {
   location: string;
   date: string;
   gdprConsent: boolean;
+  // Property encumbrances (libre de cargas)
+  encumbrances?: {
+    freeOfMortgage: boolean;
+    freeOfEncumbrances: boolean;
+    freeOfTenants: boolean;
+    currentOnIbi: boolean;
+    currentOnCommunityFees: boolean;
+  };
 }
 
 export interface ArrasSignatureDocument {

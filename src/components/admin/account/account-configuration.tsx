@@ -154,7 +154,9 @@ export function AccountConfiguration() {
         commission: 0,
         min_commission: 0,
         duration: 12,
-        exclusivity: false,
+        contractType: "normal" as const,
+        zona_commission_percentage: 1,
+        zona_min_commission: 500,
         communications: false,
       },
     },
@@ -207,7 +209,9 @@ export function AccountConfiguration() {
               commission: 0,
               min_commission: 0,
               duration: 12,
-              exclusivity: false,
+              contractType: "normal" as const,
+              zona_commission_percentage: 1,
+              zona_min_commission: 500,
               communications: false,
             },
           });
@@ -972,7 +976,7 @@ export function AccountConfiguration() {
                       <div className="space-y-4">
                         <FormField
                           control={form.control}
-                          name="terms.exclusivity"
+                          name="terms.contractType"
                           render={({ field }) => (
                             <FormItem className="rounded-lg p-4 shadow-md">
                               <div className="flex items-center gap-1.5 mb-2">
@@ -981,15 +985,15 @@ export function AccountConfiguration() {
                                 </FormLabel>
                                 <button
                                   type="button"
-                                  onClick={() => toggleDescription("terms.exclusivity")}
+                                  onClick={() => toggleDescription("terms.contractType")}
                                   className="focus:outline-none"
                                 >
                                   <Info className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600 cursor-pointer transition-colors" />
                                 </button>
                               </div>
-                              {visibleDescriptions.has("terms.exclusivity") && (
+                              {visibleDescriptions.has("terms.contractType") && (
                                 <FormDescription className="text-xs mb-2">
-                                  Contrato de exclusividad por defecto
+                                  Tipo de contrato por defecto para hojas de encargo
                                 </FormDescription>
                               )}
                               <FormControl>
@@ -997,31 +1001,45 @@ export function AccountConfiguration() {
                                   <motion.div
                                     className="absolute left-1 top-1 h-8 rounded-md bg-white shadow-sm"
                                     animate={{
-                                      width: "calc(50% - 4px)",
-                                      x: field.value ? "100%" : "0%",
+                                      width: "calc(33.333% - 4px)",
+                                      x: field.value === "normal"
+                                        ? "0%"
+                                        : field.value === "zona"
+                                          ? "100%"
+                                          : "200%",
                                     }}
                                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                   />
                                   <div className="relative flex h-full">
                                     <button
                                       type="button"
-                                      onClick={() => field.onChange(false)}
+                                      onClick={() => field.onChange("normal")}
                                       className={cn(
                                         "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
-                                        !field.value ? "text-gray-900" : "text-gray-600",
+                                        field.value === "normal" ? "text-gray-900" : "text-gray-600",
                                       )}
                                     >
                                       Normal
                                     </button>
                                     <button
                                       type="button"
-                                      onClick={() => field.onChange(true)}
+                                      onClick={() => field.onChange("zona")}
                                       className={cn(
                                         "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
-                                        field.value ? "text-gray-900" : "text-gray-600",
+                                        field.value === "zona" ? "text-gray-900" : "text-gray-600",
                                       )}
                                     >
-                                      Exclusividad
+                                      Zona
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => field.onChange("exclusiva")}
+                                      className={cn(
+                                        "relative z-10 flex-1 rounded-md text-sm font-medium transition-colors duration-200",
+                                        field.value === "exclusiva" ? "text-gray-900" : "text-gray-600",
+                                      )}
+                                    >
+                                      Exclusiva
                                     </button>
                                   </div>
                                 </div>
@@ -1029,6 +1047,59 @@ export function AccountConfiguration() {
                             </FormItem>
                           )}
                         />
+
+                        {/* Zona-specific commission fields */}
+                        {form.watch("terms.contractType") === "zona" && (
+                          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <FormField
+                              control={form.control}
+                              name="terms.zona_commission_percentage"
+                              render={({ field }) => (
+                                <FormItem className="rounded-lg p-4 shadow-md">
+                                  <FormLabel>Comisión Zona (%)</FormLabel>
+                                  <FormDescription className="text-xs">
+                                    Comisión cuando propietario/terceros cierran la venta
+                                  </FormDescription>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      step="0.1"
+                                      {...field}
+                                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 1)}
+                                      value={field.value ?? 1}
+                                      className="border-0 shadow-md"
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="terms.zona_min_commission"
+                              render={({ field }) => (
+                                <FormItem className="rounded-lg p-4 shadow-md">
+                                  <FormLabel>Comisión Mínima Zona (€)</FormLabel>
+                                  <FormDescription className="text-xs">
+                                    Importe mínimo de comisión zona
+                                  </FormDescription>
+                                  <FormControl>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="1"
+                                      {...field}
+                                      onChange={(e) => field.onChange(parseInt(e.target.value) || 500)}
+                                      value={field.value ?? 500}
+                                      className="border-0 shadow-md"
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        )}
 
                         <FormField
                           control={form.control}

@@ -779,7 +779,12 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
       />
 
       {/* Toast Notifications */}
-      <Toaster position="top-right" richColors />
+      <Toaster
+        position="top-right"
+        richColors
+        closeButton
+        swipeDirections={["top", "right"]}
+      />
 
       {/* Sticky Notification Button */}
       <StickyNotificationButton />

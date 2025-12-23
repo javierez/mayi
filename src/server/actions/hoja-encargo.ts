@@ -19,8 +19,10 @@ import type {
   HojaEncargoFormData,
   HojaEncargoPageData,
   HojaEncargoDocumentData,
+  ContractType,
 } from "~/types/hoja-encargo";
 import { getBrandAsset } from "~/app/actions/brand-upload";
+import { migrateExclusivityToContractType } from "~/lib/nota-encargo-helpers";
 
 /**
  * Sanitize a string for use in filenames
@@ -217,11 +219,18 @@ export async function getHojaEncargoFormDataAction(
     // Parse account terms (used as defaults)
     const accountTerms = listingData.account.terms as Record<string, unknown> | null;
     // Prioritize database values over account defaults
+    // Backwards compatibility: migrate exclusivity boolean to contractType
     const terms = {
       commission: (accountTerms?.commission as number) ?? 3,
       minCommission: (accountTerms?.min_commission as number) ?? 1500,
       duration: (accountTerms?.duration as number) ?? 12,
-      exclusivity: (accountTerms?.exclusivity as boolean) ?? false,
+      contractType: migrateExclusivityToContractType(
+        accountTerms?.exclusivity as boolean | undefined,
+        accountTerms?.contractType as ContractType | undefined,
+      ),
+      // Zona-specific fields
+      zonaCommissionPercentage: (accountTerms?.zona_commission_percentage as number) ?? 1,
+      zonaMinimumCommission: (accountTerms?.zona_min_commission as number) ?? 500,
       // Use listing-specific values if set, otherwise fall back to account defaults
       allowSignage: listingData.listing.allowSignage ?? (accountTerms?.allowSignage as boolean) ?? true,
       allowVisits: listingData.listing.allowVisits ?? (accountTerms?.allowVisits as boolean) ?? true,
@@ -585,7 +594,7 @@ export async function getHojaEncargoDocumentDataAction(
         offices: [
           {
             address: pageData.agency.address ?? "",
-            city: pageData.property.city ?? "",
+            city: "", // Will be populated from websiteProperties if available
             postalCode: "",
             phone: pageData.agency.phone ?? "",
           },
@@ -619,7 +628,9 @@ export async function getHojaEncargoDocumentDataAction(
         commissionPercentage: formData?.commissionPercentage ?? pageData.terms?.commission ?? 3,
         minimumCommission: (formData?.minimumCommission ?? pageData.terms?.minCommission ?? 1500).toString(),
         durationMonths: formData?.durationMonths ?? pageData.terms?.duration ?? 12,
-        exclusivity: formData?.exclusivity ?? pageData.terms?.exclusivity ?? false,
+        contractType: formData?.contractType ?? pageData.terms?.contractType ?? "normal",
+        zonaCommissionPercentage: formData?.zonaCommissionPercentage ?? pageData.terms?.zonaCommissionPercentage ?? 1,
+        zonaMinimumCommission: (formData?.zonaMinimumCommission ?? pageData.terms?.zonaMinimumCommission ?? 500).toString(),
         allowSignage: formData?.allowSignage ?? pageData.terms?.allowSignage ?? true,
         allowVisits: formData?.allowVisits ?? pageData.terms?.allowVisits ?? true,
         allowKeyDelivery: formData?.allowKeyDelivery ?? pageData.terms?.allowKeyDelivery ?? true,

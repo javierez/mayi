@@ -3,6 +3,14 @@
  * Uses documents table for PDF storage (no dedicated tracking table)
  */
 
+/**
+ * Contract type for hoja de encargo
+ * - "normal": No exclusivity, standard terms
+ * - "zona": No exclusivity, but with reduced commission if owner/third party sells
+ * - "exclusiva": Full exclusivity with the agency
+ */
+export type ContractType = "normal" | "zona" | "exclusiva";
+
 export interface HojaEncargoFormData {
   listingId: bigint;
   ownerContactId: bigint;
@@ -20,7 +28,10 @@ export interface HojaEncargoFormData {
   commissionPercentage: number;
   minimumCommission: number;
   durationMonths: number;
-  exclusivity: boolean;
+  contractType: ContractType;
+  // Zona-specific fields (only used when contractType === "zona")
+  zonaCommissionPercentage?: number;
+  zonaMinimumCommission?: number;
   // Authorizations
   allowSignage: boolean;
   allowVisits: boolean;
@@ -89,7 +100,10 @@ export interface HojaEncargoPageData {
     commission: number;
     minCommission: number;
     duration: number;
-    exclusivity: boolean;
+    contractType: ContractType;
+    // Zona-specific fields
+    zonaCommissionPercentage?: number;
+    zonaMinimumCommission?: number;
     allowSignage: boolean;
     allowVisits: boolean;
     allowKeyDelivery: boolean;
@@ -145,7 +159,10 @@ export interface HojaEncargoDocumentData {
     commissionPercentage: number;
     minimumCommission: string;
     durationMonths: number;
-    exclusivity: boolean;
+    contractType: ContractType;
+    // Zona-specific fields (formatted for display)
+    zonaCommissionPercentage?: number;
+    zonaMinimumCommission?: string;
     allowSignage: boolean;
     allowVisits: boolean;
     allowKeyDelivery: boolean;
