@@ -25,7 +25,6 @@ import {
 import * as XLSX from "xlsx";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -86,7 +85,6 @@ export const PropertyTable = React.memo(function PropertyTable({
   onExport,
   onPublishToggled,
 }: PropertyTableProps) {
-  const router = useRouter();
   const [loadedImages, setLoadedImages] = React.useState<Set<string>>(
     new Set(),
   );
@@ -403,15 +401,18 @@ export const PropertyTable = React.memo(function PropertyTable({
               return (
                 <TableRow
                   key={listingId}
-                  className="cursor-pointer transition-colors hover:bg-muted/50"
-                  onClick={() =>
-                    router.push(`/propiedades/${listing.listingId}`)
-                  }
+                  className="group/row relative transition-colors hover:bg-muted/50"
                 >
                   <TableCell
                     className="overflow-hidden py-0"
                     style={getColumnStyle("imagen")}
                   >
+                    {/* Link overlay for the entire row */}
+                    <Link
+                      href={`/propiedades/${listing.listingId}`}
+                      className="absolute inset-0 z-0"
+                      aria-label={`Ver ${listing.title ?? "propiedad"}`}
+                    />
                     <div className="truncate">
                       <div className="group relative h-[48px] w-[72px] overflow-hidden rounded-md">
                         {listing.imageUrl &&
@@ -451,7 +452,7 @@ export const PropertyTable = React.memo(function PropertyTable({
                         )}
 
                         {/* Hover overlay with share icon */}
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -502,7 +503,7 @@ export const PropertyTable = React.memo(function PropertyTable({
                         {listing.ownerName && listing.ownerId && (
                           <Link
                             href={`/contactos/${listing.ownerId}`}
-                            className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-primary"
+                            className="relative z-10 flex items-center gap-2 text-muted-foreground transition-colors hover:text-primary"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <User className="h-3.5 w-3.5 flex-shrink-0" />
@@ -522,7 +523,7 @@ export const PropertyTable = React.memo(function PropertyTable({
                         {listing.agentName && (
                           <Link
                             href="/operaciones"
-                            className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-primary"
+                            className="relative z-10 flex items-center gap-2 text-muted-foreground transition-colors hover:text-primary"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <Briefcase className="h-3.5 w-3.5 flex-shrink-0" />

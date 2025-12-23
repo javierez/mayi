@@ -46,10 +46,10 @@ export default function OperacionesSummaryCard({
       "Visita Completada": "Visitas Completadas",
       "Sin Visitas": "Sin Visitas", // Doesn't change
       // Acuerdos status types
-      Offer: "Offers",
-      UnderContract: "UnderContract",
-      Closed: "Closed",
-      Lost: "Lost",
+      Offer: "Ofertas",
+      UnderContract: "En Contrato",
+      Closed: "Cerrados",
+      Lost: "Perdidos",
     };
 
     return pluralMap[status] ?? status;

@@ -35,10 +35,10 @@ export function NotificationDropdown() {
           <NotificationBell />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[420px] p-0 border-0 shadow-lg" align="end">
+      <PopoverContent className="w-[calc(100vw-2rem)] sm:w-[420px] p-0 border-0 shadow-lg" align="end">
         <div className="flex flex-col">
           {/* Notifications List */}
-          <ScrollArea className="max-h-[400px]">
+          <ScrollArea className="h-[min(400px,60vh)]">
             {loading && notifications.length === 0 ? (
               <div className="flex items-center justify-center py-8">
                 <p className="text-sm text-gray-500">Cargando...</p>

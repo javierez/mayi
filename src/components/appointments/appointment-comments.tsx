@@ -655,10 +655,10 @@ export function AppointmentComments({
             </Avatar>
             <div className="relative flex-1">
               <Textarea
-                placeholder="Escribe una nota..."
+                placeholder="Escribe un comentario..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                className="min-h-[80px] resize-none border-gray-200 pr-10"
+                className="min-h-[60px] resize-none border-gray-200 pr-10 text-sm"
               />
               <div className="absolute right-2 top-2">
                 <PushToTalkWhisperButton

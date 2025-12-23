@@ -514,7 +514,7 @@ export function AppointmentDetailSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="flex flex-col overflow-hidden w-full max-w-full sm:max-w-md [&>button]:hidden">
+      <SheetContent className="flex h-full flex-col overflow-hidden w-full max-w-full sm:max-w-md [&>button]:hidden">
         <SheetHeader className="shrink-0">
           <div className="flex items-center justify-between gap-2">
             <SheetTitle className="flex items-center gap-2 text-base sm:text-lg min-w-0 flex-1">
