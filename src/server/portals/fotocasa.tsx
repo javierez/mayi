@@ -198,7 +198,17 @@ const PROPERTY_SUBTYPE_MAPPING: Record<string, number> = {
   "Suelo industrial": 60,
   "Suelo rústico": 91,
 
-  // Garage subtypes
+  // Garage subtypes - Idealista values mapped to Fotocasa IDs
+  // motorcycle → Moto (68)
+  // car_compact, car_sedan → Individual (70)
+  // car_and_motorcycle → Individual (70) - single car space + moto
+  // two_cars_and_more → Doble (69)
+  motorcycle: 68,
+  car_compact: 70,
+  car_sedan: 70,
+  car_and_motorcycle: 70,
+  two_cars_and_more: 69,
+  // Legacy values (backward compatibility)
   Moto: 68,
   Doble: 69,
   Individual: 70,

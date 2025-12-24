@@ -193,7 +193,9 @@ export function AdditionalCharacteristicsCard({
                         disabled={!canEdit}
                       />
                       <Label htmlFor="securityDoor" className="text-sm">
-                        Puerta blindada
+                        {propertyType === "garaje"
+                          ? "Puerta automática"
+                          : "Puerta blindada"}
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2">

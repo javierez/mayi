@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { useFormContext } from "../form-context";
+import { GARAGE_SUBTYPE_DISPLAY_NAMES } from "~/types/property-types";
 import { QuickContactModal } from "~/components/contactos/quick-contact-modal";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Separator } from "~/components/ui/separator";
@@ -644,7 +645,7 @@ export default function FirstPage({
             <button
               onClick={() => {
                 updateField("propertyType", "garaje");
-                updateField("propertySubtype", "Individual");
+                updateField("propertySubtype", "car_sedan");
                 // Reset to basic Rent if special rent type was selected
                 if (["RoomSharing", "RentWithOption"].includes(formData.listingType)) {
                   updateField("listingType", "Rent");
@@ -730,7 +731,7 @@ export default function FirstPage({
           <button
             onClick={() => {
               updateField("propertyType", "garaje");
-              updateField("propertySubtype", "Individual");
+              updateField("propertySubtype", "car_sedan");
               // Reset to basic Rent if special rent type was selected
               if (["RoomSharing", "RentWithOption"].includes(formData.listingType)) {
                 updateField("listingType", "Rent");
@@ -765,7 +766,7 @@ export default function FirstPage({
                   : formData.propertyType === "solar"
                     ? "Suelo residencial"
                     : formData.propertyType === "garaje"
-                      ? "Individual"
+                      ? "car_sedan"
                       : "")
           }
           onValueChange={(value) => updateField("propertySubtype", value)}
@@ -821,9 +822,11 @@ export default function FirstPage({
             )}
             {formData.propertyType === "garaje" && (
               <>
-                <SelectItem value="Moto">Moto</SelectItem>
-                <SelectItem value="Doble">Doble</SelectItem>
-                <SelectItem value="Individual">Individual</SelectItem>
+                {Object.entries(GARAGE_SUBTYPE_DISPLAY_NAMES).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
               </>
             )}
           </SelectContent>

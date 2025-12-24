@@ -16,6 +16,7 @@ import { Building2, ChevronDown } from "lucide-react";
 import { ModernSaveIndicator } from "../common/modern-save-indicator";
 import type { PropertyListing } from "~/types/property-listing";
 import type { SaveState } from "~/types/save-state";
+import { GARAGE_SUBTYPE_DISPLAY_NAMES } from "~/types/property-types";
 
 interface BasicInfoCardProps {
   listing: PropertyListing;
@@ -397,7 +398,7 @@ export function BasicInfoCard({
                     : propertyType === "solar"
                       ? "Suelo residencial"
                       : propertyType === "garaje"
-                        ? "Individual"
+                        ? "car_sedan"
                         : "")
             }
             onValueChange={(value) => {
@@ -459,9 +460,11 @@ export function BasicInfoCard({
               )}
               {propertyType === "garaje" && (
                 <>
-                  <SelectItem value="Moto">Moto</SelectItem>
-                  <SelectItem value="Doble">Doble</SelectItem>
-                  <SelectItem value="Individual">Individual</SelectItem>
+                  {Object.entries(GARAGE_SUBTYPE_DISPLAY_NAMES).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
                 </>
               )}
             </SelectContent>

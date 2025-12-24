@@ -57,7 +57,7 @@ interface PortalSelectionProps {
   hasKeys?: boolean;
   // Fotocasa & Idealista visibility settings (shared - explicit fields from database)
   fcLocationVisibility?: number; // 1=Exact, 2=Street, 3=Zone (used by both Fotocasa and Idealista)
-  fcPriceVisibility?: boolean; // true=hidden, false=shown (Fotocasa only)
+  fcPriceVisibility?: boolean; // true=hidden, false=shown (shared by Fotocasa & Idealista)
   // Idealista-specific settings
   idCoordinatesPrecision?: "exact" | "moved";
   // Portal props from database (JSON columns) - Legacy support
@@ -1357,10 +1357,42 @@ export function PortalSelection({
                                 </div>
                               </div>
 
-                              {/* Info Note */}
-                              <p className="text-xs text-gray-500">
-                                Nota: Idealista no permite ocultar el precio en España.
-                              </p>
+                              {/* Hide Price Toggle (shared with Fotocasa) */}
+                              <div className="flex items-center justify-between">
+                                <Label
+                                  htmlFor="idealista-hide-price"
+                                  className="cursor-pointer text-xs font-medium text-gray-700"
+                                >
+                                  Ocultar precio
+                                </Label>
+                                <button
+                                  type="button"
+                                  role="switch"
+                                  aria-checked={hidePriceModes.fotocasa ?? false}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleHidePriceChange(
+                                      "fotocasa",
+                                      !(hidePriceModes.fotocasa ?? false),
+                                    );
+                                  }}
+                                  className={cn(
+                                    "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-300 focus-visible:ring-offset-1",
+                                    hidePriceModes.fotocasa
+                                      ? "border-gray-400 bg-gray-400"
+                                      : "border-gray-200 bg-gray-100",
+                                  )}
+                                >
+                                  <span
+                                    className={cn(
+                                      "pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out",
+                                      hidePriceModes.fotocasa
+                                        ? "translate-x-4"
+                                        : "translate-x-0.5",
+                                    )}
+                                  />
+                                </button>
+                              </div>
                             </div>
                           </motion.div>
                         )}

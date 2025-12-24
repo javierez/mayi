@@ -372,6 +372,10 @@ export async function buildIdealistaPropertyPayload(
     virtualTourUrl?: string | null;
     externalUrl?: string | null;
     videos?: Array<{ url: string }> | null;
+    garageType?: string | null; // "cerrado" or "abierto" for parking covered
+    securityDoor?: boolean | null; // For garages: maps to automatic door
+    alarm?: boolean | null; // For garages: maps to security alarm
+    securityGuard?: boolean | null; // For garages: maps to security personnel
   };
 
   // Get and process images with watermarking (only active images for portal export)
@@ -538,6 +542,49 @@ export async function buildIdealistaPropertyPayload(
     // Property type flags
     ...propertyFlags,
 
+    // Garage capacity type (only for garage properties)
+    // propertySubtype stores Idealista's featuresGarageCapacityType values directly
+    ...(propertyCategory === "garage" &&
+      listing.propertySubtype &&
+      ["motorcycle", "car_compact", "car_sedan", "car_and_motorcycle", "two_cars_and_more"].includes(
+        listing.propertySubtype,
+      ) && {
+        featuresGarageCapacityType: listing.propertySubtype as
+          | "motorcycle"
+          | "car_compact"
+          | "car_sedan"
+          | "car_and_motorcycle"
+          | "two_cars_and_more",
+      }),
+
+    // Parking place covered (only for garage properties)
+    // garageType: "cerrado" → true (covered), "abierto" → false (not covered)
+    ...(propertyCategory === "garage" &&
+      listing.garageType &&
+      ["cerrado", "abierto"].includes(listing.garageType) && {
+        featuresParkingPlaceCovered: listing.garageType === "cerrado",
+      }),
+
+    // Automatic door (only for garage properties)
+    // securityDoor field is repurposed as automatic door for garages
+    ...(propertyCategory === "garage" &&
+      listing.securityDoor !== null &&
+      listing.securityDoor !== undefined && {
+        featuresParkingAutomaticDoor: listing.securityDoor,
+      }),
+
+    // Security features (only for garage properties)
+    ...(propertyCategory === "garage" &&
+      listing.alarm !== null &&
+      listing.alarm !== undefined && {
+        featuresSecurityAlarm: listing.alarm,
+      }),
+    ...(propertyCategory === "garage" &&
+      listing.securityGuard !== null &&
+      listing.securityGuard !== undefined && {
+        featuresSecurityPersonnel: listing.securityGuard,
+      }),
+
     // Boolean features
     featuresLiftAvailable: listing.hasElevator ?? undefined,
     featuresParkingAvailable: listing.hasGarage ?? undefined,
@@ -564,6 +611,11 @@ export async function buildIdealistaPropertyPayload(
     featuresAllowPets: listing.petsAllowed ?? undefined,
     featuresHandicapAdaptedAccess: listing.accessibleAccess ?? undefined,
     featuresHandicapAdaptedUse: listing.accessibleUse ?? undefined,
+
+    // Hidden price (shared with Fotocasa via fcPriceVisibility)
+    ...(listing.fcPriceVisibility && {
+      featuresHiddenPrice: true,
+    }),
 
     // Conservation status
     ...(listing.conservationStatus && {

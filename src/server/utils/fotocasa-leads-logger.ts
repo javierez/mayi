@@ -1,41 +1,54 @@
 import fs from "fs";
 import path from "path";
 
+// In production (Vercel), the filesystem is read-only, so we only log to console
+const isProduction = process.env.NODE_ENV === "production";
+
 /**
  * Logger utility for Fotocasa Leads API operations
- * Writes logs to both console and file
+ * Writes logs to both console and file (file logging only in development)
  */
 class FotocasaLeadsLogger {
-  private logFilePath: string;
+  private logFilePath: string | null = null;
   private sessionId: string;
 
   constructor(accountId?: bigint) {
-    // Create logs directory if it doesn't exist
-    const logsDir = path.join(process.cwd(), "logs", "fotocasa-leads");
-    if (!fs.existsSync(logsDir)) {
-      fs.mkdirSync(logsDir, { recursive: true });
-    }
-
-    // Create a new log file with timestamp
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     this.sessionId = timestamp;
-    const accountSuffix = accountId ? `-account-${accountId.toString()}` : "";
-    this.logFilePath = path.join(
-      logsDir,
-      `fotocasa-leads-${timestamp}${accountSuffix}.log`,
-    );
 
-    // Write header
-    this.writeToFile(`=== Fotocasa Leads Sync Session Started ===\n`);
-    this.writeToFile(`Session ID: ${this.sessionId}\n`);
-    if (accountId) {
-      this.writeToFile(`Account ID: ${accountId.toString()}\n`);
+    // Only create log files in development
+    if (!isProduction) {
+      try {
+        const logsDir = path.join(process.cwd(), "logs", "fotocasa-leads");
+        if (!fs.existsSync(logsDir)) {
+          fs.mkdirSync(logsDir, { recursive: true });
+        }
+
+        const accountSuffix = accountId ? `-account-${accountId.toString()}` : "";
+        this.logFilePath = path.join(
+          logsDir,
+          `fotocasa-leads-${timestamp}${accountSuffix}.log`,
+        );
+
+        // Write header
+        this.writeToFile(`=== Fotocasa Leads Sync Session Started ===\n`);
+        this.writeToFile(`Session ID: ${this.sessionId}\n`);
+        if (accountId) {
+          this.writeToFile(`Account ID: ${accountId.toString()}\n`);
+        }
+        this.writeToFile(`Timestamp: ${new Date().toISOString()}\n`);
+        this.writeToFile(`${"=".repeat(80)}\n\n`);
+      } catch (error) {
+        // If file logging fails, just continue with console logging
+        console.warn("[Fotocasa Leads] File logging disabled:", error);
+        this.logFilePath = null;
+      }
     }
-    this.writeToFile(`Timestamp: ${new Date().toISOString()}\n`);
-    this.writeToFile(`${"=".repeat(80)}\n\n`);
   }
 
   private writeToFile(message: string): void {
+    if (!this.logFilePath) return;
+
     try {
       fs.appendFileSync(this.logFilePath, message);
     } catch (error) {
@@ -92,7 +105,7 @@ class FotocasaLeadsLogger {
   }
 
   getLogFilePath(): string {
-    return this.logFilePath;
+    return this.logFilePath ?? "console-only (production)";
   }
 }
 

@@ -30,7 +30,14 @@ export interface PropertySubtypes {
     | "Bungalow";
   local: "Local Comercial" | "Residencial" | "Otros" | "Mixto residencial" | "Oficinas" | "Hotel";
   solar: "Suelo residencial" | "Suelo industrial" | "Suelo rústico";
-  garaje: "Moto" | "Doble" | "Individual";
+  // Garage subtypes use Idealista's featuresGarageCapacityType values
+  // These map to Fotocasa: motorcycle→Moto, two_cars_and_more→Doble, others→Individual
+  garaje:
+    | "motorcycle"
+    | "car_compact"
+    | "car_sedan"
+    | "car_and_motorcycle"
+    | "two_cars_and_more";
 }
 
 // Core fields applicable to all property types
@@ -75,48 +82,21 @@ export interface CorePropertyFields {
   };
 }
 
-// Fields specific to garage properties
+// Fields specific to garage properties (minimal set for description generation)
 export interface GaragePropertyFields extends CorePropertyFields {
   propertyType: "garaje";
 
-  // Garage-specific measurements (uses builtSurfaceArea instead of squareMeter)
-  builtSurfaceArea?: number;
+  // Garage features
+  garageType?: string; // → featuresParkingPlaceCovered
+  securityDoor?: boolean; // → featuresParkingAutomaticDoor (repurposed)
+  hasElevator?: boolean; // → featuresLiftAvailable
 
-  // Construction details (limited for garages)
-  yearBuilt?: number;
-  conservationStatus?: number;
+  // Security
+  alarm?: boolean; // → featuresSecurityAlarm
+  securityGuard?: boolean; // → featuresSecurityPersonnel
 
-  // Garage-specific features
-  hasGarage?: boolean; // Can still have additional garage spaces
-  garageType?: string;
-  garageSpaces?: number;
-  garageInBuilding?: boolean;
-  garageNumber?: string;
-  optionalGaragePrice?: number;
-
-  // Basic building features that apply to garages
-  hasElevator?: boolean;
-
-  // Security features (applicable to garages)
-  videoIntercom?: boolean;
-  conciergeService?: boolean;
-  securityGuard?: boolean;
-  alarm?: boolean;
-  securityDoor?: boolean;
-
-  // Building characteristics
-  disabledAccessible?: boolean;
-  vpo?: boolean;
-  satelliteDish?: boolean;
-
-  // Orientation (only exterior applies)
-  exterior?: boolean;
-
-  // Rental-specific (if applicable)
-  internet?: boolean;
-  studentFriendly?: boolean;
-  petsAllowed?: boolean;
-  appliancesIncluded?: boolean;
+  // Occupation
+  occupationStatus?: "free" | "tenanted" | "bare_ownership" | "illegally_occupied"; // → featuresCurrentOccupation
 }
 
 // Fields specific to solar (land) properties
@@ -439,63 +419,35 @@ export function getRelevantFields(
   const propertyType = listing.propertyType;
 
   // Start with core fields that apply to all properties
+  // Note: propertyId and listingId are excluded - they're internal IDs with no meaning to the AI
   const relevantFields: Partial<PropertyListing> = {
-    propertyId: listing.propertyId,
-    listingId: listing.listingId,
     propertyType: listing.propertyType,
     propertySubtype: listing.propertySubtype,
     listingType: listing.listingType,
     price: listing.price,
-    cadastralReference: listing.cadastralReference,
     isBankOwned: listing.isBankOwned,
-    isFeatured: listing.isFeatured,
     newConstruction: listing.newConstruction,
-    publishToWebsite: listing.publishToWebsite,
     // Location fields (all properties)
     street: listing.street,
-    addressDetails: listing.addressDetails,
     postalCode: listing.postalCode,
     neighborhood: listing.neighborhood,
     city: listing.city,
     province: listing.province,
     municipality: listing.municipality,
-    // Content
-    description: listing.description,
-    shortDescription: listing.shortDescription,
+    // Note: description/shortDescription excluded - we're generating new ones
     // Note: agent is intentionally excluded from AI prompts
   };
 
   // Add property-type specific fields
   if (isGarageProperty(propertyType)) {
-    // Garage properties - very limited fields
+    // Garage properties - minimal fields for description generation
     Object.assign(relevantFields, {
-      builtSurfaceArea: listing.builtSurfaceArea,
-      yearBuilt: listing.yearBuilt,
-      conservationStatus: listing.conservationStatus,
-      hasElevator: listing.hasElevator,
-      hasGarage: listing.hasGarage,
-      garageType: listing.garageType,
-      garageSpaces: listing.garageSpaces,
-      garageInBuilding: listing.garageInBuilding,
-      garageNumber: listing.garageNumber,
-      optionalGaragePrice: listing.optionalGaragePrice,
-      // Security features
-      videoIntercom: listing.videoIntercom,
-      conciergeService: listing.conciergeService,
-      securityGuard: listing.securityGuard,
-      alarm: listing.alarm,
-      securityDoor: listing.securityDoor,
-      // Building characteristics
-      disabledAccessible: listing.disabledAccessible,
-      vpo: listing.vpo,
-      satelliteDish: listing.satelliteDish,
-      // Basic characteristics
-      exterior: listing.exterior,
-      // Rental features (if applicable)
-      internet: listing.internet,
-      studentFriendly: listing.studentFriendly,
-      petsAllowed: listing.petsAllowed,
-      appliancesIncluded: listing.appliancesIncluded,
+      garageType: listing.garageType, // featuresParkingPlaceCovered
+      securityDoor: listing.securityDoor, // featuresParkingAutomaticDoor
+      hasElevator: listing.hasElevator, // featuresLiftAvailable
+      alarm: listing.alarm, // featuresSecurityAlarm
+      securityGuard: listing.securityGuard, // featuresSecurityPersonnel
+      occupationStatus: listing.occupationStatus, // featuresCurrentOccupation
     });
   } else if (isSolarProperty(propertyType)) {
     // Solar properties - land-specific fields only
@@ -630,7 +582,14 @@ export function getRelevantFields(
     }
   }
 
-  return relevantFields;
+  // Remove undefined, null, and empty string values (but keep false - it's informative)
+  const cleanedFields = Object.fromEntries(
+    Object.entries(relevantFields).filter(
+      ([_, value]) => value !== undefined && value !== null && value !== "",
+    ),
+  );
+
+  return cleanedFields;
 }
 
 /**
@@ -646,6 +605,24 @@ export function getPropertyTypeDisplayName(propertyType: PropertyType): string {
   };
 
   return displayNames[propertyType] || propertyType;
+}
+
+/**
+ * Display names for garage subtypes (Idealista values → Spanish labels)
+ */
+export const GARAGE_SUBTYPE_DISPLAY_NAMES: Record<string, string> = {
+  motorcycle: "Moto",
+  car_compact: "Coche pequeño",
+  car_sedan: "Coche normal",
+  car_and_motorcycle: "Coche y moto",
+  two_cars_and_more: "Dos coches o más",
+};
+
+/**
+ * Gets the display name for a garage subtype
+ */
+export function getGarageSubtypeDisplayName(subtype: string): string {
+  return GARAGE_SUBTYPE_DISPLAY_NAMES[subtype] ?? subtype;
 }
 
 /**
@@ -673,7 +650,8 @@ export function getPropertySubtypes(propertyType: PropertyType): string[] {
     ],
     local: ["Local Comercial", "Residencial", "Otros", "Mixto residencial", "Oficinas", "Hotel"],
     solar: ["Suelo residencial", "Suelo industrial", "Suelo rústico"],
-    garaje: ["Moto", "Doble", "Individual"],
+    // Garage subtypes use Idealista's featuresGarageCapacityType values
+    garaje: ["motorcycle", "car_compact", "car_sedan", "car_and_motorcycle", "two_cars_and_more"],
   };
 
   return subtypes[propertyType] || [];
