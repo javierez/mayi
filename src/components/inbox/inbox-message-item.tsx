@@ -57,7 +57,8 @@ export function InboxThreadItem({
       className={cn(
         "group flex cursor-pointer items-start gap-2 border-b border-border/40 p-3 transition-all duration-200 sm:gap-3 sm:p-4",
         isSelected && "bg-accent",
-        !thread.read && "bg-amber-50/30",
+        !thread.read && "border-l-[3px] border-l-gray-400 bg-gray-50/50 dark:border-l-gray-500 dark:bg-gray-800/30",
+        thread.read && "border-l-[3px] border-l-transparent",
         !isSelected && "hover:bg-accent/50"
       )}
     >
@@ -84,7 +85,9 @@ export function InboxThreadItem({
           <span
             className={cn(
               "truncate text-sm",
-              !thread.read ? "font-semibold text-foreground" : "font-medium text-foreground"
+              !thread.read
+                ? "font-semibold text-gray-900 dark:text-gray-100"
+                : "font-medium text-gray-600 dark:text-gray-400"
             )}
             title={mainParticipant?.name}
           >
@@ -103,7 +106,9 @@ export function InboxThreadItem({
           <p
             className={cn(
               "line-clamp-1 text-sm",
-              !thread.read ? "font-medium text-foreground" : "text-muted-foreground"
+              !thread.read
+                ? "font-medium text-gray-800 dark:text-gray-200"
+                : "text-gray-500 dark:text-gray-500"
             )}
             title={thread.subject}
           >

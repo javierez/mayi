@@ -265,31 +265,34 @@ export function PropertyCharacteristicsForm({
           break;
 
         case "propertyDetails":
+          // Helper to safely parse numbers, returning null for NaN/empty
+          const safeNumber = (value: string | undefined | null): number | null => {
+            if (!value || value === "") return null;
+            const num = Number(value);
+            return isNaN(num) ? null : num;
+          };
           propertyData = {
-            bedrooms: Number(
+            bedrooms: safeNumber(
               (document.getElementById("bedrooms") as HTMLInputElement)?.value,
             ),
-            bathrooms: Number(
+            bathrooms: safeNumber(
               (document.getElementById("bathrooms") as HTMLInputElement)?.value,
             ),
-            squareMeter: Number(
+            squareMeter: safeNumber(
               (document.getElementById("squareMeter") as HTMLInputElement)
                 ?.value,
             ),
-            builtSurfaceArea: Math.round(
-              Number(
-                (
-                  document.getElementById(
-                    "builtSurfaceArea",
-                  ) as HTMLInputElement
-                )?.value,
-              ),
-            ),
-            yearBuilt: Number(
+            builtSurfaceArea: (() => {
+              const val = safeNumber(
+                (document.getElementById("builtSurfaceArea") as HTMLInputElement)?.value,
+              );
+              return val !== null ? Math.round(val) : null;
+            })(),
+            yearBuilt: safeNumber(
               (document.getElementById("yearBuilt") as HTMLInputElement)?.value,
             ),
             lastRenovationYear: lastRenovationYear || null,
-            buildingFloors: buildingFloors,
+            buildingFloors: isNaN(buildingFloors) ? null : buildingFloors,
             conservationStatus: listing.conservationStatus ?? 1,
             finca: finca,
             superficieFinca: superficieFinca,
@@ -424,6 +427,11 @@ export function PropertyCharacteristicsForm({
             longitude: longitudeValue || null,
             title: newTitle, // Add generated title to property data
             streetType: streetType || null, // Only for 'local' property type
+            // Solar/Land Infrastructure - distance to urban center
+            nearestLocationKm:
+              nearestLocationKm !== null && !isNaN(nearestLocationKm)
+                ? nearestLocationKm.toString()
+                : null,
           };
 
           console.log("📝 [SAVE] Property data prepared for update:", {
@@ -456,6 +464,14 @@ export function PropertyCharacteristicsForm({
             heatingType,
             hotWaterType: isHotWater ? hotWaterType : null,
             airConditioningType: isAirConditioning ? airConditioningType : null,
+            // Solar utilities (repurposed fields for infrastructure availability)
+            electricityType: electricityType || null,
+            plumbingType: plumbingType || null,
+            // Solar/Land Infrastructure - Idealista Integration
+            hasRoadAccess,
+            hasSewerage,
+            hasSidewalk,
+            hasStreetLighting,
           };
           listingData = {
             isFurnished,
@@ -570,13 +586,13 @@ export function PropertyCharacteristicsForm({
         case "additionalSpaces":
           propertyData = {
             terrace,
-            terraceSize,
+            terraceSize: terraceSize && !isNaN(terraceSize) ? terraceSize : null,
             wineCellar,
-            wineCellarSize,
-            livingRoomSize,
-            balconyCount,
-            galleryCount,
-            buildingFloors,
+            wineCellarSize: wineCellarSize && !isNaN(wineCellarSize) ? wineCellarSize : null,
+            livingRoomSize: livingRoomSize && !isNaN(livingRoomSize) ? livingRoomSize : null,
+            balconyCount: balconyCount && !isNaN(balconyCount) ? balconyCount : null,
+            galleryCount: galleryCount && !isNaN(galleryCount) ? galleryCount : null,
+            buildingFloors: buildingFloors && !isNaN(buildingFloors) ? buildingFloors : null,
             builtInWardrobes,
           };
           break;
@@ -881,6 +897,18 @@ export function PropertyCharacteristicsForm({
   const [plumbingType, setPlumbingType] = useState(listing.plumbingType ?? "");
   const [plumbingStatus, setPlumbingStatus] = useState(
     listing.plumbingStatus ?? "",
+  );
+  // Solar/Land Infrastructure - Idealista Integration
+  const [hasRoadAccess, setHasRoadAccess] = useState(
+    listing.hasRoadAccess ?? false,
+  );
+  const [hasSewerage, setHasSewerage] = useState(listing.hasSewerage ?? false);
+  const [hasSidewalk, setHasSidewalk] = useState(listing.hasSidewalk ?? false);
+  const [hasStreetLighting, setHasStreetLighting] = useState(
+    listing.hasStreetLighting ?? false,
+  );
+  const [nearestLocationKm, setNearestLocationKm] = useState<number | null>(
+    listing.nearestLocationKm ?? null,
   );
   const [views, setViews] = useState(listing.views ?? false);
   const [mountainViews, setMountainViews] = useState(
@@ -1785,10 +1813,24 @@ export function PropertyCharacteristicsForm({
             setFridge={setFridge}
             setTv={setTv}
             setStoneware={setStoneware}
+            electricityType={electricityType}
+            plumbingType={plumbingType}
+            setElectricityType={setElectricityType}
+            setPlumbingType={setPlumbingType}
+            // Solar/Land Infrastructure
+            hasRoadAccess={hasRoadAccess}
+            hasSewerage={hasSewerage}
+            hasSidewalk={hasSidewalk}
+            hasStreetLighting={hasStreetLighting}
+            setHasRoadAccess={setHasRoadAccess}
+            setHasSewerage={setHasSewerage}
+            setHasSidewalk={setHasSidewalk}
+            setHasStreetLighting={setHasStreetLighting}
             getCardStyles={getCardStyles}
           />
 
-          {/* Additional Characteristics */}
+          {/* Additional Characteristics - hidden for solar */}
+          {propertyType !== "solar" && (
           <AdditionalCharacteristicsCard
             disabledAccessible={disabledAccessible}
             vpo={vpo}
@@ -1833,8 +1875,10 @@ export function PropertyCharacteristicsForm({
             setShowAdditionalCharacteristics={setShowAdditionalCharacteristics}
             getCardStyles={getCardStyles}
           />
+          )}
 
-          {/* Additional Spaces */}
+          {/* Additional Spaces - hidden for solar */}
+          {propertyType !== "solar" && (
           <AdditionalSpacesCard
             terrace={terrace}
             terraceSize={terraceSize}
@@ -1863,6 +1907,7 @@ export function PropertyCharacteristicsForm({
             setBuiltInWardrobes={setBuiltInWardrobes}
             getCardStyles={getCardStyles}
           />
+          )}
 
           {/* Rental Terms - Only shows for Rent listings */}
           <RentalTermsCard
@@ -1949,6 +1994,8 @@ export function PropertyCharacteristicsForm({
             onPropertyDetailsChange={() =>
               updateModuleState("propertyDetails", true)
             }
+            nearestLocationKm={nearestLocationKm}
+            setNearestLocationKm={setNearestLocationKm}
           />
 
           {/* Orientation and Exposure */}
@@ -1973,7 +2020,8 @@ export function PropertyCharacteristicsForm({
             getCardStyles={getCardStyles}
           />
 
-          {/* Premium Features */}
+          {/* Premium Features - hidden for solar */}
+          {propertyType !== "solar" && (
           <PremiumFeaturesCard
             propertyType={propertyType}
             views={views}
@@ -2034,8 +2082,10 @@ export function PropertyCharacteristicsForm({
             setCommunityArea={setCommunityArea}
             getCardStyles={getCardStyles}
           />
+          )}
 
-          {/* Materials */}
+          {/* Materials - hidden for solar */}
+          {propertyType !== "solar" && (
           <MaterialsCard
             mainFloorType={mainFloorType}
             shutterType={shutterType}
@@ -2064,6 +2114,7 @@ export function PropertyCharacteristicsForm({
             setShowMaterials={setShowMaterials}
             getCardStyles={getCardStyles}
           />
+          )}
 
           {/* Property Expenses */}
           <PropertyExpensesCard

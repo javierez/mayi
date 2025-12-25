@@ -52,6 +52,16 @@ export type Property = {
   energyCertification?: string;
   hasHeating: boolean;
   heatingType?: string;
+  electricityType?: string;
+  electricityStatus?: string;
+  plumbingType?: string;
+  plumbingStatus?: string;
+  // Solar/Land Infrastructure
+  hasRoadAccess?: boolean;
+  hasSewerage?: boolean;
+  hasSidewalk?: boolean;
+  hasStreetLighting?: boolean;
+  nearestLocationKm?: string | null;
   hasElevator: boolean;
   hasGarage: boolean;
   hasStorageRoom: boolean;

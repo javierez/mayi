@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Plus, CheckCheck, MessageCircle, Mail, Home, ExternalLink } from "lucide-react";
+import { Search, Plus, CheckCheck, MessageCircle, Mail, RefreshCw, Loader2 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -10,6 +10,7 @@ import { useInbox } from "~/hooks/use-inbox";
 import { InboxThreadList } from "./inbox-message-list";
 import { InboxConversationView } from "./inbox-message-detail";
 import { InboxComposeDialog } from "./inbox-compose-dialog";
+import { GmailConnectPrompt, GmailConnectionStatus } from "./gmail-connect-prompt";
 import type { InboxFilter } from "./inbox-types";
 
 export function InboxPageContent() {
@@ -21,6 +22,11 @@ export function InboxPageContent() {
     searchQuery,
     isComposeOpen,
     unreadCounts,
+    isGmailConnected,
+    isGmailLoading,
+    gmailEmail,
+    hasMorePages,
+    loadMore,
     selectThread,
     setFilter,
     setSearchQuery,
@@ -32,13 +38,15 @@ export function InboxPageContent() {
     sendMessage,
     openCompose,
     closeCompose,
+    refresh,
+    disconnectGmail,
   } = useInbox();
 
   // Mobile: show detail view when thread is selected
   const [showMobileDetail, setShowMobileDetail] = useState(false);
 
   const handleSelectThread = (threadId: string) => {
-    selectThread(threadId);
+    void selectThread(threadId);
     setShowMobileDetail(true);
   };
 
@@ -74,6 +82,24 @@ export function InboxPageContent() {
               className="pl-10"
             />
           </div>
+
+          {/* Refresh button */}
+          {isGmailConnected && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={refresh}
+              disabled={isGmailLoading}
+              className="hidden shadow-md sm:flex"
+            >
+              {isGmailLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-2 h-4 w-4" />
+              )}
+              <span className="hidden lg:inline">Actualizar</span>
+            </Button>
+          )}
 
           {/* Mark all as read */}
           <Button
@@ -152,6 +178,15 @@ export function InboxPageContent() {
         </button>
       </div>
 
+      {/* Gmail connection status */}
+      {isGmailConnected === false && filter === "email" && (
+        <GmailConnectPrompt className="mb-4" />
+      )}
+
+      {isGmailConnected && gmailEmail && filter === "email" && (
+        <GmailConnectionStatus email={gmailEmail} onDisconnect={disconnectGmail} />
+      )}
+
       {/* Main content - Card with split view */}
       <Card className="flex h-[calc(100vh-13rem)] overflow-hidden sm:h-[calc(100vh-14rem)] lg:h-[calc(100vh-16rem)]">
         {/* Thread List - Hidden on mobile when detail is shown */}
@@ -166,6 +201,9 @@ export function InboxPageContent() {
             selectedThreadId={selectedThreadId}
             onSelectThread={handleSelectThread}
             onToggleStar={toggleStarred}
+            hasMorePages={hasMorePages ?? false}
+            isLoading={isGmailLoading}
+            onLoadMore={loadMore}
           />
         </div>
 

@@ -41,6 +41,7 @@ import {
   isLandType,
   isRoomType,
   filterFeaturesByCategory,
+  mapAllowedUseToClassification,
   type IdealistaAddressVisibility,
   type IdealistaCoordinatesPrecision,
   type IdealistaCountry,
@@ -376,6 +377,12 @@ export async function buildIdealistaPropertyPayload(
     securityDoor?: boolean | null; // For garages: maps to automatic door
     alarm?: boolean | null; // For garages: maps to security alarm
     securityGuard?: boolean | null; // For garages: maps to security personnel
+    allowedUse?: number | null; // For solar/land: maps to featuresClassification* booleans
+    buildingFloors?: number | null; // For solar: maps to featuresFloorsBuildable
+    streetType?: string | null; // For solar: maps to featuresAccessType (urban, road, track, highway)
+    electricityType?: string | null; // For solar: "disponible" → featuresUtilitiesElectricity: true
+    plumbingType?: string | null; // For solar: "disponible" → featuresUtilitiesWater: true
+    heatingType?: string | null; // For solar: "disponible" → featuresUtilitiesNaturalGas: true
   };
 
   // Get and process images with watermarking (only active images for portal export)
@@ -497,13 +504,21 @@ export async function buildIdealistaPropertyPayload(
   };
 
   // Build features
-  // Area mapping for Idealista (NO FALLBACKS - use actual DB fields):
-  // - featuresAreaConstructed = builtSurfaceArea (superficie construida) = constructed/built area
-  // - featuresAreaUsable = squareMeter (superficie útil) = usable/living area
-  // IMPORTANT: Usable area cannot equal constructed area per Idealista requirements
+  // Area mapping for Idealista - DIFFERENT for solar/land vs other types:
+  //
+  // NON-SOLAR:
+  //   - builtSurfaceArea (Construida) → featuresAreaConstructed
+  //   - squareMeter (Superficie útil) → featuresAreaUsable
+  //
+  // SOLAR/LAND:
+  //   - builtSurfaceArea (Plot total) → featuresAreaPlot (REQUIRED)
+  //   - squareMeter (Edificable) → featuresAreaBuildable
+  //
+  const isLand = propertyCategory === "land";
+
   // Parse builtSurfaceArea (may be string or number in DB)
   const builtSurfaceAreaRaw = listing.builtSurfaceArea;
-  const areaConstructed =
+  const builtSurfaceAreaParsed =
     builtSurfaceAreaRaw !== null && builtSurfaceAreaRaw !== undefined
       ? Math.round(
           typeof builtSurfaceAreaRaw === "string"
@@ -512,26 +527,45 @@ export async function buildIdealistaPropertyPayload(
         )
       : undefined;
 
-  // Use squareMeter directly (no fallback)
-  const areaUsableRaw = listing.squareMeter ?? undefined;
+  // Parse squareMeter
+  const squareMeterParsed = listing.squareMeter ?? undefined;
 
-  // Only include usable area if it differs from constructed area and is > 0
+  // For non-land: usable area cannot equal constructed area per Idealista requirements
   const areaUsable =
-    areaUsableRaw !== undefined &&
-    areaUsableRaw > 0 &&
-    areaConstructed !== undefined &&
-    areaUsableRaw !== areaConstructed
-      ? areaUsableRaw
+    !isLand &&
+    squareMeterParsed !== undefined &&
+    squareMeterParsed > 0 &&
+    builtSurfaceAreaParsed !== undefined &&
+    squareMeterParsed !== builtSurfaceAreaParsed
+      ? squareMeterParsed
       : undefined;
 
   const propertyFeatures: IdealistaFeatures = {
     featuresType: propertyType ?? "flat",
-    // Only include area fields if we have actual values from database
-    ...(areaConstructed !== undefined && {
-      featuresAreaConstructed: areaConstructed,
-    }),
-    ...(areaUsable !== undefined && { featuresAreaUsable: areaUsable }),
-    featuresAreaPlot: listing.plotArea ?? undefined,
+
+    // Area fields - mapped differently for land vs non-land
+    // Non-land: builtSurfaceArea → featuresAreaConstructed
+    ...(!isLand &&
+      builtSurfaceAreaParsed !== undefined && {
+        featuresAreaConstructed: builtSurfaceAreaParsed,
+      }),
+    // Non-land: squareMeter → featuresAreaUsable (if different from constructed)
+    ...(!isLand && areaUsable !== undefined && { featuresAreaUsable: areaUsable }),
+
+    // Land: builtSurfaceArea → featuresAreaPlot (REQUIRED for land)
+    ...(isLand &&
+      builtSurfaceAreaParsed !== undefined && {
+        featuresAreaPlot: builtSurfaceAreaParsed,
+      }),
+    // Land: squareMeter → featuresAreaBuildable
+    ...(isLand &&
+      squareMeterParsed !== undefined &&
+      squareMeterParsed > 0 && {
+        featuresAreaBuildable: squareMeterParsed,
+      }),
+
+    // Legacy plotArea field (for non-land types that might have it)
+    ...(!isLand && listing.plotArea && { featuresAreaPlot: listing.plotArea }),
     // Schema: integer1to99 (min 1) - ensure at least 1 if bathrooms exist
     featuresBathroomNumber: listing.bathrooms
       ? Math.max(1, Math.round(Number(listing.bathrooms)))
@@ -583,6 +617,65 @@ export async function buildIdealistaPropertyPayload(
       listing.securityGuard !== null &&
       listing.securityGuard !== undefined && {
         featuresSecurityPersonnel: listing.securityGuard,
+      }),
+
+    // Land classification (only for solar/land properties)
+    // Maps Vesta's allowedUse (uso permitido) to Idealista's classification booleans
+    ...(propertyCategory === "land" &&
+      listing.allowedUse !== null &&
+      listing.allowedUse !== undefined && {
+        ...mapAllowedUseToClassification(listing.allowedUse),
+      }),
+
+    // Land-specific features (repurposed existing fields)
+    // Buildable floors: buildingFloors field repurposed for solar
+    ...(propertyCategory === "land" &&
+      listing.buildingFloors !== null &&
+      listing.buildingFloors !== undefined &&
+      listing.buildingFloors > 0 && {
+        featuresFloorsBuildable: listing.buildingFloors,
+      }),
+
+    // Access type: streetType field repurposed for solar (uses Idealista enum values directly)
+    ...(propertyCategory === "land" &&
+      listing.streetType && {
+        featuresAccessType: listing.streetType,
+      }),
+
+    // Utilities availability (solar only - derived from yes/no fields)
+    ...(propertyCategory === "land" &&
+      listing.electricityType === "disponible" && {
+        featuresUtilitiesElectricity: true,
+      }),
+    ...(propertyCategory === "land" &&
+      listing.plumbingType === "disponible" && {
+        featuresUtilitiesWater: true,
+      }),
+    ...(propertyCategory === "land" &&
+      listing.heatingType === "disponible" && {
+        featuresUtilitiesNaturalGas: true,
+      }),
+    // Additional land utilities - Infrastructure
+    ...(propertyCategory === "land" &&
+      listing.hasRoadAccess && {
+        featuresUtilitiesRoadAccess: true,
+      }),
+    ...(propertyCategory === "land" &&
+      listing.hasSewerage && {
+        featuresUtilitiesSewerage: true,
+      }),
+    ...(propertyCategory === "land" &&
+      listing.hasSidewalk && {
+        featuresUtilitiesSidewalk: true,
+      }),
+    ...(propertyCategory === "land" &&
+      listing.hasStreetLighting && {
+        featuresUtilitiesStreetLighting: true,
+      }),
+    ...(propertyCategory === "land" &&
+      listing.nearestLocationKm !== null &&
+      listing.nearestLocationKm !== undefined && {
+        featuresNearestLocationKm: Number(listing.nearestLocationKm),
       }),
 
     // Boolean features

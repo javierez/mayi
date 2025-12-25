@@ -16,6 +16,8 @@ import { ChevronDown, Loader, Search, CheckCircle } from "lucide-react";
 import {
   STREET_TYPE_VALUES,
   STREET_TYPE_LABELS,
+  ACCESS_TYPE_VALUES,
+  ACCESS_TYPE_LABELS,
 } from "~/lib/constants/street-type";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -67,6 +69,9 @@ interface LocationCardProps {
   setBuiltSurfaceArea?: (value: number) => void;
   setYearBuilt?: (value: number) => void;
   onPropertyDetailsChange?: () => void;
+  // Solar/Land Infrastructure - distance to urban center
+  nearestLocationKm?: number | null;
+  setNearestLocationKm?: (value: number | null) => void;
 }
 
 export function LocationCard({
@@ -91,6 +96,8 @@ export function LocationCard({
   setBuiltSurfaceArea,
   setYearBuilt,
   onPropertyDetailsChange,
+  nearestLocationKm,
+  setNearestLocationKm,
 }: LocationCardProps) {
   const [isUpdatingAddress, setIsUpdatingAddress] = useState(false);
   const [streetValue, setStreetValue] = useState(listing.street ?? "");
@@ -998,11 +1005,11 @@ export function LocationCard({
           />
         </div>
 
-        {/* Street Type - Only show for local property type */}
-        {propertyType === "local" && (
+        {/* Street Type (local) or Access Type (solar) */}
+        {(propertyType === "local" || propertyType === "solar") && (
           <div className="space-y-1.5">
             <Label htmlFor="streetType" className="text-sm">
-              Tipo de Calle
+              {propertyType === "solar" ? "Tipo de acceso" : "Tipo de Calle"}
             </Label>
             <Select
               value={streetType}
@@ -1012,17 +1019,56 @@ export function LocationCard({
               }}
               disabled={!canEdit}
             >
-              <SelectTrigger className="h-8 text-gray-500 [&>span]:text-sm [&>span]:font-medium [&>span]:text-gray-700">
-                <SelectValue placeholder="Seleccionar tipo de calle" />
+              <SelectTrigger className="h-8 text-gray-500">
+                <SelectValue
+                  placeholder={
+                    propertyType === "solar"
+                      ? "Seleccionar tipo de acceso"
+                      : "Seleccionar tipo de calle"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
-                {STREET_TYPE_VALUES.map((value) => (
-                  <SelectItem key={value} value={value} className="text-xs">
-                    {STREET_TYPE_LABELS[value]}
-                  </SelectItem>
-                ))}
+                {propertyType === "solar"
+                  ? ACCESS_TYPE_VALUES.map((value) => (
+                      <SelectItem key={value} value={value} className="text-xs">
+                        {ACCESS_TYPE_LABELS[value]}
+                      </SelectItem>
+                    ))
+                  : STREET_TYPE_VALUES.map((value) => (
+                      <SelectItem key={value} value={value} className="text-xs">
+                        {STREET_TYPE_LABELS[value]}
+                      </SelectItem>
+                    ))}
               </SelectContent>
             </Select>
+          </div>
+        )}
+
+        {/* Distance to urban center - only for solar */}
+        {propertyType === "solar" && (
+          <div className="space-y-1.5">
+            <Label htmlFor="nearestLocationKm" className="text-sm">
+              Distancia al núcleo urbano (km)
+            </Label>
+            <Input
+              id="nearestLocationKm"
+              type="number"
+              value={nearestLocationKm ?? ""}
+              onChange={(e) => {
+                const value =
+                  e.target.value === "" ? null : parseFloat(e.target.value);
+                setNearestLocationKm?.(
+                  value !== null && isNaN(value) ? null : value,
+                );
+                onUpdateModule(true);
+              }}
+              className="h-8 text-gray-500"
+              min="0"
+              step="0.1"
+              placeholder="0"
+              disabled={!canEdit}
+            />
           </div>
         )}
 

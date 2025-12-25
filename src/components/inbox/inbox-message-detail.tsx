@@ -29,6 +29,7 @@ import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Card, CardContent } from "~/components/ui/card";
+import { DeleteConfirmationModal } from "~/components/ui/delete-confirmation-modal";
 import type { InboxThread, ThreadMessage } from "./inbox-types";
 
 interface InboxConversationViewProps {
@@ -50,8 +51,8 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-// Single message bubble component
-function MessageBubble({ message, isFromAgent }: { message: ThreadMessage; isFromAgent: boolean }) {
+// Chat-style message bubble for WhatsApp
+function ChatBubble({ message, isFromAgent }: { message: ThreadMessage; isFromAgent: boolean }) {
   const formattedTime = format(message.timestamp, "HH:mm", { locale: es });
   const formattedDate = format(message.timestamp, "d MMM", { locale: es });
 
@@ -120,6 +121,115 @@ function MessageBubble({ message, isFromAgent }: { message: ThreadMessage; isFro
   );
 }
 
+// Email-style message card with clear sender header
+function EmailCard({ message, isFromAgent }: { message: ThreadMessage; isFromAgent: boolean }) {
+  const formattedTime = format(message.timestamp, "HH:mm", { locale: es });
+  const formattedDate = format(message.timestamp, "d MMM yyyy", { locale: es });
+
+  return (
+    <div className={cn(
+      "rounded-lg border",
+      isFromAgent
+        ? "border-rose-200/60 bg-rose-50/30 dark:border-rose-800/40 dark:bg-rose-950/20"
+        : "border-border/60 bg-background"
+    )}>
+      {/* Email header with sender info */}
+      <div className="flex items-start gap-3 border-b border-border/40 px-4 py-3">
+        {isFromAgent ? (
+          /* Distinct avatar for sent emails (from me) */
+          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-rose-500 text-white">
+            <Send className="h-4 w-4" />
+          </div>
+        ) : (
+          <Avatar className="h-9 w-9 flex-shrink-0">
+            {message.from.avatar ? (
+              <AvatarImage src={message.from.avatar} alt={message.from.name} />
+            ) : null}
+            <AvatarFallback className="bg-muted text-xs text-muted-foreground">
+              {getInitials(message.from.name)}
+            </AvatarFallback>
+          </Avatar>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className={cn(
+                "truncate text-sm font-medium",
+                isFromAgent ? "text-rose-700 dark:text-rose-300" : "text-foreground"
+              )}>
+                {message.from.name}
+                {isFromAgent && (
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">(Yo)</span>
+                )}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {message.from.email}
+              </p>
+            </div>
+            <span className="flex-shrink-0 text-xs text-muted-foreground">
+              {formattedDate} {formattedTime}
+            </span>
+          </div>
+          {/* Show recipient if sent */}
+          {isFromAgent && message.to ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Para: {message.to.email}
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Email body */}
+      <div className="px-4 py-3">
+        <div className="prose prose-sm max-w-none dark:prose-invert">
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+            {message.content}
+          </p>
+        </div>
+      </div>
+
+      {/* Attachments */}
+      {message.attachments && message.attachments.length > 0 ? (
+        <div className="border-t border-border/40 px-4 py-3">
+          <p className="mb-2 text-xs font-medium text-muted-foreground">
+            Adjuntos ({message.attachments.length})
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {message.attachments.map((attachment, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-2 rounded-md border border-border/60 bg-muted/30 px-2.5 py-1.5"
+              >
+                <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs">{attachment.name}</span>
+                {attachment.size ? (
+                  <span className="text-[10px] text-muted-foreground">({attachment.size})</span>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// Wrapper that chooses the right layout based on channel
+function MessageBubble({
+  message,
+  isFromAgent,
+  channel
+}: {
+  message: ThreadMessage;
+  isFromAgent: boolean;
+  channel: "whatsapp" | "email";
+}) {
+  if (channel === "email") {
+    return <EmailCard message={message} isFromAgent={isFromAgent} />;
+  }
+  return <ChatBubble message={message} isFromAgent={isFromAgent} />;
+}
+
 export function InboxConversationView({
   thread,
   onToggleStar,
@@ -130,6 +240,8 @@ export function InboxConversationView({
   showBackButton = false,
 }: InboxConversationViewProps) {
   const [replyContent, setReplyContent] = useState("");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   if (!thread) {
     return (
@@ -149,6 +261,16 @@ export function InboxConversationView({
     if (replyContent.trim()) {
       onSendReply(thread.id, replyContent);
       setReplyContent("");
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true);
+    try {
+      await onDelete(thread.id);
+      setIsDeleteDialogOpen(false);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -237,7 +359,7 @@ export function InboxConversationView({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => onDelete(thread.id)}
+              onClick={() => setIsDeleteDialogOpen(true)}
               className="text-muted-foreground hover:text-destructive"
             >
               <Trash2 className="h-4 w-4" />
@@ -261,6 +383,7 @@ export function InboxConversationView({
               key={message.id}
               message={message}
               isFromAgent={message.from.id === "agent"}
+              channel={thread.channel}
             />
           ))}
         </div>
@@ -305,6 +428,18 @@ export function InboxConversationView({
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="¿Eliminar conversación?"
+        description="El email se moverá a la papelera. Esta acción no se puede deshacer."
+        isDeleting={isDeleting}
+        confirmText="Eliminar"
+        loadingText="Eliminando..."
+      />
     </div>
   );
 }

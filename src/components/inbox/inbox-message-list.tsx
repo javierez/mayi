@@ -1,7 +1,8 @@
 "use client";
 
-import { SearchX } from "lucide-react";
+import { SearchX, Loader2 } from "lucide-react";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import { Button } from "~/components/ui/button";
 import { InboxThreadItem } from "./inbox-message-item";
 import type { InboxThread } from "./inbox-types";
 
@@ -10,6 +11,9 @@ interface InboxThreadListProps {
   selectedThreadId: string | null;
   onSelectThread: (threadId: string) => void;
   onToggleStar: (threadId: string) => void;
+  hasMorePages?: boolean;
+  isLoading?: boolean;
+  onLoadMore?: () => void;
 }
 
 export function InboxThreadList({
@@ -17,6 +21,9 @@ export function InboxThreadList({
   selectedThreadId,
   onSelectThread,
   onToggleStar,
+  hasMorePages = false,
+  isLoading = false,
+  onLoadMore,
 }: InboxThreadListProps) {
   if (threads.length === 0) {
     return (
@@ -44,6 +51,28 @@ export function InboxThreadList({
             onToggleStar={() => onToggleStar(thread.id)}
           />
         ))}
+
+        {/* Load more button */}
+        {hasMorePages && onLoadMore && (
+          <div className="p-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onLoadMore}
+              disabled={isLoading}
+              className="w-full"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Cargando...
+                </>
+              ) : (
+                "Cargar más"
+              )}
+            </Button>
+          </div>
+        )}
       </div>
     </ScrollArea>
   );

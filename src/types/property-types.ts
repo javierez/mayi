@@ -41,13 +41,9 @@ export interface PropertySubtypes {
 }
 
 // Core fields applicable to all property types
+// NOTE: IDs (propertyId, listingId, agentId) are intentionally NOT sent to AI
 export interface CorePropertyFields {
-  // Basic identification
-  propertyId?: number | string;
-  listingId?: number | string;
-  agentId?: string;
-
-  // Basic property info
+  // Basic property info (IDs excluded from AI context)
   propertyType: PropertyType;
   propertySubtype?: string;
   listingType?: string;
@@ -103,29 +99,28 @@ export interface GaragePropertyFields extends CorePropertyFields {
 export interface SolarPropertyFields extends CorePropertyFields {
   propertyType: "solar";
 
-  // Solar-specific measurements
+  // Measurements
   squareMeter?: number; // Total land area
   builtSurfaceArea?: number; // Buildable area
+  buildingFloors?: number; // Max floors allowed
 
-  // No construction year for undeveloped land
-  // No conservation status for land
-  // No building floors for land
+  // Land use
+  allowedUse?: number; // Allowed use enum (1-9)
+  streetType?: string; // Street/road type
 
-  // Orientation and characteristics
-  orientation?: string;
-  bright?: boolean;
+  // Utilities available
+  electricityType?: string;
+  plumbingType?: string;
+  heatingType?: string;
 
-  // Views (land can have views)
-  views?: boolean;
-  mountainViews?: boolean;
-  seaViews?: boolean;
-  beachfront?: boolean;
+  // Infrastructure
+  hasRoadAccess?: boolean;
+  hasSewerage?: boolean;
+  hasSidewalk?: boolean;
+  hasStreetLighting?: boolean;
 
-  // Location benefits
-  nearbyPublicTransport?: boolean;
-
-  // Note: Most other features don't apply to undeveloped solar properties
-  // as indicated by the conditional rendering in the card components
+  // Location
+  nearestLocationKm?: number;
 }
 
 // Fields for residential properties (piso, casa)
@@ -419,7 +414,7 @@ export function getRelevantFields(
   const propertyType = listing.propertyType;
 
   // Start with core fields that apply to all properties
-  // Note: propertyId and listingId are excluded - they're internal IDs with no meaning to the AI
+  // IMPORTANT: Never send IDs (propertyId, listingId, agentId, cadastralReference) to AI
   const relevantFields: Partial<PropertyListing> = {
     propertyType: listing.propertyType,
     propertySubtype: listing.propertySubtype,
@@ -450,20 +445,26 @@ export function getRelevantFields(
       occupationStatus: listing.occupationStatus, // featuresCurrentOccupation
     });
   } else if (isSolarProperty(propertyType)) {
-    // Solar properties - land-specific fields only
+    // Solar properties - land-specific fields for description generation
     Object.assign(relevantFields, {
+      // Measurements
       squareMeter: listing.squareMeter,
       builtSurfaceArea: listing.builtSurfaceArea,
-      // Orientation and characteristics
-      orientation: listing.orientation,
-      bright: listing.bright,
-      // Views
-      views: listing.views,
-      mountainViews: listing.mountainViews,
-      seaViews: listing.seaViews,
-      beachfront: listing.beachfront,
+      buildingFloors: listing.buildingFloors,
+      // Land use - convert number to readable label for AI
+      allowedUse: getAllowedUseLabel(listing.allowedUse),
+      streetType: listing.streetType,
+      // Utilities available
+      electricityType: listing.electricityType,
+      plumbingType: listing.plumbingType,
+      heatingType: listing.heatingType,
+      // Infrastructure
+      hasRoadAccess: listing.hasRoadAccess,
+      hasSewerage: listing.hasSewerage,
+      hasSidewalk: listing.hasSidewalk,
+      hasStreetLighting: listing.hasStreetLighting,
       // Location
-      nearbyPublicTransport: listing.nearbyPublicTransport,
+      nearestLocationKm: listing.nearestLocationKm,
     });
   } else if (
     isResidentialProperty(propertyType) ||
@@ -655,4 +656,22 @@ export function getPropertySubtypes(propertyType: PropertyType): string[] {
   };
 
   return subtypes[propertyType] || [];
+}
+
+/**
+ * Converts allowedUse number to a readable Spanish label for AI description generation
+ */
+export function getAllowedUseLabel(allowedUse: number | undefined | null): string | undefined {
+  if (allowedUse === undefined || allowedUse === null) return undefined;
+
+  const labels: Record<number, string> = {
+    1: "Agrícola",
+    2: "Comercial",
+    3: "Servicios (equipamientos públicos)",
+    4: "Industrial",
+    8: "Residencial plurifamiliar (bloques)",
+    9: "Residencial unifamiliar (chalets)",
+  };
+
+  return labels[allowedUse] ?? undefined;
 }

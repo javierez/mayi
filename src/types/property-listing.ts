@@ -165,6 +165,12 @@ export interface PropertyListing {
   loadingArea?: boolean;
   patio?: boolean;
   allowedUse?: number; // Allowed use for solar/land properties (1-9 enum)
+  // Solar/Land Infrastructure - Idealista Integration
+  hasRoadAccess?: boolean;
+  hasSewerage?: boolean;
+  hasSidewalk?: boolean;
+  hasStreetLighting?: boolean;
+  nearestLocationKm?: number;
   isDiafano?: boolean; // Only for 'local' property type - open-plan/open-space commercial
   hasEscaparate?: boolean; // Only for 'local' property type - has shop window/storefront
   streetType?: string; // Only for 'local' - traffic intensity: muy_transitada, transitada, moderada, poco_transitada
@@ -390,6 +396,12 @@ export function convertDbListingToPropertyListing(
     loadingArea: getBoolean(dbListing.loadingArea),
     patio: getBoolean(dbListing.patio),
     allowedUse: getNumber(dbListing.allowedUse),
+    // Solar/Land Infrastructure
+    hasRoadAccess: getBoolean(dbListing.hasRoadAccess),
+    hasSewerage: getBoolean(dbListing.hasSewerage),
+    hasSidewalk: getBoolean(dbListing.hasSidewalk),
+    hasStreetLighting: getBoolean(dbListing.hasStreetLighting),
+    nearestLocationKm: getNumber(dbListing.nearestLocationKm),
     isDiafano: getBoolean(dbListing.isDiafano),
     hasEscaparate: getBoolean(dbListing.hasEscaparate),
     streetType: (dbListing.streetType as string) ?? undefined,

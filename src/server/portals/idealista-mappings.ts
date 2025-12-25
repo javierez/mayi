@@ -943,6 +943,37 @@ export function isRoomType(idealistaType: string | null | undefined): boolean {
 }
 
 /**
+ * Map Vesta allowedUse (uso permitido) to Idealista land classification booleans
+ *
+ * Vesta stores a single numeric value, Idealista expects boolean fields.
+ * A land parcel can have multiple classifications in Idealista, but Vesta
+ * currently only supports one primary use.
+ *
+ * @param allowedUse - Vesta's allowedUse numeric value
+ * @returns Object with the corresponding Idealista classification boolean(s)
+ */
+export function mapAllowedUseToClassification(
+  allowedUse: number | null | undefined,
+): Record<string, boolean> {
+  switch (allowedUse) {
+    case 1: // Agrícola - no direct Idealista equivalent
+      return { featuresClassificationOther: true };
+    case 2: // Comercial
+      return { featuresClassificationCommercial: true };
+    case 3: // Servicios (public amenities like hospitals, schools)
+      return { featuresClassificationPublic: true };
+    case 4: // Industrial
+      return { featuresClassificationIndustrial: true };
+    case 8: // Residencial plurifamiliar (high-rise/blocks)
+      return { featuresClassificationBlocks: true };
+    case 9: // Residencial unifamiliar (detached houses/chalets)
+      return { featuresClassificationChalet: true };
+    default:
+      return {};
+  }
+}
+
+/**
  * Fields that should NOT be sent for specific property categories
  * per Idealista's additionalProperties: false in schemas
  *

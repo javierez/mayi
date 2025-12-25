@@ -377,6 +377,12 @@ export const properties = pgTable("properties", {
   loadingArea: boolean("loading_area"),
   patio: boolean("patio"),
   allowedUse: smallint("allowed_use"), // Allowed use for solar/land properties (1-9 enum)
+  // Solar/Land Infrastructure - Idealista Integration
+  hasRoadAccess: boolean("has_road_access").default(false), // featuresUtilitiesRoadAccess
+  hasSewerage: boolean("has_sewerage").default(false), // featuresUtilitiesSewerage
+  hasSidewalk: boolean("has_sidewalk").default(false), // featuresUtilitiesSidewalk
+  hasStreetLighting: boolean("has_street_lighting").default(false), // featuresUtilitiesStreetLighting
+  nearestLocationKm: decimal("nearest_location_km", { precision: 6, scale: 2 }), // featuresNearestLocationKm
   isDiafano: boolean("is_diafano"), // Only for 'local' property type - open-plan/open-space commercial
   hasEscaparate: boolean("has_escaparate"), // Only for 'local' property type - has shop window/storefront
   streetType: varchar("street_type", { length: 50 }), // Only for 'local' - traffic intensity: muy_transitada, transitada, moderada, poco_transitada

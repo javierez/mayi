@@ -2034,6 +2034,12 @@ export async function getListingDetails(listingId: number, accountId: number) {
         loadingArea: properties.loadingArea, // For Fotocasa FeatureId 204
         patio: properties.patio, // For Fotocasa FeatureId 263
         allowedUse: properties.allowedUse, // For Fotocasa FeatureId 21 (solar only)
+        // Solar/Land Infrastructure - Idealista Integration
+        hasRoadAccess: properties.hasRoadAccess,
+        hasSewerage: properties.hasSewerage,
+        hasSidewalk: properties.hasSidewalk,
+        hasStreetLighting: properties.hasStreetLighting,
+        nearestLocationKm: properties.nearestLocationKm,
         isDiafano: properties.isDiafano, // For local property type - open-plan
         hasEscaparate: properties.hasEscaparate, // For local property type - shop window
         streetType: properties.streetType, // For local property type - traffic intensity

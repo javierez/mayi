@@ -46,6 +46,14 @@ interface FeaturesCardProps {
   fridge: boolean;
   tv: boolean;
   stoneware: boolean;
+  // Solar utilities (repurposed fields for infrastructure availability)
+  electricityType?: string;
+  plumbingType?: string;
+  // Solar/Land Infrastructure - Idealista Integration
+  hasRoadAccess?: boolean;
+  hasSewerage?: boolean;
+  hasSidewalk?: boolean;
+  hasStreetLighting?: boolean;
   collapsedSections: Record<string, boolean>;
   saveState: SaveState;
   canEdit?: boolean;
@@ -78,6 +86,14 @@ interface FeaturesCardProps {
   setFridge: (value: boolean) => void;
   setTv: (value: boolean) => void;
   setStoneware: (value: boolean) => void;
+  // Solar utilities setters
+  setElectricityType?: (value: string) => void;
+  setPlumbingType?: (value: string) => void;
+  // Solar/Land Infrastructure setters
+  setHasRoadAccess?: (value: boolean) => void;
+  setHasSewerage?: (value: boolean) => void;
+  setHasSidewalk?: (value: boolean) => void;
+  setHasStreetLighting?: (value: boolean) => void;
   getCardStyles: (moduleName: "features") => string;
 }
 
@@ -142,6 +158,19 @@ export function FeaturesCard({
   setFridge,
   setTv,
   setStoneware,
+  electricityType,
+  plumbingType,
+  setElectricityType,
+  setPlumbingType,
+  // Solar/Land Infrastructure
+  hasRoadAccess,
+  hasSewerage,
+  hasSidewalk,
+  hasStreetLighting,
+  setHasRoadAccess,
+  setHasSewerage,
+  setHasSidewalk,
+  setHasStreetLighting,
   getCardStyles,
 }: FeaturesCardProps) {
   // Heating/Hot Water options (maps to Fotocasa FeatureId 320/321)
@@ -190,30 +219,171 @@ export function FeaturesCard({
           collapsedSections.features ? "max-h-0" : "max-h-[5000px]",
         )}
       >
+        {/* Solar/Land utilities section - simplified yes/no for infrastructure availability */}
         {propertyType === "solar" && (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <div className="mb-3 rounded-full bg-muted p-3">
-              <svg
-                className="h-6 w-6 text-muted-foreground"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.44-.896-6-2.364M3 15.364C4.56 14.896 6.66 14 9 14s4.44.896 6 2.364"
-                />
-              </svg>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <h4 className="text-xs font-medium text-muted-foreground">
+                Suministros disponibles
+              </h4>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="electricityType" className="text-sm">
+                    Electricidad
+                  </Label>
+                  <Select
+                    value={electricityType || undefined}
+                    onValueChange={(value) => {
+                      setElectricityType?.(value);
+                      onUpdateModule(true);
+                    }}
+                    disabled={!canEdit}
+                  >
+                    <SelectTrigger className="h-8 text-gray-500">
+                      <SelectValue placeholder="Seleccionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="disponible">Sí</SelectItem>
+                      <SelectItem value="no_disponible">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="plumbingType" className="text-sm">
+                    Agua
+                  </Label>
+                  <Select
+                    value={plumbingType || undefined}
+                    onValueChange={(value) => {
+                      setPlumbingType?.(value);
+                      onUpdateModule(true);
+                    }}
+                    disabled={!canEdit}
+                  >
+                    <SelectTrigger className="h-8 text-gray-500">
+                      <SelectValue placeholder="Seleccionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="disponible">Sí</SelectItem>
+                      <SelectItem value="no_disponible">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="heatingType" className="text-sm">
+                    Gas natural
+                  </Label>
+                  <Select
+                    value={heatingType || undefined}
+                    onValueChange={(value) => {
+                      setHeatingType(value);
+                      onUpdateModule(true);
+                    }}
+                    disabled={!canEdit}
+                  >
+                    <SelectTrigger className="h-8 text-gray-500">
+                      <SelectValue placeholder="Seleccionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="disponible">Sí</SelectItem>
+                      <SelectItem value="no_disponible">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
-            <p className="text-sm font-medium text-muted-foreground">
-              No aplicable para solares
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Los equipamientos y servicios no se aplican a este tipo de
-              propiedad
-            </p>
+            {/* Infrastructure section - Idealista fields */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-medium text-muted-foreground">
+                Infraestructura
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="hasRoadAccess" className="text-sm">
+                    Acceso carretera
+                  </Label>
+                  <Select
+                    value={hasRoadAccess ? "disponible" : "no_disponible"}
+                    onValueChange={(value) => {
+                      setHasRoadAccess?.(value === "disponible");
+                      onUpdateModule(true);
+                    }}
+                    disabled={!canEdit}
+                  >
+                    <SelectTrigger className="h-8 text-gray-500">
+                      <SelectValue placeholder="Seleccionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="disponible">Sí</SelectItem>
+                      <SelectItem value="no_disponible">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="hasSewerage" className="text-sm">
+                    Alcantarillado
+                  </Label>
+                  <Select
+                    value={hasSewerage ? "disponible" : "no_disponible"}
+                    onValueChange={(value) => {
+                      setHasSewerage?.(value === "disponible");
+                      onUpdateModule(true);
+                    }}
+                    disabled={!canEdit}
+                  >
+                    <SelectTrigger className="h-8 text-gray-500">
+                      <SelectValue placeholder="Seleccionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="disponible">Sí</SelectItem>
+                      <SelectItem value="no_disponible">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="hasSidewalk" className="text-sm">
+                    Acera
+                  </Label>
+                  <Select
+                    value={hasSidewalk ? "disponible" : "no_disponible"}
+                    onValueChange={(value) => {
+                      setHasSidewalk?.(value === "disponible");
+                      onUpdateModule(true);
+                    }}
+                    disabled={!canEdit}
+                  >
+                    <SelectTrigger className="h-8 text-gray-500">
+                      <SelectValue placeholder="Seleccionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="disponible">Sí</SelectItem>
+                      <SelectItem value="no_disponible">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="hasStreetLighting" className="text-sm">
+                    Alumbrado
+                  </Label>
+                  <Select
+                    value={hasStreetLighting ? "disponible" : "no_disponible"}
+                    onValueChange={(value) => {
+                      setHasStreetLighting?.(value === "disponible");
+                      onUpdateModule(true);
+                    }}
+                    disabled={!canEdit}
+                  >
+                    <SelectTrigger className="h-8 text-gray-500">
+                      <SelectValue placeholder="Seleccionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="disponible">Sí</SelectItem>
+                      <SelectItem value="no_disponible">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
           </div>
         )}
         {propertyType !== "solar" && (

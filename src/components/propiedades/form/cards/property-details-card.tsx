@@ -234,7 +234,9 @@ export function PropertyDetailsCard({
             <Label htmlFor="squareMeter" className="text-sm">
               {propertyType === "garaje"
                 ? "Medidas (m²)"
-                : "Superficie útil (m²)"}
+                : propertyType === "solar"
+                  ? "Edificable (m²)"
+                  : "Superficie útil (m²)"}
             </Label>
             <Input
               id="squareMeter"
@@ -251,7 +253,7 @@ export function PropertyDetailsCard({
             <div className="space-y-1.5">
               <Label htmlFor="builtSurfaceArea" className="text-sm">
                 {propertyType === "solar"
-                  ? "Edificable (m²)"
+                  ? "Superficie de parcela (m²)"
                   : "Construida (m²)"}
               </Label>
               <Input
@@ -305,17 +307,20 @@ export function PropertyDetailsCard({
             />
           </div>
         )}
-        {propertyType !== "garaje" && propertyType !== "solar" && (
+        {propertyType !== "garaje" && (
           <div className="space-y-1.5">
             <Label htmlFor="buildingFloors" className="text-sm">
-              Plantas edificio
+              {propertyType === "solar"
+                ? "Plantas edificables"
+                : "Plantas edificio"}
             </Label>
             <Input
               id="buildingFloors"
               type="number"
-              value={buildingFloors}
+              value={buildingFloors ?? ""}
               onChange={(e) => {
-                setBuildingFloors(parseInt(e.target.value));
+                const value = e.target.value;
+                setBuildingFloors(value === "" ? 0 : parseInt(value) || 0);
                 onUpdateModule(true);
               }}
               className="h-8 text-gray-500"
