@@ -41,7 +41,7 @@ function getHeader(
 }
 
 /**
- * Extract contact from email headers
+ * Extract contact from email headers (single contact)
  */
 export function extractContactFromHeaders(
   headers: gmail_v1.Schema$MessagePartHeader[] | undefined,
@@ -56,6 +56,55 @@ export function extractContactFromHeaders(
     name: name ? name : (email.split("@")[0] ?? email),
     email,
   };
+}
+
+/**
+ * Parse multiple email addresses from a header value
+ * Handles formats like: "John <john@x.com>, Jane <jane@y.com>, bob@z.com"
+ */
+function parseMultipleEmailAddresses(raw: string): InboxContact[] {
+  if (!raw) return [];
+
+  // Split by comma, but be careful with names that might contain commas
+  // This regex splits on commas that are followed by an email pattern or end of string
+  const addresses: string[] = [];
+  let current = "";
+  let inAngleBrackets = false;
+
+  for (const char of raw) {
+    if (char === "<") inAngleBrackets = true;
+    if (char === ">") inAngleBrackets = false;
+
+    if (char === "," && !inAngleBrackets) {
+      if (current.trim()) addresses.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  if (current.trim()) addresses.push(current.trim());
+
+  return addresses.map((addr) => {
+    const { name, email } = parseEmailAddress(addr);
+    return {
+      id: email,
+      name: name ? name : (email.split("@")[0] ?? email),
+      email,
+    };
+  });
+}
+
+/**
+ * Extract all contacts from email headers (multiple contacts)
+ */
+export function extractAllContactsFromHeaders(
+  headers: gmail_v1.Schema$MessagePartHeader[] | undefined,
+  headerName: string
+): InboxContact[] {
+  const value = getHeader(headers, headerName);
+  if (!value) return [];
+
+  return parseMultipleEmailAddresses(value);
 }
 
 /**
@@ -130,7 +179,8 @@ export function decodeMessageBody(
  * Extract attachments from Gmail message payload
  */
 export function extractAttachments(
-  payload: gmail_v1.Schema$MessagePart | undefined
+  payload: gmail_v1.Schema$MessagePart | undefined,
+  messageId?: string
 ): InboxAttachment[] {
   const attachments: InboxAttachment[] = [];
 
@@ -140,6 +190,8 @@ export function extractAttachments(
         name: part.filename,
         type: part.mimeType ?? "application/octet-stream",
         size: part.body.size ? `${Math.round(part.body.size / 1024)} KB` : undefined,
+        attachmentId: part.body.attachmentId,
+        messageId,
       });
     }
 
@@ -181,9 +233,10 @@ export function gmailMessageToThreadMessage(
 ): ThreadMessage {
   const headers = message.payload?.headers;
   const from = extractContactFromHeaders(headers, "From");
-  const to = extractContactFromHeaders(headers, "To");
+  const to = extractAllContactsFromHeaders(headers, "To");
+  const cc = extractAllContactsFromHeaders(headers, "Cc");
   const { content, htmlContent } = decodeMessageBody(message.payload);
-  const attachments = extractAttachments(message.payload);
+  const attachments = extractAttachments(message.payload, message.id ?? undefined);
   const status = getMessageStatus(message, userEmail);
 
   return {
@@ -191,7 +244,8 @@ export function gmailMessageToThreadMessage(
     threadId,
     status,
     from: from ?? { id: "unknown", name: "Unknown", email: "" },
-    to: to ?? undefined,
+    to: to.length > 0 ? to : undefined,
+    cc: cc.length > 0 ? cc : undefined,
     content: content ? content : (message.snippet ?? ""),
     htmlContent,
     timestamp: new Date(parseInt(message.internalDate ?? "0", 10)),

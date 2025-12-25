@@ -23,6 +23,9 @@ export interface InboxAttachment {
   type: string;
   size?: string;
   url?: string;
+  // Gmail-specific fields for downloading
+  attachmentId?: string;
+  messageId?: string;
 }
 
 // Related listing/property for a conversation
@@ -45,7 +48,8 @@ export interface ThreadMessage {
   threadId: string;
   status: MessageStatus;
   from: InboxContact;
-  to?: InboxContact;
+  to?: InboxContact[]; // All recipients
+  cc?: InboxContact[]; // CC recipients
   content: string;
   htmlContent?: string;
   timestamp: Date;
@@ -79,12 +83,19 @@ export interface InboxState {
   isComposeOpen: boolean;
 }
 
+export interface ComposeAttachment {
+  filename: string;
+  mimeType: string;
+  data: string; // Base64 encoded
+}
+
 export interface ComposeMessageData {
   channel: MessageChannel;
   recipientId: string;
   recipientName: string;
   subject?: string;
   content: string;
+  attachments?: ComposeAttachment[];
 }
 
 // For backwards compatibility during migration

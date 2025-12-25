@@ -174,6 +174,19 @@ export interface PropertyListing {
   isDiafano?: boolean; // Only for 'local' property type - open-plan/open-space commercial
   hasEscaparate?: boolean; // Only for 'local' property type - has shop window/storefront
   streetType?: string; // Only for 'local' - traffic intensity: muy_transitada, transitada, moderada, poco_transitada
+  // Local (commercial) property specific fields - Idealista integration
+  locatedAtCorner?: boolean; // Only for 'local' - property is on a corner
+  ubication?: string; // Only for 'local' - location type: street, mezzanine, shopping, etc.
+  facadeArea?: number; // Only for 'local' - meters of facade/storefront
+  windowsNumber?: number; // Only for 'local' - number of shop windows (escaparates)
+  bridgeCrane?: boolean; // Only for 'local' - has bridge crane (puente grúa)
+  smokeExtraction?: boolean; // Only for 'local' - has smoke extraction system
+  // Commercial transfer fields (only for 'local' property type)
+  isATransfer?: boolean; // Only for 'local' - indicates if the local is a transfer (traspaso)
+  priceTransfer?: string; // Only for 'local' - transfer price
+  commercialMainActivity?: string; // Only for 'local' - main commercial activity
+  commercialSecondaryActivity?: string; // Only for 'local' - secondary activity
+  transferEndContract?: string; // Only for 'local' - end of rental contract date (yyyy-mm format)
   finca?: boolean; // Only for 'casa' - indicates if the house has an estate/land
   superficieFinca?: number; // Only for 'casa' - surface area of the estate in m²
   gym?: boolean;
@@ -405,6 +418,19 @@ export function convertDbListingToPropertyListing(
     isDiafano: getBoolean(dbListing.isDiafano),
     hasEscaparate: getBoolean(dbListing.hasEscaparate),
     streetType: (dbListing.streetType as string) ?? undefined,
+    // Local (commercial) property specific fields
+    locatedAtCorner: getBoolean(dbListing.locatedAtCorner),
+    ubication: (dbListing.ubication as string) ?? undefined,
+    facadeArea: getNumber(dbListing.facadeArea),
+    windowsNumber: getNumber(dbListing.windowsNumber),
+    bridgeCrane: getBoolean(dbListing.bridgeCrane),
+    smokeExtraction: getBoolean(dbListing.smokeExtraction),
+    // Commercial transfer fields
+    isATransfer: getBoolean(dbListing.isATransfer),
+    priceTransfer: (dbListing.priceTransfer as string) ?? undefined,
+    commercialMainActivity: (dbListing.commercialMainActivity as string) ?? undefined,
+    commercialSecondaryActivity: (dbListing.commercialSecondaryActivity as string) ?? undefined,
+    transferEndContract: (dbListing.transferEndContract as string) ?? undefined,
     finca: getBoolean(dbListing.finca),
     superficieFinca: getNumber(dbListing.superficieFinca),
     gym: getBoolean(dbListing.gym),

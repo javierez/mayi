@@ -1,5 +1,6 @@
 import React from "react";
 import { Card } from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import {
   Select,
@@ -23,6 +24,10 @@ interface OrientationCardProps {
   collapsedSections: Record<string, boolean>;
   saveState: SaveState;
   canEdit?: boolean;
+  // Local (commercial) property specific fields
+  locatedAtCorner?: boolean;
+  facadeArea?: number | null;
+  windowsNumber?: number | null;
   onToggleSection: (section: string) => void;
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
@@ -30,6 +35,10 @@ interface OrientationCardProps {
   setIsBright: (value: boolean) => void;
   setHasEscaparate: (value: boolean) => void;
   setOrientation: (value: string) => void;
+  // Local (commercial) property setters
+  setLocatedAtCorner?: (value: boolean) => void;
+  setFacadeArea?: (value: number | null) => void;
+  setWindowsNumber?: (value: number | null) => void;
   getCardStyles: (moduleName: string) => string;
 }
 
@@ -42,6 +51,9 @@ export function OrientationCard({
   collapsedSections,
   saveState,
   canEdit = true,
+  locatedAtCorner,
+  facadeArea,
+  windowsNumber,
   onToggleSection,
   onSave,
   onUpdateModule,
@@ -49,6 +61,9 @@ export function OrientationCard({
   setIsBright,
   setHasEscaparate,
   setOrientation,
+  setLocatedAtCorner,
+  setFacadeArea,
+  setWindowsNumber,
   getCardStyles,
 }: OrientationCardProps) {
   return (
@@ -117,20 +132,78 @@ export function OrientationCard({
           </div>
         )}
         {propertyType === "local" && (
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="hasEscaparate"
-              checked={hasEscaparate}
-              onCheckedChange={(checked) => {
-                setHasEscaparate(checked as boolean);
-                onUpdateModule(true);
-              }}
-              disabled={!canEdit}
-            />
-            <Label htmlFor="hasEscaparate" className="text-sm">
-              Escaparate
-            </Label>
-          </div>
+          <>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="hasEscaparate"
+                checked={hasEscaparate}
+                onCheckedChange={(checked) => {
+                  setHasEscaparate(checked as boolean);
+                  onUpdateModule(true);
+                }}
+                disabled={!canEdit}
+              />
+              <Label htmlFor="hasEscaparate" className="text-sm">
+                Escaparate
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="locatedAtCorner"
+                checked={locatedAtCorner ?? false}
+                onCheckedChange={(checked) => {
+                  setLocatedAtCorner?.(checked as boolean);
+                  onUpdateModule(true);
+                }}
+                disabled={!canEdit}
+              />
+              <Label htmlFor="locatedAtCorner" className="text-sm">
+                Hace esquina
+              </Label>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="facadeArea" className="text-sm">
+                  Metros de fachada
+                </Label>
+                <Input
+                  id="facadeArea"
+                  type="number"
+                  value={facadeArea ?? ""}
+                  onChange={(e) => {
+                    const value = e.target.value === "" ? null : parseInt(e.target.value);
+                    setFacadeArea?.(value);
+                    onUpdateModule(true);
+                  }}
+                  className="h-8 text-gray-500"
+                  placeholder="0"
+                  min="1"
+                  max="999"
+                  disabled={!canEdit}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="windowsNumber" className="text-sm">
+                  Nº de escaparates
+                </Label>
+                <Input
+                  id="windowsNumber"
+                  type="number"
+                  value={windowsNumber ?? ""}
+                  onChange={(e) => {
+                    const value = e.target.value === "" ? null : parseInt(e.target.value);
+                    setWindowsNumber?.(value);
+                    onUpdateModule(true);
+                  }}
+                  className="h-8 text-gray-500"
+                  placeholder="0"
+                  min="1"
+                  max="99"
+                  disabled={!canEdit}
+                />
+              </div>
+            </div>
+          </>
         )}
         {propertyType !== "garaje" && (
           <div className="space-y-1.5">

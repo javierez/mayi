@@ -144,6 +144,12 @@ export type Property = {
   isDiafano?: boolean;
   hasEscaparate?: boolean;
   streetType?: string;
+  locatedAtCorner?: boolean;
+  ubication?: string;
+  facadeArea?: number;
+  windowsNumber?: number;
+  bridgeCrane?: boolean;
+  smokeExtraction?: boolean;
   // Property Expenses - Taxes & Fees
   ibi?: string;
   garbageTax?: string;
@@ -1114,6 +1120,12 @@ export type Listing = {
   shortTermLicense?: string | null;
   // Sale-specific fields
   occupationStatus?: string | null;
+  // Commercial Transfer fields (only for 'local' property type)
+  isATransfer?: boolean;
+  priceTransfer?: string | null;
+  commercialMainActivity?: string | null;
+  commercialSecondaryActivity?: string | null;
+  transferEndContract?: string | null;
   // Catalonia-specific
   priceReferenceIndex?: string | null;
   // Rental Terms - Deposit & Guarantees

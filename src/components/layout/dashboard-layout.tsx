@@ -786,6 +786,12 @@ export const DashboardLayout: FC<DashboardLayoutProps> = ({ children }) => {
         richColors
         closeButton
         swipeDirections={["top", "right"]}
+        toastOptions={{
+          classNames: {
+            closeButton:
+              "!bg-transparent !border-none !text-gray-400/50 hover:!text-gray-500 !right-1 !top-1 !left-auto !transform-none",
+          },
+        }}
       />
 
       {/* Sticky Notification Button */}

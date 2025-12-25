@@ -19,6 +19,12 @@ export interface FetchThreadsResult {
   nextPageToken?: string;
 }
 
+export interface EmailAttachment {
+  filename: string;
+  mimeType: string;
+  data: string; // Base64 encoded
+}
+
 export interface SendEmailOptions {
   to: string;
   subject: string;
@@ -26,6 +32,7 @@ export interface SendEmailOptions {
   htmlBody?: string;
   threadId?: string;
   replyToMessageId?: string;
+  attachments?: EmailAttachment[];
 }
 
 export interface SendEmailResult {
@@ -144,9 +151,10 @@ export async function fetchGmailThread(
  * Create MIME message for sending
  */
 function createMimeMessage(options: SendEmailOptions): string {
-  const { to, subject, body, htmlBody, replyToMessageId } = options;
+  const { to, subject, body, htmlBody, replyToMessageId, attachments } = options;
 
-  const boundary = `boundary_${Date.now()}`;
+  const mainBoundary = `boundary_main_${Date.now()}`;
+  const altBoundary = `boundary_alt_${Date.now()}`;
   const lines: string[] = [];
 
   // Headers
@@ -160,19 +168,62 @@ function createMimeMessage(options: SendEmailOptions): string {
     lines.push(`References: ${replyToMessageId}`);
   }
 
-  if (htmlBody) {
-    // Multipart message with text and HTML
-    lines.push(`Content-Type: multipart/alternative; boundary="${boundary}"`);
+  const hasAttachments = attachments && attachments.length > 0;
+
+  if (hasAttachments) {
+    // Multipart/mixed for attachments
+    lines.push(`Content-Type: multipart/mixed; boundary="${mainBoundary}"`);
     lines.push("");
-    lines.push(`--${boundary}`);
+
+    // Text/HTML body part
+    lines.push(`--${mainBoundary}`);
+
+    if (htmlBody) {
+      lines.push(`Content-Type: multipart/alternative; boundary="${altBoundary}"`);
+      lines.push("");
+      lines.push(`--${altBoundary}`);
+      lines.push("Content-Type: text/plain; charset=UTF-8");
+      lines.push("");
+      lines.push(body);
+      lines.push(`--${altBoundary}`);
+      lines.push("Content-Type: text/html; charset=UTF-8");
+      lines.push("");
+      lines.push(htmlBody);
+      lines.push(`--${altBoundary}--`);
+    } else {
+      lines.push("Content-Type: text/plain; charset=UTF-8");
+      lines.push("");
+      lines.push(body);
+    }
+
+    // Attachment parts
+    for (const attachment of attachments) {
+      lines.push(`--${mainBoundary}`);
+      lines.push(`Content-Type: ${attachment.mimeType}; name="${attachment.filename}"`);
+      lines.push("Content-Transfer-Encoding: base64");
+      lines.push(`Content-Disposition: attachment; filename="${attachment.filename}"`);
+      lines.push("");
+      // Split base64 data into 76-character lines (MIME standard)
+      const base64Data = attachment.data;
+      for (let i = 0; i < base64Data.length; i += 76) {
+        lines.push(base64Data.slice(i, i + 76));
+      }
+    }
+
+    lines.push(`--${mainBoundary}--`);
+  } else if (htmlBody) {
+    // Multipart/alternative for text and HTML (no attachments)
+    lines.push(`Content-Type: multipart/alternative; boundary="${altBoundary}"`);
+    lines.push("");
+    lines.push(`--${altBoundary}`);
     lines.push("Content-Type: text/plain; charset=UTF-8");
     lines.push("");
     lines.push(body);
-    lines.push(`--${boundary}`);
+    lines.push(`--${altBoundary}`);
     lines.push("Content-Type: text/html; charset=UTF-8");
     lines.push("");
     lines.push(htmlBody);
-    lines.push(`--${boundary}--`);
+    lines.push(`--${altBoundary}--`);
   } else {
     // Plain text only
     lines.push("Content-Type: text/plain; charset=UTF-8");
@@ -234,7 +285,8 @@ export async function replyToGmailThread(
   userId: string,
   threadId: string,
   content: string,
-  htmlContent?: string
+  htmlContent?: string,
+  attachments?: EmailAttachment[]
 ): Promise<SendEmailResult> {
   const gmail = await getGmailClient(userId);
   if (!gmail) {
@@ -284,6 +336,7 @@ export async function replyToGmailThread(
     htmlBody: htmlContent,
     threadId,
     replyToMessageId: messageIdHeader ?? undefined,
+    attachments,
   });
 }
 

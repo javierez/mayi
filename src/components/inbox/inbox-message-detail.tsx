@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -16,12 +16,13 @@ import {
   User,
   Check,
   CheckCheck,
-  Home,
-  MapPin,
-  Bed,
-  Bath,
-  Maximize,
-  ExternalLink,
+  Download,
+  FileImage,
+  FileSpreadsheet,
+  FileArchive,
+  File,
+  X,
+  Loader2,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -31,13 +32,21 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import { Card, CardContent } from "~/components/ui/card";
 import { DeleteConfirmationModal } from "~/components/ui/delete-confirmation-modal";
 import type { InboxThread, ThreadMessage } from "./inbox-types";
+import type { EmailAttachment } from "~/server/services/gmail-service";
+
+interface PendingAttachment {
+  file: File;
+  name: string;
+  type: string;
+  size: string;
+}
 
 interface InboxConversationViewProps {
   thread: InboxThread | null;
   onToggleStar: (threadId: string) => void;
   onToggleRead: (threadId: string) => void;
   onDelete: (threadId: string) => void;
-  onSendReply: (threadId: string, content: string) => void;
+  onSendReply: (threadId: string, content: string, attachments?: EmailAttachment[]) => void;
   onBack?: () => void;
   showBackButton?: boolean;
 }
@@ -49,6 +58,113 @@ function getInitials(name: string): string {
     .join("")
     .toUpperCase()
     .slice(0, 2);
+}
+
+function getFileIcon(filename: string) {
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+
+  // Images
+  if (["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp"].includes(ext)) {
+    return FileImage;
+  }
+  // Spreadsheets
+  if (["xls", "xlsx", "csv"].includes(ext)) {
+    return FileSpreadsheet;
+  }
+  // Archives
+  if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) {
+    return FileArchive;
+  }
+  // Documents (PDF, Word, etc.)
+  if (["pdf", "doc", "docx", "txt", "rtf"].includes(ext)) {
+    return FileText;
+  }
+  // Default
+  return File;
+}
+
+function buildDownloadUrl(attachment: { attachmentId?: string; messageId?: string; name: string }): string | null {
+  if (!attachment.attachmentId || !attachment.messageId) {
+    return null;
+  }
+  const params = new URLSearchParams({
+    messageId: attachment.messageId,
+    attachmentId: attachment.attachmentId,
+    filename: attachment.name,
+  });
+  return `/api/google/gmail/attachment?${params.toString()}`;
+}
+
+// Download button with loading state
+function DownloadButton({
+  url,
+  filename,
+  variant = "icon",
+}: {
+  url: string;
+  filename: string;
+  variant?: "icon" | "badge";
+}) {
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isDownloading) return;
+
+    setIsDownloading(true);
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Download failed");
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error("Download failed:", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  if (variant === "badge") {
+    return (
+      <button
+        type="button"
+        onClick={handleDownload}
+        disabled={isDownloading}
+        className="text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
+        title={isDownloading ? "Descargando..." : "Descargar"}
+      >
+        {isDownloading ? (
+          <Loader2 className="h-3 w-3 animate-spin" />
+        ) : (
+          <Download className="h-3 w-3" />
+        )}
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleDownload}
+      disabled={isDownloading}
+      className="flex-shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+      title={isDownloading ? "Descargando..." : "Descargar"}
+    >
+      {isDownloading ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Download className="h-4 w-4" />
+      )}
+    </button>
+  );
 }
 
 // Chat-style message bubble for WhatsApp
@@ -87,21 +203,29 @@ function ChatBubble({ message, isFromAgent }: { message: ThreadMessage; isFromAg
         {/* Attachments */}
         {message.attachments && message.attachments.length > 0 ? (
           <div className="space-y-1">
-            {message.attachments.map((attachment, index) => (
-              <Card key={index} className="shadow-sm">
-                <CardContent className="flex items-center gap-2 p-2">
-                  <div className="rounded-lg bg-muted/50 p-1.5">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="truncate text-xs font-medium">{attachment.name}</p>
-                    {attachment.size ? (
-                      <p className="text-[10px] text-muted-foreground">{attachment.size}</p>
+            {message.attachments.map((attachment, index) => {
+              const IconComponent = getFileIcon(attachment.name);
+              const downloadUrl = buildDownloadUrl(attachment);
+
+              return (
+                <Card key={index} className="shadow-sm">
+                  <CardContent className="flex items-center gap-2 p-2">
+                    <div className="rounded-lg bg-muted/50 p-1.5">
+                      <IconComponent className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate text-xs font-medium">{attachment.name}</p>
+                      {attachment.size ? (
+                        <p className="text-[10px] text-muted-foreground">{attachment.size}</p>
+                      ) : null}
+                    </div>
+                    {downloadUrl ? (
+                      <DownloadButton url={downloadUrl} filename={attachment.name} />
                     ) : null}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         ) : null}
 
@@ -170,10 +294,16 @@ function EmailCard({ message, isFromAgent }: { message: ThreadMessage; isFromAge
               {formattedDate} {formattedTime}
             </span>
           </div>
-          {/* Show recipient if sent */}
-          {isFromAgent && message.to ? (
+          {/* Show recipients if sent */}
+          {isFromAgent && message.to && message.to.length > 0 ? (
             <p className="mt-1 text-xs text-muted-foreground">
-              Para: {message.to.email}
+              Para: {message.to.map((r) => r.email).join(", ")}
+            </p>
+          ) : null}
+          {/* Show CC if present */}
+          {message.cc && message.cc.length > 0 ? (
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Cc: {message.cc.map((r) => r.email).join(", ")}
             </p>
           ) : null}
         </div>
@@ -195,18 +325,26 @@ function EmailCard({ message, isFromAgent }: { message: ThreadMessage; isFromAge
             Adjuntos ({message.attachments.length})
           </p>
           <div className="flex flex-wrap gap-2">
-            {message.attachments.map((attachment, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-2 rounded-md border border-border/60 bg-muted/30 px-2.5 py-1.5"
-              >
-                <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-xs">{attachment.name}</span>
-                {attachment.size ? (
-                  <span className="text-[10px] text-muted-foreground">({attachment.size})</span>
-                ) : null}
-              </div>
-            ))}
+            {message.attachments.map((attachment, index) => {
+              const IconComponent = getFileIcon(attachment.name);
+              const downloadUrl = buildDownloadUrl(attachment);
+
+              return (
+                <div
+                  key={index}
+                  className="flex items-center gap-2 rounded-md border border-border/60 bg-muted/30 px-2.5 py-1.5"
+                >
+                  <IconComponent className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs">{attachment.name}</span>
+                  {attachment.size ? (
+                    <span className="text-[10px] text-muted-foreground">({attachment.size})</span>
+                  ) : null}
+                  {downloadUrl ? (
+                    <DownloadButton url={downloadUrl} filename={attachment.name} variant="badge" />
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         </div>
       ) : null}
@@ -242,6 +380,62 @@ export function InboxConversationView({
   const [replyContent, setReplyContent] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
+  const [isSending, setIsSending] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Format file size
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // Handle file selection
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newAttachments: PendingAttachment[] = [];
+    for (const file of Array.from(files)) {
+      // Limit file size to 25MB (Gmail limit)
+      if (file.size > 25 * 1024 * 1024) {
+        continue;
+      }
+      newAttachments.push({
+        file,
+        name: file.name,
+        type: file.type || "application/octet-stream",
+        size: formatFileSize(file.size),
+      });
+    }
+
+    setPendingAttachments((prev) => [...prev, ...newAttachments]);
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, []);
+
+  // Remove pending attachment
+  const removePendingAttachment = useCallback((index: number) => {
+    setPendingAttachments((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  // Convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Remove data URL prefix (e.g., "data:image/png;base64,")
+        const base64 = result.split(",")[1] ?? "";
+        resolve(base64);
+      };
+      reader.onerror = reject;
+    });
+  };
 
   if (!thread) {
     return (
@@ -257,10 +451,28 @@ export function InboxConversationView({
     );
   }
 
-  const handleSendReply = () => {
-    if (replyContent.trim()) {
-      onSendReply(thread.id, replyContent);
+  const handleSendReply = async () => {
+    if (!replyContent.trim() && pendingAttachments.length === 0) return;
+
+    setIsSending(true);
+    try {
+      // Convert pending attachments to EmailAttachment format
+      let emailAttachments: EmailAttachment[] | undefined;
+      if (pendingAttachments.length > 0) {
+        emailAttachments = await Promise.all(
+          pendingAttachments.map(async (attachment) => ({
+            filename: attachment.name,
+            mimeType: attachment.type,
+            data: await fileToBase64(attachment.file),
+          }))
+        );
+      }
+
+      onSendReply(thread.id, replyContent, emailAttachments);
       setReplyContent("");
+      setPendingAttachments([]);
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -392,6 +604,32 @@ export function InboxConversationView({
       {/* Reply Section */}
       <div className="border-t border-border/40 p-3 sm:p-4">
         <div className="space-y-2 sm:space-y-3">
+          {/* Pending Attachments */}
+          {pendingAttachments.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {pendingAttachments.map((attachment, index) => {
+                const IconComponent = getFileIcon(attachment.name);
+                return (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 rounded-md border border-border/60 bg-muted/30 py-1 pl-2.5 pr-1"
+                  >
+                    <IconComponent className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="max-w-[120px] truncate text-xs">{attachment.name}</span>
+                    <span className="text-[10px] text-muted-foreground">({attachment.size})</span>
+                    <button
+                      type="button"
+                      onClick={() => removePendingAttachment(index)}
+                      className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+
           <Textarea
             value={replyContent}
             onChange={(e) => setReplyContent(e.target.value)}
@@ -400,22 +638,46 @@ export function InboxConversationView({
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                handleSendReply();
+                void handleSendReply();
               }
             }}
           />
           <div className="flex items-center justify-between">
-            <Button variant="ghost" size="sm" disabled className="hidden sm:flex">
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              onChange={handleFileSelect}
+              className="hidden"
+              accept="*/*"
+            />
+
+            {/* Attach button - only enabled for email */}
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={thread.channel !== "email"}
+              onClick={() => fileInputRef.current?.click()}
+              className="hidden sm:flex"
+            >
               <Paperclip className="mr-2 h-4 w-4" />
               Adjuntar
             </Button>
-            <Button variant="ghost" size="icon" disabled className="sm:hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={thread.channel !== "email"}
+              onClick={() => fileInputRef.current?.click()}
+              className="sm:hidden"
+            >
               <Paperclip className="h-4 w-4" />
             </Button>
+
             <Button
               size="sm"
-              onClick={handleSendReply}
-              disabled={!replyContent.trim()}
+              onClick={() => void handleSendReply()}
+              disabled={isSending || (!replyContent.trim() && pendingAttachments.length === 0)}
               className={cn(
                 thread.channel === "whatsapp"
                   ? "bg-amber-600 hover:bg-amber-700"
@@ -423,7 +685,7 @@ export function InboxConversationView({
               )}
             >
               <Send className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Enviar</span>
+              <span className="hidden sm:inline">{isSending ? "Enviando..." : "Enviar"}</span>
             </Button>
           </div>
         </div>

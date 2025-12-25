@@ -54,6 +54,9 @@ interface FeaturesCardProps {
   hasSewerage?: boolean;
   hasSidewalk?: boolean;
   hasStreetLighting?: boolean;
+  // Local (commercial) property specific fields
+  bridgeCrane?: boolean;
+  smokeExtraction?: boolean;
   collapsedSections: Record<string, boolean>;
   saveState: SaveState;
   canEdit?: boolean;
@@ -94,6 +97,9 @@ interface FeaturesCardProps {
   setHasSewerage?: (value: boolean) => void;
   setHasSidewalk?: (value: boolean) => void;
   setHasStreetLighting?: (value: boolean) => void;
+  // Local (commercial) property setters
+  setBridgeCrane?: (value: boolean) => void;
+  setSmokeExtraction?: (value: boolean) => void;
   getCardStyles: (moduleName: "features") => string;
 }
 
@@ -171,6 +177,11 @@ export function FeaturesCard({
   setHasSewerage,
   setHasSidewalk,
   setHasStreetLighting,
+  // Local (commercial) property
+  bridgeCrane,
+  smokeExtraction,
+  setBridgeCrane,
+  setSmokeExtraction,
   getCardStyles,
 }: FeaturesCardProps) {
   // Heating/Hot Water options (maps to Fotocasa FeatureId 320/321)
@@ -740,6 +751,40 @@ export function FeaturesCard({
                       </SelectContent>
                     </Select>
                   </div>
+                )}
+
+                {/* Local (commercial) property specific features */}
+                {propertyType === "local" && (
+                  <>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="smokeExtraction"
+                        checked={smokeExtraction ?? false}
+                        onCheckedChange={(checked) => {
+                          setSmokeExtraction?.(checked as boolean);
+                          onUpdateModule(true);
+                        }}
+                        disabled={!canEdit}
+                      />
+                      <Label htmlFor="smokeExtraction" className="text-sm">
+                        Extracción de humos
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="bridgeCrane"
+                        checked={bridgeCrane ?? false}
+                        onCheckedChange={(checked) => {
+                          setBridgeCrane?.(checked as boolean);
+                          onUpdateModule(true);
+                        }}
+                        disabled={!canEdit}
+                      />
+                      <Label htmlFor="bridgeCrane" className="text-sm">
+                        Puente grúa
+                      </Label>
+                    </div>
+                  </>
                 )}
 
                 <div className="space-y-2">

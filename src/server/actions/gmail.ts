@@ -18,6 +18,7 @@ import {
   unstarGmailThread,
   deleteGmailThread,
   type FetchThreadsOptions,
+  type EmailAttachment,
 } from "~/server/services/gmail-service";
 import type { InboxThread } from "~/components/inbox/inbox-types";
 
@@ -44,6 +45,7 @@ export interface SendEmailData {
   subject: string;
   body: string;
   htmlBody?: string;
+  attachments?: EmailAttachment[];
 }
 
 export interface ActionResult {
@@ -201,7 +203,8 @@ export async function sendGmailMessageAction(
 export async function replyToGmailThreadAction(
   threadId: string,
   content: string,
-  htmlContent?: string
+  htmlContent?: string,
+  attachments?: EmailAttachment[]
 ): Promise<SendResult> {
   try {
     const user = await getCurrentUser();
@@ -209,7 +212,7 @@ export async function replyToGmailThreadAction(
       return { success: false, error: "No autorizado" };
     }
 
-    const result = await replyToGmailThread(user.id, threadId, content, htmlContent);
+    const result = await replyToGmailThread(user.id, threadId, content, htmlContent, attachments);
     revalidatePath("/inbox");
 
     return {

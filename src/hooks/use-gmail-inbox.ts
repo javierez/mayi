@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import type { InboxThread, ComposeMessageData } from "~/components/inbox/inbox-types";
+import type { InboxThread, ComposeMessageData, InboxAttachment } from "~/components/inbox/inbox-types";
+import type { EmailAttachment } from "~/server/services/gmail-service";
 import {
   getGmailConnectionStatusAction,
   getGmailThreadsAction,
@@ -36,7 +37,7 @@ export interface UseGmailInboxReturn {
   toggleStarred: (threadId: string) => Promise<void>;
   deleteThread: (threadId: string) => Promise<boolean>;
   sendMessage: (data: ComposeMessageData) => Promise<boolean>;
-  sendReply: (threadId: string, content: string) => Promise<boolean>;
+  sendReply: (threadId: string, content: string, attachments?: EmailAttachment[]) => Promise<boolean>;
   disconnect: () => Promise<void>;
   checkConnection: () => Promise<void>;
 }
@@ -52,6 +53,10 @@ export function useGmailInbox(): UseGmailInboxReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
+
+  // Track last refresh time to avoid rapid refreshes
+  const lastRefreshTime = useRef<number>(0);
+  const REFRESH_COOLDOWN_MS = 30000; // 30 seconds
 
   // Check connection status
   const checkConnection = useCallback(async () => {
@@ -111,6 +116,7 @@ export function useGmailInbox(): UseGmailInboxReturn {
   useEffect(() => {
     if (isConnected === true) {
       void fetchThreads();
+      lastRefreshTime.current = Date.now();
     }
   }, [isConnected, fetchThreads]);
 
@@ -118,7 +124,25 @@ export function useGmailInbox(): UseGmailInboxReturn {
   const refresh = useCallback(async () => {
     setNextPageToken(null);
     await fetchThreads();
+    lastRefreshTime.current = Date.now();
   }, [fetchThreads]);
+
+  // Refresh on window focus (when user returns to tab)
+  useEffect(() => {
+    const handleFocus = () => {
+      // Only refresh if connected, not loading, and cooldown has passed
+      if (
+        isConnected &&
+        !isLoading &&
+        Date.now() - lastRefreshTime.current > REFRESH_COOLDOWN_MS
+      ) {
+        void refresh();
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [isConnected, isLoading, refresh]);
 
   // Load more threads
   const loadMore = useCallback(async () => {
@@ -248,10 +272,18 @@ export function useGmailInbox(): UseGmailInboxReturn {
     }
 
     try {
+      // Convert ComposeAttachment to EmailAttachment format
+      const attachments = data.attachments?.map((att) => ({
+        filename: att.filename,
+        mimeType: att.mimeType,
+        data: att.data,
+      }));
+
       const result = await sendGmailMessageAction({
         to: data.recipientId, // recipientId should be the email address
         subject: data.subject ?? "",
         body: data.content,
+        attachments,
       });
 
       if (result.success) {
@@ -270,9 +302,13 @@ export function useGmailInbox(): UseGmailInboxReturn {
   }, [refresh]);
 
   // Send reply
-  const sendReply = useCallback(async (threadId: string, content: string): Promise<boolean> => {
+  const sendReply = useCallback(async (
+    threadId: string,
+    content: string,
+    attachments?: EmailAttachment[]
+  ): Promise<boolean> => {
     try {
-      const result = await replyToGmailThreadAction(threadId, content);
+      const result = await replyToGmailThreadAction(threadId, content, undefined, attachments);
 
       if (result.success) {
         toast.success("Respuesta enviada");

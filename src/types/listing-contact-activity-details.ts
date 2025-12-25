@@ -179,6 +179,9 @@ export interface MessageReceivedDetails {
   isPending?: boolean;
   createdAt?: string;
   fotocasaLeadId?: string;
+  // Idealista-specific fields
+  idealistaLeadId?: string;
+  idealistaAdCode?: string;
 }
 
 // ============================================================================

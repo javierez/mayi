@@ -50,6 +50,34 @@ export const PROPERTY_FIELDS: FieldDefinition[] = [
     inputId: "shortTermLicense",
     cardName: "Información Básica",
   },
+  {
+    label: "Es un Traspaso",
+    keywords: ["traspaso", "transfer", "ceder", "negocio"],
+    sectionKey: "basicInfo",
+    inputId: "isATransfer",
+    cardName: "Información Básica",
+  },
+  {
+    label: "Precio del Traspaso",
+    keywords: ["precio traspaso", "transfer price", "coste traspaso"],
+    sectionKey: "basicInfo",
+    inputId: "priceTransfer",
+    cardName: "Información Básica",
+  },
+  {
+    label: "Actividad Principal",
+    keywords: ["actividad", "negocio", "comercio", "activity"],
+    sectionKey: "basicInfo",
+    inputId: "commercialMainActivity",
+    cardName: "Información Básica",
+  },
+  {
+    label: "Actividad Secundaria",
+    keywords: ["actividad secundaria", "secondary activity"],
+    sectionKey: "basicInfo",
+    inputId: "commercialSecondaryActivity",
+    cardName: "Información Básica",
+  },
 
   // ============================================
   // DISTRIBUCIÓN Y SUPERFICIE (propertyDetails)
@@ -286,6 +314,20 @@ export const PROPERTY_FIELDS: FieldDefinition[] = [
     cardName: "Equipamiento",
   },
   {
+    label: "Extracción de Humos",
+    keywords: ["humos", "extraccion", "smoke", "cocina industrial"],
+    sectionKey: "features",
+    inputId: "smokeExtraction",
+    cardName: "Equipamiento",
+  },
+  {
+    label: "Puente Grúa",
+    keywords: ["puente grua", "grua", "bridge crane", "industrial"],
+    sectionKey: "features",
+    inputId: "bridgeCrane",
+    cardName: "Equipamiento",
+  },
+  {
     label: "Amueblado",
     keywords: ["amueblado", "muebles", "furnished", "mobiliario"],
     sectionKey: "features",
@@ -329,6 +371,34 @@ export const PROPERTY_FIELDS: FieldDefinition[] = [
     keywords: ["escaparate", "vitrina", "showcase"],
     sectionKey: "orientation",
     inputId: "hasEscaparate",
+    cardName: "Orientación",
+  },
+  {
+    label: "En Esquina",
+    keywords: ["esquina", "corner", "chaflán"],
+    sectionKey: "orientation",
+    inputId: "locatedAtCorner",
+    cardName: "Orientación",
+  },
+  {
+    label: "Ubicación del Local",
+    keywords: ["ubicacion", "local", "calle", "entreplanta", "centro comercial"],
+    sectionKey: "propertyDetails",
+    inputId: "ubication",
+    cardName: "Distribución",
+  },
+  {
+    label: "Metros de Fachada",
+    keywords: ["fachada", "metros fachada", "facade"],
+    sectionKey: "orientation",
+    inputId: "facadeArea",
+    cardName: "Orientación",
+  },
+  {
+    label: "Número de Escaparates",
+    keywords: ["escaparates", "vitrinas", "windows"],
+    sectionKey: "orientation",
+    inputId: "windowsNumber",
     cardName: "Orientación",
   },
 

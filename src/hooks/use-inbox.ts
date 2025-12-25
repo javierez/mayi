@@ -8,6 +8,7 @@ import type {
   InboxFilter,
   ComposeMessageData,
 } from "~/components/inbox/inbox-types";
+import type { EmailAttachment } from "~/server/services/gmail-service";
 import {
   mockThreads,
   filterThreads,
@@ -172,7 +173,7 @@ export function useInbox() {
 
   // Send reply to thread
   const sendReply = useCallback(
-    async (threadId: string, replyContent: string) => {
+    async (threadId: string, replyContent: string, attachments?: EmailAttachment[]) => {
       if (!replyContent.trim()) {
         toast.error("El mensaje no puede estar vacio");
         return;
@@ -183,7 +184,7 @@ export function useInbox() {
 
       if (thread.channel === "email" && gmail.isConnected) {
         // Send via Gmail
-        const success = await gmail.sendReply(threadId, replyContent);
+        const success = await gmail.sendReply(threadId, replyContent, attachments);
         if (success) {
           // Refresh the selected thread data
           const updated = await gmail.selectThread(threadId);
@@ -204,7 +205,7 @@ export function useInbox() {
             name: "Tu",
             email: "agente@vesta.es",
           },
-          to: otherParticipant,
+          to: otherParticipant ? [otherParticipant] : undefined,
           content: replyContent,
           timestamp: new Date(),
         };
@@ -264,7 +265,7 @@ export function useInbox() {
           threadId: `thread-new-${Date.now()}`,
           status: "sent",
           from: agentContact,
-          to: recipientContact,
+          to: [recipientContact],
           content: data.content,
           timestamp: new Date(),
         };

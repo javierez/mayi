@@ -17,6 +17,10 @@ import { ModernSaveIndicator } from "../common/modern-save-indicator";
 import type { PropertyListing } from "~/types/property-listing";
 import type { SaveState } from "~/types/save-state";
 import { GARAGE_SUBTYPE_DISPLAY_NAMES } from "~/types/property-types";
+import {
+  COMMERCIAL_ACTIVITY_VALUES,
+  COMMERCIAL_ACTIVITY_LABELS,
+} from "~/lib/constants/commercial-activities";
 
 interface BasicInfoCardProps {
   listing: PropertyListing;
@@ -34,6 +38,12 @@ interface BasicInfoCardProps {
   rentalType?: "residential" | "seasonal" | "short_term";
   shortTermLicense?: string;
   occupationStatus?: "free" | "tenanted" | "bare_ownership" | "illegally_occupied";
+  // Commercial transfer fields (only for 'local' property type)
+  isATransfer?: boolean;
+  priceTransfer?: number | null;
+  commercialMainActivity?: string | null;
+  commercialSecondaryActivity?: string | null;
+  transferEndContract?: string | null;
   onToggleSection: (section: string) => void;
   onSave: () => Promise<void>;
   onUpdateModule: (hasChanges: boolean) => void;
@@ -49,6 +59,12 @@ interface BasicInfoCardProps {
   setRentalType?: (value: "residential" | "seasonal" | "short_term" | undefined) => void;
   setShortTermLicense?: (value: string) => void;
   setOccupationStatus?: (value: "free" | "tenanted" | "bare_ownership" | "illegally_occupied" | undefined) => void;
+  // Commercial transfer setters
+  setIsATransfer?: (value: boolean) => void;
+  setPriceTransfer?: (value: number | null) => void;
+  setCommercialMainActivity?: (value: string | null) => void;
+  setCommercialSecondaryActivity?: (value: string | null) => void;
+  setTransferEndContract?: (value: string | null) => void;
   getCardStyles: (moduleName: string) => string;
 }
 
@@ -67,6 +83,11 @@ export function BasicInfoCard({
   rentalType,
   shortTermLicense,
   occupationStatus,
+  isATransfer,
+  priceTransfer,
+  commercialMainActivity,
+  commercialSecondaryActivity,
+  transferEndContract,
   onToggleSection,
   onSave,
   onUpdateModule,
@@ -80,6 +101,11 @@ export function BasicInfoCard({
   setRentalType,
   setShortTermLicense,
   setOccupationStatus,
+  setIsATransfer,
+  setPriceTransfer,
+  setCommercialMainActivity,
+  setCommercialSecondaryActivity,
+  setTransferEndContract,
   getCardStyles,
 }: BasicInfoCardProps) {
   const currentListingType = listingTypes[0] ?? "";
@@ -615,6 +641,131 @@ export function BasicInfoCard({
               </Button>
             </div>
           </div>
+        )}
+
+        {/* Commercial Transfer Section - Only for 'local' property type */}
+        {propertyType === "local" && (
+          <>
+            <div className="my-2 border-t border-border" />
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="isATransfer"
+                  checked={isATransfer ?? false}
+                  onCheckedChange={(checked) => {
+                    setIsATransfer?.(checked as boolean);
+                    if (!checked) {
+                      setPriceTransfer?.(null);
+                      setCommercialMainActivity?.(null);
+                      setCommercialSecondaryActivity?.(null);
+                      setTransferEndContract?.(null);
+                    }
+                    onUpdateModule(true);
+                  }}
+                  disabled={!canEdit}
+                />
+                <Label htmlFor="isATransfer" className="text-sm font-medium">
+                  Es un traspaso
+                </Label>
+              </div>
+
+              {isATransfer && (
+                <div className="ml-6 space-y-3 border-l-2 pl-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="priceTransfer" className="text-sm">
+                      Precio del traspaso (€)
+                    </Label>
+                    <Input
+                      id="priceTransfer"
+                      type="number"
+                      value={priceTransfer ?? ""}
+                      onChange={(e) => {
+                        const value = e.target.value === "" ? null : parseFloat(e.target.value);
+                        setPriceTransfer?.(value);
+                        onUpdateModule(true);
+                      }}
+                      className="h-8 text-gray-500"
+                      placeholder="0"
+                      min="0"
+                      disabled={!canEdit}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="commercialMainActivity" className="text-sm">
+                      Actividad principal
+                    </Label>
+                    <Select
+                      value={commercialMainActivity ?? ""}
+                      onValueChange={(value) => {
+                        setCommercialMainActivity?.(value || null);
+                        onUpdateModule(true);
+                      }}
+                      disabled={!canEdit}
+                    >
+                      <SelectTrigger className="h-8 text-gray-500">
+                        <SelectValue placeholder="Seleccionar actividad" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COMMERCIAL_ACTIVITY_VALUES.map((activity) => (
+                          <SelectItem key={activity} value={activity}>
+                            {COMMERCIAL_ACTIVITY_LABELS[activity]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="commercialSecondaryActivity" className="text-sm">
+                      Actividad secundaria
+                    </Label>
+                    <Select
+                      value={commercialSecondaryActivity ?? ""}
+                      onValueChange={(value) => {
+                        setCommercialSecondaryActivity?.(value || null);
+                        onUpdateModule(true);
+                      }}
+                      disabled={!canEdit}
+                    >
+                      <SelectTrigger className="h-8 text-gray-500">
+                        <SelectValue placeholder="Seleccionar actividad" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COMMERCIAL_ACTIVITY_VALUES.map((activity) => (
+                          <SelectItem key={activity} value={activity}>
+                            {COMMERCIAL_ACTIVITY_LABELS[activity]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Transfer End Contract - Only for rent listings */}
+                  {["Rent", "RentWithOption", "RoomSharing"].includes(currentListingType) && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="transferEndContract" className="text-sm">
+                        Fin del contrato (YYYY-MM)
+                      </Label>
+                      <Input
+                        id="transferEndContract"
+                        type="text"
+                        value={transferEndContract ?? ""}
+                        onChange={(e) => {
+                          setTransferEndContract?.(e.target.value || null);
+                          onUpdateModule(true);
+                        }}
+                        className="h-8 text-gray-500"
+                        placeholder="2025-12"
+                        pattern="\d{4}-\d{2}"
+                        disabled={!canEdit}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </>
         )}
 
         <div className="my-2 border-t border-border" />

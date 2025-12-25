@@ -1,7 +1,19 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { MessageCircle, Mail, Send, Search } from "lucide-react";
+import { useState, useMemo, useRef, useCallback } from "react";
+import {
+  MessageCircle,
+  Mail,
+  Send,
+  Search,
+  Paperclip,
+  FileText,
+  FileImage,
+  FileSpreadsheet,
+  FileArchive,
+  File,
+  X,
+} from "lucide-react";
 import { cn } from "~/lib/utils";
 import {
   Dialog,
@@ -18,6 +30,23 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { mockContacts } from "./mock-inbox-data";
 import type { MessageChannel, ComposeMessageData, InboxContact } from "./inbox-types";
+import type { EmailAttachment } from "~/server/services/gmail-service";
+
+interface PendingAttachment {
+  file: File;
+  name: string;
+  type: string;
+  size: string;
+}
+
+function getFileIcon(filename: string) {
+  const ext = filename.split(".").pop()?.toLowerCase() ?? "";
+  if (["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp"].includes(ext)) return FileImage;
+  if (["xls", "xlsx", "csv"].includes(ext)) return FileSpreadsheet;
+  if (["zip", "rar", "7z", "tar", "gz"].includes(ext)) return FileArchive;
+  if (["pdf", "doc", "docx", "txt", "rtf"].includes(ext)) return FileText;
+  return File;
+}
 
 interface InboxComposeDialogProps {
   isOpen: boolean;
@@ -45,6 +74,56 @@ export function InboxComposeDialog({
   const [showRecipientDropdown, setShowRecipientDropdown] = useState(false);
   const [subject, setSubject] = useState("");
   const [content, setContent] = useState("");
+  const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
+  const [isSending, setIsSending] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Format file size
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // Handle file selection
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newAttachments: PendingAttachment[] = [];
+    for (const file of Array.from(files)) {
+      // Limit file size to 25MB (Gmail limit)
+      if (file.size > 25 * 1024 * 1024) continue;
+      newAttachments.push({
+        file,
+        name: file.name,
+        type: file.type || "application/octet-stream",
+        size: formatFileSize(file.size),
+      });
+    }
+
+    setPendingAttachments((prev) => [...prev, ...newAttachments]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, []);
+
+  // Remove pending attachment
+  const removePendingAttachment = useCallback((index: number) => {
+    setPendingAttachments((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  // Convert file to base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        const base64 = result.split(",")[1] ?? "";
+        resolve(base64);
+      };
+      reader.onerror = reject;
+    });
+  };
 
   // Filter contacts based on search
   const filteredContacts = useMemo(() => {
@@ -64,23 +143,42 @@ export function InboxComposeDialog({
     setShowRecipientDropdown(false);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!selectedRecipient || !content.trim()) return;
 
-    onSend({
-      channel,
-      recipientId: selectedRecipient.id,
-      recipientName: selectedRecipient.name,
-      subject: channel === "email" ? subject : undefined,
-      content,
-    });
+    setIsSending(true);
+    try {
+      // Convert attachments to base64 if email
+      let attachments: { filename: string; mimeType: string; data: string }[] | undefined;
+      if (channel === "email" && pendingAttachments.length > 0) {
+        attachments = await Promise.all(
+          pendingAttachments.map(async (attachment) => ({
+            filename: attachment.name,
+            mimeType: attachment.type,
+            data: await fileToBase64(attachment.file),
+          }))
+        );
+      }
 
-    // Reset form
-    setChannel("whatsapp");
-    setRecipientSearch("");
-    setSelectedRecipient(null);
-    setSubject("");
-    setContent("");
+      onSend({
+        channel,
+        recipientId: selectedRecipient.id,
+        recipientName: selectedRecipient.name,
+        subject: channel === "email" ? subject : undefined,
+        content,
+        attachments,
+      });
+
+      // Reset form
+      setChannel("whatsapp");
+      setRecipientSearch("");
+      setSelectedRecipient(null);
+      setSubject("");
+      setContent("");
+      setPendingAttachments([]);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleClose = () => {
@@ -90,6 +188,7 @@ export function InboxComposeDialog({
     setSelectedRecipient(null);
     setSubject("");
     setContent("");
+    setPendingAttachments([]);
     onClose();
   };
 
@@ -224,6 +323,64 @@ export function InboxComposeDialog({
               className="min-h-[120px] resize-none"
             />
           </div>
+
+          {/* Attachments (email only) */}
+          {channel === "email" ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold tracking-wide text-muted-foreground">
+                  ADJUNTOS
+                </Label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  accept="*/*"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="h-7 text-xs"
+                >
+                  <Paperclip className="mr-1.5 h-3 w-3" />
+                  Adjuntar archivo
+                </Button>
+              </div>
+
+              {pendingAttachments.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {pendingAttachments.map((attachment, index) => {
+                    const IconComponent = getFileIcon(attachment.name);
+                    return (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 rounded-md border border-border/60 bg-muted/30 py-1 pl-2.5 pr-1"
+                      >
+                        <IconComponent className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="max-w-[100px] truncate text-xs">{attachment.name}</span>
+                        <span className="text-[10px] text-muted-foreground">({attachment.size})</span>
+                        <button
+                          type="button"
+                          onClick={() => removePendingAttachment(index)}
+                          className="rounded p-0.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Maximo 25 MB por archivo
+                </p>
+              )}
+            </div>
+          ) : null}
         </div>
 
         {/* Footer */}
@@ -232,8 +389,8 @@ export function InboxComposeDialog({
             Cancelar
           </Button>
           <Button
-            onClick={handleSend}
-            disabled={!canSend}
+            onClick={() => void handleSend()}
+            disabled={!canSend || isSending}
             className={cn(
               "shadow-md",
               channel === "whatsapp"
@@ -242,7 +399,7 @@ export function InboxComposeDialog({
             )}
           >
             <Send className="mr-2 h-4 w-4" />
-            Enviar {channel === "whatsapp" ? "WhatsApp" : "email"}
+            {isSending ? "Enviando..." : `Enviar ${channel === "whatsapp" ? "WhatsApp" : "email"}`}
           </Button>
         </div>
       </DialogContent>

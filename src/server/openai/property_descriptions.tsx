@@ -11,8 +11,9 @@ import {
   type PropertyType,
 } from "~/types/property-types";
 import { getSquareMeter, getBuiltSurfaceArea } from "~/lib/properties/area-utils";
+import { generateText } from "~/server/ai/text-client";
 
-// Initialize OpenAI client
+// OpenAI client for file uploads only (not used for text generation)
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -57,18 +58,10 @@ async function searchNeighborhoodInfo(
     const searchQuery =
       `${street ? `${street} ` : ""}${neighborhood} ${city ?? ""} neighborhood amenities restaurants parks attractions`.trim();
 
-    // Use OpenAI's web search capability through a separate API call
-    const searchResponse = await openai.chat.completions.create({
-      model: "gpt-5-mini-2025-08-07",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a helpful assistant that searches for information about neighborhoods and specific areas. Provide positive information about local amenities, attractions, restaurants, parks, schools, and lifestyle benefits. Only mention positive aspects that would appeal to potential residents.",
-        },
-        {
-          role: "user",
-          content: `Search for information about the area "${searchQuery}". Find positive details about:
+    const systemPrompt =
+      "You are a helpful assistant that searches for information about neighborhoods and specific areas. Provide positive information about local amenities, attractions, restaurants, parks, schools, and lifestyle benefits. Only mention positive aspects that would appeal to potential residents.";
+
+    const userPrompt = `Search for information about the area "${searchQuery}". Find positive details about:
           - Restaurants and dining options
           - Shopping areas and markets
           - Parks and green spaces
@@ -77,13 +70,10 @@ async function searchNeighborhoodInfo(
           - Cultural attractions
           - Lifestyle benefits
           ${street ? `- Specific advantages of the ${street} area` : ""}
-          
-          Provide a brief summary of the most appealing aspects of this location for potential residents.`,
-        },
-      ],
-    });
 
-    return searchResponse.choices[0]?.message?.content ?? null;
+          Provide a brief summary of the most appealing aspects of this location for potential residents.`;
+
+    return await generateText(systemPrompt, userPrompt);
   } catch (error) {
     console.error("Error searching neighborhood info:", error);
     return null;
@@ -404,62 +394,43 @@ ${EXAMPLES_FILE_ID ? `CRITICAL: Before writing, carefully study the uploaded exa
     // Merge user config with defaults (currently unused)
     // const finalConfig = { ...defaultConfig, ...aiConfig };
 
-    // Call OpenAI API with all customizable parameters
-    const completion = await openai.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: (() => {
-            let systemMessage = `You are a professional real estate copywriter who specializes in creating engaging property descriptions in Spanish. You understand the unique characteristics and selling points of different property types including residential properties (pisos, casas), commercial spaces (locales), garages, and land (solares).`;
+    // Build system prompt
+    let systemMessage = `You are a professional real estate copywriter who specializes in creating engaging property descriptions in Spanish. You understand the unique characteristics and selling points of different property types including residential properties (pisos, casas), commercial spaces (locales), garages, and land (solares).`;
 
-            if (accountContext && EXAMPLES_FILE_ID) {
-              systemMessage +=
-                " You have access to property description examples via an uploaded file and specific company information to personalize the descriptions. You MUST carefully study the examples file to understand and replicate the exact writing style, tone, vocabulary, and structure. Your primary goal is to match the patterns demonstrated in the examples - study how they describe properties, create emotional connections, use specific language, and structure their narrative flow. Then use the company context to make descriptions feel authentic to that specific real estate agency.";
-            } else if (EXAMPLES_FILE_ID) {
-              systemMessage +=
-                " You have access to property description examples via an uploaded file. You MUST carefully study these examples to understand and replicate the exact writing style, tone, vocabulary, and structure. Your primary goal is to match the patterns demonstrated in the examples - study how they describe properties, create emotional connections, use specific language, and structure their narrative flow. Your description should feel like it was written by the same person who wrote the examples.";
-            } else if (accountContext) {
-              systemMessage +=
-                " You have been provided with specific company information to personalize the descriptions. Use this context to make descriptions feel authentic to that specific real estate agency - naturally incorporating their brand identity and contact information when appropriate.";
-            }
+    if (accountContext && EXAMPLES_FILE_ID) {
+      systemMessage +=
+        " You have access to property description examples via an uploaded file and specific company information to personalize the descriptions. You MUST carefully study the examples file to understand and replicate the exact writing style, tone, vocabulary, and structure. Your primary goal is to match the patterns demonstrated in the examples - study how they describe properties, create emotional connections, use specific language, and structure their narrative flow. Then use the company context to make descriptions feel authentic to that specific real estate agency.";
+    } else if (EXAMPLES_FILE_ID) {
+      systemMessage +=
+        " You have access to property description examples via an uploaded file. You MUST carefully study these examples to understand and replicate the exact writing style, tone, vocabulary, and structure. Your primary goal is to match the patterns demonstrated in the examples - study how they describe properties, create emotional connections, use specific language, and structure their narrative flow. Your description should feel like it was written by the same person who wrote the examples.";
+    } else if (accountContext) {
+      systemMessage +=
+        " You have been provided with specific company information to personalize the descriptions. Use this context to make descriptions feel authentic to that specific real estate agency - naturally incorporating their brand identity and contact information when appropriate.";
+    }
 
-            // Add property-type specific guidance
-            const propertyType = relevantListing.propertyType;
-            if (propertyType === "garaje") {
-              systemMessage +=
-                " For garage properties, focus on practical aspects like size, accessibility, security features, building amenities, and location convenience. Emphasize the value and utility for vehicle storage and the peace of mind it provides.";
-            } else if (propertyType === "solar") {
-              systemMessage +=
-                " For land/solar properties, emphasize development potential, location advantages, views, accessibility, and investment opportunities. Focus on the possibilities and vision for future development while highlighting current land characteristics.";
-            } else if (propertyType === "local") {
-              systemMessage +=
-                " For commercial properties, focus on business potential, location advantages, foot traffic, accessibility, layout flexibility, and features that would attract businesses or investors.";
-            } else {
-              systemMessage +=
-                " For residential properties, create emotional connections by describing lifestyle benefits, comfort features, and how the space would feel as a home.";
-            }
+    // Add property-type specific guidance
+    const propertyType = relevantListing.propertyType;
+    if (propertyType === "garaje") {
+      systemMessage +=
+        " For garage properties, focus on practical aspects like size, accessibility, security features, building amenities, and location convenience. Emphasize the value and utility for vehicle storage and the peace of mind it provides.";
+    } else if (propertyType === "solar") {
+      systemMessage +=
+        " For land/solar properties, emphasize development potential, location advantages, views, accessibility, and investment opportunities. Focus on the possibilities and vision for future development while highlighting current land characteristics.";
+    } else if (propertyType === "local") {
+      systemMessage +=
+        " For commercial properties, focus on business potential, location advantages, foot traffic, accessibility, layout flexibility, and features that would attract businesses or investors.";
+    } else {
+      systemMessage +=
+        " For residential properties, create emotional connections by describing lifestyle benefits, comfort features, and how the space would feel as a home.";
+    }
 
-            systemMessage +=
-              " You are extremely careful to only mention features and characteristics that are explicitly confirmed in the filtered property data provided. Write in a flowing narrative style without using numbers, bullet points, or section breaks. When neighborhood information is provided, use it to enhance the description by highlighting local amenities, attractions, and lifestyle benefits that would appeal to potential buyers or renters.";
+    systemMessage +=
+      " You are extremely careful to only mention features and characteristics that are explicitly confirmed in the filtered property data provided. Write in a flowing narrative style without using numbers, bullet points, or section breaks. When neighborhood information is provided, use it to enhance the description by highlighting local amenities, attractions, and lifestyle benefits that would appeal to potential buyers or renters.";
 
-            return systemMessage;
-          })(),
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      model: "gpt-5-mini-2025-08-07",
-      // Note: reasoningEffort and verbosity might be specific to certain model versions
-      // and may need to be added as custom parameters if supported
-    });
+    // Generate description using unified AI client
+    const description = await generateText(systemMessage, prompt);
 
-    // Return the generated description
-    return (
-      completion.choices[0]?.message?.content ??
-      "No se pudo generar la descripción"
-    );
+    return description ?? "No se pudo generar la descripción";
   } catch (error) {
     console.error("Error generating property description:", error);
     throw new Error("Failed to generate property description");
@@ -510,12 +481,8 @@ ${await formatAccountContextForPrompt(accountContext)}
 Use this context to maintain consistency with the company's style and approach.`;
     }
 
-    // Call OpenAI API for short description
-    const completion = await openai.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: `You are an expert at creating ultra-concise, compelling property summaries. Your specialty is distilling full property descriptions into powerful, concise summaries that capture the essence and main selling points in 200 characters or less. You maintain the original tone and style while focusing on the most attractive features.
+    // Generate short description using unified AI client
+    const systemPrompt = `You are an expert at creating ultra-concise, compelling property summaries. Your specialty is distilling full property descriptions into powerful, concise summaries that capture the essence and main selling points in 200 characters or less. You maintain the original tone and style while focusing on the most attractive features.
 
 Key principles:
 - Extract the most compelling aspects from the full description
@@ -525,18 +492,10 @@ Key principles:
 - Make it perfect for quick scanning and immediate impact
 - Ensure it works well for property cards, previews, and social media
 - Be extremely selective with words - every character counts
-- Prioritize impact over completeness`,
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      model: "gpt-5-mini-2025-08-07",
-    });
+- Prioritize impact over completeness`;
 
     const shortDescription =
-      completion.choices[0]?.message?.content ??
+      (await generateText(systemPrompt, prompt)) ??
       "No se pudo generar la descripción corta";
 
     // Ensure it's within the character limit

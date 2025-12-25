@@ -1855,6 +1855,12 @@ export async function getListingDetails(listingId: number, accountId: number) {
         rentalType: listings.rentalType,
         shortTermLicense: listings.shortTermLicense,
         occupationStatus: listings.occupationStatus,
+        // Commercial transfer fields (only for 'local' property type)
+        isATransfer: listings.isATransfer,
+        priceTransfer: listings.priceTransfer,
+        commercialMainActivity: listings.commercialMainActivity,
+        commercialSecondaryActivity: listings.commercialSecondaryActivity,
+        transferEndContract: listings.transferEndContract,
         priceReferenceIndex: listings.priceReferenceIndex,
         // Rental Terms - Deposit & Guarantees
         securityDeposit: listings.securityDeposit,
@@ -2043,6 +2049,13 @@ export async function getListingDetails(listingId: number, accountId: number) {
         isDiafano: properties.isDiafano, // For local property type - open-plan
         hasEscaparate: properties.hasEscaparate, // For local property type - shop window
         streetType: properties.streetType, // For local property type - traffic intensity
+        // Local (commercial) property specific fields - Idealista integration
+        locatedAtCorner: properties.locatedAtCorner,
+        ubication: properties.ubication,
+        facadeArea: properties.facadeArea,
+        windowsNumber: properties.windowsNumber,
+        bridgeCrane: properties.bridgeCrane,
+        smokeExtraction: properties.smokeExtraction,
         finca: properties.finca, // For casa property type - has estate/land
         superficieFinca: properties.superficieFinca, // For casa property type - estate surface area
         electricityType: properties.electricityType,

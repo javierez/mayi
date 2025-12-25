@@ -1,6 +1,6 @@
 import { db } from "../db";
-import { accounts, websiteProperties } from "../db/schema";
-import { eq, like, or } from "drizzle-orm";
+import { accounts, websiteProperties, userIntegrations, users } from "../db/schema";
+import { eq, like, or, and } from "drizzle-orm";
 import { initializeAccountRoles } from "./account-roles";
 
 // Create a new account
@@ -759,5 +759,117 @@ export async function updateAccountFotocasaLastSync(
     );
   } catch (error) {
     console.error("Error updating Fotocasa last sync:", error);
+  }
+}
+
+/**
+ * Get all accounts with users who have active Gmail integrations
+ * Used by the Idealista leads sync cron job
+ */
+export async function getAccountsWithGmailEnabled(): Promise<
+  Array<{
+    accountId: bigint;
+    userId: string;
+    lastIdealistaLeadSyncAt: Date | null;
+  }>
+> {
+  try {
+    // Find all active Gmail integrations with their user and account info
+    const gmailIntegrations = await db
+      .select({
+        accountId: users.accountId,
+        userId: userIntegrations.userId,
+      })
+      .from(userIntegrations)
+      .innerJoin(users, eq(userIntegrations.userId, users.id))
+      .innerJoin(accounts, eq(users.accountId, accounts.accountId))
+      .where(
+        and(
+          eq(userIntegrations.provider, "gmail"),
+          eq(userIntegrations.isActive, true),
+          eq(users.isActive, true),
+          eq(accounts.isActive, true),
+        ),
+      );
+
+    // Get unique accounts and their last sync times
+    const accountMap = new Map<string, { accountId: bigint; userId: string; lastIdealistaLeadSyncAt: Date | null }>();
+
+    for (const integration of gmailIntegrations) {
+      // Skip if accountId is null
+      if (!integration.accountId) continue;
+
+      const accountIdStr = integration.accountId.toString();
+
+      // Only keep first user per account (to avoid duplicate processing)
+      if (!accountMap.has(accountIdStr)) {
+        // Get account to check portal settings
+        const [account] = await db
+          .select()
+          .from(accounts)
+          .where(eq(accounts.accountId, integration.accountId))
+          .limit(1);
+
+        if (account) {
+          const portalSettings = (account.portalSettings as Record<string, unknown>) ?? {};
+          const idealista = (portalSettings.idealista as Record<string, unknown>) ?? {};
+          const lastIdealistaLeadSyncAt = idealista.lastLeadSyncAt as string | undefined;
+
+          accountMap.set(accountIdStr, {
+            accountId: integration.accountId,
+            userId: integration.userId,
+            lastIdealistaLeadSyncAt: lastIdealistaLeadSyncAt ? new Date(lastIdealistaLeadSyncAt) : null,
+          });
+        }
+      }
+    }
+
+    const result = Array.from(accountMap.values());
+    console.log(`Found ${result.length} accounts with Gmail enabled`);
+    return result;
+  } catch (error) {
+    console.error("Error getting Gmail-enabled accounts:", error);
+    return [];
+  }
+}
+
+/**
+ * Update the last Idealista lead sync timestamp for an account
+ * Called after successful Idealista leads sync
+ */
+export async function updateAccountIdealistaLastSync(
+  accountId: number | bigint,
+  syncTime: Date,
+): Promise<void> {
+  try {
+    const account = await getAccountById(accountId);
+    if (!account) {
+      console.warn(`Account not found for ID: ${accountId}`);
+      return;
+    }
+
+    const portalSettings =
+      (account.portalSettings as Record<string, unknown>) ?? {};
+    const idealista =
+      (portalSettings.idealista as Record<string, unknown>) ?? {};
+
+    const updatedIdealista = {
+      ...idealista,
+      lastLeadSyncAt: syncTime.toISOString(),
+    };
+
+    await db
+      .update(accounts)
+      .set({
+        portalSettings: { ...portalSettings, idealista: updatedIdealista },
+        updatedAt: new Date(),
+      })
+      .where(eq(accounts.accountId, BigInt(accountId)));
+
+    console.log(
+      `Updated Idealista lastLeadSyncAt for account ${accountId}: ${syncTime.toISOString()}`,
+    );
+  } catch (error) {
+    console.error("Error updating Idealista last sync:", error);
   }
 }

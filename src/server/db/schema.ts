@@ -386,6 +386,13 @@ export const properties = pgTable("properties", {
   isDiafano: boolean("is_diafano"), // Only for 'local' property type - open-plan/open-space commercial
   hasEscaparate: boolean("has_escaparate"), // Only for 'local' property type - has shop window/storefront
   streetType: varchar("street_type", { length: 50 }), // Only for 'local' - traffic intensity: muy_transitada, transitada, moderada, poco_transitada
+  // Local (commercial) property specific fields - Idealista integration
+  locatedAtCorner: boolean("located_at_corner"), // featuresLocatedAtCorner - property is on a corner
+  ubication: varchar("ubication", { length: 50 }), // featuresUbication: 'on_top_floor' | 'shopping' | 'street' | 'mezzanine' | 'belowGround' | 'other'
+  facadeArea: smallint("facade_area"), // featuresFacadeArea - meters of facade/storefront
+  windowsNumber: smallint("windows_number"), // featuresWindowsShop - number of shop windows (escaparates)
+  bridgeCrane: boolean("bridge_crane"), // featuresBridgeCrane - has bridge crane (puente grúa)
+  smokeExtraction: boolean("smoke_extraction"), // featuresSmokeExtraction - has smoke extraction system
 
   // Finca (estate/land) - specific to 'casa' property type
   finca: boolean("finca").default(false), // Indicates if the casa has an estate/land
@@ -535,6 +542,13 @@ export const listings = pgTable("listings", {
 
   // Sale-specific fields (only for sale operations)
   occupationStatus: varchar("occupation_status", { length: 20 }), // "free" | "tenanted" | "bare_ownership" | "illegally_occupied"
+
+  // Commercial Transfer fields (only for 'local' property type - Idealista integration)
+  isATransfer: boolean("is_a_transfer"), // featuresIsATransfer - indicates if the local is a transfer (traspaso)
+  priceTransfer: decimal("price_transfer", { precision: 12, scale: 2 }), // operationPriceTransfer - transfer price (only if isATransfer = true)
+  commercialMainActivity: varchar("commercial_main_activity", { length: 50 }), // featuresCommercialMainActivity - main commercial activity (bar, restaurant, etc.)
+  commercialSecondaryActivity: varchar("commercial_secondary_activity", { length: 50 }), // featuresCommercialSecondaryActivity - secondary activity
+  transferEndContract: varchar("transfer_end_contract", { length: 7 }), // featuresTransferEndContractDate - yyyy-mm format (only if isATransfer + operation=rent)
 
   // Catalonia-specific (mandatory for rentals in Catalonia)
   priceReferenceIndex: decimal("price_reference_index", { precision: 10, scale: 2 }), // 0.01-10000, mandatory for Catalonia rentals

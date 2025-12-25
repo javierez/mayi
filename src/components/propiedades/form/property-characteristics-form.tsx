@@ -255,6 +255,12 @@ export function PropertyCharacteristicsForm({
             shortTermLicense: shortTermLicense || null,
             // Sale-specific fields
             occupationStatus: occupationStatus ?? null,
+            // Commercial transfer fields (only for 'local' property type)
+            isATransfer: propertyType === "local" ? isATransfer : null,
+            priceTransfer: propertyType === "local" && isATransfer ? priceTransfer : null,
+            commercialMainActivity: propertyType === "local" && isATransfer ? commercialMainActivity : null,
+            commercialSecondaryActivity: propertyType === "local" && isATransfer ? commercialSecondaryActivity : null,
+            transferEndContract: propertyType === "local" && isATransfer ? transferEndContract : null,
           };
           propertyData = {
             propertyType,
@@ -296,6 +302,8 @@ export function PropertyCharacteristicsForm({
             conservationStatus: listing.conservationStatus ?? 1,
             finca: finca,
             superficieFinca: superficieFinca,
+            // Local (commercial) property specific fields
+            ubication: propertyType === "local" ? ubication : null,
           };
           break;
 
@@ -472,6 +480,9 @@ export function PropertyCharacteristicsForm({
             hasSewerage,
             hasSidewalk,
             hasStreetLighting,
+            // Local (commercial) property specific fields
+            bridgeCrane: propertyType === "local" ? bridgeCrane : null,
+            smokeExtraction: propertyType === "local" ? smokeExtraction : null,
           };
           listingData = {
             isFurnished,
@@ -530,6 +541,10 @@ export function PropertyCharacteristicsForm({
             bright: isBright,
             orientation,
             hasEscaparate,
+            // Local (commercial) property specific fields
+            locatedAtCorner: propertyType === "local" ? locatedAtCorner : null,
+            facadeArea: propertyType === "local" ? facadeArea : null,
+            windowsNumber: propertyType === "local" ? windowsNumber : null,
           };
           break;
 
@@ -975,6 +990,29 @@ export function PropertyCharacteristicsForm({
     listing.occupationStatus,
   );
 
+  // Commercial transfer fields (only for 'local' property type)
+  const [isATransfer, setIsATransfer] = useState(listing.isATransfer ?? false);
+  const [priceTransfer, setPriceTransfer] = useState<number | null>(
+    listing.priceTransfer ? parseFloat(listing.priceTransfer) : null,
+  );
+  const [commercialMainActivity, setCommercialMainActivity] = useState<string | null>(
+    listing.commercialMainActivity ?? null,
+  );
+  const [commercialSecondaryActivity, setCommercialSecondaryActivity] = useState<string | null>(
+    listing.commercialSecondaryActivity ?? null,
+  );
+  const [transferEndContract, setTransferEndContract] = useState<string | null>(
+    listing.transferEndContract ?? null,
+  );
+
+  // Local (commercial) property specific fields
+  const [locatedAtCorner, setLocatedAtCorner] = useState(listing.locatedAtCorner ?? false);
+  const [facadeArea, setFacadeArea] = useState<number | null>(listing.facadeArea ?? null);
+  const [windowsNumber, setWindowsNumber] = useState<number | null>(listing.windowsNumber ?? null);
+  const [ubication, setUbication] = useState<string | null>(listing.ubication ?? null);
+  const [bridgeCrane, setBridgeCrane] = useState(listing.bridgeCrane ?? false);
+  const [smokeExtraction, setSmokeExtraction] = useState(listing.smokeExtraction ?? false);
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [isGeneratingShort, setIsGeneratingShort] = useState(false);
   const [description, setDescription] = useState(listing.description ?? "");
@@ -1249,11 +1287,20 @@ export function PropertyCharacteristicsForm({
       }>;
       const { sectionKey, inputId } = customEvent.detail;
 
-      // Expand the section if it's collapsed
-      setCollapsedSections((prev) => ({
-        ...prev,
-        [sectionKey]: false,
-      }));
+      // Collapse all sections except the target one
+      setCollapsedSections((prev) => {
+        const allCollapsed = Object.keys(prev).reduce(
+          (acc, key) => {
+            acc[key] = true;
+            return acc;
+          },
+          {} as Record<string, boolean>,
+        );
+        return {
+          ...allCollapsed,
+          [sectionKey]: false,
+        };
+      });
 
       // Wait for DOM update then scroll and focus
       setTimeout(() => {
@@ -1368,28 +1415,9 @@ export function PropertyCharacteristicsForm({
     updateModuleState("basicInfo", true);
   };
 
-  const handlePropertyTypeChange = async (newType: string) => {
-    setPropertyType(newType); // Update local state only, don't change URL
-
-    // Only update property type, NOT the title (title stays as-is)
-    try {
-      const propertyId = Number(listing.propertyId);
-      if (!propertyId) {
-        throw new Error("Property ID is required");
-      }
-
-      await updateProperty(propertyId, {
-        propertyType: newType,
-      });
-
-      // Update local listing data
-      listing.propertyType = newType;
-
-      toast.success("Tipo de propiedad actualizado");
-    } catch (error) {
-      console.error("Error updating property type:", error);
-      toast.error("Error al actualizar el tipo de propiedad");
-    }
+  const handlePropertyTypeChange = (newType: string) => {
+    setPropertyType(newType);
+    updateModuleState("basicInfo", true);
   };
 
   const handleGenerateDescription = async () => {
@@ -1706,6 +1734,11 @@ export function PropertyCharacteristicsForm({
             rentalType={rentalType}
             shortTermLicense={shortTermLicense}
             occupationStatus={occupationStatus}
+            isATransfer={isATransfer}
+            priceTransfer={priceTransfer}
+            commercialMainActivity={commercialMainActivity}
+            commercialSecondaryActivity={commercialSecondaryActivity}
+            transferEndContract={transferEndContract}
             onToggleSection={toggleSection}
             onSave={() => saveModule("basicInfo")}
             onUpdateModule={(hasChanges) =>
@@ -1721,6 +1754,11 @@ export function PropertyCharacteristicsForm({
             setRentalType={setRentalType}
             setShortTermLicense={setShortTermLicense}
             setOccupationStatus={setOccupationStatus}
+            setIsATransfer={setIsATransfer}
+            setPriceTransfer={setPriceTransfer}
+            setCommercialMainActivity={setCommercialMainActivity}
+            setCommercialSecondaryActivity={setCommercialSecondaryActivity}
+            setTransferEndContract={setTransferEndContract}
             getCardStyles={getCardStyles}
           />
 
@@ -1747,6 +1785,8 @@ export function PropertyCharacteristicsForm({
             superficieFinca={superficieFinca}
             setFinca={setFinca}
             setSuperficieFinca={setSuperficieFinca}
+            ubication={ubication}
+            setUbication={setUbication}
           />
 
           {/* Features */}
@@ -1826,6 +1866,10 @@ export function PropertyCharacteristicsForm({
             setHasSewerage={setHasSewerage}
             setHasSidewalk={setHasSidewalk}
             setHasStreetLighting={setHasStreetLighting}
+            bridgeCrane={bridgeCrane}
+            smokeExtraction={smokeExtraction}
+            setBridgeCrane={setBridgeCrane}
+            setSmokeExtraction={setSmokeExtraction}
             getCardStyles={getCardStyles}
           />
 
@@ -2008,6 +2052,9 @@ export function PropertyCharacteristicsForm({
             collapsedSections={collapsedSections}
             saveState={moduleStates.orientation?.saveState ?? "idle"}
             canEdit={canEdit}
+            locatedAtCorner={locatedAtCorner}
+            facadeArea={facadeArea}
+            windowsNumber={windowsNumber}
             onToggleSection={toggleSection}
             onSave={() => saveModule("orientation")}
             onUpdateModule={(hasChanges) =>
@@ -2017,6 +2064,9 @@ export function PropertyCharacteristicsForm({
             setIsBright={setIsBright}
             setHasEscaparate={setHasEscaparate}
             setOrientation={setOrientation}
+            setLocatedAtCorner={setLocatedAtCorner}
+            setFacadeArea={setFacadeArea}
+            setWindowsNumber={setWindowsNumber}
             getCardStyles={getCardStyles}
           />
 

@@ -41,9 +41,13 @@ export interface PropertySubtypes {
 }
 
 // Core fields applicable to all property types
-// NOTE: IDs (propertyId, listingId, agentId) are intentionally NOT sent to AI
 export interface CorePropertyFields {
-  // Basic property info (IDs excluded from AI context)
+  // Basic identification
+  propertyId?: number | string;
+  listingId?: number | string;
+  agentId?: string;
+
+  // Basic property info
   propertyType: PropertyType;
   propertySubtype?: string;
   listingType?: string;
@@ -414,7 +418,7 @@ export function getRelevantFields(
   const propertyType = listing.propertyType;
 
   // Start with core fields that apply to all properties
-  // IMPORTANT: Never send IDs (propertyId, listingId, agentId, cadastralReference) to AI
+  // Note: propertyId and listingId are excluded - they're internal IDs with no meaning to the AI
   const relevantFields: Partial<PropertyListing> = {
     propertyType: listing.propertyType,
     propertySubtype: listing.propertySubtype,
@@ -466,121 +470,101 @@ export function getRelevantFields(
       // Location
       nearestLocationKm: listing.nearestLocationKm,
     });
-  } else if (
-    isResidentialProperty(propertyType) ||
-    isCommercialProperty(propertyType)
-  ) {
-    // Residential and Commercial properties - most comprehensive
+  } else if (isCommercialProperty(propertyType)) {
+    // Commercial properties (local) - trimmed to essential fields
+    Object.assign(relevantFields, {
+      // Dimensions (use "espacios" not "habitaciones" for commercial)
+      espacios: listing.bedrooms,
+      bathrooms: listing.bathrooms,
+      squareMeter: listing.squareMeter,
+      // Construction
+      conservationStatus: listing.conservationStatus,
+      // Building features
+      hasElevator: listing.hasElevator,
+      buildingFloors: listing.buildingFloors,
+      // Utilities
+      hasHeating: listing.hasHeating,
+      heatingType: listing.heatingType,
+      airConditioningType: listing.airConditioningType,
+      // Orientation
+      exterior: listing.exterior,
+      orientation: listing.orientation,
+      bright: listing.bright,
+      isDiafano: listing.isDiafano,
+      // Accessibility
+      disabledAccessible: listing.disabledAccessible,
+      // Security
+      alarm: listing.alarm,
+      // Commercial-specific fields
+      locatedAtCorner: listing.locatedAtCorner,
+      ubication: listing.ubication,
+      facadeArea: listing.facadeArea,
+      windowsNumber: listing.windowsNumber,
+      smokeExtraction: listing.smokeExtraction,
+      hasEscaparate: listing.hasEscaparate,
+      streetType: listing.streetType,
+      terrace: listing.terrace,
+    });
+  } else if (isResidentialProperty(propertyType)) {
+    // Residential properties (piso, casa) - essential fields only
+    const currentYear = new Date().getFullYear();
+    const renovationYear = listing.lastRenovationYear
+      ? parseInt(listing.lastRenovationYear, 10)
+      : null;
+    const isRecentRenovation =
+      renovationYear && currentYear - renovationYear <= 5;
+
     Object.assign(relevantFields, {
       // Dimensions
       bedrooms: listing.bedrooms,
       bathrooms: listing.bathrooms,
       squareMeter: listing.squareMeter,
-      builtSurfaceArea: listing.builtSurfaceArea,
       // Construction
       yearBuilt: listing.yearBuilt,
-      lastRenovationYear: listing.lastRenovationYear,
-      buildingFloors: listing.buildingFloors,
       conservationStatus: listing.conservationStatus,
-      // Features
+      // Only include renovation if within last 5 years
+      ...(isRecentRenovation && { lastRenovationYear: listing.lastRenovationYear }),
+      // Building
       hasElevator: listing.hasElevator,
+      conciergeService: listing.conciergeService,
       // Garage and storage
       hasGarage: listing.hasGarage,
-      garageType: listing.garageType,
       garageSpaces: listing.garageSpaces,
-      garageInBuilding: listing.garageInBuilding,
-      garageNumber: listing.garageNumber,
-      optionalGaragePrice: listing.optionalGaragePrice,
       hasStorageRoom: listing.hasStorageRoom,
-      storageRoomSize: listing.storageRoomSize,
-      storageRoomNumber: listing.storageRoomNumber,
-      optionalStorageRoomPrice: listing.optionalStorageRoomPrice,
       // Utilities
       hasHeating: listing.hasHeating,
       heatingType: listing.heatingType,
-      hotWaterType: listing.hotWaterType,
       airConditioningType: listing.airConditioningType,
       // Furnishing
       isFurnished: listing.isFurnished,
-      furnitureQuality: listing.furnitureQuality,
+      // Only include furniture quality if excellent
+      ...(listing.furnitureQuality === "excelente" && {
+        furnitureQuality: listing.furnitureQuality,
+      }),
       // Orientation
       exterior: listing.exterior,
       orientation: listing.orientation,
       bright: listing.bright,
-      // Building characteristics
+      // Accessibility
       disabledAccessible: listing.disabledAccessible,
-      vpo: listing.vpo,
       // Security
-      videoIntercom: listing.videoIntercom,
-      conciergeService: listing.conciergeService,
-      securityGuard: listing.securityGuard,
-      satelliteDish: listing.satelliteDish,
-      doubleGlazing: listing.doubleGlazing,
       alarm: listing.alarm,
-      securityDoor: listing.securityDoor,
-      // Kitchen
-      kitchenType: listing.kitchenType,
-      openKitchen: listing.openKitchen,
-      frenchKitchen: listing.frenchKitchen,
-      furnishedKitchen: listing.furnishedKitchen,
-      pantry: listing.pantry,
-      // Spaces
+      // Outdoor spaces
       terrace: listing.terrace,
-      terraceSize: listing.terraceSize,
-      wineCellar: listing.wineCellar,
-      wineCellarSize: listing.wineCellarSize,
-      livingRoomSize: listing.livingRoomSize,
-      balconyCount: listing.balconyCount,
-      galleryCount: listing.galleryCount,
-      builtInWardrobes: listing.builtInWardrobes,
-      // Materials
-      mainFloorType: listing.mainFloorType,
-      shutterType: listing.shutterType,
-      carpentryType: listing.carpentryType,
-      windowType: listing.windowType,
+      garden: listing.garden,
+      pool: listing.pool,
+      jacuzzi: listing.jacuzzi,
       // Views
       views: listing.views,
       mountainViews: listing.mountainViews,
       seaViews: listing.seaViews,
       beachfront: listing.beachfront,
       // Premium features
-      jacuzzi: listing.jacuzzi,
-      hydromassage: listing.hydromassage,
-      garden: listing.garden,
-      pool: listing.pool,
-      communityPool: listing.communityPool,
-      privatePool: listing.privatePool,
-      homeAutomation: listing.homeAutomation,
-      musicSystem: listing.musicSystem,
-      laundryRoom: listing.laundryRoom,
-      coveredClothesline: listing.coveredClothesline,
       fireplace: listing.fireplace,
       gym: listing.gym,
-      sportsArea: listing.sportsArea,
-      childrenArea: listing.childrenArea,
-      suiteBathroom: listing.suiteBathroom,
-      tennisCourt: listing.tennisCourt,
       // Location
       nearbyPublicTransport: listing.nearbyPublicTransport,
-      // Rental features
-      internet: listing.internet,
-      appliancesIncluded: listing.appliancesIncluded,
     });
-
-    // Add residential-specific rental features (not for commercial)
-    if (isResidentialProperty(propertyType)) {
-      Object.assign(relevantFields, {
-        studentFriendly: listing.studentFriendly,
-        petsAllowed: listing.petsAllowed,
-        // Appliances
-        oven: listing.oven,
-        microwave: listing.microwave,
-        washingMachine: listing.washingMachine,
-        fridge: listing.fridge,
-        tv: listing.tv,
-        stoneware: listing.stoneware,
-      });
-    }
   }
 
   // Remove undefined, null, and empty string values (but keep false - it's informative)
@@ -661,7 +645,9 @@ export function getPropertySubtypes(propertyType: PropertyType): string[] {
 /**
  * Converts allowedUse number to a readable Spanish label for AI description generation
  */
-export function getAllowedUseLabel(allowedUse: number | undefined | null): string | undefined {
+export function getAllowedUseLabel(
+  allowedUse: number | undefined | null,
+): string | undefined {
   if (allowedUse === undefined || allowedUse === null) return undefined;
 
   const labels: Record<number, string> = {

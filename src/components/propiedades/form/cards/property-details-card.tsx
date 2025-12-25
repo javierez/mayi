@@ -16,6 +16,10 @@ import { ModernSaveIndicator } from "../common/modern-save-indicator";
 import type { PropertyListing } from "~/types/property-listing";
 import type { SaveState } from "~/types/save-state";
 import { CONSERVATION_STATUS_LABELS } from "~/lib/constants/conservation-status";
+import {
+  PREMISES_UBICATION_VALUES,
+  PREMISES_UBICATION_LABELS,
+} from "~/lib/constants/premises-ubication";
 
 type ModuleName = "propertyDetails";
 
@@ -41,6 +45,9 @@ interface PropertyDetailsCardProps {
   superficieFinca: number | null;
   setFinca: (value: boolean) => void;
   setSuperficieFinca: (value: number | null) => void;
+  // Local (commercial) property specific fields
+  ubication?: string | null;
+  setUbication?: (value: string | null) => void;
 }
 
 export function PropertyDetailsCard({
@@ -63,6 +70,8 @@ export function PropertyDetailsCard({
   superficieFinca,
   setFinca,
   setSuperficieFinca,
+  ubication,
+  setUbication,
 }: PropertyDetailsCardProps) {
   // Format area with thousand separators
   const formatArea = (value: number | null | undefined): string => {
@@ -214,20 +223,46 @@ export function PropertyDetailsCard({
           </div>
         )}
         {propertyType === "local" && (
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="isDiafano"
-              checked={listing.isDiafano ?? false}
-              onCheckedChange={(checked) => {
-                listing.isDiafano = checked as boolean;
-                onUpdateModule(true);
-              }}
-              disabled={!canEdit}
-            />
-            <Label htmlFor="isDiafano" className="text-sm">
-              Local Diáfano
-            </Label>
-          </div>
+          <>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isDiafano"
+                checked={listing.isDiafano ?? false}
+                onCheckedChange={(checked) => {
+                  listing.isDiafano = checked as boolean;
+                  onUpdateModule(true);
+                }}
+                disabled={!canEdit}
+              />
+              <Label htmlFor="isDiafano" className="text-sm">
+                Local Diáfano
+              </Label>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ubication" className="text-sm">
+                Ubicación del local
+              </Label>
+              <Select
+                value={ubication ?? ""}
+                onValueChange={(value) => {
+                  setUbication?.(value || null);
+                  onUpdateModule(true);
+                }}
+                disabled={!canEdit}
+              >
+                <SelectTrigger className="h-8 text-gray-500">
+                  <SelectValue placeholder="Seleccionar ubicación" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PREMISES_UBICATION_VALUES.map((ubi) => (
+                    <SelectItem key={ubi} value={ubi}>
+                      {PREMISES_UBICATION_LABELS[ubi]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </>
         )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
