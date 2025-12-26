@@ -3,11 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
-import {
-  RegistrationOptions,
-  OptionDetails,
-  type RegistrationOption,
-} from "~/components/propiedades/registro/registration-options";
+import { RegistrationOptions } from "~/components/propiedades/registro/registration-options";
 import { VoiceRecordingEnhanced } from "~/components/propiedades/registro/voice-recording-enhanced";
 import type { EnhancedExtractedPropertyData } from "~/types/textract-enhanced";
 import { FileUpload } from "~/components/propiedades/registro/file-upload";
@@ -50,43 +46,6 @@ export default function CapturaPage() {
     setActiveOption("quick");
   };
 
-  // Only define options that need OptionDetails (recording needs instructions)
-  const options: RegistrationOption[] = [
-    {
-      id: "recording",
-      title: "Grabación de Voz",
-      description:
-        "Habla con nuesetro sistema y la IA registrará la información automáticamente",
-      features: [
-        "Transcripción automática",
-        "Procesamiento con IA",
-        "Extracción de datos",
-        "Ahorra 10 minutos por propiedad",
-      ],
-      additionalInfo:
-        "Dirección, tipo de propiedad, habitaciones, baños, precio y características especiales.",
-      gradient: "from-amber-400 to-rose-400",
-      bgActive: "from-amber-50 to-rose-50",
-      action: () => console.log("Open recording panel"),
-    },
-    {
-      id: "upload",
-      title: "Ficha de Encargo",
-      description:
-        "Carga documentos existentes y extrae información automáticamente",
-      features: [
-        "OCR inteligente",
-        "Extracción automática",
-        "Múltiples formatos",
-        "Procesamiento rápido",
-      ],
-      gradient: "from-amber-400 to-rose-400",
-      bgActive: "from-amber-50 to-rose-50",
-      action: () =>
-        setActiveOption(activeOption === "upload" ? null : "upload"),
-    },
-  ];
-
   const handleQuickForm = async () => {
     if (isCreatingProperty) return;
 
@@ -116,10 +75,6 @@ export default function CapturaPage() {
     }
 
     setActiveOption(activeOption === optionId ? null : optionId);
-    const option = options.find((o) => o.id === optionId);
-    if (option && optionId !== "upload") {
-      option.action();
-    }
   };
 
   const handleFileUpload = async (files: File[]) => {
@@ -130,67 +85,49 @@ export default function CapturaPage() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 backdrop-blur-sm sm:p-4">
-      <div className="max-h-[95vh] w-full max-w-7xl overflow-y-auto">
+      <div className="max-h-[95vh] w-full max-w-3xl overflow-y-auto">
         <div className="rounded-2xl bg-white shadow-2xl">
-          <div className="relative p-4 sm:p-6 md:p-8">
+          <div className="relative p-6 sm:p-8">
             {/* Close button */}
             <button
               onClick={() => router.back()}
-              className="absolute right-4 top-4 rounded-full p-2 transition-colors hover:bg-gray-100"
+              className="absolute right-4 top-4 rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
             >
-              <X className="h-5 w-5 text-gray-500" />
+              <X className="h-5 w-5" />
             </button>
 
-            {/* Header */}
-            <div className="mb-6 text-center sm:mb-8 md:mb-12">
-              <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl md:text-4xl">
-                Registro de Propiedad
+            {/* Header - Compact */}
+            <div className="mb-6 text-center">
+              <h2 className="text-xl font-semibold text-gray-900 sm:text-2xl">
+                Agregar Propiedad
               </h2>
-              <p className="mt-2 text-sm text-gray-600 sm:mt-3 sm:text-base md:mt-4 md:text-lg">
-                Selecciona cómo quieres registrar la nueva propiedad
-              </p>
             </div>
 
             {/* Feature Tabs */}
             <RegistrationOptions
               activeOption={activeOption}
               onToggleOption={toggleOption}
-              className="mb-4 sm:mb-6 md:mb-8"
+              className="mb-6"
               isQuickFormLoading={isCreatingProperty}
             />
 
-            {/* Recording Option with Details */}
+            {/* Voice Recording - Clean and Minimal */}
             {activeOption === "recording" && (
-              <div className="animate-in slide-in-from-top-4 duration-300">
-                <div className="rounded-2xl bg-gradient-to-br from-amber-50/50 to-rose-50/50 p-4 shadow-lg sm:p-6 md:p-8">
-                  <div className="grid gap-4 sm:gap-6 md:gap-8 lg:grid-cols-3">
-                    {(() => {
-                      const selectedOption = options.find(
-                        (o) => o.id === "recording",
-                      );
-                      return selectedOption ? (
-                        <OptionDetails
-                          option={selectedOption}
-                          onStart={() => selectedOption.action()}
-                        />
-                      ) : null;
-                    })()}
-                    <div className="flex items-center justify-center lg:col-span-2">
-                      <VoiceRecordingEnhanced
-                        onProcessingComplete={handleVoiceProcessingComplete}
-                        onRetryRecording={handleRetryRecording}
-                        onManualEntry={handleManualEntry}
-                        referenceNumber="temp-voice-recording"
-                      />
-                    </div>
-                  </div>
+              <div className="animate-in fade-in duration-200">
+                <div className="flex justify-center">
+                  <VoiceRecordingEnhanced
+                    onProcessingComplete={handleVoiceProcessingComplete}
+                    onRetryRecording={handleRetryRecording}
+                    onManualEntry={handleManualEntry}
+                    referenceNumber="temp-voice-recording"
+                  />
                 </div>
               </div>
             )}
 
             {/* Upload Section for Ficha de Encargo */}
             {activeOption === "upload" && (
-              <div className="animate-in slide-in-from-top-4 duration-300">
+              <div className="animate-in fade-in duration-200">
                 <FileUpload onFileUpload={handleFileUpload} />
               </div>
             )}

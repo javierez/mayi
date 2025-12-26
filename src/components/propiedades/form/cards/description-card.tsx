@@ -180,7 +180,7 @@ export function DescriptionCard({
                     disabled={!canEdit}
                   />
                 </div>
-                <div className="absolute bottom-2 right-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div className={cn("absolute bottom-2 right-2 transition-opacity duration-200", isGeneratingShort ? "opacity-100" : "opacity-0 group-hover:opacity-100")}>
                   <button
                     type="button"
                     onClick={onGenerateShortDescription}
@@ -232,7 +232,7 @@ export function DescriptionCard({
                     disabled={!canEdit}
                   />
                 </div>
-                <div className="absolute bottom-2 right-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <div className={cn("absolute bottom-2 right-2 transition-opacity duration-200", isGenerating ? "opacity-100" : "opacity-0 group-hover:opacity-100")}>
                   <button
                     type="button"
                     onClick={onGenerateDescription}

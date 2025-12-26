@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Check, Loader2, Plus, User } from "lucide-react";
+import { Check, Loader2, Plus, User, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -23,6 +23,24 @@ import type {
 import { saveVoiceProperty } from "~/server/queries/forms/voice/save-voice-property";
 import { searchContactsForFormWithAuth } from "~/server/queries/contact";
 import { QuickContactModal } from "~/components/contactos/quick-contact-modal";
+import {
+  AddressAutocomplete,
+  type LocationData,
+} from "~/components/propiedades/form/address-autocomplete";
+import { getNeighborhoodFromCoordinates } from "~/server/googlemaps/retrieve_geo";
+
+// Location-related fields that will be grouped in the address section
+const LOCATION_FIELDS = [
+  "street",
+  "addressDetails",
+  "postalCode",
+  "extractedCity",
+  "extractedProvince",
+  "latitude",
+  "longitude",
+  "neighborhood",
+  "municipality",
+];
 
 // Type definitions for contact selection
 interface Contact {
@@ -51,39 +69,109 @@ const FIELD_LABELS: Record<string, string> = {
   yearBuilt: "Año de Construcción",
   builtSurfaceArea: "Superficie Construida",
   conservationStatus: "Estado de Conservación",
+  buildingFloors: "Plantas del Edificio",
 
   // Location
   street: "Dirección",
   addressDetails: "Detalles de Dirección",
   postalCode: "Código Postal",
+  extractedCity: "Ciudad",
+  extractedProvince: "Provincia",
+  cadastralReference: "Referencia Catastral",
+  streetType: "Tipo de Calle",
 
-  // Energy
+  // Energy & Heating
   energyConsumptionScale: "Certificado Energético",
   energyConsumptionValue: "Consumo Energético",
   emissionsScale: "Escala de Emisiones",
+  emissionsValue: "Valor de Emisiones",
+  hasHeating: "Calefacción",
+  heatingType: "Tipo de Calefacción",
+  airConditioningType: "Aire Acondicionado",
 
   // Basic Amenities
   hasElevator: "Ascensor",
   hasGarage: "Garaje",
   hasStorageRoom: "Trastero",
+  garageType: "Tipo de Garaje",
+  garageSpaces: "Plazas de Garaje",
+  garageInBuilding: "Garaje en Edificio",
+  elevatorToGarage: "Ascensor a Garaje",
+  garageNumber: "Número de Plaza",
+  storageRoomNumber: "Número de Trastero",
+  storageRoomSize: "Tamaño Trastero",
 
   // Features
   terrace: "Terraza",
+  terraceSize: "Tamaño Terraza",
   pool: "Piscina",
   garden: "Jardín",
   gym: "Gimnasio",
   communityPool: "Piscina Comunitaria",
   privatePool: "Piscina Privada",
+  sportsArea: "Zona Deportiva",
+  childrenArea: "Zona Infantil",
+  tennisCourt: "Pista de Tenis",
+  nearbyPublicTransport: "Transporte Público Cercano",
 
-  // Property Condition
+  // Property Characteristics
   furnished: "Amueblado",
   brandNew: "Nuevo",
   needsRenovation: "Necesita Reforma",
+  newConstruction: "Obra Nueva",
+  underConstruction: "En Construcción",
+  lastRenovationYear: "Año Última Reforma",
+  disabledAccessible: "Accesible",
+  vpo: "VPO",
+  videoIntercom: "Videoportero",
+  conciergeService: "Portero",
+  securityGuard: "Vigilancia",
+  alarm: "Alarma",
+  securityDoor: "Puerta Blindada",
+  doubleGlazing: "Doble Acristalamiento",
+
+  // Views & Location
+  exterior: "Exterior",
+  bright: "Luminoso",
+  views: "Vistas",
+  mountainViews: "Vistas Montaña",
+  seaViews: "Vistas Mar",
+  beachfront: "Primera Línea de Playa",
+  orientation: "Orientación",
+
+  // Interior Spaces
+  sauna: "Sauna",
+  patio: "Patio",
+  suiteBathroom: "Baño en Suite",
+  communityArea: "Zona Comunitaria",
+  satelliteDish: "Antena Parabólica",
+  wineCellar: "Bodega",
+  wineCellarSize: "Tamaño Bodega",
+  livingRoomSize: "Tamaño Salón",
+  balconyCount: "Balcones",
+  galleryCount: "Galerías",
+  builtInWardrobes: "Armarios Empotrados",
+  mainFloorType: "Tipo de Suelo",
+  shutterType: "Tipo de Persiana",
+  carpentryType: "Tipo de Carpintería",
+  windowType: "Tipo de Ventana",
 
   // Kitchen
   kitchenType: "Tipo de Cocina",
-  openKitchen: "Cocina Abierta",
+  hotWaterType: "Tipo Agua Caliente",
+  openKitchen: "Cocina Americana",
+  frenchKitchen: "Cocina Francesa",
   furnishedKitchen: "Cocina Amueblada",
+  pantry: "Despensa",
+
+  // Luxury Amenities
+  jacuzzi: "Jacuzzi",
+  hydromassage: "Hidromasaje",
+  homeAutomation: "Domótica",
+  musicSystem: "Sistema de Música",
+  laundryRoom: "Lavadero",
+  coveredClothesline: "Tendedero Cubierto",
+  fireplace: "Chimenea",
 
   // Appliances
   oven: "Horno",
@@ -94,20 +182,74 @@ const FIELD_LABELS: Record<string, string> = {
   dishwasher: "Lavavajillas",
   stoneware: "Vajilla",
   appliancesIncluded: "Electrodomésticos Incluidos",
+  secadora: "Secadora",
+
+  // Expenses & Taxes
+  ibi: "IBI",
+  garbageTax: "Tasa de Basuras",
+  communityFees: "Cuota Comunidad",
+  derrama: "Derrama",
+  vadoPermanente: "Vado Permanente",
+  electricityEstimate: "Estimación Luz",
+  gasEstimate: "Estimación Gas",
+  waterEstimate: "Estimación Agua",
+  centralHeatingFee: "Cuota Calefacción Central",
+  internetEstimate: "Estimación Internet",
+  homeInsurance: "Seguro Hogar",
 
   // Listing Details
   price: "Precio",
   listingType: "Tipo de Operación",
   isFurnished: "Amueblado",
+  furnitureQuality: "Calidad Mobiliario",
+  optionalGarage: "Garaje Opcional",
+  optionalGaragePrice: "Precio Garaje Opcional",
+  optionalStorageRoom: "Trastero Opcional",
+  optionalStorageRoomPrice: "Precio Trastero Opcional",
   hasKeys: "Con Llaves",
   petsAllowed: "Mascotas Permitidas",
   studentFriendly: "Para Estudiantes",
   internet: "Internet",
+  isBankOwned: "Propiedad de Banco",
+  encargo: "Encargo Firmado",
 
-  // Additional
-  orientation: "Orientación",
-  airConditioningType: "Aire Acondicionado",
-  heatingType: "Tipo de Calefacción",
+  // Rental Details
+  rentalType: "Tipo de Alquiler",
+  securityDeposit: "Fianza",
+  additionalGuarantee: "Garantía Adicional",
+  bankGuaranteeRequired: "Aval Bancario Requerido",
+  managementFees: "Gastos de Gestión",
+  nonPaymentInsurance: "Seguro de Impago",
+  nonPaymentInsuranceAmount: "Coste Seguro Impago",
+  occupationStatus: "Estado de Ocupación",
+  priceReferenceIndex: "Índice de Referencia",
+  shortTermLicense: "Licencia Turística",
+
+  // Commercial/Industrial
+  isDiafano: "Diáfano",
+  hasEscaparate: "Escaparate",
+  locatedAtCorner: "En Esquina",
+  ubication: "Ubicación Local",
+  facadeArea: "Metros de Fachada",
+  windowsNumber: "Número Escaparates",
+  bridgeCrane: "Puente Grúa",
+  smokeExtraction: "Extracción de Humos",
+  loadingArea: "Zona de Carga",
+  allowedUse: "Uso Permitido",
+
+  // Land/Finca
+  finca: "Finca",
+  superficieFinca: "Superficie Finca",
+  hasRoadAccess: "Acceso por Carretera",
+  hasSewerage: "Alcantarillado",
+  hasSidewalk: "Acera",
+  hasStreetLighting: "Alumbrado Público",
+
+  // Infrastructure
+  electricityType: "Tipo Instalación Eléctrica",
+  electricityStatus: "Estado Instalación Eléctrica",
+  plumbingType: "Tipo Fontanería",
+  plumbingStatus: "Estado Fontanería",
 };
 
 interface VoiceFieldValidationModalProps {
@@ -138,6 +280,20 @@ export function VoiceFieldValidationModal({
   );
   const [showContactPopup, setShowContactPopup] = useState(false);
 
+  // Address autocomplete state
+  const [addressValue, setAddressValue] = useState("");
+  const [locationData, setLocationData] = useState<{
+    street?: string;
+    addressDetails?: string; // Floor, door letter (e.g., "3º B")
+    postalCode?: string;
+    city?: string;
+    province?: string;
+    neighborhood?: string;
+    latitude?: number;
+    longitude?: number;
+  }>({});
+  const [isLoadingNeighborhood, setIsLoadingNeighborhood] = useState(false);
+
   // Initialize checked fields when modal opens or fields change
   useEffect(() => {
     if (isOpen && extractedFields.length > 0) {
@@ -147,6 +303,85 @@ export function VoiceFieldValidationModal({
       setCheckedFields(new Set(allFieldIds));
     }
   }, [isOpen, extractedFields]);
+
+  // Initialize address from extracted fields when modal opens
+  useEffect(() => {
+    if (isOpen && extractedFields.length > 0) {
+      const streetField = extractedFields.find((f) => f.dbColumn === "street");
+      const addressDetailsField = extractedFields.find((f) => f.dbColumn === "addressDetails");
+      const postalCodeField = extractedFields.find((f) => f.dbColumn === "postalCode");
+      const cityField = extractedFields.find((f) => f.dbColumn === "extractedCity");
+      const provinceField = extractedFields.find((f) => f.dbColumn === "extractedProvince");
+      const neighborhoodField = extractedFields.find((f) => f.dbColumn === "neighborhood");
+      const latField = extractedFields.find((f) => f.dbColumn === "latitude");
+      const lngField = extractedFields.find((f) => f.dbColumn === "longitude");
+
+      const street = streetField?.value as string | undefined;
+      if (street) {
+        setAddressValue(street);
+      }
+
+      setLocationData({
+        street: street,
+        addressDetails: addressDetailsField?.value as string | undefined,
+        postalCode: postalCodeField?.value as string | undefined,
+        city: cityField?.value as string | undefined,
+        province: provinceField?.value as string | undefined,
+        neighborhood: neighborhoodField?.value as string | undefined,
+        latitude: latField?.value as number | undefined,
+        longitude: lngField?.value as number | undefined,
+      });
+    }
+  }, [isOpen, extractedFields]);
+
+  // Handle Google Places autocomplete selection
+  const handleLocationSelected = async (data: LocationData) => {
+    console.log("📍 [VoiceValidation] Google Places location selected:", data);
+
+    // Parse street with number
+    const streetWithNumber =
+      data.addressComponents.streetNumber && data.addressComponents.route
+        ? `${data.addressComponents.route} ${data.addressComponents.streetNumber}`
+        : data.addressComponents.route ?? addressValue;
+
+    setAddressValue(streetWithNumber);
+
+    // Get neighborhood from Nominatim if not available from Google
+    let neighborhood = data.addressComponents.sublocality;
+    if (!neighborhood) {
+      console.log("🔄 [VoiceValidation] Fetching neighborhood from Nominatim...");
+      setIsLoadingNeighborhood(true);
+      try {
+        const nominatimNeighborhood = await getNeighborhoodFromCoordinates(
+          data.lat,
+          data.lng,
+        );
+        if (nominatimNeighborhood) {
+          console.log("✅ [VoiceValidation] Neighborhood from Nominatim:", nominatimNeighborhood);
+          neighborhood = nominatimNeighborhood;
+        }
+      } catch (error) {
+        console.error("❌ [VoiceValidation] Error fetching neighborhood:", error);
+      } finally {
+        setIsLoadingNeighborhood(false);
+      }
+    }
+
+    // Update location data (including addressDetails/subpremise for floor/door)
+    const newLocationData = {
+      street: streetWithNumber,
+      addressDetails: data.addressComponents.subpremise ?? locationData.addressDetails,
+      postalCode: data.addressComponents.postalCode ?? locationData.postalCode,
+      city: data.addressComponents.locality ?? locationData.city,
+      province: data.addressComponents.administrativeAreaLevel1 ?? locationData.province,
+      neighborhood: neighborhood ?? locationData.neighborhood,
+      latitude: data.lat,
+      longitude: data.lng,
+    };
+    setLocationData(newLocationData);
+
+    toast.success("Dirección actualizada desde Google Maps");
+  };
 
   // Debounced contact search
   const performContactSearch = useCallback(async (query: string) => {
@@ -339,6 +574,157 @@ export function VoiceFieldValidationModal({
       return orientationMap[field.value] ?? field.value;
     }
 
+    if (field.dbColumn === "streetType" && typeof field.value === "string") {
+      const streetTypeMap: Record<string, string> = {
+        muy_transitada: "Muy Transitada",
+        transitada: "Transitada",
+        moderada: "Moderada",
+        poco_transitada: "Poco Transitada",
+      };
+      return streetTypeMap[field.value] ?? field.value;
+    }
+
+    if (field.dbColumn === "heatingType" && typeof field.value === "string") {
+      const heatingMap: Record<string, string> = {
+        individual: "Individual",
+        centralizado: "Centralizado",
+        gas: "Gas",
+        eléctrico: "Eléctrico",
+        electrico: "Eléctrico",
+        no: "Sin Calefacción",
+      };
+      return heatingMap[field.value] ?? field.value;
+    }
+
+    if (field.dbColumn === "airConditioningType" && typeof field.value === "string") {
+      const acMap: Record<string, string> = {
+        individual: "Individual",
+        centralizado: "Centralizado",
+        no: "Sin Aire Acondicionado",
+      };
+      return acMap[field.value] ?? field.value;
+    }
+
+    if (field.dbColumn === "furnitureQuality" && typeof field.value === "string") {
+      const qualityMap: Record<string, string> = {
+        basic: "Básico",
+        standard: "Estándar",
+        high: "Alta Calidad",
+        luxury: "Lujo",
+      };
+      return qualityMap[field.value] ?? field.value;
+    }
+
+    if (field.dbColumn === "rentalType" && typeof field.value === "string") {
+      const rentalMap: Record<string, string> = {
+        residential: "Larga Temporada",
+        seasonal: "Temporada",
+        short_term: "Corta Estancia",
+      };
+      return rentalMap[field.value] ?? field.value;
+    }
+
+    if (field.dbColumn === "occupationStatus" && typeof field.value === "string") {
+      const occupationMap: Record<string, string> = {
+        free: "Libre",
+        tenanted: "Alquilado",
+        bare_ownership: "Nuda Propiedad",
+        illegally_occupied: "Ocupado Ilegalmente",
+      };
+      return occupationMap[field.value] ?? field.value;
+    }
+
+    if (field.dbColumn === "ubication" && typeof field.value === "string") {
+      const ubicationMap: Record<string, string> = {
+        on_top_floor: "Última Planta",
+        shopping: "Centro Comercial",
+        street: "A Pie de Calle",
+        mezzanine: "Entreplanta",
+        belowGround: "Sótano",
+        other: "Otro",
+      };
+      return ubicationMap[field.value] ?? field.value;
+    }
+
+    if (field.dbColumn === "kitchenType" && typeof field.value === "string") {
+      const kitchenMap: Record<string, string> = {
+        gas: "Gas",
+        induccion: "Inducción",
+        vitroceramica: "Vitrocerámica",
+        carbon: "Carbón",
+        electrico: "Eléctrico",
+        mixto: "Mixto",
+      };
+      return kitchenMap[field.value] ?? field.value;
+    }
+
+    if (field.dbColumn === "electricityType" && typeof field.value === "string") {
+      const elecMap: Record<string, string> = {
+        monofasica: "Monofásica",
+        trifasica: "Trifásica",
+        mixta: "Mixta",
+      };
+      return elecMap[field.value] ?? field.value;
+    }
+
+    if (
+      (field.dbColumn === "electricityStatus" || field.dbColumn === "plumbingStatus") &&
+      typeof field.value === "string"
+    ) {
+      const statusMap: Record<string, string> = {
+        nuevo: "Nuevo",
+        buen_estado: "Buen Estado",
+        funcional: "Funcional",
+        necesita_actualizacion: "Necesita Actualización",
+        necesita_reparacion: "Necesita Reparación",
+        tiene_fugas: "Tiene Fugas",
+      };
+      return statusMap[field.value] ?? field.value;
+    }
+
+    if (field.dbColumn === "plumbingType" && typeof field.value === "string") {
+      const plumbingMap: Record<string, string> = {
+        cobre: "Cobre",
+        pvc: "PVC",
+        multicapa: "Multicapa",
+        galvanizado: "Galvanizado",
+        mixto: "Mixto",
+      };
+      return plumbingMap[field.value] ?? field.value;
+    }
+
+    // Format currency fields
+    if (
+      (field.dbColumn === "ibi" ||
+        field.dbColumn === "garbageTax" ||
+        field.dbColumn === "communityFees" ||
+        field.dbColumn === "derrama" ||
+        field.dbColumn === "securityDeposit" ||
+        field.dbColumn === "additionalGuarantee" ||
+        field.dbColumn === "optionalGaragePrice" ||
+        field.dbColumn === "optionalStorageRoomPrice") &&
+      typeof field.value === "number"
+    ) {
+      return field.value.toLocaleString("es-ES", {
+        style: "currency",
+        currency: "EUR",
+        minimumFractionDigits: 0,
+      });
+    }
+
+    // Format size fields
+    if (
+      (field.dbColumn === "terraceSize" ||
+        field.dbColumn === "storageRoomSize" ||
+        field.dbColumn === "wineCellarSize" ||
+        field.dbColumn === "livingRoomSize" ||
+        field.dbColumn === "superficieFinca" ||
+        field.dbColumn === "facadeArea") &&
+      typeof field.value === "number"
+    ) {
+      return `${field.value} m²`;
+    }
+
     return String(field.value);
   };
 
@@ -355,16 +741,149 @@ export function VoiceFieldValidationModal({
     });
   };
 
-  // Build final data object with only checked fields
+  // Build final data object with only checked fields + address autocomplete data
   const buildConfirmedData = (): EnhancedExtractedPropertyData => {
     const data: EnhancedExtractedPropertyData = {};
+
+    // Add non-location fields from extracted data
     extractedFields.forEach((field) => {
       const fieldId = `${field.dbTable}.${field.dbColumn}`;
-      if (checkedFields.has(fieldId) && field.dbTable === "properties") {
+      if (
+        checkedFields.has(fieldId) &&
+        field.dbTable === "properties" &&
+        !LOCATION_FIELDS.includes(field.dbColumn)
+      ) {
         (data as Record<string, unknown>)[field.dbColumn] = field.value;
       }
     });
+
+    // Add location data from address autocomplete (always include if available)
+    if (locationData.street) {
+      data.street = locationData.street;
+    }
+    if (locationData.postalCode) {
+      data.postalCode = locationData.postalCode;
+    }
+    if (locationData.latitude !== undefined) {
+      data.latitude = locationData.latitude;
+    }
+    if (locationData.longitude !== undefined) {
+      data.longitude = locationData.longitude;
+    }
+
     return data;
+  };
+
+  // Build fields to save including location data from address autocomplete
+  const buildFieldsToSave = (): ExtractedFieldResult[] => {
+    // Filter non-location fields that are checked
+    const nonLocationFields = extractedFields.filter((field) => {
+      const fieldId = `${field.dbTable}.${field.dbColumn}`;
+      return (
+        checkedFields.has(fieldId) && !LOCATION_FIELDS.includes(field.dbColumn)
+      );
+    });
+
+    // Create location field results from address autocomplete data
+    const locationFields: ExtractedFieldResult[] = [];
+
+    if (locationData.street) {
+      locationFields.push({
+        dbColumn: "street",
+        dbTable: "properties",
+        value: locationData.street,
+        originalText: locationData.street,
+        confidence: 100,
+        extractionSource: "nominatim_geocoding",
+        fieldType: "string",
+      });
+    }
+
+    if (locationData.addressDetails) {
+      locationFields.push({
+        dbColumn: "addressDetails",
+        dbTable: "properties",
+        value: locationData.addressDetails,
+        originalText: locationData.addressDetails,
+        confidence: 100,
+        extractionSource: "nominatim_geocoding",
+        fieldType: "string",
+      });
+    }
+
+    if (locationData.postalCode) {
+      locationFields.push({
+        dbColumn: "postalCode",
+        dbTable: "properties",
+        value: locationData.postalCode,
+        originalText: locationData.postalCode,
+        confidence: 100,
+        extractionSource: "nominatim_geocoding",
+        fieldType: "string",
+      });
+    }
+
+    if (locationData.city) {
+      locationFields.push({
+        dbColumn: "extractedCity",
+        dbTable: "properties",
+        value: locationData.city,
+        originalText: locationData.city,
+        confidence: 100,
+        extractionSource: "nominatim_geocoding",
+        fieldType: "string",
+      });
+    }
+
+    if (locationData.province) {
+      locationFields.push({
+        dbColumn: "extractedProvince",
+        dbTable: "properties",
+        value: locationData.province,
+        originalText: locationData.province,
+        confidence: 100,
+        extractionSource: "nominatim_geocoding",
+        fieldType: "string",
+      });
+    }
+
+    if (locationData.neighborhood) {
+      locationFields.push({
+        dbColumn: "neighborhood",
+        dbTable: "properties",
+        value: locationData.neighborhood,
+        originalText: locationData.neighborhood,
+        confidence: 100,
+        extractionSource: "nominatim_geocoding",
+        fieldType: "string",
+      });
+    }
+
+    if (locationData.latitude !== undefined) {
+      locationFields.push({
+        dbColumn: "latitude",
+        dbTable: "properties",
+        value: locationData.latitude,
+        originalText: String(locationData.latitude),
+        confidence: 100,
+        extractionSource: "nominatim_geocoding",
+        fieldType: "decimal",
+      });
+    }
+
+    if (locationData.longitude !== undefined) {
+      locationFields.push({
+        dbColumn: "longitude",
+        dbTable: "properties",
+        value: locationData.longitude,
+        originalText: String(locationData.longitude),
+        confidence: 100,
+        extractionSource: "nominatim_geocoding",
+        fieldType: "decimal",
+      });
+    }
+
+    return [...nonLocationFields, ...locationFields];
   };
 
   // Handle confirm and create property
@@ -379,11 +898,8 @@ export function VoiceFieldValidationModal({
         return;
       }
 
-      // Filter only checked fields
-      const fieldsToSave = extractedFields.filter((field) => {
-        const fieldId = `${field.dbTable}.${field.dbColumn}`;
-        return checkedFields.has(fieldId);
-      });
+      // Build fields to save (non-location fields + address autocomplete data)
+      const fieldsToSave = buildFieldsToSave();
 
       // Save property with voice data and contact IDs
       const result = await saveVoiceProperty(fieldsToSave, selectedContactIds);
@@ -414,14 +930,16 @@ export function VoiceFieldValidationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="flex max-h-[80vh] max-w-2xl flex-col overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[90vh] max-w-2xl flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="text-lg font-medium">
             Campos identificados
           </DialogTitle>
         </DialogHeader>
 
-        {/* Contact Selection Section */}
+        {/* Scrollable Content Area */}
+        <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto">
+          {/* Contact Selection Section */}
         <div className="space-y-3 border-b pb-4">
           <div className="flex items-center justify-between">
             <h3 className="text-md font-medium text-gray-900">Contactos</h3>
@@ -478,49 +996,139 @@ export function VoiceFieldValidationModal({
           </div>
         </div>
 
-        {/* Fields Checklist */}
-        <div className="flex-1 overflow-y-auto py-4">
-          {extractedFields.length === 0 ? (
+        {/* Address Section with Google Places Autocomplete */}
+        <div className="space-y-3 border-b pb-4">
+          <div className="flex items-center space-x-2">
+            <MapPin className="h-4 w-4 text-gray-500" />
+            <h3 className="text-md font-medium text-gray-900">Dirección</h3>
+            {isLoadingNeighborhood && (
+              <Loader2 className="h-3 w-3 animate-spin text-gray-400" />
+            )}
+          </div>
+
+          {/* Address Autocomplete */}
+          <AddressAutocomplete
+            value={addressValue}
+            onChange={(value) => {
+              setAddressValue(value);
+              setLocationData((prev) => ({ ...prev, street: value }));
+            }}
+            onLocationSelected={handleLocationSelected}
+            placeholder="Buscar dirección..."
+            className="h-10 border border-gray-200 shadow-md"
+          />
+
+          {/* Floor/Door Input */}
+          <Input
+            placeholder="Piso, puerta (ej: 3º B)"
+            value={locationData.addressDetails ?? ""}
+            onChange={(e) =>
+              setLocationData((prev) => ({
+                ...prev,
+                addressDetails: e.target.value,
+              }))
+            }
+            className="h-10 border border-gray-200 shadow-md"
+          />
+
+          {/* Location Data Display */}
+          {(locationData.postalCode ??
+            locationData.city ??
+            locationData.province ??
+            locationData.neighborhood) && (
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              {locationData.postalCode && (
+                <div className="rounded-md bg-gray-50 px-3 py-2">
+                  <span className="text-xs text-gray-500">Código Postal</span>
+                  <p className="font-medium text-gray-900">
+                    {locationData.postalCode}
+                  </p>
+                </div>
+              )}
+              {locationData.city && (
+                <div className="rounded-md bg-gray-50 px-3 py-2">
+                  <span className="text-xs text-gray-500">Ciudad</span>
+                  <p className="font-medium text-gray-900">
+                    {locationData.city}
+                  </p>
+                </div>
+              )}
+              {locationData.province && (
+                <div className="rounded-md bg-gray-50 px-3 py-2">
+                  <span className="text-xs text-gray-500">Provincia</span>
+                  <p className="font-medium text-gray-900">
+                    {locationData.province}
+                  </p>
+                </div>
+              )}
+              {locationData.neighborhood && (
+                <div className="rounded-md bg-gray-50 px-3 py-2">
+                  <span className="text-xs text-gray-500">Barrio</span>
+                  <p className="font-medium text-gray-900">
+                    {locationData.neighborhood}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Coordinates indicator */}
+          {locationData.latitude !== undefined &&
+            locationData.longitude !== undefined && (
+              <div className="flex items-center space-x-1 text-xs text-green-600">
+                <Check className="h-3 w-3" />
+                <span>Coordenadas identificadas</span>
+              </div>
+            )}
+        </div>
+
+        {/* Fields Checklist (excluding location fields) */}
+        <div className="py-4">
+          {extractedFields.filter((f) => !LOCATION_FIELDS.includes(f.dbColumn))
+            .length === 0 ? (
             <div className="py-12 text-center text-gray-500">
-              No se encontraron campos
+              No se encontraron campos adicionales
             </div>
           ) : (
             <div className="space-y-2">
-              {extractedFields.map((field) => {
-                const fieldId = `${field.dbTable}.${field.dbColumn}`;
-                const isChecked = checkedFields.has(fieldId);
+              {extractedFields
+                .filter((field) => !LOCATION_FIELDS.includes(field.dbColumn))
+                .map((field) => {
+                  const fieldId = `${field.dbTable}.${field.dbColumn}`;
+                  const isChecked = checkedFields.has(fieldId);
 
-                return (
-                  <div
-                    key={fieldId}
-                    className="flex items-center space-x-3 rounded-lg bg-gray-50 px-4 py-3 transition-colors hover:bg-gray-100"
-                  >
-                    <Checkbox
-                      id={fieldId}
-                      checked={isChecked}
-                      onCheckedChange={(checked) =>
-                        handleCheckboxChange(fieldId, checked as boolean)
-                      }
-                    />
-                    <Label
-                      htmlFor={fieldId}
-                      className="flex flex-1 cursor-pointer items-center justify-between"
+                  return (
+                    <div
+                      key={fieldId}
+                      className="flex items-center space-x-3 rounded-lg bg-gray-50 px-4 py-3 transition-colors hover:bg-gray-100"
                     >
-                      <span className="text-sm font-normal text-gray-600">
-                        {FIELD_LABELS[field.dbColumn] ?? field.dbColumn}
-                      </span>
-                      <span className="text-sm font-medium text-gray-900">
-                        {formatFieldValue(field)}
-                      </span>
-                    </Label>
-                  </div>
-                );
-              })}
+                      <Checkbox
+                        id={fieldId}
+                        checked={isChecked}
+                        onCheckedChange={(checked) =>
+                          handleCheckboxChange(fieldId, checked as boolean)
+                        }
+                      />
+                      <Label
+                        htmlFor={fieldId}
+                        className="flex flex-1 cursor-pointer items-center justify-between"
+                      >
+                        <span className="text-sm font-normal text-gray-600">
+                          {FIELD_LABELS[field.dbColumn] ?? field.dbColumn}
+                        </span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {formatFieldValue(field)}
+                        </span>
+                      </Label>
+                    </div>
+                  );
+                })}
             </div>
           )}
         </div>
+        </div>
 
-        <DialogFooter className="border-t pt-4">
+        <DialogFooter className="shrink-0 border-t pt-4">
           <Button
             onClick={handleConfirm}
             disabled={checkedFields.size === 0 || isLoading}

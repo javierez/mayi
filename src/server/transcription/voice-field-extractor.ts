@@ -22,6 +22,145 @@ interface VoiceExtractionInput {
   referenceNumber?: string;
 }
 
+// Nominatim API response interface
+interface NominatimResult {
+  lat: string;
+  lon: string;
+  display_name: string;
+  address?: {
+    road?: string;
+    house_number?: string;
+    postcode?: string;
+    city?: string;
+    town?: string;
+    village?: string;
+    municipality?: string;
+    state?: string;
+    province?: string;
+    suburb?: string;
+    quarter?: string;
+    neighbourhood?: string;
+    county?: string;
+    country?: string;
+  };
+}
+
+// Enriched location data from Nominatim
+export interface EnrichedLocationData {
+  latitude: number;
+  longitude: number;
+  normalizedCity: string;
+  normalizedProvince: string;
+  neighborhood: string;
+  postalCode: string;
+  fullAddress: string;
+  confidence: number;
+}
+
+/**
+ * Server-side location enrichment using Nominatim (OpenStreetMap)
+ * Takes extracted voice fields and geocodes them to get coordinates and normalized names
+ */
+export async function enrichLocationFromVoice(params: {
+  street?: string;
+  city?: string;
+  province?: string;
+  postalCode?: string;
+}): Promise<EnrichedLocationData | null> {
+  const { street, city, province, postalCode } = params;
+
+  // Build the address query from available fields
+  const addressParts: string[] = [];
+  if (street) addressParts.push(street);
+  if (city) addressParts.push(city);
+  if (province) addressParts.push(province);
+  if (postalCode) addressParts.push(postalCode);
+  addressParts.push("España"); // Always add country for better results
+
+  if (addressParts.length <= 1) {
+    console.log("🗺️ [NOMINATIM] Not enough location data to geocode");
+    return null;
+  }
+
+  const addressQuery = addressParts.join(", ");
+  console.log(`🗺️ [NOMINATIM] Geocoding address: "${addressQuery}"`);
+
+  try {
+    const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressQuery)}&limit=1&countrycodes=es&addressdetails=1&accept-language=es`;
+
+    const response = await fetch(nominatimUrl, {
+      headers: {
+        "User-Agent": "Vesta-RealEstate/1.0 (contact@vesta.com)",
+      },
+    });
+
+    if (!response.ok) {
+      console.error(`❌ [NOMINATIM] HTTP error: ${response.status}`);
+      return null;
+    }
+
+    const results = (await response.json()) as NominatimResult[];
+
+    if (!results[0]) {
+      console.log("🗺️ [NOMINATIM] No results found for address");
+      return null;
+    }
+
+    const result = results[0];
+    const address = result.address ?? {};
+
+    // Parse latitude and longitude
+    const latitude = parseFloat(result.lat);
+    const longitude = parseFloat(result.lon);
+
+    if (isNaN(latitude) || isNaN(longitude)) {
+      console.error("❌ [NOMINATIM] Invalid coordinates");
+      return null;
+    }
+
+    // Get normalized city (prefer city > town > village > municipality)
+    const normalizedCity =
+      address.city ??
+      address.town ??
+      address.village ??
+      address.municipality ??
+      city ??
+      "";
+
+    // Get normalized province (prefer state > province > county)
+    const normalizedProvince =
+      address.state ?? address.province ?? address.county ?? province ?? "";
+
+    // Get neighborhood (prefer suburb > quarter > neighbourhood)
+    const neighborhood =
+      address.suburb ?? address.quarter ?? address.neighbourhood ?? "";
+
+    // Get postal code from response or use the one we have
+    const enrichedPostalCode = address.postcode ?? postalCode ?? "";
+
+    console.log(`✅ [NOMINATIM] Location enriched successfully:`);
+    console.log(`   - Coordinates: ${latitude}, ${longitude}`);
+    console.log(`   - City: ${normalizedCity}`);
+    console.log(`   - Province: ${normalizedProvince}`);
+    console.log(`   - Neighborhood: ${neighborhood}`);
+    console.log(`   - Postal Code: ${enrichedPostalCode}`);
+
+    return {
+      latitude,
+      longitude,
+      normalizedCity,
+      normalizedProvince,
+      neighborhood,
+      postalCode: enrichedPostalCode,
+      fullAddress: result.display_name,
+      confidence: 85, // Nominatim typically has good accuracy for Spain
+    };
+  } catch (error) {
+    console.error("❌ [NOMINATIM] Geocoding error:", error);
+    return null;
+  }
+}
+
 /**
  * Enhanced voice field extraction using GPT-4 for context-aware data extraction
  * Adapts the existing OCR field extraction pattern for voice transcripts
@@ -75,6 +214,64 @@ export async function extractPropertyDataFromVoice(
     (listingData as Record<string, unknown>)[field.dbColumn] = field.value;
   }
 
+  // Step 4: Enrich location data with Nominatim geocoding
+  // Access dynamic properties using Record type
+  const propRecord = propertyData as Record<string, unknown>;
+  const street = propertyData.street;
+  const city = propRecord.city as string | undefined;
+  const province = propRecord.province as string | undefined;
+  const postalCode = propertyData.postalCode;
+
+  if (street ?? city ?? province ?? postalCode) {
+    console.log(`🗺️ [VOICE-EXTRACTION] Enriching location data with Nominatim...`);
+    const enrichedLocation = await enrichLocationFromVoice({
+      street,
+      city,
+      province,
+      postalCode,
+    });
+
+    if (enrichedLocation) {
+      // Add enriched location data to propertyData
+      propertyData.latitude = enrichedLocation.latitude;
+      propertyData.longitude = enrichedLocation.longitude;
+
+      // Only update if we got better data from Nominatim
+      if (enrichedLocation.normalizedCity && !propRecord.city) {
+        propRecord.city = enrichedLocation.normalizedCity;
+      }
+      if (enrichedLocation.normalizedProvince && !propRecord.province) {
+        propRecord.province = enrichedLocation.normalizedProvince;
+      }
+      if (enrichedLocation.neighborhood && !propRecord.neighborhood) {
+        propRecord.neighborhood = enrichedLocation.neighborhood;
+      }
+      if (enrichedLocation.postalCode && !propertyData.postalCode) {
+        propertyData.postalCode = enrichedLocation.postalCode;
+      }
+
+      // Add enriched fields to extractedFields for tracking
+      gptExtractedFields.push({
+        dbColumn: "latitude",
+        dbTable: "properties",
+        value: enrichedLocation.latitude,
+        originalText: enrichedLocation.fullAddress,
+        confidence: enrichedLocation.confidence,
+        extractionSource: "nominatim_geocoding",
+        fieldType: "decimal",
+      });
+      gptExtractedFields.push({
+        dbColumn: "longitude",
+        dbTable: "properties",
+        value: enrichedLocation.longitude,
+        originalText: enrichedLocation.fullAddress,
+        confidence: enrichedLocation.confidence,
+        extractionSource: "nominatim_geocoding",
+        fieldType: "decimal",
+      });
+    }
+  }
+
   const completeData: CompleteExtractedData = {
     property: propertyData,
     listing: listingData,
@@ -85,9 +282,11 @@ export async function extractPropertyDataFromVoice(
   console.log(`   - Total fields extracted: ${gptExtractedFields.length}`);
   console.log(`   - Property fields: ${propertyFields.length}`);
   console.log(`   - Listing fields: ${listingFields.length}`);
-  console.log(
-    `   - Average confidence: ${(gptExtractedFields.reduce((sum, r) => sum + r.confidence, 0) / gptExtractedFields.length).toFixed(1)}%`,
-  );
+  if (gptExtractedFields.length > 0) {
+    console.log(
+      `   - Average confidence: ${(gptExtractedFields.reduce((sum, r) => sum + r.confidence, 0) / gptExtractedFields.length).toFixed(1)}%`,
+    );
+  }
 
   return {
     extractedFields: gptExtractedFields,
@@ -1679,6 +1878,22 @@ function processFunctionResults(
       continue;
     }
 
+    // Calculate adjusted confidence early for filtering
+    const baseConfidence = (functionArgs.confidence as number) ?? 80;
+    const adjustedConfidence = Math.min(
+      baseConfidence,
+      baseConfidence * (voiceInput.confidence / 100),
+    );
+
+    // Skip low-confidence extractions (likely inferred, not explicit)
+    const MIN_CONFIDENCE_THRESHOLD = 65;
+    if (adjustedConfidence < MIN_CONFIDENCE_THRESHOLD) {
+      console.log(
+        `⏭️ [GPT4-FUNCTION-CALLING] Skipping ${fieldName}: confidence ${adjustedConfidence.toFixed(1)}% below threshold ${MIN_CONFIDENCE_THRESHOLD}%`,
+      );
+      continue;
+    }
+
     const mapping = currentMapping[fieldName];
     if (!mapping) {
       console.warn(
@@ -1734,13 +1949,6 @@ function processFunctionResults(
         convertedValue = fieldValue;
       }
     }
-
-    // Adjust confidence based on transcript confidence
-    const baseConfidence = (functionArgs.confidence as number) ?? 80;
-    const adjustedConfidence = Math.min(
-      baseConfidence,
-      baseConfidence * (voiceInput.confidence / 100),
-    );
 
     extractedFields.push({
       dbColumn: mapping.dbColumn,

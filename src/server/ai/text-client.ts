@@ -74,7 +74,8 @@ async function generateWithGemini(
 
   // Gemini 3 uses temperature 1.0 by default (recommended)
   const temperature = options.temperature ?? 1.0;
-  const maxOutputTokens = options.maxTokens ?? 2000;
+  // Need higher limit to account for thinking tokens + actual output
+  const maxOutputTokens = options.maxTokens ?? 8000;
 
   const response = await ai.models.generateContent({
     model,
@@ -85,7 +86,28 @@ async function generateWithGemini(
     },
   });
 
-  const text = response.text;
+  // Extract text from response, handling mixed content (text + thought parts)
+  let text = "";
+
+  // Try to get text directly first
+  try {
+    text = response.text ?? "";
+  } catch {
+    // response.text may throw if there are non-text parts
+  }
+
+  // If empty, extract text parts from candidates (handles thinking responses)
+  if (!text) {
+    const parts = response.candidates?.[0]?.content?.parts;
+    if (parts) {
+      const textParts = parts
+        .filter((part: unknown): part is { text: string } =>
+          typeof part === "object" && part !== null && "text" in part && typeof (part as { text: unknown }).text === "string"
+        )
+        .map((part: { text: string }) => part.text);
+      text = textParts.join("");
+    }
+  }
 
   if (!text) {
     throw new Error("No text response from Gemini API");

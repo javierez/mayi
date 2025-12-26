@@ -5,6 +5,7 @@ import { createProperty } from "~/server/queries/properties";
 import { createDefaultListing } from "~/server/queries/listing";
 import { getCurrentUser } from "~/lib/dal";
 import { generatePropertyTitle } from "~/lib/property-title";
+import { findOrCreateLocation } from "~/server/queries/locations";
 
 export interface SaveVoicePropertyResult {
   success: boolean;
@@ -40,9 +41,46 @@ export async function saveVoiceProperty(
       formPosition: 1,
     };
 
+    // Location fields that need special handling (stored in locations table, not properties)
+    const locationFieldNames = [
+      "extractedCity",
+      "extractedProvince",
+      "municipality",
+      "neighborhood",
+    ];
+    const extractedLocationData: {
+      city?: string;
+      province?: string;
+      municipality?: string;
+      neighborhood?: string;
+    } = {};
+
     // Map extracted fields to property data
     extractedFields.forEach((field) => {
       if (field.dbTable === "properties") {
+        // Handle location fields specially - extract but don't save directly
+        if (field.dbColumn === "extractedCity") {
+          extractedLocationData.city = String(field.value);
+          return;
+        }
+        if (field.dbColumn === "extractedProvince") {
+          extractedLocationData.province = String(field.value);
+          return;
+        }
+        if (field.dbColumn === "municipality") {
+          extractedLocationData.municipality = String(field.value);
+          return;
+        }
+        if (field.dbColumn === "neighborhood") {
+          extractedLocationData.neighborhood = String(field.value);
+          return;
+        }
+
+        // Skip location field names that don't exist in DB
+        if (locationFieldNames.includes(field.dbColumn)) {
+          return;
+        }
+
         // Handle boolean conversions
         if (field.fieldType === "boolean") {
           propertyData[field.dbColumn] = Boolean(field.value);
@@ -67,10 +105,39 @@ export async function saveVoiceProperty(
       }
     });
 
+    // Create or find location record if we have location data
+    if (
+      extractedLocationData.city ??
+      extractedLocationData.province ??
+      extractedLocationData.neighborhood
+    ) {
+      try {
+        const neighborhoodId = await findOrCreateLocation({
+          city: extractedLocationData.city ?? "Unknown",
+          province: extractedLocationData.province ?? "Unknown",
+          municipality:
+            extractedLocationData.municipality ??
+            extractedLocationData.city ??
+            "Unknown",
+          neighborhood: extractedLocationData.neighborhood ?? "Unknown",
+        });
+        propertyData.neighborhoodId = BigInt(neighborhoodId);
+        console.log(
+          `🏛️ [VOICE-PROPERTY] Location created/found with neighborhoodId: ${neighborhoodId}`,
+        );
+      } catch (locationError) {
+        console.error(
+          "❌ [VOICE-PROPERTY] Error creating location:",
+          locationError,
+        );
+        // Continue without neighborhoodId - property can still be created
+      }
+    }
+
     // Generate title from extracted property data
     const propertyType = (propertyData.propertyType as string) || "piso";
     const street = (propertyData.street as string) || "";
-    const neighborhood = (propertyData.neighborhood as string) || "";
+    const neighborhood = extractedLocationData.neighborhood ?? "";
 
     // Auto-generate title using the standard function
     const generatedTitle = generatePropertyTitle(

@@ -153,8 +153,6 @@ export function VoiceRecordingEnhanced({
   const [frequencyData, setFrequencyData] = useState<number[]>(
     new Array(40).fill(0),
   );
-  const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
-
   const waveAnimationRef = useRef<NodeJS.Timeout | null>(null);
   const [processingState, setProcessingState] = useState<ProcessingState>({
     step: "idle",
@@ -172,24 +170,35 @@ export function VoiceRecordingEnhanced({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const suggestionTimerRef = useRef<NodeJS.Timeout | null>(null);
   const mimeTypeRef = useRef<string>("audio/webm");
   const extensionRef = useRef<string>("webm");
 
   const MAX_RECORDING_DURATION = 300; // 5 minutes in seconds
 
+  const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
+  const suggestionTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   const recordingSuggestions = [
-    "Recuerda mencionar el precio y número de habitaciones",
-    "Por favor, comparte la dirección completa",
-    "Describe el estado de la propiedad",
-    "Menciona los metros cuadrados si los conoces",
-    "¿Tiene parking o trastero incluido?",
-    "Habla sobre la orientación y luminosidad",
+    "¿Cuál es la dirección completa?",
+    "¿Cuántas habitaciones y baños tiene?",
+    "¿Cuál es el precio de venta o alquiler?",
+    "¿Cuántos metros cuadrados tiene?",
+    "¿Tiene garaje o trastero?",
+    "¿Qué orientación tiene?",
+    "¿En qué estado de conservación está?",
+    "¿Tiene ascensor el edificio?",
     "¿Qué tipo de calefacción tiene?",
-    "Menciona si está amueblado o no",
-    "Describe la zona y servicios cercanos",
-    "¿Cuál es la disponibilidad para visitas?",
   ];
+
+  // Get 3 suggestions starting from current index
+  const getVisibleSuggestions = () => {
+    const suggestions = [];
+    for (let i = 0; i < 3; i++) {
+      const index = (currentSuggestionIndex + i) % recordingSuggestions.length;
+      suggestions.push(recordingSuggestions[index]);
+    }
+    return suggestions;
+  };
 
   // Simulated waveform animation that mimics natural speech patterns
   const simulateWaveform = () => {
@@ -279,6 +288,7 @@ export function VoiceRecordingEnhanced({
         setRecordingTime((prev) => prev + 1);
       }, 1000);
 
+      // Start suggestion rotation
       setCurrentSuggestionIndex(0);
       suggestionTimerRef.current = setInterval(() => {
         setCurrentSuggestionIndex(
@@ -336,11 +346,13 @@ export function VoiceRecordingEnhanced({
       timerRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
+
+      // Restart suggestion rotation
       suggestionTimerRef.current = setInterval(() => {
         setCurrentSuggestionIndex(
           (prev) => (prev + 1) % recordingSuggestions.length,
         );
-      }, 4000);
+      }, 6000);
     }
   };
 
@@ -549,154 +561,56 @@ export function VoiceRecordingEnhanced({
   const StepIcon = PROCESSING_STEPS[processingState.step].icon;
 
   return (
-    <div className={cn("w-full max-w-lg", className)}>
-      <div className="rounded-xl bg-white p-8 shadow-sm">
+    <div className={cn("w-full max-w-md", className)}>
+      <div className="py-8">
         <div className="text-center">
-          <div className="mb-6">
-            <div
-              className={cn(
-                "relative mx-auto flex h-32 w-32 items-center justify-center rounded-full transition-all",
-                isProcessing
-                  ? "bg-gradient-to-br from-amber-100 to-rose-100"
-                  : isRecording
-                    ? "bg-gradient-to-br from-red-100 to-red-200"
-                    : audioBlob
-                      ? "bg-gradient-to-br from-green-100 to-green-200"
-                      : "bg-gradient-to-br from-amber-100 to-rose-100",
-              )}
-            >
-              {/* Pulse effect for high audio levels */}
-              {isRecording && !isPaused && audioLevel > 0.6 && (
-                <div className="pointer-events-none absolute inset-0 animate-ping rounded-full bg-amber-400/30" />
-              )}
-              {isProcessing ? (
-                <div className="relative">
-                  <StepIcon
-                    className={cn(
-                      "relative z-10 h-16 w-16 transition-all duration-500",
-                      PROCESSING_STEPS[processingState.step].color,
-                      processingState.step !== "complete" &&
-                        processingState.step !== "error" &&
-                        "scale-110 animate-pulse",
-                    )}
-                  />
-                  {processingState.step !== "complete" &&
-                    processingState.step !== "error" && (
-                      <>
-                        <div className="absolute inset-0 animate-pulse rounded-full bg-gradient-to-br from-amber-300/20 to-rose-300/20" />
-                        <div className="absolute inset-0 animate-ping rounded-full bg-gradient-to-br from-amber-400/30 to-rose-400/30" />
-                        <div
-                          className="absolute -inset-2 animate-pulse rounded-full bg-gradient-to-br from-amber-200/10 to-rose-200/10"
-                          style={{ animationDelay: "0.5s" }}
-                        />
-                      </>
-                    )}
-                </div>
-              ) : (
-                <Mic
-                  className={cn(
-                    "h-16 w-16 transition-colors",
-                    isRecording
-                      ? "text-red-600"
-                      : audioBlob
-                        ? "text-green-600"
-                        : "text-amber-600",
-                  )}
-                />
-              )}
+          {/* Processing Status Icon - only shown when processing */}
+          {isProcessing && (
+            <div className="mb-6">
+              <StepIcon
+                className={cn(
+                  "mx-auto h-10 w-10 transition-all duration-300",
+                  PROCESSING_STEPS[processingState.step].color,
+                  processingState.step !== "complete" &&
+                    processingState.step !== "error" &&
+                    "animate-pulse",
+                )}
+              />
             </div>
-          </div>
+          )}
 
           {/* Timer or Processing Status */}
           {isProcessing || processingState.step === "error" ? (
             <div className="mb-6">
-              <div
+              <p
                 className={cn(
-                  "mb-2 text-2xl font-semibold",
+                  "mb-3 text-lg font-medium",
                   processingState.step === "error"
                     ? "text-red-600"
-                    : "text-gray-900",
+                    : "text-gray-700",
                 )}
               >
                 {PROCESSING_STEPS[processingState.step].label}
-              </div>
+              </p>
               {processingState.step !== "error" && (
-                <div className="mb-2 h-2 w-full rounded-full bg-gray-200">
+                <div className="mx-auto mb-3 h-1 w-48 overflow-hidden rounded-full bg-gray-100">
                   <div
-                    className="h-2 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 transition-all duration-500"
+                    className="h-full rounded-full bg-gradient-to-r from-amber-400 to-rose-400 transition-all duration-500"
                     style={{ width: `${processingState.progress}%` }}
                   />
                 </div>
               )}
-              <p
-                className={cn(
-                  "text-sm",
-                  processingState.step === "error"
-                    ? "font-medium text-red-600"
-                    : "text-gray-600",
-                )}
-              >
-                {processingState.message}
-              </p>
-              {processingState.error &&
-                processingState.error !== processingState.message && (
-                  <p className="mt-2 text-xs italic text-red-500">
-                    {processingState.error}
-                  </p>
-                )}
             </div>
           ) : (
-            <div className="mb-2 font-mono text-3xl font-bold text-gray-900">
+            <div className="mb-6 font-mono text-3xl tracking-widest text-gray-600">
               {formatTime(recordingTime)}
             </div>
           )}
 
-          {/* Enhanced Audio Visualization */}
-          {isRecording && !isProcessing && (
-            <div className="mb-4 flex h-20 items-end justify-center gap-0.5">
-              {frequencyData.map((height, i) => {
-                const isActive = isRecording && !isPaused;
-                const barHeight = isActive ? height : 8;
-                const delay = i * 20; // Stagger animation for wave effect
-
-                return (
-                  <div
-                    key={i}
-                    className={cn(
-                      "w-1.5 rounded-t-sm transition-all duration-150 ease-out",
-                      isActive
-                        ? "bg-gradient-to-t from-rose-500 via-amber-400 to-yellow-300 shadow-sm"
-                        : "bg-gradient-to-t from-gray-400 to-gray-300",
-                    )}
-                    style={{
-                      height: `${Math.max(barHeight, 8)}%`,
-                      transform: `scaleY(${isActive ? 1 : 0.4})`,
-                      animationDelay: `${delay}ms`,
-                      opacity: isActive ? 0.9 + height / 500 : 0.6,
-                      boxShadow:
-                        isActive && height > 30
-                          ? `0 0 ${height / 10}px rgba(251, 146, 60, 0.4)`
-                          : "none",
-                    }}
-                  />
-                );
-              })}
-            </div>
-          )}
-
-          {/* Status Message */}
-          {!isProcessing && (
-            <p className="mb-6 text-sm text-gray-600">
-              {isRecording &&
-                !isPaused &&
-                "Grabando... Habla claramente sobre la propiedad"}
-              {isPaused && "Grabación pausada"}
-              {!isRecording &&
-                audioBlob &&
-                "Grabación completa - Lista para procesar"}
-              {!isRecording &&
-                !audioBlob &&
-                "Presiona el botón para comenzar a grabar"}
+          {/* Minimal Status Message - only when not recording */}
+          {!isProcessing && !isRecording && (
+            <p className="mb-6 text-sm text-gray-400">
+              {audioBlob ? "Listo para procesar" : "Toca para grabar"}
             </p>
           )}
 
@@ -716,13 +630,13 @@ export function VoiceRecordingEnhanced({
                 <>
                   <button
                     onClick={pauseRecording}
-                    className="rounded-full bg-amber-100 p-4 text-amber-700 transition-all hover:bg-amber-200"
+                    className="rounded-full bg-gray-100 p-4 text-gray-500 transition-all hover:bg-gray-200 hover:text-gray-700"
                   >
                     <Pause className="h-6 w-6" />
                   </button>
                   <button
                     onClick={stopRecording}
-                    className="rounded-full bg-red-100 p-4 text-red-700 transition-all hover:bg-red-200"
+                    className="rounded-full bg-gray-100 p-4 text-gray-500 transition-all hover:bg-gray-200 hover:text-gray-700"
                   >
                     <Square className="h-6 w-6" />
                   </button>
@@ -733,13 +647,13 @@ export function VoiceRecordingEnhanced({
                 <>
                   <button
                     onClick={resumeRecording}
-                    className="rounded-full bg-green-100 p-4 text-green-700 transition-all hover:bg-green-200"
+                    className="rounded-full bg-gray-100 p-4 text-gray-500 transition-all hover:bg-gray-200 hover:text-gray-700"
                   >
                     <Play className="h-6 w-6" />
                   </button>
                   <button
                     onClick={stopRecording}
-                    className="rounded-full bg-red-100 p-4 text-red-700 transition-all hover:bg-red-200"
+                    className="rounded-full bg-gray-100 p-4 text-gray-500 transition-all hover:bg-gray-200 hover:text-gray-700"
                   >
                     <Square className="h-6 w-6" />
                   </button>
@@ -765,58 +679,49 @@ export function VoiceRecordingEnhanced({
             </div>
           )}
 
-          {/* Recording Suggestions */}
-          {isRecording && !isPaused && !isProcessing && (
-            <div className="mt-8 rounded-lg border border-amber-200 bg-gradient-to-r from-amber-50 to-rose-50 p-4">
-              <div className="mb-2 flex items-center gap-2">
-                <div className="h-2 w-2 animate-pulse rounded-full bg-amber-500"></div>
-                <p className="text-xs font-semibold text-amber-800">
-                  Sugerencia:
-                </p>
-              </div>
-              <p
-                key={currentSuggestionIndex}
-                className="animate-in fade-in slide-in-from-bottom-2 text-sm text-amber-700 duration-300"
-              >
-                {recordingSuggestions[currentSuggestionIndex]}
-              </p>
-            </div>
+          {/* Recording tips - below buttons */}
+          {isRecording && !isPaused && (
+            <ul className="mt-8 space-y-2 text-left text-sm">
+              {getVisibleSuggestions().map((suggestion, i) => (
+                <li
+                  key={`${currentSuggestionIndex}-${i}`}
+                  className={cn(
+                    "flex items-center gap-2 text-gray-400",
+                    "animate-in fade-in slide-in-from-top-1 duration-300 ease-out fill-mode-both",
+                  )}
+                  style={{
+                    opacity: 1 - i * 0.2,
+                    animationDelay: `${i * 100}ms`,
+                  }}
+                >
+                  <span
+                    className="h-1 w-1 flex-shrink-0 rounded-full bg-gray-300"
+                    style={{ opacity: 1 - i * 0.25 }}
+                  />
+                  {suggestion}
+                </li>
+              ))}
+            </ul>
           )}
 
           {/* Retry button for errors */}
           {processingState.step === "error" && (
-            <div className="mt-6 space-y-3">
-              <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" />
-                  <div className="flex-1">
-                    <p className="mb-1 text-sm font-medium text-red-800">
-                      No se pudo procesar la grabación
-                    </p>
-                    <p className="text-xs text-red-600">
-                      Intenta grabar de nuevo con voz clara y asegúrate de
-                      mencionar los detalles de la propiedad
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center justify-center gap-3">
+            <div className="mt-6 flex items-center justify-center gap-3">
+              <button
+                onClick={resetRecording}
+                className="flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 px-5 py-2 text-sm font-medium text-white transition-all hover:opacity-90"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Reintentar
+              </button>
+              {onManualEntry && (
                 <button
-                  onClick={resetRecording}
-                  className="flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-400 to-rose-400 px-6 py-2.5 font-medium text-white shadow-lg transition-all hover:scale-105 hover:from-amber-500 hover:to-rose-500"
+                  onClick={onManualEntry}
+                  className="rounded-full px-5 py-2 text-sm font-medium text-gray-500 transition-all hover:text-gray-700"
                 >
-                  <RotateCcw className="h-4 w-4" />
-                  Intentar de nuevo
+                  Entrada manual
                 </button>
-                {onManualEntry && (
-                  <button
-                    onClick={onManualEntry}
-                    className="flex items-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-2.5 font-medium text-gray-700 transition-all hover:bg-gray-50"
-                  >
-                    Entrada manual
-                  </button>
-                )}
-              </div>
+              )}
             </div>
           )}
         </div>

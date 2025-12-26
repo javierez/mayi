@@ -259,7 +259,7 @@ export function AddressAutocomplete({
   const isInputDisabled = disabled;
 
   return (
-    <Popover open={open && status === "OK"} onOpenChange={setOpen}>
+    <Popover open={open && status === "OK"} onOpenChange={setOpen} modal={true}>
       <PopoverTrigger asChild>
         <div className="relative">
           <Input
@@ -289,8 +289,9 @@ export function AddressAutocomplete({
         </div>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[var(--radix-popover-trigger-width)] p-0"
+        className="z-[100] w-[var(--radix-popover-trigger-width)] p-0"
         align="start"
+        sideOffset={4}
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <div className="max-h-[300px] overflow-y-auto">

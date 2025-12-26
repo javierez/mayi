@@ -238,7 +238,8 @@ export interface ExtractedFieldResult {
     | "gpt4"
     | "gpt4_function_calling"
     | "gpt4_ocr"
-    | "voice_pattern";
+    | "voice_pattern"
+    | "nominatim_geocoding";
   fieldType: "string" | "number" | "boolean" | "decimal";
   matched_alias?: string; // Which Spanish term was matched
 }

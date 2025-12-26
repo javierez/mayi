@@ -309,10 +309,7 @@ export async function generatePropertyDescription(
     // Filter to only relevant fields for this property type
     const relevantListing = getRelevantFields(listing);
 
-    // Fetch account context for personalization
-    const accountContext = await fetchAccountContext();
-
-    // Fetch description examples from database
+    // Fetch description examples from database FIRST - they drive everything else
     let examples: string[] = [];
     let importantFields: string[] = [];
     const accountId: number = await getCurrentUserAccountId();
@@ -326,9 +323,48 @@ export async function generatePropertyDescription(
       importantFields = examplesResult.importantFields;
     }
 
-    // Search for neighborhood information if available
+    const hasExamples = examples.length > 0;
+
+    // Helper to detect if examples mention neighborhood/location details
+    const examplesUseNeighborhood = hasExamples && examples.some((ex) => {
+      const lowerEx = ex.toLowerCase();
+      return lowerEx.includes("barrio") ||
+             lowerEx.includes("zona") ||
+             lowerEx.includes("ubicación") ||
+             lowerEx.includes("ubicado") ||
+             lowerEx.includes("situado") ||
+             lowerEx.includes("cercano") ||
+             lowerEx.includes("próximo") ||
+             lowerEx.includes("alrededores") ||
+             lowerEx.includes("entorno") ||
+             lowerEx.includes("vecindario") ||
+             lowerEx.includes("servicios") ||
+             lowerEx.includes("transporte") ||
+             lowerEx.includes("comercios") ||
+             lowerEx.includes("colegios") ||
+             lowerEx.includes("parques");
+    });
+
+    // Helper to detect if examples mention company/agency branding
+    const examplesUseCompanyContext = hasExamples && examples.some((ex) => {
+      const lowerEx = ex.toLowerCase();
+      return lowerEx.includes("inmobiliaria") ||
+             lowerEx.includes("nuestra") ||
+             lowerEx.includes("nuestro") ||
+             lowerEx.includes("le ofrecemos") ||
+             lowerEx.includes("contacte") ||
+             lowerEx.includes("llámenos");
+    });
+
+    // Only fetch account context if examples use company branding
+    let accountContext = null;
+    if (!hasExamples || examplesUseCompanyContext) {
+      accountContext = await fetchAccountContext();
+    }
+
+    // Only search for neighborhood info if examples use location details
     let neighborhoodInfo = null;
-    if (relevantListing.neighborhood || relevantListing.city) {
+    if (examplesUseNeighborhood && (relevantListing.neighborhood || relevantListing.city)) {
       console.log(
         `Searching for neighborhood info: ${relevantListing.street ?? ""} ${relevantListing.neighborhood ?? relevantListing.city}`,
       );
@@ -339,123 +375,102 @@ export async function generatePropertyDescription(
       );
     }
 
-    // Create a prompt with examples and account context
+    // Create prompt - examples are the PRIMARY driver
     let prompt = "";
-
-    // Add examples directly in prompt if available
-    const hasExamples = examples.length > 0;
-    if (hasExamples) {
-      prompt += `EJEMPLOS DE ESTILO A SEGUIR:
-
-${examples.map((ex, i) => `--- EJEMPLO ${i + 1} ---\n${ex}`).join("\n\n")}
-
-IMPORTANTE: Estudia cuidadosamente estos ejemplos para replicar su estilo de escritura, tono, estructura y vocabulario. Presta especial atención a:
-- Cómo describen las propiedades y sus características
-- El lenguaje emocional y técnicas persuasivas que utilizan
-- El flujo narrativo y patrones de estructura
-- El vocabulario y frases específicas que emplean
-- Cómo destacan los puntos de venta clave
-- La manera en que crean conexiones visuales y emocionales
-
-${
-        importantFields.length > 0
-          ? `CAMPOS IMPORTANTES A DESTACAR:
-Los siguientes campos son especialmente importantes en las descripciones de este tipo de propiedad. Si la propiedad tiene datos para estos campos, asegúrate de mencionarlos de forma natural en la descripción:
-${importantFields.join(", ")}
-
-`
-          : ""
-      }`;
-    }
-
-    // Add neighborhood information if found
-    if (neighborhoodInfo) {
-      prompt += `NEIGHBORHOOD INFORMATION:
-${neighborhoodInfo}
-
-`;
-    }
-
-    // Add account context if available
-    if (accountContext) {
-      prompt += `${await formatAccountContextForPrompt(accountContext)}
-
-`;
-    }
-
-    // Add the main instruction
     const propertyTypeDisplay = getPropertyTypeDisplayName(
       relevantListing.propertyType as PropertyType,
     );
-    prompt += `Generate a professional property description in Spanish for a ${propertyTypeDisplay} with these confirmed characteristics:
 
-${hasExamples ? `CRÍTICO: Antes de escribir, estudia cuidadosamente los ejemplos proporcionados arriba para entender el estilo, tono y estructura deseados. Tu descripción debe coincidir estrechamente con los patrones, vocabulario y enfoque demostrados en esos ejemplos.` : ""}
+    if (hasExamples) {
+      // EXAMPLE-DRIVEN PROMPT: Focus entirely on replicating the examples
+      prompt = `TU ÚNICA TAREA: Escribir una descripción que sea INDISTINGUIBLE de estos ejemplos.
 
-    Basic Information:
-    Price: ${relevantListing.price}€
-    Listing Type: ${relevantListing.listingType}
-    Property Type: ${propertyTypeDisplay}
+EJEMPLOS DE REFERENCIA (CÓPIALOS EXACTAMENTE EN ESTILO):
 
-    Property Specifications:
-    ${relevantListing.propertyType !== "garaje" ? `Size: ${getSquareMeter(relevantListing) ?? "N/A"}m²` : `Built Area: ${getBuiltSurfaceArea(relevantListing) ?? "N/A"}m²`}
-    ${relevantListing.propertyType !== "garaje" && relevantListing.propertyType !== "solar" ? `Bedrooms: ${relevantListing.bedrooms ?? "N/A"}` : ""}
-    ${relevantListing.propertyType !== "garaje" && relevantListing.propertyType !== "solar" ? `Bathrooms: ${relevantListing.bathrooms ?? "N/A"}` : ""}
+${examples.map((ex, i) => `═══ EJEMPLO ${i + 1} ═══\n${ex}`).join("\n\n")}
 
-    Complete Property Data (filtered for relevance):
-    ${JSON.stringify(relevantListing, null, 2)}
+═══════════════════════════════════════════════════════════════
 
-    Write a flowing narrative that includes:
-    - A compelling headline with property type and location
-    - An introduction highlighting main selling points
-    ${relevantListing.propertyType !== "solar" ? "- Property condition and recent improvements (if any)" : ""}
-    ${relevantListing.propertyType !== "garaje" && relevantListing.propertyType !== "solar" ? "- Layout and space distribution" : ""}
-    ${relevantListing.propertyType === "garaje" ? "- Garage specifications and access details" : ""}
-    ${relevantListing.propertyType === "solar" ? "- Land characteristics and development potential" : ""}
-    - Special features and amenities (if any)
-    - Location benefits and connectivity (if any)
-    - Neighborhood amenities and lifestyle
+DATOS DE LA PROPIEDAD A DESCRIBIR:
+- Tipo: ${propertyTypeDisplay}
+- Precio: ${relevantListing.price}€
+- Operación: ${relevantListing.listingType}
+${relevantListing.propertyType !== "garaje" ? `- Superficie: ${getSquareMeter(relevantListing) ?? "N/A"}m²` : `- Superficie construida: ${getBuiltSurfaceArea(relevantListing) ?? "N/A"}m²`}
+${relevantListing.propertyType !== "garaje" && relevantListing.propertyType !== "solar" ? `- Habitaciones: ${relevantListing.bedrooms ?? "N/A"}` : ""}
+${relevantListing.propertyType !== "garaje" && relevantListing.propertyType !== "solar" ? `- Baños: ${relevantListing.bathrooms ?? "N/A"}` : ""}
 
-    Style Requirements:
-    - Professional and engaging tone
-    - Emotional connection with potential buyers
-    - Descriptive language for visualization
-    - Specific neighborhood details
-    - Flowing narrative without numbers or bullet points
-    - Keep descriptions concise and avoid overly elaborate language
-    - Focus on key features without excessive embellishment
-    - Format square meters as numeric notation (e.g., "80m2", "120m2") not as written text
+Datos completos:
+${JSON.stringify(relevantListing, null, 2)}
 
-    CRITICAL REQUIREMENTS:
-    ${
-      hasExamples
-        ? `- OBLIGATORIO: Estudia los ejemplos proporcionados y replica su estilo de escritura, tono y estructura exactos
-    - Coincide con el vocabulario, frases y lenguaje emocional usado en los ejemplos
-    - Sigue los mismos patrones de flujo narrativo y estructura de los ejemplos
-    - Usa las mismas técnicas persuasivas y enfoques de venta demostrados en los ejemplos
-    - Replica la forma en que los ejemplos destacan características y crean conexiones emocionales
-    - Tu descripción debe sentirse como si fuera escrita por la misma persona que escribió los ejemplos`
-        : "- Usa un estilo de escritura inmobiliaria profesional"
+${importantFields.length > 0 ? `CAMPOS QUE DEBES MENCIONAR (si la propiedad los tiene): ${importantFields.join(", ")}` : ""}
+
+${neighborhoodInfo ? `INFORMACIÓN DEL BARRIO (úsala SOLO si los ejemplos mencionan ubicación/zona):
+${neighborhoodInfo}` : ""}
+
+${accountContext ? `CONTEXTO DE EMPRESA (úsalo SOLO si los ejemplos incluyen branding):
+${await formatAccountContextForPrompt(accountContext)}` : ""}
+
+INSTRUCCIONES ABSOLUTAS:
+
+1. REPLICA EL ESTILO EXACTO de los ejemplos:
+   - Misma estructura y organización de párrafos
+   - Mismo tono y registro lingüístico
+   - Mismas expresiones y giros idiomáticos
+   - Misma longitud aproximada
+   - Misma forma de destacar características
+
+2. ANALIZA los ejemplos para detectar:
+   - ¿Usan títulos/encabezados o texto corrido?
+   - ¿Mencionan ubicación/barrio o solo la propiedad?
+   - ¿Incluyen información de empresa o son neutros?
+   - ¿Son técnicos o emocionales?
+   - ¿Son breves o detallados?
+
+   → Tu descripción debe coincidir en TODOS estos aspectos.
+
+3. NO AÑADAS elementos que no aparezcan en los ejemplos:
+   - Si los ejemplos no mencionan barrio → no menciones barrio
+   - Si los ejemplos no tienen título → no pongas título
+   - Si los ejemplos son breves → sé breve
+   - Si los ejemplos no son emotivos → no seas emotivo
+
+4. USA SOLO datos confirmados de la propiedad. No inventes.
+
+⚠️ PROHIBIDO (rechazo del portal):
+- Teléfonos en cualquier formato
+- Emails
+- Cualquier dato de contacto`;
+
+    } else {
+      // NO EXAMPLES: Use standard professional style
+      prompt = `Genera una descripción profesional en español para un/a ${propertyTypeDisplay}.
+
+DATOS DE LA PROPIEDAD:
+- Precio: ${relevantListing.price}€
+- Operación: ${relevantListing.listingType}
+- Tipo: ${propertyTypeDisplay}
+${relevantListing.propertyType !== "garaje" ? `- Superficie: ${getSquareMeter(relevantListing) ?? "N/A"}m²` : `- Superficie construida: ${getBuiltSurfaceArea(relevantListing) ?? "N/A"}m²`}
+${relevantListing.propertyType !== "garaje" && relevantListing.propertyType !== "solar" ? `- Habitaciones: ${relevantListing.bedrooms ?? "N/A"}` : ""}
+${relevantListing.propertyType !== "garaje" && relevantListing.propertyType !== "solar" ? `- Baños: ${relevantListing.bathrooms ?? "N/A"}` : ""}
+
+Datos completos:
+${JSON.stringify(relevantListing, null, 2)}
+
+${accountContext ? `CONTEXTO DE EMPRESA:
+${await formatAccountContextForPrompt(accountContext)}` : ""}
+
+REQUISITOS:
+- Estilo profesional inmobiliario
+- Narrativa fluida sin viñetas ni números
+- Solo menciona características confirmadas
+- Tono apropiado para el tipo de propiedad
+- Formato metros cuadrados: "80m2" (no "ochenta metros cuadrados")
+
+⚠️ PROHIBIDO (rechazo del portal):
+- Teléfonos en cualquier formato
+- Emails
+- Cualquier dato de contacto`;
     }
-    ${accountContext ? "- Naturally incorporate the company information provided in the company context" : ""}
-    - Only mention explicitly confirmed features. Omit any unconfirmed information
-    - Create descriptions that feel authentic and match the established writing style
-
-    ⚠️ PROHIBITED CONTENT (PORTAL COMPLIANCE - CRITICAL):
-    - NEVER include phone numbers in ANY format (e.g., 666 123 456, +34 666123456, 666-123-456, etc.)
-    - NEVER include email addresses (e.g., info@example.com, contacto@inmobiliaria.es, etc.)
-    - NEVER include any contact information whatsoever
-    - This is a STRICT requirement from property portals like Fotocasa to prevent direct contact outside their platform
-    - Violation of this rule will result in listing rejection by the portal
-
-    NEIGHBORHOOD INTEGRATION:
-    ${
-      neighborhoodInfo
-        ? `- Use the neighborhood information provided above to enhance the property description
-    - Naturally incorporate local amenities, attractions, and lifestyle benefits into your description
-    - Highlight what makes this location special and desirable for potential buyers/renters
-    - Make the neighborhood sound attractive and appealing`
-        : "- Focus on the property's features and benefits since no neighborhood information is available"
-    }`;
 
     // Set default AI configuration values (currently unused)
     // const defaultConfig: Required<AIConfig> = {
@@ -471,38 +486,45 @@ ${hasExamples ? `CRÍTICO: Antes de escribir, estudia cuidadosamente los ejemplo
     // Merge user config with defaults (currently unused)
     // const finalConfig = { ...defaultConfig, ...aiConfig };
 
-    // Build system prompt
-    let systemMessage = `You are a professional real estate copywriter who specializes in creating engaging property descriptions in Spanish. You understand the unique characteristics and selling points of different property types including residential properties (pisos, casas), commercial spaces (locales), garages, and land (solares).`;
+    // Build system prompt - heavily example-driven when examples exist
+    let systemMessage: string;
 
-    if (accountContext && hasExamples) {
-      systemMessage +=
-        " You have been provided with property description examples and specific company information to personalize the descriptions. You MUST carefully study the examples to understand and replicate the exact writing style, tone, vocabulary, and structure. Your primary goal is to match the patterns demonstrated in the examples - study how they describe properties, create emotional connections, use specific language, and structure their narrative flow. Then use the company context to make descriptions feel authentic to that specific real estate agency.";
-    } else if (hasExamples) {
-      systemMessage +=
-        " You have been provided with property description examples. You MUST carefully study these examples to understand and replicate the exact writing style, tone, vocabulary, and structure. Your primary goal is to match the patterns demonstrated in the examples - study how they describe properties, create emotional connections, use specific language, and structure their narrative flow. Your description should feel like it was written by the same person who wrote the examples.";
-    } else if (accountContext) {
-      systemMessage +=
-        " You have been provided with specific company information to personalize the descriptions. Use this context to make descriptions feel authentic to that specific real estate agency - naturally incorporating their brand identity and contact information when appropriate.";
-    }
+    if (hasExamples) {
+      // EXAMPLE-DRIVEN SYSTEM: You are a style replicator
+      systemMessage = `Eres un experto en replicar estilos de escritura. Tu trabajo es analizar ejemplos de descripciones inmobiliarias y producir descripciones IDÉNTICAS en estilo, tono, estructura y vocabulario.
 
-    // Add property-type specific guidance
-    const propertyType = relevantListing.propertyType;
-    if (propertyType === "garaje") {
-      systemMessage +=
-        " For garage properties, focus on practical aspects like size, accessibility, security features, building amenities, and location convenience. Emphasize the value and utility for vehicle storage and the peace of mind it provides.";
-    } else if (propertyType === "solar") {
-      systemMessage +=
-        " For land/solar properties, emphasize development potential, location advantages, views, accessibility, and investment opportunities. Focus on the possibilities and vision for future development while highlighting current land characteristics.";
-    } else if (propertyType === "local") {
-      systemMessage +=
-        " For commercial properties, focus on business potential, location advantages, foot traffic, accessibility, layout flexibility, and features that would attract businesses or investors.";
+REGLAS ABSOLUTAS:
+1. Tu descripción debe ser INDISTINGUIBLE de los ejemplos proporcionados
+2. Copia la estructura exacta: si los ejemplos tienen título, pon título; si no, no
+3. Copia la longitud aproximada de los ejemplos
+4. Usa las mismas expresiones y giros lingüísticos
+5. Si los ejemplos no mencionan algo (barrio, empresa, etc.), TÚ TAMPOCO
+6. Solo usa datos confirmados de la propiedad
+
+Tu objetivo es que un humano NO pueda distinguir tu descripción de los ejemplos originales.`;
     } else {
-      systemMessage +=
-        " For residential properties, create emotional connections by describing lifestyle benefits, comfort features, and how the space would feel as a home.";
-    }
+      // NO EXAMPLES: Standard professional copywriter
+      systemMessage = `Eres un redactor inmobiliario profesional especializado en descripciones en español. Conoces las características y puntos de venta de diferentes tipos de propiedades: residenciales (pisos, casas), comerciales (locales), garajes y terrenos (solares).`;
 
-    systemMessage +=
-      " You are extremely careful to only mention features and characteristics that are explicitly confirmed in the filtered property data provided. Write in a flowing narrative style without using numbers, bullet points, or section breaks. When neighborhood information is provided, use it to enhance the description by highlighting local amenities, attractions, and lifestyle benefits that would appeal to potential buyers or renters.";
+      // Add property-type specific guidance only when no examples
+      const propertyType = relevantListing.propertyType;
+      if (propertyType === "garaje") {
+        systemMessage +=
+          " Para garajes, enfócate en aspectos prácticos: tamaño, accesibilidad, seguridad, ubicación.";
+      } else if (propertyType === "solar") {
+        systemMessage +=
+          " Para solares, destaca el potencial de desarrollo, ubicación, vistas y oportunidades de inversión.";
+      } else if (propertyType === "local") {
+        systemMessage +=
+          " Para locales comerciales, enfócate en potencial de negocio, ubicación, tráfico peatonal y flexibilidad del espacio.";
+      } else {
+        systemMessage +=
+          " Para propiedades residenciales, crea conexión emocional describiendo el estilo de vida y confort.";
+      }
+
+      systemMessage +=
+        " Solo menciona características confirmadas. Escribe en narrativa fluida sin viñetas ni números.";
+    }
 
     // Generate description using unified AI client
     const description = await generateText(systemMessage, prompt);
