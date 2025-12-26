@@ -34,7 +34,7 @@ export default function CapturaPage() {
     );
 
     // In the future, you can navigate to the form with the data:
-    // router.push(`/propiedades/crear?voiceData=${encodeURIComponent(JSON.stringify(extractedData))}`);
+    // router.push(`/propiedades/registro?voiceData=${encodeURIComponent(JSON.stringify(extractedData))}`);
   };
 
   // Handle retry recording

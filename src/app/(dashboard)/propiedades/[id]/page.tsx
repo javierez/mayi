@@ -97,7 +97,7 @@ export default async function PropertyPage({
     isValidRecord(fullListingDetails) &&
     (fullListingDetails as { status?: string }).status === "Draft"
   ) {
-    redirect(`/propiedades/crear/${listingId}`);
+    redirect(`/propiedades/registro/${listingId}`);
   }
 
   // Get energy certificate, images, videos, YouTube links, virtual tours, and image count in parallel

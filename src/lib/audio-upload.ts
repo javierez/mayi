@@ -29,6 +29,27 @@ const s3Client = new S3Client({
   },
 });
 
+/**
+ * Get the appropriate file extension for an audio MIME type
+ */
+function getAudioExtension(mimeType: string): string {
+  const baseMimeType = mimeType.split(";")[0]?.trim() ?? "";
+
+  const extensionMap: Record<string, string> = {
+    "audio/webm": "webm",
+    "audio/wav": "wav",
+    "audio/mp3": "mp3",
+    "audio/mpeg": "mp3",
+    "audio/ogg": "ogg",
+    "audio/mp4": "mp4",
+    "audio/m4a": "m4a",
+    "audio/aac": "aac",
+    "audio/x-m4a": "m4a",
+  };
+
+  return extensionMap[baseMimeType] ?? "webm";
+}
+
 export async function uploadAudioToS3(
   audioBlob: Blob,
   referenceNumber: string,
@@ -49,9 +70,13 @@ export async function uploadAudioToS3(
     // Get dynamic bucket name based on current user's account
     const bucketName = await getDynamicBucketName();
 
+    // Get the appropriate file extension based on MIME type
+    const extension = getAudioExtension(audioBlob.type);
+    const contentType = audioBlob.type.split(";")[0]?.trim() ?? "audio/webm";
+
     // Generate a unique filename with timestamp
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const audioKey = `${referenceNumber}/audio/voice_recording_${timestamp}_${nanoid(6)}.webm`;
+    const audioKey = `${referenceNumber}/audio/voice_recording_${timestamp}_${nanoid(6)}.${extension}`;
     const s3key = `s3://${bucketName}/${audioKey}`;
 
     // Convert Blob to Buffer
@@ -64,12 +89,13 @@ export async function uploadAudioToS3(
         Bucket: bucketName,
         Key: audioKey,
         Body: buffer,
-        ContentType: "audio/webm",
+        ContentType: contentType,
         // Add metadata for better organization
         Metadata: {
           source: "voice-recording",
           referenceNumber: referenceNumber,
           uploadTimestamp: new Date().toISOString(),
+          originalMimeType: audioBlob.type,
         },
       }),
     );
@@ -120,12 +146,26 @@ export function validateAudioBlob(audioBlob: Blob): {
     };
   }
 
-  // Check MIME type
-  const validTypes = ["audio/webm", "audio/wav", "audio/mp3", "audio/ogg"];
-  if (!validTypes.includes(audioBlob.type)) {
+  // Check MIME type - support base types and variants with codecs
+  const validBaseTypes = [
+    "audio/webm",
+    "audio/wav",
+    "audio/mp3",
+    "audio/ogg",
+    "audio/mp4",
+    "audio/m4a",
+    "audio/aac",
+    "audio/mpeg",
+    "audio/x-m4a",
+  ];
+
+  // Extract base MIME type (without codec info like ";codecs=opus")
+  const baseMimeType = audioBlob.type.split(";")[0]?.trim() ?? "";
+
+  if (!validBaseTypes.includes(baseMimeType)) {
     return {
       isValid: false,
-      error: `Invalid audio format: ${audioBlob.type}. Supported: ${validTypes.join(", ")}`,
+      error: `Invalid audio format: ${audioBlob.type}. Supported: ${validBaseTypes.join(", ")}`,
     };
   }
 

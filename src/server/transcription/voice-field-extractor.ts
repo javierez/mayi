@@ -1162,29 +1162,29 @@ async function extractWithGPT4(
     {
       name: "extract_infrastructure",
       description:
-        "Extract utility infrastructure details like electricity and plumbing/detalles de infraestructura e instalaciones",
+        "Extract utility infrastructure details like electricity and plumbing - ONLY include fields that are explicitly mentioned in the text",
       parameters: {
         type: "object",
         properties: {
           electricity_type: {
             type: "string",
-            enum: ["monofasica", "trifasica", "mixta", "no_disponible"],
-            description: "Tipo instalación eléctrica: monofásica, trifásica, mixta, no_disponible",
+            enum: ["monofasica", "trifasica", "mixta"],
+            description: "Tipo instalación eléctrica - ONLY include if explicitly mentioned",
           },
           electricity_status: {
             type: "string",
-            enum: ["nuevo", "buen_estado", "funcional", "necesita_actualizacion", "necesita_reparacion", "no_disponible"],
-            description: "Estado instalación eléctrica",
+            enum: ["nuevo", "buen_estado", "funcional", "necesita_actualizacion", "necesita_reparacion"],
+            description: "Estado instalación eléctrica - ONLY include if explicitly mentioned",
           },
           plumbing_type: {
             type: "string",
-            enum: ["cobre", "pvc", "multicapa", "galvanizado", "mixto", "no_disponible"],
-            description: "Tipo fontanería: cobre, pvc, multicapa, galvanizado, mixto",
+            enum: ["cobre", "pvc", "multicapa", "galvanizado", "mixto"],
+            description: "Tipo fontanería - ONLY include if explicitly mentioned",
           },
           plumbing_status: {
             type: "string",
-            enum: ["nuevo", "buen_estado", "funcional", "necesita_actualizacion", "tiene_fugas", "necesita_reparacion", "no_disponible"],
-            description: "Estado fontanería",
+            enum: ["nuevo", "buen_estado", "funcional", "necesita_actualizacion", "tiene_fugas", "necesita_reparacion"],
+            description: "Estado fontanería - ONLY include if explicitly mentioned",
           },
           original_text: {
             type: "string",
@@ -1665,6 +1665,17 @@ function processFunctionResults(
       fieldName === "confidence" ||
       fieldValue == null
     ) {
+      continue;
+    }
+
+    // Skip "no_disponible" values - these indicate the model couldn't find the information
+    if (
+      typeof fieldValue === "string" &&
+      fieldValue.toLowerCase() === "no_disponible"
+    ) {
+      console.log(
+        `⏭️ [GPT4-FUNCTION-CALLING] Skipping ${fieldName}: value is "no_disponible"`,
+      );
       continue;
     }
 

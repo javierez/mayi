@@ -32,7 +32,7 @@
 ### 1.1 Creación y Edición de Propiedades
 
 **📍 Ubicación en el código:**
-- `src/app/(dashboard)/propiedades/crear/page.tsx`
+- `src/app/(dashboard)/propiedades/registro/page.tsx`
 - `src/components/propiedades/form/property-characteristics-form.tsx`
 
 **✨ Funcionalidades Principales:**

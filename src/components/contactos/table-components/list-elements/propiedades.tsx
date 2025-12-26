@@ -173,7 +173,7 @@ export function Propiedades({
           onClick={(e) => {
             e.stopPropagation();
             const targetRoute = isDraft
-              ? `/propiedades/crear/${listing.listingId}`
+              ? `/propiedades/registro/${listing.listingId}`
               : `/propiedades/${listing.listingId}`;
             router.push(targetRoute);
           }}
@@ -289,7 +289,7 @@ export function Propiedades({
               onClick={(e) => {
                 e.stopPropagation();
                 const targetRoute = isDraft
-                  ? `/propiedades/crear/${firstListing.listingId}`
+                  ? `/propiedades/registro/${firstListing.listingId}`
                   : `/propiedades/${firstListing.listingId}`;
                 router.push(targetRoute);
               }}
@@ -429,7 +429,7 @@ export function Propiedades({
                     onClick={(e) => {
                       e.stopPropagation();
                       const targetRoute = isDraft
-                        ? `/propiedades/crear/${listing.listingId}`
+                        ? `/propiedades/registro/${listing.listingId}`
                         : `/propiedades/${listing.listingId}`;
                       router.push(targetRoute);
                     }}

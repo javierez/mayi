@@ -43,9 +43,22 @@ export async function transcribeAudio(
       );
     }
 
+    // Extract file extension from URL and determine MIME type
+    const urlExtension = audioUrl.split(".").pop()?.split("?")[0] ?? "webm";
+    const extensionToMimeType: Record<string, string> = {
+      webm: "audio/webm",
+      wav: "audio/wav",
+      mp3: "audio/mp3",
+      ogg: "audio/ogg",
+      mp4: "audio/mp4",
+      m4a: "audio/m4a",
+      aac: "audio/aac",
+    };
+    const mimeType = extensionToMimeType[urlExtension] ?? "audio/webm";
+
     const audioBuffer = await audioResponse.arrayBuffer();
-    const audioFile = new File([audioBuffer], "recording.webm", {
-      type: "audio/webm",
+    const audioFile = new File([audioBuffer], `recording.${urlExtension}`, {
+      type: mimeType,
     });
 
     // Configure transcription with Spanish real estate context
