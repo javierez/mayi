@@ -23,7 +23,10 @@ import {
   File,
   X,
   Loader2,
+  Building2,
 } from "lucide-react";
+import Image from "next/image";
+import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -584,6 +587,47 @@ export function InboxConversationView({
           <h3 className="mt-4 text-xl font-semibold tracking-tight">
             {thread.subject}
           </h3>
+        ) : null}
+
+        {/* Thread Context - Linked Listing */}
+        {thread.threadContext?.listing ? (
+          <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                {thread.threadContext.listing.imageUrl ? (
+                  <Image
+                    src={thread.threadContext.listing.imageUrl}
+                    alt={thread.threadContext.listing.title ?? "Property"}
+                    width={40}
+                    height={40}
+                    className="h-10 w-10 rounded-lg object-cover"
+                  />
+                ) : (
+                  <Building2 className="h-5 w-5 text-primary" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="truncate text-sm font-medium">
+                    {thread.threadContext.listing.title ?? "Propiedad"}
+                  </p>
+                  <Badge variant="outline" className="text-xs">
+                    {thread.threadContext.contactType === "owner"
+                      ? "Propietario"
+                      : "Demandante"}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  {thread.threadContext.listing.referenceNumber ? (
+                    <span>Ref: {thread.threadContext.listing.referenceNumber}</span>
+                  ) : null}
+                  {thread.threadContext.listing.city ? (
+                    <span>• {thread.threadContext.listing.city}</span>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </div>
         ) : null}
       </div>
 

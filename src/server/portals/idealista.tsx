@@ -3,8 +3,20 @@
 import { Client as FTPClient } from "basic-ftp";
 import { Readable } from "stream";
 import { db } from "~/server/db";
-import { listings, properties } from "~/server/db/schema";
+import {
+  accounts,
+  listings,
+  locations,
+  properties,
+  propertyImages,
+} from "~/server/db/schema";
 import { eq, and } from "drizzle-orm";
+import {
+  listFtpFiles,
+  downloadFtpFile,
+  deleteMultipleFtpFiles,
+  type FtpConfig,
+} from "../utils/ftp-client";
 import { getListingDetailsWithAuth, updateListing } from "../queries/listing";
 import { getPropertyImages } from "../queries/property_images";
 import {
@@ -1366,6 +1378,373 @@ export async function validateListingForIdealista(listingId: number): Promise<{
           : "Error al validar el inmueble",
       ],
       warnings: [],
+    };
+  }
+}
+
+// ============================================
+// SLOT MANAGEMENT
+// ============================================
+
+/**
+ * Get the max Idealista slots for an account
+ * Returns null if unlimited (no limit set)
+ */
+export async function getAccountIdealistaMaxSlots(
+  accountId: number,
+): Promise<number | null> {
+  const [account] = await db
+    .select({ portalSettings: accounts.portalSettings })
+    .from(accounts)
+    .where(eq(accounts.accountId, BigInt(accountId)))
+    .limit(1);
+
+  if (!account?.portalSettings) {
+    return null;
+  }
+
+  const portalSettings = account.portalSettings as Record<string, unknown>;
+  const idealistaSettings = portalSettings.idealista as
+    | Record<string, unknown>
+    | undefined;
+
+  return (idealistaSettings?.maxSlots as number | undefined) ?? null;
+}
+
+/**
+ * Get detailed Idealista enabled listings (for swap modal)
+ */
+export async function getIdealistaEnabledListingsDetailed(
+  accountId: number,
+): Promise<{
+  success: boolean;
+  listings?: Array<{
+    listingId: bigint;
+    referenceNumber: string | null;
+    title: string | null;
+    city: string | null;
+    price: string;
+    propertyType: string | null;
+    imageUrl: string | null;
+  }>;
+  count?: number;
+  error?: string;
+}> {
+  try {
+    const result = await db
+      .select({
+        listingId: listings.listingId,
+        referenceNumber: properties.referenceNumber,
+        title: properties.title,
+        city: locations.city,
+        price: listings.price,
+        propertyType: properties.propertyType,
+        propertyId: properties.propertyId,
+      })
+      .from(listings)
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .leftJoin(
+        locations,
+        eq(properties.neighborhoodId, locations.neighborhoodId),
+      )
+      .where(
+        and(
+          eq(listings.accountId, BigInt(accountId)),
+          eq(listings.idealista, true),
+          eq(listings.isActive, true),
+        ),
+      );
+
+    // Fetch first image for each property
+    const propertyIds = result.map((l) => l.propertyId);
+    const imagesResult =
+      propertyIds.length > 0
+        ? await db
+            .select({
+              propertyId: propertyImages.propertyId,
+              imageUrl: propertyImages.imageUrl,
+            })
+            .from(propertyImages)
+            .where(
+              and(
+                eq(propertyImages.isActive, true),
+                // We'll filter by propertyIds in memory since Drizzle inArray needs specific handling
+              ),
+            )
+        : [];
+
+    // Create a map of propertyId to first imageUrl
+    const imageMap = new Map<string, string>();
+    for (const img of imagesResult) {
+      const propIdStr = img.propertyId.toString();
+      if (
+        !imageMap.has(propIdStr) &&
+        propertyIds.some((pid) => pid.toString() === propIdStr)
+      ) {
+        imageMap.set(propIdStr, img.imageUrl);
+      }
+    }
+
+    return {
+      success: true,
+      listings: result.map((l) => ({
+        listingId: l.listingId,
+        referenceNumber: l.referenceNumber,
+        title: l.title,
+        city: l.city,
+        price: l.price,
+        propertyType: l.propertyType,
+        imageUrl: imageMap.get(l.propertyId.toString()) ?? null,
+      })),
+      count: result.length,
+    };
+  } catch (error) {
+    console.error("Error getting Idealista enabled listings detailed:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+/**
+ * Check if account has available Idealista slots
+ */
+export async function checkIdealistaSlotAvailability(
+  accountId: number,
+): Promise<{
+  hasCapacity: boolean;
+  currentCount: number;
+  maxSlots: number | null;
+  enabledListings?: Array<{
+    listingId: bigint;
+    referenceNumber: string | null;
+    title: string | null;
+    city: string | null;
+    price: string;
+    propertyType: string | null;
+    imageUrl: string | null;
+  }>;
+}> {
+  const [maxSlots, enabledResult] = await Promise.all([
+    getAccountIdealistaMaxSlots(accountId),
+    getIdealistaEnabledListingsDetailed(accountId),
+  ]);
+
+  const currentCount = enabledResult.count ?? 0;
+
+  // If maxSlots is null, unlimited
+  if (maxSlots === null) {
+    return { hasCapacity: true, currentCount, maxSlots: null };
+  }
+
+  const hasCapacity = currentCount < maxSlots;
+
+  return {
+    hasCapacity,
+    currentCount,
+    maxSlots,
+    enabledListings: hasCapacity ? undefined : enabledResult.listings,
+  };
+}
+
+/**
+ * Swap Idealista listing - deactivate one and activate another
+ */
+export async function swapIdealistaListing(
+  accountId: number,
+  listingIdToDeactivate: bigint,
+  listingIdToActivate: number,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Deactivate the selected listing
+    await db
+      .update(listings)
+      .set({ idealista: false, updatedAt: new Date() })
+      .where(
+        and(
+          eq(listings.listingId, listingIdToDeactivate),
+          eq(listings.accountId, BigInt(accountId)),
+        ),
+      );
+
+    // Activate the new listing
+    await db
+      .update(listings)
+      .set({ idealista: true, updatedAt: new Date() })
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingIdToActivate)),
+          eq(listings.accountId, BigInt(accountId)),
+        ),
+      );
+
+    // Log activity
+    try {
+      const currentUser = await getCurrentUser();
+      console.log(
+        `User ${currentUser.id} swapped Idealista listings: deactivated ${listingIdToDeactivate}, activated ${listingIdToActivate}`,
+      );
+    } catch (activityError) {
+      console.error("Error logging Idealista swap activity:", activityError);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error swapping Idealista listing:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+// ============================================
+// STATUS FILE READER
+// ============================================
+
+/**
+ * Read and process Idealista status files from FTP
+ * - Reads the most recent status file
+ * - Deletes old status files
+ * - Logs and returns the parsed content
+ */
+export async function readIdealistaStatusFiles(
+  customerCode: string,
+): Promise<{
+  success: boolean;
+  statusData?: unknown;
+  processedFile?: string;
+  deletedFiles?: string[];
+  error?: string;
+}> {
+  const ftpHost = process.env.IDEALISTA_FTP_HOST;
+  const ftpUser = process.env.IDEALISTA_FTP_USER;
+  const ftpPassword = process.env.IDEALISTA_FTP_PASSWORD;
+
+  if (!ftpHost || !ftpUser || !ftpPassword) {
+    return {
+      success: false,
+      error: "FTP credentials not configured",
+    };
+  }
+
+  const ftpConfig: FtpConfig = {
+    host: ftpHost,
+    user: ftpUser,
+    password: ftpPassword,
+    secure: false,
+  };
+
+  try {
+    // List files in status directory
+    const listResult = await listFtpFiles(ftpConfig, "status");
+    if (!listResult.success || !listResult.files) {
+      return {
+        success: false,
+        error: listResult.error ?? "Failed to list status files",
+      };
+    }
+
+    // Filter for this customer's status files
+    // Pattern: ilc*_yyyyMMdd-HH:mm:ss.SSS.json
+    const statusFiles = listResult.files
+      .filter(
+        (f) =>
+          f.type === "file" &&
+          f.name.startsWith(customerCode) &&
+          f.name.endsWith(".json"),
+      )
+      .sort((a, b) => b.modifiedAt.getTime() - a.modifiedAt.getTime()); // Most recent first
+
+    if (statusFiles.length === 0) {
+      console.log(
+        `No Idealista status files found for customer ${customerCode}`,
+      );
+      return {
+        success: true,
+        statusData: null,
+        processedFile: undefined,
+        deletedFiles: [],
+      };
+    }
+
+    // Read the most recent file
+    const mostRecentFile = statusFiles[0];
+    if (!mostRecentFile) {
+      return {
+        success: true,
+        statusData: null,
+        processedFile: undefined,
+        deletedFiles: [],
+      };
+    }
+
+    const downloadResult = await downloadFtpFile(
+      ftpConfig,
+      mostRecentFile.name,
+      "status",
+    );
+
+    if (!downloadResult.success || !downloadResult.content) {
+      return {
+        success: false,
+        error: downloadResult.error ?? "Failed to download status file",
+      };
+    }
+
+    // Parse the JSON content
+    let statusData: unknown;
+    try {
+      statusData = JSON.parse(downloadResult.content);
+    } catch (parseError) {
+      console.error("Failed to parse status file JSON:", parseError);
+      return {
+        success: false,
+        error: "Failed to parse status file JSON",
+      };
+    }
+
+    // Log the status data
+    console.log("Idealista Status File Processed:", {
+      filename: mostRecentFile.name,
+      processedAt: new Date().toISOString(),
+      data: statusData,
+    });
+
+    // Delete old files (all except the most recent one)
+    const filesToDelete = statusFiles.slice(1).map((f) => f.name);
+    let deletedFiles: string[] = [];
+
+    if (filesToDelete.length > 0) {
+      const deleteResult = await deleteMultipleFtpFiles(
+        ftpConfig,
+        filesToDelete,
+        "status",
+      );
+      deletedFiles = filesToDelete.filter(
+        (_, index) => index < deleteResult.deletedCount,
+      );
+
+      if (deleteResult.errors.length > 0) {
+        console.warn(
+          "Some status files could not be deleted:",
+          deleteResult.errors,
+        );
+      }
+    }
+
+    return {
+      success: true,
+      statusData,
+      processedFile: mostRecentFile.name,
+      deletedFiles,
+    };
+  } catch (error) {
+    console.error("Error reading Idealista status files:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }

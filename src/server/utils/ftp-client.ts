@@ -223,3 +223,114 @@ export async function deleteFtpFile(
     client.close();
   }
 }
+
+/**
+ * Download a file from the FTP server and return its content
+ *
+ * @param ftpConfig - FTP connection configuration
+ * @param filename - Name of the file to download
+ * @param directory - Optional directory where the file is located
+ * @returns File content as string
+ */
+export async function downloadFtpFile(
+  ftpConfig: FtpConfig,
+  filename: string,
+  directory?: string,
+): Promise<{ success: boolean; content?: string; error?: string }> {
+  const client = new Client();
+  client.ftp.verbose = false;
+
+  try {
+    await client.access({
+      host: ftpConfig.host,
+      user: ftpConfig.user,
+      password: ftpConfig.password,
+      secure: ftpConfig.secure ?? true,
+      port: ftpConfig.port ?? 21,
+    });
+
+    // Navigate to directory if specified
+    if (directory) {
+      await client.cd(directory);
+    }
+
+    // Create a writable stream to collect the file content
+    const { Writable } = await import("stream");
+    const chunks: Buffer[] = [];
+    const writableStream = new Writable({
+      write(chunk, _encoding, callback) {
+        chunks.push(Buffer.from(chunk));
+        callback();
+      },
+    });
+
+    await client.downloadTo(writableStream, filename);
+    const content = Buffer.concat(chunks).toString("utf-8");
+
+    return { success: true, content };
+  } catch (error) {
+    console.error("FTP download file failed:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown FTP error",
+    };
+  } finally {
+    client.close();
+  }
+}
+
+/**
+ * Delete multiple files from the FTP server in a single connection
+ *
+ * @param ftpConfig - FTP connection configuration
+ * @param filenames - Array of filenames to delete
+ * @param directory - Optional directory where files are located
+ * @returns Deletion result with count of deleted files
+ */
+export async function deleteMultipleFtpFiles(
+  ftpConfig: FtpConfig,
+  filenames: string[],
+  directory?: string,
+): Promise<{ success: boolean; deletedCount: number; errors: string[] }> {
+  const client = new Client();
+  client.ftp.verbose = false;
+  const errors: string[] = [];
+  let deletedCount = 0;
+
+  try {
+    await client.access({
+      host: ftpConfig.host,
+      user: ftpConfig.user,
+      password: ftpConfig.password,
+      secure: ftpConfig.secure ?? true,
+      port: ftpConfig.port ?? 21,
+    });
+
+    // Navigate to directory if specified
+    if (directory) {
+      await client.cd(directory);
+    }
+
+    for (const filename of filenames) {
+      try {
+        await client.remove(filename);
+        deletedCount++;
+      } catch (err) {
+        errors.push(
+          `Failed to delete ${filename}: ${err instanceof Error ? err.message : "Unknown error"}`,
+        );
+      }
+    }
+
+    return { success: errors.length === 0, deletedCount, errors };
+  } catch (error) {
+    console.error("FTP delete multiple files failed:", error);
+    return {
+      success: false,
+      deletedCount,
+      errors: [error instanceof Error ? error.message : "Unknown FTP error"],
+    };
+  } finally {
+    client.close();
+  }
+}

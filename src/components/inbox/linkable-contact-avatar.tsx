@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, Link2 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import type { InboxContact } from "./inbox-types";
@@ -8,9 +8,9 @@ import type { InboxContact } from "./inbox-types";
 interface LinkableContactAvatarProps {
   contact: InboxContact;
   size?: "sm" | "md" | "lg";
-  onLinkClick?: (contact: InboxContact) => void;
+  onClick?: (contact: InboxContact) => void;
   className?: string;
-  useGroupHover?: boolean; // Use parent's group-hover for showing '+' button
+  useGroupHover?: boolean; // Use parent's group-hover for showing overlay
 }
 
 function getInitials(name: string): string {
@@ -37,16 +37,16 @@ const iconSizeClasses = {
 export function LinkableContactAvatar({
   contact,
   size = "md",
-  onLinkClick,
+  onClick,
   className,
   useGroupHover = false,
 }: LinkableContactAvatarProps) {
-  const isUnlinked = !contact.isLinked;
+  const isLinked = contact.isLinked ?? false;
 
   const handleClick = (e: React.MouseEvent) => {
-    if (isUnlinked && onLinkClick) {
+    if (onClick) {
       e.stopPropagation();
-      onLinkClick(contact);
+      onClick(contact);
     }
   };
 
@@ -55,35 +55,50 @@ export function LinkableContactAvatar({
       <Avatar
         className={cn(
           sizeClasses[size],
-          isUnlinked && "border-2 border-dashed border-rose-400/60",
+          !isLinked && "border-2 border-dashed border-rose-400/60",
+          isLinked && "border-2 border-solid border-primary/40",
         )}
       >
         {contact.avatar ? (
           <AvatarImage src={contact.avatar} alt={contact.name} />
         ) : null}
-        <AvatarFallback className="bg-muted text-xs text-muted-foreground">
+        <AvatarFallback
+          className={cn(
+            "text-xs",
+            isLinked
+              ? "bg-primary/10 text-primary"
+              : "bg-muted text-muted-foreground"
+          )}
+        >
           {getInitials(contact.name)}
         </AvatarFallback>
       </Avatar>
 
-      {/* '+' overlay for unlinked contacts - shows on parent group hover */}
-      {isUnlinked && onLinkClick ? (
+      {/* Clickable overlay - always available, different appearance for linked/unlinked */}
+      {onClick ? (
         <button
           type="button"
           onClick={handleClick}
           className={cn(
             "absolute inset-0 flex items-center justify-center",
-            "rounded-full bg-rose-500/90 text-white",
+            "rounded-full text-white",
             "transition-opacity duration-150",
-            "hover:bg-rose-600",
-            // Hide by default, show on hover (group-hover or self-hover)
+            // Different colors for linked vs unlinked
+            isLinked
+              ? "bg-primary/90 hover:bg-primary"
+              : "bg-rose-500/90 hover:bg-rose-600",
+            // Hide by default, show on hover
             useGroupHover
               ? "opacity-0 group-hover:opacity-100"
               : "opacity-0 hover:opacity-100",
           )}
-          title="Crear contacto"
+          title={isLinked ? "Vincular propiedad" : "Crear contacto"}
         >
-          <Plus className={iconSizeClasses[size]} />
+          {isLinked ? (
+            <Link2 className={iconSizeClasses[size]} />
+          ) : (
+            <Plus className={iconSizeClasses[size]} />
+          )}
         </button>
       ) : null}
     </div>

@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import type { InboxThread, ComposeMessageData } from "~/components/inbox/inbox-types";
+import type { InboxThread, ComposeMessageData, ThreadContext } from "~/components/inbox/inbox-types";
 import type { EmailAttachment } from "~/server/services/gmail-service";
 import {
   getGmailConnectionStatusAction,
@@ -16,6 +16,8 @@ import {
   disconnectGmailAction,
   deleteGmailThreadAction,
 } from "~/server/actions/gmail";
+import { getThreadContextsByThreadIds } from "~/server/queries/email-thread-context";
+import { assignListingToThreadAction } from "~/server/actions/email-thread-context";
 
 export interface UseGmailInboxReturn {
   // Connection state
@@ -41,6 +43,13 @@ export interface UseGmailInboxReturn {
   disconnect: () => Promise<void>;
   checkConnection: () => Promise<void>;
   markContactAsLinked: (email: string) => void;
+  assignListingToThread: (
+    threadId: string,
+    contactId: bigint,
+    listingId: bigint | null,
+    contactType?: "owner" | "buyer",
+  ) => Promise<boolean>;
+  updateThreadContext: (threadId: string, context: ThreadContext | undefined) => void;
 }
 
 export function useGmailInbox(): UseGmailInboxReturn {
@@ -80,6 +89,35 @@ export function useGmailInbox(): UseGmailInboxReturn {
     void checkConnection();
   }, [checkConnection]);
 
+  // Helper to enrich threads with their contexts
+  const enrichThreadsWithContexts = useCallback(async (threadsToEnrich: InboxThread[]): Promise<InboxThread[]> => {
+    if (threadsToEnrich.length === 0) return threadsToEnrich;
+
+    try {
+      const threadIds = threadsToEnrich.map((t) => t.id);
+      const contextsMap = await getThreadContextsByThreadIds(threadIds);
+
+      return threadsToEnrich.map((thread) => {
+        const contextData = contextsMap.get(thread.id);
+        if (!contextData) return thread;
+
+        const threadContext: ThreadContext | undefined = contextData.listingContactId
+          ? {
+              listingContactId: contextData.listingContactId,
+              contactId: contextData.contactId,
+              contactType: contextData.contactType as "owner" | "buyer" | null,
+              listing: contextData.listing,
+            }
+          : undefined;
+
+        return { ...thread, threadContext };
+      });
+    } catch (err) {
+      console.error("Error fetching thread contexts:", err);
+      return threadsToEnrich;
+    }
+  }, []);
+
   // Fetch threads
   const fetchThreads = useCallback(async (pageToken?: string, isRefresh = false) => {
     if (!isConnected) return;
@@ -94,18 +132,21 @@ export function useGmailInbox(): UseGmailInboxReturn {
       });
 
       if (result.success) {
+        // Enrich threads with their contexts
+        const enrichedThreads = await enrichThreadsWithContexts(result.threads);
+
         if (pageToken) {
           // Append to existing threads (pagination)
-          setThreads((prev) => [...prev, ...result.threads]);
+          setThreads((prev) => [...prev, ...enrichedThreads]);
         } else if (isRefresh) {
           // Incremental refresh: merge new threads with existing ones
           setThreads((prev) => {
             const existingById = new Map(prev.map((t) => [t.id, t]));
-            const newThreads = result.threads.filter((t) => !existingById.has(t.id));
+            const newThreads = enrichedThreads.filter((t) => !existingById.has(t.id));
 
-            // Update existing threads with fresh data, but preserve isLinked status
+            // Update existing threads with fresh data, but preserve isLinked status and threadContext
             const updatedExisting = prev.map((existing) => {
-              const fresh = result.threads.find((t) => t.id === existing.id);
+              const fresh = enrichedThreads.find((t) => t.id === existing.id);
               if (!fresh) return existing;
 
               // Preserve isLinked status from existing participants
@@ -117,6 +158,8 @@ export function useGmailInbox(): UseGmailInboxReturn {
 
               return {
                 ...fresh,
+                // Preserve threadContext from fresh data (already enriched)
+                threadContext: fresh.threadContext ?? existing.threadContext,
                 participants: fresh.participants.map((p) => {
                   const email = (p.email ?? p.id).toLowerCase().trim();
                   return linkedEmails.has(email) ? { ...p, isLinked: true } : p;
@@ -131,7 +174,7 @@ export function useGmailInbox(): UseGmailInboxReturn {
           });
         } else {
           // Initial load: replace threads
-          setThreads(result.threads);
+          setThreads(enrichedThreads);
         }
         setNextPageToken(result.nextPageToken ?? null);
       } else {
@@ -143,7 +186,7 @@ export function useGmailInbox(): UseGmailInboxReturn {
     } finally {
       setIsLoading(false);
     }
-  }, [isConnected]);
+  }, [isConnected, enrichThreadsWithContexts]);
 
   // Load threads when connected
   useEffect(() => {
@@ -410,6 +453,48 @@ export function useGmailInbox(): UseGmailInboxReturn {
     );
   }, []);
 
+  // Update thread context (optimistically)
+  const updateThreadContext = useCallback((threadId: string, context: ThreadContext | undefined) => {
+    setThreads((prev) =>
+      prev.map((thread) =>
+        thread.id === threadId ? { ...thread, threadContext: context } : thread
+      )
+    );
+  }, []);
+
+  // Assign listing to thread
+  const assignListingToThread = useCallback(
+    async (
+      threadId: string,
+      contactId: bigint,
+      listingId: bigint | null,
+      contactType?: "owner" | "buyer",
+    ): Promise<boolean> => {
+      try {
+        const result = await assignListingToThreadAction(
+          threadId,
+          contactId,
+          listingId,
+          contactType,
+        );
+
+        if (result.success) {
+          // Refresh to get updated context
+          await refresh();
+          return true;
+        } else {
+          toast.error(result.error ?? "Error al asignar propiedad");
+          return false;
+        }
+      } catch (err) {
+        console.error("Error assigning listing to thread:", err);
+        toast.error("Error al asignar propiedad");
+        return false;
+      }
+    },
+    [refresh]
+  );
+
   return {
     isConnected,
     connectionEmail,
@@ -429,5 +514,7 @@ export function useGmailInbox(): UseGmailInboxReturn {
     disconnect,
     checkConnection,
     markContactAsLinked,
+    assignListingToThread,
+    updateThreadContext,
   };
 }

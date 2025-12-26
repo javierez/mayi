@@ -77,7 +77,7 @@ export function PortalConfiguration() {
     resolver: zodResolver(portalConfigurationSchema),
     defaultValues: {
       fotocasa: { enabled: false, apiKey: "", publisherId: "" },
-      idealista: { enabled: false, apiKey: "" },
+      idealista: { enabled: false, apiKey: "", maxSlots: undefined },
       general: { watermarkEnabled: false },
     },
   });
@@ -363,6 +363,39 @@ export function PortalConfiguration() {
                                 type="text"
                                 placeholder="Introduce tu API Key de Idealista"
                                 className="h-10 font-mono"
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    {/* Max Slots Card */}
+                    <div className="rounded-2xl bg-white p-6 shadow-md">
+                      <FormField
+                        control={form.control}
+                        name="idealista.maxSlots"
+                        render={({ field }) => (
+                          <FormItem className="space-y-3">
+                            <FormLabel className="flex items-center gap-2 text-sm font-medium">
+                              <Globe className="h-4 w-4 text-gray-500" />
+                              Anuncios disponibles
+                            </FormLabel>
+                            <FormDescription className="text-sm text-gray-500">
+                              Número máximo de propiedades que se pueden publicar en Idealista (deja vacío para ilimitado)
+                            </FormDescription>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                value={field.value ?? ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  field.onChange(value === "" ? undefined : parseInt(value, 10));
+                                }}
+                                type="number"
+                                min={1}
+                                placeholder="Ej: 50"
+                                className="h-10 w-32"
                               />
                             </FormControl>
                           </FormItem>

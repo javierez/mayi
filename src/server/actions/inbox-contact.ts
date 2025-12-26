@@ -5,6 +5,7 @@ import {
   createContactWithListings,
   findContactsByEmailsWithAuth,
 } from "~/server/queries/contact";
+import { upsertEmailThreadContext } from "~/server/queries/email-thread-context";
 import type { InboxContact } from "~/components/inbox/inbox-types";
 import type { Contact } from "~/lib/data";
 
@@ -30,10 +31,12 @@ export async function createContactFromEmailAction(
     name: string;
     email?: string;
   },
+  threadId: string,
   listingId?: bigint,
   contactType?: "owner" | "buyer",
 ): Promise<
-  { success: true; contact: Contact } | { success: false; error: string }
+  | { success: true; contact: Contact; listingContactId?: bigint }
+  | { success: false; error: string }
 > {
   try {
     const { firstName, lastName } = parseNameParts(inboxContact.name);
@@ -47,7 +50,10 @@ export async function createContactFromEmailAction(
       isActive: true,
     };
 
-    let result: Contact | { error: "DUPLICATE_FOUND"; duplicates: unknown[] };
+    let result:
+      | (Contact & { listingContactId?: bigint })
+      | { error: "DUPLICATE_FOUND"; duplicates: unknown[] };
+    let listingContactId: bigint | undefined;
 
     // If listing is provided, use createContactWithListings
     if (listingId && contactType) {
@@ -58,6 +64,11 @@ export async function createContactFromEmailAction(
         undefined, // ownershipAction
         false, // Don't bypass duplicate check
       );
+
+      // Extract listingContactId if available
+      if (!("error" in result) && result.listingContactId) {
+        listingContactId = result.listingContactId;
+      }
     } else {
       result = await createContact(
         contactData,
@@ -72,7 +83,16 @@ export async function createContactFromEmailAction(
       };
     }
 
-    return { success: true, contact: result as Contact };
+    // Create thread context if we have a listingContactId
+    if (listingContactId) {
+      await upsertEmailThreadContext(threadId, listingContactId);
+    }
+
+    return {
+      success: true,
+      contact: result as Contact,
+      listingContactId,
+    };
   } catch (error) {
     console.error("Error creating contact from email:", error);
     return {

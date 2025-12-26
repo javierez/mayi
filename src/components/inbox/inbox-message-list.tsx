@@ -11,7 +11,7 @@ interface InboxThreadListProps {
   selectedThreadId: string | null;
   onSelectThread: (threadId: string) => void;
   onToggleStar: (threadId: string) => void;
-  onLinkContact?: (contact: InboxContact) => void;
+  onContactClick?: (contact: InboxContact) => void;
   hasMorePages?: boolean;
   isLoading?: boolean;
   onLoadMore?: () => void;
@@ -22,7 +22,7 @@ export function InboxThreadList({
   selectedThreadId,
   onSelectThread,
   onToggleStar,
-  onLinkContact,
+  onContactClick,
   hasMorePages = false,
   isLoading = false,
   onLoadMore,
@@ -51,7 +51,7 @@ export function InboxThreadList({
             isSelected={selectedThreadId === thread.id}
             onSelect={() => onSelectThread(thread.id)}
             onToggleStar={() => onToggleStar(thread.id)}
-            onLinkContact={onLinkContact}
+            onContactClick={onContactClick}
           />
         ))}
 

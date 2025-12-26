@@ -675,7 +675,7 @@ export async function createContact(
 }
 
 // Create a new contact with listing relationships
-// Returns either the created contact or a result object with duplicate information
+// Returns either the created contact (with optional listingContactId) or a result object with duplicate information
 export async function createContactWithListings(
   contactData: Omit<Contact, "contactId" | "createdAt" | "updatedAt">,
   selectedListings: bigint[],
@@ -683,7 +683,8 @@ export async function createContactWithListings(
   ownershipAction?: "change" | "add",
   bypassDuplicateCheck = false,
 ): Promise<
-  Contact | { error: "DUPLICATE_FOUND"; duplicates: DuplicateContact[] }
+  | (Contact & { listingContactId?: bigint })
+  | { error: "DUPLICATE_FOUND"; duplicates: DuplicateContact[] }
 > {
   try {
     const accountId = await getCurrentUserAccountId();
@@ -724,6 +725,7 @@ export async function createContactWithListings(
     if (!result) throw new Error("Failed to create contact");
 
     const newContactId = BigInt(result.contactId);
+    let listingContactId: bigint | undefined;
 
     // Handle listing relationships
     if (selectedListings.length > 0) {
@@ -743,14 +745,22 @@ export async function createContactWithListings(
               );
           }
           // For both 'change' and 'add', create new owner relationship
-          await db.insert(listingContacts).values({
-            listingId: listingId,
-            contactId: newContactId,
-            contactType: "owner",
-            status: null, // Owners don't have lead status
-            source: null, // Owners don't have a source
-            isActive: true,
-          });
+          const [lcResult] = await db
+            .insert(listingContacts)
+            .values({
+              listingId: listingId,
+              contactId: newContactId,
+              contactType: "owner",
+              status: null, // Owners don't have lead status
+              source: null, // Owners don't have a source
+              isActive: true,
+            })
+            .returning({ listingContactId: listingContacts.listingContactId });
+
+          // Store the first listingContactId (for single listing assignments from inbox)
+          if (!listingContactId && lcResult) {
+            listingContactId = lcResult.listingContactId;
+          }
         }
       } else {
         // For buyers or owners without ownership conflict, just create relationships
@@ -759,15 +769,23 @@ export async function createContactWithListings(
           contactId: newContactId,
           contactType: contactType,
           status: contactType === "buyer" ? "Cita Pendiente" : null, // Set lead status for buyers
-          source: contactType === "buyer" ? "Appointment" : null, // Set source for buyers
+          source: contactType === "buyer" ? "Email" : null, // Set source for buyers
           isActive: true,
         }));
 
-        await db.insert(listingContacts).values(relationships);
+        const lcResults = await db
+          .insert(listingContacts)
+          .values(relationships)
+          .returning({ listingContactId: listingContacts.listingContactId });
+
+        // Store the first listingContactId (for single listing assignments from inbox)
+        if (lcResults.length > 0 && lcResults[0]) {
+          listingContactId = lcResults[0].listingContactId;
+        }
       }
     }
 
-    // Return the created contact
+    // Return the created contact with optional listingContactId
     const [newContact] = await db
       .select()
       .from(contacts)
@@ -779,9 +797,78 @@ export async function createContactWithListings(
       );
 
     if (!newContact) throw new Error("Failed to retrieve created contact");
-    return newContact as Contact;
+    return { ...(newContact as Contact), listingContactId };
   } catch (error) {
     console.error("Error creating contact with listings:", error);
+    throw error;
+  }
+}
+
+/**
+ * Find or create a listingContact relationship for an existing contact
+ * Used when assigning a listing to a thread for an already-linked contact
+ */
+export async function findOrCreateListingContact(
+  contactId: bigint,
+  listingId: bigint,
+  contactType: "owner" | "buyer",
+): Promise<{ listingContactId: bigint; created: boolean }> {
+  try {
+    const accountId = await getCurrentUserAccountId();
+
+    // Verify contact belongs to account
+    const [contact] = await db
+      .select({ contactId: contacts.contactId })
+      .from(contacts)
+      .where(
+        and(
+          eq(contacts.contactId, contactId),
+          eq(contacts.accountId, BigInt(accountId)),
+          eq(contacts.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    if (!contact) {
+      throw new Error("Contact not found or not accessible");
+    }
+
+    // Check if relationship already exists
+    const [existing] = await db
+      .select({ listingContactId: listingContacts.listingContactId })
+      .from(listingContacts)
+      .where(
+        and(
+          eq(listingContacts.contactId, contactId),
+          eq(listingContacts.listingId, listingId),
+          eq(listingContacts.contactType, contactType),
+          eq(listingContacts.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    if (existing) {
+      return { listingContactId: existing.listingContactId, created: false };
+    }
+
+    // Create new relationship
+    const [result] = await db
+      .insert(listingContacts)
+      .values({
+        listingId,
+        contactId,
+        contactType,
+        status: contactType === "buyer" ? "Cita Pendiente" : null,
+        source: contactType === "buyer" ? "Email" : null,
+        isActive: true,
+      })
+      .returning({ listingContactId: listingContacts.listingContactId });
+
+    if (!result) throw new Error("Failed to create listing contact relationship");
+
+    return { listingContactId: result.listingContactId, created: true };
+  } catch (error) {
+    console.error("Error in findOrCreateListingContact:", error);
     throw error;
   }
 }

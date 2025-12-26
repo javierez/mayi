@@ -317,13 +317,26 @@ async function extractWithGPT4(
         properties: {
           property_type: {
             type: "string",
+            enum: ["piso", "casa", "local", "solar", "garaje"],
             description:
-              "Type of property (piso, casa, chalet, apartamento, local, garaje, estudio, loft, dúplex, ático)",
+              "Tipo principal de propiedad: piso (pisos/apartamentos/áticos/estudios/lofts/dúplex/bajos), casa (casas/chalets/adosados/bungalows), local (locales comerciales/oficinas/naves), solar (terrenos/suelos), garaje (plazas de garaje)",
           },
           property_subtype: {
             type: "string",
+            enum: [
+              // Piso subtypes
+              "Tríplex", "Dúplex", "Ático", "Estudio", "Loft", "Piso", "Apartamento", "Bajo",
+              // Casa subtypes
+              "Casa", "Casa adosada", "Casa pareada", "Chalet", "Casa rústica", "Bungalow",
+              // Local subtypes
+              "Local Comercial", "Residencial", "Otros", "Mixto residencial", "Oficinas", "Hotel",
+              // Solar subtypes
+              "Suelo residencial", "Suelo industrial", "Suelo rústico",
+              // Garaje subtypes (use internal keys)
+              "motorcycle", "car_compact", "car_sedan", "car_and_motorcycle", "two_cars_and_more"
+            ],
             description:
-              "Property subtype (Piso, Apartamento, Casa, Chalet, etc.)",
+              "Subtipo de propiedad. Para piso: Tríplex/Dúplex/Ático/Estudio/Loft/Piso/Apartamento/Bajo. Para casa: Casa/Casa adosada/Casa pareada/Chalet/Casa rústica/Bungalow. Para local: Local Comercial/Residencial/Otros/Mixto residencial/Oficinas/Hotel. Para solar: Suelo residencial/Suelo industrial/Suelo rústico. Para garaje: motorcycle/car_compact/car_sedan/car_and_motorcycle/two_cars_and_more",
           },
           description: { type: "string", description: "Property description" },
           bedrooms: {
@@ -1445,6 +1458,36 @@ TIPOS DE OPERACIÓN VÁLIDOS:
 - RentWithOption: para alquiler con opción a compra
 - Transfer: para traspaso
 - RoomSharing: para compartir habitación
+
+TIPOS DE PROPIEDAD Y SUBTIPOS:
+El tipo principal (property_type) DEBE ser uno de: piso, casa, local, solar, garaje
+
+Subtipos válidos por tipo principal:
+- PISO: Tríplex, Dúplex, Ático, Estudio, Loft, Piso, Apartamento, Bajo
+  * "ático" → property_type: "piso", property_subtype: "Ático"
+  * "estudio" → property_type: "piso", property_subtype: "Estudio"
+  * "apartamento" → property_type: "piso", property_subtype: "Apartamento"
+  * "dúplex" → property_type: "piso", property_subtype: "Dúplex"
+  * "bajo" → property_type: "piso", property_subtype: "Bajo"
+
+- CASA: Casa, Casa adosada, Casa pareada, Chalet, Casa rústica, Bungalow
+  * "chalet" → property_type: "casa", property_subtype: "Chalet"
+  * "adosado" → property_type: "casa", property_subtype: "Casa adosada"
+  * "pareado" → property_type: "casa", property_subtype: "Casa pareada"
+  * "bungalow" → property_type: "casa", property_subtype: "Bungalow"
+  * "casa rústica" o "finca" → property_type: "casa", property_subtype: "Casa rústica"
+
+- LOCAL: Local Comercial, Residencial, Otros, Mixto residencial, Oficinas, Hotel
+  * "oficina" → property_type: "local", property_subtype: "Oficinas"
+  * "nave" → property_type: "local", property_subtype: "Otros"
+  * "hotel" → property_type: "local", property_subtype: "Hotel"
+
+- SOLAR: Suelo residencial, Suelo industrial, Suelo rústico
+  * "terreno" o "parcela" → property_type: "solar"
+
+- GARAJE: motorcycle, car_compact, car_sedan, car_and_motorcycle, two_cars_and_more
+  * "plaza de garaje" o "parking" → property_type: "garaje"
+  * "plaza de moto" → property_subtype: "motorcycle"
 
 Usa las funciones apropiadas para extraer SOLO los datos que estén explícitamente mencionados en la descripción.
 

@@ -4,7 +4,11 @@ import { eq, and, inArray, asc } from "drizzle-orm";
 import { db } from "~/server/db";
 import { listings, listingActivity, appointments, accounts } from "~/server/db/schema";
 import { getSecureSession } from "~/lib/dal";
-import { exportToIdealista } from "~/server/portals/idealista";
+import {
+  exportToIdealista,
+  checkIdealistaSlotAvailability,
+  swapIdealistaListing,
+} from "~/server/portals/idealista";
 
 // Progress stage action types that we track from listing_activity
 const PROGRESS_STAGE_ACTIONS = [
@@ -222,6 +226,82 @@ export async function triggerIdealistaExport(): Promise<{
     }
   } catch (error) {
     console.error("Error triggering Idealista export:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+/**
+ * Check Idealista slot availability for current account
+ */
+export async function checkIdealistaSlots(): Promise<{
+  success: boolean;
+  hasCapacity?: boolean;
+  currentCount?: number;
+  maxSlots?: number | null;
+  enabledListings?: Array<{
+    listingId: bigint;
+    referenceNumber: string | null;
+    title: string | null;
+    city: string | null;
+    price: string;
+    propertyType: string | null;
+    imageUrl: string | null;
+  }>;
+  error?: string;
+}> {
+  try {
+    const session = await getSecureSession();
+    if (!session) {
+      return { success: false, error: "No session" };
+    }
+
+    const result = await checkIdealistaSlotAvailability(
+      Number(session.user.accountId),
+    );
+    return {
+      success: true,
+      ...result,
+    };
+  } catch (error) {
+    console.error("Error checking Idealista slots:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+/**
+ * Swap Idealista listing - deactivate one and activate another
+ * Automatically triggers export after swap
+ */
+export async function performIdealistaSwap(
+  listingIdToDeactivate: string,
+  listingIdToActivate: number,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const session = await getSecureSession();
+    if (!session) {
+      return { success: false, error: "No session" };
+    }
+
+    const result = await swapIdealistaListing(
+      Number(session.user.accountId),
+      BigInt(listingIdToDeactivate),
+      listingIdToActivate,
+    );
+
+    if (result.success) {
+      // Trigger export after swap
+      await triggerIdealistaExport();
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error performing Idealista swap:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",

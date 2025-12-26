@@ -18,7 +18,7 @@ interface InboxThreadItemProps {
   isSelected: boolean;
   onSelect: () => void;
   onToggleStar: () => void;
-  onLinkContact?: (contact: InboxContact) => void;
+  onContactClick?: (contact: InboxContact) => void;
 }
 
 export function InboxThreadItem({
@@ -26,7 +26,7 @@ export function InboxThreadItem({
   isSelected,
   onSelect,
   onToggleStar,
-  onLinkContact,
+  onContactClick,
 }: InboxThreadItemProps) {
   const timeAgo = formatDistanceToNow(thread.lastMessageAt, {
     addSuffix: true,
@@ -66,7 +66,7 @@ export function InboxThreadItem({
         <LinkableContactAvatar
           contact={mainParticipant}
           size="sm"
-          onLinkClick={onLinkContact}
+          onClick={onContactClick}
           className="flex-shrink-0"
           useGroupHover
         />

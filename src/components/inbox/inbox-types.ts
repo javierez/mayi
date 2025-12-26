@@ -32,16 +32,20 @@ export interface InboxAttachment {
 
 // Related listing/property for a conversation
 export interface RelatedListing {
-  id: string;
-  reference: string; // e.g., "REF-2024-001"
-  title: string;
-  address: string;
-  price: number;
-  type: "piso" | "casa" | "chalet" | "local" | "atico" | "oficina";
-  bedrooms?: number;
-  bathrooms?: number;
-  size?: number; // m2
-  imageUrl?: string;
+  listingId: bigint;
+  title: string | null;
+  referenceNumber: string | null;
+  price: string;
+  city: string | null;
+  imageUrl: string | null;
+}
+
+// Thread context linking thread to listing-contact relationship
+export interface ThreadContext {
+  listingContactId: bigint;
+  contactId: bigint | null;
+  contactType: "owner" | "buyer" | null;
+  listing: RelatedListing | null;
 }
 
 // Individual message within a thread
@@ -73,6 +77,8 @@ export interface InboxThread {
   messageCount: number;
   // Labels similar to Gmail
   labels?: string[];
+  // Thread context - links thread to listing-contact relationship
+  threadContext?: ThreadContext;
 }
 
 export type InboxFilter = "all" | "whatsapp" | "email";

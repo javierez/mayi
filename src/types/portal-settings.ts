@@ -11,6 +11,7 @@ export interface PortalConfigurationData {
   idealista?: {
     enabled: boolean;
     apiKey?: string;
+    maxSlots?: number; // Max listings that can be published to Idealista (null = unlimited)
     customSettings?: Record<string, unknown>;
   };
   general: {
@@ -34,6 +35,7 @@ export interface PortalConfigurationInput {
   idealista?: {
     enabled: boolean;
     apiKey?: string;
+    maxSlots?: number; // Max listings that can be published to Idealista
   };
   general: {
     watermarkEnabled: boolean;
@@ -59,6 +61,7 @@ export const portalConfigurationSchema = z.object({
     .object({
       enabled: z.boolean(),
       apiKey: z.string().optional(),
+      maxSlots: z.number().int().min(1).optional(),
     })
     .optional(),
   general: z.object({

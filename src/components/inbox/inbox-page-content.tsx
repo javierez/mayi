@@ -12,7 +12,7 @@ import { InboxConversationView } from "./inbox-message-detail";
 import { InboxComposeDialog } from "./inbox-compose-dialog";
 import { QuickLinkContactModal } from "./quick-link-contact-modal";
 import { GmailConnectPrompt, GmailConnectionStatus } from "./gmail-connect-prompt";
-import type { InboxContact, InboxFilter } from "./inbox-types";
+import type { InboxContact, InboxFilter, ThreadContext } from "./inbox-types";
 import { createContactFromEmailAction } from "~/server/actions/inbox-contact";
 import { toast } from "sonner";
 
@@ -44,20 +44,45 @@ export function InboxPageContent() {
     refresh,
     disconnectGmail,
     markContactAsLinked,
+    assignListingToThread,
   } = useInbox();
 
   // Mobile: show detail view when thread is selected
   const [showMobileDetail, setShowMobileDetail] = useState(false);
 
-  // Contact linking modal state
-  const [linkModalContact, setLinkModalContact] = useState<InboxContact | null>(null);
+  // Contact linking modal state - now includes threadId and context
+  const [linkModalState, setLinkModalState] = useState<{
+    contact: InboxContact;
+    threadId: string;
+    currentContext?: ThreadContext;
+  } | null>(null);
 
-  const handleLinkContact = (contact: InboxContact) => {
-    setLinkModalContact(contact);
+  const handleContactClick = (contact: InboxContact) => {
+    // Find the thread this contact belongs to (the selected one or find by participant)
+    const threadId = selectedThreadId ?? threads.find((t) =>
+      t.participants.some((p) => (p.email ?? p.id) === (contact.email ?? contact.id))
+    )?.id;
+
+    if (!threadId) {
+      console.error("Could not find thread for contact");
+      return;
+    }
+
+    // Get current thread context if any
+    const thread = threads.find((t) => t.id === threadId);
+    const currentContext = thread?.threadContext;
+
+    setLinkModalState({
+      contact,
+      threadId,
+      currentContext,
+    });
   };
 
-  const handleConfirmLinkContact = async (
+  // Handle creating new contact from email
+  const handleCreateContact = async (
     contact: InboxContact,
+    threadId: string,
     listingId?: bigint,
     contactType?: "owner" | "buyer",
   ) => {
@@ -71,6 +96,7 @@ export function InboxPageContent() {
         name: contact.name,
         email: contact.email,
       },
+      threadId,
       listingId,
       contactType,
     );
@@ -80,11 +106,32 @@ export function InboxPageContent() {
         ? "Contacto creado y vinculado a la propiedad"
         : "Contacto creado correctamente";
       toast.success(message);
+      // Refresh to get updated thread contexts
+      void refresh();
     } else {
       toast.error(result.error);
       // Refresh to revert the optimistic update on error
       void refresh();
     }
+  };
+
+  // Handle assigning listing to thread for existing contact
+  const handleAssignListing = async (
+    threadId: string,
+    contactId: bigint,
+    listingId: bigint | null,
+    contactType?: "owner" | "buyer",
+  ): Promise<boolean> => {
+    const success = await assignListingToThread(threadId, contactId, listingId, contactType);
+
+    if (success) {
+      const message = listingId
+        ? "Propiedad vinculada correctamente"
+        : "Vinculación eliminada";
+      toast.success(message);
+    }
+
+    return success;
   };
 
   const handleSelectThread = (threadId: string) => {
@@ -243,7 +290,7 @@ export function InboxPageContent() {
             selectedThreadId={selectedThreadId}
             onSelectThread={handleSelectThread}
             onToggleStar={toggleStarred}
-            onLinkContact={handleLinkContact}
+            onContactClick={handleContactClick}
             hasMorePages={hasMorePages ?? false}
             isLoading={isGmailLoading}
             onLoadMore={loadMore}
@@ -278,10 +325,13 @@ export function InboxPageContent() {
 
       {/* Quick Link Contact Modal */}
       <QuickLinkContactModal
-        contact={linkModalContact}
-        isOpen={linkModalContact !== null}
-        onClose={() => setLinkModalContact(null)}
-        onConfirm={handleConfirmLinkContact}
+        contact={linkModalState?.contact ?? null}
+        threadId={linkModalState?.threadId ?? ""}
+        currentContext={linkModalState?.currentContext}
+        isOpen={linkModalState !== null}
+        onClose={() => setLinkModalState(null)}
+        onCreateContact={handleCreateContact}
+        onAssignListing={handleAssignListing}
       />
     </div>
   );

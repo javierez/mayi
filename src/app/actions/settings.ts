@@ -320,6 +320,7 @@ export async function getPortalConfigurationAction(
       idealista: {
         enabled: (idealistaSettings?.enabled as boolean) ?? false,
         apiKey: (idealistaSettings?.apiKey as string | undefined) ?? "",
+        maxSlots: idealistaSettings?.maxSlots as number | undefined,
       },
       general: {
         watermarkEnabled:

@@ -358,5 +358,7 @@ export function useInbox() {
     refresh,
     disconnectGmail: gmail.disconnect,
     markContactAsLinked: gmail.markContactAsLinked,
+    assignListingToThread: gmail.assignListingToThread,
+    updateThreadContext: gmail.updateThreadContext,
   };
 }

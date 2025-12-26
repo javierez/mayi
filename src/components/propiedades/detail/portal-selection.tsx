@@ -20,7 +20,12 @@ import {
   type AdevintaPortalId,
   ADEVINTA_PORTAL_IDS,
 } from "~/lib/constants/adevinta-portals";
-import { triggerIdealistaExport } from "~/app/actions/listing-actions";
+import {
+  triggerIdealistaExport,
+  checkIdealistaSlots,
+  performIdealistaSwap,
+} from "~/app/actions/listing-actions";
+import { IdealistaSwapModal } from "./idealista-swap-modal";
 
 interface Platform {
   id: string;
@@ -291,6 +296,22 @@ export function PortalSelection({
   const [publishToWebsiteSettingsExpanded, setPublishToWebsiteSettingsExpanded] =
     useState(false);
 
+  // Idealista swap modal state
+  const [showIdealistaSwapModal, setShowIdealistaSwapModal] = useState(false);
+  const [idealistaSwapData, setIdealistaSwapData] = useState<{
+    enabledListings: Array<{
+      listingId: bigint;
+      referenceNumber: string | null;
+      title: string | null;
+      city: string | null;
+      price: string;
+      propertyType: string | null;
+      imageUrl: string | null;
+    }>;
+    maxSlots: number;
+  } | null>(null);
+  const [isSwapping, setIsSwapping] = useState(false);
+
   // Track failed image loads for debugging and fallback rendering
   const [failedImageLoads, setFailedImageLoads] = useState<Set<string>>(
     new Set(),
@@ -391,7 +412,28 @@ export function PortalSelection({
     initialPlatformStates,
   ]);
 
-  const handlePlatformToggle = (platformId: string, isActive: boolean) => {
+  const handlePlatformToggle = async (platformId: string, isActive: boolean) => {
+    // Special handling for Idealista - check slot availability when enabling
+    if (platformId === "idealista" && isActive) {
+      try {
+        const slotCheck = await checkIdealistaSlots();
+
+        if (slotCheck.success && !slotCheck.hasCapacity && slotCheck.enabledListings && slotCheck.maxSlots) {
+          // Show swap modal instead of toggling
+          setIdealistaSwapData({
+            enabledListings: slotCheck.enabledListings,
+            maxSlots: slotCheck.maxSlots,
+          });
+          setShowIdealistaSwapModal(true);
+          return; // Don't toggle yet - wait for swap modal
+        }
+      } catch (error) {
+        console.error("Error checking Idealista slot availability:", error);
+        toast.error("Error al verificar disponibilidad de anuncios en Idealista");
+        return;
+      }
+    }
+
     // Group: fotocasa, habitaclia, milanuncios should toggle together
     const groupedPortals = ["fotocasa", "habitaclia", "milanuncios"];
     const isGroupedPortal = groupedPortals.includes(platformId);
@@ -427,6 +469,47 @@ export function PortalSelection({
       {} as Record<string, boolean>,
     );
     onPortalStateChange?.(platformStates, visibilityModes, hidePriceModes);
+  };
+
+  // Handle Idealista swap confirmation
+  const handleIdealistaSwapConfirm = async (listingIdToDeactivate: string) => {
+    setIsSwapping(true);
+    try {
+      const result = await performIdealistaSwap(
+        listingIdToDeactivate,
+        Number(listingId),
+      );
+
+      if (result.success) {
+        // Update local state to show Idealista as active
+        const updatedPlatforms = platforms.map((p) =>
+          p.id === "idealista"
+            ? { ...p, isActive: true, status: "pending" as const }
+            : p,
+        );
+        setPlatforms(updatedPlatforms);
+        setHasUnsavedChanges(false); // Swap already saved to DB
+        setShowIdealistaSwapModal(false);
+        setIdealistaSwapData(null);
+
+        // Notify parent
+        const platformStates = updatedPlatforms.reduce(
+          (acc, p) => ({ ...acc, [p.id]: p.isActive }),
+          {} as Record<string, boolean>,
+        );
+        onPortalStateChange?.(platformStates, visibilityModes, hidePriceModes);
+        onPortalsSaved?.({ idealista: true });
+
+        toast.success("Propiedad intercambiada correctamente en Idealista");
+      } else {
+        toast.error(result.error ?? "Error al intercambiar propiedades");
+      }
+    } catch (error) {
+      console.error("Error swapping Idealista listing:", error);
+      toast.error("Error al intercambiar propiedades");
+    } finally {
+      setIsSwapping(false);
+    }
   };
 
   const handleConfirmChanges = async () => {
@@ -1513,6 +1596,22 @@ export function PortalSelection({
           ))}
         </motion.div>
       </motion.div>
+
+      {/* Idealista Swap Modal */}
+      {idealistaSwapData && (
+        <IdealistaSwapModal
+          isOpen={showIdealistaSwapModal}
+          onClose={() => {
+            setShowIdealistaSwapModal(false);
+            setIdealistaSwapData(null);
+          }}
+          onConfirm={handleIdealistaSwapConfirm}
+          currentListingId={listingId}
+          enabledListings={idealistaSwapData.enabledListings}
+          maxSlots={idealistaSwapData.maxSlots}
+          isLoading={isSwapping}
+        />
+      )}
     </div>
   );
 }

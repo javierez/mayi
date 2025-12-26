@@ -69,6 +69,8 @@ export const accounts = pgTable("accounts", {
   // Image AI Token System
   imageTokenBalance: integer("image_token_balance").default(0).notNull(), // Current token balance for AI image operations
   imageTokensUsed: integer("image_tokens_used").default(0).notNull(), // Lifetime token usage tracking
+  // Portal Slot Limits
+  idealistaMaxSlots: integer("idealista_max_slots"), // Max Idealista listings (null = unlimited)
   // Timestamps
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -1293,6 +1295,16 @@ export const contactActivity = pgTable("contact_activity", {
   action: varchar("action", { length: 50 }).notNull(), // 'contact_created', 'contact_deactivated', 'consent_given', 'consent_withdrawn', 'gdpr_data_export_requested', etc.
   details: jsonb("details").notNull(), // Action-specific data: { reason, method, compliance info, etc. }
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Email Thread Contexts table (link Gmail threads to listing-contact relationships)
+export const emailThreadContexts = pgTable("email_thread_contexts", {
+  id: bigserial("id", { mode: "bigint" }).primaryKey(),
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
+  threadId: varchar("thread_id", { length: 255 }).notNull(), // Gmail thread ID
+  listingContactId: bigint("listing_contact_id", { mode: "bigint" }), // FK → listing_contacts.listing_contact_id (nullable)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Mappings table (for data ingestion column mappings)

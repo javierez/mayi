@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Loader2, UserPlus, Search, X } from "lucide-react";
+import { Loader2, UserPlus, Link2, Search, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import { Badge } from "~/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +20,7 @@ import {
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { cn } from "~/lib/utils";
 import { listListingsCompactWithAuth } from "~/server/queries/listing";
-import type { InboxContact } from "./inbox-types";
+import type { InboxContact, ThreadContext } from "./inbox-types";
 
 interface Listing {
   listingId: bigint;
@@ -34,13 +35,24 @@ interface Listing {
 
 interface CreateContactFromEmailModalProps {
   contact: InboxContact | null;
+  threadId: string;
+  currentContext?: ThreadContext; // Current thread context (if any)
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (
+  // For new contacts: creates contact + optional listing link + thread context
+  onCreateContact: (
     contact: InboxContact,
+    threadId: string,
     listingId?: bigint,
     contactType?: "owner" | "buyer",
   ) => Promise<void>;
+  // For existing contacts: assigns listing to thread
+  onAssignListing: (
+    threadId: string,
+    contactId: bigint,
+    listingId: bigint | null,
+    contactType?: "owner" | "buyer",
+  ) => Promise<boolean>;
 }
 
 function getInitials(name: string): string {
@@ -80,11 +92,14 @@ function useDebounce(value: string, delay: number): string {
 
 export function CreateContactFromEmailModal({
   contact,
+  threadId,
+  currentContext,
   isOpen,
   onClose,
-  onConfirm,
+  onCreateContact,
+  onAssignListing,
 }: CreateContactFromEmailModalProps) {
-  const [isCreating, setIsCreating] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [listings, setListings] = useState<Listing[]>([]);
   const [recentListings, setRecentListings] = useState<Listing[]>([]);
@@ -95,14 +110,18 @@ export function CreateContactFromEmailModal({
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
+  // Determine if contact is already linked (existing contact)
+  const isLinkedContact = contact?.isLinked ?? false;
+
   // Reset state and fetch recent listings when modal opens
   useEffect(() => {
     if (isOpen) {
       setSearchQuery("");
       setListings([]);
       setSelectedListing(null);
-      setContactType("buyer");
-      setIsCreating(false);
+      // Set contact type from current context or default to buyer
+      setContactType((currentContext?.contactType as "owner" | "buyer") ?? "buyer");
+      setIsProcessing(false);
 
       // Fetch 5 recent listings (ordered by createdAt DESC by default)
       const fetchRecentListings = async () => {
@@ -122,7 +141,7 @@ export function CreateContactFromEmailModal({
 
       void fetchRecentListings();
     }
-  }, [isOpen]);
+  }, [isOpen, currentContext?.contactType]);
 
   // Fetch listings when search query changes
   useEffect(() => {
@@ -161,18 +180,36 @@ export function CreateContactFromEmailModal({
   const email = contact.email ?? contact.id;
 
   const handleConfirm = async () => {
-    setIsCreating(true);
+    setIsProcessing(true);
     try {
-      await onConfirm(
-        contact,
-        selectedListing?.listingId,
-        selectedListing ? contactType : undefined,
-      );
+      if (isLinkedContact) {
+        // Existing contact - assign listing to thread
+        const contactId = contact.contactId;
+        if (!contactId) {
+          console.error("Contact ID not found for linked contact");
+          return;
+        }
+
+        await onAssignListing(
+          threadId,
+          BigInt(contactId),
+          selectedListing?.listingId ?? null,
+          selectedListing ? contactType : undefined,
+        );
+      } else {
+        // New contact - create contact + optional listing link
+        await onCreateContact(
+          contact,
+          threadId,
+          selectedListing?.listingId,
+          selectedListing ? contactType : undefined,
+        );
+      }
       onClose();
     } catch (error) {
-      console.error("Error creating contact:", error);
+      console.error("Error processing:", error);
     } finally {
-      setIsCreating(false);
+      setIsProcessing(false);
     }
   };
 
@@ -186,39 +223,107 @@ export function CreateContactFromEmailModal({
     setSelectedListing(null);
   };
 
+  // Modal title and description based on mode
+  const modalTitle = isLinkedContact ? "Vincular Propiedad" : "Crear Contacto";
+  const modalDescription = isLinkedContact
+    ? "Vincula esta conversación a una propiedad"
+    : "Se creara un nuevo contacto con los siguientes datos:";
+  const confirmButtonText = isLinkedContact
+    ? selectedListing
+      ? "Vincular Propiedad"
+      : "Quitar Vinculación"
+    : "Crear Contacto";
+  const processingText = isLinkedContact ? "Vinculando..." : "Creando...";
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-[95vw] sm:max-w-[450px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <UserPlus className="h-5 w-5 text-rose-500" />
-            Crear Contacto
+            {isLinkedContact ? (
+              <Link2 className="h-5 w-5 text-primary" />
+            ) : (
+              <UserPlus className="h-5 w-5 text-rose-500" />
+            )}
+            {modalTitle}
           </DialogTitle>
-          <DialogDescription>
-            Se creara un nuevo contacto con los siguientes datos:
-          </DialogDescription>
+          <DialogDescription>{modalDescription}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 overflow-hidden">
           {/* Contact Info */}
           <div className="flex items-center gap-4 rounded-lg border border-border/60 bg-muted/30 p-4">
             <Avatar className="h-12 w-12">
-              <AvatarFallback className="bg-rose-100 text-rose-700">
+              <AvatarFallback
+                className={cn(
+                  isLinkedContact
+                    ? "bg-primary/10 text-primary"
+                    : "bg-rose-100 text-rose-700"
+                )}
+              >
                 {getInitials(contact.name)}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <p className="font-medium text-foreground">
-                {firstName} {lastName}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="font-medium text-foreground">
+                  {firstName} {lastName}
+                </p>
+                {isLinkedContact ? (
+                  <Badge variant="secondary" className="text-xs">
+                    Contacto existente
+                  </Badge>
+                ) : null}
+              </div>
               <p className="truncate text-sm text-muted-foreground">{email}</p>
             </div>
           </div>
 
+          {/* Current Context (if thread already has a listing) */}
+          {isLinkedContact && currentContext?.listing ? (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-muted-foreground">
+                Propiedad actual
+              </Label>
+              <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-3">
+                <div className="flex items-start gap-3">
+                  {currentContext.listing.imageUrl ? (
+                    <Image
+                      src={currentContext.listing.imageUrl}
+                      alt={currentContext.listing.title ?? "Property"}
+                      width={40}
+                      height={40}
+                      className="h-10 w-10 rounded object-cover shrink-0"
+                    />
+                  ) : null}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">
+                      {currentContext.listing.title ?? "Sin título"}
+                    </div>
+                    {currentContext.listing.referenceNumber ? (
+                      <div className="text-xs text-muted-foreground truncate">
+                        Ref: {currentContext.listing.referenceNumber}
+                      </div>
+                    ) : null}
+                    <Badge variant="outline" className="mt-1 text-xs">
+                      {currentContext.contactType === "owner"
+                        ? "Propietario"
+                        : "Demandante"}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           {/* Listing Selection */}
           <div className="space-y-2">
             <Label className="text-sm font-medium">
-              Propiedad relacionada (opcional)
+              {isLinkedContact
+                ? currentContext?.listing
+                  ? "Cambiar a otra propiedad"
+                  : "Seleccionar propiedad"
+                : "Propiedad relacionada (opcional)"}
             </Label>
 
             {selectedListing ? (
@@ -380,17 +485,17 @@ export function CreateContactFromEmailModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isCreating}>
+          <Button variant="outline" onClick={onClose} disabled={isProcessing}>
             Cancelar
           </Button>
-          <Button onClick={handleConfirm} disabled={isCreating}>
-            {isCreating ? (
+          <Button onClick={handleConfirm} disabled={isProcessing}>
+            {isProcessing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creando...
+                {processingText}
               </>
             ) : (
-              "Crear Contacto"
+              confirmButtonText
             )}
           </Button>
         </DialogFooter>
