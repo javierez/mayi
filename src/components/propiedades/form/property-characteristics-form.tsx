@@ -1415,7 +1415,7 @@ export function PropertyCharacteristicsForm({
     updateModuleState("basicInfo", true);
   };
 
-  const handlePropertyTypeChange = (newType: string) => {
+  const handlePropertyTypeChange = async (newType: string) => {
     setPropertyType(newType);
     updateModuleState("basicInfo", true);
   };

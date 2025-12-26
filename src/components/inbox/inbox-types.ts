@@ -16,6 +16,8 @@ export interface InboxContact {
   email?: string;
   phone?: string;
   avatar?: string;
+  contactId?: number; // Linked contact's database ID (undefined = unlinked)
+  isLinked?: boolean; // Convenience flag for UI
 }
 
 export interface InboxAttachment {

@@ -123,6 +123,51 @@ export interface EnhancedExtractedPropertyData {
   laundryRoom?: boolean;
   coveredClothesline?: boolean;
   fireplace?: boolean;
+
+  // Additional Amenities
+  sauna?: boolean;
+  patio?: boolean;
+  communityArea?: boolean;
+  streetType?: string;
+
+  // Expenses and Taxes
+  ibi?: number;
+  garbageTax?: number;
+  communityFees?: number;
+  derrama?: number;
+  vadoPermanente?: number;
+  electricityEstimate?: number;
+  gasEstimate?: number;
+  waterEstimate?: number;
+  centralHeatingFee?: number;
+  internetEstimate?: number;
+  homeInsurance?: number;
+
+  // Commercial/Industrial
+  isDiafano?: boolean;
+  hasEscaparate?: boolean;
+  locatedAtCorner?: boolean;
+  ubication?: string;
+  facadeArea?: number;
+  windowsNumber?: number;
+  bridgeCrane?: boolean;
+  smokeExtraction?: boolean;
+  loadingArea?: boolean;
+  allowedUse?: number;
+
+  // Land/Finca
+  finca?: boolean;
+  superficieFinca?: number;
+  hasRoadAccess?: boolean;
+  hasSewerage?: boolean;
+  hasSidewalk?: boolean;
+  hasStreetLighting?: boolean;
+
+  // Infrastructure
+  electricityType?: string;
+  electricityStatus?: string;
+  plumbingType?: string;
+  plumbingStatus?: string;
 }
 
 // Enhanced interface for listing-specific data
@@ -151,6 +196,23 @@ export interface EnhancedExtractedListingData {
   optionalGaragePrice?: number;
   optionalStorageRoom?: boolean;
   optionalStorageRoomPrice?: number;
+
+  // Additional fields
+  encargo?: boolean;
+  secadora?: boolean;
+  isBankOwned?: boolean;
+
+  // Rental details
+  rentalType?: string;
+  securityDeposit?: number;
+  additionalGuarantee?: number;
+  bankGuaranteeRequired?: boolean;
+  managementFees?: number;
+  nonPaymentInsurance?: boolean;
+  nonPaymentInsuranceAmount?: number;
+  occupationStatus?: string;
+  priceReferenceIndex?: number;
+  shortTermLicense?: string;
 }
 
 // Combined interface for all extracted data

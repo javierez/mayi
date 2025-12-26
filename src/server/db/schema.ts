@@ -1342,6 +1342,21 @@ export const fotocasaLogs = pgTable("fotocasa_logs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Property Description Examples table (for AI-generated property descriptions)
+export const propertyDescriptionExamples = pgTable("property_description_examples", {
+  id: bigserial("id", { mode: "bigint" }).primaryKey(),
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
+  propertyType: varchar("property_type", { length: 20 }).notNull(), // 'piso' | 'casa' | 'local' | 'garaje' | 'solar' | 'all'
+  listingType: varchar("listing_type", { length: 20 }), // 'Sale' | 'Rent' | null (applies to both)
+  exampleText: text("example_text").notNull(), // The actual example description text
+  title: varchar("title", { length: 100 }), // Optional title/label for the example
+  metadata: jsonb("metadata"), // Flexible metadata for future use
+  isActive: boolean("is_active").default(true).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(), // For ordering examples
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Image Token Transactions table (track all token usage and purchases)
 export const imageTokenTransactions = pgTable("image_token_transactions", {
   // Primary Key

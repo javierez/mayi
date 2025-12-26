@@ -182,6 +182,69 @@ export async function getDraftContactsWithAuth() {
   return getDraftContacts(accountId);
 }
 
+/**
+ * Find contacts by email addresses (batch lookup for inbox integration)
+ * Returns a Map of email -> contact info for matched emails
+ */
+export async function findContactsByEmailsWithAuth(
+  emails: string[],
+): Promise<Map<string, { contactId: number; firstName: string; lastName: string }>> {
+  const accountId = await getCurrentUserAccountId();
+
+  // Normalize and filter empty emails
+  const normalizedEmails = emails
+    .filter(Boolean)
+    .map((email) => email.toLowerCase().trim())
+    .filter((email) => email.length > 0);
+
+  if (normalizedEmails.length === 0) {
+    return new Map();
+  }
+
+  // Remove duplicates
+  const uniqueEmails = [...new Set(normalizedEmails)];
+
+  try {
+    const results = await db
+      .select({
+        contactId: contacts.contactId,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        email: contacts.email,
+      })
+      .from(contacts)
+      .where(
+        and(
+          eq(contacts.accountId, BigInt(accountId)),
+          eq(contacts.isActive, true),
+          sql`LOWER(TRIM(${contacts.email})) IN (${sql.join(
+            uniqueEmails.map((e) => sql`${e}`),
+            sql`, `,
+          )})`,
+        ),
+      );
+
+    const contactMap = new Map<
+      string,
+      { contactId: number; firstName: string; lastName: string }
+    >();
+    for (const result of results) {
+      if (result.email) {
+        contactMap.set(result.email.toLowerCase().trim(), {
+          contactId: Number(result.contactId),
+          firstName: result.firstName,
+          lastName: result.lastName,
+        });
+      }
+    }
+
+    return contactMap;
+  } catch (error) {
+    console.error("Error finding contacts by emails:", error);
+    return new Map();
+  }
+}
+
 export async function deleteDraftContactWithAuth(contactId: number) {
   const accountId = await getCurrentUserAccountId();
   return deleteDraftContact(contactId, accountId);

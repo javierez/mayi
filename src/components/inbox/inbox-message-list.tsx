@@ -4,13 +4,14 @@ import { SearchX, Loader2 } from "lucide-react";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Button } from "~/components/ui/button";
 import { InboxThreadItem } from "./inbox-message-item";
-import type { InboxThread } from "./inbox-types";
+import type { InboxContact, InboxThread } from "./inbox-types";
 
 interface InboxThreadListProps {
   threads: InboxThread[];
   selectedThreadId: string | null;
   onSelectThread: (threadId: string) => void;
   onToggleStar: (threadId: string) => void;
+  onLinkContact?: (contact: InboxContact) => void;
   hasMorePages?: boolean;
   isLoading?: boolean;
   onLoadMore?: () => void;
@@ -21,6 +22,7 @@ export function InboxThreadList({
   selectedThreadId,
   onSelectThread,
   onToggleStar,
+  onLinkContact,
   hasMorePages = false,
   isLoading = false,
   onLoadMore,
@@ -49,6 +51,7 @@ export function InboxThreadList({
             isSelected={selectedThreadId === thread.id}
             onSelect={() => onSelectThread(thread.id)}
             onToggleStar={() => onToggleStar(thread.id)}
+            onLinkContact={onLinkContact}
           />
         ))}
 

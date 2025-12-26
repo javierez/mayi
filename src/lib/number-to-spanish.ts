@@ -18,12 +18,6 @@ const HUNDREDS = [
   "seiscientos", "setecientos", "ochocientos", "novecientos"
 ];
 
-// Feminine forms for currency (euros is masculine, but keeping for completeness)
-const _HUNDREDS_FEMININE = [
-  "", "ciento", "doscientas", "trescientas", "cuatrocientas", "quinientas",
-  "seiscientas", "setecientas", "ochocientas", "novecientas"
-];
-
 /**
  * Converts a number (0-999) to Spanish words
  */

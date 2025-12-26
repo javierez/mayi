@@ -47,7 +47,7 @@ export function RegistrationOptions({
       id: "recording",
       title: "Grabación de Voz",
       description:
-        "Habla con nuesetro sistema y la IA registrará la información automáticamente",
+        "Habla con nuestro sistema y la IA registrará la información automáticamente",
       features: [
         "Transcripción automática",
         "Procesamiento con IA",
@@ -59,7 +59,6 @@ export function RegistrationOptions({
       gradient: "from-amber-400 to-rose-400",
       bgActive: "from-amber-50 to-rose-50",
       action: () => console.log("Open recording panel"),
-      comingSoon: true,
     },
     {
       id: "upload",

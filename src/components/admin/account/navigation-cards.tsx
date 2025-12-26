@@ -19,6 +19,7 @@ import {
   Building,
   Shield,
   Mail,
+  FileText,
 } from "lucide-react";
 
 interface AccountAdminCard {
@@ -92,6 +93,13 @@ const accountAdminSections: AccountAdminCard[] = [
     description: "Configura el servicio de correo electrónico y notificaciones",
     icon: Mail,
     href: "/account-admin/notification-system",
+    available: true,
+  },
+  {
+    title: "Ejemplos de Descripción",
+    description: "Gestiona los ejemplos que usa la IA para generar descripciones",
+    icon: FileText,
+    href: "/account-admin/ejemplos-descripcion",
     available: true,
   },
   {

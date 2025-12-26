@@ -456,116 +456,117 @@ export async function importIdealistaLead(
       contactUpdated: !contactCreated,
     };
 
-    // Create listing_contact using property reference
+    // Create listing_contact using property reference (which now contains listingId)
     if (lead.propertyReference) {
-      // Find listing by reference number
-      const listingMatch = await findListingByReference(accountId, lead.propertyReference);
+      // propertyReference now contains the listingId directly (swapped in Idealista export)
+      // Convert to BigInt for database operations
+      let listingId: bigint;
+      try {
+        listingId = BigInt(lead.propertyReference);
+      } catch {
+        logger.warn(`Invalid listingId format in propertyReference: ${lead.propertyReference} - skipping listing_contact creation`);
+        return result;
+      }
 
-      if (!listingMatch) {
-        logger.warn(`Listing not found for reference ${lead.propertyReference} - skipping listing_contact creation`);
+      // Verify listing exists and belongs to this account
+      const listing = await getListingById(Number(listingId), Number(accountId));
+
+      if (!listing) {
+        logger.warn(`Listing ${listingId.toString()} does not exist - skipping listing_contact creation`);
       } else {
-        const listingId = listingMatch.listingId;
+        // Check if listing_contact already exists
+        const lcExists = await listingContactExists(contactId, listingId);
 
-        // Verify listing exists
-        const listing = await getListingById(Number(listingId), Number(accountId));
+        let listingContactId: bigint | undefined;
 
-        if (!listing) {
-          logger.warn(`Listing ${listingId.toString()} does not exist - skipping listing_contact creation`);
+        if (lcExists) {
+          result.listingContactSkipped = true;
+          logger.debug(`listing_contact already exists for contact ${contactId.toString()} + listing ${listingId.toString()}`);
+
+          // Fetch existing listing_contact ID for activity logging
+          const [existingListingContact] = await db
+            .select({ listingContactId: listingContacts.listingContactId })
+            .from(listingContacts)
+            .where(
+              and(
+                eq(listingContacts.contactId, contactId),
+                eq(listingContacts.listingId, listingId),
+                eq(listingContacts.isActive, true),
+              ),
+            )
+            .limit(1);
+
+          listingContactId = existingListingContact?.listingContactId;
         } else {
-          // Check if listing_contact already exists
-          const lcExists = await listingContactExists(contactId, listingId);
+          // Determine status based on message content
+          const contactStatus = determineContactStatus(lead.message);
 
-          let listingContactId: bigint | undefined;
+          // Find earliest lead date for this listing_contact
+          const earliestDate = allLeads
+            ? findEarliestListingContactDate(allLeads, lead.senderEmail, lead.phone, lead.propertyReference)
+            : null;
+          const listingContactCreatedAt = earliestDate ? new Date(earliestDate) : new Date(lead.emailDate);
 
-          if (lcExists) {
-            result.listingContactSkipped = true;
-            logger.debug(`listing_contact already exists for contact ${contactId.toString()} + listing ${listingId.toString()}`);
+          // Create new listing_contact
+          const [newListingContact] = await db
+            .insert(listingContacts)
+            .values({
+              listingId,
+              contactId,
+              contactType: "buyer",
+              source,
+              status: contactStatus,
+              isActive: true,
+              createdAt: listingContactCreatedAt,
+            })
+            .returning();
 
-            // Fetch existing listing_contact ID for activity logging
-            const [existingListingContact] = await db
-              .select({ listingContactId: listingContacts.listingContactId })
-              .from(listingContacts)
-              .where(
-                and(
-                  eq(listingContacts.contactId, contactId),
-                  eq(listingContacts.listingId, listingId),
-                  eq(listingContacts.isActive, true),
-                ),
-              )
-              .limit(1);
-
-            listingContactId = existingListingContact?.listingContactId;
-          } else {
-            // Determine status based on message content
-            const contactStatus = determineContactStatus(lead.message);
-
-            // Find earliest lead date for this listing_contact
-            const earliestDate = allLeads
-              ? findEarliestListingContactDate(allLeads, lead.senderEmail, lead.phone, lead.propertyReference)
-              : null;
-            const listingContactCreatedAt = earliestDate ? new Date(earliestDate) : new Date(lead.emailDate);
-
-            // Create new listing_contact
-            const [newListingContact] = await db
-              .insert(listingContacts)
-              .values({
-                listingId,
-                contactId,
-                contactType: "buyer",
-                source,
-                status: contactStatus,
-                isActive: true,
-                createdAt: listingContactCreatedAt,
-              })
-              .returning();
-
-            if (newListingContact) {
-              listingContactId = newListingContact.listingContactId;
-              result.listingContactId = listingContactId;
-              result.listingContactCreated = true;
-              logger.info(`Created listing_contact ${listingContactId.toString()} for listing ${listingId.toString()}`, {
-                contactId: contactId.toString(),
-                contactType: "buyer",
-                source,
-                status: contactStatus,
-                reference: lead.propertyReference,
-              });
-            }
+          if (newListingContact) {
+            listingContactId = newListingContact.listingContactId;
+            result.listingContactId = listingContactId;
+            result.listingContactCreated = true;
+            logger.info(`Created listing_contact ${listingContactId.toString()} for listing ${listingId.toString()}`, {
+              contactId: contactId.toString(),
+              contactType: "buyer",
+              source,
+              status: contactStatus,
+              reference: lead.propertyReference,
+            });
           }
+        }
 
-          // Log listing_contact_activity
-          if (listingContactId) {
-            try {
-              const activityExists = await listingContactActivityExists(listingContactId, lead.id);
-              if (activityExists) {
-                logger.debug(`Activity for lead ${lead.id} already exists, skipping`);
+        // Log listing_contact_activity
+        if (listingContactId) {
+          try {
+            const activityExists = await listingContactActivityExists(listingContactId, lead.id);
+            if (activityExists) {
+              logger.debug(`Activity for lead ${lead.id} already exists, skipping`);
+            } else {
+              const systemUserId = await getSystemUserIdForAccount(accountId);
+              if (!systemUserId) {
+                logger.warn(
+                  `Skipping listing_contact_activity log for listing_contact ${listingContactId.toString()} - no system user found`,
+                );
               } else {
-                const systemUserId = await getSystemUserIdForAccount(accountId);
-                if (!systemUserId) {
-                  logger.warn(
-                    `Skipping listing_contact_activity log for listing_contact ${listingContactId.toString()} - no system user found`,
-                  );
-                } else {
-                  await logListingContactActivity({
-                    listingContactId,
-                    userId: systemUserId,
-                    action: "message_received",
-                    details: {
-                      notes: lead.message ?? `Lead recibido desde Idealista`,
-                      topic: "Mensaje Idealista",
-                      activityType: "mail",
-                      isPending: true,
-                      createdAt: lead.emailDate,
-                      idealistaLeadId: lead.id,
-                      idealistaAdCode: lead.idealistaAdCode,
-                    },
+                await logListingContactActivity({
+                  listingContactId,
+                  userId: systemUserId,
+                  action: "message_received",
+                  details: {
+                    notes: lead.message ?? `Lead recibido desde Idealista`,
+                    topic: "Mensaje Idealista",
+                    activityType: "mail",
+                    isPending: true,
                     createdAt: lead.emailDate,
-                  });
-                }
+                    idealistaLeadId: lead.id,
+                    idealistaAdCode: lead.idealistaAdCode,
+                  },
+                  createdAt: lead.emailDate,
+                });
               }
-            } catch (activityError) {
-              logger.debug(`Failed to log listing_contact_activity for listing_contact ${listingContactId.toString()}`, activityError);
             }
+          } catch (activityError) {
+            logger.debug(`Failed to log listing_contact_activity for listing_contact ${listingContactId.toString()}`, activityError);
           }
         }
       }

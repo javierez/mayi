@@ -4,8 +4,8 @@ import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { Star, Clock, Paperclip } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import type { InboxThread } from "./inbox-types";
+import type { InboxContact, InboxThread } from "./inbox-types";
+import { LinkableContactAvatar } from "./linkable-contact-avatar";
 
 // Subtle sunset color palette
 const CHANNEL_COLORS = {
@@ -18,15 +18,7 @@ interface InboxThreadItemProps {
   isSelected: boolean;
   onSelect: () => void;
   onToggleStar: () => void;
-}
-
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
+  onLinkContact?: (contact: InboxContact) => void;
 }
 
 export function InboxThreadItem({
@@ -34,6 +26,7 @@ export function InboxThreadItem({
   isSelected,
   onSelect,
   onToggleStar,
+  onLinkContact,
 }: InboxThreadItemProps) {
   const timeAgo = formatDistanceToNow(thread.lastMessageAt, {
     addSuffix: true,
@@ -69,14 +62,15 @@ export function InboxThreadItem({
       />
 
       {/* Avatar */}
-      <Avatar className="h-8 w-8 flex-shrink-0 sm:h-10 sm:w-10">
-        {mainParticipant?.avatar ? (
-          <AvatarImage src={mainParticipant.avatar} alt={mainParticipant.name} />
-        ) : null}
-        <AvatarFallback className="bg-muted text-xs text-muted-foreground sm:text-sm">
-          {getInitials(mainParticipant?.name ?? "?")}
-        </AvatarFallback>
-      </Avatar>
+      {mainParticipant ? (
+        <LinkableContactAvatar
+          contact={mainParticipant}
+          size="sm"
+          onLinkClick={onLinkContact}
+          className="flex-shrink-0"
+          useGroupHover
+        />
+      ) : null}
 
       {/* Content */}
       <div className="min-w-0 flex-1 space-y-0.5">

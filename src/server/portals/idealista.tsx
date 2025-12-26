@@ -877,8 +877,8 @@ export async function buildIdealistaPropertyPayload(
   ) as IdealistaFeatures;
 
   return {
-    propertyCode: listingId.toString(), // Always unique ID for Idealista
-    propertyReference: listing.referenceNumber ?? undefined, // Agency's internal reference
+    propertyCode: listing.referenceNumber ?? listingId.toString(), // Agency's internal reference (or listingId as fallback)
+    propertyReference: listingId.toString(), // ListingId - used by Idealista in email notifications for lead matching
     propertyVisibility: "idealista",
     propertyUrl: listing.externalUrl ?? undefined,
     propertyOperation, // Singular object

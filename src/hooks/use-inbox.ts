@@ -357,5 +357,6 @@ export function useInbox() {
     closeCompose,
     refresh,
     disconnectGmail: gmail.disconnect,
+    markContactAsLinked: gmail.markContactAsLinked,
   };
 }

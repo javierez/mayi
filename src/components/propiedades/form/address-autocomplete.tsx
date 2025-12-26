@@ -96,7 +96,7 @@ export async function geocodeAddress(address: string): Promise<LocationData | nu
     const results = await getGeocode({ address });
     if (!results[0]) return null;
 
-    const { lat, lng } = await getLatLng(results[0]);
+    const { lat, lng } = getLatLng(results[0]);
     const parsedComponents = parseGeocoderComponents(results[0].address_components);
 
     return {

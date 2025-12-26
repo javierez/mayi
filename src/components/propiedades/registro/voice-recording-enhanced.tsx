@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { cn } from "~/lib/utils";
+import { toast } from "sonner";
 import {
   Mic,
   Pause,
@@ -15,6 +16,75 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
+
+/**
+ * Detect if running on iOS Safari
+ */
+function isIOSSafari(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  const isIOS =
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isSafari =
+    ua.includes("Safari") &&
+    !["Chrome", "CriOS", "FxiOS", "EdgiOS"].some((browser) =>
+      ua.includes(browser),
+    );
+  return isIOS && isSafari;
+}
+
+/**
+ * Get the best supported audio MIME type for MediaRecorder
+ * Prioritizes formats that OpenAI Whisper supports well
+ */
+function getSupportedMimeType(): { mimeType: string; extension: string } {
+  // iOS Safari specific handling
+  if (isIOSSafari()) {
+    console.log("iOS Safari detected, using audio/mp4");
+    if (typeof MediaRecorder !== "undefined") {
+      const testTypes = ["audio/mp4", "audio/aac", "audio/mpeg", ""];
+      for (const mimeType of testTypes) {
+        try {
+          if (mimeType === "" || MediaRecorder.isTypeSupported(mimeType)) {
+            console.log(
+              "iOS Safari: selected MIME type:",
+              mimeType || "(browser default)",
+            );
+            return { mimeType, extension: "mp4" };
+          }
+        } catch {
+          // Some browsers throw on isTypeSupported
+        }
+      }
+    }
+    return { mimeType: "", extension: "mp4" };
+  }
+
+  // Prioritized list of MIME types (most compatible with OpenAI Whisper first)
+  const mimeTypes = [
+    { mimeType: "audio/mp4", extension: "mp4" },
+    { mimeType: "audio/webm;codecs=opus", extension: "webm" },
+    { mimeType: "audio/webm", extension: "webm" },
+    { mimeType: "audio/ogg;codecs=opus", extension: "ogg" },
+    { mimeType: "audio/ogg", extension: "ogg" },
+  ];
+
+  for (const { mimeType, extension } of mimeTypes) {
+    try {
+      if (MediaRecorder.isTypeSupported(mimeType)) {
+        console.log("Selected audio MIME type:", mimeType);
+        return { mimeType, extension };
+      }
+    } catch {
+      // Some browsers throw on isTypeSupported for certain types
+    }
+  }
+
+  // Ultimate fallback - let browser decide
+  console.warn("No preferred MIME type supported, using browser default");
+  return { mimeType: "", extension: "webm" };
+}
 import type {
   EnhancedExtractedPropertyData,
   ExtractedFieldResult,
@@ -103,6 +173,10 @@ export function VoiceRecordingEnhanced({
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const suggestionTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const mimeTypeRef = useRef<string>("audio/webm");
+  const extensionRef = useRef<string>("webm");
+
+  const MAX_RECORDING_DURATION = 300; // 5 minutes in seconds
 
   const recordingSuggestions = [
     "Recuerda mencionar el precio y número de habitaciones",
@@ -155,9 +229,19 @@ export function VoiceRecordingEnhanced({
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: "audio/webm",
-      });
+
+      // Get the best supported MIME type for this browser
+      const { mimeType: supportedMimeType, extension } = getSupportedMimeType();
+      mimeTypeRef.current = supportedMimeType || "audio/webm";
+      extensionRef.current = extension;
+
+      // Create MediaRecorder with detected MIME type
+      const mediaRecorderOptions: MediaRecorderOptions = {};
+      if (supportedMimeType) {
+        mediaRecorderOptions.mimeType = supportedMimeType;
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, mediaRecorderOptions);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
@@ -169,8 +253,11 @@ export function VoiceRecordingEnhanced({
       };
 
       mediaRecorder.onstop = () => {
+        // Use the detected MIME type for the blob
+        const detectedMimeType =
+          mediaRecorder.mimeType || mimeTypeRef.current || "audio/webm";
         const audioBlob = new Blob(audioChunksRef.current, {
-          type: "audio/webm",
+          type: detectedMimeType,
         });
         setAudioBlob(audioBlob);
         stream.getTracks().forEach((track) => track.stop());
@@ -198,9 +285,14 @@ export function VoiceRecordingEnhanced({
           (prev) => (prev + 1) % recordingSuggestions.length,
         );
       }, 6000);
+
+      // Haptic feedback on mobile
+      if ("vibrate" in navigator) {
+        navigator.vibrate(50);
+      }
     } catch (error) {
       console.error("Error accessing microphone:", error);
-      alert(
+      toast.error(
         "No se pudo acceder al micrófono. Por favor, verifica los permisos.",
       );
     }
@@ -312,7 +404,7 @@ export function VoiceRecordingEnhanced({
       });
 
       const formData = new FormData();
-      formData.append("audio", audioBlob, "recording.webm");
+      formData.append("audio", audioBlob, `recording.${extensionRef.current}`);
       formData.append("referenceNumber", referenceNumber);
 
       const processResponse = await fetch("/api/voice-processing/process", {
@@ -420,6 +512,22 @@ export function VoiceRecordingEnhanced({
     resetRecording();
   };
 
+  // Max recording duration warning and auto-stop
+  useEffect(() => {
+    if (isRecording && !isPaused && recordingTime >= MAX_RECORDING_DURATION) {
+      stopRecording();
+      toast.warning("Duración máxima alcanzada (5 minutos). Grabación detenida.");
+    } else if (
+      isRecording &&
+      !isPaused &&
+      recordingTime === MAX_RECORDING_DURATION - 30
+    ) {
+      // 30 second warning
+      toast.info("Quedan 30 segundos de grabación");
+    }
+  }, [recordingTime, isRecording, isPaused]);
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) {

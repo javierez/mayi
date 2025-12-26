@@ -271,7 +271,7 @@ function extractMessageContent(bodyText: string): string | null {
   const markerRegex = /@contacts\.idealista\.com\s*([\s\S]*?)(?:Responder desde|También puedes)/i;
   const match = markerRegex.exec(bodyText);
 
-  if (match && match[1]) {
+  if (match?.[1]) {
     // Clean up the extracted message
     let message = match[1]
       .replace(/<[^>]*>/g, " ") // Remove HTML tags
@@ -294,7 +294,7 @@ function extractMessageContent(bodyText: string): string | null {
 
   for (const pattern of fallbackPatterns) {
     const fallbackMatch = pattern.exec(bodyText);
-    if (fallbackMatch && fallbackMatch[0]) {
+    if (fallbackMatch?.[0]) {
       return fallbackMatch[0]
         .replace(/<[^>]*>/g, " ")
         .replace(/\s+/g, " ")
@@ -422,7 +422,7 @@ export function extractPhonePrefix(phone: string | null | undefined): string | n
  * Check if lead has valid contact info
  */
 export function hasValidContactInfo(lead: IdealistaLead): boolean {
-  const hasEmail = Boolean(lead.senderEmail && lead.senderEmail.includes("@"));
+  const hasEmail = Boolean(lead.senderEmail?.includes("@"));
   const hasPhone = Boolean(lead.phone && normalizePhone(lead.phone));
   return hasEmail || hasPhone;
 }

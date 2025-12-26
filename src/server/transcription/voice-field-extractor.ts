@@ -190,6 +190,11 @@ async function extractWithGPT4(
             ],
             description: "Property orientation",
           },
+          street_type: {
+            type: "string",
+            enum: ["muy_transitada", "transitada", "moderada", "poco_transitada"],
+            description: "Street traffic intensity/intensidad tráfico calle",
+          },
           original_text: {
             type: "string",
             description:
@@ -270,6 +275,10 @@ async function extractWithGPT4(
           is_bank_owned: {
             type: "boolean",
             description: "Whether property is bank owned/banco",
+          },
+          encargo: {
+            type: "boolean",
+            description: "Whether has signed mandate/exclusivity contract/encargo firmado - ONLY include if explicitly mentioned",
           },
           original_text: {
             type: "string",
@@ -456,6 +465,33 @@ async function extractWithGPT4(
             type: "boolean",
             description:
               "Whether beachfront/frente playa - ONLY include if explicitly mentioned",
+          },
+
+          // Additional Amenities
+          sauna: {
+            type: "boolean",
+            description:
+              "Whether has sauna - ONLY include if explicitly mentioned",
+          },
+          patio: {
+            type: "boolean",
+            description:
+              "Whether has patio/patio interior - ONLY include if explicitly mentioned",
+          },
+          suite_bathroom: {
+            type: "boolean",
+            description:
+              "Whether has suite bathroom/baño en suite - ONLY include if explicitly mentioned",
+          },
+          community_area: {
+            type: "boolean",
+            description:
+              "Whether has community area/zona comunitaria - ONLY include if explicitly mentioned",
+          },
+          satellite_dish: {
+            type: "boolean",
+            description:
+              "Whether has satellite dish/antena parabólica - ONLY include if explicitly mentioned",
           },
 
           original_text: {
@@ -717,6 +753,16 @@ async function extractWithGPT4(
             description: "Window type/tipo ventana",
           },
 
+          // Identifiers
+          garage_number: {
+            type: "string",
+            description: "Garage space number/número plaza garaje (ej: '45', 'P-12')",
+          },
+          storage_room_number: {
+            type: "string",
+            description: "Storage room number/número trastero (ej: 'T-3', '12')",
+          },
+
           original_text: {
             type: "string",
             description:
@@ -836,10 +882,313 @@ async function extractWithGPT4(
             description:
               "Whether appliances/electrodomésticos are included - ONLY include if explicitly mentioned in the text (true if mentioned as present, false if mentioned as absent, omit entirely if not mentioned)",
           },
+          secadora: {
+            type: "boolean",
+            description:
+              "Whether the property has dryer/secadora - ONLY include if explicitly mentioned in the text (true if mentioned as present, false if mentioned as absent, omit entirely if not mentioned)",
+          },
           original_text: {
             type: "string",
             description:
               "Original text snippet where this information was found",
+          },
+          confidence: {
+            type: "integer",
+            minimum: 1,
+            maximum: 100,
+            description: "Confidence level (1-100)",
+          },
+        },
+        required: ["original_text", "confidence"],
+      },
+    },
+    {
+      name: "extract_expenses_taxes",
+      description:
+        "Extract property expenses, taxes, and utility estimates/gastos e impuestos de la propiedad",
+      parameters: {
+        type: "object",
+        properties: {
+          ibi: {
+            type: "number",
+            minimum: 0,
+            description: "IBI/Impuesto Bienes Inmuebles - property tax amount in euros per year",
+          },
+          garbage_tax: {
+            type: "number",
+            minimum: 0,
+            description: "Tasa de basuras/garbage collection tax in euros per year",
+          },
+          community_fees: {
+            type: "number",
+            minimum: 0,
+            description: "Cuota comunidad/HOA fees in euros per month",
+          },
+          derrama: {
+            type: "number",
+            minimum: 0,
+            description: "Derrama/special community assessment in euros (one-time)",
+          },
+          vado_permanente: {
+            type: "number",
+            minimum: 0,
+            description: "Vado permanente/permanent driveway permit fee in euros per year",
+          },
+          electricity_estimate: {
+            type: "number",
+            minimum: 0,
+            description: "Estimación luz/estimated electricity bill in euros per month",
+          },
+          gas_estimate: {
+            type: "number",
+            minimum: 0,
+            description: "Estimación gas/estimated gas bill in euros per month",
+          },
+          water_estimate: {
+            type: "number",
+            minimum: 0,
+            description: "Estimación agua/estimated water bill in euros per month",
+          },
+          central_heating_fee: {
+            type: "number",
+            minimum: 0,
+            description: "Cuota calefacción central/central heating fee in euros per month",
+          },
+          internet_estimate: {
+            type: "number",
+            minimum: 0,
+            description: "Estimación internet/estimated internet cost in euros per month",
+          },
+          home_insurance: {
+            type: "number",
+            minimum: 0,
+            description: "Seguro hogar/home insurance cost in euros per year",
+          },
+          original_text: {
+            type: "string",
+            description: "Original text snippet where this information was found",
+          },
+          confidence: {
+            type: "integer",
+            minimum: 1,
+            maximum: 100,
+            description: "Confidence level (1-100)",
+          },
+        },
+        required: ["original_text", "confidence"],
+      },
+    },
+    {
+      name: "extract_rental_details",
+      description:
+        "Extract rental-specific details like deposits, guarantees, and rental terms/detalles específicos de alquiler",
+      parameters: {
+        type: "object",
+        properties: {
+          rental_type: {
+            type: "string",
+            enum: ["residential", "seasonal", "short_term"],
+            description: "Tipo de alquiler: residential=larga temporada, seasonal=temporada, short_term=corta estancia/turístico",
+          },
+          security_deposit: {
+            type: "number",
+            minimum: 0,
+            description: "Fianza/security deposit amount in euros",
+          },
+          additional_guarantee: {
+            type: "number",
+            minimum: 0,
+            description: "Garantía adicional/additional guarantee amount in euros",
+          },
+          bank_guarantee_required: {
+            type: "boolean",
+            description: "Si requiere aval bancario - ONLY include if explicitly mentioned",
+          },
+          management_fees: {
+            type: "number",
+            minimum: 0,
+            description: "Gastos de gestión/management fees in euros per month",
+          },
+          non_payment_insurance: {
+            type: "boolean",
+            description: "Si tiene seguro de impago - ONLY include if explicitly mentioned",
+          },
+          non_payment_insurance_amount: {
+            type: "number",
+            minimum: 0,
+            description: "Coste seguro impago/non-payment insurance cost in euros per year",
+          },
+          occupation_status: {
+            type: "string",
+            enum: ["free", "tenanted", "bare_ownership", "illegally_occupied"],
+            description: "Estado ocupación: free=libre, tenanted=alquilado, bare_ownership=nuda propiedad, illegally_occupied=ocupado ilegalmente",
+          },
+          price_reference_index: {
+            type: "number",
+            minimum: 0.01,
+            maximum: 10000,
+            description: "Índice referencia precio (Cataluña) - mandatory for rentals in Catalonia",
+          },
+          short_term_license: {
+            type: "string",
+            description: "Número de licencia turística/short-term rental license number",
+          },
+          original_text: {
+            type: "string",
+            description: "Original text snippet where this information was found",
+          },
+          confidence: {
+            type: "integer",
+            minimum: 1,
+            maximum: 100,
+            description: "Confidence level (1-100)",
+          },
+        },
+        required: ["original_text", "confidence"],
+      },
+    },
+    {
+      name: "extract_commercial_industrial",
+      description:
+        "Extract commercial/industrial property features for locales and naves/características de locales comerciales e industriales",
+      parameters: {
+        type: "object",
+        properties: {
+          is_diafano: {
+            type: "boolean",
+            description: "Si es diáfano/open-plan - ONLY include if explicitly mentioned",
+          },
+          has_escaparate: {
+            type: "boolean",
+            description: "Si tiene escaparate/storefront window - ONLY include if explicitly mentioned",
+          },
+          located_at_corner: {
+            type: "boolean",
+            description: "Si está en esquina - ONLY include if explicitly mentioned",
+          },
+          ubication: {
+            type: "string",
+            enum: ["on_top_floor", "shopping", "street", "mezzanine", "belowGround", "other"],
+            description: "Ubicación del local: on_top_floor=última planta, shopping=centro comercial, street=a pie de calle, mezzanine=entreplanta, belowGround=sótano",
+          },
+          facade_area: {
+            type: "integer",
+            minimum: 1,
+            description: "Metros de fachada/facade meters",
+          },
+          windows_number: {
+            type: "integer",
+            minimum: 0,
+            description: "Número de escaparates/number of shop windows",
+          },
+          bridge_crane: {
+            type: "boolean",
+            description: "Si tiene puente grúa - ONLY include if explicitly mentioned",
+          },
+          smoke_extraction: {
+            type: "boolean",
+            description: "Si tiene extracción de humos - ONLY include if explicitly mentioned",
+          },
+          loading_area: {
+            type: "boolean",
+            description: "Si tiene zona de carga/descarga - ONLY include if explicitly mentioned",
+          },
+          allowed_use: {
+            type: "integer",
+            minimum: 1,
+            maximum: 9,
+            description: "Uso permitido (1-9 enum): 1=oficina, 2=comercio, 3=hostelería, etc.",
+          },
+          original_text: {
+            type: "string",
+            description: "Original text snippet where this information was found",
+          },
+          confidence: {
+            type: "integer",
+            minimum: 1,
+            maximum: 100,
+            description: "Confidence level (1-100)",
+          },
+        },
+        required: ["original_text", "confidence"],
+      },
+    },
+    {
+      name: "extract_land_finca",
+      description:
+        "Extract land/finca property features and infrastructure/características de fincas y terrenos",
+      parameters: {
+        type: "object",
+        properties: {
+          finca: {
+            type: "boolean",
+            description: "Si es finca/tiene terreno - ONLY include if explicitly mentioned",
+          },
+          superficie_finca: {
+            type: "number",
+            minimum: 0,
+            description: "Superficie de la finca/terreno en metros cuadrados",
+          },
+          has_road_access: {
+            type: "boolean",
+            description: "Si tiene acceso por carretera - ONLY include if explicitly mentioned",
+          },
+          has_sewerage: {
+            type: "boolean",
+            description: "Si tiene alcantarillado - ONLY include if explicitly mentioned",
+          },
+          has_sidewalk: {
+            type: "boolean",
+            description: "Si tiene acera - ONLY include if explicitly mentioned",
+          },
+          has_street_lighting: {
+            type: "boolean",
+            description: "Si tiene alumbrado público - ONLY include if explicitly mentioned",
+          },
+          original_text: {
+            type: "string",
+            description: "Original text snippet where this information was found",
+          },
+          confidence: {
+            type: "integer",
+            minimum: 1,
+            maximum: 100,
+            description: "Confidence level (1-100)",
+          },
+        },
+        required: ["original_text", "confidence"],
+      },
+    },
+    {
+      name: "extract_infrastructure",
+      description:
+        "Extract utility infrastructure details like electricity and plumbing/detalles de infraestructura e instalaciones",
+      parameters: {
+        type: "object",
+        properties: {
+          electricity_type: {
+            type: "string",
+            enum: ["monofasica", "trifasica", "mixta", "no_disponible"],
+            description: "Tipo instalación eléctrica: monofásica, trifásica, mixta, no_disponible",
+          },
+          electricity_status: {
+            type: "string",
+            enum: ["nuevo", "buen_estado", "funcional", "necesita_actualizacion", "necesita_reparacion", "no_disponible"],
+            description: "Estado instalación eléctrica",
+          },
+          plumbing_type: {
+            type: "string",
+            enum: ["cobre", "pvc", "multicapa", "galvanizado", "mixto", "no_disponible"],
+            description: "Tipo fontanería: cobre, pvc, multicapa, galvanizado, mixto",
+          },
+          plumbing_status: {
+            type: "string",
+            enum: ["nuevo", "buen_estado", "funcional", "necesita_actualizacion", "tiene_fugas", "necesita_reparacion", "no_disponible"],
+            description: "Estado fontanería",
+          },
+          original_text: {
+            type: "string",
+            description: "Original text snippet where this information was found",
           },
           confidence: {
             type: "integer",
@@ -876,15 +1225,20 @@ EJEMPLO:
 - Si NO menciona jacuzzi → NO incluyas el campo jacuzzi
 
 FUNCIONES DISPONIBLES:
-- extract_basic_property_info: información básica (tipo, habitaciones, metros, ubicación)
-- extract_listing_details: detalles del anuncio (precio, tipo operación, disponibilidad)
-- extract_property_amenities: amenidades básicas (ascensor, garaje, piscina, jardín, etc.)
+- extract_basic_property_info: información básica (tipo, habitaciones, metros, ubicación, tipo calle)
+- extract_listing_details: detalles del anuncio (precio, tipo operación, disponibilidad, encargo)
+- extract_property_amenities: amenidades básicas (ascensor, garaje, piscina, jardín, sauna, patio, etc.)
 - extract_energy_heating: energía, calefacción y certificados
 - extract_property_condition: estado de la propiedad y renovaciones
 - extract_kitchen_features: características de la cocina
-- extract_interior_spaces: espacios interiores y almacenamiento
+- extract_interior_spaces: espacios interiores, almacenamiento, números de plaza/trastero
 - extract_luxury_amenities: amenidades de lujo
-- extract_appliances: electrodomésticos incluidos
+- extract_appliances: electrodomésticos incluidos (incluyendo secadora)
+- extract_expenses_taxes: gastos e impuestos (IBI, comunidad, suministros, seguros)
+- extract_rental_details: detalles de alquiler (fianza, garantías, seguros impago, licencias)
+- extract_commercial_industrial: características locales/naves (diáfano, escaparate, carga)
+- extract_land_finca: características fincas/terrenos (acceso, alcantarillado, aceras)
+- extract_infrastructure: instalaciones (electricidad, fontanería, estado)
 
 TIPOS DE OPERACIÓN VÁLIDOS:
 - Sale: para venta
@@ -905,9 +1259,15 @@ Extrae únicamente los datos que estén claramente mencionados en el texto.`;
 
   const allExtractedFields: ExtractedFieldResult[] = [];
 
-  // Execute each function call sequentially
-  for (const func of extractionFunctions) {
-    try {
+  console.log(
+    `🚀 [GPT4-FUNCTION-CALLING] Starting parallel extraction with ${extractionFunctions.length} functions`,
+  );
+
+  const startTime = Date.now();
+
+  // Execute all function calls in parallel using Promise.allSettled for resilience
+  const results = await Promise.allSettled(
+    extractionFunctions.map(async (func) => {
       console.log(
         `🔍 [GPT4-FUNCTION-CALLING] Executing function: ${func.name}`,
       );
@@ -932,6 +1292,23 @@ Extrae únicamente los datos que estén claramente mencionados en el texto.`;
         },
       });
 
+      return { func, completion };
+    }),
+  );
+
+  // Process results from all parallel calls
+  for (const result of results) {
+    if (result.status === "rejected") {
+      console.error(
+        `❌ [GPT4-FUNCTION-CALLING] Parallel call failed:`,
+        result.reason,
+      );
+      continue;
+    }
+
+    const { func, completion } = result.value;
+
+    try {
       const message = completion.choices[0]?.message;
       if (!message?.tool_calls || message.tool_calls.length === 0) {
         console.warn(
@@ -983,15 +1360,16 @@ Extrae únicamente los datos que estén claramente mencionados en el texto.`;
       allExtractedFields.push(...functionFields);
     } catch (error) {
       console.error(
-        `❌ [GPT4-FUNCTION-CALLING] Error executing ${func.name}:`,
+        `❌ [GPT4-FUNCTION-CALLING] Error processing ${func.name}:`,
         error,
       );
       continue;
     }
   }
 
+  const duration = Date.now() - startTime;
   console.log(
-    `🤖 [GPT4-FUNCTION-CALLING] Multi-function extraction completed: ${allExtractedFields.length} total fields extracted`,
+    `🤖 [GPT4-FUNCTION-CALLING] Parallel extraction completed in ${duration}ms: ${allExtractedFields.length} total fields extracted from ${results.filter((r) => r.status === "fulfilled").length}/${extractionFunctions.length} successful calls`,
   );
   return allExtractedFields;
 }
@@ -1034,6 +1412,7 @@ function processFunctionResults(
       city: { dbColumn: "extractedCity", dbTable: "properties" },
       province: { dbColumn: "extractedProvince", dbTable: "properties" },
       orientation: { dbColumn: "orientation", dbTable: "properties" },
+      street_type: { dbColumn: "streetType", dbTable: "properties" },
     },
     extract_listing_details: {
       listing_type: { dbColumn: "listingType", dbTable: "listings" },
@@ -1058,6 +1437,7 @@ function processFunctionResults(
       student_friendly: { dbColumn: "studentFriendly", dbTable: "listings" },
       internet: { dbColumn: "internet", dbTable: "listings" },
       is_bank_owned: { dbColumn: "isBankOwned", dbTable: "listings" },
+      encargo: { dbColumn: "encargo", dbTable: "listings" },
     },
     extract_property_amenities: {
       // Basic Amenities
@@ -1117,6 +1497,13 @@ function processFunctionResults(
       mountain_views: { dbColumn: "mountainViews", dbTable: "properties" },
       sea_views: { dbColumn: "seaViews", dbTable: "properties" },
       beachfront: { dbColumn: "beachfront", dbTable: "properties" },
+
+      // Additional Amenities
+      sauna: { dbColumn: "sauna", dbTable: "properties" },
+      patio: { dbColumn: "patio", dbTable: "properties" },
+      suite_bathroom: { dbColumn: "suiteBathroom", dbTable: "properties" },
+      community_area: { dbColumn: "communityArea", dbTable: "properties" },
+      satellite_dish: { dbColumn: "satelliteDish", dbTable: "properties" },
     },
     extract_energy_heating: {
       has_heating: { dbColumn: "hasHeating", dbTable: "properties" },
@@ -1181,6 +1568,8 @@ function processFunctionResults(
       shutter_type: { dbColumn: "shutterType", dbTable: "properties" },
       carpentry_type: { dbColumn: "carpentryType", dbTable: "properties" },
       window_type: { dbColumn: "windowType", dbTable: "properties" },
+      garage_number: { dbColumn: "garageNumber", dbTable: "properties" },
+      storage_room_number: { dbColumn: "storageRoomNumber", dbTable: "properties" },
     },
     extract_luxury_amenities: {
       jacuzzi: { dbColumn: "jacuzzi", dbTable: "properties" },
@@ -1206,6 +1595,58 @@ function processFunctionResults(
         dbColumn: "appliancesIncluded",
         dbTable: "listings",
       },
+      secadora: { dbColumn: "secadora", dbTable: "listings" },
+    },
+    extract_expenses_taxes: {
+      ibi: { dbColumn: "ibi", dbTable: "properties" },
+      garbage_tax: { dbColumn: "garbageTax", dbTable: "properties" },
+      community_fees: { dbColumn: "communityFees", dbTable: "properties" },
+      derrama: { dbColumn: "derrama", dbTable: "properties" },
+      vado_permanente: { dbColumn: "vadoPermanente", dbTable: "properties" },
+      electricity_estimate: { dbColumn: "electricityEstimate", dbTable: "properties" },
+      gas_estimate: { dbColumn: "gasEstimate", dbTable: "properties" },
+      water_estimate: { dbColumn: "waterEstimate", dbTable: "properties" },
+      central_heating_fee: { dbColumn: "centralHeatingFee", dbTable: "properties" },
+      internet_estimate: { dbColumn: "internetEstimate", dbTable: "properties" },
+      home_insurance: { dbColumn: "homeInsurance", dbTable: "properties" },
+    },
+    extract_rental_details: {
+      rental_type: { dbColumn: "rentalType", dbTable: "listings" },
+      security_deposit: { dbColumn: "securityDeposit", dbTable: "listings" },
+      additional_guarantee: { dbColumn: "additionalGuarantee", dbTable: "listings" },
+      bank_guarantee_required: { dbColumn: "bankGuaranteeRequired", dbTable: "listings" },
+      management_fees: { dbColumn: "managementFees", dbTable: "listings" },
+      non_payment_insurance: { dbColumn: "nonPaymentInsurance", dbTable: "listings" },
+      non_payment_insurance_amount: { dbColumn: "nonPaymentInsuranceAmount", dbTable: "listings" },
+      occupation_status: { dbColumn: "occupationStatus", dbTable: "listings" },
+      price_reference_index: { dbColumn: "priceReferenceIndex", dbTable: "listings" },
+      short_term_license: { dbColumn: "shortTermLicense", dbTable: "listings" },
+    },
+    extract_commercial_industrial: {
+      is_diafano: { dbColumn: "isDiafano", dbTable: "properties" },
+      has_escaparate: { dbColumn: "hasEscaparate", dbTable: "properties" },
+      located_at_corner: { dbColumn: "locatedAtCorner", dbTable: "properties" },
+      ubication: { dbColumn: "ubication", dbTable: "properties" },
+      facade_area: { dbColumn: "facadeArea", dbTable: "properties" },
+      windows_number: { dbColumn: "windowsNumber", dbTable: "properties" },
+      bridge_crane: { dbColumn: "bridgeCrane", dbTable: "properties" },
+      smoke_extraction: { dbColumn: "smokeExtraction", dbTable: "properties" },
+      loading_area: { dbColumn: "loadingArea", dbTable: "properties" },
+      allowed_use: { dbColumn: "allowedUse", dbTable: "properties" },
+    },
+    extract_land_finca: {
+      finca: { dbColumn: "finca", dbTable: "properties" },
+      superficie_finca: { dbColumn: "superficieFinca", dbTable: "properties" },
+      has_road_access: { dbColumn: "hasRoadAccess", dbTable: "properties" },
+      has_sewerage: { dbColumn: "hasSewerage", dbTable: "properties" },
+      has_sidewalk: { dbColumn: "hasSidewalk", dbTable: "properties" },
+      has_street_lighting: { dbColumn: "hasStreetLighting", dbTable: "properties" },
+    },
+    extract_infrastructure: {
+      electricity_type: { dbColumn: "electricityType", dbTable: "properties" },
+      electricity_status: { dbColumn: "electricityStatus", dbTable: "properties" },
+      plumbing_type: { dbColumn: "plumbingType", dbTable: "properties" },
+      plumbing_status: { dbColumn: "plumbingStatus", dbTable: "properties" },
     },
   };
 

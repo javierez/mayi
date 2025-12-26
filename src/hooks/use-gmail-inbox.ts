@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import type { InboxThread, ComposeMessageData, InboxAttachment } from "~/components/inbox/inbox-types";
+import type { InboxThread, ComposeMessageData } from "~/components/inbox/inbox-types";
 import type { EmailAttachment } from "~/server/services/gmail-service";
 import {
   getGmailConnectionStatusAction,
@@ -40,6 +40,7 @@ export interface UseGmailInboxReturn {
   sendReply: (threadId: string, content: string, attachments?: EmailAttachment[]) => Promise<boolean>;
   disconnect: () => Promise<void>;
   checkConnection: () => Promise<void>;
+  markContactAsLinked: (email: string) => void;
 }
 
 export function useGmailInbox(): UseGmailInboxReturn {
@@ -80,7 +81,7 @@ export function useGmailInbox(): UseGmailInboxReturn {
   }, [checkConnection]);
 
   // Fetch threads
-  const fetchThreads = useCallback(async (pageToken?: string) => {
+  const fetchThreads = useCallback(async (pageToken?: string, isRefresh = false) => {
     if (!isConnected) return;
 
     setIsLoading(true);
@@ -94,10 +95,42 @@ export function useGmailInbox(): UseGmailInboxReturn {
 
       if (result.success) {
         if (pageToken) {
-          // Append to existing threads
+          // Append to existing threads (pagination)
           setThreads((prev) => [...prev, ...result.threads]);
+        } else if (isRefresh) {
+          // Incremental refresh: merge new threads with existing ones
+          setThreads((prev) => {
+            const existingById = new Map(prev.map((t) => [t.id, t]));
+            const newThreads = result.threads.filter((t) => !existingById.has(t.id));
+
+            // Update existing threads with fresh data, but preserve isLinked status
+            const updatedExisting = prev.map((existing) => {
+              const fresh = result.threads.find((t) => t.id === existing.id);
+              if (!fresh) return existing;
+
+              // Preserve isLinked status from existing participants
+              const linkedEmails = new Set(
+                existing.participants
+                  .filter((p) => p.isLinked)
+                  .map((p) => (p.email ?? p.id).toLowerCase().trim())
+              );
+
+              return {
+                ...fresh,
+                participants: fresh.participants.map((p) => {
+                  const email = (p.email ?? p.id).toLowerCase().trim();
+                  return linkedEmails.has(email) ? { ...p, isLinked: true } : p;
+                }),
+              };
+            });
+
+            // Combine and sort by date
+            return [...newThreads, ...updatedExisting].sort(
+              (a, b) => b.lastMessageAt.getTime() - a.lastMessageAt.getTime()
+            );
+          });
         } else {
-          // Replace threads
+          // Initial load: replace threads
           setThreads(result.threads);
         }
         setNextPageToken(result.nextPageToken ?? null);
@@ -120,10 +153,10 @@ export function useGmailInbox(): UseGmailInboxReturn {
     }
   }, [isConnected, fetchThreads]);
 
-  // Refresh threads
+  // Refresh threads (incremental - keeps existing threads and merges new ones)
   const refresh = useCallback(async () => {
     setNextPageToken(null);
-    await fetchThreads();
+    await fetchThreads(undefined, true); // isRefresh = true
     lastRefreshTime.current = Date.now();
   }, [fetchThreads]);
 
@@ -343,6 +376,40 @@ export function useGmailInbox(): UseGmailInboxReturn {
     }
   }, []);
 
+  // Optimistically mark a contact as linked by email
+  const markContactAsLinked = useCallback((email: string) => {
+    const normalizedEmail = email.toLowerCase().trim();
+
+    setThreads((prev) =>
+      prev.map((thread) => ({
+        ...thread,
+        participants: thread.participants.map((p) => {
+          const participantEmail = (p.email ?? p.id).toLowerCase().trim();
+          if (participantEmail === normalizedEmail) {
+            return { ...p, isLinked: true };
+          }
+          return p;
+        }),
+        messages: thread.messages.map((msg) => ({
+          ...msg,
+          from: msg.from && (msg.from.email ?? msg.from.id).toLowerCase().trim() === normalizedEmail
+            ? { ...msg.from, isLinked: true }
+            : msg.from,
+          to: msg.to?.map((t) =>
+            (t.email ?? t.id).toLowerCase().trim() === normalizedEmail
+              ? { ...t, isLinked: true }
+              : t
+          ),
+          cc: msg.cc?.map((c) =>
+            (c.email ?? c.id).toLowerCase().trim() === normalizedEmail
+              ? { ...c, isLinked: true }
+              : c
+          ),
+        })),
+      }))
+    );
+  }, []);
+
   return {
     isConnected,
     connectionEmail,
@@ -361,5 +428,6 @@ export function useGmailInbox(): UseGmailInboxReturn {
     sendReply,
     disconnect,
     checkConnection,
+    markContactAsLinked,
   };
 }

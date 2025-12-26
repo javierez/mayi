@@ -30,7 +30,6 @@ import { ScrollArea } from "~/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { mockContacts } from "./mock-inbox-data";
 import type { MessageChannel, ComposeMessageData, InboxContact } from "./inbox-types";
-import type { EmailAttachment } from "~/server/services/gmail-service";
 
 interface PendingAttachment {
   file: File;

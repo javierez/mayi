@@ -45,7 +45,7 @@ interface InboxConversationViewProps {
   thread: InboxThread | null;
   onToggleStar: (threadId: string) => void;
   onToggleRead: (threadId: string) => void;
-  onDelete: (threadId: string) => void;
+  onDelete: (threadId: string) => void | Promise<void>;
   onSendReply: (threadId: string, content: string, attachments?: EmailAttachment[]) => void;
   onBack?: () => void;
   showBackButton?: boolean;

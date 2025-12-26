@@ -243,7 +243,7 @@ export function FeaturesCard({
                     Electricidad
                   </Label>
                   <Select
-                    value={electricityType || undefined}
+                    value={electricityType ?? undefined}
                     onValueChange={(value) => {
                       setElectricityType?.(value);
                       onUpdateModule(true);
@@ -264,7 +264,7 @@ export function FeaturesCard({
                     Agua
                   </Label>
                   <Select
-                    value={plumbingType || undefined}
+                    value={plumbingType ?? undefined}
                     onValueChange={(value) => {
                       setPlumbingType?.(value);
                       onUpdateModule(true);

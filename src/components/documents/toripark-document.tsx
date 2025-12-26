@@ -26,11 +26,11 @@ export function ToriParkDocument({ data }: Props) {
   const [agentName, setAgentName] = useState<string>(
     data.branding?.agentName ?? "ToriPark",
   );
-  const [_taxId, setTaxId] = useState<string>(data.branding?.taxId ?? "");
+  const [, setTaxId] = useState<string>(data.branding?.taxId ?? "");
   const [offices, setOffices] = useState<
     Array<{ address: string; city: string; postalCode: string; phone: string }>
   >(data.branding?.offices ?? []);
-  const [_website, setWebsite] = useState<string>(data.branding?.website ?? "");
+  const [, setWebsite] = useState<string>(data.branding?.website ?? "");
   const [propertyImages, setPropertyImages] = useState<string[]>([]);
   const [imageOrientations, setImageOrientations] = useState<Record<string, "portrait" | "landscape">>({});
   const { data: session } = useSession();

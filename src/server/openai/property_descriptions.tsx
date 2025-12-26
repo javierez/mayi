@@ -1,6 +1,5 @@
 "use server";
 
-import OpenAI from "openai";
 import {
   fetchAccountContext,
   formatAccountContextForPrompt,
@@ -12,37 +11,89 @@ import {
 } from "~/types/property-types";
 import { getSquareMeter, getBuiltSurfaceArea } from "~/lib/properties/area-utils";
 import { generateText } from "~/server/ai/text-client";
-
-// OpenAI client for file uploads only (not used for text generation)
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-// File Upload configuration
-const EXAMPLES_FILE_ID = process.env.OPENAI_EXAMPLES_FILE_ID; // Set this after uploading the file
+import { db } from "~/server/db";
+import { propertyDescriptionExamples } from "~/server/db/schema";
+import { eq, and, or, asc } from "drizzle-orm";
+import { getCurrentUserAccountId } from "~/lib/dal";
 
 /**
- * Utility function to upload examples file to OpenAI
- * Run this once to set up the examples file
+ * Metadata structure from analyzed examples
  */
-export async function uploadExamplesFile(
-  fileContent: string,
-  fileName = "property-examples.txt",
-) {
+interface ExampleMetadata {
+  fieldsUsed?: string[];
+  fieldsByTable?: {
+    properties: string[];
+    listings: string[];
+  };
+}
+
+/**
+ * Result from fetching description examples
+ */
+interface DescriptionExamplesResult {
+  examples: string[];
+  importantFields: string[];
+}
+
+/**
+ * Fetch property description examples from the database
+ * Returns examples filtered by property type and listing type,
+ * plus a list of important fields extracted from the examples' metadata
+ */
+async function fetchDescriptionExamples(
+  accountId: bigint,
+  propertyType?: string,
+  listingType?: string,
+  limit = 3,
+): Promise<DescriptionExamplesResult> {
   try {
-    const file = await openai.files.create({
-      file: new File([fileContent], fileName, { type: "text/plain" }),
-      purpose: "assistants",
+    const examples = await db
+      .select({
+        exampleText: propertyDescriptionExamples.exampleText,
+        listingType: propertyDescriptionExamples.listingType,
+        metadata: propertyDescriptionExamples.metadata,
+      })
+      .from(propertyDescriptionExamples)
+      .where(
+        and(
+          eq(propertyDescriptionExamples.accountId, accountId),
+          eq(propertyDescriptionExamples.isActive, true),
+          or(
+            eq(propertyDescriptionExamples.propertyType, propertyType ?? "all"),
+            eq(propertyDescriptionExamples.propertyType, "all"),
+          ),
+        ),
+      )
+      .orderBy(asc(propertyDescriptionExamples.sortOrder))
+      .limit(limit * 2); // Fetch more to filter by listing type
+
+    // Filter by listing type in memory (null listingType applies to all)
+    const filteredExamples = examples.filter((ex) => {
+      if (!ex.listingType) return true; // null applies to both Sale and Rent
+      if (!listingType) return true; // No filter requested
+      return ex.listingType === listingType;
     });
 
-    console.log(`File uploaded successfully. File ID: ${file.id}`);
-    console.log(
-      "You can now reference this file directly in your prompts using the file ID.",
-    );
-    return file.id;
+    const selectedExamples = filteredExamples.slice(0, limit);
+
+    // Extract unique important fields from all examples' metadata
+    const importantFieldsSet = new Set<string>();
+    for (const ex of selectedExamples) {
+      const metadata = ex.metadata as ExampleMetadata | null;
+      if (metadata?.fieldsUsed) {
+        for (const field of metadata.fieldsUsed) {
+          importantFieldsSet.add(field);
+        }
+      }
+    }
+
+    return {
+      examples: selectedExamples.map((ex) => ex.exampleText),
+      importantFields: Array.from(importantFieldsSet),
+    };
   } catch (error) {
-    console.error("Error uploading file:", error);
-    throw error;
+    console.error("Error fetching description examples:", error);
+    return { examples: [], importantFields: [] };
   }
 }
 
@@ -261,6 +312,20 @@ export async function generatePropertyDescription(
     // Fetch account context for personalization
     const accountContext = await fetchAccountContext();
 
+    // Fetch description examples from database
+    let examples: string[] = [];
+    let importantFields: string[] = [];
+    const accountId: number = await getCurrentUserAccountId();
+    if (accountId) {
+      const examplesResult = await fetchDescriptionExamples(
+        BigInt(accountId),
+        relevantListing.propertyType,
+        relevantListing.listingType,
+      );
+      examples = examplesResult.examples;
+      importantFields = examplesResult.importantFields;
+    }
+
     // Search for neighborhood information if available
     let neighborhoodInfo = null;
     if (relevantListing.neighborhood || relevantListing.city) {
@@ -274,21 +339,33 @@ export async function generatePropertyDescription(
       );
     }
 
-    // Create a prompt that uses file search for examples and account context
+    // Create a prompt with examples and account context
     let prompt = "";
 
-    // Add examples file reference if available
-    if (EXAMPLES_FILE_ID) {
-      prompt += `EXAMPLES REFERENCE:
-You have access to uploaded property description examples (File ID: ${EXAMPLES_FILE_ID}). Study these examples carefully to match their writing style, tone, structure, and vocabulary. Pay special attention to:
-- How they describe properties and their features
-- The emotional language and persuasive techniques they use
-- The narrative flow and structure patterns
-- The specific vocabulary and phrases they employ
-- How they highlight key selling points
-- The way they create visual and emotional connections
+    // Add examples directly in prompt if available
+    const hasExamples = examples.length > 0;
+    if (hasExamples) {
+      prompt += `EJEMPLOS DE ESTILO A SEGUIR:
 
-`;
+${examples.map((ex, i) => `--- EJEMPLO ${i + 1} ---\n${ex}`).join("\n\n")}
+
+IMPORTANTE: Estudia cuidadosamente estos ejemplos para replicar su estilo de escritura, tono, estructura y vocabulario. Presta especial atención a:
+- Cómo describen las propiedades y sus características
+- El lenguaje emocional y técnicas persuasivas que utilizan
+- El flujo narrativo y patrones de estructura
+- El vocabulario y frases específicas que emplean
+- Cómo destacan los puntos de venta clave
+- La manera en que crean conexiones visuales y emocionales
+
+${
+        importantFields.length > 0
+          ? `CAMPOS IMPORTANTES A DESTACAR:
+Los siguientes campos son especialmente importantes en las descripciones de este tipo de propiedad. Si la propiedad tiene datos para estos campos, asegúrate de mencionarlos de forma natural en la descripción:
+${importantFields.join(", ")}
+
+`
+          : ""
+      }`;
     }
 
     // Add neighborhood information if found
@@ -312,7 +389,7 @@ ${neighborhoodInfo}
     );
     prompt += `Generate a professional property description in Spanish for a ${propertyTypeDisplay} with these confirmed characteristics:
 
-${EXAMPLES_FILE_ID ? `CRITICAL: Before writing, carefully study the uploaded examples file (${EXAMPLES_FILE_ID}) to understand the desired style, tone, and structure. Your description must closely match the patterns, vocabulary, and approach demonstrated in those examples.` : ""}
+${hasExamples ? `CRÍTICO: Antes de escribir, estudia cuidadosamente los ejemplos proporcionados arriba para entender el estilo, tono y estructura deseados. Tu descripción debe coincidir estrechamente con los patrones, vocabulario y enfoque demostrados en esos ejemplos.` : ""}
 
     Basic Information:
     Price: ${relevantListing.price}€
@@ -350,14 +427,14 @@ ${EXAMPLES_FILE_ID ? `CRITICAL: Before writing, carefully study the uploaded exa
 
     CRITICAL REQUIREMENTS:
     ${
-      EXAMPLES_FILE_ID
-        ? `- MANDATORY: Study the uploaded examples file (${EXAMPLES_FILE_ID}) and replicate its exact writing style, tone, and structure
-    - Match the vocabulary, phrases, and emotional language used in the examples
-    - Follow the same narrative flow and structure patterns from the examples
-    - Use the same persuasive techniques and selling approaches demonstrated in the examples
-    - Replicate the way examples highlight features and create emotional connections
-    - Your description should feel like it was written by the same person who wrote the examples`
-        : "- Use professional real estate writing style"
+      hasExamples
+        ? `- OBLIGATORIO: Estudia los ejemplos proporcionados y replica su estilo de escritura, tono y estructura exactos
+    - Coincide con el vocabulario, frases y lenguaje emocional usado en los ejemplos
+    - Sigue los mismos patrones de flujo narrativo y estructura de los ejemplos
+    - Usa las mismas técnicas persuasivas y enfoques de venta demostrados en los ejemplos
+    - Replica la forma en que los ejemplos destacan características y crean conexiones emocionales
+    - Tu descripción debe sentirse como si fuera escrita por la misma persona que escribió los ejemplos`
+        : "- Usa un estilo de escritura inmobiliaria profesional"
     }
     ${accountContext ? "- Naturally incorporate the company information provided in the company context" : ""}
     - Only mention explicitly confirmed features. Omit any unconfirmed information
@@ -397,12 +474,12 @@ ${EXAMPLES_FILE_ID ? `CRITICAL: Before writing, carefully study the uploaded exa
     // Build system prompt
     let systemMessage = `You are a professional real estate copywriter who specializes in creating engaging property descriptions in Spanish. You understand the unique characteristics and selling points of different property types including residential properties (pisos, casas), commercial spaces (locales), garages, and land (solares).`;
 
-    if (accountContext && EXAMPLES_FILE_ID) {
+    if (accountContext && hasExamples) {
       systemMessage +=
-        " You have access to property description examples via an uploaded file and specific company information to personalize the descriptions. You MUST carefully study the examples file to understand and replicate the exact writing style, tone, vocabulary, and structure. Your primary goal is to match the patterns demonstrated in the examples - study how they describe properties, create emotional connections, use specific language, and structure their narrative flow. Then use the company context to make descriptions feel authentic to that specific real estate agency.";
-    } else if (EXAMPLES_FILE_ID) {
+        " You have been provided with property description examples and specific company information to personalize the descriptions. You MUST carefully study the examples to understand and replicate the exact writing style, tone, vocabulary, and structure. Your primary goal is to match the patterns demonstrated in the examples - study how they describe properties, create emotional connections, use specific language, and structure their narrative flow. Then use the company context to make descriptions feel authentic to that specific real estate agency.";
+    } else if (hasExamples) {
       systemMessage +=
-        " You have access to property description examples via an uploaded file. You MUST carefully study these examples to understand and replicate the exact writing style, tone, vocabulary, and structure. Your primary goal is to match the patterns demonstrated in the examples - study how they describe properties, create emotional connections, use specific language, and structure their narrative flow. Your description should feel like it was written by the same person who wrote the examples.";
+        " You have been provided with property description examples. You MUST carefully study these examples to understand and replicate the exact writing style, tone, vocabulary, and structure. Your primary goal is to match the patterns demonstrated in the examples - study how they describe properties, create emotional connections, use specific language, and structure their narrative flow. Your description should feel like it was written by the same person who wrote the examples.";
     } else if (accountContext) {
       systemMessage +=
         " You have been provided with specific company information to personalize the descriptions. Use this context to make descriptions feel authentic to that specific real estate agency - naturally incorporating their brand identity and contact information when appropriate.";

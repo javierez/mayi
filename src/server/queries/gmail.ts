@@ -11,7 +11,8 @@ import {
   type FetchThreadsOptions,
   type FetchThreadsResult,
 } from "~/server/services/gmail-service";
-import type { InboxThread } from "~/components/inbox/inbox-types";
+import type { InboxContact, InboxThread } from "~/components/inbox/inbox-types";
+import { enrichContactsWithLinkStatus } from "~/server/actions/inbox-contact";
 
 /**
  * Get Gmail integration for current user (with auth)
@@ -42,6 +43,47 @@ export async function getGmailEmailWithAuth(): Promise<string | null> {
 }
 
 /**
+ * Enrich thread participants with contact link status
+ */
+async function enrichThreadWithContactLinks(
+  thread: InboxThread,
+): Promise<InboxThread> {
+  const enrichedParticipants = await enrichContactsWithLinkStatus(
+    thread.participants,
+  );
+
+  // Create a map for quick lookup
+  const participantMap = new Map<string, InboxContact>();
+  for (const p of enrichedParticipants) {
+    participantMap.set(p.email ?? p.id, p);
+  }
+
+  // Enrich message senders/recipients too
+  const enrichedMessages = thread.messages.map((msg) => {
+    const enrichedFrom = participantMap.get(msg.from.email ?? msg.from.id) ?? msg.from;
+    const enrichedTo = msg.to?.map(
+      (t) => participantMap.get(t.email ?? t.id) ?? t,
+    );
+    const enrichedCc = msg.cc?.map(
+      (c) => participantMap.get(c.email ?? c.id) ?? c,
+    );
+
+    return {
+      ...msg,
+      from: enrichedFrom,
+      to: enrichedTo,
+      cc: enrichedCc,
+    };
+  });
+
+  return {
+    ...thread,
+    participants: enrichedParticipants,
+    messages: enrichedMessages,
+  };
+}
+
+/**
  * Get Gmail threads for current user (with auth)
  */
 export async function getGmailThreadsWithAuth(
@@ -52,7 +94,17 @@ export async function getGmailThreadsWithAuth(
     throw new Error("Unauthorized");
   }
 
-  return fetchGmailThreads(user.id, options);
+  const result = await fetchGmailThreads(user.id, options);
+
+  // Enrich all threads with contact link status
+  const enrichedThreads = await Promise.all(
+    result.threads.map(enrichThreadWithContactLinks),
+  );
+
+  return {
+    ...result,
+    threads: enrichedThreads,
+  };
 }
 
 /**
@@ -66,7 +118,10 @@ export async function getGmailThreadWithAuth(
     throw new Error("Unauthorized");
   }
 
-  return fetchGmailThread(user.id, threadId);
+  const thread = await fetchGmailThread(user.id, threadId);
+  if (!thread) return null;
+
+  return enrichThreadWithContactLinks(thread);
 }
 
 /**

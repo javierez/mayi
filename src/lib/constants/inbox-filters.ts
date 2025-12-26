@@ -66,9 +66,7 @@ export const ALLOWED_DOMAINS = [
  * Specific sender emails that are always included (whitelist)
  * Used for portals that send from specific addresses
  */
-export const WHITELISTED_SENDERS = [
-  "reply@idealista.com",
-] as const;
+export const WHITELISTED_SENDERS = [] as readonly string[];
 
 /**
  * Patterns in sender email to detect real estate agencies
@@ -223,6 +221,8 @@ export const EXCLUDED_SENDER_PATTERNS = [
   "digest@",
   "weekly@",
   "monthly@",
+  // Idealista leads - processed by cron, excluded from inbox display
+  "reply@idealista.com",
 ] as const;
 
 // ===================

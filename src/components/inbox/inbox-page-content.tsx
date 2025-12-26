@@ -10,8 +10,11 @@ import { useInbox } from "~/hooks/use-inbox";
 import { InboxThreadList } from "./inbox-message-list";
 import { InboxConversationView } from "./inbox-message-detail";
 import { InboxComposeDialog } from "./inbox-compose-dialog";
+import { QuickLinkContactModal } from "./quick-link-contact-modal";
 import { GmailConnectPrompt, GmailConnectionStatus } from "./gmail-connect-prompt";
-import type { InboxFilter } from "./inbox-types";
+import type { InboxContact, InboxFilter } from "./inbox-types";
+import { createContactFromEmailAction } from "~/server/actions/inbox-contact";
+import { toast } from "sonner";
 
 export function InboxPageContent() {
   const {
@@ -40,10 +43,49 @@ export function InboxPageContent() {
     closeCompose,
     refresh,
     disconnectGmail,
+    markContactAsLinked,
   } = useInbox();
 
   // Mobile: show detail view when thread is selected
   const [showMobileDetail, setShowMobileDetail] = useState(false);
+
+  // Contact linking modal state
+  const [linkModalContact, setLinkModalContact] = useState<InboxContact | null>(null);
+
+  const handleLinkContact = (contact: InboxContact) => {
+    setLinkModalContact(contact);
+  };
+
+  const handleConfirmLinkContact = async (
+    contact: InboxContact,
+    listingId?: bigint,
+    contactType?: "owner" | "buyer",
+  ) => {
+    // Optimistically mark the contact as linked (removes the rose border immediately)
+    const contactEmail = contact.email ?? contact.id;
+    markContactAsLinked(contactEmail);
+
+    const result = await createContactFromEmailAction(
+      {
+        id: contact.id,
+        name: contact.name,
+        email: contact.email,
+      },
+      listingId,
+      contactType,
+    );
+
+    if (result.success) {
+      const message = listingId
+        ? "Contacto creado y vinculado a la propiedad"
+        : "Contacto creado correctamente";
+      toast.success(message);
+    } else {
+      toast.error(result.error);
+      // Refresh to revert the optimistic update on error
+      void refresh();
+    }
+  };
 
   const handleSelectThread = (threadId: string) => {
     void selectThread(threadId);
@@ -201,6 +243,7 @@ export function InboxPageContent() {
             selectedThreadId={selectedThreadId}
             onSelectThread={handleSelectThread}
             onToggleStar={toggleStarred}
+            onLinkContact={handleLinkContact}
             hasMorePages={hasMorePages ?? false}
             isLoading={isGmailLoading}
             onLoadMore={loadMore}
@@ -231,6 +274,14 @@ export function InboxPageContent() {
         isOpen={isComposeOpen}
         onClose={closeCompose}
         onSend={sendMessage}
+      />
+
+      {/* Quick Link Contact Modal */}
+      <QuickLinkContactModal
+        contact={linkModalContact}
+        isOpen={linkModalContact !== null}
+        onClose={() => setLinkModalContact(null)}
+        onConfirm={handleConfirmLinkContact}
       />
     </div>
   );
