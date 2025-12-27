@@ -419,28 +419,7 @@ export function PortalSelection({
     initialPlatformStates,
   ]);
 
-  const handlePlatformToggle = async (platformId: string, isActive: boolean) => {
-    // Special handling for Idealista - check slot availability when enabling
-    if (platformId === "idealista" && isActive) {
-      try {
-        const slotCheck = await checkIdealistaSlots();
-
-        if (slotCheck.success && !slotCheck.hasCapacity && slotCheck.enabledListings && slotCheck.maxSlots) {
-          // Show swap modal instead of toggling
-          setIdealistaSwapData({
-            enabledListings: slotCheck.enabledListings,
-            maxSlots: slotCheck.maxSlots,
-          });
-          setShowIdealistaSwapModal(true);
-          return; // Don't toggle yet - wait for swap modal
-        }
-      } catch (error) {
-        console.error("Error checking Idealista slot availability:", error);
-        toast.error("Error al verificar disponibilidad de anuncios en Idealista");
-        return;
-      }
-    }
-
+  const handlePlatformToggle = (platformId: string, isActive: boolean) => {
     // Group: fotocasa, habitaclia, milanuncios should toggle together
     const groupedPortals = ["fotocasa", "habitaclia", "milanuncios"];
     const isGroupedPortal = groupedPortals.includes(platformId);
@@ -779,6 +758,19 @@ export function PortalSelection({
 
         // Trigger Idealista export when toggle changes (either enabled or disabled)
         if (idealistaEnabled || idealistaDisabled) {
+          // Check slot availability before exporting
+          const slotCheck = await checkIdealistaSlots();
+          if (slotCheck.success && !slotCheck.hasCapacity && slotCheck.enabledListings && slotCheck.maxSlots) {
+            // Show swap modal - too many "Activo" listings
+            setIdealistaSwapData({
+              enabledListings: slotCheck.enabledListings,
+              maxSlots: slotCheck.maxSlots,
+            });
+            setShowIdealistaSwapModal(true);
+            setIsLoading(false);
+            return;
+          }
+
           // Export runs in background - don't await to avoid blocking UI
           triggerIdealistaExport()
             .then((result) => {
@@ -997,6 +989,23 @@ export function PortalSelection({
           setPlatforms(updatedPlatforms);
         }
       } else if (platformId === "idealista") {
+        // Check slot availability before exporting
+        try {
+          const slotCheck = await checkIdealistaSlots();
+          if (slotCheck.success && !slotCheck.hasCapacity && slotCheck.enabledListings && slotCheck.maxSlots) {
+            // Show swap modal - too many "Activo" listings
+            setIdealistaSwapData({
+              enabledListings: slotCheck.enabledListings,
+              maxSlots: slotCheck.maxSlots,
+            });
+            setShowIdealistaSwapModal(true);
+            setRefreshingPlatforms((prev) => ({ ...prev, [platformId]: false }));
+            return;
+          }
+        } catch (error) {
+          console.error("Error checking Idealista slot availability:", error);
+        }
+
         // Re-export all Idealista-enabled properties with current data
         try {
           const result = await triggerIdealistaExport();

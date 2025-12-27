@@ -1453,6 +1453,7 @@ export async function getIdealistaEnabledListingsDetailed(
           eq(listings.accountId, BigInt(accountId)),
           eq(listings.idealista, true),
           eq(listings.isActive, true),
+          eq(listings.idPropertyVisibility, "idealista"), // Only count "Activo" listings
         ),
       );
 
