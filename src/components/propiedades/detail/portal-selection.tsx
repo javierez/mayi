@@ -887,8 +887,7 @@ export function PortalSelection({
         : platform,
     );
     setPlatforms(updatedPlatforms);
-
-    // Don't set unsaved changes - settings changes are handled via refresh button
+    setHasUnsavedChanges(true);
 
     // Notify parent component to persist state
     const platformStates = updatedPlatforms.reduce(
@@ -913,8 +912,7 @@ export function PortalSelection({
       platform.id === platformId ? { ...platform, hidePrice } : platform,
     );
     setPlatforms(updatedPlatforms);
-
-    // Don't set unsaved changes - settings changes are handled via refresh button
+    setHasUnsavedChanges(true);
 
     // Notify parent component to persist state
     const platformStates = updatedPlatforms.reduce(
@@ -1444,6 +1442,7 @@ export function PortalSelection({
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setIdealistaCoordinatesPrecision(option.value);
+                                        setHasUnsavedChanges(true);
                                       }}
                                       className={cn(
                                         "flex flex-1 items-center justify-center rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200",
