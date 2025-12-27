@@ -124,11 +124,15 @@ export function CreateContactFromEmailModal({
       setIsProcessing(false);
 
       // Fetch 5 recent listings (ordered by createdAt DESC by default)
+      // Exclude listings the contact is already linked to
       const fetchRecentListings = async () => {
         setIsLoadingRecent(true);
         try {
           const listingsData = await listListingsCompactWithAuth({
             limit: 5,
+            excludeListingsForContactId: contact?.contactId
+              ? BigInt(contact.contactId)
+              : undefined,
           });
           setRecentListings(listingsData);
         } catch (error) {
@@ -141,7 +145,7 @@ export function CreateContactFromEmailModal({
 
       void fetchRecentListings();
     }
-  }, [isOpen, currentContext?.contactType]);
+  }, [isOpen, currentContext?.contactType, contact?.contactId]);
 
   // Fetch listings when search query changes
   useEffect(() => {
@@ -157,6 +161,9 @@ export function CreateContactFromEmailModal({
       try {
         const listingsData = await listListingsCompactWithAuth({
           searchQuery: debouncedSearchQuery.trim(),
+          excludeListingsForContactId: contact?.contactId
+            ? BigInt(contact.contactId)
+            : undefined,
         });
         setListings(listingsData);
       } catch (error) {
@@ -168,7 +175,7 @@ export function CreateContactFromEmailModal({
     };
 
     void fetchListings();
-  }, [isOpen, debouncedSearchQuery]);
+  }, [isOpen, debouncedSearchQuery, contact?.contactId]);
 
   // Determine which listings to display
   const displayListings = searchQuery.length >= 2 ? listings : recentListings;
@@ -265,16 +272,9 @@ export function CreateContactFromEmailModal({
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <p className="font-medium text-foreground">
-                  {firstName} {lastName}
-                </p>
-                {isLinkedContact ? (
-                  <Badge variant="secondary" className="text-xs">
-                    Contacto existente
-                  </Badge>
-                ) : null}
-              </div>
+              <p className="font-medium text-foreground">
+                {firstName} {lastName}
+              </p>
               <p className="truncate text-sm text-muted-foreground">{email}</p>
             </div>
           </div>

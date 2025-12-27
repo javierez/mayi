@@ -116,7 +116,6 @@ interface ListingData {
   squareMeter: number | null;
   city: string | null;
   agentName: string | null;
-  isOwned: boolean;
   imageUrl: string | null;
 }
 
@@ -249,28 +248,7 @@ export default function ContactForm() {
   const handleCreateContact = async () => {
     if (!validatePropertyStep()) return;
 
-    // If no properties selected, proceed directly to contact creation
-    if (formData.selectedListings.length === 0) {
-      await createContactProcess();
-      return;
-    }
-
-    // Check if any selected listing is owned
-    const ownedListings = formData.selectedListings.filter((listingId) => {
-      const listing = listings.find((l) => l.listingId === listingId);
-      return listing?.isOwned;
-    });
-
-    // Only show ownership dialog if:
-    // 1. There are owned listings selected AND
-    // 2. The contact type is 'owner' (not 'buyer')
-    if (ownedListings.length > 0 && formData.contactType === "owner") {
-      // Show ownership confirmation dialog
-      setShowOwnershipDialog(true);
-      return;
-    }
-
-    // Proceed with contact creation (for buyers or non-owned properties)
+    // Proceed with contact creation
     await createContactProcess();
   };
 

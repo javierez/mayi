@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Link2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import type { InboxContact } from "./inbox-types";
@@ -55,8 +55,9 @@ export function LinkableContactAvatar({
       <Avatar
         className={cn(
           sizeClasses[size],
+          // Only show dashed rose border for unlinked contacts
           !isLinked && "border-2 border-dashed border-rose-400/60",
-          isLinked && "border-2 border-solid border-primary/40",
+          // Linked contacts have no border
         )}
       >
         {contact.avatar ? (
@@ -65,9 +66,7 @@ export function LinkableContactAvatar({
         <AvatarFallback
           className={cn(
             "text-xs",
-            isLinked
-              ? "bg-primary/10 text-primary"
-              : "bg-muted text-muted-foreground"
+            "bg-muted text-muted-foreground"
           )}
         >
           {getInitials(contact.name)}
@@ -83,9 +82,9 @@ export function LinkableContactAvatar({
             "absolute inset-0 flex items-center justify-center",
             "rounded-full text-white",
             "transition-opacity duration-150",
-            // Different colors for linked vs unlinked
+            // Different colors: rose for unlinked, gray for linked (to assign listing)
             isLinked
-              ? "bg-primary/90 hover:bg-primary"
+              ? "bg-gray-500/80 hover:bg-gray-600"
               : "bg-rose-500/90 hover:bg-rose-600",
             // Hide by default, show on hover
             useGroupHover
@@ -94,11 +93,8 @@ export function LinkableContactAvatar({
           )}
           title={isLinked ? "Vincular propiedad" : "Crear contacto"}
         >
-          {isLinked ? (
-            <Link2 className={iconSizeClasses[size]} />
-          ) : (
-            <Plus className={iconSizeClasses[size]} />
-          )}
+          {/* Always show Plus icon */}
+          <Plus className={iconSizeClasses[size]} />
         </button>
       ) : null}
     </div>

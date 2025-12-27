@@ -99,7 +99,6 @@ interface Listing {
   propertyType: string | null;
   city: string | null;
   imageUrl: string | null;
-  isOwned: boolean;
 }
 
 const initialFormData: ContactFormData = {
@@ -471,24 +470,6 @@ export function CreateContactModal({
   };
 
   const handleCreateContact = async () => {
-    // If no properties selected, proceed directly
-    if (formData.selectedListings.length === 0) {
-      await createContactProcess();
-      return;
-    }
-
-    // Check if any selected listing is owned
-    const ownedListings = formData.selectedListings.filter((listingId) => {
-      const listing = listings.find((l) => l.listingId === listingId);
-      return listing?.isOwned;
-    });
-
-    // Only show ownership dialog if owned listings AND contact type is owner
-    if (ownedListings.length > 0 && formData.contactType === "owner") {
-      setShowOwnershipDialog(true);
-      return;
-    }
-
     // Proceed with contact creation
     await createContactProcess();
   };

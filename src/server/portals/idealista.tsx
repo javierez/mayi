@@ -368,6 +368,7 @@ export async function buildIdealistaPropertyPayload(
   // Note: Address visibility uses fcLocationVisibility (shared with Fotocasa)
   const listing = listingData as typeof listingData & {
     idCoordinatesPrecision?: string | null;
+    idPropertyVisibility?: "idealista" | "microsite" | "private" | null;
     idealistaProps?: { coordinatesPrecision?: IdealistaCoordinatesPrecision } | null;
     rentalType?: string | null;
     shortTermLicense?: string | null;
@@ -891,7 +892,7 @@ export async function buildIdealistaPropertyPayload(
   return {
     propertyCode: listing.referenceNumber ?? listingId.toString(), // Agency's internal reference (or listingId as fallback)
     propertyReference: listingId.toString(), // ListingId - used by Idealista in email notifications for lead matching
-    propertyVisibility: "idealista",
+    propertyVisibility: listing.idPropertyVisibility ?? "idealista", // "idealista" | "microsite" | "private"
     propertyUrl: listing.externalUrl ?? undefined,
     propertyOperation, // Singular object
     propertyAddress,

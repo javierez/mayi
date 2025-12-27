@@ -1033,6 +1033,7 @@ export async function listListingsCompact(
     searchQuery?: string;
     page?: number;
     limit?: number;
+    excludeListingsForContactId?: bigint; // Exclude listings this contact is already linked to
   },
 ) {
   try {
@@ -1084,6 +1085,17 @@ export async function listListingsCompact(
           )`,
         );
       }
+      // Exclude listings that the contact is already linked to
+      if (filters.excludeListingsForContactId) {
+        whereConditions.push(
+          sql`NOT EXISTS (
+            SELECT 1 FROM ${listingContacts}
+            WHERE ${listingContacts.listingId} = ${listings.listingId}
+            AND ${listingContacts.contactId} = ${filters.excludeListingsForContactId}
+            AND ${listingContacts.isActive} = true
+          )`,
+        );
+      }
     }
 
     // Always show active listings only for this account, excluding Draft, Sold, and Rented
@@ -1108,7 +1120,6 @@ export async function listListingsCompact(
         builtSurfaceArea: properties.builtSurfaceArea,
         city: locations.city,
         agentName: users.name,
-        isOwned: sql<boolean>`CASE WHEN ${listingContacts.contactId} IS NOT NULL THEN true ELSE false END`,
         imageUrl: propertyImages.imageUrl,
       })
       .from(listings)
@@ -1118,14 +1129,6 @@ export async function listListingsCompact(
         eq(properties.neighborhoodId, locations.neighborhoodId),
       )
       .leftJoin(users, eq(listings.agentId, users.id))
-      .leftJoin(
-        listingContacts,
-        and(
-          eq(listingContacts.listingId, listings.listingId),
-          eq(listingContacts.contactType, "owner"),
-          eq(listingContacts.isActive, true),
-        ),
-      )
       .leftJoin(
         propertyImages,
         and(
@@ -1852,6 +1855,7 @@ export async function getListingDetails(listingId: number, accountId: number) {
         fcPriceVisibility: listings.fcPriceVisibility,
         idealista: listings.idealista,
         idCoordinatesPrecision: listings.idCoordinatesPrecision,
+        idPropertyVisibility: listings.idPropertyVisibility,
         rentalType: listings.rentalType,
         shortTermLicense: listings.shortTermLicense,
         occupationStatus: listings.occupationStatus,

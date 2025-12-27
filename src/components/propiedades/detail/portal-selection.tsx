@@ -65,6 +65,7 @@ interface PortalSelectionProps {
   fcPriceVisibility?: boolean; // true=hidden, false=shown (shared by Fotocasa & Idealista)
   // Idealista-specific settings
   idCoordinatesPrecision?: "exact" | "moved";
+  idPropertyVisibility?: "idealista" | "microsite" | "private";
   // Portal props from database (JSON columns) - Legacy support
   fotocasaProps?: unknown;
   idealistaProps?: unknown;
@@ -252,6 +253,7 @@ export function PortalSelection({
   fcLocationVisibility = 1,
   fcPriceVisibility = false,
   idCoordinatesPrecision = "exact",
+  idPropertyVisibility = "idealista",
   fotocasaProps: _fotocasaProps,
   idealistaProps: _idealistaProps,
   habitacliaProps: _habitacliaProps,
@@ -326,6 +328,11 @@ export function PortalSelection({
     ((_idealistaProps as { coordinatesPrecision?: "exact" | "moved" })?.coordinatesPrecision) ??
     "exact",
   );
+
+  // Idealista property visibility: "idealista" (portal), "microsite" (agency site only), "private" (hidden)
+  const [idealistaPropertyVisibility, setIdealistaPropertyVisibility] = useState<
+    "idealista" | "microsite" | "private"
+  >(idPropertyVisibility ?? "idealista");
 
   // Initialize platforms based on portal fields and defaults
   useEffect(() => {
@@ -666,6 +673,7 @@ export function PortalSelection({
         },
         // Idealista visibility settings (address visibility uses shared fcLocationVisibility)
         idCoordinatesPrecision: idealistaCoordinatesPrecision,
+        idPropertyVisibility: idealistaPropertyVisibility,
         idealistaProps: {
           coordinatesPrecision: idealistaCoordinatesPrecision,
         },
@@ -1008,6 +1016,7 @@ export function PortalSelection({
             // Update Idealista settings in database with current settings
             await updateListingWithAuth(Number(listingId), {
               idCoordinatesPrecision: idealistaCoordinatesPrecision,
+              idPropertyVisibility: idealistaPropertyVisibility,
               // Legacy support: also update idealistaProps for backward compatibility
               idealistaProps: {
                 coordinatesPrecision: idealistaCoordinatesPrecision,
@@ -1430,6 +1439,38 @@ export function PortalSelection({
                                       className={cn(
                                         "flex flex-1 items-center justify-center rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200",
                                         idealistaCoordinatesPrecision === option.value
+                                          ? "border-gray-700 bg-gray-700 text-white shadow-sm"
+                                          : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50",
+                                      )}
+                                    >
+                                      {option.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Property Visibility */}
+                              <div className="space-y-2">
+                                <Label className="text-xs font-medium text-gray-700">
+                                  Visibilidad anuncio
+                                </Label>
+                                <div className="flex flex-wrap gap-2">
+                                  {[
+                                    { value: "idealista" as const, label: "Activo" },
+                                    { value: "microsite" as const, label: "Inactivo" },
+                                    { value: "private" as const, label: "Privado" },
+                                  ].map((option) => (
+                                    <button
+                                      key={option.value}
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIdealistaPropertyVisibility(option.value);
+                                        setHasUnsavedChanges(true);
+                                      }}
+                                      className={cn(
+                                        "flex flex-1 items-center justify-center rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200",
+                                        idealistaPropertyVisibility === option.value
                                           ? "border-gray-700 bg-gray-700 text-white shadow-sm"
                                           : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50",
                                       )}

@@ -529,6 +529,7 @@ export const listings = pgTable("listings", {
 
   // Idealista-specific settings (address visibility uses fcLocationVisibility - shared with Fotocasa)
   idCoordinatesPrecision: varchar("id_coordinates_precision", { length: 10 }), // "exact" | "moved"
+  idPropertyVisibility: varchar("id_property_visibility", { length: 20 }).default("idealista"), // "idealista" | "microsite" | "private"
 
   // Rental-specific fields (only for rent operations)
   rentalType: varchar("rental_type", { length: 20 }), // "residential" | "seasonal" | "short_term" - MUTUALLY EXCLUSIVE
