@@ -69,20 +69,33 @@ export function useInbox() {
   const selectedThread = useMemo(() => {
     if (!selectedThreadId) return null;
 
+    // Find the thread in allThreads (which has threadContext from enrichment)
+    const threadFromList = allThreads.find((t) => t.id === selectedThreadId);
+
     // Check if we have detailed thread data (from Gmail)
     if (selectedThreadData?.id === selectedThreadId) {
-      return selectedThreadData;
+      // Merge threadContext from allThreads into the detailed data
+      // since gmail.selectThread() doesn't include threadContext
+      return {
+        ...selectedThreadData,
+        threadContext: selectedThreadData.threadContext ?? threadFromList?.threadContext,
+      };
     }
 
-    // Otherwise find in combined threads
-    return allThreads.find((t) => t.id === selectedThreadId) ?? null;
+    // Otherwise return from combined threads
+    return threadFromList ?? null;
   }, [allThreads, selectedThreadId, selectedThreadData]);
 
   // Select a thread and mark as read
   const selectThread = useCallback(
     async (threadId: string | null) => {
       setSelectedThreadId(threadId);
-      setSelectedThreadData(null);
+
+      // Only clear selectedThreadData if deselecting (null)
+      // Don't clear when switching threads to avoid flicker
+      if (!threadId) {
+        setSelectedThreadData(null);
+      }
 
       if (threadId) {
         const thread = allThreads.find((t) => t.id === threadId);
@@ -94,6 +107,8 @@ export function useInbox() {
             setSelectedThreadData(detailedThread);
           }
         } else {
+          // Clear Gmail data when selecting WhatsApp thread
+          setSelectedThreadData(null);
           // Mark WhatsApp thread as read locally
           setWhatsappThreads((prev) =>
             prev.map((t) => (t.id === threadId ? { ...t, read: true } : t))

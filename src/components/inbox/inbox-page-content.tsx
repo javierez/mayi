@@ -1,11 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Plus, CheckCheck, MessageCircle, Mail, RefreshCw, Loader2 } from "lucide-react";
+import { Search, Plus, CheckCheck, MessageCircle, Mail, RefreshCw, Loader2, Building2 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Card } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
 import { useInbox } from "~/hooks/use-inbox";
 import { InboxThreadList } from "./inbox-message-list";
 import { InboxConversationView } from "./inbox-message-detail";
@@ -210,61 +213,94 @@ export function InboxPageContent() {
         </div>
       </div>
 
-      {/* Filter toggles - colorless */}
-      <div className="inline-flex items-center rounded-2xl border border-border/60 bg-muted/30 p-1">
-        <button
-          type="button"
-          onClick={() => handleFilterChange("all")}
-          className={cn(
-            "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200",
-            filter === "all"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          Todos
-          {unreadCounts.all > 0 ? (
-            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-              {unreadCounts.all}
-            </span>
-          ) : null}
-        </button>
-        <button
-          type="button"
-          onClick={() => handleFilterChange("whatsapp")}
-          className={cn(
-            "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200",
-            filter === "whatsapp"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <MessageCircle className="h-4 w-4" />
-          <span className="hidden sm:inline">WhatsApp</span>
-          {unreadCounts.whatsapp > 0 ? (
-            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-              {unreadCounts.whatsapp}
-            </span>
-          ) : null}
-        </button>
-        <button
-          type="button"
-          onClick={() => handleFilterChange("email")}
-          className={cn(
-            "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200",
-            filter === "email"
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          <Mail className="h-4 w-4" />
-          <span className="hidden sm:inline">Email</span>
-          {unreadCounts.email > 0 ? (
-            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-              {unreadCounts.email}
-            </span>
-          ) : null}
-        </button>
+      {/* Filter toggles + Listing card row */}
+      <div className="flex items-center justify-between gap-4">
+        {/* Filter toggles - colorless */}
+        <div className="inline-flex items-center rounded-2xl border border-border/60 bg-muted/30 p-1">
+          <button
+            type="button"
+            onClick={() => handleFilterChange("all")}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200",
+              filter === "all"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Todos
+            {unreadCounts.all > 0 ? (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                {unreadCounts.all}
+              </span>
+            ) : null}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleFilterChange("whatsapp")}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200",
+              filter === "whatsapp"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <MessageCircle className="h-4 w-4" />
+            <span className="hidden sm:inline">WhatsApp</span>
+            {unreadCounts.whatsapp > 0 ? (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                {unreadCounts.whatsapp}
+              </span>
+            ) : null}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleFilterChange("email")}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200",
+              filter === "email"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <Mail className="h-4 w-4" />
+            <span className="hidden sm:inline">Email</span>
+            {unreadCounts.email > 0 ? (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                {unreadCounts.email}
+              </span>
+            ) : null}
+          </button>
+        </div>
+
+        {/* Listing card - shows when selected thread has a linked listing */}
+        {selectedThread?.threadContext?.listing ? (
+          <Link
+            href={`/propiedades/${selectedThread.threadContext.listing.listingId}`}
+            className="hidden items-center gap-2 rounded-2xl border border-primary/20 bg-primary/5 py-1 pl-1 pr-4 transition-colors hover:bg-primary/10 md:flex"
+          >
+            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary/10">
+              {selectedThread.threadContext.listing.imageUrl ? (
+                <Image
+                  src={selectedThread.threadContext.listing.imageUrl}
+                  alt={selectedThread.threadContext.listing.title ?? "Property"}
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 object-cover"
+                />
+              ) : (
+                <Building2 className="h-4 w-4 text-primary" />
+              )}
+            </div>
+            <p className="max-w-[400px] truncate text-sm font-medium">
+              {selectedThread.threadContext.listing.title ?? "Propiedad"}
+            </p>
+            <Badge variant="outline" className="px-2 py-0.5 text-xs">
+              {selectedThread.threadContext.contactType === "owner"
+                ? "Propietario"
+                : "Demandante"}
+            </Badge>
+          </Link>
+        ) : null}
       </div>
 
       {/* Gmail connection status */}

@@ -23,10 +23,8 @@ import {
   File,
   X,
   Loader2,
-  Building2,
+  Maximize2,
 } from "lucide-react";
-import Image from "next/image";
-import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
@@ -34,7 +32,9 @@ import { Textarea } from "~/components/ui/textarea";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Card, CardContent } from "~/components/ui/card";
 import { DeleteConfirmationModal } from "~/components/ui/delete-confirmation-modal";
-import type { InboxThread, ThreadMessage } from "./inbox-types";
+import { AttachmentActionModal } from "./attachment-action-modal";
+import { ConversationFullscreenModal } from "./conversation-fullscreen-modal";
+import type { InboxThread, ThreadMessage, InboxAttachment } from "./inbox-types";
 import type { EmailAttachment } from "~/server/services/gmail-service";
 
 interface PendingAttachment {
@@ -171,7 +171,15 @@ function DownloadButton({
 }
 
 // Chat-style message bubble for WhatsApp
-function ChatBubble({ message, isFromAgent }: { message: ThreadMessage; isFromAgent: boolean }) {
+function ChatBubble({
+  message,
+  isFromAgent,
+  onAttachmentClick,
+}: {
+  message: ThreadMessage;
+  isFromAgent: boolean;
+  onAttachmentClick?: (attachment: InboxAttachment, messageId: string) => void;
+}) {
   const formattedTime = format(message.timestamp, "HH:mm", { locale: es });
   const formattedDate = format(message.timestamp, "d MMM", { locale: es });
 
@@ -208,10 +216,13 @@ function ChatBubble({ message, isFromAgent }: { message: ThreadMessage; isFromAg
           <div className="space-y-1">
             {message.attachments.map((attachment, index) => {
               const IconComponent = getFileIcon(attachment.name);
-              const downloadUrl = buildDownloadUrl(attachment);
 
               return (
-                <Card key={index} className="shadow-sm">
+                <Card
+                  key={index}
+                  className="cursor-pointer shadow-sm transition-all hover:shadow-md"
+                  onClick={() => onAttachmentClick?.(attachment, message.id)}
+                >
                   <CardContent className="flex items-center gap-2 p-2">
                     <div className="rounded-lg bg-muted/50 p-1.5">
                       <IconComponent className="h-4 w-4 text-muted-foreground" />
@@ -222,9 +233,6 @@ function ChatBubble({ message, isFromAgent }: { message: ThreadMessage; isFromAg
                         <p className="text-[10px] text-muted-foreground">{attachment.size}</p>
                       ) : null}
                     </div>
-                    {downloadUrl ? (
-                      <DownloadButton url={downloadUrl} filename={attachment.name} />
-                    ) : null}
                   </CardContent>
                 </Card>
               );
@@ -249,7 +257,15 @@ function ChatBubble({ message, isFromAgent }: { message: ThreadMessage; isFromAg
 }
 
 // Email-style message card with clear sender header
-function EmailCard({ message, isFromAgent }: { message: ThreadMessage; isFromAgent: boolean }) {
+function EmailCard({
+  message,
+  isFromAgent,
+  onAttachmentClick,
+}: {
+  message: ThreadMessage;
+  isFromAgent: boolean;
+  onAttachmentClick?: (attachment: InboxAttachment, messageId: string) => void;
+}) {
   const formattedTime = format(message.timestamp, "HH:mm", { locale: es });
   const formattedDate = format(message.timestamp, "d MMM yyyy", { locale: es });
 
@@ -330,22 +346,20 @@ function EmailCard({ message, isFromAgent }: { message: ThreadMessage; isFromAge
           <div className="flex flex-wrap gap-2">
             {message.attachments.map((attachment, index) => {
               const IconComponent = getFileIcon(attachment.name);
-              const downloadUrl = buildDownloadUrl(attachment);
 
               return (
-                <div
+                <button
+                  type="button"
                   key={index}
-                  className="flex items-center gap-2 rounded-md border border-border/60 bg-muted/30 px-2.5 py-1.5"
+                  className="flex items-center gap-2 rounded-md border border-border/60 bg-muted/30 px-2.5 py-1.5 transition-all hover:border-primary/40 hover:bg-muted/50"
+                  onClick={() => onAttachmentClick?.(attachment, message.id)}
                 >
                   <IconComponent className="h-3.5 w-3.5 text-muted-foreground" />
                   <span className="text-xs">{attachment.name}</span>
                   {attachment.size ? (
                     <span className="text-[10px] text-muted-foreground">({attachment.size})</span>
                   ) : null}
-                  {downloadUrl ? (
-                    <DownloadButton url={downloadUrl} filename={attachment.name} variant="badge" />
-                  ) : null}
-                </div>
+                </button>
               );
             })}
           </div>
@@ -359,16 +373,18 @@ function EmailCard({ message, isFromAgent }: { message: ThreadMessage; isFromAge
 function MessageBubble({
   message,
   isFromAgent,
-  channel
+  channel,
+  onAttachmentClick,
 }: {
   message: ThreadMessage;
   isFromAgent: boolean;
   channel: "whatsapp" | "email";
+  onAttachmentClick?: (attachment: InboxAttachment, messageId: string) => void;
 }) {
   if (channel === "email") {
-    return <EmailCard message={message} isFromAgent={isFromAgent} />;
+    return <EmailCard message={message} isFromAgent={isFromAgent} onAttachmentClick={onAttachmentClick} />;
   }
-  return <ChatBubble message={message} isFromAgent={isFromAgent} />;
+  return <ChatBubble message={message} isFromAgent={isFromAgent} onAttachmentClick={onAttachmentClick} />;
 }
 
 export function InboxConversationView({
@@ -385,6 +401,11 @@ export function InboxConversationView({
   const [isDeleting, setIsDeleting] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
   const [isSending, setIsSending] = useState(false);
+  const [attachmentModalState, setAttachmentModalState] = useState<{
+    attachment: InboxAttachment;
+    messageId: string;
+  } | null>(null);
+  const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Format file size
@@ -423,6 +444,34 @@ export function InboxConversationView({
   // Remove pending attachment
   const removePendingAttachment = useCallback((index: number) => {
     setPendingAttachments((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  // Handle attachment click - open the action modal
+  const handleAttachmentClick = useCallback((attachment: InboxAttachment, messageId: string) => {
+    setAttachmentModalState({ attachment, messageId });
+  }, []);
+
+  // Handle download from attachment modal
+  const handleAttachmentDownload = useCallback(async (attachment: InboxAttachment) => {
+    const downloadUrl = buildDownloadUrl(attachment);
+    if (!downloadUrl) return;
+
+    try {
+      const response = await fetch(downloadUrl);
+      if (!response.ok) throw new Error("Download failed");
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = attachment.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download failed:", error);
+    }
   }, []);
 
   // Convert file to base64
@@ -554,6 +603,15 @@ export function InboxConversationView({
             <Button
               variant="ghost"
               size="icon"
+              onClick={() => setIsFullscreenOpen(true)}
+              className="text-muted-foreground"
+              title="Expandir conversación"
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => onToggleStar(thread.id)}
               className={cn(
                 thread.starred ? "text-amber-500" : "text-muted-foreground"
@@ -588,47 +646,6 @@ export function InboxConversationView({
             {thread.subject}
           </h3>
         ) : null}
-
-        {/* Thread Context - Linked Listing */}
-        {thread.threadContext?.listing ? (
-          <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                {thread.threadContext.listing.imageUrl ? (
-                  <Image
-                    src={thread.threadContext.listing.imageUrl}
-                    alt={thread.threadContext.listing.title ?? "Property"}
-                    width={40}
-                    height={40}
-                    className="h-10 w-10 rounded-lg object-cover"
-                  />
-                ) : (
-                  <Building2 className="h-5 w-5 text-primary" />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-medium">
-                    {thread.threadContext.listing.title ?? "Propiedad"}
-                  </p>
-                  <Badge variant="outline" className="text-xs">
-                    {thread.threadContext.contactType === "owner"
-                      ? "Propietario"
-                      : "Demandante"}
-                  </Badge>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  {thread.threadContext.listing.referenceNumber ? (
-                    <span>Ref: {thread.threadContext.listing.referenceNumber}</span>
-                  ) : null}
-                  {thread.threadContext.listing.city ? (
-                    <span>• {thread.threadContext.listing.city}</span>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : null}
       </div>
 
       {/* Conversation - Messages */}
@@ -640,6 +657,7 @@ export function InboxConversationView({
               message={message}
               isFromAgent={message.from.id === "agent"}
               channel={thread.channel}
+              onAttachmentClick={handleAttachmentClick}
             />
           ))}
         </div>
@@ -745,6 +763,26 @@ export function InboxConversationView({
         isDeleting={isDeleting}
         confirmText="Eliminar"
         loadingText="Eliminando..."
+      />
+
+      {/* Attachment Action Modal */}
+      <AttachmentActionModal
+        isOpen={attachmentModalState !== null}
+        onClose={() => setAttachmentModalState(null)}
+        attachment={attachmentModalState?.attachment ?? null}
+        messageId={attachmentModalState?.messageId ?? ""}
+        threadContext={thread.threadContext}
+        onDownload={handleAttachmentDownload}
+      />
+
+      {/* Fullscreen Conversation Modal */}
+      <ConversationFullscreenModal
+        isOpen={isFullscreenOpen}
+        onClose={() => setIsFullscreenOpen(false)}
+        thread={thread}
+        onToggleStar={onToggleStar}
+        onSendReply={onSendReply}
+        onAttachmentClick={handleAttachmentClick}
       />
     </div>
   );

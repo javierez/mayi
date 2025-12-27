@@ -785,14 +785,21 @@ export function PortalSelection({
             })
             .catch((err) => console.error("Idealista export error:", err));
 
-          // Show user-friendly toast
+          // Show user-friendly toast with slot usage
+          const currentCount = slotCheck.currentCount ?? 0;
+          const maxSlots = slotCheck.maxSlots;
+
           if (idealistaEnabled) {
+            const newCount = currentCount + 1;
+            const slotInfo = maxSlots ? ` (${newCount}/${maxSlots} huecos)` : "";
             toast.success(
-              "Anuncio publicado en Idealista. Espera 15 minutos para ver los resultados.",
+              `Anuncio publicado en Idealista${slotInfo}. Espera 15 minutos para ver los resultados.`,
               { duration: 5000 },
             );
           } else {
-            toast.success("Anuncio eliminado de Idealista.");
+            const newCount = Math.max(0, currentCount - 1);
+            const slotInfo = maxSlots ? ` (${newCount}/${maxSlots} huecos)` : "";
+            toast.success(`Anuncio eliminado de Idealista${slotInfo}.`);
           }
         }
 
@@ -988,8 +995,9 @@ export function PortalSelection({
         }
       } else if (platformId === "idealista") {
         // Check slot availability before exporting
+        let slotCheck: Awaited<ReturnType<typeof checkIdealistaSlots>> | null = null;
         try {
-          const slotCheck = await checkIdealistaSlots();
+          slotCheck = await checkIdealistaSlots();
           if (slotCheck.success && !slotCheck.hasCapacity && slotCheck.enabledListings && slotCheck.maxSlots) {
             // Show swap modal - too many "Activo" listings
             setIdealistaSwapData({
@@ -1009,8 +1017,11 @@ export function PortalSelection({
           const result = await triggerIdealistaExport();
           if (result.success) {
             console.log("Idealista export triggered successfully");
+            const currentCount = slotCheck?.currentCount ?? 0;
+            const maxSlots = slotCheck?.maxSlots;
+            const slotInfo = maxSlots ? ` (${currentCount}/${maxSlots} huecos)` : "";
             toast.success(
-              "Exportación a Idealista iniciada. Los cambios se reflejarán en ~15 minutos.",
+              `Exportación a Idealista iniciada${slotInfo}. Los cambios se reflejarán en ~15 minutos.`,
             );
             // Update platform status to active with new sync time
             const updatedPlatforms = platforms.map((p) =>

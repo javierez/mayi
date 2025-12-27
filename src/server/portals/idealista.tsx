@@ -1559,10 +1559,14 @@ export async function swapIdealistaListing(
   listingIdToActivate: number,
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Deactivate the selected listing
+    // Deactivate the selected listing: change visibility to 'microsite' (Inactivo)
+    // Keep idealista = true so it stays in the export, but won't count as "Activo" slot
     await db
       .update(listings)
-      .set({ idealista: false, updatedAt: new Date() })
+      .set({
+        idPropertyVisibility: "microsite",
+        updatedAt: new Date(),
+      })
       .where(
         and(
           eq(listings.listingId, listingIdToDeactivate),
@@ -1570,10 +1574,14 @@ export async function swapIdealistaListing(
         ),
       );
 
-    // Activate the new listing
+    // Activate the new listing: set visibility to 'idealista' (Activo)
     await db
       .update(listings)
-      .set({ idealista: true, updatedAt: new Date() })
+      .set({
+        idealista: true,
+        idPropertyVisibility: "idealista",
+        updatedAt: new Date(),
+      })
       .where(
         and(
           eq(listings.listingId, BigInt(listingIdToActivate)),
@@ -1585,7 +1593,7 @@ export async function swapIdealistaListing(
     try {
       const currentUser = await getCurrentUser();
       console.log(
-        `User ${currentUser.id} swapped Idealista listings: deactivated ${listingIdToDeactivate}, activated ${listingIdToActivate}`,
+        `User ${currentUser.id} swapped Idealista slots: set ${listingIdToDeactivate} to 'microsite', set ${listingIdToActivate} to 'idealista'`,
       );
     } catch (activityError) {
       console.error("Error logging Idealista swap activity:", activityError);
