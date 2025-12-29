@@ -164,7 +164,8 @@ export async function uploadDocumentToS3(
     | "planos"
     | "others"
     | "carteles"
-    | "arras",
+    | "arras"
+    | "documentos-personales",
 ): Promise<{
   fileUrl: string;
   s3key: string;

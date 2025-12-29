@@ -17,7 +17,41 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") ?? "";
+    const contactId = searchParams.get("contactId");
     const limit = parseInt(searchParams.get("limit") ?? "20", 10);
+
+    // If contactId is provided, fetch that specific contact
+    if (contactId) {
+      const result = await db
+        .select({
+          contactId: contacts.contactId,
+          firstName: contacts.firstName,
+          lastName: contacts.lastName,
+          email: contacts.email,
+          phone: contacts.phone,
+          nif: contacts.nif,
+        })
+        .from(contacts)
+        .where(
+          and(
+            eq(contacts.contactId, BigInt(contactId)),
+            eq(contacts.accountId, BigInt(user.accountId)),
+            eq(contacts.isActive, true)
+          )
+        )
+        .limit(1);
+
+      const contactList = result.map((c) => ({
+        contactId: Number(c.contactId),
+        firstName: c.firstName,
+        lastName: c.lastName,
+        email: c.email,
+        phone: c.phone,
+        nif: c.nif,
+      }));
+
+      return NextResponse.json({ contacts: contactList });
+    }
 
     // Build search conditions
     const searchConditions = search
@@ -45,6 +79,7 @@ export async function GET(request: NextRequest) {
       .where(
         and(
           eq(contacts.isActive, true),
+          eq(contacts.accountId, BigInt(user.accountId)),
           searchConditions
         )
       )

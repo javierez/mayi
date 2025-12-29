@@ -44,7 +44,7 @@ interface Contact {
 }
 
 interface RecommendedContact extends Contact {
-  matchReason: "dni" | "name";
+  matchReason: "dni" | "name" | "thread";
 }
 
 interface DNIValidationModalProps {
@@ -176,17 +176,48 @@ export function DNIValidationModal({
   // Auto-search for recommended contact when modal opens
   useEffect(() => {
     if (!isOpen) return;
-    if (suggestedContactId) return; // Already have a suggested contact
+    console.log("[DNI Modal] Modal opened, suggestedContactId:", suggestedContactId);
 
-    const searchForRecommendedContact = async () => {
-      const documentNumber = analysisData.documentNumber;
-      const fullName = analysisData.fullName;
-
-      if (!documentNumber && !fullName) return;
-
+    const fetchOrSearchContact = async () => {
       setIsLoadingRecommendation(true);
 
       try {
+        // If we have a suggested contact from thread, fetch its details
+        if (suggestedContactId) {
+          console.log("[DNI Modal] Fetching recommended contact by ID:", suggestedContactId);
+          const params = new URLSearchParams();
+          params.set("contactId", suggestedContactId.toString());
+
+          const response = await fetch(`/api/contacts/search?${params.toString()}`);
+          console.log("[DNI Modal] API response status:", response.status);
+          if (response.ok) {
+            const data = (await response.json()) as { contacts: Contact[] };
+            console.log("[DNI Modal] Contacts returned:", data.contacts.length, data.contacts);
+            if (data.contacts.length > 0) {
+              const contact = data.contacts[0];
+              if (contact) {
+                console.log("[DNI Modal] Setting recommended contact from thread:", contact);
+                setRecommendedContact({ ...contact, matchReason: "thread" });
+              }
+            } else {
+              console.log("[DNI Modal] No contact found for ID:", suggestedContactId);
+            }
+          } else {
+            console.error("[DNI Modal] API error:", response.statusText);
+          }
+          setIsLoadingRecommendation(false);
+          return;
+        }
+
+        // Otherwise, search by DNI/name
+        const documentNumber = analysisData.documentNumber;
+        const fullName = analysisData.fullName;
+
+        if (!documentNumber && !fullName) {
+          setIsLoadingRecommendation(false);
+          return;
+        }
+
         // First, try to find by DNI number (more precise)
         if (documentNumber) {
           const params = new URLSearchParams();
@@ -236,7 +267,7 @@ export function DNIValidationModal({
       }
     };
 
-    void searchForRecommendedContact();
+    void fetchOrSearchContact();
   }, [isOpen, analysisData.documentNumber, analysisData.fullName, suggestedContactId]);
 
   // Search contacts when query changes

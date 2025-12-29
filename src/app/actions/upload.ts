@@ -395,7 +395,8 @@ export async function uploadDocument(
     | "planos"
     | "others"
     | "carteles"
-    | "arras",
+    | "arras"
+    | "documentos-personales",
   documentHash?: string,
   documentTimestamp?: Date,
 ): Promise<Document> {

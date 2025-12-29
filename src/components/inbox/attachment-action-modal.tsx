@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Download,
   Share2,
@@ -14,11 +14,17 @@ import {
   FileSpreadsheet,
   FileArchive,
   File,
+  User,
+  Building2,
+  AlertCircle,
+  Search,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
 import { ScrollArea } from "~/components/ui/scroll-area";
+import { Input } from "~/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -36,16 +42,33 @@ import { cn } from "~/lib/utils";
 import type { InboxAttachment, ThreadContext } from "./inbox-types";
 import { DNIValidationModal, type DNIAnalysisData } from "./dni-validation-modal";
 
+// Types for entity selection
+interface ContactSearchResult {
+  contactId: number;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+}
+
+interface ListingSearchResult {
+  listingId: number;
+  referenceNumber: string | null;
+  title: string | null;
+  city: string | null;
+  listingType: string | null;
+}
+
 interface AttachmentActionModalProps {
   isOpen: boolean;
   onClose: () => void;
   attachment: InboxAttachment | null;
   messageId: string;
   threadContext?: ThreadContext;
+  senderContactId?: number;
   onDownload: (attachment: InboxAttachment) => void;
 }
 
-type ModalStep = "actions" | "folder-select" | "type-select" | "saving";
+type ModalStep = "actions" | "entity-select" | "folder-select" | "type-select" | "saving";
 
 interface DocumentFolder {
   id: string;
@@ -213,8 +236,12 @@ export function AttachmentActionModal({
   attachment,
   messageId,
   threadContext,
+  senderContactId,
   onDownload,
 }: AttachmentActionModalProps) {
+  // Use threadContext.contactId if available, otherwise fallback to senderContactId
+  const effectiveContactId = threadContext?.contactId ? Number(threadContext.contactId) : senderContactId;
+
   const [step, setStep] = useState<ModalStep>("actions");
   const [selectedFolder, setSelectedFolder] = useState<DocumentFolder | null>(null);
   const [selectedType, setSelectedType] = useState<DocumentType | null>(null);
@@ -227,6 +254,16 @@ export function AttachmentActionModal({
   const [analyzeDocument, setAnalyzeDocument] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<DNIAnalysisData | null>(null);
   const [showValidationModal, setShowValidationModal] = useState(false);
+
+  // Entity selection state
+  const [selectedContact, setSelectedContact] = useState<ContactSearchResult | null>(null);
+  const [selectedListing, setSelectedListing] = useState<ListingSearchResult | null>(null);
+  const [contactSearch, setContactSearch] = useState("");
+  const [listingSearch, setListingSearch] = useState("");
+  const [contactResults, setContactResults] = useState<ContactSearchResult[]>([]);
+  const [listingResults, setListingResults] = useState<ListingSearchResult[]>([]);
+  const [isSearchingContacts, setIsSearchingContacts] = useState(false);
+  const [isSearchingListings, setIsSearchingListings] = useState(false);
 
   // Reset state when modal opens
   useEffect(() => {
@@ -241,8 +278,94 @@ export function AttachmentActionModal({
       setAnalyzeDocument(false);
       setAnalysisResult(null);
       setShowValidationModal(false);
+      // Reset entity selection
+      setSelectedContact(null);
+      setSelectedListing(null);
+      setContactSearch("");
+      setListingSearch("");
+      setContactResults([]);
+      setListingResults([]);
     }
   }, [isOpen, attachment]);
+
+  // Pre-populate entity selection from thread context
+  useEffect(() => {
+    if (isOpen && step === "entity-select") {
+      // Pre-select contact from thread context or sender
+      if (effectiveContactId && !selectedContact) {
+        // Fetch contact details
+        fetch(`/api/contacts/search?contactId=${effectiveContactId}`)
+          .then((res) => res.json())
+          .then((data: { contacts: ContactSearchResult[] }) => {
+            if (data.contacts[0]) {
+              setSelectedContact(data.contacts[0]);
+            }
+          })
+          .catch(console.error);
+      }
+      // Pre-select listing from thread context
+      if (threadContext?.listing?.listingId && !selectedListing) {
+        setSelectedListing({
+          listingId: Number(threadContext.listing.listingId),
+          referenceNumber: threadContext.listing.referenceNumber ?? null,
+          title: threadContext.listing.title ?? null,
+          city: threadContext.listing.city ?? null,
+          listingType: null,
+        });
+      }
+    }
+  }, [isOpen, step, effectiveContactId, threadContext, selectedContact, selectedListing]);
+
+  // Search contacts with debounce
+  const searchContacts = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setContactResults([]);
+      return;
+    }
+    setIsSearchingContacts(true);
+    try {
+      const res = await fetch(`/api/contacts/search?search=${encodeURIComponent(query)}&limit=5`);
+      const data = (await res.json()) as { contacts: ContactSearchResult[] };
+      setContactResults(data.contacts);
+    } catch (err) {
+      console.error("Error searching contacts:", err);
+    } finally {
+      setIsSearchingContacts(false);
+    }
+  }, []);
+
+  // Search listings with debounce
+  const searchListings = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setListingResults([]);
+      return;
+    }
+    setIsSearchingListings(true);
+    try {
+      const res = await fetch(`/api/listings/search?search=${encodeURIComponent(query)}&limit=5`);
+      const data = (await res.json()) as { listings: ListingSearchResult[] };
+      setListingResults(data.listings);
+    } catch (err) {
+      console.error("Error searching listings:", err);
+    } finally {
+      setIsSearchingListings(false);
+    }
+  }, []);
+
+  // Debounced search effects
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void searchContacts(contactSearch);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [contactSearch, searchContacts]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void searchListings(listingSearch);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [listingSearch, searchListings]);
 
   // Fetch folder suggestion when entering folder select step
   useEffect(() => {
@@ -298,6 +421,16 @@ export function AttachmentActionModal({
   }, [step, attachment, selectedFolder, typeSuggestion]);
 
   const handleSaveClick = () => {
+    setStep("entity-select");
+  };
+
+  const handleEntityContinue = () => {
+    // Validate at least one entity is selected
+    if (!selectedContact && !selectedListing) {
+      setError("Selecciona al menos un contacto o una propiedad");
+      return;
+    }
+    setError(null);
     setStep("folder-select");
   };
 
@@ -329,8 +462,8 @@ export function AttachmentActionModal({
           filename: attachment.name,
           folderType: selectedFolder.id,
           documentTag: docType.id,
-          contactId: threadContext?.contactId?.toString(),
-          listingId: threadContext?.listing?.listingId?.toString(),
+          contactId: selectedContact?.contactId?.toString(),
+          listingId: selectedListing?.listingId?.toString(),
           analyzeDocument: shouldAnalyze,
         }),
       });
@@ -382,8 +515,11 @@ export function AttachmentActionModal({
   };
 
   const handleBack = () => {
-    if (step === "folder-select") {
+    if (step === "entity-select") {
       setStep("actions");
+      setError(null);
+    } else if (step === "folder-select") {
+      setStep("entity-select");
       setFolderSuggestion(null);
     } else if (step === "type-select") {
       setStep("folder-select");
@@ -427,7 +563,7 @@ export function AttachmentActionModal({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {(step === "folder-select" || step === "type-select") && (
+            {(step === "entity-select" || step === "folder-select" || step === "type-select") && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -438,12 +574,14 @@ export function AttachmentActionModal({
               </Button>
             )}
             {step === "actions" && "Acciones del adjunto"}
+            {step === "entity-select" && "Asignar documento"}
             {step === "folder-select" && "Seleccionar carpeta"}
             {step === "type-select" && "Seleccionar tipo"}
             {step === "saving" && "Guardando..."}
           </DialogTitle>
           <DialogDescription>
             {step === "actions" && "Elige qué hacer con este archivo"}
+            {step === "entity-select" && "Selecciona a qué contacto o propiedad asignar el documento"}
             {step === "folder-select" && "Selecciona dónde guardar el documento"}
             {step === "type-select" && `Tipo de documento en ${selectedFolder?.name}`}
           </DialogDescription>
@@ -507,6 +645,183 @@ export function AttachmentActionModal({
             >
               <Save className="h-5 w-5" />
               <span className="text-xs">Guardar en documentos</span>
+            </Button>
+          </div>
+        )}
+
+        {/* Entity Selection Step */}
+        {step === "entity-select" && (
+          <div className="space-y-4 py-2">
+            {error && (
+              <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                {error}
+              </div>
+            )}
+
+            {/* Contact Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                Contacto
+              </label>
+              {selectedContact ? (
+                <div className="flex items-center justify-between rounded-lg border border-primary/10 bg-primary/5 p-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                      <User className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">
+                        {[selectedContact.firstName, selectedContact.lastName].filter(Boolean).join(" ")}
+                      </p>
+                      {selectedContact.email && (
+                        <p className="text-xs text-muted-foreground">{selectedContact.email}</p>
+                      )}
+                    </div>
+                    {(Boolean(effectiveContactId) || Boolean(threadContext?.contactId)) && (
+                      <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                        Recomendado
+                      </span>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => setSelectedContact(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar contacto..."
+                      value={contactSearch}
+                      onChange={(e) => setContactSearch(e.target.value)}
+                      className="pl-9"
+                    />
+                    {isSearchingContacts && (
+                      <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                  {contactResults.length > 0 && (
+                    <div className="max-h-32 space-y-1 overflow-y-auto rounded-lg border p-1">
+                      {contactResults.map((contact) => (
+                        <button
+                          key={contact.contactId}
+                          type="button"
+                          className="flex w-full items-center gap-2 rounded-md p-2 text-left hover:bg-muted"
+                          onClick={() => {
+                            setSelectedContact(contact);
+                            setContactSearch("");
+                            setContactResults([]);
+                          }}
+                        >
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm">
+                              {[contact.firstName, contact.lastName].filter(Boolean).join(" ")}
+                            </p>
+                            {contact.email && (
+                              <p className="text-xs text-muted-foreground">{contact.email}</p>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Listing Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                Propiedad
+              </label>
+              {selectedListing ? (
+                <div className="flex items-center justify-between rounded-lg border border-primary/10 bg-primary/5 p-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                      <Building2 className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">
+                        {selectedListing.referenceNumber ?? `#${selectedListing.listingId}`}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedListing.title ?? selectedListing.city ?? "Sin dirección"}
+                      </p>
+                    </div>
+                    {threadContext?.listing?.listingId && (
+                      <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                        Recomendado
+                      </span>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => setSelectedListing(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar propiedad por referencia o dirección..."
+                      value={listingSearch}
+                      onChange={(e) => setListingSearch(e.target.value)}
+                      className="pl-9"
+                    />
+                    {isSearchingListings && (
+                      <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                  {listingResults.length > 0 && (
+                    <div className="max-h-32 space-y-1 overflow-y-auto rounded-lg border p-1">
+                      {listingResults.map((listing) => (
+                        <button
+                          key={listing.listingId}
+                          type="button"
+                          className="flex w-full items-center gap-2 rounded-md p-2 text-left hover:bg-muted"
+                          onClick={() => {
+                            setSelectedListing(listing);
+                            setListingSearch("");
+                            setListingResults([]);
+                          }}
+                        >
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <div>
+                            <p className="text-sm">
+                              {listing.referenceNumber ?? `#${listing.listingId}`}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {listing.title ?? listing.city ?? "Sin dirección"}
+                            </p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Continue Button */}
+            <Button
+              className="w-full"
+              onClick={handleEntityContinue}
+              disabled={!selectedContact && !selectedListing}
+            >
+              Continuar
             </Button>
           </div>
         )}
@@ -728,7 +1043,7 @@ export function AttachmentActionModal({
         isOpen={showValidationModal}
         onClose={handleValidationModalClose}
         analysisData={analysisResult}
-        suggestedContactId={threadContext?.contactId ? Number(threadContext.contactId) : undefined}
+        suggestedContactId={selectedContact?.contactId}
         onConfirm={handleConfirmDNIData}
       />
     )}

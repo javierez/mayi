@@ -380,12 +380,19 @@ function MessageBubble({
   message: ThreadMessage;
   isFromAgent: boolean;
   channel: "whatsapp" | "email";
-  onAttachmentClick?: (attachment: InboxAttachment, messageId: string) => void;
+  onAttachmentClick?: (attachment: InboxAttachment, messageId: string, senderContactId?: number) => void;
 }) {
+  // Wrap the callback to include the sender's contactId
+  const handleAttachmentClick = onAttachmentClick
+    ? (attachment: InboxAttachment, messageId: string) => {
+        onAttachmentClick(attachment, messageId, message.from.contactId);
+      }
+    : undefined;
+
   if (channel === "email") {
-    return <EmailCard message={message} isFromAgent={isFromAgent} onAttachmentClick={onAttachmentClick} />;
+    return <EmailCard message={message} isFromAgent={isFromAgent} onAttachmentClick={handleAttachmentClick} />;
   }
-  return <ChatBubble message={message} isFromAgent={isFromAgent} onAttachmentClick={onAttachmentClick} />;
+  return <ChatBubble message={message} isFromAgent={isFromAgent} onAttachmentClick={handleAttachmentClick} />;
 }
 
 export function InboxConversationView({
@@ -405,6 +412,7 @@ export function InboxConversationView({
   const [attachmentModalState, setAttachmentModalState] = useState<{
     attachment: InboxAttachment;
     messageId: string;
+    senderContactId?: number;
   } | null>(null);
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -449,8 +457,9 @@ export function InboxConversationView({
   }, []);
 
   // Handle attachment click - open the action modal
-  const handleAttachmentClick = useCallback((attachment: InboxAttachment, messageId: string) => {
-    setAttachmentModalState({ attachment, messageId });
+  const handleAttachmentClick = useCallback((attachment: InboxAttachment, messageId: string, senderContactId?: number) => {
+    console.log("[Message Detail] handleAttachmentClick - senderContactId:", senderContactId);
+    setAttachmentModalState({ attachment, messageId, senderContactId });
   }, []);
 
   // Handle download from attachment modal
@@ -811,6 +820,7 @@ export function InboxConversationView({
         attachment={attachmentModalState?.attachment ?? null}
         messageId={attachmentModalState?.messageId ?? ""}
         threadContext={thread.threadContext}
+        senderContactId={attachmentModalState?.senderContactId}
         onDownload={handleAttachmentDownload}
       />
 

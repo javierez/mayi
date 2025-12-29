@@ -48,7 +48,7 @@ interface ConversationFullscreenModalProps {
   thread: InboxThread;
   onToggleStar: (threadId: string) => void;
   onSendReply: (threadId: string, content: string, attachments?: EmailAttachment[]) => void;
-  onAttachmentClick?: (attachment: InboxAttachment, messageId: string) => void;
+  onAttachmentClick?: (attachment: InboxAttachment, messageId: string, senderContactId?: number) => void;
 }
 
 function getInitials(name: string): string {
@@ -277,12 +277,19 @@ function MessageBubble({
   message: ThreadMessage;
   isFromAgent: boolean;
   channel: "whatsapp" | "email";
-  onAttachmentClick?: (attachment: InboxAttachment, messageId: string) => void;
+  onAttachmentClick?: (attachment: InboxAttachment, messageId: string, senderContactId?: number) => void;
 }) {
+  // Wrap the callback to include the sender's contactId
+  const handleAttachmentClick = onAttachmentClick
+    ? (attachment: InboxAttachment, messageId: string) => {
+        onAttachmentClick(attachment, messageId, message.from.contactId);
+      }
+    : undefined;
+
   if (channel === "email") {
-    return <EmailCard message={message} isFromAgent={isFromAgent} onAttachmentClick={onAttachmentClick} />;
+    return <EmailCard message={message} isFromAgent={isFromAgent} onAttachmentClick={handleAttachmentClick} />;
   }
-  return <ChatBubble message={message} isFromAgent={isFromAgent} onAttachmentClick={onAttachmentClick} />;
+  return <ChatBubble message={message} isFromAgent={isFromAgent} onAttachmentClick={handleAttachmentClick} />;
 }
 
 export function ConversationFullscreenModal({

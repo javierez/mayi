@@ -194,7 +194,8 @@ type UploadFolderType =
   | "planos"
   | "others"
   | "carteles"
-  | "arras";
+  | "arras"
+  | "documentos-personales";
 
 // Map folder IDs to upload folder types (supports both propiedades and contactos)
 const FOLDER_TYPE_MAP: Record<string, UploadFolderType> = {
@@ -212,7 +213,7 @@ const FOLDER_TYPE_MAP: Record<string, UploadFolderType> = {
   "certificado-energetico": "certificados",
   "escrituras": "legal-docs",
   "carteles": "carteles",
-  "documentos-personales": "initial-docs",
+  "documentos-personales": "documentos-personales",
 };
 
 /**
@@ -332,8 +333,16 @@ export async function POST(request: NextRequest) {
     // Get next document order
     const documentOrder = await getNextDocumentOrder();
 
-    // Map the folder type
-    const uploadFolderType = FOLDER_TYPE_MAP[folderType] ?? "others";
+    // Determine the actual document tag and folder type
+    // DNI/NIE saved to contact only (no listing) should use "documentos-personales"
+    let actualDocumentTag = documentTag;
+    let uploadFolderType = FOLDER_TYPE_MAP[folderType] ?? "others";
+
+    if (documentTag === "documentacion-inicial" && parsedContactId && !parsedListingId) {
+      // DNI/NIE being saved to a contact without a listing
+      actualDocumentTag = "documentos-personales";
+      uploadFolderType = "documentos-personales";
+    }
 
     // Upload the document
     const document = await uploadDocument(
@@ -341,7 +350,7 @@ export async function POST(request: NextRequest) {
       user.id,
       referenceNumber,
       documentOrder,
-      documentTag,
+      actualDocumentTag,
       parsedContactId,
       parsedListingId,
       undefined, // listingContactId
@@ -353,7 +362,7 @@ export async function POST(request: NextRequest) {
 
     // Analyze document if requested (for DNI/NIE)
     let analysis: DNIAnalysisResult | undefined;
-    if (analyzeDocument && documentTag === "documentacion-inicial") {
+    if (analyzeDocument && (documentTag === "documentacion-inicial" || actualDocumentTag === "documentos-personales")) {
       console.log("📄 Analyzing DNI/NIE document...");
       const analysisResult = await analyzeDNIDocument(base64, mimeType);
       if (analysisResult) {
