@@ -33,7 +33,6 @@ import {
   TooltipTrigger,
 } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
-import { Switch } from "~/components/ui/switch";
 import type { InboxAttachment, ThreadContext } from "./inbox-types";
 import { DNIValidationModal, type DNIAnalysisData } from "./dni-validation-modal";
 
@@ -535,38 +534,27 @@ export function AttachmentActionModal({
                   return (
                     <Card
                       key={folder.id}
-                      className={cn(
-                        "cursor-pointer transition-all duration-200 hover:border-primary/40 hover:bg-muted/30",
-                        isSuggested && "border-primary border-2 bg-primary/10 shadow-sm ring-2 ring-primary/20"
-                      )}
+                      className="cursor-pointer transition-all duration-200 hover:border-primary/40 hover:bg-muted/30"
                       onClick={() => handleFolderSelect(folder)}
                     >
                       <CardContent className="p-3">
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-center gap-3">
                           <div className="flex-shrink-0">
-                            <FolderIcon className={cn(
-                              "h-5 w-5 fill-current",
-                              isSuggested ? "text-primary" : "text-gray-600"
-                            )} />
+                            <FolderIcon className="h-5 w-5 fill-current text-gray-600" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <h4 className={cn(
-                                "text-sm font-medium",
-                                isSuggested ? "text-primary" : "text-gray-900"
-                              )}>
-                                {folder.name}
-                              </h4>
-                              {isSuggested && (
-                                <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-white">
-                                  Recomendado
-                                </span>
-                              )}
-                            </div>
+                            <h4 className="text-sm font-medium text-gray-900">
+                              {folder.name}
+                            </h4>
                             <p className="mt-0.5 text-xs text-gray-500">
                               {folder.description}
                             </p>
                           </div>
+                          {isSuggested && (
+                            <span className="flex-shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                              Recomendado
+                            </span>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -593,59 +581,37 @@ export function AttachmentActionModal({
               </div>
             )}
 
-            {/* Analyze Document Toggle - Only show for DNI/NIE folder */}
-            {selectedFolder?.id === "documentacion-inicial" && (
-              <div className="mb-4 flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Analizar documento</p>
-                  <p className="text-xs text-muted-foreground">Extraer datos del DNI/NIE con IA</p>
-                </div>
-                <Switch
-                  checked={analyzeDocument}
-                  onCheckedChange={setAnalyzeDocument}
-                />
-              </div>
-            )}
-
-            <ScrollArea className="h-[280px] pr-4">
+            <ScrollArea className={cn(
+              "pr-4",
+              selectedFolder?.id === "documentacion-inicial" ? "h-[220px]" : "h-[280px]"
+            )}>
               <div className="grid grid-cols-1 gap-2">
                 {availableTypes.map((docType) => {
                   const isSuggested = typeSuggestion?.suggestedDocumentTag === docType.id && typeSuggestion.confidence > 0.5;
                   return (
                     <Card
                       key={docType.id}
-                      className={cn(
-                        "cursor-pointer transition-all duration-200 hover:border-primary/40 hover:bg-muted/30",
-                        isSuggested && "border-primary border-2 bg-primary/10 shadow-sm ring-2 ring-primary/20"
-                      )}
+                      className="cursor-pointer transition-all duration-200 hover:border-primary/40 hover:bg-muted/30"
                       onClick={() => handleTypeSelect(docType)}
                     >
                       <CardContent className="p-3">
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-center gap-3">
                           <div className="flex-shrink-0">
-                            <FileText className={cn(
-                              "h-5 w-5",
-                              isSuggested ? "text-primary" : "text-gray-600"
-                            )} />
+                            <FileText className="h-5 w-5 text-gray-600" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <h4 className={cn(
-                                "text-sm font-medium",
-                                isSuggested ? "text-primary" : "text-gray-900"
-                              )}>
-                                {docType.name}
-                              </h4>
-                              {isSuggested && (
-                                <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-white">
-                                  Recomendado
-                                </span>
-                              )}
-                            </div>
+                            <h4 className="text-sm font-medium text-gray-900">
+                              {docType.name}
+                            </h4>
                             <p className="mt-0.5 text-xs text-gray-500">
                               {docType.description}
                             </p>
                           </div>
+                          {isSuggested && (
+                            <span className="flex-shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                              Recomendado
+                            </span>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -653,6 +619,38 @@ export function AttachmentActionModal({
                 })}
               </div>
             </ScrollArea>
+
+            {/* Analyze Document Toggle - Only show for DNI/NIE folder */}
+            {selectedFolder?.id === "documentacion-inicial" && (
+              <div className="mt-4 rounded-xl bg-primary/5 p-3">
+                <div className="flex w-full items-center rounded-xl border border-border/60 bg-background p-1">
+                  <button
+                    type="button"
+                    onClick={() => setAnalyzeDocument(false)}
+                    className={cn(
+                      "flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200",
+                      !analyzeDocument
+                        ? "bg-muted text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    No analizar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAnalyzeDocument(true)}
+                    className={cn(
+                      "flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200",
+                      analyzeDocument
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    Analizar DNI/NIE
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

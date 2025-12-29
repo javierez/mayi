@@ -140,7 +140,29 @@ export function DNIValidationModal({
   useEffect(() => {
     if (isOpen) {
       setStep("review");
-      setEditedData(analysisData);
+
+      // Combine all address fields into "street" for Google autocomplete to work
+      // Leave other address fields blank until autocomplete fills them
+      const fullAddressForAutocomplete = [
+        analysisData.street,
+        analysisData.addressDetails,
+        analysisData.postalCode,
+        analysisData.city,
+        analysisData.province,
+        // Fallback to the full address if no individual fields
+        !analysisData.street && analysisData.address,
+      ].filter(Boolean).join(", ");
+
+      setEditedData({
+        ...analysisData,
+        street: fullAddressForAutocomplete || undefined,
+        addressDetails: undefined,
+        city: undefined,
+        postalCode: undefined,
+        province: undefined,
+        address: undefined,
+      });
+
       setSelectedContactId(suggestedContactId ?? null);
       setRecommendedContact(null);
       setSearchQuery("");
