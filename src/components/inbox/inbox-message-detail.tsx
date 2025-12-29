@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -407,6 +408,7 @@ export function InboxConversationView({
   } | null>(null);
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   // Format file size
   const formatFileSize = (bytes: number): string => {
@@ -541,6 +543,16 @@ export function InboxConversationView({
   // Get the main participant (not the agent)
   const mainParticipant = thread.participants.find((p) => p.id !== "agent") ?? thread.participants[0];
 
+  // Get the linked contact ID (from threadContext or participant)
+  const linkedContactId = thread.threadContext?.contactId ?? mainParticipant?.contactId;
+
+  // Handler to navigate to contact page
+  const handleContactClick = () => {
+    if (linkedContactId) {
+      router.push(`/contactos/${linkedContactId}`);
+    }
+  };
+
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
@@ -557,19 +569,46 @@ export function InboxConversationView({
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             ) : null}
-            <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
-              {mainParticipant?.avatar ? (
-                <AvatarImage src={mainParticipant.avatar} alt={mainParticipant.name} />
-              ) : null}
-              <AvatarFallback className="bg-muted text-muted-foreground">
-                {getInitials(mainParticipant?.name ?? "?")}
-              </AvatarFallback>
-            </Avatar>
+            {linkedContactId ? (
+              <button
+                type="button"
+                onClick={handleContactClick}
+                className="rounded-full transition-opacity hover:opacity-80"
+              >
+                <Avatar className="h-10 w-10 cursor-pointer sm:h-12 sm:w-12">
+                  {mainParticipant?.avatar ? (
+                    <AvatarImage src={mainParticipant.avatar} alt={mainParticipant.name} />
+                  ) : null}
+                  <AvatarFallback className="bg-muted text-muted-foreground">
+                    {getInitials(mainParticipant?.name ?? "?")}
+                  </AvatarFallback>
+                </Avatar>
+              </button>
+            ) : (
+              <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
+                {mainParticipant?.avatar ? (
+                  <AvatarImage src={mainParticipant.avatar} alt={mainParticipant.name} />
+                ) : null}
+                <AvatarFallback className="bg-muted text-muted-foreground">
+                  {getInitials(mainParticipant?.name ?? "?")}
+                </AvatarFallback>
+              </Avatar>
+            )}
             <div className="min-w-0 flex-1 space-y-0.5 sm:space-y-1">
               <div className="flex flex-wrap items-center gap-1 sm:gap-2">
-                <h2 className="truncate text-base font-semibold tracking-tight sm:text-lg">
-                  {mainParticipant?.name}
-                </h2>
+                {linkedContactId ? (
+                  <button
+                    type="button"
+                    onClick={handleContactClick}
+                    className="truncate text-base font-semibold tracking-tight hover:underline sm:text-lg"
+                  >
+                    {mainParticipant?.name}
+                  </button>
+                ) : (
+                  <h2 className="truncate text-base font-semibold tracking-tight sm:text-lg">
+                    {mainParticipant?.name}
+                  </h2>
+                )}
                 {/* Channel badge - subtle sunset colors */}
                 <div
                   className={cn(

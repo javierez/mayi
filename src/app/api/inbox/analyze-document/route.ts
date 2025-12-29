@@ -92,7 +92,8 @@ function isSupportedMimeType(mimeType: string): boolean {
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as AnalyzeDocumentRequest;
-    let { documentBase64, mimeType, filename } = body;
+    const { documentBase64, filename } = body;
+    let { mimeType } = body;
 
     if (!documentBase64) {
       return NextResponse.json(
@@ -152,15 +153,15 @@ export async function POST(request: NextRequest) {
     ];
 
     const isPdf = mimeType === SUPPORTED_PDF_TYPE;
-    console.log(`🔍 Analyzing DNI/NIE ${isPdf ? "PDF" : "image"} with Gemini...`, {
+    console.log(`🔍 Analyzing DNI/NIE ${isPdf ? "PDF" : "image"} with Gemini 2.0 Flash...`, {
       mimeType,
       filename,
       dataLength: cleanBase64.length,
     });
 
-    // Call Gemini API - use a model that supports PDFs
+    // Call Gemini API - use Gemini 2.0 Flash for document analysis
     const response = await genAI.models.generateContent({
-      model: "gemini-2.5-flash-preview-05-20",
+      model: "gemini-2.0-flash",
       contents,
       config: {
         temperature: 0.1, // Low temperature for accurate extraction
@@ -187,7 +188,8 @@ export async function POST(request: NextRequest) {
     let analysisResult: DNIAnalysisResult;
     try {
       // Try to extract JSON from the response (in case there's extra text)
-      const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+      const jsonRegex = /\{[\s\S]*\}/;
+      const jsonMatch = jsonRegex.exec(textContent);
       if (!jsonMatch) {
         throw new Error("No JSON found in response");
       }

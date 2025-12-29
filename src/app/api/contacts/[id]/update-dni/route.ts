@@ -7,7 +7,13 @@ interface UpdateDNIRequest {
   documentNumber?: string;
   birthDate?: string;
   expiryDate?: string;
+  // Address fields (separated)
   address?: string;
+  street?: string;
+  addressDetails?: string;
+  city?: string;
+  postalCode?: string;
+  province?: string;
 }
 
 /**
@@ -35,7 +41,18 @@ export async function POST(
     }
 
     const body = (await request.json()) as UpdateDNIRequest;
-    const { fullName, documentNumber, birthDate, expiryDate, address } = body;
+    const {
+      fullName,
+      documentNumber,
+      birthDate,
+      expiryDate,
+      address,
+      street,
+      addressDetails,
+      city,
+      postalCode,
+      province,
+    } = body;
 
     // Build the update object
     const updateData: Record<string, unknown> = {};
@@ -60,7 +77,12 @@ export async function POST(
       }
     }
 
-    // Store birthDate, expiryDate, and address in additionalInfo if provided
+    // Update main address field
+    if (address) {
+      updateData.address = address;
+    }
+
+    // Store additional data in additionalInfo
     const additionalInfo: Record<string, unknown> = {};
 
     if (birthDate) {
@@ -71,8 +93,25 @@ export async function POST(
       additionalInfo.dniExpiryDate = expiryDate;
     }
 
-    if (address) {
-      additionalInfo.dniAddress = address;
+    // Store address components
+    if (street) {
+      additionalInfo.street = street;
+    }
+
+    if (addressDetails) {
+      additionalInfo.addressDetails = addressDetails;
+    }
+
+    if (city) {
+      additionalInfo.city = city;
+    }
+
+    if (postalCode) {
+      additionalInfo.postalCode = postalCode;
+    }
+
+    if (province) {
+      additionalInfo.province = province;
     }
 
     if (Object.keys(additionalInfo).length > 0) {

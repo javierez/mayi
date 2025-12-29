@@ -5,6 +5,7 @@ import { uploadDocument } from "~/app/actions/upload";
 import { db } from "~/server/db";
 import { listings, documents, properties } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
+import { GoogleGenAI } from "@google/genai";
 
 interface SaveAttachmentRequest {
   messageId: string;
@@ -22,7 +23,163 @@ interface DNIAnalysisResult {
   documentNumber?: string;
   birthDate?: string;
   expiryDate?: string;
+  // Address fields (separated)
   address?: string;
+  street?: string;
+  addressDetails?: string;
+  city?: string;
+  postalCode?: string;
+  province?: string;
+}
+
+// Prompt for extracting DNI/NIE data
+const DNI_EXTRACTION_PROMPT = `You are an expert document analyzer specializing in Spanish identity documents (DNI and NIE).
+
+Analyze this document (it can be an image or PDF scan of a DNI/NIE) and extract the following information if visible:
+- Full name (nombre completo) - first name and surnames as they appear on the document
+- Document number (número de DNI or NIE)
+- Date of birth (fecha de nacimiento)
+- Expiry date (fecha de caducidad/validez)
+- Address (domicilio/dirección) if visible - extract the components separately:
+  - Street with number (calle y número)
+  - Address details like floor, door (piso, puerta)
+  - City (ciudad/localidad)
+  - Postal code (código postal)
+  - Province (provincia)
+
+IMPORTANT RULES:
+1. Return ONLY valid JSON, no other text or explanation
+2. Use null for any field you cannot clearly read or that is not present
+3. Format dates as DD/MM/YYYY
+4. The document number should include the letter at the end (e.g., "12345678A" for DNI or "X1234567A" for NIE)
+5. For NIE, the first character is X, Y, or Z followed by 7 digits and a letter
+6. For DNI, it's 8 digits followed by a letter
+7. Be very careful with OCR accuracy - only include data you are confident about
+8. If the document is upside down or rotated, still try to read it correctly
+9. For names, use proper capitalization (e.g., "Juan García López" not "JUAN GARCIA LOPEZ")
+10. For address, parse it into components. Example: "C/ Gran Vía 28, 3º B, 28013 Madrid" should be split into street="C/ Gran Vía 28", addressDetails="3º B", postalCode="28013", city="Madrid"
+
+Return a JSON object with this exact structure:
+{
+  "fullName": "string or null",
+  "documentNumber": "string or null",
+  "birthDate": "string or null",
+  "expiryDate": "string or null",
+  "street": "string or null",
+  "addressDetails": "string or null",
+  "city": "string or null",
+  "postalCode": "string or null",
+  "province": "string or null"
+}`;
+
+/**
+ * Analyze a DNI/NIE document using Gemini Vision
+ */
+async function analyzeDNIDocument(
+  documentBase64: string,
+  mimeType: string
+): Promise<DNIAnalysisResult | null> {
+  const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
+  if (!apiKey) {
+    console.error("GOOGLE_GEMINI_API_KEY not configured");
+    return null;
+  }
+
+  try {
+    const genAI = new GoogleGenAI({ apiKey });
+
+    // Clean base64 string (remove data URL prefix if present)
+    const cleanBase64 = documentBase64.replace(/^data:[^;]+;base64,/, "");
+
+    // Prepare content with prompt and document
+    const contents = [
+      { text: DNI_EXTRACTION_PROMPT },
+      {
+        inlineData: {
+          mimeType,
+          data: cleanBase64,
+        },
+      },
+    ];
+
+    const isPdf = mimeType === "application/pdf";
+    console.log(`🔍 Analyzing DNI/NIE ${isPdf ? "PDF" : "image"} with Gemini 2.0 Flash...`);
+
+    // Call Gemini API
+    const response = await genAI.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents,
+      config: {
+        temperature: 0.1,
+        maxOutputTokens: 1000,
+      },
+    });
+
+    // Extract text response
+    const textContent = response.candidates?.[0]?.content?.parts?.find(
+      (part) => part.text
+    )?.text;
+
+    if (!textContent) {
+      console.error("No text response from Gemini");
+      return null;
+    }
+
+    console.log("📄 Gemini raw response:", textContent);
+
+    // Parse JSON response
+    const jsonRegex = /\{[\s\S]*\}/;
+    const jsonMatch = jsonRegex.exec(textContent);
+    if (!jsonMatch) {
+      console.error("No JSON found in Gemini response");
+      return null;
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
+
+    // Helper to extract string or undefined
+    const getString = (value: unknown): string | undefined => {
+      if (typeof value === "string" && value !== "null" && value.trim()) {
+        return value.trim();
+      }
+      return undefined;
+    };
+
+    // Convert null strings to undefined
+    const street = getString(parsed.street);
+    const addressDetails = getString(parsed.addressDetails);
+    const city = getString(parsed.city);
+    const postalCode = getString(parsed.postalCode);
+    const province = getString(parsed.province);
+
+    // Build full address from components
+    const addressParts = [
+      street,
+      addressDetails,
+      [postalCode, city].filter(Boolean).join(" "),
+      province,
+    ].filter(Boolean);
+    const fullAddress = addressParts.length > 0 ? addressParts.join(", ") : undefined;
+
+    const result: DNIAnalysisResult = {
+      fullName: getString(parsed.fullName),
+      documentNumber: getString(parsed.documentNumber),
+      birthDate: getString(parsed.birthDate),
+      expiryDate: getString(parsed.expiryDate),
+      address: fullAddress,
+      street,
+      addressDetails,
+      city,
+      postalCode,
+      province,
+    };
+
+    console.log("✅ DNI/NIE analysis result:", result);
+    return result;
+  } catch (error) {
+    console.error("Error analyzing DNI document:", error);
+    return null;
+  }
 }
 
 // Valid folder types for upload
@@ -197,39 +354,10 @@ export async function POST(request: NextRequest) {
     // Analyze document if requested (for DNI/NIE)
     let analysis: DNIAnalysisResult | undefined;
     if (analyzeDocument && documentTag === "documentacion-inicial") {
-      try {
-        console.log("📄 Analyzing DNI/NIE document...");
-
-        // Call the analyze-document API
-        const analyzeResponse = await fetch(
-          new URL("/api/inbox/analyze-document", request.url).toString(),
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              documentBase64: base64,
-              mimeType,
-              filename,
-            }),
-          }
-        );
-
-        if (analyzeResponse.ok) {
-          const analyzeResult = (await analyzeResponse.json()) as {
-            success: boolean;
-            analysis?: DNIAnalysisResult;
-          };
-
-          if (analyzeResult.success && analyzeResult.analysis) {
-            analysis = analyzeResult.analysis;
-            console.log("✅ DNI/NIE analysis completed:", analysis);
-          }
-        } else {
-          console.error("Failed to analyze document:", await analyzeResponse.text());
-        }
-      } catch (analyzeError) {
-        console.error("Error analyzing document:", analyzeError);
-        // Don't fail the entire save if analysis fails
+      console.log("📄 Analyzing DNI/NIE document...");
+      const analysisResult = await analyzeDNIDocument(base64, mimeType);
+      if (analysisResult) {
+        analysis = analysisResult;
       }
     }
 

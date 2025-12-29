@@ -692,7 +692,7 @@ export function QuickActionModal({
 
         {step === "contact" ? (
           /* Step 1: Contact Selection */
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 overflow-hidden">
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <Label htmlFor="contact-search">Buscar contacto</Label>
@@ -820,7 +820,7 @@ export function QuickActionModal({
           </div>
         ) : step === "listing" ? (
           /* Step 3: Listing Selection (Optional) */
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-4 overflow-hidden">
             <div className="space-y-2">
               <Label htmlFor="listing-search">Buscar propiedad</Label>
               <div className="relative">
