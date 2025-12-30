@@ -386,6 +386,21 @@ export function ToriParkDocument({ data }: Props) {
               <div className="mb-1"><strong>IMPORTE ALQUILER:</strong> {formatCurrency(rentalPrice)}</div>
               <div><strong>FIANZA:</strong> {formatCurrency(securityDeposit)}</div>
             </div>
+
+            <div className="mt-3 grid grid-cols-3 gap-4 border-t border-gray-400 pt-2.5">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 border border-black"></div>
+                <span className="text-[9pt]">Fianza entregada</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 border border-black"></div>
+                <span className="text-[9pt]">Alquiler pagado</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 border border-black"></div>
+                <span className="text-[9pt]">Fianza devuelta</span>
+              </div>
+            </div>
           </div>
 
           {/* Section 11: Legal Notice (ADVERTENCIA LEGAL) */}
