@@ -1026,44 +1026,54 @@ export function PortalSelection({
 
         // Re-export all Idealista-enabled properties with current data
         try {
-          const result = await triggerIdealistaExport();
-          if (result.success) {
-            console.log("Idealista export triggered successfully");
-            const currentCount = slotCheck?.currentCount ?? 0;
-            const maxSlots = slotCheck?.maxSlots;
-            const slotInfo = maxSlots ? ` (${currentCount}/${maxSlots} huecos)` : "";
-            toast.success(
-              `Exportación a Idealista iniciada${slotInfo}. Los cambios se reflejarán en ~15 minutos.`,
-            );
-            // Update platform status to active with new sync time
-            const updatedPlatforms = platforms.map((p) =>
-              p.id === platformId
-                ? { ...p, status: "active" as const, lastSync: new Date() }
-                : p,
-            );
-            setPlatforms(updatedPlatforms);
+          // FIRST: Save current listing's settings to database BEFORE export
+          // This ensures the export includes the latest UI values for this listing
+          await updateListingWithAuth(Number(listingId), {
+            idCoordinatesPrecision: idealistaCoordinatesPrecision,
+            idPropertyVisibility: idealistaPropertyVisibility,
+            // Legacy support: also update idealistaProps for backward compatibility
+            idealistaProps: {
+              coordinatesPrecision: idealistaCoordinatesPrecision,
+            },
+          } as Parameters<typeof updateListingWithAuth>[1]);
 
-            // Update Idealista settings in database with current settings
-            await updateListingWithAuth(Number(listingId), {
-              idCoordinatesPrecision: idealistaCoordinatesPrecision,
-              idPropertyVisibility: idealistaPropertyVisibility,
-              // Legacy support: also update idealistaProps for backward compatibility
-              idealistaProps: {
-                coordinatesPrecision: idealistaCoordinatesPrecision,
-              },
-            } as Parameters<typeof updateListingWithAuth>[1]);
-          } else {
-            console.error("Idealista export failed:", result.error);
-            toast.error(`Error al exportar a Idealista: ${result.error}`);
-            // Update platform status to error
-            const updatedPlatforms = platforms.map((p) =>
-              p.id === platformId ? { ...p, status: "error" as const } : p,
-            );
-            setPlatforms(updatedPlatforms);
-          }
+          // Show toast immediately and update UI
+          const currentCount = slotCheck?.currentCount ?? 0;
+          const maxSlots = slotCheck?.maxSlots;
+          const slotInfo = maxSlots ? ` (${currentCount}/${maxSlots} huecos)` : "";
+          toast.success(
+            `Exportación a Idealista iniciada${slotInfo}. Los cambios se reflejarán en ~15 minutos.`,
+          );
+
+          // Update platform status to active with new sync time
+          const updatedPlatforms = platforms.map((p) =>
+            p.id === platformId
+              ? { ...p, status: "active" as const, lastSync: new Date() }
+              : p,
+          );
+          setPlatforms(updatedPlatforms);
+
+          // Trigger export in background - don't await to avoid blocking UI
+          triggerIdealistaExport()
+            .then((result) => {
+              if (result.success) {
+                console.log(
+                  `Idealista export completed: ${result.propertyCount} properties`,
+                  result.s3Url,
+                );
+              } else {
+                console.error("Idealista export failed:", result.error);
+                // Optionally show error toast if export fails in background
+                toast.error(`Error en exportación: ${result.error}`);
+              }
+            })
+            .catch((err) => {
+              console.error("Idealista export error:", err);
+              toast.error("Error al conectar con Idealista");
+            });
         } catch (error) {
-          console.error("Idealista export error:", error);
-          toast.error("Error al conectar con Idealista");
+          console.error("Idealista settings save error:", error);
+          toast.error("Error al guardar configuración de Idealista");
           // Update platform status to error
           const updatedPlatforms = platforms.map((p) =>
             p.id === platformId ? { ...p, status: "error" as const } : p,
