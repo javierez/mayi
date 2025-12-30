@@ -17,11 +17,11 @@ import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import type { PropertyImage } from "~/lib/data";
 import {
-  uploadPropertyVideo,
   deletePropertyImage,
   updateImageOrders,
   togglePropertyImageVisibility,
 } from "~/app/actions/upload";
+import { uploadPropertyVideoPresigned } from "~/lib/presigned-upload";
 import {
   Dialog,
   DialogContent,
@@ -191,15 +191,15 @@ export function VideoGallery({
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    // Check file sizes (10MB limit per file due to Next.js Server Actions limit)
-    const maxFileSize = 10 * 1024 * 1024; // 10MB in bytes
+    // Check file sizes (500MB limit per file - presigned uploads bypass Vercel's limit)
+    const maxFileSize = 500 * 1024 * 1024; // 500MB in bytes
     const oversizedFiles = Array.from(files).filter(
       (file) => file.size > maxFileSize,
     );
 
     if (oversizedFiles.length > 0) {
       toast.error(
-        `Los siguientes archivos exceden el límite de 10MB:\n${oversizedFiles.map((f) => `${f.name} (${Math.round(f.size / 1024 / 1024)}MB)`).join("\n")}\n\nPor favor, comprime los vídeos antes de subirlos.`,
+        `Los siguientes archivos exceden el límite de 500MB:\n${oversizedFiles.map((f) => `${f.name} (${Math.round(f.size / 1024 / 1024)}MB)`).join("\n")}\n\nPor favor, comprime los vídeos antes de subirlos.`,
         { duration: 8000 }
       );
       // Reset the input
@@ -234,7 +234,7 @@ export function VideoGallery({
               : 0;
           const nextVideoOrder = maxVideoOrder + index + 1;
 
-          const newVideo = await uploadPropertyVideo(
+          const newVideo = await uploadPropertyVideoPresigned(
             file,
             propertyId,
             referenceNumber,
@@ -283,19 +283,7 @@ export function VideoGallery({
       console.error("Error uploading videos:", error);
 
       // Check if it's a body size limit error
-      if (error && typeof error === "object" && "statusCode" in error && error.statusCode === 413) {
-        toast.error(
-          "Error al subir vídeo: El archivo excede el límite de 10MB para la carga directa. Por favor, utiliza un archivo más pequeño o comprime el vídeo.",
-          { duration: 6000 }
-        );
-      } else if (error instanceof Error && error.message.includes("10mb limit")) {
-        toast.error(
-          "Error al subir vídeo: El archivo excede el límite de 10MB para la carga directa. Por favor, utiliza un archivo más pequeño o comprime el vídeo.",
-          { duration: 6000 }
-        );
-      } else {
-        toast.error("Error al subir los vídeos. Por favor, inténtalo de nuevo.");
-      }
+      toast.error("Error al subir los vídeos. Por favor, inténtalo de nuevo.");
     } finally {
       setIsUploading(false);
       setUploadProgress({});
@@ -651,7 +639,7 @@ export function VideoGallery({
                   Añadir vídeos
                 </span>
                 <span className="text-xs text-gray-400">
-                  (máx. 10MB por archivo)
+                  (máx. 500MB por archivo)
                 </span>
               </>
             )}

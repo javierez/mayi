@@ -5,6 +5,11 @@ import {
   uploadVideoToS3,
   uploadDocumentToS3,
   renameS3Folder,
+  generatePresignedUploadUrl,
+  generateDocumentKey,
+  generateImageKey,
+  generateVideoKey,
+  getS3PublicUrl,
 } from "~/lib/s3";
 import {
   createPropertyImage,
@@ -867,12 +872,6 @@ export async function uploadFichaEncargoAction(file: File): Promise<{
 // These bypass Vercel's 4.5MB limit by uploading directly to S3
 // ============================================================================
 
-import {
-  generatePresignedUploadUrl,
-  generateDocumentKey,
-  getS3PublicUrl,
-} from "~/lib/s3";
-
 export type PresignedUploadResult = {
   uploadUrl: string;
   documentKey: string;
@@ -1159,4 +1158,196 @@ export async function saveFichaEncargoDocument(
     BigInt(listingId),
     BigInt(propertyId),
   );
+}
+
+// ============================================================================
+// PRESIGNED URL UPLOADS FOR IMAGES AND VIDEOS
+// ============================================================================
+
+interface PresignedImageUploadResult {
+  uploadUrl: string;
+  imageKey: string;
+  imageUrl: string;
+}
+
+interface PresignedVideoUploadResult {
+  uploadUrl: string;
+  videoKey: string;
+  videoUrl: string;
+}
+
+/**
+ * Get presigned URL for property image upload.
+ * Client uploads directly to S3, bypassing Vercel's 4.5MB limit.
+ */
+export async function getPropertyImagePresignedUrl(
+  filename: string,
+  contentType: string,
+  referenceNumber: string,
+  imageOrder: number,
+): Promise<PresignedImageUploadResult> {
+  "use server";
+
+  const session = await getSecureSession();
+  if (!session?.user?.id) {
+    throw new Error("Usuario no autenticado");
+  }
+
+  // Generate the S3 key for the image
+  const imageKey = generateImageKey(referenceNumber, imageOrder, filename);
+
+  // Get presigned URL for upload
+  const { uploadUrl } = await generatePresignedUploadUrl(imageKey, contentType);
+
+  // Get the public URL for the image
+  const imageUrl = await getS3PublicUrl(imageKey);
+
+  console.log("[getPropertyImagePresignedUrl] Generated presigned URL for:", filename);
+
+  return { uploadUrl, imageKey, imageUrl };
+}
+
+/**
+ * Save property image record after presigned upload.
+ */
+export async function savePropertyImageRecord(
+  propertyId: bigint,
+  referenceNumber: string,
+  imageUrl: string,
+  imageKey: string,
+  imageOrder: number,
+): Promise<PropertyImage> {
+  "use server";
+
+  const session = await getSecureSession();
+  if (!session?.user?.id) {
+    throw new Error("Usuario no autenticado");
+  }
+
+  console.log("[savePropertyImageRecord] Saving image record:", imageKey);
+
+  // Get bucket name for s3key
+  const bucketName = await getDynamicBucketName();
+  const s3key = `s3://${bucketName}/${imageKey}`;
+
+  // Create the property image record
+  const result = await createPropertyImage({
+    propertyId,
+    referenceNumber,
+    imageUrl,
+    isActive: true,
+    imageKey,
+    s3key,
+    imageOrder,
+  });
+
+  if (!result) {
+    throw new Error("Error al guardar la imagen");
+  }
+
+  // Fetch the complete image record
+  const propertyImage = await getPropertyImageById(result.propertyImageId);
+
+  if (!propertyImage) {
+    throw new Error("Error al obtener la imagen guardada");
+  }
+
+  console.log("[savePropertyImageRecord] Image saved with ID:", propertyImage.propertyImageId.toString());
+
+  // Convert null values to match PropertyImage type
+  return {
+    ...propertyImage,
+    isActive: propertyImage.isActive ?? true,
+    imageTag: propertyImage.imageTag ?? undefined,
+    originImageId: propertyImage.originImageId ?? undefined,
+  };
+}
+
+/**
+ * Get presigned URL for property video upload.
+ * Client uploads directly to S3, bypassing Vercel's 4.5MB limit.
+ */
+export async function getPropertyVideoPresignedUrl(
+  filename: string,
+  contentType: string,
+  referenceNumber: string,
+  videoOrder: number,
+): Promise<PresignedVideoUploadResult> {
+  "use server";
+
+  const session = await getSecureSession();
+  if (!session?.user?.id) {
+    throw new Error("Usuario no autenticado");
+  }
+
+  // Generate the S3 key for the video
+  const videoKey = generateVideoKey(referenceNumber, videoOrder, filename);
+
+  // Get presigned URL for upload
+  const { uploadUrl } = await generatePresignedUploadUrl(videoKey, contentType);
+
+  // Get the public URL for the video
+  const videoUrl = await getS3PublicUrl(videoKey);
+
+  console.log("[getPropertyVideoPresignedUrl] Generated presigned URL for:", filename);
+
+  return { uploadUrl, videoKey, videoUrl };
+}
+
+/**
+ * Save property video record after presigned upload.
+ * Videos are stored in the property_images table with isVideo=true.
+ */
+export async function savePropertyVideoRecord(
+  propertyId: bigint,
+  referenceNumber: string,
+  videoUrl: string,
+  videoKey: string,
+  videoOrder: number,
+): Promise<PropertyImage> {
+  "use server";
+
+  const session = await getSecureSession();
+  if (!session?.user?.id) {
+    throw new Error("Usuario no autenticado");
+  }
+
+  console.log("[savePropertyVideoRecord] Saving video record:", videoKey);
+
+  // Get bucket name for s3key
+  const bucketName = await getDynamicBucketName();
+  const s3key = `s3://${bucketName}/${videoKey}`;
+
+  // Create the property image record (videos use same table with imageTag='video')
+  const result = await createPropertyImage({
+    propertyId,
+    referenceNumber,
+    imageUrl: videoUrl,
+    isActive: true,
+    imageKey: videoKey,
+    s3key,
+    imageOrder: 99, // Non-image media always goes to order 99
+    imageTag: "video", // This marks it as a video
+  });
+
+  if (!result) {
+    throw new Error("Error al guardar el vídeo");
+  }
+
+  // Fetch the complete record
+  const propertyVideo = await getPropertyImageById(result.propertyImageId);
+
+  if (!propertyVideo) {
+    throw new Error("Error al obtener el vídeo guardado");
+  }
+
+  console.log("[savePropertyVideoRecord] Video saved with ID:", propertyVideo.propertyImageId.toString());
+
+  // Convert null values to match PropertyImage type
+  return {
+    ...propertyVideo,
+    isActive: propertyVideo.isActive ?? true,
+    imageTag: propertyVideo.imageTag ?? undefined,
+    originImageId: propertyVideo.originImageId ?? undefined,
+  };
 }

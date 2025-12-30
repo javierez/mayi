@@ -447,3 +447,29 @@ export async function getS3PublicUrl(key: string): Promise<string> {
   const bucket = await getDynamicBucketName();
   return `https://${bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
 }
+
+/**
+ * Generate the image key for S3 storage
+ */
+export function generateImageKey(
+  referenceNumber: string,
+  imageOrder: number,
+  filename: string,
+): string {
+  const fileExtension = filename.split(".").pop() ?? "jpg";
+  const uniqueId = nanoid(6);
+  return `${referenceNumber}/images/image_${imageOrder}_${uniqueId}.${fileExtension}`;
+}
+
+/**
+ * Generate the video key for S3 storage
+ */
+export function generateVideoKey(
+  referenceNumber: string,
+  videoOrder: number,
+  filename: string,
+): string {
+  const fileExtension = filename.split(".").pop() ?? "mp4";
+  const uniqueId = nanoid(6);
+  return `${referenceNumber}/videos/video_${videoOrder}_${uniqueId}.${fileExtension}`;
+}

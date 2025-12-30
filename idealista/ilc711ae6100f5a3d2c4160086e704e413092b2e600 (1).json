@@ -1,0 +1,1474 @@
+{
+  "customerCode": "ilc711ae6100f5a3d2c4160086e704e413092b2e600",
+  "customerCountry": "Spain",
+  "customerSendDate": "2025/12/30 16:57:33",
+  "customerProperties": [
+    {
+      "propertyCode": "VESTA2025000006",
+      "propertyReference": "1000030",
+      "propertyVisibility": "idealista",
+      "propertyOperation": {
+        "operationType": "sale",
+        "operationPrice": 69000
+      },
+      "propertyAddress": {
+        "addressVisibility": "hidden",
+        "addressStreetName": "Calle Magallanes",
+        "addressStreetNumber": "5",
+        "addressFloor": "1",
+        "addressDoor": "01",
+        "addressPostalCode": "24009",
+        "addressTown": "León",
+        "addressCountry": "Spain",
+        "addressCoordinatesPrecision": "moved",
+        "addressCoordinatesLatitude": 42.5991401,
+        "addressCoordinatesLongitude": -5.5908454
+      },
+      "propertyFeatures": {
+        "featuresType": "flat",
+        "featuresAreaConstructed": 86,
+        "featuresAreaUsable": 78,
+        "featuresBathroomNumber": 1,
+        "featuresBedroomNumber": 3,
+        "featuresLiftAvailable": false,
+        "featuresParkingAvailable": false,
+        "featuresStorage": false,
+        "featuresGarden": false,
+        "featuresPool": false,
+        "featuresWardrobes": false,
+        "featuresChimney": false,
+        "featuresConservation": "good",
+        "featuresHeatingType": "centralGas",
+        "featuresWindowsLocation": "interior",
+        "featuresCurrentOccupation": "tenanted"
+      },
+      "propertyDescriptions": [
+        {
+          "descriptionLanguage": "spanish",
+          "descriptionText": "Piso en Calle Magallanes 5, 24009 — Tres dormitorios en 78m2"
+        }
+      ],
+      "propertyImages": [
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_1_36IE_A.jpg",
+          "imageOrder": 1,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_2_S6ssfh.jpg",
+          "imageOrder": 2,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_3_aKH5Nl.jpg",
+          "imageOrder": 3,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_5_vvRQSs.jpg",
+          "imageOrder": 4,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_6_9M5e_i.jpg",
+          "imageOrder": 5,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_7_ZnhQLJ.jpg",
+          "imageOrder": 6,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_8_ZPfUKl.jpg",
+          "imageOrder": 7,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_9_EmRuvj.jpg",
+          "imageOrder": 8,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000006/watermarked/temp_image_10_03zGgq.jpg",
+          "imageOrder": 9,
+          "imageLabel": "unknown"
+        }
+      ],
+      "propertyContact": {
+        "contactEmail": "javier.acropolisinmobiliaria@gmail.com",
+        "contactPrimaryPhoneNumber": "621317639",
+        "contactPrimaryPhonePrefix": "34"
+      }
+    },
+    {
+      "propertyCode": "VESTA2025000011",
+      "propertyReference": "1000036",
+      "propertyVisibility": "microsite",
+      "propertyOperation": {
+        "operationType": "rent",
+        "operationPrice": 1800
+      },
+      "propertyAddress": {
+        "addressVisibility": "street",
+        "addressStreetName": "Calle las Fuentes",
+        "addressStreetNumber": "1",
+        "addressFloor": "4",
+        "addressDoor": "G",
+        "addressPostalCode": "24005",
+        "addressTown": "León",
+        "addressCountry": "Spain",
+        "addressCoordinatesPrecision": "exact",
+        "addressCoordinatesLatitude": 42.5927258,
+        "addressCoordinatesLongitude": -5.5684818
+      },
+      "propertyFeatures": {
+        "featuresType": "flat",
+        "featuresAreaConstructed": 265,
+        "featuresAreaUsable": 244,
+        "featuresBathroomNumber": 3,
+        "featuresBedroomNumber": 6,
+        "featuresDuplex": true,
+        "featuresLiftAvailable": true,
+        "featuresParkingAvailable": true,
+        "featuresStorage": true,
+        "featuresGarden": false,
+        "featuresPool": false,
+        "featuresTerrace": true,
+        "featuresWardrobes": false,
+        "featuresChimney": false,
+        "featuresAllowPets": true,
+        "featuresConservation": "good",
+        "featuresOrientationEast": true,
+        "featuresBuiltYear": 1991,
+        "featuresEquippedKitchen": false,
+        "featuresWindowsLocation": "exterior"
+      },
+      "propertyDescriptions": [
+        {
+          "descriptionLanguage": "spanish",
+          "descriptionText": "Piso en alquiler"
+        }
+      ],
+      "propertyImages": [
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_1_2iDUjm.jpg",
+          "imageOrder": 1,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_2_vz8iVy.jpg",
+          "imageOrder": 2,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_3_JjUObx.jpg",
+          "imageOrder": 3,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_4_XzwQfZ.jpg",
+          "imageOrder": 4,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_5_m4Iv49.jpg",
+          "imageOrder": 5,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_6_cdU-yI.jpg",
+          "imageOrder": 6,
+          "imageLabel": "unknown"
+        }
+      ],
+      "propertyContact": {
+        "contactEmail": "javier.acropolisinmobiliaria@gmail.com",
+        "contactPrimaryPhoneNumber": "621317639",
+        "contactPrimaryPhonePrefix": "34"
+      }
+    },
+    {
+      "propertyCode": "VESTA2025000011",
+      "propertyReference": "1000035",
+      "propertyVisibility": "microsite",
+      "propertyOperation": {
+        "operationType": "sale",
+        "operationPrice": 480000
+      },
+      "propertyAddress": {
+        "addressVisibility": "street",
+        "addressStreetName": "Calle las Fuentes",
+        "addressStreetNumber": "1",
+        "addressFloor": "4",
+        "addressDoor": "G",
+        "addressPostalCode": "24005",
+        "addressTown": "León",
+        "addressCountry": "Spain",
+        "addressCoordinatesPrecision": "exact",
+        "addressCoordinatesLatitude": 42.5927258,
+        "addressCoordinatesLongitude": -5.5684818
+      },
+      "propertyFeatures": {
+        "featuresType": "flat",
+        "featuresAreaConstructed": 265,
+        "featuresAreaUsable": 244,
+        "featuresBathroomNumber": 3,
+        "featuresBedroomNumber": 6,
+        "featuresDuplex": true,
+        "featuresLiftAvailable": true,
+        "featuresParkingAvailable": true,
+        "featuresStorage": true,
+        "featuresGarden": false,
+        "featuresPool": false,
+        "featuresTerrace": true,
+        "featuresWardrobes": false,
+        "featuresChimney": false,
+        "featuresConservation": "good",
+        "featuresOrientationEast": true,
+        "featuresBuiltYear": 1991,
+        "featuresWindowsLocation": "exterior"
+      },
+      "propertyDescriptions": [
+        {
+          "descriptionLanguage": "spanish",
+          "descriptionText": "Duplex amplio en Calle las Fuentes, Chantría (León)\n\nPresentamos un piso tipo dúplex de 244m2 con seis dormitorios y tres baños, esta vivienda ofrece un planteamiento espacial ideal para familias numerosas o quienes buscan combinar hogar y espacio de trabajo sin renunciar a la amplitud interior que solo una propiedad de estas dimensiones puede brindar.\n\nInmobiliaria Martos gestiona la venta de esta propiedad y puede facilitar más detalles, visitas y orientación para valorar posibles adaptaciones del espacio según su proyecto de vida."
+        }
+      ],
+      "propertyImages": [
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_1_lTPLFP.jpg",
+          "imageOrder": 1,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_2_KVNR5u.jpg",
+          "imageOrder": 2,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_3_sjCC07.jpg",
+          "imageOrder": 3,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_4_hiyUNY.jpg",
+          "imageOrder": 4,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_5_deVvRa.jpg",
+          "imageOrder": 5,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000011/watermarked/temp_image_6_DYR8ud.jpg",
+          "imageOrder": 6,
+          "imageLabel": "unknown"
+        }
+      ],
+      "propertyContact": {
+        "contactEmail": "javier.acropolisinmobiliaria@gmail.com",
+        "contactPrimaryPhoneNumber": "621317639",
+        "contactPrimaryPhonePrefix": "34"
+      }
+    },
+    {
+      "propertyCode": "VESTA2025000010",
+      "propertyReference": "1000033",
+      "propertyVisibility": "microsite",
+      "propertyOperation": {
+        "operationType": "sale",
+        "operationPrice": 280000
+      },
+      "propertyAddress": {
+        "addressVisibility": "street",
+        "addressStreetName": "Calle los Osorios",
+        "addressStreetNumber": "7",
+        "addressPostalCode": "24007",
+        "addressTown": "León",
+        "addressCountry": "Spain",
+        "addressCoordinatesPrecision": "exact",
+        "addressCoordinatesLatitude": 42.6032729,
+        "addressCoordinatesLongitude": -5.5694222
+      },
+      "propertyFeatures": {
+        "featuresType": "flat",
+        "featuresAreaConstructed": 87,
+        "featuresAreaUsable": 80,
+        "featuresBathroomNumber": 2,
+        "featuresBedroomNumber": 4,
+        "featuresLiftAvailable": true,
+        "featuresParkingAvailable": false,
+        "featuresStorage": false,
+        "featuresGarden": false,
+        "featuresPool": false,
+        "featuresTerrace": false,
+        "featuresBalcony": true,
+        "featuresWardrobes": false,
+        "featuresChimney": false,
+        "featuresConservation": "good",
+        "featuresHeatingType": "centralGas",
+        "featuresOrientationEast": true,
+        "featuresBuiltYear": 1980,
+        "featuresWindowsLocation": "exterior",
+        "featuresCurrentOccupation": "tenanted"
+      },
+      "propertyDescriptions": [
+        {
+          "descriptionLanguage": "spanish",
+          "descriptionText": "Piso en Calle los Osorios 7, San Lorenzo – La Palomera (León)\n\nPiso de 80m2 con cuatro dormitorios y dos baños, ubicado en una tranquila calle del barrio de la Palomera, que ofrece una excelente combinación entre vida de barrio y proximidad al corazón cultural de León. Esta vivienda exterior es ideal para quien busca espacio para configurar un hogar a medida, con la posibilidad de adaptar estancias según las necesidades de una familia o de quienes teletrabajan.\n\nConstruido en 1980, pero completamente reformado, cuenta con ascensor y es accesible.\n\nLa distribución se centra en cuatro dormitorios bien diferenciados y dos baños, lo que facilita la convivencia y ofrece flexibilidad para usos alternativos como despacho, cuarto de lectura o habitación de invitados.\n\nLa ubicación es uno de sus grandes atractivos: en cuestión de minutos se accede a parques y zonas verdes de La Palomera, agradables paseos y áreas de juego, así como a una oferta variada de restauración con tradicionales establecimientos de cocina castellana, cafeterías y pastelerías. El barrio cuenta con comercios locales para la compra diaria, acceso sencillo a los mercados centrales y buenas conexiones hacia el centro histórico, donde se encuentran la Catedral, Casa Botines y otros espacios culturales. Es una zona que combina calma residencial con la vida urbana, pensada para familias y profesionales que valoran proximidad a servicios y un entorno amable.\n\nInmobiliaria Martos presenta esta oportunidad para quienes buscan una vivienda para reformar en una de las zonas más equilibradas de León. Si quieres conocer más detalles sobre este piso y sus posibilidades, Inmobiliaria Martos te ofrece la información y asesoramiento necesario a través del portal."
+        }
+      ],
+      "propertyImages": [
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_10_cPJgjk.jpg",
+          "imageOrder": 1,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_11_gb6TWY.jpg",
+          "imageOrder": 2,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_12_o6K7QL.jpg",
+          "imageOrder": 3,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_13_DYwgbA.jpg",
+          "imageOrder": 4,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_14_FZZPON.jpg",
+          "imageOrder": 5,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_15_VTRIkG.jpg",
+          "imageOrder": 6,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_15_VTRIkG.jpg",
+          "imageOrder": 7,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_16_bJG5rf.jpg",
+          "imageOrder": 8,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_17_lhKa6U.jpg",
+          "imageOrder": 9,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_18_Y-T5cj.jpg",
+          "imageOrder": 10,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_19_M12BMD.jpg",
+          "imageOrder": 11,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_20_XnGbYD.jpg",
+          "imageOrder": 12,
+          "imageLabel": "unknown"
+        }
+      ],
+      "propertyContact": {
+        "contactEmail": "javier.acropolisinmobiliaria@gmail.com",
+        "contactPrimaryPhoneNumber": "621317639",
+        "contactPrimaryPhonePrefix": "34"
+      }
+    },
+    {
+      "propertyCode": "VESTA2025000007",
+      "propertyReference": "1000031",
+      "propertyVisibility": "microsite",
+      "propertyOperation": {
+        "operationType": "rent",
+        "operationPrice": 600
+      },
+      "propertyAddress": {
+        "addressVisibility": "full",
+        "addressStreetName": "Calle De Francos",
+        "addressStreetNumber": "21",
+        "addressDoor": "OS",
+        "addressPostalCode": "49600",
+        "addressTown": "Benavente",
+        "addressCountry": "Spain",
+        "addressCoordinatesPrecision": "exact",
+        "addressCoordinatesLatitude": 42.002785,
+        "addressCoordinatesLongitude": -5.67992
+      },
+      "propertyFeatures": {
+        "featuresType": "premises_commercial",
+        "featuresAreaConstructed": 544,
+        "featuresBathroomNumber": 1,
+        "featuresParkingAvailable": false,
+        "featuresStorage": false,
+        "featuresConservation": "good",
+        "featuresBuiltYear": 1997
+      },
+      "propertyDescriptions": [
+        {
+          "descriptionLanguage": "spanish",
+          "descriptionText": "Piso en alquiler"
+        }
+      ],
+      "propertyImages": [
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_1_sl_KaM.jpg",
+          "imageOrder": 1,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_2_UKnju3.jpg",
+          "imageOrder": 2,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_3_MCPc_t.jpg",
+          "imageOrder": 3,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_4_Nz0WtS.jpg",
+          "imageOrder": 4,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_5_wSFxGS.jpg",
+          "imageOrder": 5,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_6_Ut3n7D.jpg",
+          "imageOrder": 6,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_7_0Xz2rU.jpg",
+          "imageOrder": 7,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_8_1IW2RY.jpg",
+          "imageOrder": 8,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_9_O19cVs.jpg",
+          "imageOrder": 9,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_10_BM5MiS.jpg",
+          "imageOrder": 10,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000007/watermarked/temp_image_11_2MOG1j.jpg",
+          "imageOrder": 11,
+          "imageLabel": "unknown"
+        }
+      ],
+      "propertyContact": {
+        "contactEmail": "javier.acropolisinmobiliaria@gmail.com",
+        "contactPrimaryPhoneNumber": "621317639",
+        "contactPrimaryPhonePrefix": "34"
+      }
+    },
+    {
+      "propertyCode": "VESTA2025000020",
+      "propertyReference": "1000048",
+      "propertyVisibility": "microsite",
+      "propertyOperation": {
+        "operationType": "sale",
+        "operationPrice": 180000
+      },
+      "propertyAddress": {
+        "addressVisibility": "full",
+        "addressStreetName": "Plaza de Santa María",
+        "addressStreetNumber": "1",
+        "addressFloor": "2",
+        "addressDoor": "A",
+        "addressPostalCode": "49600",
+        "addressTown": "Benavente",
+        "addressCountry": "Spain",
+        "addressCoordinatesPrecision": "exact",
+        "addressCoordinatesLatitude": 42.0022019,
+        "addressCoordinatesLongitude": -5.6802717
+      },
+      "propertyFeatures": {
+        "featuresType": "flat",
+        "featuresAreaConstructed": 104,
+        "featuresAreaUsable": 93,
+        "featuresBathroomNumber": 1,
+        "featuresBedroomNumber": 2,
+        "featuresLiftAvailable": false,
+        "featuresParkingAvailable": false,
+        "featuresStorage": false,
+        "featuresGarden": false,
+        "featuresPool": false,
+        "featuresTerrace": false,
+        "featuresBalcony": true,
+        "featuresWardrobes": false,
+        "featuresChimney": false,
+        "featuresConservation": "good",
+        "featuresOrientationEast": true,
+        "featuresBuiltYear": 1975,
+        "featuresWindowsLocation": "exterior"
+      },
+      "propertyDescriptions": [
+        {
+          "descriptionLanguage": "spanish",
+          "descriptionText": "Espectacular piso en la Plaza de Santa María de Benavente"
+        }
+      ],
+      "propertyImages": [
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_1_WN0QQE.jpg",
+          "imageOrder": 1,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_2_GTRKvX.jpg",
+          "imageOrder": 2,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_3_vB4Jrg.jpg",
+          "imageOrder": 3,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_4__1c0yj.jpg",
+          "imageOrder": 4,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_5_nqknlG.jpg",
+          "imageOrder": 5,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_6_8RFZdz.jpg",
+          "imageOrder": 6,
+          "imageLabel": "unknown"
+        }
+      ],
+      "propertyContact": {
+        "contactEmail": "javier.acropolisinmobiliaria@gmail.com",
+        "contactPrimaryPhoneNumber": "621317639",
+        "contactPrimaryPhonePrefix": "34"
+      }
+    },
+    {
+      "propertyCode": "VESTA2025000001",
+      "propertyReference": "1000021",
+      "propertyVisibility": "idealista",
+      "propertyOperation": {
+        "operationType": "rent",
+        "operationPrice": 1200
+      },
+      "propertyAddress": {
+        "addressVisibility": "full",
+        "addressStreetName": "Plaza Arizgoiti",
+        "addressStreetNumber": "6",
+        "addressPostalCode": "48970",
+        "addressTown": "Arizgoiti",
+        "addressCountry": "Spain",
+        "addressCoordinatesPrecision": "exact",
+        "addressCoordinatesLatitude": 43.2352376,
+        "addressCoordinatesLongitude": -2.8900658
+      },
+      "propertyFeatures": {
+        "featuresType": "premises_commercial",
+        "featuresAreaConstructed": 200,
+        "featuresAreaUsable": 182,
+        "featuresBathroomNumber": 1,
+        "featuresParkingAvailable": false,
+        "featuresStorage": false,
+        "featuresConservation": "good",
+        "featuresEquippedKitchen": false
+      },
+      "propertyDescriptions": [
+        {
+          "descriptionLanguage": "spanish",
+          "descriptionText": "Local comercial en Plaza Arizgoiti 6, Arizgoiti (Vizcaya) — 182m2 en alquiler\n\nEn pleno corazón del barrio Arizgoiti se ofrece este local comercial de 182m2. Con una superficie generosa y una distribución que permite múltiples posibilidades. El precio de alquiler es 1.200€/mes.\n\nEl local se presenta en buen estado de conservación, listo para acondicionarse según las necesidades del inquilino. Actualmente cuenta con un espacio independiente que puede utilizarse como despacho, almacén o zona privada. \n\nSituado en Plaza Arizgoiti, este emplazamiento aporta el valor de la vida de barrio: bares de pintxos y cafeterías familiares, comercios independientes y mercados locales que animan la plaza y atraen a clientes de la zona. Las calles circundantes son muy transitadas a pie, lo que favorece la captación de público local y la integración con la comunidad. Además, la proximidad a parques, colegios y servicios habituales convierte la ubicación en un punto cómodo para clientes y empleados.\n\nInmobiliaria Martos presenta este local como una solución práctica y con gran potencial para proyectos comerciales en un entorno acogedor y con fuerte carácter local. Para más información y visitas, consulte la ficha en el portal y solicite una cita con Inmobiliaria Martos."
+        }
+      ],
+      "propertyImages": [
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_1_Onz0xV.jpg",
+          "imageOrder": 1,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_2_5XQGXh.jpg",
+          "imageOrder": 2,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_3_l47fe4.jpg",
+          "imageOrder": 3,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_4_MLl9q0.jpg",
+          "imageOrder": 4,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_5_lr7Zlp.jpg",
+          "imageOrder": 5,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_6_yDoH9L.jpg",
+          "imageOrder": 6,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_7__9tW2x.jpg",
+          "imageOrder": 7,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_8_W3mhJO.jpg",
+          "imageOrder": 8,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_9_ophkoz.jpg",
+          "imageOrder": 9,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_10_Pjr0d3.jpg",
+          "imageOrder": 10,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000001/watermarked/temp_image_11_7P2CSe.jpg",
+          "imageOrder": 11,
+          "imageLabel": "unknown"
+        }
+      ],
+      "propertyContact": {
+        "contactEmail": "javier.acropolisinmobiliaria@gmail.com",
+        "contactPrimaryPhoneNumber": "621317639",
+        "contactPrimaryPhonePrefix": "34"
+      }
+    },
+    {
+      "propertyCode": "VESTA2025000010",
+      "propertyReference": "1000034",
+      "propertyVisibility": "microsite",
+      "propertyOperation": {
+        "operationType": "rent",
+        "operationPrice": 1200
+      },
+      "propertyAddress": {
+        "addressVisibility": "street",
+        "addressStreetName": "Calle los Osorios",
+        "addressStreetNumber": "7",
+        "addressPostalCode": "24007",
+        "addressTown": "León",
+        "addressCountry": "Spain",
+        "addressCoordinatesPrecision": "exact",
+        "addressCoordinatesLatitude": 42.6032729,
+        "addressCoordinatesLongitude": -5.5694222
+      },
+      "propertyFeatures": {
+        "featuresType": "flat",
+        "featuresAreaConstructed": 87,
+        "featuresAreaUsable": 80,
+        "featuresBathroomNumber": 2,
+        "featuresBedroomNumber": 4,
+        "featuresLiftAvailable": true,
+        "featuresParkingAvailable": false,
+        "featuresStorage": false,
+        "featuresGarden": false,
+        "featuresPool": false,
+        "featuresTerrace": false,
+        "featuresBalcony": true,
+        "featuresWardrobes": false,
+        "featuresChimney": false,
+        "featuresAllowPets": false,
+        "featuresConservation": "good",
+        "featuresHeatingType": "centralGas",
+        "featuresOrientationEast": true,
+        "featuresBuiltYear": 1980,
+        "featuresEquippedKitchen": true,
+        "featuresEquippedWithFurniture": true,
+        "featuresWindowsLocation": "exterior"
+      },
+      "propertyDescriptions": [
+        {
+          "descriptionLanguage": "spanish",
+          "descriptionText": "Piso en alquiler"
+        }
+      ],
+      "propertyImages": [
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_10_L0FGEU.jpg",
+          "imageOrder": 1,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_11_dRvyfe.jpg",
+          "imageOrder": 2,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_12_PLMOLT.jpg",
+          "imageOrder": 3,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_13_2EXAbN.jpg",
+          "imageOrder": 4,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_14_uNr6Sq.jpg",
+          "imageOrder": 5,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_15_QwxfW1.jpg",
+          "imageOrder": 6,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_15_QwxfW1.jpg",
+          "imageOrder": 7,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_16_Tk30YS.jpg",
+          "imageOrder": 8,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_17_fnwMB-.jpg",
+          "imageOrder": 9,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_18_gpXYK0.jpg",
+          "imageOrder": 10,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_19_EYlViU.jpg",
+          "imageOrder": 11,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000010/watermarked/temp_image_20_OOcmmB.jpg",
+          "imageOrder": 12,
+          "imageLabel": "unknown"
+        }
+      ],
+      "propertyContact": {
+        "contactEmail": "javier.acropolisinmobiliaria@gmail.com",
+        "contactPrimaryPhoneNumber": "621317639",
+        "contactPrimaryPhonePrefix": "34"
+      }
+    },
+    {
+      "propertyCode": "VESTA2025000020",
+      "propertyReference": "1000049",
+      "propertyVisibility": "microsite",
+      "propertyOperation": {
+        "operationType": "rent",
+        "operationPrice": 590
+      },
+      "propertyAddress": {
+        "addressVisibility": "full",
+        "addressStreetName": "Plaza de Santa María",
+        "addressStreetNumber": "1",
+        "addressFloor": "2",
+        "addressDoor": "A",
+        "addressPostalCode": "49600",
+        "addressTown": "Benavente",
+        "addressCountry": "Spain",
+        "addressCoordinatesPrecision": "moved",
+        "addressCoordinatesLatitude": 42.0022019,
+        "addressCoordinatesLongitude": -5.6802717
+      },
+      "propertyFeatures": {
+        "featuresType": "flat",
+        "featuresAreaConstructed": 104,
+        "featuresAreaUsable": 93,
+        "featuresBathroomNumber": 1,
+        "featuresBedroomNumber": 2,
+        "featuresLiftAvailable": false,
+        "featuresParkingAvailable": false,
+        "featuresStorage": false,
+        "featuresGarden": false,
+        "featuresPool": false,
+        "featuresTerrace": false,
+        "featuresBalcony": true,
+        "featuresWardrobes": false,
+        "featuresChimney": false,
+        "featuresAllowPets": false,
+        "featuresConservation": "good",
+        "featuresOrientationEast": true,
+        "featuresBuiltYear": 1975,
+        "featuresEquippedKitchen": false,
+        "featuresWindowsLocation": "exterior"
+      },
+      "propertyDescriptions": [
+        {
+          "descriptionLanguage": "spanish",
+          "descriptionText": "Piso en alquiler. Para más contacto, contactar con Inmobiliaria Martos"
+        }
+      ],
+      "propertyImages": [
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_1_qolx4u.jpg",
+          "imageOrder": 1,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_2_y2XKLr.jpg",
+          "imageOrder": 2,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_3_47gmIv.jpg",
+          "imageOrder": 3,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_4_5h3TvB.jpg",
+          "imageOrder": 4,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_5_mOl6St.jpg",
+          "imageOrder": 5,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000020/watermarked/temp_image_6_AJ3Ry2.jpg",
+          "imageOrder": 6,
+          "imageLabel": "unknown"
+        }
+      ],
+      "propertyContact": {
+        "contactEmail": "javier.acropolisinmobiliaria@gmail.com",
+        "contactPrimaryPhoneNumber": "621317639",
+        "contactPrimaryPhonePrefix": "34"
+      }
+    },
+    {
+      "propertyCode": "VESTA2025000021",
+      "propertyReference": "1000050",
+      "propertyVisibility": "microsite",
+      "propertyOperation": {
+        "operationType": "rent",
+        "operationPrice": 1050
+      },
+      "propertyAddress": {
+        "addressVisibility": "full",
+        "addressStreetName": "Calle de Santa Cruz",
+        "addressStreetNumber": "14",
+        "addressDoor": "OS",
+        "addressPostalCode": "49600",
+        "addressTown": "Benavente",
+        "addressCountry": "Spain",
+        "addressCoordinatesPrecision": "moved",
+        "addressCoordinatesLatitude": 42.0027569,
+        "addressCoordinatesLongitude": -5.6772143
+      },
+      "propertyFeatures": {
+        "featuresType": "flat",
+        "featuresAreaConstructed": 149,
+        "featuresAreaUsable": 133,
+        "featuresBathroomNumber": 1,
+        "featuresBedroomNumber": 3,
+        "featuresLiftAvailable": false,
+        "featuresParkingAvailable": false,
+        "featuresStorage": false,
+        "featuresGarden": false,
+        "featuresPool": false,
+        "featuresWardrobes": false,
+        "featuresChimney": false,
+        "featuresConservation": "good",
+        "featuresBuiltYear": 1985,
+        "featuresWindowsLocation": "interior"
+      },
+      "propertyDescriptions": [
+        {
+          "descriptionLanguage": "spanish",
+          "descriptionText": "Piso en alquiler. Preguntas para más información."
+        }
+      ],
+      "propertyImages": [
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000021/watermarked/temp_image_1_gc0n7J.jpg",
+          "imageOrder": 1,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000021/watermarked/temp_image_2_MCojjF.jpg",
+          "imageOrder": 2,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000021/watermarked/temp_image_3_yc1Epk.jpg",
+          "imageOrder": 3,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000021/watermarked/temp_image_4_BpNPMS.jpg",
+          "imageOrder": 4,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000021/watermarked/temp_image_5_gERXv9.jpg",
+          "imageOrder": 5,
+          "imageLabel": "unknown"
+        }
+      ],
+      "propertyContact": {
+        "contactEmail": "javier.acropolisinmobiliaria@gmail.com",
+        "contactPrimaryPhoneNumber": "621317639",
+        "contactPrimaryPhonePrefix": "34"
+      }
+    },
+    {
+      "propertyCode": "VESTA2025000002",
+      "propertyReference": "1000022",
+      "propertyVisibility": "idealista",
+      "propertyOperation": {
+        "operationType": "rent",
+        "operationPrice": 990
+      },
+      "propertyAddress": {
+        "addressVisibility": "street",
+        "addressStreetName": "Avenida del Ferrocarril",
+        "addressStreetNumber": "2A",
+        "addressPostalCode": "48013",
+        "addressTown": "Bilbao",
+        "addressCountry": "Spain",
+        "addressCoordinatesPrecision": "exact",
+        "addressCoordinatesLatitude": 43.2597557,
+        "addressCoordinatesLongitude": -2.9467981
+      },
+      "propertyFeatures": {
+        "featuresType": "premises_commercial",
+        "featuresAreaConstructed": 89,
+        "featuresAreaUsable": 75,
+        "featuresBathroomNumber": 1,
+        "featuresParkingAvailable": false,
+        "featuresStorage": false,
+        "featuresConservation": "good",
+        "featuresEquippedKitchen": false
+      },
+      "propertyDescriptions": [
+        {
+          "descriptionLanguage": "spanish",
+          "descriptionText": "Local comercial en Avenida del Ferrocarril, Basurto (Bilbao)\n\nInmobiliaria Martos presenta este local comercial de 75m2 en alquiler, ubicado en una de las vías con mayor actividad y excelentes conexiones de Basurto. Disponible por 1300€ al mes, se trata de un espacio versátil y luminoso que se adapta a diversas actividades profesionales gracias a su distribución práctica.\n\nEl local cuenta con un gran espacio diáfano, un baño y suelos de parquet.. Dispone de calefacción.\n\nLa ubicación es uno de sus grandes atractivos: en Avenida del Ferrocarril, próxima al núcleo de San Mamés y con acceso directo a los principales ejes de transporte de la ciudad, lo que favorece el flujo de clientes y la logística. La oferta gastronómica y de ocio de la zona, con bares de pintxos, cafeterías y restaurantes, junto a supermercados, parques y paseos ribereños, aporta un entorno dinámico y cómodo para la actividad comercial. La proximidad a equipamientos culturales y deportivos como el estadio de San Mamés y al centro de Bilbao refuerza el potencial de visibilidad y afluencia.\n\nEste local es una oportunidad para emprendedores y profesionales que busquen un local en un barrio con mucha vida y excelente conectividad. Para más detalles e información sobre visitas, solicítalo a Inmobiliaria Martos."
+        }
+      ],
+      "propertyImages": [
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_1_U62Juw.jpg",
+          "imageOrder": 1,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_2_i7V3st.jpg",
+          "imageOrder": 2,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_3_ED6aHO.jpg",
+          "imageOrder": 3,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_4_ORhO_9.jpg",
+          "imageOrder": 4,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_5_o59bhT.jpg",
+          "imageOrder": 5,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_6_7je8O2.jpg",
+          "imageOrder": 6,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_7_tgP8LZ.jpg",
+          "imageOrder": 7,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_8_WFiFPi.jpg",
+          "imageOrder": 8,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_9_fHzFA5.jpg",
+          "imageOrder": 9,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_10_dTga2n.jpg",
+          "imageOrder": 10,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_11_ARXRBM.jpg",
+          "imageOrder": 11,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_12_kpaa6w.jpg",
+          "imageOrder": 12,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_13_tzB6Ha.jpg",
+          "imageOrder": 13,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000002/watermarked/temp_image_14_AB7_F-.jpg",
+          "imageOrder": 14,
+          "imageLabel": "unknown"
+        }
+      ],
+      "propertyContact": {
+        "contactEmail": "javier.acropolisinmobiliaria@gmail.com",
+        "contactPrimaryPhoneNumber": "621317639",
+        "contactPrimaryPhonePrefix": "34"
+      }
+    },
+    {
+      "propertyCode": "VESTA2025000004",
+      "propertyReference": "1000028",
+      "propertyVisibility": "idealista",
+      "propertyOperation": {
+        "operationType": "sale",
+        "operationPrice": 600000
+      },
+      "propertyAddress": {
+        "addressVisibility": "hidden",
+        "addressStreetName": "Avenida Santander",
+        "addressStreetNumber": "23",
+        "addressFloor": "5",
+        "addressDoor": "A",
+        "addressPostalCode": "03540",
+        "addressTown": "Alicante",
+        "addressCountry": "Spain",
+        "addressCoordinatesPrecision": "exact",
+        "addressCoordinatesLatitude": 38.372609,
+        "addressCoordinatesLongitude": -0.4148064
+      },
+      "propertyFeatures": {
+        "featuresType": "flat",
+        "featuresAreaConstructed": 201,
+        "featuresAreaUsable": 181,
+        "featuresBathroomNumber": 2,
+        "featuresBedroomNumber": 4,
+        "featuresLiftAvailable": true,
+        "featuresParkingAvailable": true,
+        "featuresStorage": false,
+        "featuresGarden": true,
+        "featuresPool": false,
+        "featuresTerrace": true,
+        "featuresWardrobes": false,
+        "featuresChimney": false,
+        "featuresConservation": "good",
+        "featuresBuiltYear": 1989,
+        "featuresWindowsLocation": "exterior",
+        "featuresCurrentOccupation": "free"
+      },
+      "propertyDescriptions": [
+        {
+          "descriptionLanguage": "spanish",
+          "descriptionText": "Piso en venta en Avenida Santander, San Juan Playa (Alicante)\n\nAmplio piso de 181m2 (225m2 construidos) con cuatro dormitorios y dos baños, ubicado en la quinta planta de un edificio de seis alturas en la codiciada Avenida Santander, muy cerca de la Playa de San Juan y su paseo marítimo. Esta vivienda ofrece un lienzo amplio para quien busque un hogar espacioso en una ubicación costera, con la posibilidad de adaptar la distribución y el diseño a su gusto para crear estancias acogedoras y funcionales.\n\nSu emplazamiento es uno de sus principales atractivos: vivir en Avenida Santander significa estar a un paso de la larga playa de arena y de una oferta gastronómica variada, desde chiringuitos y terrazas frente al mar hasta bares de tapas y restaurantes mediterráneos. La zona cuenta con supermercados, panaderías y mercados locales para el día a día, parques y espacios deportivos para un estilo de vida activo y centros educativos que hacen del barrio una opción muy adecuada para familias. Además, la conexión con Alicante y sus servicios es cómoda mediante transporte público y vías rápidas, facilitando desplazamientos al centro y al aeropuerto.\n\nInmobiliaria Martos acompaña la comercialización de esta vivienda ofreciendo la información necesaria para valorar su potencial y organizar visitas. Es una oportunidad para quienes buscan amplitud y proximidad a la playa con la libertad de diseñar un hogar a medida en uno de los barrios costeros más apreciados de Alicante."
+        }
+      ],
+      "propertyImages": [
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_1_Exzu-E.jpg",
+          "imageOrder": 1,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_2_x0vZbF.jpg",
+          "imageOrder": 2,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_3_fPQ-nA.jpg",
+          "imageOrder": 3,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_4_lC2-km.jpg",
+          "imageOrder": 4,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_5_xw_fok.jpg",
+          "imageOrder": 5,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_6_SWTBWm.jpg",
+          "imageOrder": 6,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_7_Ki2p1m.jpg",
+          "imageOrder": 7,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/watermarked/temp_image_8_NXcsPJ.jpg",
+          "imageOrder": 8,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000004/images/enhanced_9_R3yE1p.png",
+          "imageOrder": 9,
+          "imageLabel": "unknown"
+        }
+      ],
+      "propertyContact": {
+        "contactEmail": "javier.acropolisinmobiliaria@gmail.com",
+        "contactPrimaryPhoneNumber": "621317639",
+        "contactPrimaryPhonePrefix": "34"
+      }
+    },
+    {
+      "propertyCode": "VESTA2025000017",
+      "propertyReference": "1000045",
+      "propertyVisibility": "idealista",
+      "propertyOperation": {
+        "operationType": "sale",
+        "operationPrice": 45000
+      },
+      "propertyAddress": {
+        "addressVisibility": "full",
+        "addressStreetName": "Avenida el Ferial",
+        "addressStreetNumber": "161",
+        "addressPostalCode": "49600",
+        "addressTown": "Benavente",
+        "addressCountry": "Spain",
+        "addressCoordinatesPrecision": "moved",
+        "addressCoordinatesLatitude": 41.993982,
+        "addressCoordinatesLongitude": -5.6788135
+      },
+      "propertyFeatures": {
+        "featuresType": "flat",
+        "featuresAreaConstructed": 78,
+        "featuresAreaUsable": 74,
+        "featuresBathroomNumber": 1,
+        "featuresBedroomNumber": 2,
+        "featuresPenthouse": true,
+        "featuresLiftAvailable": true,
+        "featuresParkingAvailable": false,
+        "featuresStorage": false,
+        "featuresGarden": false,
+        "featuresPool": false,
+        "featuresWardrobes": false,
+        "featuresChimney": false,
+        "featuresConservation": "good",
+        "featuresBuiltYear": 1994,
+        "featuresWindowsLocation": "interior"
+      },
+      "propertyDescriptions": [
+        {
+          "descriptionLanguage": "spanish",
+          "descriptionText": "Ático en venta en Avenida el Ferial, Centro — Benavente\n\nPresentamos un ático céntrico de 74m2 en Avenida el Ferial 161, una oportunidad ideal para quien busca una vivienda económica en pleno corazón de Benavente. Con dos dormitorios y un baño, esta vivienda ofrece una planta funcional que permite distribuir con comodidad las estancias y adaptar espacios según las necesidades del nuevo propietario. El precio de venta es 45.000€, una propuesta atractiva tanto para primera residencia como para inversión.\n\nConstruido en 1994, el inmueble mantiene un buen estado de conservación que facilita el acceso inmediato a la vivienda y, al mismo tiempo, ofrece posibilidades de modernización para personalizarla al gusto.\n\nLa distribución se centra en dos dormitorios y un baño dentro de sus 74m2. No dispone de plaza de garaje ni trastero. Suelo radiante\n\nSi buscas una alternativa céntrica con posibilidades de adaptación en Benavente, Inmobiliaria Martos, tu socio de confianza en Calle de Francos, te ofrece asesoramiento profesional y organización de visitas para conocer esta vivienda en detalle."
+        }
+      ],
+      "propertyImages": [
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000017/watermarked/temp_image_2_2tcuh8.jpg",
+          "imageOrder": 1,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000017/watermarked/temp_image_7_6Ih8tF.jpg",
+          "imageOrder": 2,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000017/watermarked/temp_image_8_qGZV4G.jpg",
+          "imageOrder": 3,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000017/watermarked/temp_image_9_NlA4BP.jpg",
+          "imageOrder": 4,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000017/watermarked/temp_image_10_2l9wiP.jpg",
+          "imageOrder": 5,
+          "imageLabel": "unknown"
+        }
+      ],
+      "propertyContact": {
+        "contactEmail": "alberto@martos.com",
+        "contactPrimaryPhoneNumber": "625174449",
+        "contactPrimaryPhonePrefix": "34"
+      }
+    },
+    {
+      "propertyCode": "VESTA2025000005",
+      "propertyReference": "1000029",
+      "propertyVisibility": "idealista",
+      "propertyOperation": {
+        "operationType": "sale",
+        "operationPrice": 225000
+      },
+      "propertyAddress": {
+        "addressVisibility": "hidden",
+        "addressStreetName": "Calle Torre la Sal",
+        "addressStreetNumber": "4",
+        "addressFloor": "4",
+        "addressDoor": "E",
+        "addressPostalCode": "12594",
+        "addressTown": "Oropesa",
+        "addressCountry": "Spain",
+        "addressCoordinatesPrecision": "exact",
+        "addressCoordinatesLatitude": 40.1123126,
+        "addressCoordinatesLongitude": 0.152855
+      },
+      "propertyFeatures": {
+        "featuresType": "flat",
+        "featuresAreaConstructed": 78,
+        "featuresAreaUsable": 74,
+        "featuresBathroomNumber": 2,
+        "featuresBedroomNumber": 2,
+        "featuresLiftAvailable": true,
+        "featuresParkingAvailable": true,
+        "featuresStorage": false,
+        "featuresGarden": true,
+        "featuresPool": false,
+        "featuresTerrace": true,
+        "featuresWardrobes": true,
+        "featuresChimney": false,
+        "featuresConservation": "good",
+        "featuresBuiltYear": 2007,
+        "featuresWindowsLocation": "interior",
+        "featuresCurrentOccupation": "free"
+      },
+      "propertyDescriptions": [
+        {
+          "descriptionLanguage": "spanish",
+          "descriptionText": "Piso en venta en Calle Torre la Sal 4, Marina d'Or (Oropesa)\n\nInmobiliaria Martos presenta este acogedor piso en plena zona residencial de Marina d'Or, situado en planta cuarta que combina la comodidad de vivir en un entorno turístico consolidado con la tranquilidad de una calle de carácter residencial. Con una superficie de 74m2, la vivienda ofrece dos dormitorios y dos baños, una distribución práctica.\n\nConstruido en 2007 y mantenido en buen estado de conservación, el piso conserva la funcionalidad original y permite adaptaciones según las necesidades del nuevo propietario.\n\nLa localización es uno de sus grandes atractivos: dentro del complejo de Marina d'Or, con acceso muy próximo a playas, chiringuitos y una amplia oferta gastronómica y de ocio; además cuenta con comercios y servicios dentro del resort y la posibilidad de desplazarse en poco tiempo al centro de Oropesa para acceder a supermercados, mercado local y centros educativos. Las zonas ajardinadas, paseos costeros y actividades del propio resort refuerzan un estilo de vida mediterráneo, familiar y orientado al disfrute al aire libre, con buenas conexiones por carretera hacia Castellón y otras poblaciones cercanas.\n\nUna opción versátil para vivienda habitual, segunda residencia o para quienes buscan aprovechar el potencial turístico de la zona. Inmobiliaria Martos pone a su disposición este piso en Marina d'Or, precio 225.000€."
+        }
+      ],
+      "propertyImages": [
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_1_LXkqAm.jpg",
+          "imageOrder": 1,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_2_Nc-NCy.jpg",
+          "imageOrder": 2,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_3_k0SF3b.jpg",
+          "imageOrder": 3,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_4_LBRo1E.jpg",
+          "imageOrder": 4,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_5_i9cLsH.jpg",
+          "imageOrder": 5,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_6_we13mM.jpg",
+          "imageOrder": 6,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_7_ofeihn.jpg",
+          "imageOrder": 7,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_8_vcSxYa.jpg",
+          "imageOrder": 8,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_9_15apat.jpg",
+          "imageOrder": 9,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_10_ilQ-Vo.jpg",
+          "imageOrder": 10,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_11_KmAxsM.jpg",
+          "imageOrder": 11,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_12_awbSTp.jpg",
+          "imageOrder": 12,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_13_7dL54F.jpg",
+          "imageOrder": 13,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_14_HFkfiM.jpg",
+          "imageOrder": 14,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_15_vL4oH_.jpg",
+          "imageOrder": 15,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_16_sbygu9.jpg",
+          "imageOrder": 16,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000005/watermarked/temp_image_17_aL7nLu.jpg",
+          "imageOrder": 17,
+          "imageLabel": "unknown"
+        }
+      ],
+      "propertyContact": {
+        "contactEmail": "javier.acropolisinmobiliaria@gmail.com",
+        "contactPrimaryPhoneNumber": "621317639",
+        "contactPrimaryPhonePrefix": "34"
+      }
+    },
+    {
+      "propertyCode": "VESTA2025000003",
+      "propertyReference": "1000026",
+      "propertyVisibility": "microsite",
+      "propertyOperation": {
+        "operationType": "sale",
+        "operationPrice": 150000
+      },
+      "propertyAddress": {
+        "addressVisibility": "full",
+        "addressStreetName": "Calle La Mota",
+        "addressStreetNumber": "1",
+        "addressFloor": "1",
+        "addressDoor": "B",
+        "addressPostalCode": "49600",
+        "addressTown": "Benavente",
+        "addressCountry": "Spain",
+        "addressCoordinatesPrecision": "exact",
+        "addressCoordinatesLatitude": 42.0009786,
+        "addressCoordinatesLongitude": -5.681123
+      },
+      "propertyFeatures": {
+        "featuresType": "flat",
+        "featuresAreaConstructed": 82,
+        "featuresAreaUsable": 60,
+        "featuresBathroomNumber": 1,
+        "featuresBedroomNumber": 2,
+        "featuresLiftAvailable": false,
+        "featuresParkingAvailable": true,
+        "featuresStorage": false,
+        "featuresGarden": false,
+        "featuresPool": false,
+        "featuresTerrace": true,
+        "featuresWardrobes": false,
+        "featuresChimney": false,
+        "featuresConservation": "good",
+        "featuresHeatingType": "centralGas",
+        "featuresBuiltYear": 1982,
+        "featuresWindowsLocation": "interior"
+      },
+      "propertyDescriptions": [
+        {
+          "descriptionLanguage": "spanish",
+          "descriptionText": "Piso en venta en Calle de la Mota 1, Centro de Benavente\n\nSituado en pleno corazón del Centro de Benavente, este piso de 60m2 útiles ofrece una oportunidad ideal para quien busca vivir con la comodidad de tener a mano cafés, restaurantes tradicionales, comercios y el ambiente histórico de la ciudad. La vivienda se ubica en en un edificio de 1982, y su localización en una calle céntrica aporta la ventaja de acceder a mercados, zonas verdes y a la vida cultural del municipio con paseos tranquilos y cotidianos.\n\nLa distribución es práctica y funcional, con dos dormitorios y un baño que se organizan alrededor de las zonas de día, dejando espacio para un salón acogedor y una cocina independiente. Al tratarse de una vivienda interior, disfruta de un ambiente reservado y silencioso, ideal para quienes valoran la tranquilidad en el centro urbano. Con 82m2 construidos, presenta un formato manejable para adaptar a las necesidades personales y actualizar según el gusto del comprador.\n\nEn cuanto a equipamiento, el piso no dispone de ascensor, plaza de garaje, trastero ni instalación de calefacción, por lo que es una opción para quien prefiera personalizar la reforma y la climatización. Esta condición, unida a su emplazamiento interior, se convierte en una base a partir de la cual crear un hogar a medida.\n\nVivir en Calle de la Mota significa disfrutar de un entorno muy caminable, con una oferta gastronómica local variada, panaderías y cafés para el día a día, tiendas independientes y mercados donde adquirir productos frescos. Los parques y paseos cercanos facilitan el contacto con la naturaleza y los servicios educativos y de transporte regional situados en el centro hacen que la vida cotidiana sea práctica y conectada. La combinación de una calle con encanto histórico y una atmósfera residencial tranquila lo convierte en una propuesta atractiva para familias, parejas o inversores que valoren la centralidad sin renunciar al sosiego.\n\nSi te interesa conocer más detalles o visitar la vivienda, Inmobiliaria Martos te acompaña en el proceso y te ofrecerá toda la información necesaria."
+        }
+      ],
+      "propertyImages": [
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_1_KeDiO_.jpg",
+          "imageOrder": 1,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_3_tG6C-s.jpg",
+          "imageOrder": 2,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_5_dqgFLL.jpg",
+          "imageOrder": 3,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_11_xiB2tt.jpg",
+          "imageOrder": 4,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_13_lVgbSg.jpg",
+          "imageOrder": 5,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_14_QbM4Hl.jpg",
+          "imageOrder": 6,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_15_IAw35_.jpg",
+          "imageOrder": 7,
+          "imageLabel": "unknown"
+        },
+        {
+          "imageUrl": "https://inmobiliariamartos.s3.us-east-1.amazonaws.com/VESTA2025000003/watermarked/temp_image_16_SMzftl.jpg",
+          "imageOrder": 8,
+          "imageLabel": "unknown"
+        }
+      ],
+      "propertyContact": {
+        "contactEmail": "javier.acropolisinmobiliaria@gmail.com",
+        "contactPrimaryPhoneNumber": "621317639",
+        "contactPrimaryPhonePrefix": "34"
+      }
+    }
+  ]
+}

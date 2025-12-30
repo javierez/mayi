@@ -24,6 +24,7 @@ import {
   triggerIdealistaExport,
   checkIdealistaSlots,
   performIdealistaSwap,
+  cleanupIdealistaWatermarkedImages,
 } from "~/app/actions/listing-actions";
 import { IdealistaSwapModal } from "./idealista-swap-modal";
 
@@ -797,6 +798,17 @@ export function PortalSelection({
               { duration: 5000 },
             );
           } else {
+            // Clean up watermarked images when Idealista is disabled
+            cleanupIdealistaWatermarkedImages(Number(listingId))
+              .then((cleanupResult) => {
+                if (cleanupResult.success) {
+                  console.log(`Cleaned up watermarked images for listing ${listingId}`);
+                } else {
+                  console.warn(`Failed to cleanup watermarked images: ${cleanupResult.error}`);
+                }
+              })
+              .catch((err) => console.error("Watermark cleanup error:", err));
+
             const newCount = Math.max(0, currentCount - 1);
             const slotInfo = maxSlots ? ` (${newCount}/${maxSlots} huecos)` : "";
             toast.success(`Anuncio eliminado de Idealista${slotInfo}.`);

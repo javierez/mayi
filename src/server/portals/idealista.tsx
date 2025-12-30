@@ -1077,6 +1077,8 @@ export async function exportToIdealista(
     contactName?: string;
     contactEmail?: string;
     contactPhone?: string;
+    /** Skip cleanup of watermarked images after export. Default true to keep images for async fetching. */
+    skipCleanup?: boolean;
   },
 ): Promise<{
   success: boolean;
@@ -1133,11 +1135,17 @@ export async function exportToIdealista(
     }
 
     // Clean up temporary watermarked images after successful export
-    if (referenceNumbers.length > 0) {
+    // By default, skip cleanup to allow Idealista to fetch images asynchronously
+    const skipCleanup = options?.skipCleanup ?? true;
+    if (!skipCleanup && referenceNumbers.length > 0) {
       console.log(
         `Cleaning up temporary watermarked images for ${referenceNumbers.length} properties...`,
       );
       await cleanupWatermarkedImagesForReferences(referenceNumbers);
+    } else if (referenceNumbers.length > 0) {
+      console.log(
+        `Skipping cleanup of watermarked images for ${referenceNumbers.length} properties (images will be cleaned up when Idealista is disabled)`,
+      );
     }
 
     return {
@@ -1152,8 +1160,9 @@ export async function exportToIdealista(
   } catch (error) {
     console.error("Error exporting to Idealista:", error);
 
-    // Still attempt cleanup on error to avoid orphaned temp files
-    if (referenceNumbers.length > 0) {
+    // Still attempt cleanup on error to avoid orphaned temp files (unless skipCleanup is true)
+    const skipCleanup = options?.skipCleanup ?? true;
+    if (!skipCleanup && referenceNumbers.length > 0) {
       console.log(
         `Cleaning up temporary watermarked images after export error...`,
       );

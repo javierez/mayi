@@ -2,13 +2,14 @@
 
 import { eq, and, inArray, asc } from "drizzle-orm";
 import { db } from "~/server/db";
-import { listings, listingActivity, appointments, accounts } from "~/server/db/schema";
+import { listings, listingActivity, appointments, accounts, properties } from "~/server/db/schema";
 import { getSecureSession } from "~/lib/dal";
 import {
   exportToIdealista,
   checkIdealistaSlotAvailability,
   swapIdealistaListing,
 } from "~/server/portals/idealista";
+import { cleanupAllWatermarkedImagesForReference } from "~/server/utils/watermarked-upload";
 
 // Progress stage action types that we track from listing_activity
 const PROGRESS_STAGE_ACTIONS = [
@@ -302,6 +303,57 @@ export async function performIdealistaSwap(
     return result;
   } catch (error) {
     console.error("Error performing Idealista swap:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+/**
+ * Clean up watermarked images for a listing when Idealista is disabled
+ * This is called when the user turns off the Idealista toggle for a listing
+ */
+export async function cleanupIdealistaWatermarkedImages(
+  listingId: number,
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const session = await getSecureSession();
+    if (!session) {
+      return { success: false, error: "No session" };
+    }
+
+    // Get the listing's reference number by joining with properties table
+    const [listing] = await db
+      .select({ referenceNumber: properties.referenceNumber })
+      .from(listings)
+      .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
+      .where(
+        and(
+          eq(listings.listingId, BigInt(listingId)),
+          eq(listings.accountId, BigInt(session.user.accountId)),
+        ),
+      )
+      .limit(1);
+
+    if (!listing) {
+      return { success: false, error: "Listing not found" };
+    }
+
+    const referenceNumber = listing.referenceNumber ?? listingId.toString();
+
+    // Clean up watermarked images for this listing
+    const result = await cleanupAllWatermarkedImagesForReference(referenceNumber);
+
+    if (result.success) {
+      console.log(`Cleaned up watermarked images for listing ${listingId}: ${result.message}`);
+      return { success: true };
+    } else {
+      console.warn(`Failed to cleanup watermarked images for listing ${listingId}: ${result.message}`);
+      return { success: false, error: result.message };
+    }
+  } catch (error) {
+    console.error("Error cleaning up Idealista watermarked images:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",

@@ -20,11 +20,11 @@ import {
 import { toast } from "sonner";
 import type { PropertyImage } from "~/lib/data";
 import {
-  uploadPropertyImage,
   deletePropertyImage,
   updateImageOrders,
   togglePropertyImageVisibility,
 } from "~/app/actions/upload";
+import { uploadPropertyImagePresigned } from "~/lib/presigned-upload";
 import {
   Dialog,
   DialogContent,
@@ -275,7 +275,7 @@ export function ImageGallery({
               : 0;
           const nextImageOrder = maxImageOrder + index + 1;
 
-          const newImage = await uploadPropertyImage(
+          const newImage = await uploadPropertyImagePresigned(
             file,
             propertyId,
             referenceNumber,

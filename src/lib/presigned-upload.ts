@@ -10,8 +10,12 @@ import {
   savePropertyDocument,
   createPropertyAndGetPresignedUrl,
   saveFichaEncargoDocument,
+  getPropertyImagePresignedUrl,
+  savePropertyImageRecord,
+  getPropertyVideoPresignedUrl,
+  savePropertyVideoRecord,
 } from "~/app/actions/upload";
-import type { Document } from "~/lib/data";
+import type { Document, PropertyImage } from "~/lib/data";
 
 /**
  * Upload a file directly to S3 using a presigned URL.
@@ -154,4 +158,86 @@ export async function uploadFichaEncargoPresigned(
     listingId,
     referenceNumber,
   };
+}
+
+// ============================================================================
+// IMAGE AND VIDEO UPLOADS
+// ============================================================================
+
+/**
+ * Upload a property image using presigned URL.
+ * 1. Gets presigned URL from server
+ * 2. Uploads directly to S3 (bypasses Vercel's 4.5MB limit)
+ * 3. Saves image record to database
+ */
+export async function uploadPropertyImagePresigned(
+  file: File,
+  propertyId: bigint,
+  referenceNumber: string,
+  imageOrder: number,
+): Promise<PropertyImage> {
+  console.log("[uploadPropertyImagePresigned] Starting presigned upload for:", file.name, "Size:", (file.size / 1024 / 1024).toFixed(2), "MB");
+
+  // Step 1: Get presigned URL
+  const { uploadUrl, imageKey, imageUrl } = await getPropertyImagePresignedUrl(
+    file.name,
+    file.type,
+    referenceNumber,
+    imageOrder,
+  );
+
+  // Step 2: Upload directly to S3
+  await uploadToS3(file, uploadUrl);
+
+  // Step 3: Save image record to database
+  const image = await savePropertyImageRecord(
+    propertyId,
+    referenceNumber,
+    imageUrl,
+    imageKey,
+    imageOrder,
+  );
+
+  console.log("[uploadPropertyImagePresigned] Complete, imageId:", image.propertyImageId.toString());
+
+  return image;
+}
+
+/**
+ * Upload a property video using presigned URL.
+ * 1. Gets presigned URL from server
+ * 2. Uploads directly to S3 (bypasses Vercel's 4.5MB limit)
+ * 3. Saves video record to database
+ */
+export async function uploadPropertyVideoPresigned(
+  file: File,
+  propertyId: bigint,
+  referenceNumber: string,
+  videoOrder: number,
+): Promise<PropertyImage> {
+  console.log("[uploadPropertyVideoPresigned] Starting presigned upload for:", file.name, "Size:", (file.size / 1024 / 1024).toFixed(2), "MB");
+
+  // Step 1: Get presigned URL
+  const { uploadUrl, videoKey, videoUrl } = await getPropertyVideoPresignedUrl(
+    file.name,
+    file.type,
+    referenceNumber,
+    videoOrder,
+  );
+
+  // Step 2: Upload directly to S3
+  await uploadToS3(file, uploadUrl);
+
+  // Step 3: Save video record to database
+  const video = await savePropertyVideoRecord(
+    propertyId,
+    referenceNumber,
+    videoUrl,
+    videoKey,
+    videoOrder,
+  );
+
+  console.log("[uploadPropertyVideoPresigned] Complete, videoId:", video.propertyImageId.toString());
+
+  return video;
 }
