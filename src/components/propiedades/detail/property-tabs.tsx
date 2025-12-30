@@ -105,6 +105,7 @@ interface PropertyTabsProps {
     fcLocationVisibility?: number | null;
     fcPriceVisibility?: boolean | null;
     idCoordinatesPrecision?: "exact" | "moved" | null;
+    idPropertyVisibility?: "idealista" | "microsite" | "private" | null;
     fotocasaProps?: unknown;
     idealistaProps?: unknown;
     habitacliaProps?: unknown;
@@ -845,6 +846,7 @@ export function PropertyTabs({
             fcLocationVisibility={listing.fcLocationVisibility ?? undefined}
             fcPriceVisibility={listing.fcPriceVisibility ?? undefined}
             idCoordinatesPrecision={listing.idCoordinatesPrecision ?? undefined}
+            idPropertyVisibility={listing.idPropertyVisibility ?? undefined}
             fotocasaProps={listing.fotocasaProps ?? undefined}
             idealistaProps={listing.idealistaProps ?? undefined}
             habitacliaProps={listing.habitacliaProps ?? undefined}

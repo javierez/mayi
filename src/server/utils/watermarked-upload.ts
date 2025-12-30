@@ -4,9 +4,11 @@ import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
 } from "@aws-sdk/client-s3";
+import { createHash } from "crypto";
 import { addWatermark, downloadImageBuffer } from "~/lib/watermark";
-import type { WatermarkConfig } from "~/types/watermark";
+import type { WatermarkConfig, WatermarkManifest } from "~/types/watermark";
 import { getDynamicBucketName } from "~/lib/s3-bucket";
 
 // Initialize S3 client
@@ -268,4 +270,217 @@ export async function cleanupAllWatermarkedImagesForReference(
           : "Failed to clean up watermarked images",
     };
   }
+}
+
+// ============================================
+// MANIFEST-BASED CACHING
+// ============================================
+
+/**
+ * Generate a hash of watermark config for change detection
+ */
+function hashWatermarkConfig(config: WatermarkConfig): string {
+  const configString = JSON.stringify({
+    logoUrl: config.logoUrl,
+    position: config.position,
+    size: config.size ?? 30,
+    opacity: config.opacity ?? 0.8,
+  });
+  return createHash("md5").update(configString).digest("hex");
+}
+
+/**
+ * Build the watermarked image URL from reference number and order
+ */
+function buildWatermarkedUrl(
+  bucketName: string,
+  referenceNumber: string,
+  imageOrder: number,
+): string {
+  return `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${referenceNumber}/watermarked/image_${imageOrder}.jpg`;
+}
+
+/**
+ * Read watermark manifest from S3
+ * Returns null if manifest doesn't exist or is invalid
+ */
+async function readWatermarkManifest(
+  referenceNumber: string,
+): Promise<WatermarkManifest | null> {
+  try {
+    const bucketName = await getDynamicBucketName();
+    const manifestKey = `${referenceNumber}/watermarked/manifest.json`;
+
+    const response = await s3Client.send(
+      new GetObjectCommand({
+        Bucket: bucketName,
+        Key: manifestKey,
+      }),
+    );
+
+    if (!response.Body) {
+      return null;
+    }
+
+    const bodyString = await response.Body.transformToString();
+    const manifest = JSON.parse(bodyString) as WatermarkManifest;
+
+    // Basic validation
+    if (!manifest.watermarkConfigHash || !Array.isArray(manifest.images)) {
+      console.warn(`Invalid manifest for ${referenceNumber}, will rebuild`);
+      return null;
+    }
+
+    return manifest;
+  } catch (error) {
+    // NoSuchKey is expected for new listings
+    if ((error as { name?: string }).name === "NoSuchKey") {
+      return null;
+    }
+    console.warn(`Failed to read manifest for ${referenceNumber}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Write watermark manifest to S3
+ */
+async function writeWatermarkManifest(
+  referenceNumber: string,
+  manifest: WatermarkManifest,
+): Promise<void> {
+  try {
+    const bucketName = await getDynamicBucketName();
+    const manifestKey = `${referenceNumber}/watermarked/manifest.json`;
+
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: bucketName,
+        Key: manifestKey,
+        Body: JSON.stringify(manifest, null, 2),
+        ContentType: "application/json",
+      }),
+    );
+
+    console.log(`Wrote watermark manifest for ${referenceNumber}`);
+  } catch (error) {
+    console.error(`Failed to write manifest for ${referenceNumber}:`, error);
+    // Non-fatal - caching will just not work for this listing
+  }
+}
+
+/**
+ * Compare current images with manifest to check if they match
+ */
+function imagesMatch(
+  currentImages: Array<{ imageUrl: string; imageOrder: number }>,
+  manifest: WatermarkManifest,
+): boolean {
+  if (currentImages.length !== manifest.images.length) {
+    return false;
+  }
+
+  // Sort both by order for comparison
+  const sortedCurrent = [...currentImages].sort(
+    (a, b) => a.imageOrder - b.imageOrder,
+  );
+  const sortedManifest = [...manifest.images].sort(
+    (a, b) => a.order - b.order,
+  );
+
+  for (let i = 0; i < sortedCurrent.length; i++) {
+    const current = sortedCurrent[i];
+    const cached = sortedManifest[i];
+    if (
+      !current ||
+      !cached ||
+      current.imageOrder !== cached.order ||
+      current.imageUrl !== cached.originalUrl
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Process watermarked images with caching
+ * Reuses existing watermarked images if nothing has changed
+ */
+export async function processWatermarkedImagesWithCache(
+  images: Array<{ imageUrl: string; imageOrder: number }>,
+  watermarkConfig: WatermarkConfig,
+  referenceNumber: string,
+): Promise<
+  Array<{
+    imageUrl: string;
+    watermarked: boolean;
+    watermarkedKey?: string;
+    error?: string;
+    imageOrder: number;
+  }>
+> {
+  // If watermarking disabled, return originals
+  if (!watermarkConfig.enabled || !watermarkConfig.logoUrl) {
+    return images.map((img) => ({
+      imageUrl: img.imageUrl,
+      watermarked: false,
+      imageOrder: img.imageOrder,
+    }));
+  }
+
+  const configHash = hashWatermarkConfig(watermarkConfig);
+  const manifest = await readWatermarkManifest(referenceNumber);
+  const bucketName = await getDynamicBucketName();
+
+  // Check if we can reuse existing watermarked images
+  if (manifest && manifest.watermarkConfigHash === configHash) {
+    if (imagesMatch(images, manifest)) {
+      console.log(
+        `Reusing cached watermarked images for ${referenceNumber} (${images.length} images)`,
+      );
+      return images.map((img) => ({
+        imageUrl: buildWatermarkedUrl(bucketName, referenceNumber, img.imageOrder),
+        watermarked: true,
+        watermarkedKey: `${referenceNumber}/watermarked/image_${img.imageOrder}.jpg`,
+        imageOrder: img.imageOrder,
+      }));
+    }
+    console.log(
+      `Images changed for ${referenceNumber}, rebuilding watermarks`,
+    );
+  } else if (manifest) {
+    console.log(
+      `Watermark config changed for ${referenceNumber}, rebuilding watermarks`,
+    );
+  }
+
+  // Clean up existing watermarked images before rebuilding
+  await cleanupAllWatermarkedImagesForReference(referenceNumber);
+
+  // Process fresh watermarks
+  const results = await processAndUploadWatermarkedImages(
+    images,
+    watermarkConfig,
+    referenceNumber,
+  );
+
+  // Write new manifest
+  await writeWatermarkManifest(referenceNumber, {
+    watermarkConfigHash: configHash,
+    createdAt: new Date().toISOString(),
+    images: images.map((img) => ({
+      order: img.imageOrder,
+      originalUrl: img.imageUrl,
+    })),
+  });
+
+  return results.map((r) => ({
+    imageUrl: r.imageUrl,
+    watermarked: r.watermarked,
+    watermarkedKey: r.watermarkedKey,
+    error: r.error,
+    imageOrder: r.imageOrder ?? 1,
+  }));
 }

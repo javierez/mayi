@@ -56,3 +56,13 @@ export const POSITION_MAPPING: Record<string, WatermarkPosition> = {
   "bottom-right": "southeast",
   center: "center",
 };
+
+// Manifest for tracking watermarked images in S3 (for caching)
+export interface WatermarkManifest {
+  watermarkConfigHash: string;
+  createdAt: string;
+  images: Array<{
+    order: number;
+    originalUrl: string;
+  }>;
+}

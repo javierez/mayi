@@ -24,7 +24,7 @@ import {
   getAccountIdForListing,
 } from "../queries/accounts";
 import {
-  processAndUploadWatermarkedImages,
+  processWatermarkedImagesWithCache,
   cleanupAllWatermarkedImagesForReference,
 } from "../utils/watermarked-upload";
 import { POSITION_MAPPING } from "~/types/watermark";
@@ -426,7 +426,7 @@ export async function buildIdealistaPropertyPayload(
           imageOrder: img.imageOrder,
         }));
 
-        const watermarkResults = await processAndUploadWatermarkedImages(
+        const watermarkResults = await processWatermarkedImagesWithCache(
           imageProcessingInput,
           watermarkConfigForProcessing,
           listing.referenceNumber ?? listingId.toString(),

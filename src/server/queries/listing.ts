@@ -2789,6 +2789,7 @@ export async function getListingTabsData(listingId: number) {
         fcPriceVisibility: listings.fcPriceVisibility,
         idealista: listings.idealista,
         idCoordinatesPrecision: listings.idCoordinatesPrecision,
+        idPropertyVisibility: listings.idPropertyVisibility,
         rentalType: listings.rentalType,
         shortTermLicense: listings.shortTermLicense,
         occupationStatus: listings.occupationStatus,
