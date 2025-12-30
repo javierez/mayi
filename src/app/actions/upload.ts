@@ -669,10 +669,14 @@ export async function uploadContactDocument(
 ): Promise<Document> {
   "use server";
 
+  console.log("[uploadContactDocument] Server action called - file:", file.name, "size:", (file.size / 1024 / 1024).toFixed(2), "MB");
+
   const session = await getSecureSession();
   if (!session?.user?.id) {
+    console.log("[uploadContactDocument] No session found");
     throw new Error("Usuario no autenticado");
   }
+  console.log("[uploadContactDocument] Session found, user:", session.user.id);
 
   // Map folder type to document tag
   const documentTagMap: Record<string, string> = {

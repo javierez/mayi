@@ -231,6 +231,7 @@ export function ContactDocumentsPage({
       if (!files || files.length === 0) return;
 
       setIsUploading(true);
+      console.log("[ContactDocuments] Starting upload with server action...");
 
       try {
         // Map apiFolderType to the server action's expected type
@@ -239,13 +240,17 @@ export function ContactDocumentsPage({
             ? "documentos-personales"
             : "contratos";
 
+        console.log("[ContactDocuments] Folder type:", serverFolderType, "Contact ID:", contactId.toString());
+
         // Upload all files using server action (10MB limit instead of 4.5MB API route limit)
         const uploadPromises = Array.from(files).map(async (file) => {
+          console.log("[ContactDocuments] Uploading file:", file.name, "Size:", (file.size / 1024 / 1024).toFixed(2), "MB");
           const result = await uploadContactDocument(
             file,
             contactId,
             serverFolderType,
           );
+          console.log("[ContactDocuments] Upload success:", result.filename);
 
           // Serialize BigInt values for client state
           return {
