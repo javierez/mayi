@@ -296,6 +296,9 @@ export async function performIdealistaSwap(
     );
 
     if (result.success) {
+      // Clean up watermarked images for the deactivated listing
+      await cleanupIdealistaWatermarkedImages(Number(listingIdToDeactivate));
+
       // Trigger export after swap
       await triggerIdealistaExport();
     }

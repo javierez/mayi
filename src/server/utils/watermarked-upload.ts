@@ -5,7 +5,6 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
-import { nanoid } from "nanoid";
 import { addWatermark, downloadImageBuffer } from "~/lib/watermark";
 import type { WatermarkConfig } from "~/types/watermark";
 import { getDynamicBucketName } from "~/lib/s3-bucket";
@@ -65,8 +64,8 @@ export async function uploadWatermarkedImageToS3(
     }
 
     // Create S3 key with watermarked identifier
-    // Pattern: referenceNumber/watermarked/temp_image_order_nanoid.jpg
-    const watermarkedKey = `${referenceNumber}/watermarked/temp_image_${imageOrder}_${nanoid(6)}.jpg`;
+    // Pattern: referenceNumber/watermarked/image_order.jpg (deterministic for overwrite)
+    const watermarkedKey = `${referenceNumber}/watermarked/image_${imageOrder}.jpg`;
 
     // Get dynamic bucket name
     const bucketName = await getDynamicBucketName();
