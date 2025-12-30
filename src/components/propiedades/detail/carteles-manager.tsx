@@ -15,6 +15,7 @@ import {
 import { FileText, Upload, Trash2, Eye, Plus, X } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { toast } from "sonner";
+import { uploadCartelAction, deleteDocumentAction } from "~/app/actions/upload";
 
 // Dynamically import PdfPreview to avoid SSR issues with react-pdf
 const PdfPreview = dynamic(
@@ -71,29 +72,26 @@ export function CartelesManager({
       // Validate file type
       if (file.type !== "application/pdf") {
         toast.error(`${file.name} no es un archivo PDF válido`);
-        return;
+        return null;
       }
 
       try {
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("propertyId", propertyId.toString());
-        formData.append("listingId", listingId.toString());
-        formData.append("referenceNumber", referenceNumber);
-        formData.append("documentTag", "carteles");
+        // Use server action (10MB limit instead of 4.5MB API route limit)
+        const result = await uploadCartelAction(
+          file,
+          listingId,
+          propertyId,
+          referenceNumber,
+        );
 
-        const response = await fetch(`/api/properties/${listingId}/carteles`, {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to upload ${file.name}`);
-        }
-
-        const result = (await response.json()) as { document: Cartel };
         toast.success(`${file.name} subido correctamente`);
-        return result.document;
+        return {
+          docId: result.docId,
+          filename: result.filename,
+          fileUrl: result.fileUrl,
+          documentKey: result.documentKey,
+          uploadedAt: result.uploadedAt,
+        } satisfies Cartel;
       } catch (error) {
         console.error(`Error uploading ${file.name}:`, error);
         toast.error(`Error al subir ${file.name}`);
@@ -119,19 +117,15 @@ export function CartelesManager({
     if (!cartelToDelete) return;
 
     try {
-      const response = await fetch(`/api/properties/${listingId}/carteles`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          docId: cartelToDelete.docId.toString(),
-          documentKey: cartelToDelete.documentKey,
-        }),
-      });
+      // Use server action for delete
+      const result = await deleteDocumentAction(
+        cartelToDelete.docId,
+        cartelToDelete.documentKey,
+        propertyId,
+      );
 
-      if (!response.ok) {
-        throw new Error("Failed to delete cartel");
+      if (!result.success) {
+        throw new Error(result.error ?? "Failed to delete cartel");
       }
 
       toast.success(`${cartelToDelete.filename} eliminado correctamente`);

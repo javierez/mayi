@@ -28,7 +28,10 @@ import {
 } from "~/components/ui/collapsible";
 import { DocumentsPageSkeleton } from "~/components/propiedades/detail/skeletons";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
-import { deleteDocumentAction } from "~/app/actions/upload";
+import {
+  deleteDocumentAction,
+  uploadContactDocument,
+} from "~/app/actions/upload";
 import { toast } from "sonner";
 import { generatePropertyTitle } from "~/lib/property-title";
 
@@ -230,25 +233,36 @@ export function ContactDocumentsPage({
       setIsUploading(true);
 
       try {
-        // Upload all files
-        const uploadPromises = Array.from(files).map(async (file) => {
-          const formData = new FormData();
-          formData.append("file", file);
-          formData.append("folderType", apiFolderType);
+        // Map apiFolderType to the server action's expected type
+        const serverFolderType =
+          apiFolderType === "documentos-personales"
+            ? "documentos-personales"
+            : "contratos";
 
-          const response = await fetch(
-            `/api/contacts/${contactId.toString()}/documents`,
-            {
-              method: "POST",
-              body: formData,
-            },
+        // Upload all files using server action (10MB limit instead of 4.5MB API route limit)
+        const uploadPromises = Array.from(files).map(async (file) => {
+          const result = await uploadContactDocument(
+            file,
+            contactId,
+            serverFolderType,
           );
 
-          if (!response.ok) {
-            throw new Error(`Failed to upload ${file.name}`);
-          }
-
-          return response.json() as Promise<Document>;
+          // Serialize BigInt values for client state
+          return {
+            docId: result.docId.toString(),
+            filename: result.filename,
+            fileType: result.fileType,
+            fileUrl: result.fileUrl,
+            uploadedAt: result.uploadedAt,
+            documentKey: result.documentKey,
+            listingId: result.listingId?.toString() ?? null,
+            propertyId: result.propertyId?.toString() ?? null,
+            listingTitle: null,
+            listingStreet: null,
+            listingPropertyType: null,
+            listingCity: null,
+            listingReferenceNumber: null,
+          } satisfies Document;
         });
 
         const uploadedDocuments = await Promise.all(uploadPromises);

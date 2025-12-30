@@ -661,3 +661,199 @@ export async function renameDocumentFolder(
     throw error;
   }
 }
+
+export async function uploadContactDocument(
+  file: File,
+  contactId: bigint,
+  folderType: "documentos-personales" | "contratos",
+): Promise<Document> {
+  "use server";
+
+  const session = await getSecureSession();
+  if (!session?.user?.id) {
+    throw new Error("Usuario no autenticado");
+  }
+
+  // Map folder type to document tag
+  const documentTagMap: Record<string, string> = {
+    "documentos-personales": "documentos-personales",
+    contratos: "contrato-arras",
+  };
+
+  const documentTag = documentTagMap[folderType] ?? folderType;
+
+  // Generate a reference number for the contact
+  const referenceNumber = `CONTACT_${contactId.toString()}`;
+
+  const document = await uploadDocument(
+    file,
+    session.user.id,
+    referenceNumber,
+    1, // documentOrder
+    documentTag,
+    contactId,
+    undefined, // listingId
+    undefined, // listingContactId
+    undefined, // dealId
+    undefined, // appointmentId
+    undefined, // propertyId
+    folderType,
+  );
+
+  return document;
+}
+
+export async function uploadPropertyDocumentAction(
+  file: File,
+  listingId: bigint,
+  propertyId: bigint,
+  referenceNumber: string,
+  folderType:
+    | "initial-docs"
+    | "legal-docs"
+    | "certificados"
+    | "impuestos-pagos"
+    | "contratos"
+    | "hipoteca"
+    | "visitas"
+    | "planos"
+    | "others"
+    | "carteles",
+): Promise<Document> {
+  "use server";
+
+  const session = await getSecureSession();
+  if (!session?.user?.id) {
+    throw new Error("Usuario no autenticado");
+  }
+
+  // Map folder types to document tags for database storage
+  const documentTagMap: Record<string, string> = {
+    "initial-docs": "documentacion-inicial",
+    "legal-docs": "documentacion-legal",
+    certificados: "certificados",
+    "impuestos-pagos": "impuestos-pagos",
+    contratos: "contratos",
+    hipoteca: "hipoteca",
+    visitas: "visitas",
+    planos: "planos",
+    others: "otros",
+    carteles: "carteles",
+  };
+
+  const documentTag = documentTagMap[folderType] ?? folderType;
+
+  const document = await uploadDocument(
+    file,
+    session.user.id,
+    referenceNumber,
+    1, // documentOrder
+    documentTag,
+    undefined, // contactId
+    listingId,
+    undefined, // listingContactId
+    undefined, // dealId
+    undefined, // appointmentId
+    propertyId,
+    folderType,
+  );
+
+  return document;
+}
+
+export async function uploadCartelAction(
+  file: File,
+  listingId: bigint,
+  propertyId: bigint,
+  referenceNumber: string,
+): Promise<Document> {
+  "use server";
+
+  const session = await getSecureSession();
+  if (!session?.user?.id) {
+    throw new Error("Usuario no autenticado");
+  }
+
+  // Validate file type - only PDFs for carteles
+  if (file.type !== "application/pdf") {
+    throw new Error("Solo se permiten archivos PDF para carteles");
+  }
+
+  const document = await uploadDocument(
+    file,
+    session.user.id,
+    referenceNumber,
+    1, // documentOrder
+    "carteles", // documentTag
+    undefined, // contactId
+    listingId,
+    undefined, // listingContactId
+    undefined, // dealId
+    undefined, // appointmentId
+    propertyId,
+    "carteles", // folderType
+  );
+
+  return document;
+}
+
+export async function uploadFichaEncargoAction(file: File): Promise<{
+  document: Document;
+  propertyId: string;
+  listingId: string;
+  referenceNumber: string;
+}> {
+  "use server";
+
+  // Import here to avoid circular dependency
+  const { createMinimalPropertyWithListing } = await import(
+    "~/server/queries/properties"
+  );
+
+  const session = await getSecureSession();
+  if (!session?.user?.id) {
+    throw new Error("Usuario no autenticado");
+  }
+
+  // Validate file type
+  const validTypes = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "image/jpeg",
+    "image/png",
+  ];
+
+  if (!validTypes.includes(file.type)) {
+    throw new Error(
+      "Tipo de archivo no válido. Solo se permiten PDF, DOC, DOCX, JPG y PNG.",
+    );
+  }
+
+  // Step 1: Create minimal property and listing
+  const propertyResult = await createMinimalPropertyWithListing();
+  const { propertyId, listingId, referenceNumber } = propertyResult;
+
+  // Step 2: Upload document to final property location
+  const document = await uploadDocument(
+    file,
+    session.user.id,
+    referenceNumber,
+    1, // documentOrder
+    "ficha-encargo", // documentTag
+    undefined, // contactId
+    BigInt(listingId),
+    undefined, // listingContactId
+    undefined, // dealId
+    undefined, // appointmentId
+    BigInt(propertyId),
+    "initial-docs", // folderType
+  );
+
+  return {
+    document,
+    propertyId: propertyId.toString(),
+    listingId: listingId.toString(),
+    referenceNumber,
+  };
+}

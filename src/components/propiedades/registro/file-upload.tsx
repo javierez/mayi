@@ -5,6 +5,7 @@ import { cn } from "~/lib/utils";
 import { Upload, Check, FileText, Loader2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { uploadFichaEncargoAction } from "~/app/actions/upload";
 
 interface UploadedFile {
   id: string;
@@ -147,39 +148,14 @@ export function FileUpload({
             ),
           );
 
-          const formData = new FormData();
-          formData.append("file", uploadedFile.file);
-
           setUploadedFiles((prev) =>
             prev.map((f) =>
               f.id === uploadedFile.id ? { ...f, progress: 60 } : f,
             ),
           );
 
-          const response = await fetch("/api/documents/ficha-encargo", {
-            method: "POST",
-            body: formData,
-          });
-
-          if (!response.ok) {
-            const errorData = (await response.json()) as { error?: string };
-            throw new Error(errorData.error ?? "Upload failed");
-          }
-
-          const result = (await response.json()) as {
-            document: {
-              docId: string;
-              filename: string;
-              fileType: string;
-              fileUrl: string;
-              documentKey: string;
-              propertyId?: string;
-              listingId?: string;
-            };
-            propertyId: string;
-            listingId: string;
-            referenceNumber: string;
-          };
+          // Use server action (10MB limit instead of 4.5MB API route limit)
+          const result = await uploadFichaEncargoAction(uploadedFile.file);
 
           setUploadedFiles((prev) =>
             prev.map((f) =>
@@ -198,7 +174,7 @@ export function FileUpload({
           setUploadedDocuments((prev) => [
             ...prev,
             {
-              docId: result.document.docId,
+              docId: result.document.docId.toString(),
               filename: result.document.filename,
               fileType: result.document.fileType,
               fileUrl: result.document.fileUrl,

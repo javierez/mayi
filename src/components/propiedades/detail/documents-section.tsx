@@ -5,6 +5,7 @@ import { DocumentsPage } from "./documents-page";
 import { Button } from "~/components/ui/button";
 import { Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { uploadPropertyDocumentAction } from "~/app/actions/upload";
 
 interface Document {
   docId: bigint;
@@ -76,27 +77,37 @@ export function DocumentsSection({
       setIsUploading(true);
 
       try {
-        const apiFolderType = FOLDER_TYPE_MAP[folderType];
+        const apiFolderType = FOLDER_TYPE_MAP[folderType] as
+          | "initial-docs"
+          | "legal-docs"
+          | "certificados"
+          | "impuestos-pagos"
+          | "contratos"
+          | "hipoteca"
+          | "visitas"
+          | "planos"
+          | "others"
+          | "carteles";
 
-        // Upload all files
+        // Upload all files using server action (10MB limit instead of 4.5MB API route limit)
         const uploadPromises = Array.from(files).map(async (file) => {
-          const formData = new FormData();
-          formData.append("file", file);
-          formData.append("folderType", apiFolderType);
-
-          const response = await fetch(
-            `/api/properties/${listing.listingId}/documents`,
-            {
-              method: "POST",
-              body: formData,
-            },
+          const result = await uploadPropertyDocumentAction(
+            file,
+            listing.listingId,
+            listing.propertyId,
+            listing.referenceNumber ?? `TEMP_${listing.listingId}`,
+            apiFolderType,
           );
 
-          if (!response.ok) {
-            throw new Error(`Failed to upload ${file.name}`);
-          }
-
-          return response.json() as Promise<Document>;
+          // Return document with bigint values for internal state
+          return {
+            docId: result.docId,
+            filename: result.filename,
+            fileType: result.fileType,
+            fileUrl: result.fileUrl,
+            uploadedAt: result.uploadedAt,
+            documentKey: result.documentKey,
+          } satisfies Document;
         });
 
         const uploadedDocuments = await Promise.all(uploadPromises);
@@ -111,7 +122,7 @@ export function DocumentsSection({
         setIsUploading(false);
       }
     },
-    [folderType, listing.listingId, handleDocumentsUploaded],
+    [folderType, listing, handleDocumentsUploaded],
   );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
