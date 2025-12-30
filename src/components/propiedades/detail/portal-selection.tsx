@@ -1465,7 +1465,6 @@ export function PortalSelection({
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setIdealistaCoordinatesPrecision(option.value);
-                                        setHasUnsavedChanges(true);
                                       }}
                                       className={cn(
                                         "flex flex-1 items-center justify-center rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200",
@@ -1497,7 +1496,6 @@ export function PortalSelection({
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         setIdealistaPropertyVisibility(option.value);
-                                        setHasUnsavedChanges(true);
                                       }}
                                       className={cn(
                                         "flex flex-1 items-center justify-center rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-200",
@@ -1512,7 +1510,7 @@ export function PortalSelection({
                                 </div>
                               </div>
 
-                              {/* Hide Price Toggle (shared with Fotocasa) */}
+                              {/* Hide Price Toggle (shared with Fotocasa) - doesn't trigger confirm button */}
                               <div className="flex items-center justify-between">
                                 <Label
                                   htmlFor="idealista-hide-price"
@@ -1526,10 +1524,9 @@ export function PortalSelection({
                                   aria-checked={hidePriceModes.fotocasa ?? false}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleHidePriceChange(
-                                      "fotocasa",
-                                      !(hidePriceModes.fotocasa ?? false),
-                                    );
+                                    // Update state without triggering unsaved changes
+                                    const newHidePrice = !(hidePriceModes.fotocasa ?? false);
+                                    setHidePriceModes((prev) => ({ ...prev, fotocasa: newHidePrice }));
                                   }}
                                   className={cn(
                                     "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-300 focus-visible:ring-offset-1",
