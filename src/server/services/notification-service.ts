@@ -9,6 +9,7 @@
 import { createNotificationInternal } from "~/server/queries/notification";
 import { sendPushToUser } from "~/server/services/push-service";
 import { sendNotificationEmailIfNeeded } from "~/server/services/email-notification-service";
+import { sendNotificationWhatsAppIfNeeded } from "~/server/services/whatsapp-notification-service";
 import type {
   NotificationType,
   NotificationPriority,
@@ -682,6 +683,11 @@ export async function notifyTaskAssigned(
       console.error("Failed to send email notification for task assigned:", error);
       // Don't throw - notification was created successfully
     });
+
+    // Send WhatsApp notification if needed (async, don't await)
+    sendNotificationWhatsAppIfNeeded(notification, accountId).catch((error) => {
+      console.error("Failed to send WhatsApp notification for task assigned:", error);
+    });
   } catch (error) {
     console.error("Error creating task assigned notification:", error);
     throw error;
@@ -870,6 +876,11 @@ export async function notifyTaskReassigned(
       console.error("Failed to send email notification for task reassigned:", error);
       // Don't throw - notification was created successfully
     });
+
+    // Send WhatsApp notification if needed (async, don't await)
+    sendNotificationWhatsAppIfNeeded(notification, accountId).catch((error) => {
+      console.error("Failed to send WhatsApp notification for task reassigned:", error);
+    });
   } catch (error) {
     console.error("Error creating task reassigned notification:", error);
     throw error;
@@ -1053,6 +1064,11 @@ export async function notifyTaskCompleted(
         console.error("Failed to send email notification for task completed:", error);
         // Don't throw - notification was created successfully
       });
+
+      // Send WhatsApp notification if needed (async, don't await)
+      sendNotificationWhatsAppIfNeeded(notification, accountId).catch((error) => {
+        console.error("Failed to send WhatsApp notification for task completed:", error);
+      });
     } else {
       console.log(`[Task Completed Notification] Task ID: ${task.taskId} has no createdBy, skipping notification`);
     }
@@ -1160,6 +1176,11 @@ export async function notifyTaskDueSoon(
       console.error("Failed to send email notification for task due soon:", error);
       // Don't throw - notification was created successfully
     });
+
+    // Send WhatsApp notification if needed (async, don't await)
+    sendNotificationWhatsAppIfNeeded(notification, accountId).catch((error) => {
+      console.error("Failed to send WhatsApp notification for task due soon:", error);
+    });
   } catch (error) {
     console.error("Error creating task due soon notification:", error);
     throw error;
@@ -1257,6 +1278,11 @@ export async function notifyTaskOverdue(
       console.error("Failed to send email notification for overdue task:", error);
       // Don't throw - notification was created successfully
     });
+
+    // Send WhatsApp notification if needed (async, don't await)
+    sendNotificationWhatsAppIfNeeded(notification, accountId).catch((error) => {
+      console.error("Failed to send WhatsApp notification for overdue task:", error);
+    });
   } catch (error) {
     console.error("Error creating task overdue notification:", error);
     throw error;
@@ -1333,6 +1359,11 @@ export async function notifyAppointmentScheduled(
     sendNotificationEmailIfNeeded(notification, accountId).catch((error) => {
       console.error("Failed to send email notification for appointment scheduled:", error);
       // Don't throw - notification was created successfully
+    });
+
+    // Send WhatsApp notification if needed (async, don't await)
+    sendNotificationWhatsAppIfNeeded(notification, accountId).catch((error) => {
+      console.error("Failed to send WhatsApp notification for appointment scheduled:", error);
     });
   } catch (error) {
     console.error("Error creating appointment scheduled notification:", error);
@@ -1411,6 +1442,11 @@ export async function notifyAppointmentRescheduled(
       console.error("Failed to send email notification for appointment rescheduled:", error);
       // Don't throw - notification was created successfully
     });
+
+    // Send WhatsApp notification if needed (async, don't await)
+    sendNotificationWhatsAppIfNeeded(notification, accountId).catch((error) => {
+      console.error("Failed to send WhatsApp notification for appointment rescheduled:", error);
+    });
   } catch (error) {
     console.error("Error creating appointment rescheduled notification:", error);
     throw error;
@@ -1485,6 +1521,11 @@ export async function notifyAppointmentCancelled(
     sendNotificationEmailIfNeeded(notification, accountId).catch((error) => {
       console.error("Failed to send email notification for appointment cancelled:", error);
       // Don't throw - notification was created successfully
+    });
+
+    // Send WhatsApp notification if needed (async, don't await)
+    sendNotificationWhatsAppIfNeeded(notification, accountId).catch((error) => {
+      console.error("Failed to send WhatsApp notification for appointment cancelled:", error);
     });
   } catch (error) {
     console.error("Error creating appointment cancelled notification:", error);
@@ -1563,6 +1604,11 @@ export async function notifyAppointmentReminder(
     sendNotificationEmailIfNeeded(notification, accountId).catch((error) => {
       console.error("Failed to send email notification for appointment reminder:", error);
       // Don't throw - notification was created successfully
+    });
+
+    // Send WhatsApp notification if needed (async, don't await)
+    sendNotificationWhatsAppIfNeeded(notification, accountId).catch((error) => {
+      console.error("Failed to send WhatsApp notification for appointment reminder:", error);
     });
   } catch (error) {
     console.error("Error creating appointment reminder notification:", error);

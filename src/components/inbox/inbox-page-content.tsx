@@ -48,6 +48,9 @@ export function InboxPageContent() {
     disconnectGmail,
     markContactAsLinked,
     assignListingToThread,
+    // WhatsApp 24h window helpers
+    getWhatsAppSessionInfo,
+    sendWhatsAppTemplate,
   } = useInbox();
 
   // Mobile: show detail view when thread is selected
@@ -348,6 +351,17 @@ export function InboxPageContent() {
             onSendReply={sendReply}
             onBack={handleBackToList}
             showBackButton={showMobileDetail}
+            // WhatsApp 24h window props
+            whatsappSessionInfo={
+              selectedThread?.channel === "whatsapp" && selectedThreadId
+                ? getWhatsAppSessionInfo(selectedThreadId.replace("wa-", ""))
+                : null
+            }
+            onSendTemplate={(conversationId) => {
+              // For now, show a toast about template functionality
+              // This could open a template picker modal in the future
+              void sendWhatsAppTemplate(conversationId, "re_engagement", { "1": "Hola, te contactamos de nuevo" });
+            }}
           />
         </div>
       </Card>

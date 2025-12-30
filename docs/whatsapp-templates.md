@@ -1,1044 +1,874 @@
-# WhatsApp Message Templates - Vesta
+# WhatsApp Content Templates for Vesta CRM
 
-Este documento contiene todas las plantillas de WhatsApp para los diferentes casos de uso de la plataforma Vesta.
+Este documento contiene todas las plantillas de WhatsApp para notificaciones internas del equipo.
+Las plantillas están diseñadas para incluir la misma información que los emails.
 
-> **Formato de variables**: Las variables se representan como `{{1}}`, `{{2}}`, etc. y serán reemplazadas por valores dinámicos desde la base de datos.
+> **Formato de variables**: Las variables se representan como `{{1}}`, `{{2}}`, etc.
+
+---
+
+## Configuracion de Template SIDs
+
+Despues de crear las plantillas en Twilio, registra los SIDs aqui:
+
+```typescript
+const WHATSAPP_TEMPLATES = {
+  // Task Templates
+  task_assigned: "HX_______________________",
+  task_completed: "HX_______________________",
+  task_reassigned: "HX_______________________",
+  task_due_soon: "HX_______________________",
+  task_overdue: "HX_______________________",
+
+  // Appointment Templates
+  appointment_scheduled: "HX_______________________",
+  appointment_rescheduled: "HX_______________________",
+  appointment_cancelled: "HX_______________________",
+  appointment_reminder: "HX_______________________",
+};
+```
 
 ---
 
 ## Tabla de Contenidos
 
-1. [Notificaciones de Tareas (Agentes)](#1-notificaciones-de-tareas-agentes)
-2. [Notificaciones de Citas (Agentes)](#2-notificaciones-de-citas-agentes)
-3. [Resúmenes Diarios/Semanales](#3-resúmenes-diariossemanales)
-4. [Notificaciones para Clientes - Propiedades](#4-notificaciones-para-clientes---propiedades)
-5. [Notificaciones para Clientes - Documentos](#5-notificaciones-para-clientes---documentos)
-6. [Notificaciones para Clientes - Operaciones](#6-notificaciones-para-clientes---operaciones)
-7. [Recordatorios de Citas para Clientes](#7-recordatorios-de-citas-para-clientes)
-8. [Autenticación y Seguridad](#8-autenticación-y-seguridad)
+1. [Plantillas de Tareas](#1-plantillas-de-tareas)
+2. [Plantillas de Citas](#2-plantillas-de-citas)
+3. [Tablas de Referencia](#3-tablas-de-referencia)
+4. [Notas de Implementacion](#4-notas-de-implementacion)
 
 ---
 
-## 1. Notificaciones de Tareas (Agentes)
+## 1. Plantillas de Tareas
 
-### 1.1 Tarea Asignada (`task_assigned`)
+### 1.1 Tarea Asignada (`vesta_task_assigned_es`)
 
-**Nombre de plantilla**: `task_assigned`
+**Configuracion Twilio:**
+- Name: `vesta_task_assigned_es`
+- Language: Spanish (es)
+- Category: UTILITY
+- Type: Text
 
+**Cuerpo de la Plantilla:**
 ```
-{{1}}, tienes una nueva tarea asignada.
+📋 *Nueva tarea asignada*
 
-*{{2}}*
-{{3}}
+*{{1}}*
 
-Vence: {{4}}
-Prioridad: {{5}}
+{{2}}
 
-Ver en Vesta: {{6}}
-```
+👤 Asignada por: {{3}}
+📆 Fecha limite: {{4}}
+⚡ Urgencia: {{5}}
+🏷️ Categoria: {{6}}
 
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre del agente | "Carlos" |
-| `{{2}}` | Título de la tarea | "Llamar al propietario" |
-| `{{3}}` | Descripción de la tarea | "Confirmar disponibilidad para visita" |
-| `{{4}}` | Fecha de vencimiento | "25 dic 2024 a las 10:00" |
-| `{{5}}` | Nivel de urgencia | "Alta" |
-| `{{6}}` | URL de la tarea | "https://app.vesta.com/tareas?taskId=123" |
-
----
-
-### 1.2 Tarea Reasignada (`task_reassigned`)
-
-**Nombre de plantilla**: `task_reassigned`
-
-```
-{{1}}, se te ha reasignado una tarea.
-
-*{{2}}*
-{{3}}
-
-Asignada por: {{4}}
-Vence: {{5}}
-
-Ver en Vesta: {{6}}
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre del nuevo asignado | "María" |
-| `{{2}}` | Título de la tarea | "Preparar documentación" |
-| `{{3}}` | Descripción | "Recopilar documentos para la firma" |
-| `{{4}}` | Nombre de quien reasignó | "Juan García" |
-| `{{5}}` | Fecha de vencimiento | "26 dic 2024" |
-| `{{6}}` | URL de la tarea | "https://app.vesta.com/tareas?taskId=456" |
-
----
-
-### 1.3 Tarea Completada (`task_completed`)
-
-**Nombre de plantilla**: `task_completed`
-
-```
-{{1}}, tu tarea ha sido completada.
-
-*{{2}}*
-
-Completada por: {{3}}
-Fecha: {{4}}
-
-Ver detalles: {{5}}
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre del creador de la tarea | "Ana" |
-| `{{2}}` | Título de la tarea | "Enviar propuesta al cliente" |
-| `{{3}}` | Nombre de quien completó | "Pedro López" |
-| `{{4}}` | Fecha de completado | "24 dic 2024 15:30" |
-| `{{5}}` | URL de la tarea | "https://app.vesta.com/tareas?taskId=789" |
-
----
-
-### 1.4 Tarea Vence Pronto (`task_due_soon`)
-
-**Nombre de plantilla**: `task_due_today`
-
-```
-{{1}}, tienes una tarea que vence hoy.
-
-*{{2}}*
-{{3}}
-
-Hora límite: {{4}}
-Prioridad: {{5}}
-
-Completar ahora: {{6}}
-```
-
-**Nombre de plantilla**: `task_due_tomorrow`
-
-```
-{{1}}, tienes una tarea que vence mañana.
-
-*{{2}}*
-{{3}}
-
-Vence: {{4}}
-Prioridad: {{5}}
-
-Ver tarea: {{6}}
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre del agente | "Carlos" |
-| `{{2}}` | Título de la tarea | "Confirmar cita con cliente" |
-| `{{3}}` | Descripción | "Llamar para confirmar visita" |
-| `{{4}}` | Hora/Fecha límite | "18:00" o "25 dic 2024" |
-| `{{5}}` | Prioridad | "Urgente" |
-| `{{6}}` | URL | "https://app.vesta.com/tareas?taskId=101" |
-
----
-
-### 1.5 Tarea Vencida (`task_overdue`)
-
-**Nombre de plantilla**: `task_overdue`
-
-```
-{{1}}, tienes una tarea vencida que requiere tu atención.
-
-*{{2}}*
-{{3}}
-
-Venció: {{4}}
-Prioridad: {{5}}
-
-Completar ahora: {{6}}
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre del agente | "María" |
-| `{{2}}` | Título de la tarea | "Enviar contrato" |
-| `{{3}}` | Descripción | "Enviar borrador de contrato al abogado" |
-| `{{4}}` | Fecha de vencimiento | "22 dic 2024" |
-| `{{5}}` | Prioridad | "Crítica" |
-| `{{6}}` | URL | "https://app.vesta.com/tareas?taskId=202" |
-
----
-
-### 1.6 Tarea Eliminada (`task_deleted`)
-
-**Nombre de plantilla**: `task_deleted`
-
-```
-{{1}}, una tarea que te fue asignada ha sido eliminada.
-
-*{{2}}*
-
-Eliminada por: {{3}}
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre del asignado | "Pedro" |
-| `{{2}}` | Título de la tarea | "Revisar documentación" |
-| `{{3}}` | Nombre de quien eliminó | "Ana García" |
-
----
-
-## 2. Notificaciones de Citas (Agentes)
-
-### 2.1 Cita Programada (`appointment_scheduled`)
-
-**Nombre de plantilla**: `appointment_scheduled`
-
-```
-{{1}}, tienes una nueva cita programada.
-
-*{{2}}*
-
-Fecha: {{3}}
-Hora: {{4}} - {{5}}
-Tipo: {{6}}
-Ubicación: {{7}}
-
-Propiedad: {{8}}
-Contacto: {{9}}
-
-Ver en calendario: {{10}}
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre del agente | "Carlos" |
-| `{{2}}` | Título de la cita | "Visita Piso Calle Mayor" |
-| `{{3}}` | Fecha | "26 dic 2024" |
-| `{{4}}` | Hora inicio | "10:00" |
-| `{{5}}` | Hora fin | "11:00" |
-| `{{6}}` | Tipo de cita | "Visita" |
-| `{{7}}` | Dirección | "Calle Mayor 15, Madrid" |
-| `{{8}}` | Referencia propiedad | "REF-2024-001" |
-| `{{9}}` | Nombre del contacto | "Juan Pérez" |
-| `{{10}}` | URL del calendario | "https://app.vesta.com/calendario" |
-
----
-
-### 2.2 Cita Reagendada (`appointment_rescheduled`)
-
-**Nombre de plantilla**: `appointment_rescheduled`
-
-```
-{{1}}, tu cita ha sido reagendada.
-
-*{{2}}*
-
-Nueva fecha: {{3}}
-Nueva hora: {{4}} - {{5}}
-
-Fecha anterior: {{6}}
-
-Ubicación: {{7}}
-Contacto: {{8}}
-
-Ver cambios: {{9}}
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre del agente | "María" |
-| `{{2}}` | Título de la cita | "Firma de arras" |
-| `{{3}}` | Nueva fecha | "28 dic 2024" |
-| `{{4}}` | Nueva hora inicio | "16:00" |
-| `{{5}}` | Nueva hora fin | "17:00" |
-| `{{6}}` | Fecha/hora anterior | "27 dic 2024 15:00" |
-| `{{7}}` | Ubicación | "Notaría García, Madrid" |
-| `{{8}}` | Contacto | "Pedro López" |
-| `{{9}}` | URL | "https://app.vesta.com/calendario" |
-
----
-
-### 2.3 Cita Cancelada (`appointment_cancelled`)
-
-**Nombre de plantilla**: `appointment_cancelled`
-
-```
-{{1}}, tu cita ha sido cancelada.
-
-*{{2}}*
-
-Fecha programada: {{3}} a las {{4}}
-Cancelada por: {{5}}
-
-Contacto: {{6}}
-Propiedad: {{7}}
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre del agente | "Ana" |
-| `{{2}}` | Título de la cita | "Visita apartamento" |
-| `{{3}}` | Fecha | "25 dic 2024" |
-| `{{4}}` | Hora | "11:00" |
-| `{{5}}` | Quien canceló | "Cliente" |
-| `{{6}}` | Contacto | "Luis Martínez" |
-| `{{7}}` | Referencia | "REF-2024-015" |
-
----
-
-### 2.4 Recordatorio de Cita - 24 horas (`appointment_reminder_24h`)
-
-**Nombre de plantilla**: `appointment_reminder_24h`
-
-```
-{{1}}, recordatorio: tienes una cita mañana.
-
-*{{2}}*
-
-Fecha: {{3}}
-Hora: {{4}}
-Tipo: {{5}}
-
-Ubicación: {{6}}
-Contacto: {{7}} - {{8}}
-
-Preparación:
-{{9}}
-
-Ver detalles: {{10}}
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre del agente | "Carlos" |
-| `{{2}}` | Título | "Visita Chalet Las Rozas" |
-| `{{3}}` | Fecha | "26 dic 2024" |
-| `{{4}}` | Hora | "10:00" |
-| `{{5}}` | Tipo | "Visita" |
-| `{{6}}` | Dirección | "Calle del Pinar 8, Las Rozas" |
-| `{{7}}` | Nombre contacto | "María García" |
-| `{{8}}` | Teléfono | "+34 612 345 678" |
-| `{{9}}` | Notas preparación | "Llevar llaves, cliente interesado en jardín" |
-| `{{10}}` | URL | "https://app.vesta.com/calendario?id=123" |
-
----
-
-### 2.5 Recordatorio de Cita - 30 minutos (`appointment_reminder_30min`)
-
-**Nombre de plantilla**: `appointment_reminder_30min`
-
-```
-{{1}}, tu cita empieza en 30 minutos.
-
-*{{2}}*
-
-Hora: {{3}}
-Ubicación: {{4}}
-
-Contacto: {{5}}
-Tel: {{6}}
-
-Cómo llegar: {{7}}
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre del agente | "Pedro" |
-| `{{2}}` | Título | "Firma contrato" |
-| `{{3}}` | Hora | "15:00" |
-| `{{4}}` | Ubicación | "Notaría Central, Gran Vía 50" |
-| `{{5}}` | Contacto | "Juan López" |
-| `{{6}}` | Teléfono | "+34 666 777 888" |
-| `{{7}}` | URL Google Maps | "https://maps.google.com/..." |
-
----
-
-## 3. Resúmenes Diarios/Semanales
-
-### 3.1 Resumen Diario (`daily_briefing`)
-
-**Nombre de plantilla**: `daily_briefing`
-
-```
-Buenos días {{1}}, este es tu resumen para hoy {{2}}.
-
-*CITAS DE HOY*
-{{3}}
-
-*TAREAS PENDIENTES*
-{{4}}
-
-Total: {{5}} citas, {{6}} tareas
-
-Ver agenda completa: {{7}}
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre del agente | "Carlos" |
-| `{{2}}` | Fecha | "lunes, 25 de diciembre" |
-| `{{3}}` | Lista de citas | "10:00 - Visita Piso Mayor\n14:00 - Firma arras" |
-| `{{4}}` | Lista de tareas | "Llamar propietario REF-001\nEnviar documentación" |
-| `{{5}}` | Número de citas | "2" |
-| `{{6}}` | Número de tareas | "3" |
-| `{{7}}` | URL | "https://app.vesta.com/dashboard" |
-
----
-
-### 3.2 Resumen Semanal (`weekly_briefing`)
-
-**Nombre de plantilla**: `weekly_briefing`
-
-```
-{{1}}, este es tu resumen semanal.
-
-*Semana del {{2}} al {{3}}*
-
-CITAS PROGRAMADAS: {{4}}
-{{5}}
-
-TAREAS PENDIENTES: {{6}}
+🏠 *Propiedad*
 {{7}}
+Ref: {{8}}
 
-Ver planificación: {{8}}
+👤 *Contacto*
+{{9}} ({{10}})
+📱 {{11}}
+
+Ver en Vesta: {{12}}
 ```
 
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre | "María" |
-| `{{2}}` | Fecha inicio semana | "25 dic" |
-| `{{3}}` | Fecha fin semana | "31 dic" |
-| `{{4}}` | Total citas | "5" |
-| `{{5}}` | Resumen citas | "Lun: 2 visitas\nMar: 1 firma\nMié: 2 reuniones" |
-| `{{6}}` | Total tareas | "8" |
-| `{{7}}` | Resumen tareas | "3 urgentes, 5 normales" |
-| `{{8}}` | URL | "https://app.vesta.com/calendario" |
+**Variables:**
+
+| Variable | Campo | Ejemplo |
+|----------|-------|---------|
+| {{1}} | Titulo de la tarea | Llamar a Maria Garcia para confirmar visita |
+| {{2}} | Descripcion de la tarea | Contactar antes del mediodia para confirmar disponibilidad |
+| {{3}} | Nombre del asignador | Juan Perez |
+| {{4}} | Fecha y hora limite | Viernes 20 de enero de 2025 a las 14:00 |
+| {{5}} | Urgencia | Alta |
+| {{6}} | Categoria | Seguimiento |
+| {{7}} | Direccion de la propiedad | Calle Mayor 23, 2oB, Madrid |
+| {{8}} | Referencia de la propiedad | V-2024-0156 |
+| {{9}} | Nombre del contacto | Maria Garcia Lopez |
+| {{10}} | Tipo de contacto | Propietario |
+| {{11}} | Telefono del contacto | +34 612 345 678 |
+| {{12}} | Link de Vesta | https://vesta.app/tareas |
+
+**Ejemplo Completo:**
+```
+📋 *Nueva tarea asignada*
+
+*Llamar a Maria Garcia para confirmar visita*
+
+Contactar antes del mediodia para confirmar disponibilidad
+
+👤 Asignada por: Juan Perez
+📆 Fecha limite: Viernes 20 de enero de 2025 a las 14:00
+⚡ Urgencia: Alta
+🏷️ Categoria: Seguimiento
+
+🏠 *Propiedad*
+Calle Mayor 23, 2oB, Madrid
+Ref: V-2024-0156
+
+👤 *Contacto*
+Maria Garcia Lopez (Propietario)
+📱 +34 612 345 678
+
+Ver en Vesta: https://vesta.app/tareas
+```
 
 ---
 
-### 3.3 Resumen de Tareas Vencidas (`task_digest`)
+### 1.2 Tarea Completada (`vesta_task_completed_es`)
 
-**Nombre de plantilla**: `task_overdue_digest`
+**Configuracion Twilio:**
+- Name: `vesta_task_completed_es`
+- Language: Spanish (es)
+- Category: UTILITY
+- Type: Text
 
+**Cuerpo de la Plantilla:**
 ```
-{{1}}, tienes {{2}} tareas vencidas que requieren atención.
+✅ *Tarea completada*
 
-{{3}}
+*{{1}}*
 
-Por favor, revisa y completa estas tareas lo antes posible.
+{{2}}
 
-Ver todas: {{4}}
-```
+👤 Completada por: {{3}}
+📆 Fecha de completado: {{4}}
 
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre | "Ana" |
-| `{{2}}` | Número de tareas | "3" |
-| `{{3}}` | Lista de tareas | "- Llamar cliente (vencida hace 2 días)\n- Enviar fotos (vencida ayer)" |
-| `{{4}}` | URL | "https://app.vesta.com/tareas?filter=overdue" |
-
----
-
-## 4. Notificaciones para Clientes - Propiedades
-
-### 4.1 Nueva Propiedad (`customer_new_listing`)
-
-**Nombre de plantilla**: `customer_new_listing`
-
-```
-Hola {{1}}, tenemos una nueva propiedad que podría interesarte.
-
-*{{2}}*
-{{3}}
-
-Precio: {{4}}
-Superficie: {{5}} m²
-Habitaciones: {{6}} | Baños: {{7}}
-
-Ubicación: {{8}}
-
-{{9}}
-
-Ver propiedad: {{10}}
-
-Tu agente: {{11}}
-Tel: {{12}}
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre cliente | "Juan" |
-| `{{2}}` | Título propiedad | "Piso luminoso en el centro" |
-| `{{3}}` | Descripción breve | "Apartamento reformado con terraza" |
-| `{{4}}` | Precio | "285.000 €" |
-| `{{5}}` | Superficie | "95" |
-| `{{6}}` | Habitaciones | "3" |
-| `{{7}}` | Baños | "2" |
-| `{{8}}` | Ubicación | "Centro, Madrid" |
-| `{{9}}` | Características destacadas | "Terraza 15m², parking incluido" |
-| `{{10}}` | URL propiedad | "https://..." |
-| `{{11}}` | Nombre agente | "Carlos García" |
-| `{{12}}` | Teléfono agente | "+34 612 345 678" |
-
----
-
-### 4.2 Cambio de Precio (`customer_price_change`)
-
-**Nombre de plantilla**: `customer_price_change`
-
-```
-Hola {{1}}, la propiedad que te interesaba ha bajado de precio.
-
-*{{2}}*
-
-Precio anterior: {{3}}
-Nuevo precio: {{4}}
-Ahorro: {{5}} ({{6}}%)
-
-Ubicación: {{7}}
-
-Esta es una oportunidad que no querrás perderte.
-
-Ver propiedad: {{8}}
-
-¿Te gustaría programar una visita?
-Contacta con {{9}}: {{10}}
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre cliente | "María" |
-| `{{2}}` | Título propiedad | "Chalet en Las Rozas" |
-| `{{3}}` | Precio anterior | "450.000 €" |
-| `{{4}}` | Nuevo precio | "420.000 €" |
-| `{{5}}` | Ahorro | "30.000 €" |
-| `{{6}}` | Porcentaje descuento | "6.7" |
-| `{{7}}` | Ubicación | "Las Rozas, Madrid" |
-| `{{8}}` | URL | "https://..." |
-| `{{9}}` | Nombre agente | "Ana López" |
-| `{{10}}` | Teléfono | "+34 666 777 888" |
-
----
-
-### 4.3 Cambio de Estado (`customer_status_change`)
-
-**Nombre de plantilla**: `customer_status_change`
-
-```
-Hola {{1}}, hay novedades sobre la propiedad {{2}}.
-
-Estado anterior: {{3}}
-Nuevo estado: {{4}}
-
+🏠 *Propiedad*
 {{5}}
+Ref: {{6}}
 
-Ver detalles: {{6}}
-
-Tu agente {{7}} está disponible para resolver cualquier duda.
-Tel: {{8}}
+Ver en Vesta: {{7}}
 ```
 
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre cliente | "Pedro" |
-| `{{2}}` | Referencia/Título | "REF-2024-001" |
-| `{{3}}` | Estado anterior | "Disponible" |
-| `{{4}}` | Nuevo estado | "Reservado" |
-| `{{5}}` | Mensaje adicional | "Si tienes interés, actúa rápido" |
-| `{{6}}` | URL | "https://..." |
-| `{{7}}` | Nombre agente | "Carlos" |
-| `{{8}}` | Teléfono | "+34 612 345 678" |
+**Variables:**
+
+| Variable | Campo | Ejemplo |
+|----------|-------|---------|
+| {{1}} | Titulo de la tarea | Llamar a Maria Garcia para confirmar visita |
+| {{2}} | Descripcion de la tarea | Contactar antes del mediodia para confirmar disponibilidad |
+| {{3}} | Nombre de quien completo | Ana Lopez |
+| {{4}} | Fecha de completado | Viernes 20 de enero de 2025 a las 11:30 |
+| {{5}} | Direccion de la propiedad | Calle Mayor 23, 2oB, Madrid |
+| {{6}} | Referencia de la propiedad | V-2024-0156 |
+| {{7}} | Link de Vesta | https://vesta.app/tareas |
+
+**Ejemplo Completo:**
+```
+✅ *Tarea completada*
+
+*Llamar a Maria Garcia para confirmar visita*
+
+Contactar antes del mediodia para confirmar disponibilidad
+
+👤 Completada por: Ana Lopez
+📆 Fecha de completado: Viernes 20 de enero de 2025 a las 11:30
+
+🏠 *Propiedad*
+Calle Mayor 23, 2oB, Madrid
+Ref: V-2024-0156
+
+Ver en Vesta: https://vesta.app/tareas
+```
 
 ---
 
-### 4.4 Nuevas Fotos (`customer_new_photos`)
+### 1.3 Tarea Reasignada (`vesta_task_reassigned_es`)
 
-**Nombre de plantilla**: `customer_new_photos`
+**Configuracion Twilio:**
+- Name: `vesta_task_reassigned_es`
+- Language: Spanish (es)
+- Category: UTILITY
+- Type: Text
 
+**Cuerpo de la Plantilla:**
 ```
-Hola {{1}}, hemos añadido {{2}} nuevas fotos de la propiedad que te interesa.
+🔄 *Tarea reasignada*
 
-*{{3}}*
-{{4}}
+*{{1}}*
 
-Ahora puedes ver:
-{{5}}
+{{2}}
 
-Ver todas las fotos: {{6}}
+👤 Reasignada por: {{3}}
+👤 Nuevo responsable: {{4}}
+📆 Fecha limite: {{5}}
+⚡ Urgencia: {{6}}
 
-¿Te gustaría visitarla?
-Contacta con {{7}}: {{8}}
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre cliente | "Laura" |
-| `{{2}}` | Número de fotos | "8" |
-| `{{3}}` | Título propiedad | "Ático con vistas" |
-| `{{4}}` | Dirección | "Paseo de la Castellana, Madrid" |
-| `{{5}}` | Descripción fotos | "Terraza, vistas panorámicas, salón reformado" |
-| `{{6}}` | URL | "https://..." |
-| `{{7}}` | Nombre agente | "María" |
-| `{{8}}` | Teléfono | "+34 666 123 456" |
-
----
-
-## 5. Notificaciones para Clientes - Documentos
-
-### 5.1 Documento Listo (`customer_document_ready`)
-
-**Nombre de plantilla**: `customer_document_ready`
-
-```
-Hola {{1}}, tu documento está listo para descargar.
-
-*{{2}}*
-Tipo: {{3}}
-
-{{4}}
-
-Descargar documento: {{5}}
-
-Si tienes dudas, contacta con {{6}}.
-Tel: {{7}}
-Email: {{8}}
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre cliente | "Juan" |
-| `{{2}}` | Nombre documento | "Contrato de arras" |
-| `{{3}}` | Tipo documento | "Contrato" |
-| `{{4}}` | Descripción | "Borrador del contrato de arras para revisión" |
-| `{{5}}` | URL descarga | "https://..." |
-| `{{6}}` | Nombre agente | "Carlos García" |
-| `{{7}}` | Teléfono | "+34 612 345 678" |
-| `{{8}}` | Email | "carlos@inmobiliaria.com" |
-
----
-
-### 5.2 Firma Requerida (`customer_signature_required`)
-
-**Nombre de plantilla**: `customer_signature_required`
-
-```
-Hola {{1}}, necesitamos tu firma en un documento.
-
-*{{2}}*
-
-{{3}}
-
-Fecha límite: {{4}}
-
-Firmar documento: {{5}}
-
-Es importante completar este paso para continuar con el proceso.
-
-¿Tienes dudas? Contacta con {{6}}: {{7}}
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre cliente | "María" |
-| `{{2}}` | Nombre documento | "Nota de encargo" |
-| `{{3}}` | Descripción | "Autorización para gestionar la venta de tu propiedad" |
-| `{{4}}` | Fecha límite | "28 dic 2024" |
-| `{{5}}` | URL firma | "https://..." |
-| `{{6}}` | Nombre agente | "Ana López" |
-| `{{7}}` | Teléfono | "+34 666 777 888" |
-
----
-
-### 5.3 Documento por Vencer (`customer_document_expiring`)
-
-**Nombre de plantilla**: `customer_document_expiring`
-
-```
-Hola {{1}}, tu documento está próximo a vencer.
-
-*{{2}}*
-
-Fecha de vencimiento: {{3}}
-Días restantes: {{4}}
-
-{{5}}
-
-Renovar documento: {{6}}
-
-Contacta con {{7}} si necesitas ayuda: {{8}}
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre cliente | "Pedro" |
-| `{{2}}` | Nombre documento | "Certificado energético" |
-| `{{3}}` | Fecha vencimiento | "15 ene 2025" |
-| `{{4}}` | Días restantes | "22" |
-| `{{5}}` | Instrucciones renovación | "Solicita una nueva inspección energética" |
-| `{{6}}` | URL | "https://..." |
-| `{{7}}` | Nombre agente | "Carlos" |
-| `{{8}}` | Teléfono | "+34 612 345 678" |
-
----
-
-## 6. Notificaciones para Clientes - Operaciones
-
-### 6.1 Oferta Recibida (`customer_offer_received`)
-
-**Nombre de plantilla**: `customer_offer_received`
-
-```
-Hola {{1}}, has recibido una oferta por tu propiedad.
-
-*{{2}}*
-
-Importe ofertado: {{3}}
-Condiciones: {{4}}
-
-Válida hasta: {{5}}
-
-Esta es una oportunidad importante. Por favor, revisa los detalles.
-
-Ver oferta: {{6}}
-
-Tu agente {{7}} te contactará pronto para comentarla.
-Tel: {{8}}
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre propietario | "Juan" |
-| `{{2}}` | Dirección propiedad | "Calle Mayor 15, Madrid" |
-| `{{3}}` | Importe oferta | "275.000 €" |
-| `{{4}}` | Condiciones | "Sin hipoteca, disponibilidad inmediata" |
-| `{{5}}` | Fecha validez | "30 dic 2024" |
-| `{{6}}` | URL | "https://..." |
-| `{{7}}` | Nombre agente | "Carlos García" |
-| `{{8}}` | Teléfono | "+34 612 345 678" |
-
----
-
-### 6.2 Oferta Aceptada (`customer_offer_accepted`)
-
-**Nombre de plantilla**: `customer_offer_accepted`
-
-```
-Hola {{1}}, ¡tu oferta ha sido aceptada!
-
-*{{2}}*
-
-Precio acordado: {{3}}
-Fecha aceptación: {{4}}
-
-Próximos pasos:
-{{5}}
-
-Ver detalles: {{6}}
-
-Tu agente {{7}} te guiará en todo el proceso.
-Tel: {{8}}
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre comprador | "María" |
-| `{{2}}` | Dirección propiedad | "Piso en Calle Gran Vía" |
-| `{{3}}` | Precio | "285.000 €" |
-| `{{4}}` | Fecha | "24 dic 2024" |
-| `{{5}}` | Próximos pasos | "1. Firma de arras (5.000€)\n2. Tramitar hipoteca\n3. Firma notaría" |
-| `{{6}}` | URL | "https://..." |
-| `{{7}}` | Nombre agente | "Ana López" |
-| `{{8}}` | Teléfono | "+34 666 777 888" |
-
----
-
-### 6.3 Operación Cerrada (`customer_deal_closed`)
-
-**Nombre de plantilla**: `customer_deal_closed`
-
-```
-Hola {{1}}, ¡enhorabuena! La operación se ha completado con éxito.
-
-*{{2}}*
-
-Precio final: {{3}}
-Fecha de cierre: {{4}}
-
-{{5}}
-
-Documentos disponibles: {{6}}
-
-Ha sido un placer ayudarte. Si necesitas algo más, estamos a tu disposición.
-
+🏠 *Propiedad*
 {{7}}
-Tel: {{8}}
+Ref: {{8}}
+
+👤 *Contacto*
+{{9}} ({{10}})
+📱 {{11}}
+
+Ver en Vesta: {{12}}
 ```
 
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre cliente | "Pedro" |
-| `{{2}}` | Dirección propiedad | "Chalet en Las Rozas" |
-| `{{3}}` | Precio final | "420.000 €" |
-| `{{4}}` | Fecha cierre | "24 dic 2024" |
-| `{{5}}` | Información post-cierre | "Recuerda cambiar la titularidad de suministros" |
-| `{{6}}` | URL documentos | "https://..." |
-| `{{7}}` | Nombre agente | "Carlos García" |
-| `{{8}}` | Teléfono | "+34 612 345 678" |
+**Variables:**
+
+| Variable | Campo | Ejemplo |
+|----------|-------|---------|
+| {{1}} | Titulo de la tarea | Preparar documentacion para firma |
+| {{2}} | Descripcion de la tarea | Reunir todos los documentos necesarios para la firma del contrato |
+| {{3}} | Nombre del reasignador | Juan Perez |
+| {{4}} | Nombre del nuevo asignado | Ana Lopez |
+| {{5}} | Fecha y hora limite | Lunes 22 de enero de 2025 a las 10:00 |
+| {{6}} | Urgencia | Urgente |
+| {{7}} | Direccion de la propiedad | Avenida Diagonal 456, Barcelona |
+| {{8}} | Referencia de la propiedad | V-2024-0234 |
+| {{9}} | Nombre del contacto | Pedro Martinez |
+| {{10}} | Tipo de contacto | Comprador |
+| {{11}} | Telefono del contacto | +34 623 456 789 |
+| {{12}} | Link de Vesta | https://vesta.app/tareas |
+
+**Ejemplo Completo:**
+```
+🔄 *Tarea reasignada*
+
+*Preparar documentacion para firma*
+
+Reunir todos los documentos necesarios para la firma del contrato
+
+👤 Reasignada por: Juan Perez
+👤 Nuevo responsable: Ana Lopez
+📆 Fecha limite: Lunes 22 de enero de 2025 a las 10:00
+⚡ Urgencia: Urgente
+
+🏠 *Propiedad*
+Avenida Diagonal 456, Barcelona
+Ref: V-2024-0234
+
+👤 *Contacto*
+Pedro Martinez (Comprador)
+📱 +34 623 456 789
+
+Ver en Vesta: https://vesta.app/tareas
+```
 
 ---
 
-### 6.4 Pago Recibido (`customer_payment_received`)
+### 1.4 Tarea Proxima a Vencer (`vesta_task_due_soon_es`)
 
-**Nombre de plantilla**: `customer_payment_received`
+**Configuracion Twilio:**
+- Name: `vesta_task_due_soon_es`
+- Language: Spanish (es)
+- Category: UTILITY
+- Type: Text
 
+**Cuerpo de la Plantilla:**
 ```
-Hola {{1}}, hemos recibido tu pago correctamente.
+⏰ *Tarea proxima a vencer*
 
-Importe: {{2}}
-Concepto: {{3}}
-Fecha: {{4}}
-Referencia: {{5}}
+*{{1}}*
 
+{{2}}
+
+⏳ Vence en: {{3}}
+📆 Fecha limite: {{4}}
+⚡ Urgencia: {{5}}
+
+🏠 *Propiedad*
 {{6}}
+Ref: {{7}}
 
-Ver recibo: {{7}}
+👤 *Contacto*
+{{8}} ({{9}})
+📱 {{10}}
 
-¿Tienes dudas? Contacta con {{8}}: {{9}}
+Ver en Vesta: {{11}}
 ```
 
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre cliente | "María" |
-| `{{2}}` | Importe | "10.000 €" |
-| `{{3}}` | Concepto | "Señal de arras" |
-| `{{4}}` | Fecha | "24 dic 2024" |
-| `{{5}}` | Referencia | "PAY-2024-001234" |
-| `{{6}}` | Próximos pasos | "Próximo pago: 20.000€ en firma de escritura" |
-| `{{7}}` | URL recibo | "https://..." |
-| `{{8}}` | Nombre agente | "Ana López" |
-| `{{9}}` | Teléfono | "+34 666 777 888" |
+**Variables:**
+
+| Variable | Campo | Ejemplo |
+|----------|-------|---------|
+| {{1}} | Titulo de la tarea | Enviar contrato al cliente |
+| {{2}} | Descripcion de la tarea | Enviar el contrato de arras por email al comprador |
+| {{3}} | Tiempo restante | 2 horas y 30 minutos |
+| {{4}} | Fecha y hora limite | Hoy a las 16:00 |
+| {{5}} | Urgencia | Alta |
+| {{6}} | Direccion de la propiedad | Calle Sol 12, Valencia |
+| {{7}} | Referencia de la propiedad | V-2024-0189 |
+| {{8}} | Nombre del contacto | Laura Fernandez |
+| {{9}} | Tipo de contacto | Comprador |
+| {{10}} | Telefono del contacto | +34 634 567 890 |
+| {{11}} | Link de Vesta | https://vesta.app/tareas |
+
+**Ejemplo Completo:**
+```
+⏰ *Tarea proxima a vencer*
+
+*Enviar contrato al cliente*
+
+Enviar el contrato de arras por email al comprador
+
+⏳ Vence en: 2 horas y 30 minutos
+📆 Fecha limite: Hoy a las 16:00
+⚡ Urgencia: Alta
+
+🏠 *Propiedad*
+Calle Sol 12, Valencia
+Ref: V-2024-0189
+
+👤 *Contacto*
+Laura Fernandez (Comprador)
+📱 +34 634 567 890
+
+Ver en Vesta: https://vesta.app/tareas
+```
 
 ---
 
-## 7. Recordatorios de Citas para Clientes
+### 1.5 Tarea Vencida (`vesta_task_overdue_es`)
 
-### 7.1 Recordatorio Visita - 24h (`customer_visit_reminder_24h`)
+**Configuracion Twilio:**
+- Name: `vesta_task_overdue_es`
+- Language: Spanish (es)
+- Category: UTILITY
+- Type: Text
 
-**Nombre de plantilla**: `customer_visit_reminder_24h`
-
+**Cuerpo de la Plantilla:**
 ```
-Hola {{1}}, te recordamos que tienes una visita programada para mañana.
+🚨 *Tarea vencida*
 
-*{{2}}*
+*{{1}}*
 
-Fecha: {{3}}
-Hora: {{4}}
-Dirección: {{5}}
+{{2}}
 
-Te recibirá: {{6}}
-Tel: {{7}}
+⚠️ Vencida hace: {{3}}
+📆 Fecha limite original: {{4}}
+⚡ Urgencia: {{5}}
 
+🏠 *Propiedad*
+{{6}}
+Ref: {{7}}
+
+👤 *Contacto*
+{{8}} ({{9}})
+📱 {{10}}
+
+Accede a Vesta urgentemente: {{11}}
+```
+
+**Variables:**
+
+| Variable | Campo | Ejemplo |
+|----------|-------|---------|
+| {{1}} | Titulo de la tarea | Confirmar cita con notario |
+| {{2}} | Descripcion de la tarea | Llamar a la notaria para confirmar hora de firma |
+| {{3}} | Tiempo vencido | 1 dia y 3 horas |
+| {{4}} | Fecha limite original | Ayer a las 12:00 |
+| {{5}} | Urgencia | Critica |
+| {{6}} | Direccion de la propiedad | Paseo de Gracia 78, Barcelona |
+| {{7}} | Referencia de la propiedad | V-2024-0167 |
+| {{8}} | Nombre del contacto | Carlos Ruiz |
+| {{9}} | Tipo de contacto | Propietario |
+| {{10}} | Telefono del contacto | +34 645 678 901 |
+| {{11}} | Link de Vesta | https://vesta.app/tareas |
+
+**Ejemplo Completo:**
+```
+🚨 *Tarea vencida*
+
+*Confirmar cita con notario*
+
+Llamar a la notaria para confirmar hora de firma
+
+⚠️ Vencida hace: 1 dia y 3 horas
+📆 Fecha limite original: Ayer a las 12:00
+⚡ Urgencia: Critica
+
+🏠 *Propiedad*
+Paseo de Gracia 78, Barcelona
+Ref: V-2024-0167
+
+👤 *Contacto*
+Carlos Ruiz (Propietario)
+📱 +34 645 678 901
+
+Accede a Vesta urgentemente: https://vesta.app/tareas
+```
+
+---
+
+## 2. Plantillas de Citas
+
+### 2.1 Cita Programada (`vesta_apt_scheduled_es`)
+
+**Configuracion Twilio:**
+- Name: `vesta_apt_scheduled_es`
+- Language: Spanish (es)
+- Category: UTILITY
+- Type: Text
+
+**Cuerpo de la Plantilla:**
+```
+📅 *Nueva cita programada*
+
+*{{1}}*
+🏷️ Tipo: {{2}}
+
+📆 {{3}}
+🕐 {{4}} - {{5}}
+📍 {{6}}
+
+👤 Programada por: {{7}}
+
+🏠 *Propiedad*
 {{8}}
+Ref: {{9}}
 
-¿Necesitas cambiar la cita? Avísanos con antelación.
+👤 *Propietario*
+{{10}}
+📱 {{11}}
+
+👤 *Comprador*
+{{12}}
+📱 {{13}}
+
+Ver en Vesta: {{14}}
 ```
 
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre cliente | "Juan" |
-| `{{2}}` | Título visita | "Visita piso Calle Mayor" |
-| `{{3}}` | Fecha | "26 dic 2024" |
-| `{{4}}` | Hora | "10:00" |
-| `{{5}}` | Dirección | "Calle Mayor 15, 3ºB, Madrid" |
-| `{{6}}` | Nombre agente | "Carlos García" |
-| `{{7}}` | Teléfono | "+34 612 345 678" |
-| `{{8}}` | Notas | "Portal con código: 1234" |
+**Variables:**
+
+| Variable | Campo | Ejemplo |
+|----------|-------|---------|
+| {{1}} | Titulo de la cita | Visita piso Calle Mayor |
+| {{2}} | Tipo de cita | Visita |
+| {{3}} | Fecha | Lunes 15 de enero de 2025 |
+| {{4}} | Hora inicio | 10:00 |
+| {{5}} | Hora fin | 11:00 |
+| {{6}} | Ubicacion/Notas | Llevar llaves del buzon |
+| {{7}} | Nombre del programador | Juan Perez |
+| {{8}} | Direccion de la propiedad | Calle Mayor 23, 2oB, Madrid |
+| {{9}} | Referencia de la propiedad | V-2024-0156 |
+| {{10}} | Nombre del propietario | Maria Garcia Lopez |
+| {{11}} | Telefono del propietario | +34 612 345 678 |
+| {{12}} | Nombre del comprador | Pedro Martinez |
+| {{13}} | Telefono del comprador | +34 623 456 789 |
+| {{14}} | Link de Vesta | https://vesta.app/calendario |
+
+**Ejemplo Completo:**
+```
+📅 *Nueva cita programada*
+
+*Visita piso Calle Mayor*
+🏷️ Tipo: Visita
+
+📆 Lunes 15 de enero de 2025
+🕐 10:00 - 11:00
+📍 Llevar llaves del buzon
+
+👤 Programada por: Juan Perez
+
+🏠 *Propiedad*
+Calle Mayor 23, 2oB, Madrid
+Ref: V-2024-0156
+
+👤 *Propietario*
+Maria Garcia Lopez
+📱 +34 612 345 678
+
+👤 *Comprador*
+Pedro Martinez
+📱 +34 623 456 789
+
+Ver en Vesta: https://vesta.app/calendario
+```
 
 ---
 
-### 7.2 Recordatorio Visita - 1h (`customer_visit_reminder_1h`)
+### 2.2 Cita Reprogramada (`vesta_apt_rescheduled_es`)
 
-**Nombre de plantilla**: `customer_visit_reminder_1h`
+**Configuracion Twilio:**
+- Name: `vesta_apt_rescheduled_es`
+- Language: Spanish (es)
+- Category: UTILITY
+- Type: Text
 
+**Cuerpo de la Plantilla:**
 ```
-Hola {{1}}, tu visita es en 1 hora.
+📅 *Cita reprogramada*
+
+*{{1}}*
+🏷️ Tipo: {{2}}
+
+🆕 *Nueva fecha*
+📆 {{3}} a las {{4}}
+
+❌ *Fecha anterior*
+{{5}}
+
+📍 {{6}}
+
+👤 Reprogramada por: {{7}}
+
+🏠 *Propiedad*
+{{8}}
+Ref: {{9}}
+
+👤 *Propietario*
+{{10}}
+📱 {{11}}
+
+👤 *Comprador*
+{{12}}
+📱 {{13}}
+
+Ver en Vesta: {{14}}
+```
+
+**Variables:**
+
+| Variable | Campo | Ejemplo |
+|----------|-------|---------|
+| {{1}} | Titulo de la cita | Firma contrato alquiler |
+| {{2}} | Tipo de cita | Firma |
+| {{3}} | Nueva fecha | Miercoles 17 de enero de 2025 |
+| {{4}} | Nueva hora | 16:00 |
+| {{5}} | Fecha/hora anterior | Martes 16 de enero de 2025 a las 10:00 |
+| {{6}} | Ubicacion/Notas | Notaria Garcia, Calle Sol 5 |
+| {{7}} | Nombre del reprogramador | Ana Lopez |
+| {{8}} | Direccion de la propiedad | Avenida Diagonal 456, Barcelona |
+| {{9}} | Referencia de la propiedad | V-2024-0234 |
+| {{10}} | Nombre del propietario | Roberto Sanchez |
+| {{11}} | Telefono del propietario | +34 634 567 890 |
+| {{12}} | Nombre del comprador | Pedro Martinez |
+| {{13}} | Telefono del comprador | +34 623 456 789 |
+| {{14}} | Link de Vesta | https://vesta.app/calendario |
+
+**Ejemplo Completo:**
+```
+📅 *Cita reprogramada*
+
+*Firma contrato alquiler*
+🏷️ Tipo: Firma
+
+🆕 *Nueva fecha*
+📆 Miercoles 17 de enero de 2025 a las 16:00
+
+❌ *Fecha anterior*
+Martes 16 de enero de 2025 a las 10:00
+
+📍 Notaria Garcia, Calle Sol 5
+
+👤 Reprogramada por: Ana Lopez
+
+🏠 *Propiedad*
+Avenida Diagonal 456, Barcelona
+Ref: V-2024-0234
+
+👤 *Propietario*
+Roberto Sanchez
+📱 +34 634 567 890
+
+👤 *Comprador*
+Pedro Martinez
+📱 +34 623 456 789
+
+Ver en Vesta: https://vesta.app/calendario
+```
+
+---
+
+### 2.3 Cita Cancelada (`vesta_apt_cancelled_es`)
+
+**Configuracion Twilio:**
+- Name: `vesta_apt_cancelled_es`
+- Language: Spanish (es)
+- Category: UTILITY
+- Type: Text
+
+**Cuerpo de la Plantilla:**
+```
+❌ *Cita cancelada*
+
+*{{1}}*
+🏷️ Tipo: {{2}}
+
+📆 Fecha original: {{3}} a las {{4}}
+📍 {{5}}
+
+👤 Cancelada por: {{6}}
+💬 Motivo: {{7}}
+
+🏠 *Propiedad*
+{{8}}
+Ref: {{9}}
+
+👤 *Propietario*
+{{10}}
+📱 {{11}}
+
+👤 *Comprador*
+{{12}}
+📱 {{13}}
+
+Ver en Vesta: {{14}}
+```
+
+**Variables:**
+
+| Variable | Campo | Ejemplo |
+|----------|-------|---------|
+| {{1}} | Titulo de la cita | Visita chalet Las Rozas |
+| {{2}} | Tipo de cita | Visita |
+| {{3}} | Fecha original | Jueves 18 de enero de 2025 |
+| {{4}} | Hora original | 11:00 |
+| {{5}} | Ubicacion/Notas | Urbanizacion Los Pinos, parcela 23 |
+| {{6}} | Quien cancelo | Cliente |
+| {{7}} | Motivo de cancelacion | El cliente ha encontrado otra propiedad |
+| {{8}} | Direccion de la propiedad | Urbanizacion Los Pinos 23, Las Rozas |
+| {{9}} | Referencia de la propiedad | V-2024-0298 |
+| {{10}} | Nombre del propietario | Roberto Sanchez |
+| {{11}} | Telefono del propietario | +34 634 567 890 |
+| {{12}} | Nombre del comprador | Laura Fernandez |
+| {{13}} | Telefono del comprador | +34 645 678 901 |
+| {{14}} | Link de Vesta | https://vesta.app/calendario |
+
+**Ejemplo Completo:**
+```
+❌ *Cita cancelada*
+
+*Visita chalet Las Rozas*
+🏷️ Tipo: Visita
+
+📆 Fecha original: Jueves 18 de enero de 2025 a las 11:00
+📍 Urbanizacion Los Pinos, parcela 23
+
+👤 Cancelada por: Cliente
+💬 Motivo: El cliente ha encontrado otra propiedad
+
+🏠 *Propiedad*
+Urbanizacion Los Pinos 23, Las Rozas
+Ref: V-2024-0298
+
+👤 *Propietario*
+Roberto Sanchez
+📱 +34 634 567 890
+
+👤 *Comprador*
+Laura Fernandez
+📱 +34 645 678 901
+
+Ver en Vesta: https://vesta.app/calendario
+```
+
+---
+
+### 2.4 Recordatorio de Cita (`vesta_apt_reminder_es`)
+
+**Configuracion Twilio:**
+- Name: `vesta_apt_reminder_es`
+- Language: Spanish (es)
+- Category: UTILITY
+- Type: Text
+
+**Cuerpo de la Plantilla:**
+```
+🔔 *Recordatorio de {{1}}*
 
 *{{2}}*
 
-Hora: {{3}}
-Dirección: {{4}}
+⏰ En {{3}}
+📆 {{4}} a las {{5}}
+📍 {{6}}
 
-Te espera {{5}}.
+🏠 *Propiedad*
+{{7}}
+Ref: {{8}}
 
-Cómo llegar: {{6}}
+👤 *Propietario*
+{{9}}
+📱 {{10}}
 
-Si tienes cualquier problema, llama al {{7}}.
+👤 *Comprador*
+{{11}}
+📱 {{12}}
+
+💡 *Recuerda*
+{{13}}
+
+Ver en Vesta: {{14}}
 ```
 
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre cliente | "María" |
-| `{{2}}` | Título | "Visita ático Castellana" |
-| `{{3}}` | Hora | "15:00" |
-| `{{4}}` | Dirección | "Paseo de la Castellana 100" |
-| `{{5}}` | Nombre agente | "Ana López" |
-| `{{6}}` | URL Maps | "https://maps.google.com/..." |
-| `{{7}}` | Teléfono | "+34 666 777 888" |
+**Variables:**
+
+| Variable | Campo | Ejemplo |
+|----------|-------|---------|
+| {{1}} | Tipo de cita (minuscula) | visita |
+| {{2}} | Titulo de la cita | Visita piso Calle Mayor |
+| {{3}} | Tiempo restante | 30 minutos |
+| {{4}} | Fecha | Lunes 15 de enero de 2025 |
+| {{5}} | Hora | 10:00 |
+| {{6}} | Ubicacion/Notas | Calle Mayor 23, 2oB |
+| {{7}} | Direccion de la propiedad | Calle Mayor 23, 2oB, Madrid |
+| {{8}} | Referencia de la propiedad | V-2024-0156 |
+| {{9}} | Nombre del propietario | Maria Garcia Lopez |
+| {{10}} | Telefono del propietario | +34 612 345 678 |
+| {{11}} | Nombre del comprador | Pedro Martinez |
+| {{12}} | Telefono del comprador | +34 623 456 789 |
+| {{13}} | Consejos/Recordatorios | Verifica llaves - Ten ficha del inmueble |
+| {{14}} | Link de Vesta | https://vesta.app/calendario |
+
+**Consejos por Tipo de Cita:**
+
+| Tipo | Consejos |
+|------|----------|
+| Visita | Verifica llaves - Ten ficha del inmueble - Prepara respuestas FAQ |
+| Firma | Verifica documentos - Confirma DNI/NIE - Revisa contrato - Lleva copias |
+| Reunion | Prepara puntos a tratar - Ten documentacion lista - Confirma asistentes |
+| Cierre | Verifica documentacion - Confirma entrega llaves - Revisa pagos - Prepara acta |
+| Viaje | Confirma direccion - Calcula tiempo con margen - Ten contacto a mano |
+| Llamada | Ten info del cliente lista - Prepara puntos a discutir - Lugar tranquilo |
+
+**Ejemplo Completo:**
+```
+🔔 *Recordatorio de visita*
+
+*Visita piso Calle Mayor*
+
+⏰ En 30 minutos
+📆 Lunes 15 de enero de 2025 a las 10:00
+📍 Calle Mayor 23, 2oB
+
+🏠 *Propiedad*
+Calle Mayor 23, 2oB, Madrid
+Ref: V-2024-0156
+
+👤 *Propietario*
+Maria Garcia Lopez
+📱 +34 612 345 678
+
+👤 *Comprador*
+Pedro Martinez
+📱 +34 623 456 789
+
+💡 *Recuerda*
+Verifica llaves - Ten ficha del inmueble
+
+Ver en Vesta: https://vesta.app/calendario
+```
 
 ---
 
-### 7.3 Recordatorio Firma (`customer_signature_reminder`)
+## 3. Tablas de Referencia
 
-**Nombre de plantilla**: `customer_signature_reminder`
+### Resumen de Variables por Plantilla
 
-```
-Hola {{1}}, te recordamos la firma programada.
+| Plantilla | Num Variables | Campos Principales |
+|-----------|---------------|-------------------|
+| task_assigned | 12 | titulo, descripcion, asignador, fecha, urgencia, categoria, propiedad, contacto |
+| task_completed | 7 | titulo, descripcion, quien completo, fecha completado, propiedad |
+| task_reassigned | 12 | titulo, descripcion, reasignador, nuevo asignado, fecha, urgencia, propiedad, contacto |
+| task_due_soon | 11 | titulo, descripcion, tiempo restante, fecha, urgencia, propiedad, contacto |
+| task_overdue | 11 | titulo, descripcion, tiempo vencido, fecha original, urgencia, propiedad, contacto |
+| apt_scheduled | 14 | titulo, tipo, fecha, hora, ubicacion, programador, propiedad, propietario, comprador |
+| apt_rescheduled | 14 | titulo, tipo, nueva fecha/hora, fecha anterior, ubicacion, reprogramador, propiedad, propietario, comprador |
+| apt_cancelled | 14 | titulo, tipo, fecha original, ubicacion, quien cancelo, motivo, propiedad, propietario, comprador |
+| apt_reminder | 14 | tipo, titulo, tiempo restante, fecha/hora, ubicacion, propiedad, propietario, comprador, consejos |
 
-*{{2}}*
+### Niveles de Urgencia
 
-Fecha: {{3}}
-Hora: {{4}}
-Lugar: {{5}}
+| Nivel | Etiqueta |
+|-------|----------|
+| 1 | Baja |
+| 2 | Media |
+| 3 | Alta |
+| 4 | Urgente |
+| 5 | Critica |
 
-Documentos necesarios:
-{{6}}
+### Tipos de Cita
 
-Te acompañará {{7}}.
-Tel: {{8}}
+| Tipo | Etiqueta |
+|------|----------|
+| visita | Visita |
+| firma | Firma |
+| reunion | Reunion |
+| llamada | Llamada |
+| cierre | Cierre |
+| viaje | Viaje |
 
-Es muy importante la puntualidad. ¿Tienes todo preparado?
-```
+### Tipos de Contacto
 
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Nombre cliente | "Pedro" |
-| `{{2}}` | Tipo firma | "Firma de arras" |
-| `{{3}}` | Fecha | "27 dic 2024" |
-| `{{4}}` | Hora | "12:00" |
-| `{{5}}` | Lugar | "Notaría García, Gran Vía 50, Madrid" |
-| `{{6}}` | Documentos | "- DNI original\n- Justificante transferencia\n- Nota simple actualizada" |
-| `{{7}}` | Nombre agente | "Carlos García" |
-| `{{8}}` | Teléfono | "+34 612 345 678" |
-
----
-
-## 8. Autenticación y Seguridad
-
-### 8.1 Código de Recuperación de Contraseña (`password_reset_code`)
-
-**Nombre de plantilla**: `password_reset_code`
-
-```
-Tu código de verificación de Vesta es: {{1}}
-
-Este código expira en {{2}} minutos.
-
-Si no solicitaste este código, ignora este mensaje.
-
-No compartas este código con nadie.
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Código 6 dígitos | "123456" |
-| `{{2}}` | Minutos validez | "5" |
+| Tipo | Etiqueta |
+|------|----------|
+| owner | Propietario |
+| buyer | Comprador |
+| contact | Contacto |
 
 ---
 
-### 8.2 Código de Verificación 2FA (`2fa_verification_code`)
+## 4. Notas de Implementacion
 
-**Nombre de plantilla**: `2fa_verification_code`
+### Campos Opcionales
 
-```
-Tu código de verificación de Vesta es: {{1}}
-
-Válido por {{2}} minutos.
-
-Si no intentaste iniciar sesión, cambia tu contraseña inmediatamente.
-```
-
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `{{1}}` | Código | "789012" |
-| `{{2}}` | Minutos validez | "5" |
-
----
-
-## Notas de Implementación
-
-### Registro de Plantillas en WhatsApp Business API
-
-1. **Cada plantilla debe ser aprobada** por Meta antes de poder usarse
-2. **Categorías recomendadas**:
-   - `UTILITY` para notificaciones transaccionales (citas, tareas, documentos)
-   - `MARKETING` para promociones de propiedades (nuevos listados, cambios precio)
-   - `AUTHENTICATION` para códigos de verificación
-
-### Límites y Restricciones
-
-- Máximo **1024 caracteres** por mensaje
-- Máximo **4 variables** de texto con marcador de posición por plantilla
-- Las variables no pueden estar al principio del mensaje
-- Los botones son opcionales pero recomendados para CTAs
-
-### Estructura en Base de Datos
-
-```sql
-CREATE TABLE whatsapp_templates (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  template_name VARCHAR(100) NOT NULL,
-  template_id VARCHAR(100), -- ID de Meta
-  category ENUM('UTILITY', 'MARKETING', 'AUTHENTICATION'),
-  language VARCHAR(10) DEFAULT 'es',
-  status ENUM('pending', 'approved', 'rejected'),
-  variables JSON, -- Mapeo de variables
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-```
-
-### Ejemplo de Uso en Código
+Si la propiedad o el contacto no estan disponibles, usa valores por defecto:
 
 ```typescript
-interface WhatsAppTemplateMessage {
-  templateName: string;
-  recipientPhone: string;
-  variables: Record<string, string>;
-}
-
-async function sendWhatsAppTemplate(message: WhatsAppTemplateMessage) {
-  const { templateName, recipientPhone, variables } = message;
-
-  // Construir el payload para la API de WhatsApp Business
-  const payload = {
-    messaging_product: "whatsapp",
-    to: recipientPhone,
-    type: "template",
-    template: {
-      name: templateName,
-      language: { code: "es" },
-      components: [
-        {
-          type: "body",
-          parameters: Object.values(variables).map(value => ({
-            type: "text",
-            text: value,
-          })),
-        },
-      ],
-    },
-  };
-
-  // Enviar a la API
-  return await whatsappApi.sendMessage(payload);
-}
+// Para campos opcionales, usa "N/A" o "-"
+const propertyAddress = listing?.street ?? "N/A";
+const propertyRef = listing?.referenceNumber ?? "-";
+const contactName = contact?.name ?? "No especificado";
+const contactPhone = contact?.phone ?? "-";
 ```
+
+### Limite de Caracteres
+
+WhatsApp tiene un limite de ~1024 caracteres por mensaje. Las plantillas estan disenadas para caber dentro de este limite.
+
+### Limite de Variables
+
+Las plantillas de WhatsApp normalmente soportan hasta 10-15 variables. Si Twilio rechaza alguna plantilla, simplifica:
+
+1. Combina fecha + hora en una sola variable
+2. Haz las secciones de propiedad/contacto opcionales
+3. Crea plantillas separadas con/sin info de propiedad
+
+### Formato de Telefono
+
+Los telefonos de contacto deben estar en formato internacional:
+- Correcto: `+34 612 345 678`
+- Incorrecto: `612 345 678`
+
+### URLs de Vesta
+
+Todos los links deben ser URLs completas:
+- Tareas: `https://vesta.app/tareas`
+- Calendario: `https://vesta.app/calendario`
+- Con ID especifico: `https://vesta.app/tareas?taskId=123`
+
+### Registro de Plantillas
+
+1. Ve a [Twilio Content Template Builder](https://console.twilio.com/us1/develop/sms/content-template-builder)
+2. Crea cada plantilla con:
+   - Nombre exacto como se indica arriba
+   - Idioma: Spanish (es)
+   - Categoria: UTILITY
+   - Tipo: Text
+3. Envia para aprobacion de WhatsApp
+4. Una vez aprobada, copia el SID (empieza con `HX`)
+5. Actualiza la seccion de configuracion al inicio de este documento
+
+### Tiempo de Aprobacion
+
+- Sandbox: Instantaneo (usa plantillas pre-aprobadas)
+- Produccion: 24-48 horas tipicamente
+
+### Tips para Aprobacion Rapida
+
+- Usa categoria `UTILITY` (no MARKETING)
+- Mantiene mensajes profesionales y claros
+- Evita lenguaje promocional
+- Incluye proposito claro del mensaje
 
 ---
 
 ## Historial de Cambios
 
-| Fecha | Versión | Cambios |
+| Fecha | Version | Cambios |
 |-------|---------|---------|
-| 2024-12-23 | 1.0 | Versión inicial con todas las plantillas |
+| 2024-12-23 | 1.0 | Version inicial |
+| 2024-12-30 | 2.0 | Actualizacion completa con plantillas que coinciden con emails |

@@ -48,6 +48,7 @@ export const env = createEnv({
     TWILIO_AUTH_TOKEN: z.string(),
     TWILIO_PHONE_NUMBER: z.string(), // E.164 format: +1234567890
     TWILIO_SENDER_ID: z.string().optional(),
+    TWILIO_WHATSAPP_NUMBER: z.string().optional(), // WhatsApp sender number (e.g., +14155238886 for sandbox)
     // Cron Job Security
     CRON_SECRET: z.string().optional(),
     // Push Notifications (VAPID)
@@ -109,6 +110,7 @@ export const env = createEnv({
     TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
     TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER,
     TWILIO_SENDER_ID: process.env.TWILIO_SENDER_ID,
+    TWILIO_WHATSAPP_NUMBER: process.env.TWILIO_WHATSAPP_NUMBER,
     // Cron Job Security
     CRON_SECRET: process.env.CRON_SECRET,
     // Push Notifications (VAPID)

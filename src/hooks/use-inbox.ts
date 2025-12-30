@@ -4,7 +4,6 @@ import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import type {
   InboxThread,
-  ThreadMessage,
   InboxFilter,
   ComposeMessageData,
 } from "~/components/inbox/inbox-types";
@@ -15,17 +14,21 @@ import {
   getUnreadCount,
 } from "~/components/inbox/mock-inbox-data";
 import { useGmailInbox } from "./use-gmail-inbox";
+import { useWhatsAppInbox } from "./use-whatsapp-inbox";
+import { convertToInboxThread } from "~/types/whatsapp-conversations";
 
 export function useInbox() {
   // Gmail integration
   const gmail = useGmailInbox();
 
-  // Local state for WhatsApp threads (mock for now)
-  const [whatsappThreads, setWhatsappThreads] = useState<InboxThread[]>(
-    mockThreads.filter((t) => t.channel === "whatsapp")
-  );
+  // WhatsApp integration
+  const whatsapp = useWhatsAppInbox();
 
-  // Mock email threads (used when Gmail is not connected)
+  // Mock threads (used as fallback when services are not connected)
+  const mockWhatsappThreads = useMemo(
+    () => mockThreads.filter((t) => t.channel === "whatsapp"),
+    []
+  );
   const mockEmailThreads = useMemo(
     () => mockThreads.filter((t) => t.channel === "email"),
     []
@@ -42,14 +45,17 @@ export function useInbox() {
     // Get email threads from Gmail if connected, otherwise use mock
     const emailThreads = gmail.isConnected ? gmail.threads : mockEmailThreads;
 
-    // Combine with WhatsApp threads
-    const combined = [...emailThreads, ...whatsappThreads];
+    // Get WhatsApp threads from hook if connected, otherwise use mock
+    const waThreads = whatsapp.isConnected ? whatsapp.threads : mockWhatsappThreads;
+
+    // Combine email and WhatsApp threads
+    const combined = [...emailThreads, ...waThreads];
 
     // Sort by last message date (newest first)
     return combined.sort(
       (a, b) => b.lastMessageAt.getTime() - a.lastMessageAt.getTime()
     );
-  }, [gmail.isConnected, gmail.threads, mockEmailThreads, whatsappThreads]);
+  }, [gmail.isConnected, gmail.threads, mockEmailThreads, whatsapp.isConnected, whatsapp.threads, mockWhatsappThreads]);
 
   // Filtered threads based on current filter and search
   const filteredThreads = useMemo(() => {
@@ -106,17 +112,24 @@ export function useInbox() {
           if (detailedThread) {
             setSelectedThreadData(detailedThread);
           }
+        } else if (thread?.channel === "whatsapp" && whatsapp.isConnected) {
+          // Fetch detailed WhatsApp conversation with messages
+          const conversationId = threadId.replace("wa-", "");
+          const detailedConversation = await whatsapp.selectConversation(conversationId);
+          if (detailedConversation) {
+            // Convert to InboxThread format
+            const detailedThread = convertToInboxThread(detailedConversation);
+            setSelectedThreadData(detailedThread);
+          }
+          // Mark as read
+          await whatsapp.markAsRead(conversationId);
         } else {
-          // Clear Gmail data when selecting WhatsApp thread
+          // Mock fallback - clear detailed data
           setSelectedThreadData(null);
-          // Mark WhatsApp thread as read locally
-          setWhatsappThreads((prev) =>
-            prev.map((t) => (t.id === threadId ? { ...t, read: true } : t))
-          );
         }
       }
     },
-    [allThreads, gmail]
+    [allThreads, gmail, whatsapp]
   );
 
   // Toggle read status
@@ -127,13 +140,14 @@ export function useInbox() {
 
       if (thread.channel === "email" && gmail.isConnected) {
         await gmail.toggleRead(threadId);
-      } else {
-        setWhatsappThreads((prev) =>
-          prev.map((t) => (t.id === threadId ? { ...t, read: !t.read } : t))
-        );
+      } else if (thread.channel === "whatsapp" && whatsapp.isConnected) {
+        // WhatsApp only supports marking as read (not toggling)
+        const conversationId = threadId.replace("wa-", "");
+        await whatsapp.markAsRead(conversationId);
       }
+      // Mock fallback - no action needed
     },
-    [allThreads, gmail]
+    [allThreads, gmail, whatsapp]
   );
 
   // Toggle starred status
@@ -144,23 +158,19 @@ export function useInbox() {
 
       if (thread.channel === "email" && gmail.isConnected) {
         await gmail.toggleStarred(threadId);
-      } else {
-        setWhatsappThreads((prev) =>
-          prev.map((t) => (t.id === threadId ? { ...t, starred: !t.starred } : t))
-        );
       }
+      // WhatsApp doesn't support starring - no action
     },
     [allThreads, gmail]
   );
 
   // Mark all as read
   const markAllAsRead = useCallback(() => {
-    setWhatsappThreads((prev) => prev.map((t) => ({ ...t, read: true })));
-    // Note: For Gmail, we would need to implement batch mark as read
+    // Note: Batch mark as read not implemented for Gmail or WhatsApp yet
     toast.success("Todas las conversaciones marcadas como leidas");
   }, []);
 
-  // Delete thread
+  // Delete/archive thread
   const deleteThread = useCallback(
     async (threadId: string) => {
       const thread = allThreads.find((t) => t.id === threadId);
@@ -173,17 +183,18 @@ export function useInbox() {
           setSelectedThreadId(null);
           setSelectedThreadData(null);
         }
-      } else {
-        // Delete WhatsApp (mock)
-        setWhatsappThreads((prev) => prev.filter((t) => t.id !== threadId));
-        if (selectedThreadId === threadId) {
+      } else if (thread.channel === "whatsapp" && whatsapp.isConnected) {
+        // Archive WhatsApp conversation
+        const conversationId = threadId.replace("wa-", "");
+        const success = await whatsapp.archiveConversation(conversationId);
+        if (success && selectedThreadId === threadId) {
           setSelectedThreadId(null);
           setSelectedThreadData(null);
         }
-        toast.success("Conversacion eliminada");
       }
+      // Mock fallback - no action
     },
-    [allThreads, gmail, selectedThreadId]
+    [allThreads, gmail, whatsapp, selectedThreadId]
   );
 
   // Send reply to thread
@@ -207,45 +218,22 @@ export function useInbox() {
             setSelectedThreadData(updated);
           }
         }
-      } else {
-        // Mock WhatsApp reply
-        const otherParticipant = thread.participants.find((p) => p.id !== "agent");
-
-        const newMessage: ThreadMessage = {
-          id: `msg-${Date.now()}`,
-          threadId: threadId,
-          status: "sent",
-          from: {
-            id: "agent",
-            name: "Tu",
-            email: "agente@vesta.es",
-          },
-          to: otherParticipant ? [otherParticipant] : undefined,
-          content: replyContent,
-          timestamp: new Date(),
-        };
-
-        setWhatsappThreads((prev) =>
-          prev.map((t) => {
-            if (t.id === threadId) {
-              return {
-                ...t,
-                messages: [...t.messages, newMessage],
-                messageCount: t.messageCount + 1,
-                snippet:
-                  replyContent.substring(0, 50) +
-                  (replyContent.length > 50 ? "..." : ""),
-                lastMessageAt: new Date(),
-              };
-            }
-            return t;
-          })
-        );
-
-        toast.success("Respuesta enviada por WhatsApp");
+      } else if (thread.channel === "whatsapp" && whatsapp.isConnected) {
+        // Send via WhatsApp
+        const conversationId = threadId.replace("wa-", "");
+        const success = await whatsapp.sendMessage(conversationId, replyContent);
+        if (success) {
+          // Refresh the selected thread data
+          const detailedConversation = await whatsapp.selectConversation(conversationId);
+          if (detailedConversation) {
+            const detailedThread = convertToInboxThread(detailedConversation);
+            setSelectedThreadData(detailedThread);
+          }
+        }
       }
+      // Mock fallback - no action
     },
-    [allThreads, gmail]
+    [allThreads, gmail, whatsapp]
   );
 
   // Send new message / create new thread
@@ -262,53 +250,27 @@ export function useInbox() {
         if (success) {
           setIsComposeOpen(false);
         }
-      } else if (data.channel === "whatsapp") {
-        // Mock WhatsApp message
-        const agentContact = {
-          id: "agent",
-          name: "Tu",
-          email: "agente@vesta.es",
-        };
-
-        const recipientContact = {
-          id: data.recipientId,
-          name: data.recipientName,
-        };
-
-        const newMessage: ThreadMessage = {
-          id: `msg-${Date.now()}`,
-          threadId: `thread-new-${Date.now()}`,
-          status: "sent",
-          from: agentContact,
-          to: [recipientContact],
-          content: data.content,
-          timestamp: new Date(),
-        };
-
-        const newThread: InboxThread = {
-          id: `thread-new-${Date.now()}`,
-          channel: data.channel,
-          subject: data.subject,
-          snippet:
-            data.content.substring(0, 50) +
-            (data.content.length > 50 ? "..." : ""),
-          participants: [recipientContact, agentContact],
-          messages: [newMessage],
-          lastMessageAt: new Date(),
-          read: true,
-          starred: false,
-          messageCount: 1,
-        };
-
-        setWhatsappThreads((prev) => [newThread, ...prev]);
-        setIsComposeOpen(false);
-        toast.success("Mensaje enviado por WhatsApp");
-      } else {
+      } else if (data.channel === "whatsapp" && whatsapp.isConnected) {
+        // Start WhatsApp conversation via hook
+        // Note: recipientId should be the contactId
+        const conversationId = await whatsapp.startConversation(
+          data.recipientId,
+          data.content
+        );
+        if (conversationId) {
+          setIsComposeOpen(false);
+          // Select the new conversation
+          await selectThread(`wa-${conversationId}`);
+        }
+      } else if (data.channel === "email") {
         // Email but Gmail not connected
         toast.error("Conecta tu cuenta de Gmail para enviar emails");
+      } else {
+        // WhatsApp but not connected
+        toast.error("WhatsApp no esta configurado");
       }
     },
-    [gmail]
+    [gmail, whatsapp, selectThread]
   );
 
   // Open compose dialog
@@ -323,10 +285,15 @@ export function useInbox() {
 
   // Refresh threads
   const refresh = useCallback(async () => {
+    const refreshPromises: Promise<void>[] = [];
     if (gmail.isConnected) {
-      await gmail.refresh();
+      refreshPromises.push(gmail.refresh());
     }
-  }, [gmail]);
+    if (whatsapp.isConnected) {
+      refreshPromises.push(whatsapp.refresh());
+    }
+    await Promise.all(refreshPromises);
+  }, [gmail, whatsapp]);
 
   // Load more threads (pagination)
   const loadMore = useCallback(async () => {
@@ -353,6 +320,18 @@ export function useInbox() {
     isGmailLoading: gmail.isLoading,
     gmailEmail: gmail.connectionEmail,
     isCheckingGmailConnection: gmail.isCheckingConnection,
+
+    // WhatsApp state
+    isWhatsAppConnected: whatsapp.isConnected,
+    isWhatsAppLoading: whatsapp.isLoading,
+    whatsappNumber: whatsapp.whatsappNumber,
+    isCheckingWhatsAppConnection: whatsapp.isCheckingConnection,
+
+    // WhatsApp 24h window helpers
+    canSendFreeform: whatsapp.canSendFreeform,
+    getWhatsAppSessionInfo: whatsapp.getSessionInfo,
+    sendWhatsAppTemplate: whatsapp.sendTemplate,
+    linkWhatsAppToListing: whatsapp.linkToListing,
 
     // Pagination
     hasMorePages,

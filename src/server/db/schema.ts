@@ -117,6 +117,8 @@ export const users = pgTable("users", {
   timezone: varchar("timezone", { length: 50 }).default("UTC"),
   language: varchar("language", { length: 10 }).default("en"),
   preferences: jsonb("preferences").default({}),
+  // Twilio/WhatsApp settings per user
+  twilioSettings: jsonb("twilio_settings").default({}), // { whatsappNumber: "+34612345678", accountSid?: string, authToken?: string }
   lastLogin: timestamp("last_login"),
   isVerified: boolean("is_verified").default(false),
   isActive: boolean("is_active").default(true),
@@ -1401,4 +1403,75 @@ export const imageTokenTransactions = pgTable("image_token_transactions", {
   // System fields
   createdAt: timestamp("created_at").defaultNow().notNull(),
   isActive: boolean("is_active").default(true),
+});
+
+// WhatsApp Conversations table (for two-way messaging with contacts)
+export const whatsappConversations = pgTable("whatsapp_conversations", {
+  // Primary Key
+  conversationId: bigserial("conversation_id", { mode: "bigint" }).primaryKey(),
+
+  // Account for multi-tenant security
+  accountId: bigint("account_id", { mode: "bigint" }).notNull(), // FK → accounts.account_id
+
+  // User who owns this conversation (has the WhatsApp number configured)
+  userId: varchar("user_id", { length: 36 }).notNull(), // FK → users.id
+
+  // Contact link (every conversation belongs to a contact)
+  contactId: bigint("contact_id", { mode: "bigint" }).notNull(), // FK → contacts.contact_id
+
+  // WhatsApp identity (E.164 format: +34612345678)
+  whatsappNumber: varchar("whatsapp_number", { length: 20 }).notNull(),
+
+  // Conversation state
+  status: varchar("status", { length: 20 }).default("active"), // 'active' | 'closed' | 'archived'
+  lastMessageAt: timestamp("last_message_at"), // Last message timestamp (for sorting)
+  lastCustomerMessageAt: timestamp("last_customer_message_at"), // For 24h window tracking
+  unreadCount: integer("unread_count").default(0).notNull(),
+
+  // Context linking (similar to email_thread_contexts)
+  listingContactId: bigint("listing_contact_id", { mode: "bigint" }), // FK → listing_contacts.listing_contact_id (optional)
+
+  // System fields
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  isActive: boolean("is_active").default(true),
+});
+
+// WhatsApp Messages table (individual messages in conversations)
+export const whatsappMessages = pgTable("whatsapp_messages", {
+  // Primary Key
+  messageId: bigserial("message_id", { mode: "bigint" }).primaryKey(),
+
+  // Conversation reference
+  conversationId: bigint("conversation_id", { mode: "bigint" }).notNull(), // FK → whatsapp_conversations.conversation_id
+
+  // Twilio identifier
+  twilioMessageSid: varchar("twilio_message_sid", { length: 64 }), // SM... or MM... SID from Twilio
+
+  // Message direction and status
+  direction: varchar("direction", { length: 10 }).notNull(), // 'inbound' | 'outbound'
+  status: varchar("status", { length: 20 }).default("sent"), // 'queued' | 'sent' | 'delivered' | 'read' | 'failed'
+
+  // Content
+  body: text("body"), // Message text content
+  mediaUrls: jsonb("media_urls").default([]), // Array of media URLs: [{url, contentType}]
+
+  // Sender info
+  senderType: varchar("sender_type", { length: 20 }).notNull(), // 'agent' | 'contact' | 'system'
+  senderUserId: varchar("sender_user_id", { length: 36 }), // FK → users.id (if agent)
+
+  // Template info (for business-initiated messages after 24h)
+  isTemplate: boolean("is_template").default(false),
+  templateSid: varchar("template_sid", { length: 64 }), // Content template SID if used
+  templateVariables: jsonb("template_variables"), // Variables passed to template
+
+  // Error tracking
+  errorCode: varchar("error_code", { length: 20 }),
+  errorMessage: text("error_message"),
+
+  // Timestamps
+  sentAt: timestamp("sent_at"), // When message was sent/received
+  deliveredAt: timestamp("delivered_at"),
+  readAt: timestamp("read_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });

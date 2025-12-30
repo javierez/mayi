@@ -58,7 +58,11 @@
       "Bash(curl:*)",
       "Bash(pnpm --silent typecheck:*)",
       "Bash(npm view:*)",
-      "Bash(sudo rm:*)"
+      "Bash(sudo rm:*)",
+      "Bash(git -C /Users/javierperezgarcia/Downloads/vesta status --porcelain)",
+      "Bash(git -C /Users/javierperezgarcia/Downloads/vesta log --oneline --all)",
+      "Bash(git -C /Users/javierperezgarcia/Downloads/vesta diff src/env.js)",
+      "Bash(git -C /Users/javierperezgarcia/Downloads/vesta diff --stat HEAD)"
     ],
     "deny": [],
     "ask": []

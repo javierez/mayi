@@ -25,6 +25,8 @@ import {
   X,
   Loader2,
   Maximize2,
+  Clock,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
@@ -37,6 +39,7 @@ import { AttachmentActionModal } from "./attachment-action-modal";
 import { ConversationFullscreenModal } from "./conversation-fullscreen-modal";
 import type { InboxThread, ThreadMessage, InboxAttachment } from "./inbox-types";
 import type { EmailAttachment } from "~/server/services/gmail-service";
+import type { WhatsAppSessionInfo } from "~/types/whatsapp-conversations";
 
 interface PendingAttachment {
   file: File;
@@ -53,6 +56,9 @@ interface InboxConversationViewProps {
   onSendReply: (threadId: string, content: string, attachments?: EmailAttachment[]) => void;
   onBack?: () => void;
   showBackButton?: boolean;
+  // WhatsApp 24h window props
+  whatsappSessionInfo?: WhatsAppSessionInfo | null;
+  onSendTemplate?: (conversationId: string) => void;
 }
 
 function getInitials(name: string): string {
@@ -403,6 +409,8 @@ export function InboxConversationView({
   onSendReply,
   onBack,
   showBackButton = false,
+  whatsappSessionInfo,
+  onSendTemplate,
 }: InboxConversationViewProps) {
   const [replyContent, setReplyContent] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -711,6 +719,59 @@ export function InboxConversationView({
         </div>
       </ScrollArea>
 
+      {/* 24h Window Warning for WhatsApp */}
+      {thread.channel === "whatsapp" && whatsappSessionInfo && !whatsappSessionInfo.canSendFreeform && (
+        <div className="border-t border-amber-200/60 bg-amber-50/50 px-4 py-3 dark:border-amber-800/40 dark:bg-amber-950/20">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 rounded-full bg-amber-100 p-1.5 dark:bg-amber-900/50">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                Ventana de 24h expirada
+              </p>
+              <p className="text-xs text-amber-700/80 dark:text-amber-300/70">
+                Para reanudar la conversacion, envia una plantilla aprobada por WhatsApp.
+              </p>
+            </div>
+            {onSendTemplate && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-shrink-0 border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-200 dark:border-amber-700 dark:bg-amber-900/50 dark:text-amber-200 dark:hover:bg-amber-900"
+                onClick={() => onSendTemplate(thread.id.replace("wa-", ""))}
+              >
+                Enviar plantilla
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 24h Window Time Remaining Indicator */}
+      {thread.channel === "whatsapp" && whatsappSessionInfo && whatsappSessionInfo.canSendFreeform && whatsappSessionInfo.hoursRemaining !== null && (
+        <div className="border-t border-emerald-200/60 bg-emerald-50/30 px-4 py-2 dark:border-emerald-800/40 dark:bg-emerald-950/20">
+          <div className="flex items-center gap-2">
+            <Clock className={cn(
+              "h-3.5 w-3.5",
+              whatsappSessionInfo.hoursRemaining <= 2
+                ? "text-amber-500"
+                : "text-emerald-600 dark:text-emerald-400"
+            )} />
+            <span className={cn(
+              "text-xs",
+              whatsappSessionInfo.hoursRemaining <= 2
+                ? "text-amber-600 dark:text-amber-400"
+                : "text-emerald-700 dark:text-emerald-300"
+            )}>
+              {whatsappSessionInfo.hoursRemaining <= 2
+                ? `Menos de ${Math.ceil(whatsappSessionInfo.hoursRemaining)}h para que expire la ventana`
+                : `${Math.floor(whatsappSessionInfo.hoursRemaining)}h restantes para mensajes libres`}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Reply Section */}
       <div className="border-t border-border/40 p-3 sm:p-4">
         <div className="space-y-2 sm:space-y-3">
@@ -743,8 +804,13 @@ export function InboxConversationView({
           <Textarea
             value={replyContent}
             onChange={(e) => setReplyContent(e.target.value)}
-            placeholder={`Escribe un mensaje...`}
+            placeholder={
+              thread.channel === "whatsapp" && whatsappSessionInfo && !whatsappSessionInfo.canSendFreeform
+                ? "Ventana de 24h expirada. Usa una plantilla para reanudar."
+                : "Escribe un mensaje..."
+            }
             className="min-h-[60px] resize-none sm:min-h-[80px]"
+            disabled={thread.channel === "whatsapp" && whatsappSessionInfo?.canSendFreeform === false}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -787,7 +853,11 @@ export function InboxConversationView({
             <Button
               size="sm"
               onClick={() => void handleSendReply()}
-              disabled={isSending || (!replyContent.trim() && pendingAttachments.length === 0)}
+              disabled={
+                isSending ||
+                (!replyContent.trim() && pendingAttachments.length === 0) ||
+                (thread.channel === "whatsapp" && whatsappSessionInfo?.canSendFreeform === false)
+              }
               className={cn(
                 thread.channel === "whatsapp"
                   ? "bg-amber-600 hover:bg-amber-700"
