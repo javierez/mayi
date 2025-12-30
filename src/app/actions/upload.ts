@@ -861,3 +861,302 @@ export async function uploadFichaEncargoAction(file: File): Promise<{
     referenceNumber,
   };
 }
+
+// ============================================================================
+// PRESIGNED URL UPLOAD FUNCTIONS
+// These bypass Vercel's 4.5MB limit by uploading directly to S3
+// ============================================================================
+
+import {
+  generatePresignedUploadUrl,
+  generateDocumentKey,
+  getS3PublicUrl,
+} from "~/lib/s3";
+
+export type PresignedUploadResult = {
+  uploadUrl: string;
+  documentKey: string;
+  fileUrl: string;
+};
+
+/**
+ * Get a presigned URL for uploading a document directly to S3.
+ * This bypasses Vercel's 4.5MB serverless function limit.
+ */
+export async function getPresignedDocumentUploadUrl(
+  filename: string,
+  contentType: string,
+  referenceNumber: string,
+  folderType: string,
+): Promise<PresignedUploadResult> {
+  "use server";
+
+  const session = await getSecureSession();
+  if (!session?.user?.id) {
+    throw new Error("Usuario no autenticado");
+  }
+
+  // Generate the S3 key for this document
+  const documentKey = generateDocumentKey(referenceNumber, folderType, filename);
+
+  // Get presigned URL for direct upload
+  const { uploadUrl } = await generatePresignedUploadUrl(documentKey, contentType);
+
+  // Get the public URL that will be valid after upload
+  const fileUrl = await getS3PublicUrl(documentKey);
+
+  console.log("[getPresignedDocumentUploadUrl] Generated presigned URL for:", filename);
+
+  return {
+    uploadUrl,
+    documentKey,
+    fileUrl,
+  };
+}
+
+/**
+ * Save a document record to the database after successful S3 upload.
+ * Call this after the client has uploaded directly to S3.
+ */
+export async function saveUploadedDocument(
+  filename: string,
+  fileType: string,
+  fileUrl: string,
+  documentKey: string,
+  documentTag: string,
+  _folderType: string, // Kept for API compatibility, not stored in DB
+  contactId?: bigint,
+  listingId?: bigint,
+  propertyId?: bigint,
+): Promise<Document> {
+  "use server";
+
+  const session = await getSecureSession();
+  if (!session?.user?.id) {
+    throw new Error("Usuario no autenticado");
+  }
+
+  console.log("[saveUploadedDocument] Saving document record:", filename);
+
+  // Insert document record into database
+  const [insertedDocument] = await db
+    .insert(documents)
+    .values({
+      filename,
+      fileType,
+      fileUrl,
+      documentKey,
+      s3key: documentKey, // s3key same as documentKey
+      documentTag,
+      userId: session.user.id,
+      contactId: contactId ?? null,
+      listingId: listingId ?? null,
+      propertyId: propertyId ?? null,
+      documentOrder: 1,
+      uploadedAt: new Date(),
+    })
+    .returning();
+
+  if (!insertedDocument) {
+    throw new Error("Error al guardar el documento");
+  }
+
+  console.log("[saveUploadedDocument] Document saved with ID:", insertedDocument.docId.toString());
+
+  // Convert null values to undefined to match Document type
+  return {
+    ...insertedDocument,
+    contactId: insertedDocument.contactId ?? undefined,
+    listingId: insertedDocument.listingId ?? undefined,
+    propertyId: insertedDocument.propertyId ?? undefined,
+    listingContactId: insertedDocument.listingContactId ?? undefined,
+    dealId: insertedDocument.dealId ?? undefined,
+    appointmentId: insertedDocument.appointmentId ?? undefined,
+    prospectId: insertedDocument.prospectId ?? undefined,
+    documentTag: insertedDocument.documentTag ?? undefined,
+    documentHash: insertedDocument.documentHash ?? undefined,
+    documentTimestamp: insertedDocument.documentTimestamp ?? undefined,
+    isActive: insertedDocument.isActive ?? true,
+  };
+}
+
+/**
+ * Combined presigned upload for contact documents.
+ * Returns presigned URL and saves document after upload confirmation.
+ */
+export async function getContactDocumentPresignedUrl(
+  filename: string,
+  contentType: string,
+  contactId: bigint,
+  folderType: "documentos-personales" | "contratos",
+): Promise<PresignedUploadResult> {
+  "use server";
+
+  const referenceNumber = `contacts/${contactId.toString()}`;
+  return getPresignedDocumentUploadUrl(filename, contentType, referenceNumber, folderType);
+}
+
+/**
+ * Save contact document after presigned upload.
+ */
+export async function saveContactDocument(
+  filename: string,
+  fileType: string,
+  fileUrl: string,
+  documentKey: string,
+  contactId: bigint,
+  folderType: "documentos-personales" | "contratos",
+): Promise<Document> {
+  "use server";
+
+  const documentTagMap: Record<string, string> = {
+    "documentos-personales": "documentos-personales",
+    contratos: "contrato-arras",
+  };
+
+  const documentTag = documentTagMap[folderType] ?? folderType;
+
+  return saveUploadedDocument(
+    filename,
+    fileType,
+    fileUrl,
+    documentKey,
+    documentTag,
+    folderType,
+    contactId,
+    undefined,
+    undefined,
+  );
+}
+
+/**
+ * Get presigned URL for property document upload.
+ */
+export async function getPropertyDocumentPresignedUrl(
+  filename: string,
+  contentType: string,
+  referenceNumber: string,
+  folderType: string,
+): Promise<PresignedUploadResult> {
+  "use server";
+
+  return getPresignedDocumentUploadUrl(filename, contentType, referenceNumber, folderType);
+}
+
+/**
+ * Save property document after presigned upload.
+ */
+export async function savePropertyDocument(
+  filename: string,
+  fileType: string,
+  fileUrl: string,
+  documentKey: string,
+  listingId: bigint,
+  propertyId: bigint,
+  folderType: string,
+): Promise<Document> {
+  "use server";
+
+  const documentTagMap: Record<string, string> = {
+    "initial-docs": "documentacion-inicial",
+    "legal-docs": "documentacion-legal",
+    certificados: "certificados",
+    "impuestos-pagos": "impuestos-pagos",
+    contratos: "contratos",
+    hipoteca: "hipoteca",
+    visitas: "visitas",
+    planos: "planos",
+    others: "otros",
+    carteles: "carteles",
+  };
+
+  const documentTag = documentTagMap[folderType] ?? folderType;
+
+  return saveUploadedDocument(
+    filename,
+    fileType,
+    fileUrl,
+    documentKey,
+    documentTag,
+    folderType,
+    undefined,
+    listingId,
+    propertyId,
+  );
+}
+
+/**
+ * Create a property and get presigned URL for ficha de encargo upload.
+ * This creates the property first, then returns the presigned URL.
+ */
+export async function createPropertyAndGetPresignedUrl(
+  filename: string,
+  contentType: string,
+): Promise<{
+  uploadUrl: string;
+  documentKey: string;
+  fileUrl: string;
+  propertyId: string;
+  listingId: string;
+  referenceNumber: string;
+}> {
+  "use server";
+
+  const { createMinimalPropertyWithListing } = await import(
+    "~/server/queries/properties"
+  );
+
+  const session = await getSecureSession();
+  if (!session?.user?.id) {
+    throw new Error("Usuario no autenticado");
+  }
+
+  console.log("[createPropertyAndGetPresignedUrl] Creating property for ficha de encargo...");
+
+  // Step 1: Create property
+  const propertyResult = await createMinimalPropertyWithListing();
+  const { propertyId, listingId, referenceNumber } = propertyResult;
+
+  console.log("[createPropertyAndGetPresignedUrl] Property created:", referenceNumber);
+
+  // Step 2: Get presigned URL
+  const result = await getPresignedDocumentUploadUrl(
+    filename,
+    contentType,
+    referenceNumber,
+    "initial-docs",
+  );
+
+  return {
+    ...result,
+    propertyId: propertyId.toString(),
+    listingId: listingId.toString(),
+    referenceNumber,
+  };
+}
+
+/**
+ * Save ficha de encargo document after presigned upload.
+ */
+export async function saveFichaEncargoDocument(
+  filename: string,
+  fileType: string,
+  fileUrl: string,
+  documentKey: string,
+  listingId: string,
+  propertyId: string,
+): Promise<Document> {
+  "use server";
+
+  return saveUploadedDocument(
+    filename,
+    fileType,
+    fileUrl,
+    documentKey,
+    "ficha-encargo",
+    "initial-docs",
+    undefined,
+    BigInt(listingId),
+    BigInt(propertyId),
+  );
+}

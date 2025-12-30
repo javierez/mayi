@@ -28,10 +28,8 @@ import {
 } from "~/components/ui/collapsible";
 import { DocumentsPageSkeleton } from "~/components/propiedades/detail/skeletons";
 import { ConfirmDialog } from "~/components/ui/confirm-dialog";
-import {
-  deleteDocumentAction,
-  uploadContactDocument,
-} from "~/app/actions/upload";
+import { deleteDocumentAction } from "~/app/actions/upload";
+import { uploadContactDocumentPresigned } from "~/lib/presigned-upload";
 import { toast } from "sonner";
 import { generatePropertyTitle } from "~/lib/property-title";
 
@@ -231,7 +229,7 @@ export function ContactDocumentsPage({
       if (!files || files.length === 0) return;
 
       setIsUploading(true);
-      console.log("[ContactDocuments] Starting upload with server action...");
+      console.log("[ContactDocuments] Starting presigned upload...");
 
       try {
         // Map apiFolderType to the server action's expected type
@@ -242,10 +240,10 @@ export function ContactDocumentsPage({
 
         console.log("[ContactDocuments] Folder type:", serverFolderType, "Contact ID:", contactId.toString());
 
-        // Upload all files using server action (10MB limit instead of 4.5MB API route limit)
+        // Upload all files using presigned URLs (bypasses Vercel's 4.5MB limit)
         const uploadPromises = Array.from(files).map(async (file) => {
           console.log("[ContactDocuments] Uploading file:", file.name, "Size:", (file.size / 1024 / 1024).toFixed(2), "MB");
-          const result = await uploadContactDocument(
+          const result = await uploadContactDocumentPresigned(
             file,
             contactId,
             serverFolderType,

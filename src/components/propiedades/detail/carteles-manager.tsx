@@ -15,7 +15,8 @@ import {
 import { FileText, Upload, Trash2, Eye, Plus, X } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { toast } from "sonner";
-import { uploadCartelAction, deleteDocumentAction } from "~/app/actions/upload";
+import { deleteDocumentAction } from "~/app/actions/upload";
+import { uploadPropertyDocumentPresigned } from "~/lib/presigned-upload";
 
 // Dynamically import PdfPreview to avoid SSR issues with react-pdf
 const PdfPreview = dynamic(
@@ -76,12 +77,14 @@ export function CartelesManager({
       }
 
       try {
-        // Use server action (10MB limit instead of 4.5MB API route limit)
-        const result = await uploadCartelAction(
+        // Use presigned upload (bypasses Vercel's 4.5MB limit)
+        console.log("[CartelesManager] Uploading file:", file.name, "Size:", (file.size / 1024 / 1024).toFixed(2), "MB");
+        const result = await uploadPropertyDocumentPresigned(
           file,
           listingId,
           propertyId,
           referenceNumber,
+          "carteles",
         );
 
         toast.success(`${file.name} subido correctamente`);

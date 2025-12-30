@@ -5,6 +5,7 @@ import {
   DeleteObjectCommand,
   ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { nanoid } from "nanoid";
 import { getDynamicBucketName } from "~/lib/s3-bucket";
 
@@ -397,4 +398,52 @@ export async function deletePropertyS3Folder(
     console.error("Error deleting property S3 folder:", error);
     throw error;
   }
+}
+
+/**
+ * Generate a presigned URL for direct S3 upload from the client.
+ * This bypasses Vercel's 4.5MB request limit by uploading directly to S3.
+ *
+ * @param key - The S3 key where the file will be uploaded
+ * @param contentType - The MIME type of the file
+ * @param expiresIn - URL expiration time in seconds (default: 300 = 5 minutes)
+ * @returns Presigned URL for PUT request
+ */
+export async function generatePresignedUploadUrl(
+  key: string,
+  contentType: string,
+  expiresIn: number = 300,
+): Promise<{ uploadUrl: string; bucket: string }> {
+  const bucket = await getDynamicBucketName();
+
+  const command = new PutObjectCommand({
+    Bucket: bucket,
+    Key: key,
+    ContentType: contentType,
+  });
+
+  const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn });
+
+  return { uploadUrl, bucket };
+}
+
+/**
+ * Generate the document key for S3 storage
+ */
+export function generateDocumentKey(
+  referenceNumber: string,
+  folderType: string,
+  filename: string,
+): string {
+  const sanitizedFilename = filename.replace(/[^a-zA-Z0-9.-]/g, "_");
+  const uniqueId = nanoid(8);
+  return `${referenceNumber}/documents/${folderType}/${uniqueId}-${sanitizedFilename}`;
+}
+
+/**
+ * Get the public URL for an S3 object
+ */
+export async function getS3PublicUrl(key: string): Promise<string> {
+  const bucket = await getDynamicBucketName();
+  return `https://${bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
 }

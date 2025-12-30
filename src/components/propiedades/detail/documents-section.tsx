@@ -5,7 +5,7 @@ import { DocumentsPage } from "./documents-page";
 import { Button } from "~/components/ui/button";
 import { Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { uploadPropertyDocumentAction } from "~/app/actions/upload";
+import { uploadPropertyDocumentPresigned } from "~/lib/presigned-upload";
 
 interface Document {
   docId: bigint;
@@ -77,21 +77,12 @@ export function DocumentsSection({
       setIsUploading(true);
 
       try {
-        const apiFolderType = FOLDER_TYPE_MAP[folderType] as
-          | "initial-docs"
-          | "legal-docs"
-          | "certificados"
-          | "impuestos-pagos"
-          | "contratos"
-          | "hipoteca"
-          | "visitas"
-          | "planos"
-          | "others"
-          | "carteles";
+        const apiFolderType = FOLDER_TYPE_MAP[folderType];
 
-        // Upload all files using server action (10MB limit instead of 4.5MB API route limit)
+        // Upload all files using presigned URLs (bypasses Vercel's 4.5MB limit)
         const uploadPromises = Array.from(files).map(async (file) => {
-          const result = await uploadPropertyDocumentAction(
+          console.log("[DocumentsSection] Uploading file:", file.name, "Size:", (file.size / 1024 / 1024).toFixed(2), "MB");
+          const result = await uploadPropertyDocumentPresigned(
             file,
             listing.listingId,
             listing.propertyId,

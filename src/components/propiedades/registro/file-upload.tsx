@@ -5,7 +5,7 @@ import { cn } from "~/lib/utils";
 import { Upload, Check, FileText, Loader2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { uploadFichaEncargoAction } from "~/app/actions/upload";
+import { uploadFichaEncargoPresigned } from "~/lib/presigned-upload";
 
 interface UploadedFile {
   id: string;
@@ -154,8 +154,9 @@ export function FileUpload({
             ),
           );
 
-          // Use server action (10MB limit instead of 4.5MB API route limit)
-          const result = await uploadFichaEncargoAction(uploadedFile.file);
+          // Use presigned upload (bypasses Vercel's 4.5MB limit)
+          console.log("[FileUpload] Uploading file:", uploadedFile.file.name, "Size:", (uploadedFile.file.size / 1024 / 1024).toFixed(2), "MB");
+          const result = await uploadFichaEncargoPresigned(uploadedFile.file);
 
           setUploadedFiles((prev) =>
             prev.map((f) =>
