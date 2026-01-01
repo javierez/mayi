@@ -391,26 +391,17 @@ export function ToriParkDocument({ data }: Props) {
               <div className="flex flex-col">
                 <span className="mb-1 text-[9pt] font-semibold">Fianza entregada</span>
                 <div className="h-12 border-b border-black"></div>
-                <div className="mt-1 flex items-center gap-1 text-[8pt]">
-                  <span>Fecha:</span>
-                  <span className="flex-1 border-b border-black"></span>
-                </div>
+                <div className="mt-1 text-[8pt]">Fecha:</div>
               </div>
               <div className="flex flex-col">
                 <span className="mb-1 text-[9pt] font-semibold">Alquiler pagado</span>
                 <div className="h-12 border-b border-black"></div>
-                <div className="mt-1 flex items-center gap-1 text-[8pt]">
-                  <span>Fecha:</span>
-                  <span className="flex-1 border-b border-black"></span>
-                </div>
+                <div className="mt-1 text-[8pt]">Fecha:</div>
               </div>
               <div className="flex flex-col">
                 <span className="mb-1 text-[9pt] font-semibold">Fianza devuelta</span>
                 <div className="h-12 border-b border-black"></div>
-                <div className="mt-1 flex items-center gap-1 text-[8pt]">
-                  <span>Fecha:</span>
-                  <span className="flex-1 border-b border-black"></span>
-                </div>
+                <div className="mt-1 text-[8pt]">Fecha:</div>
               </div>
             </div>
           </div>
