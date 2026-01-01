@@ -7,7 +7,7 @@
 
 import { db } from "~/server/db";
 import { whatsappMessages, users } from "~/server/db/schema";
-import { eq, desc, and, lt, sql } from "drizzle-orm";
+import { eq, desc, and, lt } from "drizzle-orm";
 import {
   sendWhatsAppFreeform,
   sendWhatsAppTemplate,
@@ -29,7 +29,7 @@ import type {
   WhatsAppSenderType,
   TwilioSettings,
 } from "~/types/whatsapp-conversations";
-import { isWithin24HourWindow, parseWhatsAppNumber } from "~/types/whatsapp-conversations";
+import { isWithin24HourWindow } from "~/types/whatsapp-conversations";
 
 // =============================================================================
 // Send Message Operations
@@ -233,8 +233,8 @@ export async function storeIncomingMessage(
 
     if (url) {
       mediaUrls.push({
-        url: url as string,
-        contentType: (contentType as string) ?? "application/octet-stream",
+        url: url,
+        contentType: contentType ?? "application/octet-stream",
       });
     }
   }

@@ -7,7 +7,8 @@
  * Stores messages and updates conversations.
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import {
   handleIncomingMessage,
   validateTwilioSignature,
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Convert FormData to params object for validation
     const params: Record<string, string> = {};
     formData.forEach((value, key) => {
-      params[key] = value.toString();
+      params[key] = typeof value === "string" ? value : value.name;
     });
 
     // Validate signature (optional in dev, required in prod)

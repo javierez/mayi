@@ -39,7 +39,6 @@ import {
   UserCog,
   CheckSquare,
   Settings,
-  Mail,
 } from "lucide-react";
 import type { FC, ReactNode } from "react";
 

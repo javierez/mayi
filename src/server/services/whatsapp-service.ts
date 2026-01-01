@@ -38,7 +38,7 @@ function normalizePhoneNumber(phoneNumber: string): string {
   if (!phoneNumber) return "";
 
   // Remove any whitespace
-  let normalized = phoneNumber.trim().replace(/\s+/g, "");
+  const normalized = phoneNumber.trim().replace(/\s+/g, "");
 
   // If already has country code, return as is
   if (normalized.startsWith("+")) {

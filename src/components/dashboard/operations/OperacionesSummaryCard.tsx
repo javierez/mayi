@@ -3,9 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Card, CardContent } from "~/components/ui/card";
-import { ChevronDown } from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { ChevronDown, Info } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { OperacionesSummary } from "~/server/queries/operaciones-dashboard";
+import { OperacionesInfoModal } from "./operaciones-info-modal";
 
 interface OperacionesSummaryCardProps {
   data: OperacionesSummary;
@@ -18,6 +20,7 @@ export default function OperacionesSummaryCard({
 }: OperacionesSummaryCardProps) {
   const [activeType, setActiveType] = useState<"sale" | "rent">("sale");
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [infoModalOpen, setInfoModalOpen] = useState(false);
 
   // Calcular totales para cada tipo de operación
   const calculateTotal = (operations: Record<string, number>) => {
@@ -30,10 +33,34 @@ export default function OperacionesSummaryCard({
 
   const activeData = data[activeType];
 
-  // Helper function to pluralize status names
-  const pluralizeStatus = (status: string, count: number): string => {
-    if (count <= 1) return status;
+  // Helper function to translate and pluralize status names
+  const formatStatus = (status: string, count: number): string => {
+    // Singular translations
+    const singularMap: Record<string, string> = {
+      // Conexiones badge types
+      Inactivo: "Inactivo",
+      "Visita Pendiente": "Visita Pendiente",
+      "Oferta Aceptada": "Oferta Aceptada",
+      "Oferta Rechazada": "Oferta Rechazada",
+      "Oferta Pendiente": "Oferta Pendiente",
+      "Visita Cancelada": "Visita Cancelada",
+      "Visita Perdida": "Visita Perdida",
+      "Visita Completada": "Visita Completada",
+      "Sin Visitas": "Sin Visitas",
+      // Ofertas aceptadas y cierres - DB statuses (English)
+      Offer: "Oferta Aceptada",
+      "Arras Pending": "Arras Pendientes",
+      UnderContract: "Arras Firmadas",
+      Closed: "Cerrado",
+      Lost: "Perdido",
+      // Ofertas aceptadas y cierres - Derived statuses (Spanish from query)
+      "Arras Firmadas": "Arras Firmadas",
+      "Contrato Firmado": "Contrato Firmado",
+      Cerrado: "Cerrado",
+      Perdido: "Perdido",
+    };
 
+    // Plural translations
     const pluralMap: Record<string, string> = {
       // Conexiones badge types
       Inactivo: "Inactivos",
@@ -44,14 +71,23 @@ export default function OperacionesSummaryCard({
       "Visita Cancelada": "Visitas Canceladas",
       "Visita Perdida": "Visitas Perdidas",
       "Visita Completada": "Visitas Completadas",
-      "Sin Visitas": "Sin Visitas", // Doesn't change
-      // Acuerdos status types
-      Offer: "Ofertas",
-      UnderContract: "En Contrato",
+      "Sin Visitas": "Sin Visitas",
+      // Ofertas aceptadas y cierres - DB statuses (English)
+      Offer: "Ofertas Aceptadas",
+      "Arras Pending": "Arras Pendientes",
+      UnderContract: "Arras Firmadas",
       Closed: "Cerrados",
       Lost: "Perdidos",
+      // Ofertas aceptadas y cierres - Derived statuses (Spanish from query)
+      "Arras Firmadas": "Arras Firmadas",
+      "Contrato Firmado": "Contratos Firmados",
+      Cerrado: "Cerrados",
+      Perdido: "Perdidos",
     };
 
+    if (count <= 1) {
+      return singularMap[status] ?? status;
+    }
     return pluralMap[status] ?? status;
   };
 
@@ -67,6 +103,19 @@ export default function OperacionesSummaryCard({
     "Visita Perdida",
     "Inactivo",
   ];
+
+  // Map Spanish status labels to filter values for /operaciones/leads
+  const statusToFilterValue: Record<string, string> = {
+    "Visita Pendiente": "hasUpcomingVisit",
+    "Oferta Aceptada": "offerAccepted",
+    "Oferta Rechazada": "offerRejected",
+    "Oferta Pendiente": "offerPending",
+    "Visita Cancelada": "hasCancelledVisit",
+    "Visita Perdida": "hasMissedVisit",
+    "Visita Completada": "hasCompletedVisit",
+    "Sin Visitas": "noVisits",
+    Inactivo: "inactive",
+  };
 
   // Helper function to sort statuses by urgency
   const sortByUrgency = (entries: [string, number][]): [string, number][] => {
@@ -92,8 +141,8 @@ export default function OperacionesSummaryCard({
     },
     {
       key: "deals",
-      label: "Acuerdo",
-      labelPlural: "Acuerdos",
+      label: "Ofertas aceptadas y cierres",
+      labelPlural: "Ofertas aceptadas y cierres",
       data: activeData.deals,
     },
   ];
@@ -171,7 +220,7 @@ export default function OperacionesSummaryCard({
               >
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-gray-700">
-                    Demandas
+                    Búsquedas
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -203,7 +252,7 @@ export default function OperacionesSummaryCard({
                       href={`/operaciones/prospects?hasMatches=true&type=${activeType}`}
                       className="flex items-center justify-between rounded-md bg-gray-50 px-2 py-1.5 transition-colors duration-200 hover:bg-gray-100"
                     >
-                      <span className="text-xs text-gray-700">Con Conexiones</span>
+                      <span className="text-xs text-gray-700">Con Resultados</span>
                       <span className="font-mono text-xs text-primary">
                         {activeData.prospectsWithMatches.toLocaleString("es-ES")}
                       </span>
@@ -212,7 +261,7 @@ export default function OperacionesSummaryCard({
                       href={`/operaciones/prospects?hasMatches=false&type=${activeType}`}
                       className="flex items-center justify-between rounded-md bg-gray-50 px-2 py-1.5 transition-colors duration-200 hover:bg-gray-100"
                     >
-                      <span className="text-xs text-gray-700">Sin Conexiones</span>
+                      <span className="text-xs text-gray-700">Sin Resultados</span>
                       <span className="font-mono text-xs text-primary">
                         {activeData.prospectsWithoutMatches.toLocaleString("es-ES")}
                       </span>
@@ -229,7 +278,7 @@ export default function OperacionesSummaryCard({
             >
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-gray-700">
-                  Prop. en Oferta
+                  Propiedades en cartera
                 </span>
               </div>
               <span className="text-sm font-bold text-primary">
@@ -293,6 +342,38 @@ export default function OperacionesSummaryCard({
                           ([status, count], statusIndex) => {
                             if (count === 0) return null;
 
+                            // For leads section, make items clickable
+                            if (section.key === "leads") {
+                              const filterValue =
+                                statusToFilterValue[status] ?? status;
+                              // For inactive status, we need to use isActive=false instead of badgeStatus
+                              const href =
+                                status === "Inactivo"
+                                  ? `/operaciones/leads?isActive=false`
+                                  : `/operaciones/leads?badgeStatus=${encodeURIComponent(filterValue)}`;
+
+                              return (
+                                <motion.div
+                                  key={status}
+                                  initial={{ opacity: 0, x: -20 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: statusIndex * 0.03 }}
+                                >
+                                  <Link
+                                    href={href}
+                                    className="flex items-center justify-between rounded-md bg-gray-50 px-2 py-1.5 transition-colors duration-200 hover:bg-gray-100"
+                                  >
+                                    <span className="text-xs text-gray-700">
+                                      {formatStatus(status, count)}
+                                    </span>
+                                    <span className="font-mono text-xs text-primary">
+                                      {count.toLocaleString("es-ES")}
+                                    </span>
+                                  </Link>
+                                </motion.div>
+                              );
+                            }
+
                             return (
                               <motion.div
                                 key={status}
@@ -302,7 +383,7 @@ export default function OperacionesSummaryCard({
                                 className="flex items-center justify-between rounded-md bg-gray-50 px-2 py-1.5 transition-colors duration-200 hover:bg-gray-100"
                               >
                                 <span className="text-xs text-gray-700">
-                                  {pluralizeStatus(status, count)}
+                                  {formatStatus(status, count)}
                                 </span>
                                 <span className="font-mono text-xs text-primary">
                                   {count.toLocaleString("es-ES")}
@@ -318,8 +399,24 @@ export default function OperacionesSummaryCard({
               );
             })}
           </div>
+
+          {/* Info Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setInfoModalOpen(true)}
+            className="absolute bottom-3 right-3 h-6 w-6 text-muted-foreground hover:text-foreground"
+            title="Info"
+          >
+            <Info className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </CardContent>
+
+      <OperacionesInfoModal
+        open={infoModalOpen}
+        onOpenChange={setInfoModalOpen}
+      />
     </Card>
   );
 }

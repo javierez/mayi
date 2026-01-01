@@ -387,18 +387,30 @@ export function ToriParkDocument({ data }: Props) {
               <div><strong>FIANZA:</strong> {formatCurrency(securityDeposit)}</div>
             </div>
 
-            <div className="mt-3 grid grid-cols-3 gap-4 border-t border-gray-400 pt-2.5">
-              <div className="flex items-center gap-2">
-                <div className="h-4 w-4 border border-black"></div>
-                <span className="text-[9pt]">Fianza entregada</span>
+            <div className="mt-3 grid grid-cols-3 gap-3 border-t border-gray-400 pt-2.5">
+              <div className="flex flex-col">
+                <span className="mb-1 text-[9pt] font-semibold">Fianza entregada</span>
+                <div className="h-12 border-b border-black"></div>
+                <div className="mt-1 flex items-center gap-1 text-[8pt]">
+                  <span>Fecha:</span>
+                  <span className="flex-1 border-b border-black"></span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="h-4 w-4 border border-black"></div>
-                <span className="text-[9pt]">Alquiler pagado</span>
+              <div className="flex flex-col">
+                <span className="mb-1 text-[9pt] font-semibold">Alquiler pagado</span>
+                <div className="h-12 border-b border-black"></div>
+                <div className="mt-1 flex items-center gap-1 text-[8pt]">
+                  <span>Fecha:</span>
+                  <span className="flex-1 border-b border-black"></span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="h-4 w-4 border border-black"></div>
-                <span className="text-[9pt]">Fianza devuelta</span>
+              <div className="flex flex-col">
+                <span className="mb-1 text-[9pt] font-semibold">Fianza devuelta</span>
+                <div className="h-12 border-b border-black"></div>
+                <div className="mt-1 flex items-center gap-1 text-[8pt]">
+                  <span>Fecha:</span>
+                  <span className="flex-1 border-b border-black"></span>
+                </div>
               </div>
             </div>
           </div>

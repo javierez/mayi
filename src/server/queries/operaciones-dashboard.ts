@@ -204,10 +204,20 @@ export async function getOperacionesSummary(
         listingContacts.offerAccepted,
       );
 
-    // Get deals summary by status and listing type (through listings)
+    // Get deals with date fields to calculate derived status based on process stages
+    // Status is derived from dates: closeDate → Cerrado, actualDeedDate → Contrato Firmado,
+    // arrasDate → Arras Firmadas, else → Oferta Aceptada. Lost status is kept from DB.
     const dealsData = await db
       .select({
-        status: deals.status,
+        derivedStatus: sql<string>`
+          CASE
+            WHEN ${deals.status} = 'Lost' THEN 'Perdido'
+            WHEN ${deals.closeDate} IS NOT NULL THEN 'Cerrado'
+            WHEN ${deals.actualDeedDate} IS NOT NULL THEN 'Contrato Firmado'
+            WHEN ${deals.arrasDate} IS NOT NULL THEN 'Arras Firmadas'
+            ELSE 'Oferta Aceptada'
+          END
+        `,
         listingType: listings.listingType,
         count: sql<number>`COUNT(*)`,
       })
@@ -215,7 +225,16 @@ export async function getOperacionesSummary(
       .innerJoin(listings, eq(deals.listingId, listings.listingId))
       .innerJoin(properties, eq(listings.propertyId, properties.propertyId))
       .where(eq(properties.accountId, accountId))
-      .groupBy(deals.status, listings.listingType);
+      .groupBy(
+        sql`CASE
+          WHEN ${deals.status} = 'Lost' THEN 'Perdido'
+          WHEN ${deals.closeDate} IS NOT NULL THEN 'Cerrado'
+          WHEN ${deals.actualDeedDate} IS NOT NULL THEN 'Contrato Firmado'
+          WHEN ${deals.arrasDate} IS NOT NULL THEN 'Arras Firmadas'
+          ELSE 'Oferta Aceptada'
+        END`,
+        listings.listingType,
+      );
 
     // Get matches to determine prospects with/without connections
     const matchResults = await getMatchesForProspects({
@@ -344,10 +363,11 @@ export async function getOperacionesSummary(
     });
 
     // Process deals data
+    // Process deals data - now using derived status based on dates
     dealsData.forEach((row) => {
       const type = row.listingType === "Sale" ? "sale" : "rent";
-      if (row.status) {
-        summary[type].deals[row.status] = Number(row.count);
+      if (row.derivedStatus) {
+        summary[type].deals[row.derivedStatus] = Number(row.count);
       }
     });
 

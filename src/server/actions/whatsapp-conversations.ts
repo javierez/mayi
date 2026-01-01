@@ -23,16 +23,15 @@ import {
   sendTemplateMessage,
   getMessages,
 } from "~/server/services/whatsapp-message-service";
-import { WHATSAPP_TEMPLATE_SIDS } from "~/types/whatsapp-templates";
-import type {
-  WhatsAppConversation,
-  WhatsAppConversationWithMessages,
-  WhatsAppActionResult,
-  SendMessageResult,
-  StartConversationResult,
-  TwilioSettings,
+import type { WHATSAPP_TEMPLATE_SIDS } from "~/types/whatsapp-templates";
+import {
+  getSessionInfo,
+  type WhatsAppConversation,
+  type WhatsAppConversationWithMessages,
+  type WhatsAppActionResult,
+  type SendMessageResult,
+  type StartConversationResult,
 } from "~/types/whatsapp-conversations";
-import { getSessionInfo } from "~/types/whatsapp-conversations";
 
 // =============================================================================
 // Result Types

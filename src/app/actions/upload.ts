@@ -1303,7 +1303,7 @@ export async function savePropertyVideoRecord(
   referenceNumber: string,
   videoUrl: string,
   videoKey: string,
-  videoOrder: number,
+  _videoOrder: number,
 ): Promise<PropertyImage> {
   "use server";
 

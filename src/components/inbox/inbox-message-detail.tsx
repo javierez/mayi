@@ -105,7 +105,8 @@ function buildDownloadUrl(attachment: { attachmentId?: string; messageId?: strin
   return `/api/google/gmail/attachment?${params.toString()}`;
 }
 
-// Download button with loading state
+// Download button with loading state - Unused for now
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function DownloadButton({
   url,
   filename,

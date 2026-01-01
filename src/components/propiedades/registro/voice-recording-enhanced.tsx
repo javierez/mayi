@@ -149,8 +149,8 @@ export function VoiceRecordingEnhanced({
   const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [audioLevel, setAudioLevel] = useState(0);
-  const [frequencyData, setFrequencyData] = useState<number[]>(
+  const [, setAudioLevel] = useState(0);
+  const [, setFrequencyData] = useState<number[]>(
     new Array(40).fill(0),
   );
   const waveAnimationRef = useRef<NodeJS.Timeout | null>(null);

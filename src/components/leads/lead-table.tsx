@@ -186,6 +186,16 @@ export const LeadTable = React.memo(function LeadTable({
     setSelectedContact(contactSheet);
   };
 
+  // Spanish translations for lead sources
+  const sourceLabels: Record<string, string> = {
+    Appointment: "Cita",
+    "Web form": "Formulario web",
+    Manual: "Manual",
+    "Phone call": "Llamada",
+    Email: "Email",
+    Referral: "Referido",
+  };
+
   // Helper function to render source logo or text
   const renderSource = (source: string | null | undefined) => {
     if (!source) {
@@ -214,10 +224,11 @@ export const LeadTable = React.memo(function LeadTable({
       );
     }
 
-    // Fallback to text badge if no logo found
+    // Fallback to text badge with Spanish translation if no logo found
+    const translatedSource = sourceLabels[source] ?? source;
     return (
       <Badge variant="outline" className="text-xs">
-        {source}
+        {translatedSource}
       </Badge>
     );
   };

@@ -120,7 +120,8 @@ export function CreateContactFromEmailModal({
       setListings([]);
       setSelectedListing(null);
       // Set contact type from current context or default to buyer
-      setContactType((currentContext?.contactType as "owner" | "buyer") ?? "buyer");
+      const contextType = currentContext?.contactType;
+      setContactType((contextType === "owner" || contextType === "buyer") ? contextType : "buyer");
       setIsProcessing(false);
 
       // Fetch 5 recent listings (ordered by createdAt DESC by default)

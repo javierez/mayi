@@ -78,6 +78,16 @@ export function LeadFilter({ view, onViewChange, agents }: LeadFilterProps) {
     "Referral",
   ];
 
+  // Spanish translations for lead sources
+  const sourceLabels: Record<string, string> = {
+    Appointment: "Cita",
+    "Web form": "Formulario web",
+    Manual: "Manual",
+    "Phone call": "Llamada",
+    Email: "Email",
+    Referral: "Referido",
+  };
+
   // Initialize filters from URL on mount
   useEffect(() => {
     const badgeStatus = searchParams.get("badgeStatus");
@@ -393,7 +403,7 @@ export function LeadFilter({ view, onViewChange, agents }: LeadFilterProps) {
                           <FilterOption
                             key={source}
                             value={source}
-                            label={source}
+                            label={sourceLabels[source] ?? source}
                             isSelected={leadFilters.source.includes(source)}
                             onClick={() => toggleFilter("source", source)}
                           />

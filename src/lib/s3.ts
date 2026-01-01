@@ -412,7 +412,7 @@ export async function deletePropertyS3Folder(
 export async function generatePresignedUploadUrl(
   key: string,
   contentType: string,
-  expiresIn: number = 300,
+  expiresIn = 300,
 ): Promise<{ uploadUrl: string; bucket: string }> {
   const bucket = await getDynamicBucketName();
 

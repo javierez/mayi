@@ -256,10 +256,10 @@ export async function downloadFtpFile(
 
     // Create a writable stream to collect the file content
     const { Writable } = await import("stream");
-    const chunks: Buffer[] = [];
+    const chunks: Uint8Array[] = [];
     const writableStream = new Writable({
-      write(chunk, _encoding, callback) {
-        chunks.push(Buffer.from(chunk));
+      write(chunk: Buffer, _encoding, callback) {
+        chunks.push(new Uint8Array(chunk));
         callback();
       },
     });

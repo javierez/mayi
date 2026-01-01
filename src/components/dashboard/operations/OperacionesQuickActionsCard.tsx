@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
 import {
   Plus,
   CheckSquare,
@@ -9,6 +10,7 @@ import {
   Users,
   Clock,
   Phone,
+  Info,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { GlobalTaskModalTrigger } from "~/components/tasks/global-task-modal";
@@ -16,6 +18,7 @@ import { createQuickPropertyAction } from "~/app/actions/quick-property";
 import { QuickActionModal } from "~/components/contactos/quick-action-modal";
 import { CreateContactModal } from "~/components/contactos/create-contact-modal";
 import AppointmentModal from "~/components/appointments/appointment-modal";
+import { QuickActionsInfoModal } from "./quick-actions-info-modal";
 
 interface OperacionesQuickActionsCardProps {
   onTaskCreated?: () => void;
@@ -29,6 +32,7 @@ export default function OperacionesQuickActionsCard({
   const [isQuickActionModalOpen, setIsQuickActionModalOpen] = useState(false);
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   const [isCreateContactModalOpen, setIsCreateContactModalOpen] = useState(false);
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
   const handleAddProperty = async () => {
     try {
@@ -86,6 +90,16 @@ export default function OperacionesQuickActionsCard({
     <>
       <Card className="group relative">
         <CardContent>
+          {/* Info Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsInfoModalOpen(true)}
+            className="absolute bottom-3 right-3 h-6 w-6 text-muted-foreground hover:text-foreground"
+            title="Info"
+          >
+            <Info className="h-3.5 w-3.5" />
+          </Button>
           <div className="mb-4 mt-8 grid grid-cols-2 gap-3">
             {actions.map((action) => {
               if (action.isModal && action.label === "Crear Tarea") {
@@ -185,6 +199,10 @@ export default function OperacionesQuickActionsCard({
             onTaskCreated();
           }
         }}
+      />
+      <QuickActionsInfoModal
+        open={isInfoModalOpen}
+        onOpenChange={setIsInfoModalOpen}
       />
     </>
   );

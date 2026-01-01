@@ -7,13 +7,12 @@
  */
 
 import { db } from "~/server/db";
-import { contacts, whatsappConversations } from "~/server/db/schema";
+import { contacts } from "~/server/db/schema";
 import { eq, and, or, sql } from "drizzle-orm";
 import twilio from "twilio";
 import { env } from "~/env";
 import {
   getOrCreateConversation,
-  findConversationByPhone,
   findUserByWhatsAppNumber,
 } from "./whatsapp-conversation-service";
 import {
@@ -215,7 +214,7 @@ export function parseWebhookFormData(
   const payload: Record<string, string> = {};
 
   formData.forEach((value, key) => {
-    payload[key] = value.toString();
+    payload[key] = typeof value === "string" ? value : value.name;
   });
 
   return payload as unknown as TwilioIncomingWebhookPayload;
@@ -230,7 +229,7 @@ export function parseStatusFormData(
   const payload: Record<string, string> = {};
 
   formData.forEach((value, key) => {
-    payload[key] = value.toString();
+    payload[key] = typeof value === "string" ? value : value.name;
   });
 
   return payload as unknown as TwilioStatusWebhookPayload;

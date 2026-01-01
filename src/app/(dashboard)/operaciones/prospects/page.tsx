@@ -237,22 +237,13 @@ export default function ProspectsPage() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="space-y-1">
-        <h1 className="text-xl font-bold sm:text-2xl">Demandas</h1>
+        <h1 className="text-xl font-bold sm:text-2xl">Búsquedas</h1>
       </div>
 
       {isCalculatingMatches && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-          <div className="flex items-center gap-3">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-            <div>
-              <p className="font-medium text-blue-900">
-                Calculando coincidencias...
-              </p>
-              <p className="text-sm text-blue-700">
-                Esto puede tardar unos segundos
-              </p>
-            </div>
-          </div>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="h-3 w-3 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+          <span>Actualizando coincidencias...</span>
         </div>
       )}
 

@@ -11,14 +11,13 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import type {
   InboxThread,
-  ThreadContext,
 } from "~/components/inbox/inbox-types";
 import type {
   WhatsAppConversation,
   WhatsAppConversationWithMessages,
   WhatsAppSessionInfo,
 } from "~/types/whatsapp-conversations";
-import { getSessionInfo, convertToInboxThread } from "~/types/whatsapp-conversations";
+import { getSessionInfo } from "~/types/whatsapp-conversations";
 import {
   getWhatsAppConnectionStatusAction,
   getWhatsAppConversationsAction,

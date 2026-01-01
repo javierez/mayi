@@ -295,26 +295,33 @@ export const ProspectTable = React.memo(function ProspectTable({
     listingType: string | null,
     propertyType: string | null,
   ) => {
-    let baseType = "Búsqueda";
-    if (listingType) {
+    const capitalizedPropertyType = propertyType
+      ? propertyType.charAt(0).toUpperCase() + propertyType.slice(1).toLowerCase()
+      : null;
+
+    if (listingType && capitalizedPropertyType) {
       switch (listingType) {
         case "Sale":
-          baseType = "Demanda de Compra";
-          break;
+          return `Búsqueda de ${capitalizedPropertyType} en Venta`;
         case "Rent":
-          baseType = "Búsqueda de Alquiler";
-          break;
+          return `Búsqueda de ${capitalizedPropertyType} en Alquiler`;
       }
     }
 
-    if (propertyType) {
-      const capitalizedPropertyType =
-        propertyType.charAt(0).toUpperCase() +
-        propertyType.slice(1).toLowerCase();
-      return `${baseType} de ${capitalizedPropertyType}`;
+    if (capitalizedPropertyType) {
+      return `Búsqueda de ${capitalizedPropertyType}`;
     }
 
-    return baseType;
+    if (listingType) {
+      switch (listingType) {
+        case "Sale":
+          return "Búsqueda en Venta";
+        case "Rent":
+          return "Búsqueda en Alquiler";
+      }
+    }
+
+    return "Búsqueda";
   };
 
 
@@ -615,8 +622,8 @@ export const ProspectTable = React.memo(function ProspectTable({
   // Export prospects to Excel
   const handleExport = React.useCallback(() => {
     const headers = [
-      "Demanda",
-      "Demandante",
+      "Búsqueda",
+      "Contacto",
       "Email",
       "Estado",
       "Ubicación",
@@ -698,14 +705,14 @@ export const ProspectTable = React.memo(function ProspectTable({
                   className="relative"
                   style={getColumnStyle("operacion")}
                 >
-                  <div className="truncate">Demanda</div>
+                  <div className="truncate">Búsqueda</div>
                   <ResizeHandle column="operacion" />
                 </TableHead>
                 <TableHead
                   className="relative"
                   style={getColumnStyle("contacto")}
                 >
-                  <div className="truncate">Demandante</div>
+                  <div className="truncate">Contacto</div>
                   <ResizeHandle column="contacto" />
                 </TableHead>
                 <TableHead

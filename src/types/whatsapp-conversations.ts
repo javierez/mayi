@@ -5,7 +5,7 @@
  * These types map to the database schema and are used by services.
  */
 
-import type { RelatedListing, ThreadContext, InboxThread, ThreadMessage } from "~/components/inbox/inbox-types";
+import type { RelatedListing, InboxThread, ThreadMessage } from "~/components/inbox/inbox-types";
 
 // =============================================================================
 // Enums / Constants

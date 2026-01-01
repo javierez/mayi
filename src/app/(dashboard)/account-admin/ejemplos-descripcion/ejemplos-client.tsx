@@ -31,7 +31,6 @@ import {
   Plus,
   Edit,
   Trash2,
-  ChevronRight,
   ChevronDown,
   Building,
   Home,
