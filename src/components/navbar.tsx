@@ -1,18 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { Button } from "~/components/ui/button";
-import {
-  Building,
-  Menu,
-  X,
-  Info,
-  DollarSign,
-  FileText,
-  UserPlus,
-  GraduationCap,
-} from "lucide-react";
+import { Building, Menu, X, UserPlus } from "lucide-react";
 import { useState, useCallback, memo } from "react";
 import { cn } from "~/lib/utils";
 import { SocialLinks } from "~/components/ui/social-links";
@@ -78,21 +68,7 @@ export default function Navbar({
       onKeyDown={handleKeyPress}
     >
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        {/* Left section - Logo */}
-        <div className="flex-shrink-0">
-          <Link href="/" className="flex items-center gap-2" aria-label="Home">
-            <Image
-              src="/vestazoomin.jpeg"
-              alt="Vesta Logo"
-              width={120}
-              height={40}
-              className="h-10 w-auto"
-              priority
-            />
-          </Link>
-        </div>
-
-        {/* Center section - Navigation */}
+        {/* Left section - Navigation */}
         <nav className="hidden gap-6 lg:flex" aria-label="Main navigation">
           <Link
             href="/"
@@ -100,34 +76,6 @@ export default function Navbar({
             aria-label="Inicio"
           >
             Inicio
-          </Link>
-          <Link
-            href="/precios"
-            className="text-sm font-medium transition-colors hover:text-primary"
-            aria-label="Precios"
-          >
-            Precios
-          </Link>
-          <Link
-            href="/empresa/nosotros"
-            className="text-sm font-medium transition-colors hover:text-primary"
-            aria-label="Nosotros"
-          >
-            Nosotros
-          </Link>
-          <Link
-            href="/changelog"
-            className="text-sm font-medium transition-colors hover:text-primary"
-            aria-label="Novedades"
-          >
-            Novedades
-          </Link>
-          <Link
-            href="/academia"
-            className="text-sm font-medium transition-colors hover:text-primary"
-            aria-label="Academia"
-          >
-            Academia
           </Link>
         </nav>
 
@@ -222,38 +170,6 @@ export default function Navbar({
                 >
                   <Building className="h-4 w-4" />
                   Inicio
-                </Link>
-                <Link
-                  href="/precios"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                  onClick={handleMenuClose}
-                >
-                  <DollarSign className="h-4 w-4" />
-                  Precios
-                </Link>
-                <Link
-                  href="/empresa/nosotros"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                  onClick={handleMenuClose}
-                >
-                  <Info className="h-4 w-4" />
-                  Nosotros
-                </Link>
-                <Link
-                  href="/changelog"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                  onClick={handleMenuClose}
-                >
-                  <FileText className="h-4 w-4" />
-                  Novedades
-                </Link>
-                <Link
-                  href="/academia"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                  onClick={handleMenuClose}
-                >
-                  <GraduationCap className="h-4 w-4" />
-                  Academia
                 </Link>
               </div>
             </div>

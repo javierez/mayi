@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -142,18 +141,6 @@ const SignInPage: FC = () => {
     return (
       <div className="flex min-h-screen flex-col justify-center bg-white py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="text-center mb-8">
-            <div className="flex justify-center">
-              <Image
-                src="/vestazoomin.jpeg"
-                alt="Vesta Logo"
-                width={200}
-                height={80}
-                className="h-20 w-auto object-contain"
-                priority
-              />
-            </div>
-          </div>
           <TwoFactorVerify
             userId={pendingUserId}
             onSuccess={() => {
@@ -174,26 +161,11 @@ const SignInPage: FC = () => {
   return (
     <div className="flex min-h-screen flex-col justify-center bg-white py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="text-center">
-          <div className="flex justify-center">
-            <Image
-              src="/vestazoomin.jpeg"
-              alt="Vesta Logo"
-              width={200}
-              height={80}
-              className="h-20 w-auto object-contain"
-              priority
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <Card>
           <CardHeader>
             <CardTitle>Iniciar Sesión</CardTitle>
             <CardDescription>
-              Accede a tu panel de control de Vesta CRM
+              Accede a tu cuenta
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">

@@ -1,26 +1,16 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { twoFactor } from "better-auth/plugins";
 import { db } from "~/server/db";
 import {
   users,
   sessions,
   authAccounts,
   verificationTokens,
-  twoFactor as twoFactorTable,
-  roles,
-  userRoles,
-  accountRoles,
 } from "~/server/db/schema";
-import { eq, and } from "drizzle-orm";
-import { ROLE_PERMISSIONS } from "~/lib/permissions";
-import type { Permission } from "~/lib/permissions";
 
 /**
  * Add BigInt serialization support for JSON.stringify
- * This fixes "Do not know how to serialize a BigInt" errors
- * when auth returns user objects with BigInt fields (like accountId)
  */
 declare global {
   interface BigInt {
@@ -32,185 +22,37 @@ BigInt.prototype.toJSON = function () {
   return this.toString();
 };
 
-/**
- * Permissions object structure from database
- * Nested object with categories and boolean/numeric flags
- */
-export interface PermissionsObject {
-  admin?: Record<string, boolean | number>;
-  calendar?: Record<string, boolean | number>;
-  contacts?: Record<string, boolean | number>;
-  properties?: Record<string, boolean | number>;
-  tasks?: Record<string, boolean | number>;
-  tools?: Record<string, boolean | number>;
-  [key: string]: Record<string, boolean | number> | undefined;
-}
-
-/**
- * Return type for getUserRolesAndPermissionsFromDB
- */
-export interface UserRolesAndPermissions {
-  roles: string[];
-  permissions: PermissionsObject;
-}
-
-/**
- * Merge multiple permission objects using OR logic
- * If any role grants a permission, the user gets it
- */
-function mergePermissions(
-  permissionsArray: PermissionsObject[],
-): PermissionsObject {
-  const merged: PermissionsObject = {};
-
-  permissionsArray.forEach((perms) => {
-    Object.entries(perms).forEach(([category, permissions]) => {
-      if (!merged[category as keyof PermissionsObject]) {
-        merged[category as keyof PermissionsObject] = {};
-      }
-
-      Object.entries(permissions!).forEach(([permission, value]) => {
-        const currentValue =
-          merged[category as keyof PermissionsObject]?.[permission] ?? false;
-        // OR logic: if any role grants permission (true or 1), user gets it
-        // Normalize: 1 and true are truthy, false is falsy
-        const normalizedValue = Boolean(value);
-        const normalizedCurrent = Boolean(currentValue);
-        (
-          merged[category as keyof PermissionsObject] as Record<string, boolean>
-        )[permission] = normalizedCurrent || normalizedValue;
-      });
-    });
-  });
-
-  return merged;
-}
-
-/**
- * Get user roles and permissions from database (with caching)
- * Fetches from account_roles.permissions JSON field
- */
-export async function getUserRolesFromDB(
-  userId: string,
-  accountId: number,
-): Promise<UserRolesAndPermissions> {
-  console.log(
-    `🔍 getUserRolesFromDB called for user ${userId}, account ${accountId}`,
-  );
-
-  try {
-    const userRolesList = await db
-      .select({
-        roleName: roles.name,
-        permissions: accountRoles.permissions,
-      })
-      .from(userRoles)
-      .innerJoin(roles, eq(roles.roleId, userRoles.roleId))
-      .innerJoin(
-        accountRoles,
-        and(
-          eq(accountRoles.roleId, roles.roleId),
-          eq(accountRoles.accountId, BigInt(accountId)),
-        ),
-      )
-      .where(
-        and(
-          eq(userRoles.userId, userId),
-          eq(userRoles.isActive, true),
-          eq(roles.isActive, true),
-          eq(accountRoles.isActive, true),
-        ),
-      );
-
-    const roleNames = userRolesList.map((role) => role.roleName);
-    const permissionsArray = userRolesList
-      .map((role) => role.permissions as PermissionsObject)
-      .filter((p) => p && Object.keys(p).length > 0);
-
-    // Merge permissions from all roles using OR logic
-    const mergedPermissions =
-      permissionsArray.length > 0 ? mergePermissions(permissionsArray) : {};
-
-    console.log(
-      `📊 DB query result for user ${userId}:`,
-      `\n  Roles: [${roleNames.join(", ")}]`,
-      `\n  Permissions (merged):`,
-      JSON.stringify(mergedPermissions, null, 2),
-    );
-
-    return {
-      roles: roleNames,
-      permissions: mergedPermissions,
-    };
-  } catch (error) {
-    console.error("❌ Error fetching user roles and permissions:", error);
-    return {
-      roles: [],
-      permissions: {},
-    };
-  }
-}
-
-/**
- * Get permissions for given roles
- */
-export function getPermissionsForRoles(roleNames: string[]): Permission[] {
-  const permissionsSet = new Set<Permission>();
-
-  roleNames.forEach((roleName) => {
-    const rolePermissions = ROLE_PERMISSIONS[roleName] ?? [];
-    rolePermissions.forEach((permission) => {
-      permissionsSet.add(permission);
-    });
-  });
-
-  return Array.from(permissionsSet);
-}
+// =============================================================================
+// SIMPLIFIED AUTH FOR COUPLES APP
+// The complex role-based permissions system has been removed for now.
+// See git history for the original implementation if needed.
+// =============================================================================
 
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL,
   database: drizzleAdapter(db, {
-    provider: "pg", // PostgreSQL
+    provider: "pg",
     schema: {
       user: users,
       session: sessions,
       account: authAccounts,
       verification: verificationTokens,
-      twoFactor: twoFactorTable,
+      // twoFactor: removed for simplicity - add back if needed
     },
   }),
 
   // Email and Password Authentication
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false, // Start with false for development
+    requireEmailVerification: false,
     autoSignIn: true,
-    // Password reset is now handled via SMS (see src/server/actions/password-reset.ts)
     async sendVerificationEmail() {
-      // Disable email verification for now
+      // TODO: Implement email verification when needed
     },
   },
 
-  // Add hooks for logging
-  async onRequest(request: Request) {
-    const pathname = new URL(request.url).pathname;
-    if (pathname.includes("/sign-in/email")) {
-      console.log("🔐 [Auth] Sign-in request received");
-    }
-  },
-
-  async onResponse(response: Response, request: Request) {
-    const pathname = new URL(request.url).pathname;
-    if (pathname.includes("/sign-in/email")) {
-      console.log("🔐 [Auth] Sign-in response:", {
-        status: response.status,
-        ok: response.ok,
-      });
-    }
-  },
-
-  // Social Providers Configuration (only enable if credentials are provided)
+  // Social Providers Configuration
   socialProviders: {
     ...(process.env.GOOGLE_CLIENT_ID &&
       process.env.GOOGLE_CLIENT_SECRET && {
@@ -228,16 +70,9 @@ export const auth = betterAuth({
           clientSecret: process.env.APPLE_CLIENT_SECRET,
         },
       }),
-    ...(process.env.LINKEDIN_CLIENT_ID &&
-      process.env.LINKEDIN_CLIENT_SECRET && {
-        linkedin: {
-          clientId: process.env.LINKEDIN_CLIENT_ID,
-          clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
-        },
-      }),
   },
 
-  // User schema - now matches Better-Auth expectations exactly
+  // User schema for couples app
   user: {
     additionalFields: {
       firstName: {
@@ -247,7 +82,7 @@ export const auth = betterAuth({
       },
       lastName: {
         type: "string",
-        required: true,
+        required: false,
         input: true,
       },
       phone: {
@@ -255,23 +90,22 @@ export const auth = betterAuth({
         required: false,
         input: true,
       },
+      birthDate: {
+        type: "date",
+        required: false,
+        input: true,
+      },
       timezone: {
         type: "string",
         required: false,
-        defaultValue: "UTC",
+        defaultValue: "Europe/Madrid",
         input: true,
       },
       language: {
         type: "string",
         required: false,
-        defaultValue: "en",
+        defaultValue: "es",
         input: true,
-      },
-      isVerified: {
-        type: "boolean",
-        required: false,
-        defaultValue: false,
-        input: false,
       },
       isActive: {
         type: "boolean",
@@ -284,94 +118,108 @@ export const auth = betterAuth({
         required: false,
         input: false,
       },
-      preferences: {
-        type: "string", // JSON stored as string
-        required: false,
-        input: false,
-      },
-      accountId: {
+      coupleId: {
         type: "number",
         required: false,
-        input: true,
+        input: false, // Set programmatically when joining a couple
       },
     },
   },
 
-  // Plugins configuration
+  // Plugins
   plugins: [
     nextCookies(),
-    twoFactor({
-      // Issuer name shown in authenticator apps
-      issuer: "Vesta CRM",
-    }),
+    // twoFactor removed for simplicity - add back if needed:
+    // twoFactor({ issuer: "MayI" }),
   ],
 
   // Session configuration
   session: {
-    expiresIn: 60 * 60 * 24 * 7, // 7 days
-    // Enable cookie cache for better performance
-    // Stores encrypted session data in cookie to reduce database queries
+    expiresIn: 60 * 60 * 24 * 30, // 30 days for couples app
     cookieCache: {
       enabled: true,
-      maxAge: 5 * 60, // 5 minutes - balance between performance and data freshness
-      strategy: "jwe", // Use encrypted tokens for maximum security
+      maxAge: 5 * 60,
+      strategy: "jwe",
     },
   },
 
-  // Advanced security configuration
+  // Security configuration
   advanced: {
-    // Use secure cookies only in production (HTTPS)
-    // In development (HTTP), browsers won't send/store cookies with Secure flag
     useSecureCookies: process.env.NODE_ENV === "production",
-    // Default cookie attributes for all auth cookies
     defaultCookieAttributes: {
-      httpOnly: true, // Prevent JavaScript access to cookies (XSS protection)
-      secure: process.env.NODE_ENV === "production", // Only send cookies over HTTPS in production
-      sameSite: "lax", // Prevent CSRF attacks while allowing normal navigation
-      ...(process.env.COOKIE_DOMAIN && { domain: process.env.COOKIE_DOMAIN }), // Optional domain for subdomain support
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
     },
   },
 
-  // Built-in rate limiting
+  // Rate limiting
   rateLimit: {
-    window: 60, // 1 minute window
-    max: 5, // max 5 attempts
+    window: 60,
+    max: 10,
   },
 
-  // Trusted origins for CORS
+  // Trusted origins
   trustedOrigins: [
     "http://localhost:3000",
-    "https://v0-vesta-eight.vercel.app",
-    "https://www.vesta-crm.com",
     ...(process.env.APP_URL ? [process.env.APP_URL] : []),
     ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
   ],
 });
 
 /**
- * Get session with enriched user data (roles and permissions)
+ * Get current session (simplified - no roles/permissions)
  */
-export async function getEnrichedSession() {
-  const session = await auth.api.getSession({
+export async function getSession() {
+  return auth.api.getSession({
     headers: new Headers(),
   });
-
-  if (!session?.user?.accountId) {
-    return session;
-  }
-
-  // Add roles and permissions to session data
-  const rolesAndPermissions = await getUserRolesFromDB(
-    session.user.id,
-    Number(session.user.accountId),
-  );
-
-  return {
-    ...session,
-    user: {
-      ...session.user,
-      roles: rolesAndPermissions.roles,
-      permissions: rolesAndPermissions.permissions,
-    },
-  };
 }
+
+// =============================================================================
+// ARCHIVED: Original role-based permissions system
+// =============================================================================
+/*
+// This was the original implementation with roles and permissions.
+// Keeping as reference for future use.
+
+export interface PermissionsObject {
+  admin?: Record<string, boolean | number>;
+  calendar?: Record<string, boolean | number>;
+  [key: string]: Record<string, boolean | number> | undefined;
+}
+
+export interface UserRolesAndPermissions {
+  roles: string[];
+  permissions: PermissionsObject;
+}
+
+function mergePermissions(permissionsArray: PermissionsObject[]): PermissionsObject {
+  const merged: PermissionsObject = {};
+  permissionsArray.forEach((perms) => {
+    Object.entries(perms).forEach(([category, permissions]) => {
+      if (!merged[category]) merged[category] = {};
+      Object.entries(permissions!).forEach(([permission, value]) => {
+        const currentValue = merged[category]?.[permission] ?? false;
+        (merged[category] as Record<string, boolean>)[permission] =
+          Boolean(currentValue) || Boolean(value);
+      });
+    });
+  });
+  return merged;
+}
+
+// Database query for roles would look like:
+// const userRolesList = await db
+//   .select({ roleName: roles.name, permissions: accountRoles.permissions })
+//   .from(userRoles)
+//   .innerJoin(roles, eq(roles.roleId, userRoles.roleId))
+//   .innerJoin(accountRoles, and(
+//     eq(accountRoles.roleId, roles.roleId),
+//     eq(accountRoles.accountId, BigInt(accountId))
+//   ))
+//   .where(and(
+//     eq(userRoles.userId, userId),
+//     eq(userRoles.isActive, true)
+//   ));
+*/

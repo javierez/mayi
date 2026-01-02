@@ -16,14 +16,14 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   metadataBase: new URL('https://vesta.com'),
   title: {
-    default: 'Vesta CRM - Software Inmobiliario con IA | Gestión de Propiedades',
-    template: '%s | Vesta CRM'
+    default: 'Mayi App - Software Inmobiliario con IA | Gestión de Propiedades',
+    template: '%s | Mayi App'
   },
   description: 'CRM inmobiliario líder en España. Gestiona propiedades, contactos y publica en múltiples portales (Fotocasa, Idealista) con inteligencia artificial. Prueba gratis.',
   keywords: ['CRM inmobiliario', 'software inmobiliario España', 'gestión propiedades', 'Fotocasa', 'Idealista', 'automatización inmobiliaria', 'IA inmobiliaria'],
-  authors: [{ name: 'Vesta' }],
-  creator: 'Vesta',
-  publisher: 'Vesta',
+  authors: [{ name: 'Mayi' }],
+  creator: 'Mayi',
+  publisher: 'Mayi',
   robots: {
     index: true,
     follow: true,
@@ -39,21 +39,21 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'es_ES',
     url: 'https://vesta.com',
-    siteName: 'Vesta CRM',
-    title: 'Vesta CRM - Software Inmobiliario con IA',
+    siteName: 'Mayi App',
+    title: 'Mayi App - Software Inmobiliario con IA',
     description: 'CRM inmobiliario líder en España. Gestiona propiedades, contactos y publica en múltiples portales con IA.',
     images: [
       {
         url: '/opengraph-image.png',
         width: 1200,
         height: 630,
-        alt: 'Vesta CRM - Software Inmobiliario',
+        alt: 'Mayi App - Software Inmobiliario',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Vesta CRM - Software Inmobiliario con IA',
+    title: 'Mayi App - Software Inmobiliario con IA',
     description: 'CRM inmobiliario líder en España. Gestiona propiedades, contactos y publica en múltiples portales.',
     images: ['/twitter-image.png'],
     creator: '@javierez_98',
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    title: "Vesta CRM",
+    title: "Mayi App",
     statusBarStyle: "default",
   },
   icons: {
