@@ -157,7 +157,7 @@ export function MilestonesList({ initialMilestones }: MilestonesListProps) {
         </div>
         <Button
           onClick={openCreateForm}
-          className="bg-gradient-to-r from-amber-400 to-rose-400 text-white"
+          className="bg-slate-800 text-white hover:bg-slate-700"
         >
           <Plus className="mr-1 h-4 w-4" />
           Añadir
@@ -176,7 +176,7 @@ export function MilestonesList({ initialMilestones }: MilestonesListProps) {
               className="group relative rounded-xl bg-white/80 p-4 shadow-lg backdrop-blur-sm"
             >
               <div className="flex items-start gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-amber-100 to-rose-100 text-2xl">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-2xl">
                   {milestone.icon ?? "🎉"}
                 </div>
                 <div className="flex-1">
@@ -195,7 +195,7 @@ export function MilestonesList({ initialMilestones }: MilestonesListProps) {
                       })}
                     </span>
                     {milestone.yearsAgo !== undefined && milestone.yearsAgo > 0 && (
-                      <span className="rounded-full bg-pink-100 px-2 py-0.5 text-xs text-pink-600">
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
                         {milestone.yearsAgo} años
                       </span>
                     )}
@@ -234,18 +234,18 @@ export function MilestonesList({ initialMilestones }: MilestonesListProps) {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="rounded-2xl bg-white/80 p-8 text-center shadow-lg backdrop-blur-sm"
+          className="rounded-xl bg-white p-8 text-center shadow-sm"
         >
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-amber-100 to-rose-100">
-            <Star className="h-8 w-8 text-amber-400" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-slate-100">
+            <Star className="h-7 w-7 text-slate-400" />
           </div>
           <h3 className="text-lg font-medium text-gray-700">No hay hitos aún</h3>
           <p className="mt-1 text-sm text-gray-500">
-            Añade vuestro aniversario, cumpleaños y otras fechas especiales
+            Añade aniversario, cumpleaños y otras fechas especiales
           </p>
           <Button
             onClick={openCreateForm}
-            className="mt-4 bg-gradient-to-r from-amber-400 to-rose-400 text-white"
+            className="mt-4 bg-slate-800 text-white hover:bg-slate-700"
           >
             <Plus className="mr-1 h-4 w-4" />
             Añadir primer hito
@@ -372,7 +372,7 @@ export function MilestonesList({ initialMilestones }: MilestonesListProps) {
               <Button
                 onClick={handleSubmit}
                 disabled={isPending}
-                className="flex-1 bg-gradient-to-r from-amber-400 to-rose-400 text-white"
+                className="flex-1 bg-slate-800 text-white hover:bg-slate-700"
               >
                 {isPending ? (
                   <>

@@ -177,6 +177,35 @@ export async function getSession() {
 }
 
 // =============================================================================
+// STUB: Simplified role-based permissions (for backwards compatibility)
+// The full implementation is archived below but these stubs are needed
+// for modules that still reference them (e.g., auth-cache.ts)
+// =============================================================================
+
+export interface PermissionsObject {
+  [key: string]: Record<string, boolean | number> | undefined;
+}
+
+export interface UserRolesAndPermissions {
+  roles: string[];
+  permissions: PermissionsObject;
+}
+
+/**
+ * Stub function for getting user roles
+ * Returns empty roles since the couples app doesn't use role-based permissions
+ */
+export async function getUserRolesFromDB(
+  _userId: string,
+  _accountId: number
+): Promise<UserRolesAndPermissions> {
+  return {
+    roles: [],
+    permissions: {},
+  };
+}
+
+// =============================================================================
 // ARCHIVED: Original role-based permissions system
 // =============================================================================
 /*

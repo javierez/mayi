@@ -37,12 +37,12 @@ interface AddMemoryModalProps {
 }
 
 const MEMORY_TYPES = [
-  { type: "photo", icon: ImageIcon, label: "Foto", color: "from-pink-400 to-rose-400" },
-  { type: "video", icon: Video, label: "Video", color: "from-purple-400 to-violet-400" },
-  { type: "note", icon: FileText, label: "Nota", color: "from-blue-400 to-sky-400" },
-  { type: "song", icon: Music, label: "Canción", color: "from-green-400 to-emerald-400" },
-  { type: "location", icon: MapPinned, label: "Lugar", color: "from-red-400 to-orange-400" },
-  { type: "quote", icon: Quote, label: "Frase", color: "from-amber-400 to-yellow-400" },
+  { type: "photo", icon: ImageIcon, label: "Foto", color: "bg-slate-700" },
+  { type: "video", icon: Video, label: "Video", color: "bg-slate-600" },
+  { type: "note", icon: FileText, label: "Nota", color: "bg-slate-500" },
+  { type: "song", icon: Music, label: "Canción", color: "bg-slate-600" },
+  { type: "location", icon: MapPinned, label: "Lugar", color: "bg-slate-500" },
+  { type: "quote", icon: Quote, label: "Frase", color: "bg-slate-700" },
 ];
 
 export function AddMemoryModal({
@@ -195,12 +195,12 @@ export function AddMemoryModal({
         <button
           key={type}
           onClick={() => setSelectedType(type as MemoryType)}
-          className="flex flex-col items-center gap-2 rounded-xl bg-white p-4 shadow-sm transition-all hover:shadow-md"
+          className="flex flex-col items-center gap-2 rounded-xl bg-slate-50 p-4 transition-all hover:bg-slate-100"
         >
           <div
-            className={`flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br ${color}`}
+            className={`flex h-10 w-10 items-center justify-center rounded-lg ${color}`}
           >
-            <Icon className="h-6 w-6 text-white" />
+            <Icon className="h-5 w-5 text-white" />
           </div>
           <span className="text-sm font-medium text-gray-600">{label}</span>
         </button>
@@ -455,7 +455,7 @@ export function AddMemoryModal({
                 <Button
                   onClick={handleSubmit}
                   disabled={isPending || !canSubmit()}
-                  className="flex-1 bg-gradient-to-r from-amber-400 to-rose-400 text-white"
+                  className="flex-1 bg-slate-800 text-white hover:bg-slate-700"
                 >
                   {isPending ? (
                     <>

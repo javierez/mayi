@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { nanoid } from "nanoid";
 import { requireCoupleSession, getCurrentCoupleId } from "~/lib/dal-couples";
 import {
   getMemoriesForDay,
@@ -18,6 +19,10 @@ import {
   verifyMemoryBelongsToCouple,
 } from "~/server/queries/memoria/memories";
 import { getOrCreateDay, getDayById } from "~/server/queries/memoria/days";
+import {
+  generatePresignedUploadUrl,
+  getS3PublicUrl,
+} from "~/lib/s3";
 import type {
   ActionResult,
   Memory,
@@ -399,5 +404,176 @@ export async function reorderMemoriesAction(
   } catch (error) {
     console.error("Error reordering memories:", error);
     return { success: false, error: "Error al reordenar recuerdos" };
+  }
+}
+
+// ============================================================================
+// PRESIGNED URL UPLOADS FOR MEMORIA MEDIA
+// ============================================================================
+
+export interface MemoriaPresignedUploadResult {
+  uploadUrl: string;
+  s3Key: string;
+  fileUrl: string;
+}
+
+/**
+ * Generate S3 key for memoria media
+ */
+function generateMemoriaMediaKey(
+  coupleId: bigint,
+  date: string,
+  type: "photo" | "video",
+  filename: string
+): string {
+  const fileExtension = filename.split(".").pop() ?? (type === "photo" ? "jpg" : "mp4");
+  const uniqueId = nanoid(8);
+  return `memoria/${coupleId.toString()}/${date}/${type}s/${uniqueId}.${fileExtension}`;
+}
+
+/**
+ * Get presigned URL for uploading a photo memory to S3
+ */
+export async function getMemoriaPhotoPresignedUrl(
+  date: string,
+  filename: string,
+  contentType: string
+): Promise<ActionResult<MemoriaPresignedUploadResult>> {
+  try {
+    const session = await requireCoupleSession();
+    const coupleId = session.user.coupleId;
+
+    // Generate S3 key
+    const s3Key = generateMemoriaMediaKey(coupleId, date, "photo", filename);
+
+    // Get presigned URL
+    const { uploadUrl } = await generatePresignedUploadUrl(s3Key, contentType);
+
+    // Get the public URL
+    const fileUrl = await getS3PublicUrl(s3Key);
+
+    return {
+      success: true,
+      data: {
+        uploadUrl,
+        s3Key,
+        fileUrl,
+      },
+    };
+  } catch (error) {
+    console.error("Error generating photo presigned URL:", error);
+    return { success: false, error: "Error al preparar la subida" };
+  }
+}
+
+/**
+ * Get presigned URL for uploading a video memory to S3
+ */
+export async function getMemoriaVideoPresignedUrl(
+  date: string,
+  filename: string,
+  contentType: string
+): Promise<ActionResult<MemoriaPresignedUploadResult>> {
+  try {
+    const session = await requireCoupleSession();
+    const coupleId = session.user.coupleId;
+
+    // Generate S3 key
+    const s3Key = generateMemoriaMediaKey(coupleId, date, "video", filename);
+
+    // Get presigned URL
+    const { uploadUrl } = await generatePresignedUploadUrl(s3Key, contentType);
+
+    // Get the public URL
+    const fileUrl = await getS3PublicUrl(s3Key);
+
+    return {
+      success: true,
+      data: {
+        uploadUrl,
+        s3Key,
+        fileUrl,
+      },
+    };
+  } catch (error) {
+    console.error("Error generating video presigned URL:", error);
+    return { success: false, error: "Error al preparar la subida" };
+  }
+}
+
+/**
+ * Create a photo memory after successful S3 upload
+ */
+export async function createPhotoMemoryAfterUpload(data: {
+  date: string;
+  url: string;
+  s3Key: string;
+  mimeType: string;
+  fileSize?: number;
+  caption?: string;
+  isPrivate?: boolean;
+}): Promise<ActionResult<Memory>> {
+  try {
+    const session = await requireCoupleSession();
+
+    // Get or create the day
+    const day = await getOrCreateDay(session.user.coupleId, data.date);
+
+    const memory = await createPhotoMemory({
+      dayId: day.id,
+      userId: session.user.id,
+      url: data.url,
+      s3Key: data.s3Key,
+      mimeType: data.mimeType,
+      fileSize: data.fileSize,
+      caption: data.caption,
+      isPrivate: data.isPrivate,
+    });
+
+    revalidatePath(`/memoria/dia/${data.date}`);
+    revalidatePath("/memoria");
+    return { success: true, data: memory };
+  } catch (error) {
+    console.error("Error creating photo memory:", error);
+    return { success: false, error: "Error al crear el recuerdo" };
+  }
+}
+
+/**
+ * Create a video memory after successful S3 upload
+ */
+export async function createVideoMemoryAfterUpload(data: {
+  date: string;
+  url: string;
+  s3Key: string;
+  mimeType: string;
+  fileSize?: number;
+  duration?: number;
+  caption?: string;
+  isPrivate?: boolean;
+}): Promise<ActionResult<Memory>> {
+  try {
+    const session = await requireCoupleSession();
+
+    const day = await getOrCreateDay(session.user.coupleId, data.date);
+
+    const memory = await createVideoMemory({
+      dayId: day.id,
+      userId: session.user.id,
+      url: data.url,
+      s3Key: data.s3Key,
+      mimeType: data.mimeType,
+      fileSize: data.fileSize,
+      duration: data.duration,
+      caption: data.caption,
+      isPrivate: data.isPrivate,
+    });
+
+    revalidatePath(`/memoria/dia/${data.date}`);
+    revalidatePath("/memoria");
+    return { success: true, data: memory };
+  } catch (error) {
+    console.error("Error creating video memory:", error);
+    return { success: false, error: "Error al crear el recuerdo" };
   }
 }
