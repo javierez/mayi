@@ -1,41 +1,40 @@
-import { Suspense } from "react";
 import { MemoriaLayout } from "~/components/memoria/MemoriaLayout";
 import { SettingsView } from "~/components/memoria/SettingsView";
-import { getCoupleWithPartnersAction } from "~/server/actions/memoria/couples";
-import { requireCoupleSession } from "~/lib/dal-couples";
 
-export default async function ConfiguracionPage() {
+export default function ConfiguracionPage() {
+  // Mock data for development
+  const mockCouple = {
+    id: BigInt(1),
+    name: "Nuestra Historia",
+    anniversaryDate: "2020-02-14",
+    inviteCode: "ABC123",
+    inviteCodeExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    timezone: "Europe/Madrid",
+    preferences: {},
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    isActive: true,
+    partners: [
+      { id: "1", firstName: "Javier", lastName: "García", image: null, birthDate: null },
+      { id: "2", firstName: "Partner", lastName: "", image: null, birthDate: null },
+    ],
+  };
+
+  const mockUser = {
+    id: "1",
+    firstName: "Javier",
+    lastName: "García",
+    email: "javier@example.com",
+  };
+
   return (
     <MemoriaLayout>
       <div className="px-4 py-6">
         <div className="mx-auto max-w-lg">
-          <Suspense fallback={<SettingsSkeleton />}>
-            <SettingsContent />
-          </Suspense>
+          <SettingsView couple={mockCouple} currentUser={mockUser} />
         </div>
       </div>
     </MemoriaLayout>
-  );
-}
-
-async function SettingsContent() {
-  const [coupleResult, session] = await Promise.all([
-    getCoupleWithPartnersAction(),
-    requireCoupleSession(),
-  ]);
-
-  const couple = coupleResult.success ? coupleResult.data : null;
-
-  return (
-    <SettingsView
-      couple={couple}
-      currentUser={{
-        id: session.user.id,
-        firstName: session.user.firstName,
-        lastName: session.user.lastName,
-        email: session.user.email,
-      }}
-    />
   );
 }
 

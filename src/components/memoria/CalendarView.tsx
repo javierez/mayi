@@ -3,7 +3,7 @@
 import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Heart, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Star, Camera } from "lucide-react";
 import Image from "next/image";
 import { getCalendarMonthAction } from "~/server/actions/memoria/days";
 import type { CalendarMonth, DaySummary, MilestoneWithNextDate } from "~/types/memoria";
@@ -44,12 +44,20 @@ export function CalendarView() {
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfMonth(year, month);
 
-  // Load calendar data
+  // Load calendar data (with fallback for no-auth mode)
   useEffect(() => {
     startTransition(async () => {
-      const result = await getCalendarMonthAction(year, month);
-      if (result.success && result.data) {
-        setCalendarData(result.data);
+      try {
+        const result = await getCalendarMonthAction(year, month);
+        if (result.success && result.data) {
+          setCalendarData(result.data);
+        } else {
+          // Fallback: empty calendar for development
+          setCalendarData({ year, month, days: [], milestones: [] });
+        }
+      } catch {
+        // No auth - use empty calendar
+        setCalendarData({ year, month, days: [], milestones: [] });
       }
     });
   }, [year, month]);
@@ -120,7 +128,7 @@ export function CalendarView() {
         <div className="mb-6 flex items-center justify-between">
           <button
             onClick={goToPrevMonth}
-            className="rounded-full p-2 text-gray-500 transition-colors hover:bg-pink-50 hover:text-pink-500"
+            className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
             aria-label="Mes anterior"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -138,7 +146,7 @@ export function CalendarView() {
 
           <button
             onClick={goToNextMonth}
-            className="rounded-full p-2 text-gray-500 transition-colors hover:bg-pink-50 hover:text-pink-500"
+            className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
             aria-label="Mes siguiente"
           >
             <ChevronRight className="h-5 w-5" />
@@ -173,12 +181,12 @@ export function CalendarView() {
               <motion.button
                 key={day}
                 onClick={() => handleDayClick(day)}
-                className={`relative aspect-square overflow-hidden rounded-lg transition-all ${
+                className={`group relative aspect-square overflow-hidden rounded-lg transition-all ${
                   hasMemories
-                    ? "ring-2 ring-pink-200 hover:ring-pink-400 hover:shadow-lg"
+                    ? "ring-2 ring-slate-200 hover:ring-slate-400 hover:shadow-lg"
                     : todayHighlight
                       ? "ring-2 ring-amber-300"
-                      : "hover:bg-gray-50"
+                      : "hover:bg-gray-100"
                 }`}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -198,27 +206,31 @@ export function CalendarView() {
                       </span>
                     </div>
                     {dayData.memoryCount > 1 && (
-                      <span className="absolute bottom-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-pink-400 text-[9px] font-bold text-white">
+                      <span className="absolute bottom-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-slate-600 text-[9px] font-bold text-white">
                         {dayData.memoryCount}
                       </span>
                     )}
                   </>
                 ) : hasMemories ? (
-                  <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-pink-50 to-amber-50">
+                  <div className="flex h-full w-full flex-col items-center justify-center bg-slate-100">
                     <span className="text-sm font-medium text-gray-600">
                       {day}
                     </span>
-                    <Heart className="h-3 w-3 fill-pink-300 text-pink-300" />
+                    <Camera className="h-3 w-3 text-slate-400" />
                   </div>
                 ) : (
                   <div
-                    className={`flex h-full w-full items-center justify-center text-sm ${
+                    className={`relative flex h-full w-full items-center justify-center text-sm ${
                       todayHighlight
                         ? "bg-amber-50 font-bold text-amber-600"
                         : "bg-gray-50 text-gray-400"
                     }`}
                   >
-                    {day}
+                    <span className="group-hover:opacity-0 transition-opacity">{day}</span>
+                    {/* Plus button on hover for empty days */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-slate-100">
+                      <Plus className="h-5 w-5 text-slate-500" />
+                    </div>
                   </div>
                 )}
 
@@ -232,8 +244,8 @@ export function CalendarView() {
         </div>
 
         {/* Memory count */}
-        <div className="mt-6 flex items-center justify-center gap-2 text-sm text-gray-500">
-          <Heart className="h-4 w-4 fill-pink-300 text-pink-300" />
+        <div className="mt-6 flex items-center justify-center gap-2 text-sm text-gray-400">
+          <Camera className="h-4 w-4" />
           <span>
             {isPending ? "Cargando..." : `${memoriesThisMonth} recuerdos este mes`}
           </span>

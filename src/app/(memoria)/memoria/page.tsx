@@ -1,15 +1,10 @@
 import { Suspense } from "react";
 import { MemoriaLayout } from "~/components/memoria/MemoriaLayout";
 import { CalendarView } from "~/components/memoria/CalendarView";
-import { getCoupleWithPartnersAction } from "~/server/actions/memoria/couples";
 
-export default async function MemoriaPage() {
-  // Get couple info for the layout
-  const coupleResult = await getCoupleWithPartnersAction();
-  const coupleName = coupleResult.success ? coupleResult.data?.name : undefined;
-
+export default function MemoriaPage() {
   return (
-    <MemoriaLayout coupleName={coupleName ?? undefined}>
+    <MemoriaLayout coupleName="Nuestra Historia">
       <div className="px-4 py-6">
         <div className="mx-auto max-w-lg">
           <Suspense fallback={<CalendarSkeleton />}>

@@ -14,6 +14,8 @@ const publicPaths = [
   "/ingest", // PostHog analytics proxy
   "/templates",
   "/sandbox",
+  "/memoria", // Couples memory app - all /memoria/* routes are public
+  "/centro-de-ayuda",
   "/producto/caracteristicas",
   "/producto/integraciones",
   "/producto/seguridad",

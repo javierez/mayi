@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import {
   MapPin,
   Cloud,
-  Smile,
   Plus,
   Image as ImageIcon,
   Video,
@@ -15,10 +14,10 @@ import {
   Music,
   MapPinned,
   Quote,
-  Heart,
   MessageCircle,
-  MoreVertical,
-  Pencil,
+  Camera,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import type { Day, MemoryWithUser } from "~/types/memoria";

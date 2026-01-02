@@ -1,9 +1,6 @@
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { MemoriaLayout } from "~/components/memoria/MemoriaLayout";
 import { DayDetail } from "~/components/memoria/DayDetail";
-import { getDayByDateAction } from "~/server/actions/memoria/days";
-import { getMemoriesForDayAction } from "~/server/actions/memoria/memories";
 
 interface DayPageProps {
   params: Promise<{
@@ -37,29 +34,12 @@ export default async function DayPage({ params }: DayPageProps) {
       backHref="/memoria"
       title={displayDate}
     >
-      <Suspense fallback={<DayDetailSkeleton />}>
-        <DayDetailContent date={date} />
-      </Suspense>
+      <DayDetail
+        date={date}
+        day={null}
+        initialMemories={[]}
+      />
     </MemoriaLayout>
-  );
-}
-
-async function DayDetailContent({ date }: { date: string }) {
-  // Fetch day data and memories in parallel
-  const [dayResult, memoriesResult] = await Promise.all([
-    getDayByDateAction(date),
-    getMemoriesForDayAction(date),
-  ]);
-
-  const day = dayResult.success ? dayResult.data : null;
-  const memories = memoriesResult.success ? memoriesResult.data : [];
-
-  return (
-    <DayDetail
-      date={date}
-      day={day}
-      initialMemories={memories ?? []}
-    />
   );
 }
 

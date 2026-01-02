@@ -16,11 +16,11 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   metadataBase: new URL('https://vesta.com'),
   title: {
-    default: 'Mayi App - Software Inmobiliario con IA | Gestión de Propiedades',
+    default: 'Mayi App - Un viaje por nuestros momentos juntos',
     template: '%s | Mayi App'
   },
-  description: 'CRM inmobiliario líder en España. Gestiona propiedades, contactos y publica en múltiples portales (Fotocasa, Idealista) con inteligencia artificial. Prueba gratis.',
-  keywords: ['CRM inmobiliario', 'software inmobiliario España', 'gestión propiedades', 'Fotocasa', 'Idealista', 'automatización inmobiliaria', 'IA inmobiliaria'],
+  description: 'Un regalo especial para revivir nuestros recuerdos y momentos juntos.',
+  keywords: ['recuerdos', 'momentos', 'parejas', 'regalo', 'amor'],
   authors: [{ name: 'Mayi' }],
   creator: 'Mayi',
   publisher: 'Mayi',
@@ -40,21 +40,21 @@ export const metadata: Metadata = {
     locale: 'es_ES',
     url: 'https://vesta.com',
     siteName: 'Mayi App',
-    title: 'Mayi App - Software Inmobiliario con IA',
-    description: 'CRM inmobiliario líder en España. Gestiona propiedades, contactos y publica en múltiples portales con IA.',
+    title: 'Mayi App - Un viaje por nuestros momentos juntos',
+    description: 'Un regalo especial para revivir nuestros recuerdos y momentos juntos.',
     images: [
       {
         url: '/opengraph-image.png',
         width: 1200,
         height: 630,
-        alt: 'Mayi App - Software Inmobiliario',
+        alt: 'Mayi App - Un viaje por nuestros momentos juntos',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Mayi App - Software Inmobiliario con IA',
-    description: 'CRM inmobiliario líder en España. Gestiona propiedades, contactos y publica en múltiples portales.',
+    title: 'Mayi App - Un viaje por nuestros momentos juntos',
+    description: 'Un regalo especial para revivir nuestros recuerdos y momentos juntos.',
     images: ['/twitter-image.png'],
     creator: '@javierez_98',
   },

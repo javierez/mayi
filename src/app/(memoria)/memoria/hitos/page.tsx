@@ -1,27 +1,56 @@
-import { Suspense } from "react";
 import { MemoriaLayout } from "~/components/memoria/MemoriaLayout";
 import { MilestonesList } from "~/components/memoria/MilestonesList";
-import { getMilestonesAction } from "~/server/actions/memoria/milestones";
 
-export default async function HitosPage() {
+export default function HitosPage() {
+  // Mock milestones for development
+  const mockMilestones = [
+    {
+      id: BigInt(1),
+      coupleId: BigInt(1),
+      title: "Nuestro Aniversario",
+      description: "El día que empezó todo",
+      originalDate: "2020-02-14",
+      icon: "💕",
+      recurrence: "yearly" as const,
+      reminderDaysBefore: 7,
+      color: "#ec4899",
+      isPublic: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isActive: true,
+      nextDate: "2025-02-14",
+      daysUntil: 43,
+      yearsAgo: 5,
+    },
+    {
+      id: BigInt(2),
+      coupleId: BigInt(1),
+      title: "Primera Cita",
+      description: "Café en el centro",
+      originalDate: "2020-01-20",
+      icon: "☕",
+      recurrence: "yearly" as const,
+      reminderDaysBefore: 3,
+      color: "#f59e0b",
+      isPublic: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      isActive: true,
+      nextDate: "2025-01-20",
+      daysUntil: 18,
+      yearsAgo: 5,
+    },
+  ];
+
   return (
     <MemoriaLayout>
       <div className="px-4 py-6">
         <div className="mx-auto max-w-lg">
-          <Suspense fallback={<MilestonesSkeleton />}>
-            <MilestonesContent />
-          </Suspense>
+          <MilestonesList initialMilestones={mockMilestones} />
         </div>
       </div>
     </MemoriaLayout>
   );
-}
-
-async function MilestonesContent() {
-  const result = await getMilestonesAction();
-  const milestones = result.success ? result.data : [];
-
-  return <MilestonesList initialMilestones={milestones ?? []} />;
 }
 
 function MilestonesSkeleton() {
