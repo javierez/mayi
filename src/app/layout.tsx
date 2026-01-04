@@ -80,7 +80,7 @@ export default function RootLayout({
         <CookieConsentBanner />
         <ServiceWorkerRegistration />
         <SpeedInsights />
-        <Analytics />
+        <Analytics /> 
       </body>
     </html>
   );
