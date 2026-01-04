@@ -1,12 +1,103 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Plus, Camera } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Camera, Video } from "lucide-react";
 import Image from "next/image";
 import { getCalendarMonthAction } from "~/server/actions/memoria/days";
 import type { CalendarMonth, DaySummary } from "~/types/memoria";
+
+// Component to generate and display a thumbnail from a video URL
+function VideoThumbnail({
+  videoUrl,
+  alt,
+  className,
+}: {
+  videoUrl: string;
+  alt: string;
+  className?: string;
+}) {
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const attemptedRef = useRef(false);
+
+  const generateThumbnail = useCallback(async () => {
+    if (attemptedRef.current) return;
+    attemptedRef.current = true;
+
+    try {
+      const video = document.createElement("video");
+      video.crossOrigin = "anonymous";
+      video.preload = "metadata";
+      video.muted = true;
+      video.playsInline = true;
+
+      await new Promise<void>((resolve, reject) => {
+        video.onloadedmetadata = () => {
+          // Seek to 0.5 seconds or 10% of video
+          video.currentTime = Math.min(0.5, video.duration * 0.1);
+        };
+
+        video.onseeked = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+          setThumbnailUrl(dataUrl);
+          setIsLoading(false);
+          resolve();
+        };
+
+        video.onerror = () => {
+          reject(new Error("Failed to load video"));
+        };
+
+        // Timeout after 5 seconds
+        setTimeout(() => reject(new Error("Timeout")), 5000);
+
+        video.src = videoUrl;
+        video.load();
+      });
+    } catch {
+      setError(true);
+      setIsLoading(false);
+    }
+  }, [videoUrl]);
+
+  useEffect(() => {
+    void generateThumbnail();
+  }, [generateThumbnail]);
+
+  if (error || (!isLoading && !thumbnailUrl)) {
+    return (
+      <div className={`flex items-center justify-center bg-slate-200 ${className ?? ""}`}>
+        <Video className="h-4 w-4 text-slate-400" />
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className={`animate-pulse bg-slate-200 ${className ?? ""}`} />
+    );
+  }
+
+  return (
+    <Image
+      src={thumbnailUrl!}
+      alt={alt}
+      fill
+      className={className}
+      sizes="(max-width: 640px) 14vw, 60px"
+      unoptimized // Since it's a data URL
+    />
+  );
+}
 
 const DAYS_OF_WEEK = ["L", "M", "X", "J", "V", "S", "D"];
 const MONTHS = [
@@ -167,6 +258,7 @@ export function CalendarView() {
             const dayData = getDayData(day);
             const hasMemories = dayData && dayData.memoryCount > 0;
             const todayHighlight = isToday(day);
+            const hasVideoOnly = hasMemories && !dayData.thumbnailUrl && dayData.videoUrl;
 
             return (
               <motion.button
@@ -189,6 +281,19 @@ export function CalendarView() {
                       fill
                       className="object-cover"
                       sizes="(max-width: 640px) 14vw, 60px"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                      <span className="text-base font-semibold text-white drop-shadow-md">
+                        {day}
+                      </span>
+                    </div>
+                  </>
+                ) : hasVideoOnly ? (
+                  <>
+                    <VideoThumbnail
+                      videoUrl={dayData.videoUrl!}
+                      alt={dayData.title ?? `Video del día ${day}`}
+                      className="object-cover"
                     />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/25">
                       <span className="text-base font-semibold text-white drop-shadow-md">

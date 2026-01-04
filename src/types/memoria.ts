@@ -167,6 +167,7 @@ export interface DaySummary {
   memoryCount: number;
   hasMilestone: boolean;
   thumbnailUrl?: string | null;
+  videoUrl?: string | null; // Fallback video URL for thumbnail generation
   title?: string | null;
 }
 

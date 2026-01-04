@@ -47,6 +47,15 @@ export async function getDaysForMonth(
            LIMIT 1)
         )
       `.as("thumbnailUrl"),
+      videoUrl: sql<string | null>`
+        -- Get first video URL for client-side thumbnail generation
+        (SELECT m4.url FROM memories m4
+         WHERE m4.day_id = ${days.id}
+           AND m4.is_active = true
+           AND m4.type = 'video'
+         ORDER BY m4.position ASC
+         LIMIT 1)
+      `.as("videoUrl"),
     })
     .from(days)
     .leftJoin(
@@ -68,6 +77,7 @@ export async function getDaysForMonth(
     title: row.title,
     memoryCount: row.memoryCount,
     thumbnailUrl: row.thumbnailUrl,
+    videoUrl: row.videoUrl,
     hasMilestone: false, // Will be enhanced when milestones are loaded
   }));
 }
@@ -348,6 +358,15 @@ export async function getRecentDays(
            LIMIT 1)
         )
       `.as("thumbnailUrl"),
+      videoUrl: sql<string | null>`
+        -- Get first video URL for client-side thumbnail generation
+        (SELECT m4.url FROM memories m4
+         WHERE m4.day_id = ${days.id}
+           AND m4.is_active = true
+           AND m4.type = 'video'
+         ORDER BY m4.position ASC
+         LIMIT 1)
+      `.as("videoUrl"),
     })
     .from(days)
     .leftJoin(
@@ -365,6 +384,7 @@ export async function getRecentDays(
     title: row.title,
     memoryCount: row.memoryCount,
     thumbnailUrl: row.thumbnailUrl,
+    videoUrl: row.videoUrl,
     hasMilestone: false,
   }));
 }
