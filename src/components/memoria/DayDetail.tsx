@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "~/lib/utils";
+import { convertHeicToJpeg, isHeicFile } from "~/lib/image-utils";
 import type { Day, MemoryWithUser, SongMemory } from "~/types/memoria";
 import { AddMemoryModal } from "./AddMemoryModal";
 import { SpotifySongCard } from "./SpotifySongCard";
@@ -188,8 +189,10 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
     const files = e.target.files;
     if (!files?.length) return;
 
-    const file = files[0];
-    if (!file) return;
+    const originalFile = files[0];
+    if (!originalFile) return;
+
+    let file: File = originalFile;
 
     // Reset input first
     e.target.value = "";
@@ -202,6 +205,17 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
 
     startTransition(async () => {
       try {
+        // Convert HEIC to JPEG if needed (for photos only)
+        if (type === "photo" && isHeicFile(file)) {
+          setUploadProgress({
+            type,
+            filename: file.name,
+            status: "uploading",
+            message: "Convirtiendo HEIC...",
+          });
+          file = await convertHeicToJpeg(file);
+        }
+
         // Get presigned URL
         const presignedResult = type === "photo"
           ? await getMemoriaPhotoPresignedUrl(date, file.name, file.type)
@@ -552,7 +566,7 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
           )}
           <input
             type="file"
-            accept="image/*"
+            accept="image/*,.heic,.heif"
             className="hidden"
             disabled={isPending}
             onChange={(e) => handleFileChange(e, "photo")}
