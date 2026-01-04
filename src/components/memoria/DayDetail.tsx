@@ -1169,27 +1169,27 @@ function LocationChip({
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: index * 0.03 }}
-      className="group relative flex shrink-0 items-center gap-2 rounded-full bg-white py-1.5 pl-2 pr-3 shadow-sm"
+      className="group relative flex shrink-0 items-center gap-3 rounded-2xl bg-white py-2.5 pl-2.5 pr-4 shadow-sm"
     >
-      {/* Small photo or icon */}
+      {/* Photo or icon */}
       {locationData?.photoUrl ? (
-        <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full">
+        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl">
           <Image
             src={locationData.photoUrl}
             alt={locationData.name}
             fill
             className="object-cover"
-            sizes="28px"
+            sizes="44px"
           />
         </div>
       ) : (
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100">
-          <MapPinned className="h-3.5 w-3.5 text-slate-400" />
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100">
+          <MapPinned className="h-5 w-5 text-slate-400" />
         </div>
       )}
 
       {/* Location name */}
-      <span className="max-w-[140px] truncate text-xs font-medium text-gray-700">
+      <span className="max-w-[180px] truncate text-sm font-medium text-gray-700">
         {locationData?.name}
       </span>
 
@@ -1200,14 +1200,14 @@ function LocationChip({
             e.stopPropagation();
             setShowMenu(!showMenu);
           }}
-          className="ml-1 flex h-4 w-4 items-center justify-center rounded-full opacity-0 transition-opacity group-hover:opacity-100"
+          className="ml-1 flex h-5 w-5 items-center justify-center rounded-full opacity-0 transition-opacity group-hover:opacity-100"
         >
-          <MoreHorizontal className="h-3 w-3 text-gray-400" />
+          <MoreHorizontal className="h-4 w-4 text-gray-400" />
         </button>
 
         {showMenu && (
           <div
-            className="absolute right-0 top-6 z-20 min-w-[100px] overflow-hidden rounded-lg bg-white shadow-lg"
+            className="absolute right-0 top-7 z-20 min-w-[110px] overflow-hidden rounded-lg bg-white shadow-lg"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -1216,9 +1216,9 @@ function LocationChip({
                 onDelete();
                 setShowMenu(false);
               }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-red-600 transition-colors hover:bg-red-50"
+              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50"
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="h-4 w-4" />
               <span>Eliminar</span>
             </button>
           </div>

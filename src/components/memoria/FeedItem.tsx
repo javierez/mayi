@@ -23,7 +23,8 @@ interface FeedItemProps {
 export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute }: FeedItemProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isBuffered, setIsBuffered] = useState(false);
+  const [isFullyBuffered, setIsFullyBuffered] = useState(false); // Video is 100% downloaded
+  const [bufferProgress, setBufferProgress] = useState(0); // 0-100%
   const isActiveRef = useRef(isActive);
   const { memory, dayNote, pinnedQuote, song, location, date } = item;
 
@@ -59,7 +60,7 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
   // Handle video playback and preloading
   useEffect(() => {
     if (videoRef.current) {
-      if (isActive && isBuffered) {
+      if (isActive && isFullyBuffered) {
         playVideo();
       } else if (!isActive) {
         videoRef.current.pause();
@@ -68,7 +69,7 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
         }
       }
     }
-  }, [isActive, isBuffered, shouldPreload, playVideo]);
+  }, [isActive, isFullyBuffered, shouldPreload, playVideo]);
 
   // Preload video when shouldPreload becomes true
   useEffect(() => {
@@ -79,33 +80,54 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
     }
   }, [shouldPreload, memory.type]);
 
-  // Handle unexpected video pause - resume if still active
-  const handlePause = useCallback(() => {
-    if (isActiveRef.current && videoRef.current) {
-      // Small delay to avoid fighting with intentional pauses
-      setTimeout(() => {
-        if (isActiveRef.current && videoRef.current?.paused) {
-          videoRef.current.play().catch(() => {});
-        }
-      }, 50);
+  // Check if video is fully buffered (entire video downloaded)
+  const checkFullyBuffered = useCallback(() => {
+    const video = videoRef.current;
+    if (!video || !video.duration || !isFinite(video.duration)) return;
+
+    const buffered = video.buffered;
+    if (buffered.length === 0) {
+      setBufferProgress(0);
+      return;
     }
-  }, []);
+
+    // Check the last buffered range - if it reaches the end, video is fully loaded
+    const lastBufferedEnd = buffered.end(buffered.length - 1);
+    const progress = Math.min(100, (lastBufferedEnd / video.duration) * 100);
+    setBufferProgress(progress);
+
+    // Consider fully buffered if we have 99.5%+ (small tolerance for rounding)
+    if (lastBufferedEnd >= video.duration - 0.1) {
+      setIsFullyBuffered(true);
+      if (isActiveRef.current) {
+        playVideo();
+      }
+    }
+  }, [playVideo]);
+
+  // Handle buffer progress updates
+  const handleProgress = useCallback(() => {
+    checkFullyBuffered();
+  }, [checkFullyBuffered]);
+
+  // Handle video metadata loaded - start checking buffer
+  const handleDurationChange = useCallback(() => {
+    checkFullyBuffered();
+  }, [checkFullyBuffered]);
 
   // Handle video metadata loaded (for showing poster/thumbnail)
   const handleLoadedData = useCallback(() => {
     setIsLoaded(true);
   }, []);
 
-  // Handle video fully buffered - only play when entire video is ready
+  // Handle canplaythrough - but we still wait for full buffer
   const handleCanPlayThrough = useCallback(() => {
-    setIsBuffered(true);
     if (videoRef.current) {
       videoRef.current.volume = 0.3; // 30% volume
     }
-    if (isActiveRef.current) {
-      playVideo();
-    }
-  }, [playVideo]);
+    // Don't auto-play here, wait for full buffer via handleProgress
+    checkFullyBuffered();
+  }, [checkFullyBuffered]);
 
   const isVideo = memory.type === "video";
   const isPhoto = memory.type === "photo";
@@ -135,8 +157,9 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
                 playsInline
                 preload="auto"
                 onLoadedData={handleLoadedData}
+                onDurationChange={handleDurationChange}
+                onProgress={handleProgress}
                 onCanPlayThrough={handleCanPlayThrough}
-                onPause={handlePause}
                 onEnded={playVideo}
               />
             ) : mediaUrl ? (
@@ -154,8 +177,45 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
           </>
         )}
 
-        {/* Loading placeholder - show while loading or buffering video */}
-        {shouldPreload && (!isLoaded || (isVideo && !isBuffered)) && (
+        {/* Loading placeholder - show while video is downloading */}
+        {shouldPreload && isVideo && !isFullyBuffered && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+            {/* Circular progress indicator */}
+            <div className="relative h-14 w-14">
+              {/* Background circle */}
+              <svg className="h-full w-full -rotate-90" viewBox="0 0 56 56">
+                <circle
+                  cx="28"
+                  cy="28"
+                  r="24"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.2)"
+                  strokeWidth="3"
+                />
+                {/* Progress circle */}
+                <circle
+                  cx="28"
+                  cy="28"
+                  r="24"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 24}`}
+                  strokeDashoffset={`${2 * Math.PI * 24 * (1 - bufferProgress / 100)}`}
+                  className="transition-all duration-300"
+                />
+              </svg>
+              {/* Percentage text */}
+              <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white">
+                {Math.round(bufferProgress)}%
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Photo loading indicator */}
+        {shouldPreload && isPhoto && !isLoaded && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
           </div>
