@@ -31,6 +31,7 @@ import { SpotifySongCard } from "./SpotifySongCard";
 import {
   getMemoriaPhotoPresignedUrl,
   getMemoriaVideoPresignedUrl,
+  getMemoriaThumbnailPresignedUrl,
   createPhotoMemoryAfterUpload,
   createVideoMemoryAfterUpload,
   deleteMemoryAction,
@@ -117,18 +118,70 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
     setShowAddModal(true);
   };
 
-  const uploadFileToS3 = async (file: File, presignedUrl: string): Promise<void> => {
+  const uploadFileToS3 = async (file: File | Blob, presignedUrl: string, contentType?: string): Promise<void> => {
     const response = await fetch(presignedUrl, {
       method: "PUT",
       body: file,
       headers: {
-        "Content-Type": file.type,
+        "Content-Type": contentType ?? (file instanceof File ? file.type : "application/octet-stream"),
       },
     });
 
     if (!response.ok) {
       throw new Error(`Upload failed: ${response.status}`);
     }
+  };
+
+  // Generate thumbnail from video file
+  const generateVideoThumbnail = (videoFile: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement("video");
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      video.preload = "metadata";
+      video.muted = true;
+      video.playsInline = true;
+
+      video.onloadedmetadata = () => {
+        // Seek to 1 second or 10% of video, whichever is smaller
+        video.currentTime = Math.min(1, video.duration * 0.1);
+      };
+
+      video.onseeked = () => {
+        // Set canvas size to video dimensions (max 1280px width for thumbnail)
+        const maxWidth = 1280;
+        const scale = video.videoWidth > maxWidth ? maxWidth / video.videoWidth : 1;
+        canvas.width = video.videoWidth * scale;
+        canvas.height = video.videoHeight * scale;
+
+        // Draw video frame to canvas
+        ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Convert to blob
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error("Failed to generate thumbnail"));
+            }
+            // Clean up
+            URL.revokeObjectURL(video.src);
+          },
+          "image/jpeg",
+          0.85
+        );
+      };
+
+      video.onerror = () => {
+        URL.revokeObjectURL(video.src);
+        reject(new Error("Failed to load video for thumbnail"));
+      };
+
+      video.src = URL.createObjectURL(videoFile);
+      video.load();
+    });
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: "photo" | "video") => {

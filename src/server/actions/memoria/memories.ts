@@ -522,6 +522,41 @@ export async function getMemoriaVideoPresignedUrl(
 }
 
 /**
+ * Get presigned URL for uploading a video thumbnail to S3
+ */
+export async function getMemoriaThumbnailPresignedUrl(
+  date: string,
+  videoFilename: string
+): Promise<ActionResult<MemoriaPresignedUploadResult>> {
+  try {
+    const session = await requireCoupleSession();
+    const coupleId = session.user.coupleId;
+
+    // Generate S3 key for thumbnail (same folder as video but with _thumb suffix)
+    const uniqueId = nanoid(8);
+    const s3Key = `memoria/${coupleId.toString()}/${date}/thumbnails/${uniqueId}_thumb.jpg`;
+
+    // Get presigned URL for JPEG thumbnail
+    const { uploadUrl } = await generateMemoriaPresignedUploadUrl(s3Key, "image/jpeg");
+
+    // Get the public URL
+    const fileUrl = getMemoriaS3PublicUrl(s3Key);
+
+    return {
+      success: true,
+      data: {
+        uploadUrl,
+        s3Key,
+        fileUrl,
+      },
+    };
+  } catch (error) {
+    console.error("Error generating thumbnail presigned URL:", error);
+    return { success: false, error: "Error al preparar la subida de miniatura" };
+  }
+}
+
+/**
  * Create a photo memory after successful S3 upload
  */
 export async function createPhotoMemoryAfterUpload(data: {
@@ -569,6 +604,7 @@ export async function createVideoMemoryAfterUpload(data: {
   mimeType: string;
   fileSize?: number;
   duration?: number;
+  thumbnailUrl?: string;
   caption?: string;
   isPrivate?: boolean;
 }): Promise<ActionResult<Memory>> {
@@ -581,6 +617,7 @@ export async function createVideoMemoryAfterUpload(data: {
       dayId: day.id,
       userId: session.user.id,
       url: data.url,
+      thumbnailUrl: data.thumbnailUrl,
       s3Key: data.s3Key,
       mimeType: data.mimeType,
       fileSize: data.fileSize,
