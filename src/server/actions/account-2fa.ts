@@ -6,7 +6,15 @@ import { accountTwoFactorSettings, twoFactor, users } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "~/lib/auth";
 import { headers } from "next/headers";
-import { generateSMSCode, sendSMSCode } from "~/server/services/twilio";
+// Stub functions (Twilio removed)
+function generateSMSCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+async function sendSMSCode(phone: string, code: string): Promise<{ success: boolean; error?: string }> {
+  console.log(`[SMS Stub] Would send code ${code} to ${phone}`);
+  return { success: true };
+}
 
 /**
  * Account-Level SMS-Based 2FA Server Actions

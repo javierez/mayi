@@ -4,7 +4,15 @@ import bcrypt from "bcryptjs";
 import { db } from "~/server/db";
 import { users, passwordResetTokens, authAccounts } from "~/server/db/schema";
 import { eq, and, gt, isNull } from "drizzle-orm";
-import { generateSMSCode, sendSMSCode } from "~/server/services/twilio";
+// Stub functions (Twilio removed)
+function generateSMSCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+async function sendSMSCode(phone: string, code: string): Promise<{ success: boolean; error?: string }> {
+  console.log(`[SMS Stub] Would send code ${code} to ${phone}`);
+  return { success: true };
+}
 import { headers } from "next/headers";
 import { hashPassword } from "better-auth/crypto";
 import { randomUUID } from "crypto";
