@@ -4,8 +4,6 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
-  Heart,
-  MessageCircle,
   Music,
   MapPin,
   Volume2,
@@ -25,6 +23,7 @@ interface FeedItemProps {
 export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute }: FeedItemProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isBuffered, setIsBuffered] = useState(false);
   const isActiveRef = useRef(isActive);
   const { memory, dayNote, pinnedQuote, song, location, date } = item;
 
@@ -60,21 +59,22 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
   // Handle video playback and preloading
   useEffect(() => {
     if (videoRef.current) {
-      if (isActive) {
+      if (isActive && isBuffered) {
         playVideo();
-      } else {
+      } else if (!isActive) {
         videoRef.current.pause();
         if (!shouldPreload) {
           videoRef.current.currentTime = 0;
         }
       }
     }
-  }, [isActive, shouldPreload, playVideo]);
+  }, [isActive, isBuffered, shouldPreload, playVideo]);
 
   // Preload video when shouldPreload becomes true
   useEffect(() => {
     if (shouldPreload && memory.type === "video" && videoRef.current) {
       videoRef.current.preload = "auto";
+      videoRef.current.volume = 0.3; // 30% volume
       videoRef.current.load();
     }
   }, [shouldPreload, memory.type]);
@@ -91,15 +91,28 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
     }
   }, []);
 
-  // Handle video loaded - ensure it plays if active
+  // Handle video metadata loaded (for showing poster/thumbnail)
   const handleLoadedData = useCallback(() => {
     setIsLoaded(true);
+  }, []);
+
+  // Handle video fully buffered - only play when entire video is ready
+  const handleCanPlayThrough = useCallback(() => {
+    setIsBuffered(true);
+    if (videoRef.current) {
+      videoRef.current.volume = 0.3; // 30% volume
+    }
     if (isActiveRef.current) {
       playVideo();
     }
   }, [playVideo]);
 
   const isVideo = memory.type === "video";
+  const isPhoto = memory.type === "photo";
+  // Feed only contains photos and videos, safely cast to access media properties
+  const mediaMemory = memory as { url?: string; thumbnailUrl?: string | null };
+  const mediaUrl = (isVideo || isPhoto) ? mediaMemory.url : undefined;
+  const thumbnailUrl = (isVideo || isPhoto) ? mediaMemory.thumbnailUrl : undefined;
 
   return (
     <div
@@ -111,24 +124,24 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
         {/* Only render media when shouldPreload is true */}
         {shouldPreload && (
           <>
-            {isVideo ? (
+            {isVideo && mediaUrl ? (
               <video
                 ref={videoRef}
-                src={memory.url}
-                poster={memory.thumbnailUrl ?? undefined}
+                src={mediaUrl}
+                poster={thumbnailUrl ?? undefined}
                 className="h-full w-full object-cover"
-                autoPlay
                 loop
                 muted={isMuted}
                 playsInline
                 preload="auto"
                 onLoadedData={handleLoadedData}
+                onCanPlayThrough={handleCanPlayThrough}
                 onPause={handlePause}
                 onEnded={playVideo}
               />
-            ) : (
+            ) : mediaUrl ? (
               <Image
-                src={memory.url}
+                src={mediaUrl}
                 alt={dayNote ?? "Recuerdo"}
                 fill
                 className="object-cover"
@@ -137,21 +150,21 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
                 sizes="100vw"
                 onLoad={() => setIsLoaded(true)}
               />
-            )}
+            ) : null}
           </>
         )}
 
-        {/* Loading placeholder */}
-        {!isLoaded && shouldPreload && (
+        {/* Loading placeholder - show while loading or buffering video */}
+        {shouldPreload && (!isLoaded || (isVideo && !isBuffered)) && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
           </div>
         )}
 
         {/* Thumbnail fallback when not preloading */}
-        {!shouldPreload && memory.thumbnailUrl && (
+        {!shouldPreload && thumbnailUrl && (
           <Image
-            src={memory.thumbnailUrl}
+            src={thumbnailUrl}
             alt={dayNote ?? "Recuerdo"}
             fill
             className="object-cover opacity-50"
@@ -194,37 +207,6 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
             </button>
           </motion.div>
         )}
-
-        {/* Right Sidebar - Actions */}
-        <div className="absolute right-4 bottom-32 flex flex-col items-center gap-6">
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: isActive ? 1 : 0, scale: isActive ? 1 : 0.8 }}
-            transition={{ delay: 0.4 }}
-            className="flex flex-col items-center gap-1"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/30 backdrop-blur-sm active:scale-95">
-              <Heart className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-xs font-medium text-white">
-              {memory.reactionsCount}
-            </span>
-          </motion.button>
-
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: isActive ? 1 : 0, scale: isActive ? 1 : 0.8 }}
-            transition={{ delay: 0.5 }}
-            className="flex flex-col items-center gap-1"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-black/30 backdrop-blur-sm active:scale-95">
-              <MessageCircle className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-xs font-medium text-white">
-              {memory.commentsCount}
-            </span>
-          </motion.button>
-        </div>
 
         {/* Bottom Section - Info */}
         <motion.div

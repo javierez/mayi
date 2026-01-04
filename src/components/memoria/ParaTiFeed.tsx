@@ -17,7 +17,7 @@ export function ParaTiFeed({ initialItems }: ParaTiFeedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState(initialItems);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [isPending, startTransition] = useTransition();
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -151,9 +151,9 @@ export function ParaTiFeed({ initialItems }: ParaTiFeedProps) {
     );
   }
 
-  // Preload next 3 items for smoother scrolling
+  // Preload -1/+4 items for smoother scrolling
   const shouldPreload = (index: number) => {
-    return index >= currentIndex - 1 && index <= currentIndex + 3;
+    return index >= currentIndex - 1 && index <= currentIndex + 4;
   };
 
   return (
