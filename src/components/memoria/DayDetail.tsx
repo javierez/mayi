@@ -216,6 +216,26 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
         // Upload to S3
         await uploadFileToS3(file, uploadUrl);
 
+        // For videos, generate and upload thumbnail
+        let thumbnailUrl: string | undefined;
+        if (type === "video") {
+          try {
+            // Generate thumbnail from video
+            const thumbnailBlob = await generateVideoThumbnail(file);
+
+            // Get presigned URL for thumbnail
+            const thumbnailPresigned = await getMemoriaThumbnailPresignedUrl(date, file.name);
+            if (thumbnailPresigned.success && thumbnailPresigned.data) {
+              // Upload thumbnail
+              await uploadFileToS3(thumbnailBlob, thumbnailPresigned.data.uploadUrl, "image/jpeg");
+              thumbnailUrl = thumbnailPresigned.data.fileUrl;
+            }
+          } catch (thumbError) {
+            // Log but don't fail the upload if thumbnail fails
+            console.warn("Failed to generate thumbnail:", thumbError);
+          }
+        }
+
         // Create memory record
         const memoryResult = type === "photo"
           ? await createPhotoMemoryAfterUpload({
@@ -231,6 +251,7 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
               s3Key,
               mimeType: file.type,
               fileSize: file.size,
+              thumbnailUrl,
             });
 
         if (!memoryResult.success) {

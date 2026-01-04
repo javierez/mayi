@@ -26,7 +26,7 @@ const config = {
       },
       {
         protocol: "https",
-        hostname: "*.s3.us-east-1.amazonaws.com",
+        hostname: "*.s3.*.amazonaws.com",
         port: "",
         pathname: "/**",
       },

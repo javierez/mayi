@@ -22,15 +22,28 @@ export async function getDaysForMonth(
       memoryCount: sql<number>`count(${memories.id})::int`.as("memoryCount"),
       thumbnailUrl: sql<string | null>`
         COALESCE(
-          (SELECT COALESCE(m1.thumbnail_url, m1.url) FROM memories m1
+          -- First try cover memory (thumbnail if video, url if photo)
+          (SELECT CASE
+             WHEN m1.type = 'video' THEN m1.thumbnail_url
+             ELSE COALESCE(m1.thumbnail_url, m1.url)
+           END
+           FROM memories m1
            WHERE m1.id = ${days.coverMemoryId}
-             AND m1.is_active = true
-             AND (m1.thumbnail_url IS NOT NULL OR m1.url IS NOT NULL)),
+             AND m1.is_active = true),
+          -- Then try first photo
           (SELECT COALESCE(m2.thumbnail_url, m2.url) FROM memories m2
            WHERE m2.day_id = ${days.id}
              AND m2.is_active = true
-             AND m2.type IN ('photo', 'video')
+             AND m2.type = 'photo'
            ORDER BY m2.position ASC
+           LIMIT 1),
+          -- Finally try first video thumbnail (NOT the video url)
+          (SELECT m3.thumbnail_url FROM memories m3
+           WHERE m3.day_id = ${days.id}
+             AND m3.is_active = true
+             AND m3.type = 'video'
+             AND m3.thumbnail_url IS NOT NULL
+           ORDER BY m3.position ASC
            LIMIT 1)
         )
       `.as("thumbnailUrl"),
@@ -310,15 +323,28 @@ export async function getRecentDays(
       memoryCount: sql<number>`count(${memories.id})::int`.as("memoryCount"),
       thumbnailUrl: sql<string | null>`
         COALESCE(
-          (SELECT COALESCE(m1.thumbnail_url, m1.url) FROM memories m1
+          -- First try cover memory (thumbnail if video, url if photo)
+          (SELECT CASE
+             WHEN m1.type = 'video' THEN m1.thumbnail_url
+             ELSE COALESCE(m1.thumbnail_url, m1.url)
+           END
+           FROM memories m1
            WHERE m1.id = ${days.coverMemoryId}
-             AND m1.is_active = true
-             AND (m1.thumbnail_url IS NOT NULL OR m1.url IS NOT NULL)),
+             AND m1.is_active = true),
+          -- Then try first photo
           (SELECT COALESCE(m2.thumbnail_url, m2.url) FROM memories m2
            WHERE m2.day_id = ${days.id}
              AND m2.is_active = true
-             AND m2.type IN ('photo', 'video')
+             AND m2.type = 'photo'
            ORDER BY m2.position ASC
+           LIMIT 1),
+          -- Finally try first video thumbnail (NOT the video url)
+          (SELECT m3.thumbnail_url FROM memories m3
+           WHERE m3.day_id = ${days.id}
+             AND m3.is_active = true
+             AND m3.type = 'video'
+             AND m3.thumbnail_url IS NOT NULL
+           ORDER BY m3.position ASC
            LIMIT 1)
         )
       `.as("thumbnailUrl"),
