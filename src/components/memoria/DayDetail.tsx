@@ -199,21 +199,21 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
 
     setUploadProgress({
       type,
-      filename: file.name,
+      filename: originalFile.name,
       status: "uploading",
     });
 
     startTransition(async () => {
       try {
         // Convert HEIC to JPEG if needed (for photos only)
-        if (type === "photo" && isHeicFile(file)) {
+        if (type === "photo" && isHeicFile(originalFile)) {
           setUploadProgress({
             type,
-            filename: file.name,
+            filename: originalFile.name,
             status: "uploading",
             message: "Convirtiendo HEIC...",
           });
-          file = await convertHeicToJpeg(file);
+          file = await convertHeicToJpeg(originalFile);
         }
 
         // Get presigned URL
@@ -942,6 +942,7 @@ function MemoryCard({
             loop
             muted
             playsInline
+            preload="auto"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-slate-200">
