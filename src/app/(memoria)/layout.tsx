@@ -5,6 +5,8 @@ import { db } from "~/server/db";
 import { users } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "MayI - Nuestros Recuerdos",
   description: "Calendario de recuerdos para parejas",
