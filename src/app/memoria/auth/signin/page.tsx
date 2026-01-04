@@ -149,18 +149,17 @@ export default function MemoriaSignInPage() {
               <p className="text-xs text-red-500">{error}</p>
             )}
 
-            <motion.button
-              whileTap={{ scale: 0.98 }}
+            <button
               type="submit"
               disabled={isLoading}
-              className="flex h-11 w-full items-center justify-center rounded-xl bg-slate-800 text-sm font-medium text-white transition-colors hover:bg-slate-700 disabled:opacity-50"
+              className="flex h-11 w-full items-center justify-center rounded-xl bg-slate-800 text-sm font-medium text-white transition-colors hover:bg-slate-700 active:scale-[0.98] disabled:opacity-50"
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                "Entrar"
+                "Iniciar sesión"
               )}
-            </motion.button>
+            </button>
           </form>
 
           {/* Links */}
