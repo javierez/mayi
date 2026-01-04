@@ -943,6 +943,10 @@ function MemoryCard({
             muted
             playsInline
             preload="auto"
+            onLoadedData={(e) => {
+              const video = e.currentTarget;
+              video.play().catch(() => {});
+            }}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-slate-200">
