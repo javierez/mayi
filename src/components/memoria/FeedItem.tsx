@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
@@ -25,7 +25,13 @@ interface FeedItemProps {
 export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute }: FeedItemProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const isActiveRef = useRef(isActive);
   const { memory, dayNote, pinnedQuote, song, location, date } = item;
+
+  // Keep ref in sync
+  useEffect(() => {
+    isActiveRef.current = isActive;
+  }, [isActive]);
 
   // Format date
   const formattedDate = new Date(date).toLocaleDateString("es-ES", {
@@ -34,11 +40,28 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
     year: "numeric",
   });
 
+  // Play video helper
+  const playVideo = useCallback(() => {
+    if (videoRef.current && isActiveRef.current) {
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // Retry after a short delay if autoplay fails
+          setTimeout(() => {
+            if (videoRef.current && isActiveRef.current) {
+              videoRef.current.play().catch(() => {});
+            }
+          }, 100);
+        });
+      }
+    }
+  }, []);
+
   // Handle video playback and preloading
   useEffect(() => {
     if (videoRef.current) {
       if (isActive) {
-        videoRef.current.play().catch(() => {});
+        playVideo();
       } else {
         videoRef.current.pause();
         if (!shouldPreload) {
@@ -46,7 +69,7 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
         }
       }
     }
-  }, [isActive, shouldPreload]);
+  }, [isActive, shouldPreload, playVideo]);
 
   // Preload video when shouldPreload becomes true
   useEffect(() => {
@@ -55,6 +78,26 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
       videoRef.current.load();
     }
   }, [shouldPreload, memory.type]);
+
+  // Handle unexpected video pause - resume if still active
+  const handlePause = useCallback(() => {
+    if (isActiveRef.current && videoRef.current) {
+      // Small delay to avoid fighting with intentional pauses
+      setTimeout(() => {
+        if (isActiveRef.current && videoRef.current?.paused) {
+          videoRef.current.play().catch(() => {});
+        }
+      }, 50);
+    }
+  }, []);
+
+  // Handle video loaded - ensure it plays if active
+  const handleLoadedData = useCallback(() => {
+    setIsLoaded(true);
+    if (isActiveRef.current) {
+      playVideo();
+    }
+  }, [playVideo]);
 
   const isVideo = memory.type === "video";
 
@@ -79,7 +122,9 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
                 muted={isMuted}
                 playsInline
                 preload="auto"
-                onLoadedData={() => setIsLoaded(true)}
+                onLoadedData={handleLoadedData}
+                onPause={handlePause}
+                onEnded={playVideo}
               />
             ) : (
               <Image

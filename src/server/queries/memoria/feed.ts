@@ -29,8 +29,24 @@ export interface FeedItem {
 
 /**
  * Get random photo/video memories with related day content for the feed
+ * @param limit - Number of items to fetch
+ * @param excludeIds - Memory IDs to exclude (already shown)
  */
-export async function getFeedMemories(limit = 20): Promise<FeedItem[]> {
+export async function getFeedMemories(limit = 20, excludeIds: string[] = []): Promise<FeedItem[]> {
+  // Build where conditions
+  const whereConditions = [
+    eq(memories.isActive, true),
+    eq(memories.isPrivate, false),
+    inArray(memories.type, ["photo", "video"]),
+  ];
+
+  // Exclude already fetched memories
+  if (excludeIds.length > 0) {
+    whereConditions.push(
+      sql`${memories.id} NOT IN (${sql.join(excludeIds.map(id => sql`${BigInt(id)}`), sql`, `)})`
+    );
+  }
+
   // Get random photo/video memories
   const mediaMemories = await db
     .select({
@@ -51,13 +67,7 @@ export async function getFeedMemories(limit = 20): Promise<FeedItem[]> {
     .from(memories)
     .innerJoin(users, eq(users.id, memories.userId))
     .innerJoin(days, eq(days.id, memories.dayId))
-    .where(
-      and(
-        eq(memories.isActive, true),
-        eq(memories.isPrivate, false),
-        inArray(memories.type, ["photo", "video"])
-      )
-    )
+    .where(and(...whereConditions))
     .orderBy(sql`RANDOM()`)
     .limit(limit);
 
