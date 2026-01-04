@@ -4,9 +4,6 @@ import "./globals.css";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { CookieConsentBanner } from "~/components/cookie-consent-banner";
-import { OrganizationSchema } from "~/components/seo/OrganizationSchema";
-import { SoftwareApplicationSchema } from "~/components/seo/SoftwareApplicationSchema";
-import { WebSiteSchema } from "~/components/seo/WebSiteSchema";
 import { ServiceWorkerRegistration } from "~/components/notifications/service-worker-registration";
 import { IOSStandaloneRedirect } from "~/components/ios-standalone-redirect";
 
@@ -84,9 +81,6 @@ export default function RootLayout({
         <ServiceWorkerRegistration />
         <SpeedInsights />
         <Analytics />
-        <OrganizationSchema />
-        <SoftwareApplicationSchema />
-        <WebSiteSchema />
       </body>
     </html>
   );
