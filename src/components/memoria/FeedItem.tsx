@@ -74,8 +74,9 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
                 src={memory.url}
                 poster={memory.thumbnailUrl ?? undefined}
                 className="h-full w-full object-cover"
+                autoPlay
                 loop
-                muted
+                muted={isMuted}
                 playsInline
                 preload="auto"
                 onLoadedData={() => setIsLoaded(true)}

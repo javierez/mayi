@@ -845,21 +845,16 @@ function MemoryCard({
           />
         );
       case "video":
-        return memory.thumbnailUrl ? (
-          <>
-            <Image
-              src={memory.thumbnailUrl}
-              alt={memory.caption ?? "Video"}
-              fill
-              className="object-cover"
-              sizes="(max-width: 640px) 50vw, 200px"
-            />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50">
-                <Video className="h-5 w-5 text-white" />
-              </div>
-            </div>
-          </>
+        return memory.url ? (
+          <video
+            src={memory.url}
+            poster={memory.thumbnailUrl ?? undefined}
+            className="h-full w-full object-cover"
+            autoPlay
+            loop
+            muted
+            playsInline
+          />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-slate-200">
             <Video className="h-6 w-6 text-slate-500" />
