@@ -83,7 +83,7 @@ export function HeroSection() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8, duration: 0.8 }}
           >
-            Un viaje por nuestros momentos juntos
+            Nuestros recuerdos, siempre con nosotros
           </motion.p>
 
           {/* Decorative hearts */}

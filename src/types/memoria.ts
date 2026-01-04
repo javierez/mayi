@@ -31,6 +31,7 @@ export interface LocationData {
   lat: number;
   lng: number;
   googlePlaceId?: string;
+  photoUrl?: string; // Place photo from Google Places API
 }
 
 export interface BaseMemory {
@@ -149,6 +150,7 @@ export interface Day {
   temperature?: number | null;
   coverMemoryId?: bigint | null;
   mood?: MoodType | null;
+  rating?: number | null; // 1-5 stars rating
   createdAt: Date;
   updatedAt: Date;
   isActive: boolean;
@@ -292,36 +294,77 @@ export interface StandaloneNoteWithUser extends StandaloneNote {
 }
 
 // =============================================================================
-// COUPLE TYPES
+// CIRCLE TYPES (formerly COUPLE TYPES)
 // =============================================================================
 
-export interface Couple {
+export type CircleType = "couple" | "friends" | "family" | "group";
+
+export const CIRCLE_TYPE_LABELS: Record<CircleType, string> = {
+  couple: "Pareja",
+  friends: "Amigos",
+  family: "Familia",
+  group: "Grupo",
+};
+
+export const CIRCLE_TYPE_ICONS: Record<CircleType, string> = {
+  couple: "💑",
+  friends: "👯",
+  family: "👨‍👩‍👧‍👦",
+  group: "👥",
+};
+
+export const CIRCLE_TYPE_MAX_MEMBERS: Record<CircleType, number | null> = {
+  couple: 2,
+  friends: null, // unlimited
+  family: null, // unlimited
+  group: null, // unlimited
+};
+
+export interface Circle {
   id: bigint;
   name?: string | null;
+  type: CircleType;
+  maxMembers?: number | null;
+  description?: string | null;
   anniversaryDate?: string | null;
   inviteCode?: string | null;
   inviteCodeExpiresAt?: Date | null;
   timezone: string;
-  preferences: CouplePreferences;
+  coverImage?: string | null;
+  emoji?: string | null;
+  preferences: CirclePreferences;
   createdAt: Date;
   updatedAt: Date;
   isActive: boolean;
 }
 
-export interface CouplePreferences {
+// Alias for backwards compatibility
+export type Couple = Circle;
+
+export interface CirclePreferences {
   notificationsEnabled?: boolean;
   pushNotificationsEnabled?: boolean;
   weekStartsOn?: 0 | 1; // 0 = Sunday, 1 = Monday
 }
 
-export interface CoupleWithPartners extends Couple {
-  partners: {
-    id: string;
-    firstName: string;
-    lastName?: string | null;
-    image?: string | null;
-    birthDate?: string | null;
-  }[];
+// Alias for backwards compatibility
+export type CouplePreferences = CirclePreferences;
+
+export interface CircleMember {
+  id: string;
+  firstName: string;
+  lastName?: string | null;
+  image?: string | null;
+  birthDate?: string | null;
+}
+
+export interface CircleWithMembers extends Circle {
+  members: CircleMember[];
+}
+
+// Alias for backwards compatibility
+export interface CoupleWithPartners extends Circle {
+  partners: CircleMember[];
 }
 
 // =============================================================================
@@ -391,4 +434,24 @@ export interface PaginatedResult<T> {
   page: number;
   pageSize: number;
   hasMore: boolean;
+}
+
+// =============================================================================
+// MAP VIEW TYPES
+// =============================================================================
+
+export interface LocationMemoryForMap {
+  id: string; // Serialized bigint for client
+  dayId: string; // Serialized bigint for client
+  date: string; // From day (YYYY-MM-DD)
+  dayTitle?: string | null;
+  locationData: LocationData;
+  caption?: string | null;
+  thumbnailUrl?: string | null; // From photo/video on same day
+  user: {
+    id: string;
+    firstName: string;
+    image?: string | null;
+  };
+  createdAt: string; // ISO date string for client
 }

@@ -4,14 +4,10 @@ import { CalendarView } from "~/components/memoria/CalendarView";
 
 export default function MemoriaPage() {
   return (
-    <MemoriaLayout coupleName="Nuestra Historia">
-      <div className="px-4 py-6">
-        <div className="mx-auto max-w-lg">
-          <Suspense fallback={<CalendarSkeleton />}>
-            <CalendarView />
-          </Suspense>
-        </div>
-      </div>
+    <MemoriaLayout>
+      <Suspense fallback={<CalendarSkeleton />}>
+        <CalendarView />
+      </Suspense>
     </MemoriaLayout>
   );
 }

@@ -136,10 +136,10 @@ export const auth = betterAuth({
   // Session configuration
   session: {
     expiresIn: 60 * 60 * 24 * 30, // 30 days for couples app
+    updateAge: 60 * 60 * 24, // Refresh session expiration every 24 hours of activity
     cookieCache: {
       enabled: true,
-      maxAge: 5 * 60,
-      strategy: "jwe",
+      maxAge: 60 * 60, // 1 hour cache (was 5 minutes - too short)
     },
   },
 
@@ -162,6 +162,8 @@ export const auth = betterAuth({
   // Trusted origins
   trustedOrigins: [
     "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002",
     ...(process.env.APP_URL ? [process.env.APP_URL] : []),
     ...(process.env.VERCEL_URL ? [`https://${process.env.VERCEL_URL}`] : []),
   ],
@@ -177,9 +179,7 @@ export async function getSession() {
 }
 
 // =============================================================================
-// STUB: Simplified role-based permissions (for backwards compatibility)
-// The full implementation is archived below but these stubs are needed
-// for modules that still reference them (e.g., auth-cache.ts)
+// STUB: Simplified permissions types (roles have been removed from the app)
 // =============================================================================
 
 export interface PermissionsObject {

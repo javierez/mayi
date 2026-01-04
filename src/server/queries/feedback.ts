@@ -4,24 +4,16 @@ import { db } from "~/server/db";
 import { feedback, accounts, users } from "~/server/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { getSecureSession } from "~/lib/dal";
-import { userHasRole } from "~/server/queries/user-roles";
 import type { FeedbackWithAccount, FeedbackStatus } from "~/types/feedback";
 
 /**
  * Get all feedback with account and user information
- * Only accessible by admins (role ID 1)
  */
 export async function getAllFeedbackWithAuth(): Promise<FeedbackWithAccount[]> {
   const session = await getSecureSession();
 
   if (!session?.user) {
     throw new Error("Unauthorized: No session found");
-  }
-
-  // Check if user is admin (role ID 1)
-  const isAdmin = await userHasRole(session.user.id, 1);
-  if (!isAdmin) {
-    throw new Error("Unauthorized: Admin role required");
   }
 
   const feedbackData = await db
@@ -64,7 +56,6 @@ export async function getAllFeedbackWithAuth(): Promise<FeedbackWithAccount[]> {
 
 /**
  * Update feedback status
- * Only accessible by admins (role ID 1)
  */
 export async function updateFeedbackStatusWithAuth(
   feedbackId: string | bigint,
@@ -75,12 +66,6 @@ export async function updateFeedbackStatusWithAuth(
 
     if (!session?.user) {
       return { success: false, error: "Unauthorized: No session found" };
-    }
-
-    // Check if user is admin (role ID 1)
-    const isAdmin = await userHasRole(session.user.id, 1);
-    if (!isAdmin) {
-      return { success: false, error: "Unauthorized: Admin role required" };
     }
 
     const feedbackIdBigInt =
@@ -107,7 +92,6 @@ export async function updateFeedbackStatusWithAuth(
 
 /**
  * Mark feedback as resolved
- * Only accessible by admins (role ID 1)
  */
 export async function resolveFeedbackWithAuth(
   feedbackId: string | bigint,

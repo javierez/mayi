@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import { validateInvitationCode } from "~/app/actions/accounts";
 import { updateUserAccount } from "~/app/actions/user-account";
-import { assignUserRole } from "~/app/actions/user-roles";
 import { useSession, getSession } from "~/lib/auth-client";
 
 export default function AccountSetupPage() {
@@ -75,14 +74,6 @@ export default function AccountSetupPage() {
         setError(updateResult.error ?? "Error al asignar la cuenta");
         setIsLoading(false);
         return;
-      }
-
-      // Assign default agent role (roleId = 1)
-      try {
-        await assignUserRole(session.user.id, 1);
-      } catch (roleError) {
-        console.error("Failed to assign role:", roleError);
-        // Don't fail the process if role assignment fails
       }
 
       // Force session refresh to get updated user data with accountId

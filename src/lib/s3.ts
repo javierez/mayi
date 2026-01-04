@@ -4,6 +4,7 @@ import {
   CopyObjectCommand,
   DeleteObjectCommand,
   ListObjectsV2Command,
+  GetObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { nanoid } from "nanoid";
@@ -472,4 +473,79 @@ export function generateVideoKey(
   const fileExtension = filename.split(".").pop() ?? "mp4";
   const uniqueId = nanoid(6);
   return `${referenceNumber}/videos/video_${videoOrder}_${uniqueId}.${fileExtension}`;
+}
+
+// =============================================================================
+// MEMORIA-SPECIFIC S3 FUNCTIONS
+// Uses a fixed bucket for the Memoria app (no accountId required)
+// =============================================================================
+
+const MEMORIA_BUCKET = process.env.AWS_S3_MEMORIA_BUCKET ?? process.env.AWS_S3_BUCKET ?? "mayi";
+
+/**
+ * Generate a presigned URL for Memoria uploads (doesn't require accountId)
+ */
+export async function generateMemoriaPresignedUploadUrl(
+  key: string,
+  contentType: string,
+  expiresIn = 300,
+): Promise<{ uploadUrl: string; bucket: string }> {
+  const command = new PutObjectCommand({
+    Bucket: MEMORIA_BUCKET,
+    Key: key,
+    ContentType: contentType,
+  });
+
+  const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn });
+
+  return { uploadUrl, bucket: MEMORIA_BUCKET };
+}
+
+/**
+ * Get the public URL for a Memoria S3 object
+ */
+export function getMemoriaS3PublicUrl(key: string): string {
+  return `https://${MEMORIA_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+}
+
+/**
+ * Generate a presigned URL for reading a Memoria S3 object
+ * Use this when the bucket doesn't have public read access
+ * @param key - The S3 key of the object
+ * @param expiresIn - URL expiration time in seconds (default: 3600 = 1 hour)
+ */
+export async function generateMemoriaPresignedReadUrl(
+  key: string,
+  expiresIn = 3600,
+): Promise<string> {
+  const command = new GetObjectCommand({
+    Bucket: MEMORIA_BUCKET,
+    Key: key,
+  });
+
+  return getSignedUrl(s3Client, command, { expiresIn });
+}
+
+/**
+ * Generate presigned read URLs for multiple Memoria S3 objects
+ * More efficient than calling generateMemoriaPresignedReadUrl for each key
+ */
+export async function generateMemoriaPresignedReadUrls(
+  keys: string[],
+  expiresIn = 3600,
+): Promise<Map<string, string>> {
+  const urlMap = new Map<string, string>();
+
+  await Promise.all(
+    keys.map(async (key) => {
+      const command = new GetObjectCommand({
+        Bucket: MEMORIA_BUCKET,
+        Key: key,
+      });
+      const url = await getSignedUrl(s3Client, command, { expiresIn });
+      urlMap.set(key, url);
+    })
+  );
+
+  return urlMap;
 }

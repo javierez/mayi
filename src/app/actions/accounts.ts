@@ -1,7 +1,6 @@
 "use server";
 
 import { getSecureSession } from "~/lib/dal";
-import { userHasRole } from "~/server/queries/user-roles";
 import { redirect } from "next/navigation";
 import {
   createAccount as createAccountQuery,
@@ -12,19 +11,12 @@ import {
   validateInvitationCode as validateInvitationCodeQuery,
 } from "~/server/queries/accounts";
 
-// Helper function to check superadmin access
-async function checkSuperAdminAccess() {
-  // Use optimized DAL function instead of direct auth.api.getSession
+// Helper function to check authenticated access
+async function checkAuthenticatedAccess() {
   const session = await getSecureSession();
 
   if (!session?.user) {
     redirect("/auth/signin");
-  }
-
-  const isSuperAdmin = await userHasRole(session.user.id, 1);
-
-  if (!isSuperAdmin) {
-    throw new Error("Access denied: Superadmin role required");
   }
 
   return session.user;
@@ -41,13 +33,13 @@ export async function createAccount(data: {
   subscriptionStatus?: string;
   isActive?: boolean;
 }) {
-  await checkSuperAdminAccess();
+  await checkAuthenticatedAccess();
   return await createAccountQuery(data);
 }
 
 // Search accounts
 export async function searchAccounts(searchTerm = "") {
-  await checkSuperAdminAccess();
+  await checkAuthenticatedAccess();
   return await searchAccountsQuery(searchTerm);
 }
 
@@ -65,19 +57,19 @@ export async function updateAccount(
     isActive?: boolean;
   },
 ) {
-  await checkSuperAdminAccess();
+  await checkAuthenticatedAccess();
   return await updateAccountQuery(accountId, data);
 }
 
 // Delete an account (soft delete by setting isActive to false)
 export async function deleteAccount(accountId: number) {
-  await checkSuperAdminAccess();
+  await checkAuthenticatedAccess();
   return await deleteAccountQuery(accountId);
 }
 
 // Get account by ID
 export async function getAccountById(accountId: number) {
-  await checkSuperAdminAccess();
+  await checkAuthenticatedAccess();
   return await getAccountByIdQuery(accountId);
 }
 

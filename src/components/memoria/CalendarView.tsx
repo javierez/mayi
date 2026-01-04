@@ -3,10 +3,10 @@
 import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Plus, Star, Camera } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Camera } from "lucide-react";
 import Image from "next/image";
 import { getCalendarMonthAction } from "~/server/actions/memoria/days";
-import type { CalendarMonth, DaySummary, MilestoneWithNextDate } from "~/types/memoria";
+import type { CalendarMonth, DaySummary } from "~/types/memoria";
 
 const DAYS_OF_WEEK = ["L", "M", "X", "J", "V", "S", "D"];
 const MONTHS = [
@@ -113,19 +113,11 @@ export function CalendarView() {
   ) ?? 0;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="text-center">
-        <h2 className="text-2xl font-light text-gray-700">Nuestros Recuerdos</h2>
-        <p className="mt-1 text-sm text-gray-500">
-          Haz clic en cualquier día para ver o añadir recuerdos
-        </p>
-      </div>
-
-      {/* Calendar Card */}
-      <div className="rounded-2xl bg-white/80 p-6 shadow-xl backdrop-blur-sm">
+    <div className="flex h-[calc(100vh-5rem)] flex-col px-2 pb-2 pt-3">
+      {/* Calendar Card - fills available space */}
+      <div className="flex flex-1 flex-col rounded-2xl bg-white/90 p-3 shadow-sm backdrop-blur-sm">
         {/* Month navigation */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-3 flex items-center justify-between">
           <button
             onClick={goToPrevMonth}
             className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
@@ -154,41 +146,39 @@ export function CalendarView() {
         </div>
 
         {/* Days of week header */}
-        <div className="mb-2 grid grid-cols-7 gap-1">
+        <div className="grid grid-cols-7 gap-1">
           {DAYS_OF_WEEK.map((day) => (
             <div
               key={day}
-              className="py-2 text-center text-sm font-medium text-gray-400"
+              className="py-1.5 text-center text-xs font-medium text-gray-400"
             >
               {day}
             </div>
           ))}
         </div>
 
-        {/* Calendar grid */}
-        <div className="grid grid-cols-7 gap-1">
+        {/* Calendar grid - fills remaining space */}
+        <div className="mt-1 grid flex-1 grid-cols-7 grid-rows-6 gap-1">
           {calendarDays.map((day, index) => {
             if (day === null) {
-              return <div key={`empty-${index}`} className="aspect-square" />;
+              return <div key={`empty-${index}`} className="rounded-lg bg-gray-50/50" />;
             }
 
             const dayData = getDayData(day);
             const hasMemories = dayData && dayData.memoryCount > 0;
-            const hasMilestone = dayData?.hasMilestone;
             const todayHighlight = isToday(day);
 
             return (
               <motion.button
                 key={day}
                 onClick={() => handleDayClick(day)}
-                className={`group relative aspect-square overflow-hidden rounded-lg transition-all ${
+                className={`group relative overflow-hidden rounded-xl transition-all ${
                   hasMemories
-                    ? "ring-2 ring-slate-200 hover:ring-slate-400 hover:shadow-lg"
+                    ? "ring-1 ring-slate-200 hover:ring-slate-400 hover:shadow-md"
                     : todayHighlight
                       ? "ring-2 ring-amber-300"
                       : "hover:bg-gray-100"
                 }`}
-                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
                 {hasMemories && dayData.thumbnailUrl ? (
@@ -198,106 +188,49 @@ export function CalendarView() {
                       alt={dayData.title ?? `Recuerdos del día ${day}`}
                       fill
                       className="object-cover"
-                      sizes="(max-width: 640px) 40px, 60px"
+                      sizes="(max-width: 640px) 14vw, 60px"
                     />
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                      <span className="text-sm font-medium text-white drop-shadow">
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+                      <span className="text-base font-semibold text-white drop-shadow-md">
                         {day}
                       </span>
                     </div>
-                    {dayData.memoryCount > 1 && (
-                      <span className="absolute bottom-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-slate-600 text-[9px] font-bold text-white">
-                        {dayData.memoryCount}
-                      </span>
-                    )}
                   </>
                 ) : hasMemories ? (
                   <div className="flex h-full w-full flex-col items-center justify-center bg-slate-100">
-                    <span className="text-sm font-medium text-gray-600">
+                    <span className="text-base font-medium text-gray-600">
                       {day}
                     </span>
-                    <Camera className="h-3 w-3 text-slate-400" />
+                    <Camera className="h-4 w-4 text-slate-400" />
                   </div>
                 ) : (
                   <div
-                    className={`relative flex h-full w-full items-center justify-center text-sm ${
+                    className={`relative flex h-full w-full items-center justify-center text-base ${
                       todayHighlight
                         ? "bg-amber-50 font-bold text-amber-600"
                         : "bg-gray-50 text-gray-400"
                     }`}
                   >
-                    <span className="group-hover:opacity-0 transition-opacity">{day}</span>
+                    <span className="transition-opacity group-hover:opacity-0">{day}</span>
                     {/* Plus button on hover for empty days */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-slate-100">
-                      <Plus className="h-5 w-5 text-slate-500" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-slate-100 opacity-0 transition-opacity group-hover:opacity-100">
+                      <Plus className="h-6 w-6 text-slate-500" />
                     </div>
                   </div>
-                )}
-
-                {/* Milestone indicator */}
-                {hasMilestone && (
-                  <Star className="absolute right-0.5 top-0.5 h-3 w-3 fill-amber-400 text-amber-400 drop-shadow" />
                 )}
               </motion.button>
             );
           })}
         </div>
 
-        {/* Memory count */}
-        <div className="mt-6 flex items-center justify-center gap-2 text-sm text-gray-400">
-          <Camera className="h-4 w-4" />
+        {/* Memory count - smaller footer */}
+        <div className="mt-2 flex items-center justify-center gap-2 text-xs text-gray-400">
+          <Camera className="h-3.5 w-3.5" />
           <span>
             {isPending ? "Cargando..." : `${memoriesThisMonth} recuerdos este mes`}
           </span>
         </div>
       </div>
-
-      {/* Upcoming milestones */}
-      {calendarData && calendarData.milestones.length > 0 && (
-        <div className="rounded-2xl bg-white/80 p-4 shadow-lg backdrop-blur-sm">
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-600">
-            <Star className="h-4 w-4 text-amber-400" />
-            Próximos hitos
-          </h3>
-          <div className="space-y-2">
-            {calendarData.milestones.slice(0, 3).map((milestone) => (
-              <MilestonePreview key={milestone.id.toString()} milestone={milestone} />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MilestonePreview({ milestone }: { milestone: MilestoneWithNextDate }) {
-  const date = new Date(milestone.nextDate);
-  const formattedDate = date.toLocaleDateString("es-ES", {
-    day: "numeric",
-    month: "short",
-  });
-
-  return (
-    <div className="flex items-center gap-3 rounded-lg bg-amber-50/50 px-3 py-2">
-      <span className="text-lg">{milestone.icon ?? "🎉"}</span>
-      <div className="flex-1">
-        <p className="text-sm font-medium text-gray-700">{milestone.title}</p>
-        <p className="text-xs text-gray-500">
-          {formattedDate}
-          {milestone.yearsAgo && milestone.yearsAgo > 0 && (
-            <span className="ml-1">· {milestone.yearsAgo} años</span>
-          )}
-        </p>
-      </div>
-      {milestone.daysUntil <= 7 && (
-        <span className="rounded-full bg-amber-200 px-2 py-0.5 text-xs font-medium text-amber-700">
-          {milestone.daysUntil === 0
-            ? "¡Hoy!"
-            : milestone.daysUntil === 1
-              ? "Mañana"
-              : `${milestone.daysUntil} días`}
-        </span>
-      )}
     </div>
   );
 }

@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'Vesta CRM - Software Inmobiliario',
     short_name: 'Vesta CRM',
     description: 'CRM inmobiliario líder en España. Gestiona propiedades, contactos y publica en múltiples portales con IA.',
-    start_url: '/operaciones',
+    start_url: '/propiedades',
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#000000',

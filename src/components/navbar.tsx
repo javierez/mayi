@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
-import { Building, Menu, X, UserPlus } from "lucide-react";
+import { Building, Menu, X } from "lucide-react";
 import { useState, useCallback, memo } from "react";
 import { cn } from "~/lib/utils";
 import { SocialLinks } from "~/components/ui/social-links";
@@ -86,17 +86,12 @@ export default function Navbar({
               <SocialLinks links={socialLinks} />
             )}
             <Link
-              href="/auth/signin"
+              href="/memoria"
               className="text-sm font-medium transition-colors hover:text-primary"
               aria-label="Iniciar Sesión"
             >
               Iniciar Sesión
             </Link>
-            <Button asChild size="sm" className="hidden lg:inline-flex">
-              <Link href="/auth/signup" aria-label="Registrarse">
-                Registrarse
-              </Link>
-            </Button>
           </div>
           <Button
             variant="ghost"
@@ -142,19 +137,13 @@ export default function Navbar({
               {/* Auth Section */}
               <div className="space-y-3">
                 <div className="space-y-2">
-                  <Button asChild className="w-full" size="sm">
-                    <Link href="/auth/signup" onClick={handleMenuClose}>
-                      <UserPlus className="mr-2 h-4 w-4" />
-                      Registrarse
-                    </Link>
-                  </Button>
                   <Button
                     asChild
                     variant="outline"
                     className="w-full"
                     size="sm"
                   >
-                    <Link href="/auth/signin" onClick={handleMenuClose}>
+                    <Link href="/memories" onClick={handleMenuClose}>
                       Iniciar Sesión
                     </Link>
                   </Button>

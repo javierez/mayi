@@ -3,6 +3,7 @@ import "server-only";
 import { headers } from "next/headers";
 import { auth } from "~/lib/auth";
 import { db } from "~/server/db";
+import { users } from "~/server/db/schema";
 import { and, eq, type SQL, type SQLWrapper, type Column } from "drizzle-orm";
 
 /**
@@ -109,8 +110,27 @@ export async function getSecureCoupleSession(): Promise<CoupleSession | null> {
       return null;
     }
 
+    // Check database for coupleId (session cookie might be stale)
+    let coupleIdFromDb: bigint | null = null;
+
+    // First try session cookie
+    if (session.user.coupleId) {
+      coupleIdFromDb = BigInt(session.user.coupleId);
+    } else {
+      // Session cookie is stale, check database directly
+      const userFromDb = await db
+        .select({ coupleId: users.coupleId })
+        .from(users)
+        .where(eq(users.id, session.user.id))
+        .limit(1);
+
+      if (userFromDb[0]?.coupleId) {
+        coupleIdFromDb = userFromDb[0].coupleId;
+      }
+    }
+
     // User must belong to a couple
-    if (!session.user.coupleId) {
+    if (!coupleIdFromDb) {
       return null;
     }
 
@@ -120,7 +140,7 @@ export async function getSecureCoupleSession(): Promise<CoupleSession | null> {
         email: session.user.email,
         firstName: session.user.firstName ?? session.user.name ?? "",
         lastName: session.user.lastName ?? "",
-        coupleId: BigInt(session.user.coupleId),
+        coupleId: coupleIdFromDb,
         phone: session.user.phone ?? undefined,
         birthDate: session.user.birthDate
           ? typeof session.user.birthDate === "string"
@@ -153,8 +173,11 @@ export async function getSessionWithoutCoupleCheck(): Promise<CoupleSessionWitho
     });
 
     if (!session?.user) {
+      console.log("[DAL] getSessionWithoutCoupleCheck: No session found");
       return null;
     }
+
+    console.log("[DAL] Session found for user:", session.user.id, "expires:", session.session.expiresAt);
 
     return {
       user: {

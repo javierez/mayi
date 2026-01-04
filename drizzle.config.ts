@@ -4,9 +4,8 @@ export default {
   schema: "./src/server/db/schema.ts",
   dialect: "postgresql",
   dbCredentials: {
-    // Use direct connection (non-pooling) for migrations
-    // Set POSTGRES_URL_NON_POOLING in your environment
-    url: process.env.POSTGRES_URL_NON_POOLING ?? process.env.POSTGRES_URL!,
+    // Use pooler connection for migrations (direct connection not available)
+    url: process.env.POSTGRES_URL!,
   },
   migrations: {
     schema: "public",

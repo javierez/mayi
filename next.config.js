@@ -48,6 +48,12 @@ const config = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "i.scdn.co",
+        port: "",
+        pathname: "/**",
+      },
     ],
     // Disable Vercel Image Optimization to avoid 402 quota errors
     // Images are served directly from S3

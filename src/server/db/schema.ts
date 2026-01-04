@@ -14,20 +14,28 @@ import {
 } from "drizzle-orm/pg-core";
 
 // ============================================================================
-// COUPLES (relationship container - replaces accounts)
+// CIRCLES (relationship container - couples, friends, groups, family)
 // ============================================================================
 export const couples = pgTable("couples", {
   id: bigserial("id", { mode: "bigint" }).primaryKey(),
-  name: varchar("name", { length: 255 }), // "Javi & María"
-  anniversaryDate: date("anniversary_date"), // When they started dating
-  inviteCode: varchar("invite_code", { length: 32 }), // Unique code to invite partner
+  name: varchar("name", { length: 255 }), // "Javi & María" or "The Adventure Squad"
+  type: varchar("type", { length: 20 }).default("couple").notNull(), // 'couple' | 'friends' | 'family' | 'group'
+  maxMembers: smallint("max_members").default(2), // 2 for couples, null for unlimited
+  description: text("description"), // Optional description for the circle
+  anniversaryDate: date("anniversary_date"), // Start date (anniversary for couples, creation for others)
+  inviteCode: varchar("invite_code", { length: 32 }), // Unique code to invite members
   inviteCodeExpiresAt: timestamp("invite_code_expires_at"),
   timezone: varchar("timezone", { length: 50 }).default("Europe/Madrid"),
+  coverImage: varchar("cover_image", { length: 2048 }), // Circle cover/banner image
+  emoji: varchar("emoji", { length: 10 }), // Circle emoji icon
   preferences: jsonb("preferences").default({}),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   isActive: boolean("is_active").default(true),
 });
+
+// Alias for semantic clarity
+export const circles = couples;
 
 // ============================================================================
 // USERS (adapted for couples - BetterAuth compatible)
@@ -126,6 +134,7 @@ export const days = pgTable("days", {
   temperature: smallint("temperature"),
   coverMemoryId: bigint("cover_memory_id", { mode: "bigint" }),
   mood: varchar("mood", { length: 50 }),
+  rating: smallint("rating"), // 1-5 stars rating for the day
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   isActive: boolean("is_active").default(true),

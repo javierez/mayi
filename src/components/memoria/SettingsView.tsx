@@ -7,6 +7,8 @@ import {
   Heart,
   User,
   Users,
+  Home,
+  UserPlus,
   Calendar,
   Copy,
   RefreshCw,
@@ -17,6 +19,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -28,10 +31,14 @@ import {
   generateInviteCodeAction,
 } from "~/server/actions/memoria/couples";
 import { authClient } from "~/lib/auth-client";
-import type { CoupleWithPartners } from "~/types/memoria";
+import type { CircleWithMembers } from "~/types/memoria";
+import {
+  CIRCLE_TYPE_LABELS,
+  CIRCLE_TYPE_ICONS,
+} from "~/types/memoria";
 
 interface SettingsViewProps {
-  couple: CoupleWithPartners | null;
+  circle: CircleWithMembers | null;
   currentUser: {
     id: string;
     firstName: string;
@@ -40,26 +47,75 @@ interface SettingsViewProps {
   };
 }
 
-export function SettingsView({ couple, currentUser }: SettingsViewProps) {
+export function SettingsView({ circle, currentUser }: SettingsViewProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [showEditCouple, setShowEditCouple] = useState(false);
+  const [showEditCircle, setShowEditCircle] = useState(false);
   const [copied, setCopied] = useState(false);
 
   // Form state
-  const [coupleName, setCoupleName] = useState(couple?.name ?? "");
+  const [circleName, setCircleName] = useState(circle?.name ?? "");
+  const [circleDescription, setCircleDescription] = useState(circle?.description ?? "");
   const [anniversaryDate, setAnniversaryDate] = useState(
-    couple?.anniversaryDate ?? ""
+    circle?.anniversaryDate ?? ""
   );
 
-  const partner = couple?.partners?.find((p) => p.id !== currentUser.id);
-  const hasPartner = !!partner;
+  const circleType = circle?.type ?? "couple";
+  const otherMembers = circle?.members?.filter((m) => m.id !== currentUser.id) ?? [];
+  const hasOtherMembers = otherMembers.length > 0;
+  const maxMembers = circle?.maxMembers;
+  const canInviteMore = maxMembers === null || (circle?.members?.length ?? 0) < maxMembers;
+
+  // Get circle type icon component
+  const getCircleIcon = () => {
+    switch (circleType) {
+      case "couple":
+        return <Heart className="h-5 w-5 text-rose-400" />;
+      case "friends":
+        return <Users className="h-5 w-5 text-blue-400" />;
+      case "family":
+        return <Home className="h-5 w-5 text-green-400" />;
+      case "group":
+        return <UserPlus className="h-5 w-5 text-purple-400" />;
+      default:
+        return <Users className="h-5 w-5 text-amber-400" />;
+    }
+  };
+
+  // Get label based on circle type
+  const getCircleLabel = () => CIRCLE_TYPE_LABELS[circleType] ?? "Grupo";
+  const getMembersLabel = () => {
+    switch (circleType) {
+      case "couple":
+        return "Pareja";
+      case "friends":
+        return "Amigos";
+      case "family":
+        return "Familia";
+      case "group":
+        return "Miembros";
+      default:
+        return "Miembros";
+    }
+  };
+  const getInviteLabel = () => {
+    switch (circleType) {
+      case "couple":
+        return "Invita a tu pareja";
+      case "friends":
+        return "Invita a tus amigos";
+      case "family":
+        return "Invita a tu familia";
+      default:
+        return "Invita a nuevos miembros";
+    }
+  };
 
   const handleCopyInviteCode = async () => {
-    if (!couple?.inviteCode) return;
+    if (!circle?.inviteCode) return;
 
     try {
-      await navigator.clipboard.writeText(couple.inviteCode);
+      await navigator.clipboard.writeText(circle.inviteCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -76,15 +132,16 @@ export function SettingsView({ couple, currentUser }: SettingsViewProps) {
     });
   };
 
-  const handleSaveCouple = () => {
+  const handleSaveCircle = () => {
     startTransition(async () => {
       const result = await updateCoupleAction({
-        name: coupleName || undefined,
+        name: circleName || undefined,
+        description: circleDescription || undefined,
         anniversaryDate: anniversaryDate || undefined,
       });
 
       if (result.success) {
-        setShowEditCouple(false);
+        setShowEditCircle(false);
         router.refresh();
       }
     });
@@ -100,10 +157,12 @@ export function SettingsView({ couple, currentUser }: SettingsViewProps) {
       {/* Header */}
       <div>
         <h2 className="text-xl font-medium text-gray-700">Ajustes</h2>
-        <p className="text-sm text-gray-500">Configuración de la pareja y perfil</p>
+        <p className="text-sm text-gray-500">
+          Configuración de {getCircleLabel().toLowerCase()} y perfil
+        </p>
       </div>
 
-      {/* Couple Info */}
+      {/* Circle Info */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -111,13 +170,16 @@ export function SettingsView({ couple, currentUser }: SettingsViewProps) {
       >
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Heart className="h-5 w-5 text-rose-400" />
-            <h3 className="font-medium text-gray-700">Nuestra Pareja</h3>
+            {getCircleIcon()}
+            <h3 className="font-medium text-gray-700">
+              {circle?.emoji && <span className="mr-1">{circle.emoji}</span>}
+              {getCircleLabel()}
+            </h3>
           </div>
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setShowEditCouple(true)}
+            onClick={() => setShowEditCircle(true)}
           >
             Editar
           </Button>
@@ -127,15 +189,24 @@ export function SettingsView({ couple, currentUser }: SettingsViewProps) {
           <div>
             <p className="text-xs text-gray-500">Nombre</p>
             <p className="text-sm font-medium text-gray-700">
-              {couple?.name ?? "Sin nombre"}
+              {circle?.name ?? "Sin nombre"}
             </p>
           </div>
 
-          {couple?.anniversaryDate && (
+          {circle?.description && (
             <div>
-              <p className="text-xs text-gray-500">Aniversario</p>
+              <p className="text-xs text-gray-500">Descripción</p>
+              <p className="text-sm text-gray-600">{circle.description}</p>
+            </div>
+          )}
+
+          {circle?.anniversaryDate && (
+            <div>
+              <p className="text-xs text-gray-500">
+                {circleType === "couple" ? "Aniversario" : "Fecha de inicio"}
+              </p>
               <p className="text-sm font-medium text-gray-700">
-                {new Date(couple.anniversaryDate).toLocaleDateString("es-ES", {
+                {new Date(circle.anniversaryDate).toLocaleDateString("es-ES", {
                   day: "numeric",
                   month: "long",
                   year: "numeric",
@@ -146,16 +217,23 @@ export function SettingsView({ couple, currentUser }: SettingsViewProps) {
         </div>
       </motion.div>
 
-      {/* Partners */}
+      {/* Members */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
         className="rounded-xl bg-white/80 p-4 shadow-lg backdrop-blur-sm"
       >
-        <div className="mb-3 flex items-center gap-2">
-          <Users className="h-5 w-5 text-amber-400" />
-          <h3 className="font-medium text-gray-700">Miembros</h3>
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-amber-400" />
+            <h3 className="font-medium text-gray-700">{getMembersLabel()}</h3>
+          </div>
+          {maxMembers && (
+            <span className="text-xs text-gray-400">
+              {circle?.members?.length ?? 0}/{maxMembers}
+            </span>
+          )}
         </div>
 
         <div className="space-y-3">
@@ -175,28 +253,46 @@ export function SettingsView({ couple, currentUser }: SettingsViewProps) {
             </span>
           </div>
 
-          {/* Partner or invite */}
-          {hasPartner ? (
-            <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-rose-400 to-pink-400">
-                <User className="h-5 w-5 text-white" />
+          {/* Other members */}
+          {otherMembers.map((member, index) => (
+            <div key={member.id} className="flex items-center gap-3 rounded-lg bg-gray-50 p-3">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br ${
+                index % 2 === 0 ? "from-rose-400 to-pink-400" : "from-blue-400 to-indigo-400"
+              }`}>
+                {member.image ? (
+                  <img
+                    src={member.image}
+                    alt={member.firstName}
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <User className="h-5 w-5 text-white" />
+                )}
               </div>
               <div>
                 <p className="font-medium text-gray-700">
-                  {partner.firstName} {partner.lastName}
+                  {member.firstName} {member.lastName}
                 </p>
+                {member.birthDate && (
+                  <p className="text-xs text-gray-500">
+                    {new Date(member.birthDate).toLocaleDateString("es-ES")}
+                  </p>
+                )}
               </div>
             </div>
-          ) : (
+          ))}
+
+          {/* Invite section - only if can invite more */}
+          {canInviteMore && (
             <div className="rounded-lg border-2 border-dashed border-gray-200 p-4">
               <p className="mb-2 text-center text-sm text-gray-500">
-                Invita a tu pareja a unirse
+                {getInviteLabel()}
               </p>
-              {couple?.inviteCode ? (
+              {circle?.inviteCode ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <code className="flex-1 rounded bg-gray-100 px-3 py-2 text-center font-mono text-sm">
-                      {couple.inviteCode.slice(0, 16)}...
+                      {circle.inviteCode.slice(0, 16)}...
                     </code>
                     <Button
                       size="sm"
@@ -256,27 +352,41 @@ export function SettingsView({ couple, currentUser }: SettingsViewProps) {
         </Button>
       </motion.div>
 
-      {/* Edit Couple Dialog */}
-      <Dialog open={showEditCouple} onOpenChange={setShowEditCouple}>
+      {/* Edit Circle Dialog */}
+      <Dialog open={showEditCircle} onOpenChange={setShowEditCircle}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Editar pareja</DialogTitle>
+            <DialogTitle>Editar {getCircleLabel().toLowerCase()}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="coupleName">Nombre de la pareja</Label>
+              <Label htmlFor="circleName">Nombre</Label>
               <Input
-                id="coupleName"
-                placeholder="Ej: Javi & María"
-                value={coupleName}
-                onChange={(e) => setCoupleName(e.target.value)}
+                id="circleName"
+                placeholder={circleType === "couple" ? "Ej: Javi & María" : "Ej: Los aventureros"}
+                value={circleName}
+                onChange={(e) => setCircleName(e.target.value)}
                 className="mt-1.5"
               />
             </div>
 
             <div>
-              <Label htmlFor="anniversary">Aniversario</Label>
+              <Label htmlFor="circleDescription">Descripción (opcional)</Label>
+              <Textarea
+                id="circleDescription"
+                placeholder="Una breve descripción..."
+                value={circleDescription}
+                onChange={(e) => setCircleDescription(e.target.value)}
+                className="mt-1.5"
+                rows={2}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="anniversary">
+                {circleType === "couple" ? "Aniversario" : "Fecha de inicio"}
+              </Label>
               <Input
                 id="anniversary"
                 type="date"
@@ -289,13 +399,13 @@ export function SettingsView({ couple, currentUser }: SettingsViewProps) {
             <div className="flex gap-2 pt-2">
               <Button
                 variant="outline"
-                onClick={() => setShowEditCouple(false)}
+                onClick={() => setShowEditCircle(false)}
                 className="flex-1"
               >
                 Cancelar
               </Button>
               <Button
-                onClick={handleSaveCouple}
+                onClick={handleSaveCircle}
                 disabled={isPending}
                 className="flex-1 bg-gradient-to-r from-amber-400 to-rose-400 text-white"
               >

@@ -1,6 +1,9 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { MemoriaLayout } from "~/components/memoria/MemoriaLayout";
 import { DayDetail } from "~/components/memoria/DayDetail";
+import { getSecureCoupleSession } from "~/lib/dal-couples";
+import { getDayByDate } from "~/server/queries/memoria/days";
+import { getMemoriesForDay } from "~/server/queries/memoria/memories";
 
 interface DayPageProps {
   params: Promise<{
@@ -16,6 +19,18 @@ export default async function DayPage({ params }: DayPageProps) {
     notFound();
   }
 
+  // Get session
+  const session = await getSecureCoupleSession();
+  if (!session) {
+    redirect("/login");
+  }
+
+  // Fetch day and memories
+  const day = await getDayByDate(session.user.coupleId, date);
+  const memories = day
+    ? await getMemoriesForDay(day.id, session.user.id)
+    : [];
+
   // Format the date for display
   const dateObj = new Date(date);
   const formattedDate = dateObj.toLocaleDateString("es-ES", {
@@ -29,15 +44,12 @@ export default async function DayPage({ params }: DayPageProps) {
   const displayDate = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
 
   return (
-    <MemoriaLayout
-      showBackButton
-      backHref="/memoria"
-      title={displayDate}
-    >
+    <MemoriaLayout>
       <DayDetail
         date={date}
-        day={null}
-        initialMemories={[]}
+        displayDate={displayDate}
+        day={day}
+        initialMemories={memories}
       />
     </MemoriaLayout>
   );
@@ -45,12 +57,12 @@ export default async function DayPage({ params }: DayPageProps) {
 
 function DayDetailSkeleton() {
   return (
-    <div className="animate-pulse px-4 py-6">
-      <div className="mx-auto max-w-lg space-y-4">
-        {/* Day header skeleton */}
-        <div className="rounded-2xl bg-white/80 p-4">
-          <div className="h-6 w-3/4 rounded bg-gray-200" />
-          <div className="mt-2 h-4 w-1/2 rounded bg-gray-200" />
+    <div className="animate-pulse px-3 py-4 sm:px-4 sm:py-6">
+      <div className="space-y-4">
+        {/* Back button and date skeleton */}
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-gray-200" />
+          <div className="h-6 w-48 rounded bg-gray-200" />
         </div>
 
         {/* Memory grid skeleton */}

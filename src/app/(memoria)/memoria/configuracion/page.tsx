@@ -1,40 +1,29 @@
+import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { MemoriaLayout } from "~/components/memoria/MemoriaLayout";
 import { SettingsView } from "~/components/memoria/SettingsView";
+import { getSecureCoupleSession } from "~/lib/dal-couples";
+import { getCircleWithMembers } from "~/server/queries/memoria/couples";
 
-export default function ConfiguracionPage() {
-  // Mock data for development
-  const mockCouple = {
-    id: BigInt(1),
-    name: "Nuestra Historia",
-    anniversaryDate: "2020-02-14",
-    inviteCode: "ABC123",
-    inviteCodeExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    timezone: "Europe/Madrid",
-    preferences: {},
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    isActive: true,
-    partners: [
-      { id: "1", firstName: "Javier", lastName: "García", image: null, birthDate: null },
-      { id: "2", firstName: "Partner", lastName: "", image: null, birthDate: null },
-    ],
-  };
+async function SettingsContent() {
+  const session = await getSecureCoupleSession();
 
-  const mockUser = {
-    id: "1",
-    firstName: "Javier",
-    lastName: "García",
-    email: "javier@example.com",
-  };
+  if (!session) {
+    redirect("/auth/signin");
+  }
+
+  const circle = await getCircleWithMembers(session.user.coupleId);
 
   return (
-    <MemoriaLayout>
-      <div className="px-4 py-6">
-        <div className="mx-auto max-w-lg">
-          <SettingsView couple={mockCouple} currentUser={mockUser} />
-        </div>
-      </div>
-    </MemoriaLayout>
+    <SettingsView
+      circle={circle}
+      currentUser={{
+        id: session.user.id,
+        firstName: session.user.firstName,
+        lastName: session.user.lastName,
+        email: session.user.email,
+      }}
+    />
   );
 }
 
@@ -48,5 +37,17 @@ function SettingsSkeleton() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function ConfiguracionPage() {
+  return (
+    <MemoriaLayout>
+      <div className="px-3 py-4 sm:px-4 sm:py-6">
+        <Suspense fallback={<SettingsSkeleton />}>
+          <SettingsContent />
+        </Suspense>
+      </div>
+    </MemoriaLayout>
   );
 }

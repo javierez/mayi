@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { nanoid } from "nanoid";
-import { requireCoupleSession, getCurrentCoupleId } from "~/lib/dal-couples";
+import { requireCoupleSession, getCurrentCoupleId, NoCoupleError } from "~/lib/dal-couples";
 import {
   getMemoriesForDay,
   getMemoryWithUser,
@@ -18,10 +18,11 @@ import {
   canUserModifyMemory,
   verifyMemoryBelongsToCouple,
 } from "~/server/queries/memoria/memories";
+import { getAllLocationMemories } from "~/server/queries/memoria/locations";
 import { getOrCreateDay, getDayById } from "~/server/queries/memoria/days";
 import {
-  generatePresignedUploadUrl,
-  getS3PublicUrl,
+  generateMemoriaPresignedUploadUrl,
+  getMemoriaS3PublicUrl,
 } from "~/lib/s3";
 import type {
   ActionResult,
@@ -29,6 +30,7 @@ import type {
   MemoryWithUser,
   SongData,
   LocationData,
+  LocationMemoryForMap,
 } from "~/types/memoria";
 
 /**
@@ -447,10 +449,10 @@ export async function getMemoriaPhotoPresignedUrl(
     const s3Key = generateMemoriaMediaKey(coupleId, date, "photo", filename);
 
     // Get presigned URL
-    const { uploadUrl } = await generatePresignedUploadUrl(s3Key, contentType);
+    const { uploadUrl } = await generateMemoriaPresignedUploadUrl(s3Key, contentType);
 
     // Get the public URL
-    const fileUrl = await getS3PublicUrl(s3Key);
+    const fileUrl = getMemoriaS3PublicUrl(s3Key);
 
     return {
       success: true,
@@ -462,7 +464,16 @@ export async function getMemoriaPhotoPresignedUrl(
     };
   } catch (error) {
     console.error("Error generating photo presigned URL:", error);
-    return { success: false, error: "Error al preparar la subida" };
+    // Provide more specific error messages
+    if (error instanceof NoCoupleError) {
+      return { success: false, error: "Debes estar en pareja para subir fotos" };
+    }
+    if (error instanceof Error) {
+      if (error.message.includes("AWS") || error.message.includes("S3") || error.message.includes("bucket")) {
+        return { success: false, error: "Error de configuración de almacenamiento" };
+      }
+    }
+    return { success: false, error: "Error al preparar la subida de foto" };
   }
 }
 
@@ -482,10 +493,10 @@ export async function getMemoriaVideoPresignedUrl(
     const s3Key = generateMemoriaMediaKey(coupleId, date, "video", filename);
 
     // Get presigned URL
-    const { uploadUrl } = await generatePresignedUploadUrl(s3Key, contentType);
+    const { uploadUrl } = await generateMemoriaPresignedUploadUrl(s3Key, contentType);
 
     // Get the public URL
-    const fileUrl = await getS3PublicUrl(s3Key);
+    const fileUrl = getMemoriaS3PublicUrl(s3Key);
 
     return {
       success: true,
@@ -497,7 +508,16 @@ export async function getMemoriaVideoPresignedUrl(
     };
   } catch (error) {
     console.error("Error generating video presigned URL:", error);
-    return { success: false, error: "Error al preparar la subida" };
+    // Provide more specific error messages
+    if (error instanceof NoCoupleError) {
+      return { success: false, error: "Debes estar en pareja para subir vídeos" };
+    }
+    if (error instanceof Error) {
+      if (error.message.includes("AWS") || error.message.includes("S3") || error.message.includes("bucket")) {
+        return { success: false, error: "Error de configuración de almacenamiento" };
+      }
+    }
+    return { success: false, error: "Error al preparar la subida de vídeo" };
   }
 }
 
@@ -575,5 +595,31 @@ export async function createVideoMemoryAfterUpload(data: {
   } catch (error) {
     console.error("Error creating video memory:", error);
     return { success: false, error: "Error al crear el recuerdo" };
+  }
+}
+
+// ============================================================================
+// LOCATION MEMORIES FOR MAP VIEW
+// ============================================================================
+
+/**
+ * Get all location memories for the current couple (for map view)
+ */
+export async function getLocationMemoriesAction(): Promise<
+  ActionResult<LocationMemoryForMap[]>
+> {
+  try {
+    const session = await requireCoupleSession();
+    const coupleId = session.user.coupleId;
+
+    const locations = await getAllLocationMemories(coupleId, session.user.id);
+
+    return { success: true, data: locations };
+  } catch (error) {
+    console.error("Error getting location memories:", error);
+    if (error instanceof NoCoupleError) {
+      return { success: false, error: "Debes estar en pareja para ver el mapa" };
+    }
+    return { success: false, error: "Error al cargar ubicaciones" };
   }
 }

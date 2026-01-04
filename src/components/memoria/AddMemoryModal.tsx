@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -13,6 +13,10 @@ import {
   Loader2,
   Upload,
   Link as LinkIcon,
+  Search,
+  Play,
+  Pause,
+  ExternalLink,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
@@ -27,6 +31,9 @@ import {
   createQuoteMemoryAction,
 } from "~/server/actions/memoria/memories";
 import type { MemoryType, SongData, LocationData } from "~/types/memoria";
+import { PlaceAutocomplete, type PlaceDataWithPhotos } from "./PlaceAutocomplete";
+import Image from "next/image";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface AddMemoryModalProps {
   open: boolean;
@@ -34,6 +41,19 @@ interface AddMemoryModalProps {
   date: string;
   initialType?: string | null;
   onSuccess: () => void;
+}
+
+interface SpotifyTrackResult {
+  id: string;
+  title: string;
+  artist: string;
+  albumName: string;
+  albumArt: string | null;
+  albumArtSmall: string | null;
+  previewUrl: string | null;
+  spotifyUrl: string;
+  durationMs: number;
+  popularity: number;
 }
 
 const MEMORY_TYPES = [
@@ -68,7 +88,25 @@ export function AddMemoryModal({
   const [songArtist, setSongArtist] = useState("");
   const [songUrl, setSongUrl] = useState("");
   const [locationName, setLocationName] = useState("");
-  const [locationAddress, setLocationAddress] = useState("");
+  const [locationData, setLocationData] = useState<PlaceDataWithPhotos | null>(null);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+
+  // Spotify search state
+  const [songSearchQuery, setSongSearchQuery] = useState("");
+  const [songSearchResults, setSongSearchResults] = useState<SpotifyTrackResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedTrack, setSelectedTrack] = useState<SpotifyTrackResult | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [spotifyAvailable, setSpotifyAvailable] = useState<boolean | null>(null); // null = unknown, true = available, false = not configured
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Sync initialType to selectedType when modal opens with a specific type
+  useEffect(() => {
+    if (open && initialType) {
+      setSelectedType(initialType as MemoryType);
+    }
+  }, [open, initialType]);
 
   const resetForm = () => {
     setSelectedType(null);
@@ -82,8 +120,112 @@ export function AddMemoryModal({
     setSongArtist("");
     setSongUrl("");
     setLocationName("");
-    setLocationAddress("");
+    setLocationData(null);
+    setSelectedPhotoIndex(0);
+    // Reset Spotify state
+    setSongSearchQuery("");
+    setSongSearchResults([]);
+    setSelectedTrack(null);
+    setIsPlaying(false);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
   };
+
+  // Spotify search with debounce
+  const searchSpotify = useCallback(async (query: string) => {
+    if (!query.trim() || query.length < 2) {
+      setSongSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(`/api/spotify/search?q=${encodeURIComponent(query)}&limit=6`);
+      if (response.ok) {
+        const data = await response.json();
+        setSongSearchResults(data.tracks ?? []);
+        setSpotifyAvailable(true);
+      } else if (response.status === 503) {
+        // Spotify not configured - switch to manual mode
+        setSpotifyAvailable(false);
+      }
+    } catch (err) {
+      console.error("Spotify search error:", err);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  // Debounced search effect
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (songSearchQuery.trim().length >= 2) {
+      searchTimeoutRef.current = setTimeout(() => {
+        void searchSpotify(songSearchQuery);
+      }, 300);
+    } else {
+      setSongSearchResults([]);
+    }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [songSearchQuery, searchSpotify]);
+
+  // Handle track selection
+  const handleSelectTrack = (track: SpotifyTrackResult) => {
+    setSelectedTrack(track);
+    setSongTitle(track.title);
+    setSongArtist(track.artist);
+    setSongUrl(track.spotifyUrl);
+    setSongSearchQuery("");
+    setSongSearchResults([]);
+    // Stop any playing preview
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  // Play/pause preview
+  const togglePreview = (previewUrl: string) => {
+    if (!previewUrl) return;
+
+    if (audioRef.current && isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+      return;
+    }
+
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+
+    audioRef.current = new Audio(previewUrl);
+    audioRef.current.volume = 0.5;
+    audioRef.current.play();
+    setIsPlaying(true);
+
+    audioRef.current.onended = () => {
+      setIsPlaying(false);
+    };
+  };
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, []);
 
   const handleClose = () => {
     resetForm();
@@ -137,6 +279,8 @@ export function AddMemoryModal({
               spotifyUrl: songUrl.includes("spotify") ? songUrl : undefined,
               appleMusicUrl: songUrl.includes("apple") ? songUrl : undefined,
               youtubeUrl: songUrl.includes("youtube") || songUrl.includes("youtu.be") ? songUrl : undefined,
+              previewUrl: selectedTrack?.previewUrl ?? undefined,
+              albumArt: selectedTrack?.albumArt ?? undefined,
             };
             result = await createSongMemoryAction({
               date,
@@ -151,15 +295,25 @@ export function AddMemoryModal({
               setError("El nombre del lugar es obligatorio");
               return;
             }
-            const locationData: LocationData = {
-              name: locationName,
-              address: locationAddress || undefined,
-              lat: 0, // Would be set by Google Places API in full implementation
-              lng: 0,
-            };
+            // Use the full location data with selected photo
+            const selectedPhotoUrl = locationData?.availablePhotos?.[selectedPhotoIndex];
+            const finalLocationData: LocationData = locationData
+              ? {
+                  name: locationData.name,
+                  address: locationData.address,
+                  lat: locationData.lat,
+                  lng: locationData.lng,
+                  googlePlaceId: locationData.googlePlaceId,
+                  photoUrl: selectedPhotoUrl, // Use the selected photo
+                }
+              : {
+                  name: locationName,
+                  lat: 0,
+                  lng: 0,
+                };
             result = await createLocationMemoryAction({
               date,
-              locationData,
+              locationData: finalLocationData,
               caption: caption || undefined,
               isPrivate,
             });
@@ -260,8 +414,9 @@ export function AddMemoryModal({
     </div>
   );
 
-  const renderSongForm = () => (
-    <div className="space-y-4 p-4">
+  // Manual song entry form (used when Spotify not available or user chooses manual)
+  const renderManualSongForm = () => (
+    <div className="space-y-3">
       <div>
         <Label htmlFor="songTitle">Título de la canción</Label>
         <Input
@@ -286,7 +441,7 @@ export function AddMemoryModal({
         <Label htmlFor="songUrl">
           <div className="flex items-center gap-1">
             <LinkIcon className="h-3.5 w-3.5" />
-            Enlace (Spotify, Apple Music, YouTube)
+            Enlace de Spotify (opcional)
           </div>
         </Label>
         <Input
@@ -297,41 +452,289 @@ export function AddMemoryModal({
           className="mt-1.5"
         />
       </div>
-      <div>
-        <Label htmlFor="songCaption">¿Por qué es especial? (opcional)</Label>
-        <Input
-          id="songCaption"
-          placeholder="Ej: Sonaba en nuestra primera cita"
-          value={caption}
-          onChange={(e) => setCaption(e.target.value)}
-          className="mt-1.5"
-        />
-      </div>
+      {spotifyAvailable !== false && (
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedTrack(null);
+            setSongTitle("");
+            setSongArtist("");
+            setSongUrl("");
+          }}
+          className="text-xs text-slate-500 underline"
+        >
+          Volver a buscar
+        </button>
+      )}
     </div>
   );
+
+  const renderSongForm = () => (
+    <div className="space-y-4 p-4">
+      {/* Show manual form directly if Spotify not configured */}
+      {spotifyAvailable === false ? (
+        <>
+          <div className="mb-3 rounded-lg bg-slate-100 p-3 text-center">
+            <Music className="mx-auto mb-1 h-5 w-5 text-slate-400" />
+            <p className="text-xs text-slate-500">
+              Añade la canción manualmente
+            </p>
+          </div>
+          {renderManualSongForm()}
+        </>
+      ) : !selectedTrack ? (
+        <div className="relative">
+          <Label htmlFor="songSearch">Buscar canción en Spotify</Label>
+          <div className="relative mt-1.5">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Input
+              id="songSearch"
+              placeholder="Busca por título o artista..."
+              value={songSearchQuery}
+              onChange={(e) => setSongSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+            {isSearching && (
+              <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-gray-400" />
+            )}
+          </div>
+
+          {/* Search Results */}
+          {songSearchResults.length > 0 && (
+            <div className="absolute left-0 right-0 z-10 mt-1 max-h-64 overflow-y-auto rounded-lg border bg-white shadow-lg">
+              {songSearchResults.map((track) => (
+                <button
+                  key={track.id}
+                  type="button"
+                  onClick={() => handleSelectTrack(track)}
+                  className="flex w-full items-center gap-3 p-2 text-left transition-colors hover:bg-gray-50"
+                >
+                  {track.albumArtSmall ? (
+                    <Image
+                      src={track.albumArtSmall}
+                      alt={track.albumName}
+                      width={48}
+                      height={48}
+                      className="h-12 w-12 rounded object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-12 w-12 items-center justify-center rounded bg-gray-200">
+                      <Music className="h-5 w-5 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-gray-900">
+                      {track.title}
+                    </p>
+                    <p className="truncate text-xs text-gray-500">
+                      {track.artist}
+                    </p>
+                  </div>
+                  {track.previewUrl && (
+                    <div className="flex-shrink-0">
+                      <Play className="h-4 w-4 text-green-500" />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Manual entry fallback */}
+          <p className="mt-3 text-center text-xs text-gray-400">
+            ¿No encuentras la canción?{" "}
+            <button
+              type="button"
+              onClick={() => setSelectedTrack({ id: "manual", title: "", artist: "", albumName: "", albumArt: null, albumArtSmall: null, previewUrl: null, spotifyUrl: "", durationMs: 0, popularity: 0 })}
+              className="text-slate-600 underline"
+            >
+              Añádela manualmente
+            </button>
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Selected Track Card */}
+          {selectedTrack.id !== "manual" && selectedTrack.albumArt ? (
+            <div className="overflow-hidden rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 p-4">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <Image
+                    src={selectedTrack.albumArt}
+                    alt={selectedTrack.albumName}
+                    width={80}
+                    height={80}
+                    className="h-20 w-20 rounded-lg object-cover shadow-lg"
+                  />
+                  {selectedTrack.previewUrl && (
+                    <button
+                      type="button"
+                      onClick={() => togglePreview(selectedTrack.previewUrl!)}
+                      className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-green-500 shadow-md transition-transform hover:scale-105"
+                    >
+                      {isPlaying ? (
+                        <Pause className="h-4 w-4 text-white" />
+                      ) : (
+                        <Play className="h-4 w-4 text-white" />
+                      )}
+                    </button>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-semibold text-white">
+                    {selectedTrack.title}
+                  </p>
+                  <p className="truncate text-sm text-gray-300">
+                    {selectedTrack.artist}
+                  </p>
+                  <a
+                    href={selectedTrack.spotifyUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center gap-1 text-xs text-green-400 hover:text-green-300"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    Abrir en Spotify
+                  </a>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedTrack(null);
+                  setSongTitle("");
+                  setSongArtist("");
+                  setSongUrl("");
+                  if (audioRef.current) {
+                    audioRef.current.pause();
+                    setIsPlaying(false);
+                  }
+                }}
+                className="mt-3 w-full rounded-lg bg-white/10 py-1.5 text-xs text-white/70 transition-colors hover:bg-white/20"
+              >
+                Cambiar canción
+              </button>
+            </div>
+          ) : (
+            /* Manual entry form */
+            renderManualSongForm()
+          )}
+        </>
+      )}
+
+      {/* Caption field (shown after track selected or in manual mode) */}
+      {(selectedTrack || spotifyAvailable === false) && (
+        <div>
+          <Label htmlFor="songCaption">¿Por qué es especial? (opcional)</Label>
+          <Input
+            id="songCaption"
+            placeholder="Ej: Sonaba en nuestra primera cita"
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+            className="mt-1.5"
+          />
+        </div>
+      )}
+    </div>
+  );
+
+  const handlePlaceSelected = (data: PlaceDataWithPhotos) => {
+    setLocationName(data.name);
+    setLocationData(data);
+    setSelectedPhotoIndex(0); // Reset to first photo
+  };
+
+  const handlePrevPhoto = () => {
+    if (!locationData?.availablePhotos) return;
+    setSelectedPhotoIndex((prev) =>
+      prev === 0 ? locationData.availablePhotos!.length - 1 : prev - 1
+    );
+  };
+
+  const handleNextPhoto = () => {
+    if (!locationData?.availablePhotos) return;
+    setSelectedPhotoIndex((prev) =>
+      prev === locationData.availablePhotos!.length - 1 ? 0 : prev + 1
+    );
+  };
 
   const renderLocationForm = () => (
     <div className="space-y-4 p-4">
       <div>
-        <Label htmlFor="locationName">Nombre del lugar</Label>
-        <Input
-          id="locationName"
-          placeholder="Ej: Caffè Florian"
+        <Label htmlFor="locationName">Buscar lugar</Label>
+        <PlaceAutocomplete
           value={locationName}
-          onChange={(e) => setLocationName(e.target.value)}
+          onChange={setLocationName}
+          onPlaceSelected={handlePlaceSelected}
+          placeholder="Restaurante, playa, café..."
           className="mt-1.5"
         />
       </div>
-      <div>
-        <Label htmlFor="locationAddress">Dirección (opcional)</Label>
-        <Input
-          id="locationAddress"
-          placeholder="Ej: Piazza San Marco, Venecia"
-          value={locationAddress}
-          onChange={(e) => setLocationAddress(e.target.value)}
-          className="mt-1.5"
-        />
-      </div>
+
+      {/* Photo picker carousel */}
+      {locationData?.availablePhotos && locationData.availablePhotos.length > 0 && (
+        <div className="mt-2">
+          <div className="relative overflow-hidden rounded-lg">
+            <Image
+              src={locationData.availablePhotos[selectedPhotoIndex] ?? ""}
+              alt={locationData.name}
+              width={400}
+              height={200}
+              className="h-40 w-full object-cover"
+            />
+
+            {/* Navigation arrows - only show if multiple photos */}
+            {locationData.availablePhotos.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={handlePrevPhoto}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-1.5 text-white transition-colors hover:bg-black/70"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextPhoto}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-1.5 text-white transition-colors hover:bg-black/70"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+
+                {/* Photo indicator dots */}
+                <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1">
+                  {locationData.availablePhotos.map((_, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setSelectedPhotoIndex(idx)}
+                      className={`h-1.5 w-1.5 rounded-full transition-colors ${
+                        idx === selectedPhotoIndex ? "bg-white" : "bg-white/50"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Place name overlay */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 pt-6">
+              <p className="text-sm font-medium text-white">{locationData.name}</p>
+              {locationData.address && (
+                <p className="truncate text-xs text-white/80">{locationData.address}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Photo count indicator */}
+          {locationData.availablePhotos.length > 1 && (
+            <p className="mt-1 text-center text-xs text-gray-400">
+              Foto {selectedPhotoIndex + 1} de {locationData.availablePhotos.length}
+            </p>
+          )}
+        </div>
+      )}
+
       <div>
         <Label htmlFor="locationCaption">¿Por qué es especial? (opcional)</Label>
         <Input
@@ -445,17 +848,21 @@ export function AddMemoryModal({
 
               {/* Actions */}
               <div className="flex gap-2 border-t p-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedType(null)}
-                  className="flex-1"
-                >
-                  Atrás
-                </Button>
+                {/* Only show back button if user came from type selector (no initialType) */}
+                {!initialType && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setSelectedType(null)}
+                    className="flex-1"
+                  >
+                    Atrás
+                  </Button>
+                )}
                 <Button
                   onClick={handleSubmit}
                   disabled={isPending || !canSubmit()}
-                  className="flex-1 bg-slate-800 text-white hover:bg-slate-700"
+                  className={initialType ? "w-full" : "flex-1"}
+                  style={{ backgroundColor: "#1e293b" }}
                 >
                   {isPending ? (
                     <>

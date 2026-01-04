@@ -11,11 +11,10 @@ import {
   setCoverMemory,
   getRecentDays,
 } from "~/server/queries/memoria/days";
-import { getMilestonesForMonth } from "~/server/queries/memoria/milestones";
 import type { ActionResult, Day, DaySummary, MoodType, CalendarMonth } from "~/types/memoria";
 
 /**
- * Get calendar data for a month (days with memories + milestones)
+ * Get calendar data for a month (days with memories)
  */
 export async function getCalendarMonthAction(
   year: number,
@@ -23,27 +22,15 @@ export async function getCalendarMonthAction(
 ): Promise<ActionResult<CalendarMonth>> {
   try {
     const coupleId = await getCurrentCoupleId();
-
-    // Get days and milestones in parallel
-    const [days, milestones] = await Promise.all([
-      getDaysForMonth(coupleId, year, month),
-      getMilestonesForMonth(coupleId, year, month),
-    ]);
-
-    // Mark days that have milestones
-    const milestoneDates = new Set(milestones.map((m) => m.nextDate));
-    const daysWithMilestones = days.map((day) => ({
-      ...day,
-      hasMilestone: milestoneDates.has(day.date),
-    }));
+    const days = await getDaysForMonth(coupleId, year, month);
 
     return {
       success: true,
       data: {
         year,
         month,
-        days: daysWithMilestones,
-        milestones,
+        days,
+        milestones: [],
       },
     };
   } catch (error) {
@@ -100,6 +87,7 @@ export async function updateDayAction(
     weather?: string | null;
     temperature?: number | null;
     mood?: MoodType | null;
+    rating?: number | null;
   }
 ): Promise<ActionResult<Day>> {
   try {
@@ -138,6 +126,8 @@ export async function setCoverMemoryAction(
     }
 
     revalidatePath(`/dia/${day.date}`);
+    revalidatePath(`/memoria/dia/${day.date}`);
+    revalidatePath("/memoria");
     return { success: true, data: day };
   } catch (error) {
     console.error("Error setting cover memory:", error);
@@ -158,5 +148,32 @@ export async function getRecentDaysAction(
   } catch (error) {
     console.error("Error getting recent days:", error);
     return { success: false, error: "Error al cargar días recientes" };
+  }
+}
+
+/**
+ * Update day rating (1-5 stars)
+ */
+export async function updateDayRatingAction(
+  date: string,
+  rating: number | null
+): Promise<ActionResult<Day>> {
+  try {
+    const coupleId = await getCurrentCoupleId();
+
+    // Get or create the day first
+    const day = await getOrCreateDay(coupleId, date);
+
+    // Update the rating
+    const updatedDay = await updateDay(day.id, { rating });
+    if (!updatedDay) {
+      return { success: false, error: "Día no encontrado" };
+    }
+
+    revalidatePath(`/memoria/dia/${date}`);
+    return { success: true, data: updatedDay };
+  } catch (error) {
+    console.error("Error updating day rating:", error);
+    return { success: false, error: "Error al actualizar la valoración" };
   }
 }

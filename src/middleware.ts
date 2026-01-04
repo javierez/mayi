@@ -57,7 +57,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Everything else is protected - requires authentication
-  // Check for session token cookie (lasts 7 days)
+  // Check for session token cookie (lasts 30 days)
   // Note: We only check if token exists, DAL handles actual validation
 
   // In production (HTTPS), Better Auth uses __Secure- prefix

@@ -54,6 +54,9 @@ export const env = createEnv({
     // Push Notifications (VAPID)
     VAPID_PRIVATE_KEY: z.string().optional(),
     VAPID_SUBJECT: z.string().optional(), // Email or URL for VAPID
+    // Spotify API (for song search in Memoria)
+    SPOTIFY_CLIENT_ID: z.string().optional(),
+    SPOTIFY_CLIENT_SECRET: z.string().optional(),
   },
 
   /**
@@ -116,6 +119,9 @@ export const env = createEnv({
     // Push Notifications (VAPID)
     VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
     VAPID_SUBJECT: process.env.VAPID_SUBJECT,
+    // Spotify API
+    SPOTIFY_CLIENT_ID: process.env.SPOTIFY_CLIENT_ID,
+    SPOTIFY_CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET,
     // Client variables
     NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:
       process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,

@@ -1,7 +1,6 @@
 "use server";
 
 import { getSecureSession } from "~/lib/dal";
-import { userHasRole } from "~/server/queries/user-roles";
 import { redirect } from "next/navigation";
 import {
   getAllUsersWithRoles,
@@ -13,7 +12,6 @@ import {
   bulkUserOperations as bulkUserOperationsQuery,
   searchUsersWithFilters,
 } from "~/server/queries/users";
-import { removeUserRole } from "~/server/queries/user-roles";
 import type {
   UserFilters,
   CreateUserData,
@@ -21,19 +19,12 @@ import type {
   BulkUserOperation,
 } from "~/types/user-management";
 
-// Helper function to check superadmin access
-async function checkSuperAdminAccess() {
-  // Use optimized DAL function instead of direct auth.api.getSession
+// Helper function to check authenticated access
+async function checkAuthenticatedAccess() {
   const session = await getSecureSession();
 
   if (!session?.user) {
     redirect("/auth/signin");
-  }
-
-  const isSuperAdmin = await userHasRole(session.user.id, 1);
-
-  if (!isSuperAdmin) {
-    throw new Error("Access denied: Superadmin role required");
   }
 
   return session.user;
@@ -41,19 +32,19 @@ async function checkSuperAdminAccess() {
 
 // Get all users with roles and pagination
 export async function searchUsers(filters?: UserFilters) {
-  await checkSuperAdminAccess();
+  await checkAuthenticatedAccess();
   return await getAllUsersWithRoles(filters);
 }
 
 // Get single user with full details
 export async function getUserDetails(userId: string) {
-  await checkSuperAdminAccess();
+  await checkAuthenticatedAccess();
   return await getUserWithFullDetails(userId);
 }
 
 // Create a new user with role assignment
 export async function createUser(data: CreateUserData) {
-  await checkSuperAdminAccess();
+  await checkAuthenticatedAccess();
 
   // Generate unique user ID
   const userId = crypto.randomUUID();
@@ -76,7 +67,7 @@ export async function createUser(data: CreateUserData) {
 
 // Update user information
 export async function updateUser(userId: string, data: UpdateUserData) {
-  await checkSuperAdminAccess();
+  await checkAuthenticatedAccess();
 
   // First get the user to check if they exist and get their account
   const existingUser = await getUserWithFullDetails(userId);
@@ -90,7 +81,7 @@ export async function updateUser(userId: string, data: UpdateUserData) {
 
 // Delete user (soft delete by setting isActive to false)
 export async function deleteUser(userId: string) {
-  const user = await checkSuperAdminAccess();
+  const user = await checkAuthenticatedAccess();
 
   // Get user to check if they exist and get their account
   const existingUser = await getUserWithFullDetails(userId);
@@ -107,21 +98,9 @@ export async function deleteUser(userId: string) {
   return await deleteUserByAccount(userId, existingUser.accountId!);
 }
 
-// Assign role to user
-export async function assignRoleToUser(userId: string, roleId: number) {
-  await checkSuperAdminAccess();
-  return await updateUserRole(userId, roleId);
-}
-
-// Remove role from user
-export async function removeRoleFromUser(userId: string, roleId: number) {
-  await checkSuperAdminAccess();
-  return await removeUserRole(userId, roleId);
-}
-
 // Bulk operations on multiple users
 export async function bulkUserActions(operation: BulkUserOperation) {
-  await checkSuperAdminAccess();
+  await checkAuthenticatedAccess();
 
   return await bulkUserOperationsQuery(operation.operation, operation.userIds);
 }
@@ -136,13 +115,13 @@ export async function advancedUserSearch(filters: {
   createdAfter?: Date;
   createdBefore?: Date;
 }) {
-  await checkSuperAdminAccess();
+  await checkAuthenticatedAccess();
   return await searchUsersWithFilters(filters);
 }
 
 // Toggle user active status
 export async function toggleUserStatus(userId: string) {
-  await checkSuperAdminAccess();
+  await checkAuthenticatedAccess();
 
   const user = await getUserWithFullDetails(userId);
   if (!user) {
@@ -158,7 +137,7 @@ export async function toggleUserStatus(userId: string) {
 
 // Get users by role
 export async function getUsersByRole(roleId: number) {
-  await checkSuperAdminAccess();
+  await checkAuthenticatedAccess();
 
   // This would need to be implemented in the queries file
   // For now, we can use the search functionality

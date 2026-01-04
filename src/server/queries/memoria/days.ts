@@ -20,15 +20,20 @@ export async function getDaysForMonth(
       date: days.date,
       title: days.title,
       memoryCount: sql<number>`count(${memories.id})::int`.as("memoryCount"),
-      thumbnailUrl: sql<string | null>`(
-        SELECT ${memories.thumbnailUrl}
-        FROM ${memories}
-        WHERE ${memories.dayId} = ${days.id}
-          AND ${memories.isActive} = true
-          AND ${memories.thumbnailUrl} IS NOT NULL
-        ORDER BY ${memories.position} ASC
-        LIMIT 1
-      )`.as("thumbnailUrl"),
+      thumbnailUrl: sql<string | null>`
+        COALESCE(
+          (SELECT COALESCE(m1.thumbnail_url, m1.url) FROM memories m1
+           WHERE m1.id = ${days.coverMemoryId}
+             AND m1.is_active = true
+             AND (m1.thumbnail_url IS NOT NULL OR m1.url IS NOT NULL)),
+          (SELECT COALESCE(m2.thumbnail_url, m2.url) FROM memories m2
+           WHERE m2.day_id = ${days.id}
+             AND m2.is_active = true
+             AND m2.type IN ('photo', 'video')
+           ORDER BY m2.position ASC
+           LIMIT 1)
+        )
+      `.as("thumbnailUrl"),
     })
     .from(days)
     .leftJoin(
@@ -80,6 +85,7 @@ export async function getDayById(dayId: bigint): Promise<Day | null> {
     temperature: day.temperature,
     coverMemoryId: day.coverMemoryId,
     mood: day.mood as MoodType | null,
+    rating: day.rating,
     createdAt: day.createdAt,
     updatedAt: day.updatedAt,
     isActive: day.isActive ?? true,
@@ -121,6 +127,7 @@ export async function getOrCreateDay(
       temperature: day.temperature,
       coverMemoryId: day.coverMemoryId,
       mood: day.mood as MoodType | null,
+      rating: day.rating,
       createdAt: day.createdAt,
       updatedAt: day.updatedAt,
       isActive: day.isActive ?? true,
@@ -150,6 +157,7 @@ export async function getOrCreateDay(
     temperature: day.temperature,
     coverMemoryId: day.coverMemoryId,
     mood: day.mood as MoodType | null,
+    rating: day.rating,
     createdAt: day.createdAt,
     updatedAt: day.updatedAt,
     isActive: day.isActive ?? true,
@@ -191,6 +199,7 @@ export async function getDayByDate(
     temperature: day.temperature,
     coverMemoryId: day.coverMemoryId,
     mood: day.mood as MoodType | null,
+    rating: day.rating,
     createdAt: day.createdAt,
     updatedAt: day.updatedAt,
     isActive: day.isActive ?? true,
@@ -211,6 +220,7 @@ export async function updateDay(
     weather?: string | null;
     temperature?: number | null;
     mood?: MoodType | null;
+    rating?: number | null;
   }
 ): Promise<Day | null> {
   const result = await db
@@ -240,6 +250,7 @@ export async function updateDay(
     temperature: day.temperature,
     coverMemoryId: day.coverMemoryId,
     mood: day.mood as MoodType | null,
+    rating: day.rating,
     createdAt: day.createdAt,
     updatedAt: day.updatedAt,
     isActive: day.isActive ?? true,
@@ -278,6 +289,7 @@ export async function setCoverMemory(
     temperature: day.temperature,
     coverMemoryId: day.coverMemoryId,
     mood: day.mood as MoodType | null,
+    rating: day.rating,
     createdAt: day.createdAt,
     updatedAt: day.updatedAt,
     isActive: day.isActive ?? true,
@@ -296,15 +308,20 @@ export async function getRecentDays(
       date: days.date,
       title: days.title,
       memoryCount: sql<number>`count(${memories.id})::int`.as("memoryCount"),
-      thumbnailUrl: sql<string | null>`(
-        SELECT ${memories.thumbnailUrl}
-        FROM ${memories}
-        WHERE ${memories.dayId} = ${days.id}
-          AND ${memories.isActive} = true
-          AND ${memories.thumbnailUrl} IS NOT NULL
-        ORDER BY ${memories.position} ASC
-        LIMIT 1
-      )`.as("thumbnailUrl"),
+      thumbnailUrl: sql<string | null>`
+        COALESCE(
+          (SELECT COALESCE(m1.thumbnail_url, m1.url) FROM memories m1
+           WHERE m1.id = ${days.coverMemoryId}
+             AND m1.is_active = true
+             AND (m1.thumbnail_url IS NOT NULL OR m1.url IS NOT NULL)),
+          (SELECT COALESCE(m2.thumbnail_url, m2.url) FROM memories m2
+           WHERE m2.day_id = ${days.id}
+             AND m2.is_active = true
+             AND m2.type IN ('photo', 'video')
+           ORDER BY m2.position ASC
+           LIMIT 1)
+        )
+      `.as("thumbnailUrl"),
     })
     .from(days)
     .leftJoin(

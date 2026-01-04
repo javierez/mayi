@@ -23,7 +23,6 @@ import {
 } from "~/components/ui/select";
 import { signIn } from "~/lib/auth-client";
 import { AlertCircle, Eye, EyeOff, CheckCircle } from "lucide-react";
-import { assignUserRole } from "~/app/actions/user-roles";
 import { validateInvitationCode } from "~/app/actions/accounts";
 
 export default function SignUpPage() {
@@ -147,20 +146,6 @@ export default function SignUpPage() {
           result.error?.message ?? result.message ?? "Error al crear la cuenta",
         );
         return;
-      }
-
-      // Assign inactive role to the new user
-      if (result.user?.id) {
-        try {
-          console.log("Attempting to assign role to user:", result.user.id);
-          const roleResult = await assignUserRole(result.user.id, 5); // Assign inactive role (roleId = 5)
-          console.log("Role assignment result:", roleResult);
-        } catch (roleError) {
-          console.error("Failed to assign user role:", roleError);
-          // Don't fail the signup process if role assignment fails
-        }
-      } else {
-        console.log("No user ID found in result:", result);
       }
 
       setSuccess(true);

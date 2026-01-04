@@ -27,9 +27,12 @@ export async function createCoupleAction(data: {
   name?: string;
   anniversaryDate?: string;
 }): Promise<ActionResult<Couple>> {
+  console.log("[createCoupleAction] Starting with data:", data);
   try {
     const session = await getSessionWithoutCoupleCheck();
+    console.log("[createCoupleAction] Session:", session?.user?.id, session?.user?.coupleId);
     if (!session) {
+      console.log("[createCoupleAction] No session");
       return { success: false, error: "No autenticado" };
     }
 
@@ -39,12 +42,15 @@ export async function createCoupleAction(data: {
     }
 
     // Create the couple
+    console.log("[createCoupleAction] Creating couple...");
     const couple = await createCouple({
       name: data.name,
       anniversaryDate: data.anniversaryDate,
     });
+    console.log("[createCoupleAction] Couple created:", couple.id.toString());
 
     // Link user to the couple
+    console.log("[createCoupleAction] Linking user to couple...");
     await db
       .update(users)
       .set({
@@ -52,11 +58,14 @@ export async function createCoupleAction(data: {
         updatedAt: new Date(),
       })
       .where(eq(users.id, session.user.id));
+    console.log("[createCoupleAction] User linked successfully");
 
     revalidatePath("/");
+    revalidatePath("/memoria");
+    console.log("[createCoupleAction] Success!");
     return { success: true, data: couple };
   } catch (error) {
-    console.error("Error creating couple:", error);
+    console.error("[createCoupleAction] Error:", error);
     return { success: false, error: "Error al crear la pareja" };
   }
 }
