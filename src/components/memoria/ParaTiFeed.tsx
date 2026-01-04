@@ -11,6 +11,7 @@ interface ParaTiFeedProps {
 
 const FETCH_THRESHOLD = 3; // Fetch more when 3 items from end
 const FETCH_BATCH_SIZE = 10; // Fetch 10 more items at a time
+const FETCH_DEBOUNCE_MS = 1000; // Minimum time between fetches
 
 export function ParaTiFeed({ initialItems }: ParaTiFeedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -21,25 +22,38 @@ export function ParaTiFeed({ initialItems }: ParaTiFeedProps) {
   const [isPending, startTransition] = useTransition();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isFetchingRef = useRef(false);
+  const lastFetchTimeRef = useRef(0);
 
-  // Fetch more items when approaching end of list
+  // Fetch more items when approaching end of list (debounced)
   const fetchMoreItems = useCallback(() => {
+    const now = Date.now();
+
+    // Debounce: don't fetch if we fetched recently
+    if (now - lastFetchTimeRef.current < FETCH_DEBOUNCE_MS) return;
     if (isFetchingRef.current || !hasMore) return;
+
     isFetchingRef.current = true;
+    lastFetchTimeRef.current = now;
 
     const excludeIds = items.map((item) => item.memory.id.toString());
 
     startTransition(async () => {
-      const result = await fetchMoreFeedAction(excludeIds, FETCH_BATCH_SIZE);
+      try {
+        const result = await fetchMoreFeedAction(excludeIds, FETCH_BATCH_SIZE);
 
-      if (result.success && result.data) {
-        if (result.data.length === 0) {
-          setHasMore(false);
-        } else {
-          setItems((prev) => [...prev, ...result.data!]);
+        if (result.success && result.data) {
+          if (result.data.length === 0) {
+            setHasMore(false);
+          } else {
+            setItems((prev) => [...prev, ...result.data!]);
+          }
         }
+      } catch (error) {
+        console.error("Error fetching more items:", error);
+        // Don't set hasMore to false on error, allow retry
+      } finally {
+        isFetchingRef.current = false;
       }
-      isFetchingRef.current = false;
     });
   }, [items, hasMore]);
 

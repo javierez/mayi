@@ -13,11 +13,14 @@ const globalForDb = globalThis as unknown as {
 };
 
 // Disable prefetch for Supabase Transaction Pooler
+// Use smaller pool size to avoid exhausting Supabase's session mode limits
 const client =
   globalForDb.client ??
   postgres(env.POSTGRES_URL, {
     prepare: false,
-    max: 10, // Connection pool size
+    max: 3, // Reduced pool size for Supabase session mode
+    idle_timeout: 20, // Close idle connections after 20 seconds
+    connect_timeout: 10, // Timeout for new connections
   });
 
 if (env.NODE_ENV !== "production") {
