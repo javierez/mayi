@@ -185,6 +185,47 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
     });
   };
 
+  // Extract metadata from image/video file
+  const extractMetadata = async (
+    file: File,
+    type: "photo" | "video"
+  ): Promise<{
+    latitude?: number;
+    longitude?: number;
+    takenAt?: string;
+    deviceInfo?: string;
+    duration?: number;
+  }> => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const endpoint =
+        type === "photo" ? "/api/extract-metadata" : "/api/extract-video-metadata";
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          return {
+            latitude: result.data.latitude,
+            longitude: result.data.longitude,
+            takenAt: result.data.takenAt,
+            deviceInfo: result.data.deviceInfo,
+            duration: result.data.duration,
+          };
+        }
+      }
+    } catch (error) {
+      console.warn("Failed to extract metadata:", error);
+    }
+    return {};
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: "photo" | "video") => {
     const files = e.target.files;
     if (!files?.length) return;
@@ -205,6 +246,16 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
 
     startTransition(async () => {
       try {
+        // Extract metadata from ORIGINAL file BEFORE any conversion
+        // This is important because HEIC conversion strips EXIF data
+        setUploadProgress({
+          type,
+          filename: originalFile.name,
+          status: "uploading",
+          message: "Extrayendo metadatos...",
+        });
+        const metadata = await extractMetadata(originalFile, type);
+
         // Convert HEIC to JPEG if needed (for photos only)
         if (type === "photo" && isHeicFile(originalFile)) {
           setUploadProgress({
@@ -228,6 +279,12 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
         const { uploadUrl, s3Key, fileUrl } = presignedResult.data;
 
         // Upload to S3
+        setUploadProgress({
+          type,
+          filename: originalFile.name,
+          status: "uploading",
+          message: "Subiendo archivo...",
+        });
         await uploadFileToS3(file, uploadUrl);
 
         // For videos, generate and upload thumbnail
@@ -250,7 +307,7 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
           }
         }
 
-        // Create memory record
+        // Create memory record with metadata
         const memoryResult = type === "photo"
           ? await createPhotoMemoryAfterUpload({
               date,
@@ -258,6 +315,10 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
               s3Key,
               mimeType: file.type,
               fileSize: file.size,
+              latitude: metadata.latitude,
+              longitude: metadata.longitude,
+              takenAt: metadata.takenAt,
+              deviceInfo: metadata.deviceInfo,
             })
           : await createVideoMemoryAfterUpload({
               date,
@@ -266,6 +327,10 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
               mimeType: file.type,
               fileSize: file.size,
               thumbnailUrl,
+              duration: metadata.duration,
+              latitude: metadata.latitude,
+              longitude: metadata.longitude,
+              takenAt: metadata.takenAt,
             });
 
         if (!memoryResult.success) {

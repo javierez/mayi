@@ -58,6 +58,9 @@ export interface PhotoMemory extends BaseMemory {
   fileSize?: number | null;
   width?: number | null;
   height?: number | null;
+  // GPS coordinates from EXIF
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface VideoMemory extends BaseMemory {
@@ -70,6 +73,9 @@ export interface VideoMemory extends BaseMemory {
   width?: number | null;
   height?: number | null;
   duration?: number | null;
+  // GPS coordinates from video metadata
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface NoteMemory extends BaseMemory {
@@ -455,4 +461,30 @@ export interface LocationMemoryForMap {
     image?: string | null;
   };
   createdAt: string; // ISO date string for client
+}
+
+/**
+ * Geotagged memory for map view
+ * Includes location memories + photos/videos with GPS coordinates
+ */
+export interface GeotaggedMemoryForMap {
+  id: string;
+  dayId: string;
+  date: string;
+  dayTitle?: string | null;
+  type: "photo" | "video" | "location";
+  latitude: number;
+  longitude: number;
+  // For location type
+  locationData: LocationData | null;
+  // For photo/video type
+  url: string | null;
+  thumbnailUrl: string | null;
+  caption?: string | null;
+  user: {
+    id: string;
+    firstName: string;
+    image?: string | null;
+  };
+  createdAt: string;
 }

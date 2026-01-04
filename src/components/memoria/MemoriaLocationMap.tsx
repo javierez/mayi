@@ -3,12 +3,18 @@
 import React, { useEffect, useRef, useState, useTransition } from "react";
 import { MarkerClusterer } from "@googlemaps/markerclusterer";
 import { setOptions, importLibrary } from "@googlemaps/js-api-loader";
-import { MemoriaLocationCard } from "./MemoriaLocationCard";
-import { getLocationMemoriesAction } from "~/server/actions/memoria/memories";
-import type { LocationMemoryForMap } from "~/types/memoria";
-import { MapPin, Plus } from "lucide-react";
-import Link from "next/link";
+import { MemoriaGeotaggedCard } from "./MemoriaLocationCard";
+import { getGeotaggedMemoriesAction } from "~/server/actions/memoria/memories";
+import type { GeotaggedMemoryForMap } from "~/types/memoria";
+import { MapPin } from "lucide-react";
 import { env } from "~/env";
+
+// Marker colors by memory type
+const MARKER_COLORS = {
+  location: "#ec4899", // Pink
+  photo: "#3b82f6",    // Blue
+  video: "#8b5cf6",    // Purple
+} as const;
 
 export function MemoriaLocationMap() {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -20,18 +26,18 @@ export function MemoriaLocationMap() {
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [locations, setLocations] = useState<LocationMemoryForMap[]>([]);
+  const [geotaggedMemories, setGeotaggedMemories] = useState<GeotaggedMemoryForMap[]>([]);
   const [isPending, startTransition] = useTransition();
 
-  // Fetch location memories
+  // Fetch geotagged memories (locations + photos/videos with GPS)
   useEffect(() => {
     startTransition(async () => {
       try {
-        const result = await getLocationMemoriesAction();
+        const result = await getGeotaggedMemoriesAction();
         if (result.success && result.data) {
-          setLocations(result.data);
+          setGeotaggedMemories(result.data);
         } else if (result.error) {
-          console.error("Error fetching locations:", result.error);
+          console.error("Error fetching geotagged memories:", result.error);
         }
       } catch (err) {
         console.error("Error in fetch:", err);
@@ -86,7 +92,7 @@ export function MemoriaLocationMap() {
     void initMap();
   }, []);
 
-  // Update markers when locations change
+  // Update markers when geotagged memories change
   useEffect(() => {
     if (!isMapLoaded || !mapInstanceRef.current) return;
 
@@ -97,36 +103,45 @@ export function MemoriaLocationMap() {
     markersRef.current.forEach((marker) => marker.setMap(null));
     markersRef.current = [];
 
-    if (locations.length === 0) return;
+    if (geotaggedMemories.length === 0) return;
 
-    // Filter locations with valid coordinates
-    const validLocations = locations.filter(
-      (loc) =>
-        loc.locationData.lat &&
-        loc.locationData.lng &&
-        !isNaN(loc.locationData.lat) &&
-        !isNaN(loc.locationData.lng)
+    // Filter memories with valid coordinates
+    const validMemories = geotaggedMemories.filter(
+      (memory) =>
+        memory.latitude &&
+        memory.longitude &&
+        !isNaN(memory.latitude) &&
+        !isNaN(memory.longitude)
     );
 
-    if (validLocations.length === 0) return;
+    if (validMemories.length === 0) return;
 
     // Create markers
     const bounds = new google.maps.LatLngBounds();
-    const markers = validLocations.map((location) => {
+    const markers = validMemories.map((memory) => {
       const position = {
-        lat: location.locationData.lat,
-        lng: location.locationData.lng,
+        lat: memory.latitude,
+        lng: memory.longitude,
       };
 
       bounds.extend(position);
 
+      // Get marker color based on memory type
+      const markerColor = MARKER_COLORS[memory.type] ?? MARKER_COLORS.location;
+
+      // Get title based on memory type
+      const title =
+        memory.type === "location" && memory.locationData
+          ? memory.locationData.name
+          : memory.caption ?? `${memory.type === "photo" ? "Foto" : "Video"} - ${memory.date}`;
+
       const marker = new google.maps.Marker({
         position,
-        title: location.locationData.name,
+        title,
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
           scale: 8,
-          fillColor: "#ec4899",
+          fillColor: markerColor,
           fillOpacity: 1,
           strokeColor: "#ffffff",
           strokeWeight: 2,
@@ -137,7 +152,7 @@ export function MemoriaLocationMap() {
       marker.addListener("click", () => {
         if (!infoWindowRef.current) return;
 
-        const content = MemoriaLocationCard({ location });
+        const content = MemoriaGeotaggedCard({ memory });
         infoWindowRef.current.setContent(content);
         infoWindowRef.current.open(mapInstanceRef.current, marker);
       });
@@ -170,7 +185,7 @@ export function MemoriaLocationMap() {
         google.maps.event.removeListener(listener);
       }
     );
-  }, [isMapLoaded, locations]);
+  }, [isMapLoaded, geotaggedMemories]);
 
   // Error state
   if (error) {
@@ -209,34 +224,43 @@ export function MemoriaLocationMap() {
       )}
 
       {/* Empty state overlay */}
-      {isMapLoaded && isDataLoaded && locations.length === 0 && !isPending && (
+      {isMapLoaded && isDataLoaded && geotaggedMemories.length === 0 && !isPending && (
         <div className="absolute inset-x-0 bottom-20 flex justify-center">
-          <div className="mx-4 flex flex-col items-center gap-4 rounded-3xl bg-gradient-to-b from-pink-50/95 via-rose-50/95 to-amber-50/95 px-6 py-5 shadow-lg backdrop-blur-sm border border-pink-100/50">
-            <div className="flex flex-col items-center gap-2 text-center">
-              <div className="rounded-full bg-gradient-to-br from-pink-200/60 to-amber-200/60 p-3">
-                <MapPin className="h-6 w-6 text-pink-400" />
-              </div>
+          <div className="mx-4 flex flex-col items-center gap-3 rounded-3xl bg-gradient-to-b from-pink-50/95 via-rose-50/95 to-amber-50/95 px-6 py-5 shadow-lg backdrop-blur-sm border border-pink-100/50">
+            <div className="rounded-full bg-gradient-to-br from-pink-200/60 to-amber-200/60 p-3">
+              <MapPin className="h-6 w-6 text-pink-400" />
+            </div>
+            <div className="flex flex-col items-center gap-1 text-center">
               <h3 className="text-base font-medium text-gray-700">Tu mapa de recuerdos</h3>
               <p className="text-sm text-gray-500">
-                Agrega ubicaciones a tus recuerdos para verlas aqui
+                Las fotos y videos con ubicación aparecerán aquí
               </p>
             </div>
-            <Link
-              href="/memoria"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-pink-400 via-rose-400 to-amber-400 px-5 py-2.5 text-sm font-medium text-white shadow-md hover:shadow-lg transition-all hover:scale-105"
-            >
-              <Plus className="h-4 w-4" />
-              Agregar recuerdo
-            </Link>
           </div>
         </div>
       )}
 
-      {/* Location count */}
-      {isDataLoaded && locations.length > 0 && (
-        <p className="text-center text-xs text-muted-foreground">
-          {locations.length} {locations.length === 1 ? "lugar" : "lugares"} guardados
-        </p>
+      {/* Memory count with legend */}
+      {isDataLoaded && geotaggedMemories.length > 0 && (
+        <div className="flex flex-col items-center gap-1">
+          <p className="text-center text-xs text-muted-foreground">
+            {geotaggedMemories.length} {geotaggedMemories.length === 1 ? "recuerdo" : "recuerdos"} en el mapa
+          </p>
+          <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-2 rounded-full bg-pink-500" />
+              Lugares
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-2 rounded-full bg-blue-500" />
+              Fotos
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block h-2 w-2 rounded-full bg-purple-500" />
+              Videos
+            </span>
+          </div>
+        </div>
       )}
     </div>
   );

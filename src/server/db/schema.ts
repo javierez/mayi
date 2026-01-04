@@ -177,6 +177,10 @@ export const memories = pgTable("memories", {
   takenAt: timestamp("taken_at"),
   deviceInfo: varchar("device_info", { length: 255 }),
 
+  // GPS coordinates (extracted from EXIF/metadata)
+  latitude: decimal("latitude", { precision: 10, scale: 8 }),
+  longitude: decimal("longitude", { precision: 11, scale: 8 }),
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   isActive: boolean("is_active").default(true),

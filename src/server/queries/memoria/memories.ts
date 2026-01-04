@@ -39,6 +39,8 @@ function mapRowToMemory(row: typeof memories.$inferSelect): Memory {
         fileSize: row.fileSize,
         width: row.width,
         height: row.height,
+        latitude: row.latitude ? parseFloat(row.latitude) : null,
+        longitude: row.longitude ? parseFloat(row.longitude) : null,
       };
     case "video":
       return {
@@ -52,6 +54,8 @@ function mapRowToMemory(row: typeof memories.$inferSelect): Memory {
         width: row.width,
         height: row.height,
         duration: row.duration,
+        latitude: row.latitude ? parseFloat(row.latitude) : null,
+        longitude: row.longitude ? parseFloat(row.longitude) : null,
       };
     case "note":
       return {
@@ -225,6 +229,9 @@ export async function createPhotoMemory(data: {
   isPrivate?: boolean;
   takenAt?: Date;
   deviceInfo?: string;
+  // GPS coordinates from EXIF
+  latitude?: number;
+  longitude?: number;
 }): Promise<Memory> {
   // Get next position
   const positionResult = await db
@@ -251,6 +258,8 @@ export async function createPhotoMemory(data: {
       position: nextPosition,
       takenAt: data.takenAt,
       deviceInfo: data.deviceInfo,
+      latitude: data.latitude?.toString(),
+      longitude: data.longitude?.toString(),
     })
     .returning();
 
@@ -274,6 +283,9 @@ export async function createVideoMemory(data: {
   caption?: string;
   isPrivate?: boolean;
   takenAt?: Date;
+  // GPS coordinates from video metadata
+  latitude?: number;
+  longitude?: number;
 }): Promise<Memory> {
   const positionResult = await db
     .select({ maxPosition: sql<number>`COALESCE(MAX(${memories.position}), -1)` })
@@ -299,6 +311,8 @@ export async function createVideoMemory(data: {
       isPrivate: data.isPrivate ?? false,
       position: nextPosition,
       takenAt: data.takenAt,
+      latitude: data.latitude?.toString(),
+      longitude: data.longitude?.toString(),
     })
     .returning();
 

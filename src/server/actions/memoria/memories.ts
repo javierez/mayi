@@ -18,7 +18,7 @@ import {
   canUserModifyMemory,
   verifyMemoryBelongsToCouple,
 } from "~/server/queries/memoria/memories";
-import { getAllLocationMemories } from "~/server/queries/memoria/locations";
+import { getAllLocationMemories, getAllGeotaggedMemories } from "~/server/queries/memoria/locations";
 import { getOrCreateDay, getDayById } from "~/server/queries/memoria/days";
 import {
   generateMemoriaPresignedUploadUrl,
@@ -31,6 +31,7 @@ import type {
   SongData,
   LocationData,
   LocationMemoryForMap,
+  GeotaggedMemoryForMap,
 } from "~/types/memoria";
 
 /**
@@ -567,6 +568,11 @@ export async function createPhotoMemoryAfterUpload(data: {
   fileSize?: number;
   caption?: string;
   isPrivate?: boolean;
+  // GPS metadata from EXIF
+  latitude?: number;
+  longitude?: number;
+  takenAt?: string;
+  deviceInfo?: string;
 }): Promise<ActionResult<Memory>> {
   try {
     const session = await requireCoupleSession();
@@ -583,6 +589,10 @@ export async function createPhotoMemoryAfterUpload(data: {
       fileSize: data.fileSize,
       caption: data.caption,
       isPrivate: data.isPrivate,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      takenAt: data.takenAt ? new Date(data.takenAt) : undefined,
+      deviceInfo: data.deviceInfo,
     });
 
     revalidatePath(`/memoria/dia/${data.date}`);
@@ -607,6 +617,10 @@ export async function createVideoMemoryAfterUpload(data: {
   thumbnailUrl?: string;
   caption?: string;
   isPrivate?: boolean;
+  // GPS metadata from video
+  latitude?: number;
+  longitude?: number;
+  takenAt?: string;
 }): Promise<ActionResult<Memory>> {
   try {
     const session = await requireCoupleSession();
@@ -624,6 +638,9 @@ export async function createVideoMemoryAfterUpload(data: {
       duration: data.duration,
       caption: data.caption,
       isPrivate: data.isPrivate,
+      latitude: data.latitude,
+      longitude: data.longitude,
+      takenAt: data.takenAt ? new Date(data.takenAt) : undefined,
     });
 
     revalidatePath(`/memoria/dia/${data.date}`);
@@ -658,5 +675,31 @@ export async function getLocationMemoriesAction(): Promise<
       return { success: false, error: "Debes estar en pareja para ver el mapa" };
     }
     return { success: false, error: "Error al cargar ubicaciones" };
+  }
+}
+
+/**
+ * Get all geotagged memories for the current couple (locations + photos/videos with GPS)
+ * This includes:
+ * - Location memories (places added manually)
+ * - Photos with GPS coordinates extracted from EXIF
+ * - Videos with GPS coordinates extracted from metadata
+ */
+export async function getGeotaggedMemoriesAction(): Promise<
+  ActionResult<GeotaggedMemoryForMap[]>
+> {
+  try {
+    const session = await requireCoupleSession();
+    const coupleId = session.user.coupleId;
+
+    const geotagged = await getAllGeotaggedMemories(coupleId, session.user.id);
+
+    return { success: true, data: geotagged };
+  } catch (error) {
+    console.error("Error getting geotagged memories:", error);
+    if (error instanceof NoCoupleError) {
+      return { success: false, error: "Debes estar en pareja para ver el mapa" };
+    }
+    return { success: false, error: "Error al cargar recuerdos geoetiquetados" };
   }
 }
