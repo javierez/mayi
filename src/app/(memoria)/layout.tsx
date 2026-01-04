@@ -8,8 +8,8 @@ import { eq } from "drizzle-orm";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "MayI - Nuestros Recuerdos",
-  description: "Calendario de recuerdos para parejas",
+  title: "Mayi",
+  description: "Calendario de recuerdos",
 };
 
 export default async function MemoriaLayout({

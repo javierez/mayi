@@ -179,16 +179,21 @@ export function SpotifySongCard({
   }
 
   // Full card version
+  const handleCardClick = () => {
+    if (onClick) {
+      onClick();
+    } else if (spotifyUrl) {
+      window.open(spotifyUrl, "_blank", "noopener,noreferrer");
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      onClick={onClick}
-      className={cn(
-        "group relative overflow-hidden rounded-2xl shadow-sm transition-all",
-        onClick && "cursor-pointer hover:shadow-md"
-      )}
+      onClick={handleCardClick}
+      className="group relative cursor-pointer overflow-hidden rounded-2xl shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
     >
       {/* Three-dot menu - subtle */}
       {onDelete && (
@@ -272,17 +277,6 @@ export function SpotifySongCard({
               <p className="mt-1 line-clamp-1 text-xs italic text-gray-400">
                 &ldquo;{caption}&rdquo;
               </p>
-            )}
-
-            {/* Spotify link */}
-            {spotifyUrl && (
-              <button
-                onClick={handleSpotifyClick}
-                className="mt-2 inline-flex items-center gap-1 text-xs text-green-400 transition-colors hover:text-green-300"
-              >
-                <ExternalLink className="h-3 w-3" />
-                Abrir en Spotify
-              </button>
             )}
           </div>
         </div>

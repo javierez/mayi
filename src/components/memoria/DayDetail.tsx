@@ -26,6 +26,7 @@ import {
 import Link from "next/link";
 import { cn } from "~/lib/utils";
 import { convertHeicToJpeg, isHeicFile } from "~/lib/image-utils";
+import { compressVideo, shouldCompressVideo } from "~/lib/video-compress";
 import type { Day, MemoryWithUser, SongMemory } from "~/types/memoria";
 import { AddMemoryModal } from "./AddMemoryModal";
 import { SpotifySongCard } from "./SpotifySongCard";
@@ -63,12 +64,12 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [uploadProgress, setUploadProgress] = useState<{
+  const [uploadQueue, setUploadQueue] = useState<{
     type: "photo" | "video";
     filename: string;
-    status: "uploading" | "success" | "error";
+    status: "pending" | "uploading" | "success" | "error";
     message?: string;
-  } | null>(null);
+  }[]>([]);
   const [rating, setRating] = useState<number | null>(day?.rating ?? null);
   const [isUpdatingRating, setIsUpdatingRating] = useState(false);
 
@@ -226,89 +227,76 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
     return {};
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: "photo" | "video") => {
-    const files = e.target.files;
-    if (!files?.length) return;
-
-    const originalFile = files[0];
-    if (!originalFile) return;
-
+  // Upload a single file (used by the queue processor)
+  const uploadSingleFile = async (
+    originalFile: File,
+    type: "photo" | "video",
+    index: number
+  ): Promise<void> => {
     let file: File = originalFile;
 
-    // Reset input first
-    e.target.value = "";
+    const updateFileStatus = (status: "pending" | "uploading" | "success" | "error", message?: string) => {
+      setUploadQueue((prev) =>
+        prev.map((item, i) => (i === index ? { ...item, status, message } : item))
+      );
+    };
 
-    setUploadProgress({
-      type,
-      filename: originalFile.name,
-      status: "uploading",
-    });
+    try {
+      // Extract metadata from ORIGINAL file BEFORE any conversion
+      updateFileStatus("uploading", "Extrayendo metadatos...");
+      const metadata = await extractMetadata(originalFile, type);
 
-    startTransition(async () => {
-      try {
-        // Extract metadata from ORIGINAL file BEFORE any conversion
-        // This is important because HEIC conversion strips EXIF data
-        setUploadProgress({
-          type,
-          filename: originalFile.name,
-          status: "uploading",
-          message: "Extrayendo metadatos...",
+      // Convert HEIC to JPEG if needed (for photos only)
+      if (type === "photo" && isHeicFile(originalFile)) {
+        updateFileStatus("uploading", "Convirtiendo HEIC...");
+        file = await convertHeicToJpeg(originalFile);
+      }
+
+      // Compress video if needed
+      if (type === "video" && (await shouldCompressVideo(originalFile))) {
+        updateFileStatus("uploading", "Comprimiendo vídeo...");
+        file = await compressVideo(originalFile, (progress) => {
+          updateFileStatus(
+            "uploading",
+            progress.stage + (progress.percent ? ` (${progress.percent}%)` : "")
+          );
         });
-        const metadata = await extractMetadata(originalFile, type);
+      }
 
-        // Convert HEIC to JPEG if needed (for photos only)
-        if (type === "photo" && isHeicFile(originalFile)) {
-          setUploadProgress({
-            type,
-            filename: originalFile.name,
-            status: "uploading",
-            message: "Convirtiendo HEIC...",
-          });
-          file = await convertHeicToJpeg(originalFile);
-        }
-
-        // Get presigned URL
-        const presignedResult = type === "photo"
+      // Get presigned URL
+      const presignedResult =
+        type === "photo"
           ? await getMemoriaPhotoPresignedUrl(date, file.name, file.type)
           : await getMemoriaVideoPresignedUrl(date, file.name, file.type);
 
-        if (!presignedResult.success || !presignedResult.data) {
-          throw new Error(presignedResult.error ?? "Error al obtener URL de subida");
-        }
+      if (!presignedResult.success || !presignedResult.data) {
+        throw new Error(presignedResult.error ?? "Error al obtener URL de subida");
+      }
 
-        const { uploadUrl, s3Key, fileUrl } = presignedResult.data;
+      const { uploadUrl, s3Key, fileUrl } = presignedResult.data;
 
-        // Upload to S3
-        setUploadProgress({
-          type,
-          filename: originalFile.name,
-          status: "uploading",
-          message: "Subiendo archivo...",
-        });
-        await uploadFileToS3(file, uploadUrl);
+      // Upload to S3
+      updateFileStatus("uploading", "Subiendo archivo...");
+      await uploadFileToS3(file, uploadUrl);
 
-        // For videos, generate and upload thumbnail
-        let thumbnailUrl: string | undefined;
-        if (type === "video") {
-          try {
-            // Generate thumbnail from video
-            const thumbnailBlob = await generateVideoThumbnail(file);
-
-            // Get presigned URL for thumbnail
-            const thumbnailPresigned = await getMemoriaThumbnailPresignedUrl(date, file.name);
-            if (thumbnailPresigned.success && thumbnailPresigned.data) {
-              // Upload thumbnail
-              await uploadFileToS3(thumbnailBlob, thumbnailPresigned.data.uploadUrl, "image/jpeg");
-              thumbnailUrl = thumbnailPresigned.data.fileUrl;
-            }
-          } catch (thumbError) {
-            // Log but don't fail the upload if thumbnail fails
-            console.warn("Failed to generate thumbnail:", thumbError);
+      // For videos, generate and upload thumbnail
+      let thumbnailUrl: string | undefined;
+      if (type === "video") {
+        try {
+          const thumbnailBlob = await generateVideoThumbnail(file);
+          const thumbnailPresigned = await getMemoriaThumbnailPresignedUrl(date, file.name);
+          if (thumbnailPresigned.success && thumbnailPresigned.data) {
+            await uploadFileToS3(thumbnailBlob, thumbnailPresigned.data.uploadUrl, "image/jpeg");
+            thumbnailUrl = thumbnailPresigned.data.fileUrl;
           }
+        } catch (thumbError) {
+          console.warn("Failed to generate thumbnail:", thumbError);
         }
+      }
 
-        // Create memory record with metadata
-        const memoryResult = type === "photo"
+      // Create memory record with metadata
+      const memoryResult =
+        type === "photo"
           ? await createPhotoMemoryAfterUpload({
               date,
               url: fileUrl,
@@ -333,34 +321,55 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
               takenAt: metadata.takenAt,
             });
 
-        if (!memoryResult.success) {
-          throw new Error(memoryResult.error ?? "Error al guardar el recuerdo");
-        }
-
-        setUploadProgress({
-          type,
-          filename: file.name,
-          status: "success",
-          message: "Subido correctamente",
-        });
-
-        // Refresh data after short delay
-        setTimeout(() => {
-          router.refresh();
-          setUploadProgress(null);
-        }, 1500);
-      } catch (error) {
-        console.error("Upload error:", error);
-        setUploadProgress({
-          type,
-          filename: file.name,
-          status: "error",
-          message: error instanceof Error ? error.message : "Error al subir el archivo",
-        });
-
-        // Clear error after delay
-        setTimeout(() => setUploadProgress(null), 3000);
+      if (!memoryResult.success) {
+        throw new Error(memoryResult.error ?? "Error al guardar el recuerdo");
       }
+
+      updateFileStatus("success", "Subido");
+    } catch (error) {
+      console.error("Upload error:", error);
+      updateFileStatus("error", error instanceof Error ? error.message : "Error");
+    }
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: "photo" | "video") => {
+    const files = e.target.files;
+    if (!files?.length) return;
+
+    // Reset input first
+    e.target.value = "";
+
+    // Convert FileList to array
+    const fileArray = Array.from(files);
+
+    // Add all files to queue
+    const newQueueItems = fileArray.map((file) => ({
+      type,
+      filename: file.name,
+      status: "pending" as const,
+    }));
+
+    setUploadQueue((prev) => [...prev, ...newQueueItems]);
+
+    // Get the starting index for these files in the queue
+    const startIndex = uploadQueue.length;
+
+    // Process files sequentially to avoid overwhelming the browser
+    startTransition(async () => {
+      for (let i = 0; i < fileArray.length; i++) {
+        const file = fileArray[i];
+        if (file) {
+          await uploadSingleFile(file, type, startIndex + i);
+        }
+      }
+
+      // Refresh after all uploads complete
+      router.refresh();
+
+      // Clear completed items after a delay
+      setTimeout(() => {
+        setUploadQueue((prev) => prev.filter((item) => item.status !== "success"));
+      }, 2000);
     });
   };
 
@@ -607,6 +616,47 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
         </div>
       </motion.div>
 
+      {/* Upload Queue Progress */}
+      {uploadQueue.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mx-1 mt-4 space-y-2"
+        >
+          <p className="text-xs font-medium text-gray-500">
+            Subiendo {uploadQueue.filter((u) => u.status !== "success").length} archivo(s)...
+          </p>
+          <div className="max-h-32 space-y-1.5 overflow-y-auto rounded-xl bg-white p-3 shadow-sm">
+            {uploadQueue.map((item, index) => (
+              <div
+                key={`${item.filename}-${index}`}
+                className="flex items-center gap-2 text-xs"
+              >
+                {item.status === "uploading" && (
+                  <Loader2 className="h-3 w-3 flex-shrink-0 animate-spin text-blue-500" />
+                )}
+                {item.status === "pending" && (
+                  <div className="h-3 w-3 flex-shrink-0 rounded-full bg-gray-300" />
+                )}
+                {item.status === "success" && (
+                  <Check className="h-3 w-3 flex-shrink-0 text-green-500" />
+                )}
+                {item.status === "error" && (
+                  <div className="h-3 w-3 flex-shrink-0 rounded-full bg-red-500" />
+                )}
+                <span className="flex-1 truncate text-gray-600">{item.filename}</span>
+                {item.message && item.status === "uploading" && (
+                  <span className="flex-shrink-0 text-gray-400">{item.message}</span>
+                )}
+                {item.status === "error" && (
+                  <span className="flex-shrink-0 text-red-500">{item.message}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* Placeholders at Bottom - Bento Grid */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -618,13 +668,13 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
         <label
           className={cn(
             "relative flex aspect-square cursor-pointer items-center justify-center rounded-2xl transition-colors",
-            uploadProgress?.type === "photo" && uploadProgress?.status === "uploading"
+            uploadQueue.some((u) => u.type === "photo" && u.status === "uploading")
               ? "bg-slate-300"
               : "bg-slate-200/80 hover:bg-slate-300/80"
           )}
         >
           <span className="absolute left-3 top-3 text-[11px] font-medium text-gray-400">Fotos</span>
-          {uploadProgress?.type === "photo" && uploadProgress?.status === "uploading" ? (
+          {uploadQueue.some((u) => u.type === "photo" && u.status === "uploading") ? (
             <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
           ) : (
             <Plus className="h-6 w-6 text-slate-400" />
@@ -633,6 +683,7 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
             type="file"
             accept="image/*,.heic,.heif"
             className="hidden"
+            multiple
             disabled={isPending}
             onChange={(e) => handleFileChange(e, "photo")}
           />
@@ -641,13 +692,13 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
         <label
           className={cn(
             "relative row-span-2 flex cursor-pointer items-center justify-center rounded-2xl transition-colors",
-            uploadProgress?.type === "video" && uploadProgress?.status === "uploading"
+            uploadQueue.some((u) => u.type === "video" && u.status === "uploading")
               ? "bg-slate-300"
               : "bg-slate-200/80 hover:bg-slate-300/80"
           )}
         >
           <span className="absolute left-3 top-3 text-[11px] font-medium text-gray-400">Vídeos</span>
-          {uploadProgress?.type === "video" && uploadProgress?.status === "uploading" ? (
+          {uploadQueue.some((u) => u.type === "video" && u.status === "uploading") ? (
             <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
           ) : (
             <Plus className="h-6 w-6 text-slate-400" />
@@ -656,6 +707,7 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
             type="file"
             accept="video/*"
             className="hidden"
+            multiple
             disabled={isPending}
             onChange={(e) => handleFileChange(e, "video")}
           />
@@ -1149,7 +1201,7 @@ function LocationChip({
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Cast to access locationData (this component only receives location memories)
-  const locationData = (memory as { locationData?: { name: string; photoUrl?: string } }).locationData;
+  const locationData = (memory as { locationData?: { name: string; photoUrl?: string; lat?: number; lng?: number; googlePlaceId?: string } }).locationData;
 
   useEffect(() => {
     if (!showMenu) return;
@@ -1164,12 +1216,32 @@ function LocationChip({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showMenu]);
 
+  // Open location in Google Maps
+  const handleOpenMaps = () => {
+    if (!locationData) return;
+
+    let url: string;
+    if (locationData.googlePlaceId) {
+      // Use place_id for more accurate location
+      url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationData.name)}&query_place_id=${locationData.googlePlaceId}`;
+    } else if (locationData.lat && locationData.lng) {
+      // Fallback to coordinates
+      url = `https://www.google.com/maps/search/?api=1&query=${locationData.lat},${locationData.lng}`;
+    } else {
+      // Fallback to name search
+      url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationData.name)}`;
+    }
+
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   return (
-    <motion.div
+    <motion.button
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: index * 0.03 }}
-      className="group relative flex shrink-0 items-center gap-3 rounded-2xl bg-white py-2.5 pl-2.5 pr-4 shadow-sm"
+      onClick={handleOpenMaps}
+      className="group relative flex shrink-0 items-center gap-3 rounded-2xl bg-white py-2.5 pl-2.5 pr-4 shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
     >
       {/* Photo or icon */}
       {locationData?.photoUrl ? (
@@ -1224,7 +1296,7 @@ function LocationChip({
           </div>
         )}
       </div>
-    </motion.div>
+    </motion.button>
   );
 }
 
