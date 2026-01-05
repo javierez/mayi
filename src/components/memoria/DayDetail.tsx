@@ -69,6 +69,7 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
     filename: string;
     status: "pending" | "uploading" | "success" | "error";
     message?: string;
+    progress?: number; // 0-100 percentage
   }[]>([]);
   const [rating, setRating] = useState<number | null>(day?.rating ?? null);
   const [isUpdatingRating, setIsUpdatingRating] = useState(false);
@@ -120,18 +121,73 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
     setShowAddModal(true);
   };
 
-  const uploadFileToS3 = async (file: File | Blob, presignedUrl: string, contentType?: string): Promise<void> => {
-    const response = await fetch(presignedUrl, {
-      method: "PUT",
-      body: file,
-      headers: {
-        "Content-Type": contentType ?? (file instanceof File ? file.type : "application/octet-stream"),
-      },
+  const uploadFileToS3 = async (
+    file: File | Blob,
+    presignedUrl: string,
+    contentType?: string,
+    onProgress?: (progress: number) => void
+  ): Promise<void> => {
+    const fileSize = file.size;
+    const fileName = file instanceof File ? file.name : "blob";
+    const fileType = contentType ?? (file instanceof File ? file.type : "application/octet-stream");
+
+    console.log("[Upload] Starting S3 upload:", {
+      fileName,
+      fileSize: `${(fileSize / 1024 / 1024).toFixed(2)} MB`,
+      fileType,
+      presignedUrl: presignedUrl.substring(0, 100) + "...",
     });
 
-    if (!response.ok) {
-      throw new Error(`Upload failed: ${response.status}`);
-    }
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener("progress", (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = Math.round((event.loaded / event.total) * 100);
+          console.log(`[Upload] Progress: ${percentComplete}% (${event.loaded}/${event.total} bytes)`);
+          if (onProgress) {
+            onProgress(percentComplete);
+          }
+        }
+      });
+
+      xhr.addEventListener("load", () => {
+        console.log("[Upload] XHR load event:", {
+          status: xhr.status,
+          statusText: xhr.statusText,
+          response: xhr.responseText?.substring(0, 200),
+        });
+        if (xhr.status >= 200 && xhr.status < 300) {
+          console.log("[Upload] Success!");
+          resolve();
+        } else {
+          console.error("[Upload] Failed with status:", xhr.status, xhr.responseText);
+          reject(new Error(`Upload failed: ${xhr.status} - ${xhr.responseText}`));
+        }
+      });
+
+      xhr.addEventListener("error", (event) => {
+        console.error("[Upload] Network error:", event);
+        reject(new Error("Upload failed: Network error"));
+      });
+
+      xhr.addEventListener("abort", () => {
+        console.warn("[Upload] Aborted");
+        reject(new Error("Upload cancelled"));
+      });
+
+      xhr.addEventListener("timeout", () => {
+        console.error("[Upload] Timeout");
+        reject(new Error("Upload timeout"));
+      });
+
+      console.log("[Upload] Opening XHR PUT request...");
+      xhr.open("PUT", presignedUrl);
+      xhr.setRequestHeader("Content-Type", fileType);
+
+      console.log("[Upload] Sending file...");
+      xhr.send(file);
+    });
   };
 
   // Generate thumbnail from video file
@@ -233,18 +289,39 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
     type: "photo" | "video",
     index: number
   ): Promise<void> => {
+    console.log("[UploadFlow] Starting upload for:", {
+      fileName: originalFile.name,
+      fileType: originalFile.type,
+      fileSize: `${(originalFile.size / 1024 / 1024).toFixed(2)} MB`,
+      type,
+      index,
+    });
+
     let file: File = originalFile;
 
-    const updateFileStatus = (status: "pending" | "uploading" | "success" | "error", message?: string) => {
+    const updateFileStatus = (
+      status: "pending" | "uploading" | "success" | "error",
+      message?: string,
+      progress?: number
+    ) => {
+      console.log("[UploadFlow] Status update:", { index, status, message, progress });
       setUploadQueue((prev) =>
-        prev.map((item, i) => (i === index ? { ...item, status, message } : item))
+        prev.map((item, i) => (i === index ? { ...item, status, message, progress } : item))
+      );
+    };
+
+    const updateProgress = (progress: number) => {
+      setUploadQueue((prev) =>
+        prev.map((item, i) => (i === index ? { ...item, progress } : item))
       );
     };
 
     try {
       // Extract metadata from ORIGINAL file BEFORE any conversion
+      console.log("[UploadFlow] Extracting metadata...");
       updateFileStatus("uploading", "Extrayendo metadatos...");
       const metadata = await extractMetadata(originalFile, type);
+      console.log("[UploadFlow] Metadata extracted:", metadata);
 
       // Convert HEIC to JPEG if needed (for photos only)
       if (type === "photo" && isHeicFile(originalFile)) {
@@ -264,25 +341,36 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
       }
 
       // Get presigned URL
+      console.log("[UploadFlow] Getting presigned URL for:", { date, fileName: file.name, fileType: file.type });
       const presignedResult =
         type === "photo"
           ? await getMemoriaPhotoPresignedUrl(date, file.name, file.type)
           : await getMemoriaVideoPresignedUrl(date, file.name, file.type);
+
+      console.log("[UploadFlow] Presigned URL result:", {
+        success: presignedResult.success,
+        error: presignedResult.error,
+        hasData: !!presignedResult.data,
+      });
 
       if (!presignedResult.success || !presignedResult.data) {
         throw new Error(presignedResult.error ?? "Error al obtener URL de subida");
       }
 
       const { uploadUrl, s3Key, fileUrl } = presignedResult.data;
+      console.log("[UploadFlow] Got presigned URL, s3Key:", s3Key);
 
       // Upload to S3
-      updateFileStatus("uploading", "Subiendo archivo...");
-      await uploadFileToS3(file, uploadUrl);
+      console.log("[UploadFlow] Starting S3 upload...");
+      updateFileStatus("uploading", "Subiendo...", 0);
+      await uploadFileToS3(file, uploadUrl, undefined, updateProgress);
+      console.log("[UploadFlow] S3 upload complete!");
 
       // For videos, generate and upload thumbnail
       let thumbnailUrl: string | undefined;
       if (type === "video") {
         try {
+          updateFileStatus("uploading", "Generando miniatura...", 100);
           const thumbnailBlob = await generateVideoThumbnail(file);
           const thumbnailPresigned = await getMemoriaThumbnailPresignedUrl(date, file.name);
           if (thumbnailPresigned.success && thumbnailPresigned.data) {
@@ -295,6 +383,7 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
       }
 
       // Create memory record with metadata
+      updateFileStatus("uploading", "Guardando...", 100);
       const memoryResult =
         type === "photo"
           ? await createPhotoMemoryAfterUpload({
@@ -321,26 +410,34 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
               takenAt: metadata.takenAt,
             });
 
+      console.log("[UploadFlow] Memory result:", { success: memoryResult.success, error: memoryResult.error });
       if (!memoryResult.success) {
         throw new Error(memoryResult.error ?? "Error al guardar el recuerdo");
       }
 
+      console.log("[UploadFlow] Upload complete!");
       updateFileStatus("success", "Subido");
     } catch (error) {
-      console.error("Upload error:", error);
+      console.error("[UploadFlow] Upload error:", error);
       updateFileStatus("error", error instanceof Error ? error.message : "Error");
     }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: "photo" | "video") => {
+    console.log("[FileChange] File input changed, type:", type);
     const files = e.target.files;
-    if (!files?.length) return;
+    console.log("[FileChange] Files selected:", files?.length ?? 0);
+    if (!files?.length) {
+      console.log("[FileChange] No files selected, returning");
+      return;
+    }
 
-    // Reset input first
-    e.target.value = "";
-
-    // Convert FileList to array
+    // Convert FileList to array BEFORE resetting input (resetting clears the FileList)
     const fileArray = Array.from(files);
+    console.log("[FileChange] Processing files:", fileArray.map(f => ({ name: f.name, size: f.size, type: f.type })));
+
+    // Reset input after copying files
+    e.target.value = "";
 
     // Add all files to queue
     const newQueueItems = fileArray.map((file) => ({
@@ -349,16 +446,21 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
       status: "pending" as const,
     }));
 
+    console.log("[FileChange] Adding to queue:", newQueueItems);
     setUploadQueue((prev) => [...prev, ...newQueueItems]);
 
     // Get the starting index for these files in the queue
     const startIndex = uploadQueue.length;
+    console.log("[FileChange] Start index:", startIndex);
 
     // Process files sequentially to avoid overwhelming the browser
+    console.log("[FileChange] Starting transition for upload...");
     startTransition(async () => {
+      console.log("[FileChange] Inside transition, processing files...");
       for (let i = 0; i < fileArray.length; i++) {
         const file = fileArray[i];
         if (file) {
+          console.log("[FileChange] Uploading file", i, "of", fileArray.length, "-", file.name);
           await uploadSingleFile(file, type, startIndex + i);
         }
       }
@@ -374,8 +476,7 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
   };
 
   // Separate memories by type for different display styles
-  const photoMemories = memories.filter((m) => m.type === "photo");
-  const videoMemories = memories.filter((m) => m.type === "video");
+  const mediaMemories = memories.filter((m) => m.type === "photo" || m.type === "video");
   const noteMemories = memories.filter((m) => m.type === "note");
   const quoteMemories = memories.filter((m) => m.type === "quote");
   const songMemories = memories.filter((m) => m.type === "song") as (MemoryWithUser & SongMemory)[];
@@ -432,34 +533,14 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
         </motion.div>
       )}
 
-      {/* Pinterest-style Masonry Grid for Photos */}
-      {photoMemories.length > 0 && (
+      {/* Pinterest-style Masonry Grid for Photos & Videos */}
+      {mediaMemories.length > 0 && (
         <PinterestGrid
-          memories={photoMemories}
+          memories={mediaMemories}
           coverMemoryId={day?.coverMemoryId}
           onSetCover={handleSetCover}
           onDelete={handleDeleteMemory}
         />
-      )}
-
-      {/* Videos Section */}
-      {videoMemories.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="mx-1 mt-4 space-y-2"
-        >
-          <div className="grid grid-cols-2 gap-2">
-            {videoMemories.map((memory, index) => (
-              <MemoryCard
-                key={memory.id.toString()}
-                memory={memory}
-                index={index}
-                onDelete={() => handleDeleteMemory(memory.id.toString())}
-              />
-            ))}
-          </div>
-        </motion.div>
       )}
 
       {/* Notes - displayed as caption-style text blocks */}
@@ -626,30 +707,47 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
           <p className="text-xs font-medium text-gray-500">
             Subiendo {uploadQueue.filter((u) => u.status !== "success").length} archivo(s)...
           </p>
-          <div className="max-h-32 space-y-1.5 overflow-y-auto rounded-xl bg-white p-3 shadow-sm">
+          <div className="max-h-48 space-y-2 overflow-y-auto rounded-xl bg-white p-3 shadow-sm">
             {uploadQueue.map((item, index) => (
               <div
                 key={`${item.filename}-${index}`}
-                className="flex items-center gap-2 text-xs"
+                className="space-y-1"
               >
+                <div className="flex items-center gap-2 text-xs">
+                  {item.status === "uploading" && (
+                    <Loader2 className="h-3 w-3 flex-shrink-0 animate-spin text-gray-400" />
+                  )}
+                  {item.status === "pending" && (
+                    <div className="h-3 w-3 flex-shrink-0 rounded-full bg-gray-300" />
+                  )}
+                  {item.status === "success" && (
+                    <Check className="h-3 w-3 flex-shrink-0 text-green-500" />
+                  )}
+                  {item.status === "error" && (
+                    <div className="h-3 w-3 flex-shrink-0 rounded-full bg-red-500" />
+                  )}
+                  <span className="flex-1 truncate text-gray-600">{item.filename}</span>
+                  {item.status === "uploading" && item.progress !== undefined && (
+                    <span className="flex-shrink-0 font-medium text-gray-500">
+                      {item.progress}%
+                    </span>
+                  )}
+                  {item.status === "error" && (
+                    <span className="flex-shrink-0 text-red-500">{item.message}</span>
+                  )}
+                </div>
+                {/* Progress bar */}
                 {item.status === "uploading" && (
-                  <Loader2 className="h-3 w-3 flex-shrink-0 animate-spin text-blue-500" />
+                  <div className="relative h-1 w-full overflow-hidden rounded-full bg-gray-100">
+                    <div
+                      className="absolute inset-y-0 left-0 rounded-full bg-gray-400 transition-all duration-300"
+                      style={{ width: `${item.progress ?? 0}%` }}
+                    />
+                  </div>
                 )}
-                {item.status === "pending" && (
-                  <div className="h-3 w-3 flex-shrink-0 rounded-full bg-gray-300" />
-                )}
-                {item.status === "success" && (
-                  <Check className="h-3 w-3 flex-shrink-0 text-green-500" />
-                )}
-                {item.status === "error" && (
-                  <div className="h-3 w-3 flex-shrink-0 rounded-full bg-red-500" />
-                )}
-                <span className="flex-1 truncate text-gray-600">{item.filename}</span>
+                {/* Status message */}
                 {item.message && item.status === "uploading" && (
-                  <span className="flex-shrink-0 text-gray-400">{item.message}</span>
-                )}
-                {item.status === "error" && (
-                  <span className="flex-shrink-0 text-red-500">{item.message}</span>
+                  <p className="text-[10px] text-gray-400">{item.message}</p>
                 )}
               </div>
             ))}
@@ -685,7 +783,10 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
             className="hidden"
             multiple
             disabled={isPending}
-            onChange={(e) => handleFileChange(e, "photo")}
+            onChange={(e) => {
+              console.log("📸 PHOTO INPUT CHANGED", e.target.files);
+              handleFileChange(e, "photo");
+            }}
           />
         </label>
 
@@ -709,7 +810,10 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
             className="hidden"
             multiple
             disabled={isPending}
-            onChange={(e) => handleFileChange(e, "video")}
+            onChange={(e) => {
+              console.log("🎬 VIDEO INPUT CHANGED", e.target.files);
+              handleFileChange(e, "video");
+            }}
           />
         </label>
 
@@ -820,7 +924,7 @@ function PinterestGrid({
   );
 }
 
-// Pinterest-style Card with varying heights
+// Pinterest-style Card with varying heights (supports photos and videos)
 function PinterestCard({
   memory,
   index,
@@ -834,13 +938,14 @@ function PinterestCard({
   onSetCover: () => void;
   onDelete: () => void;
 }) {
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [mediaLoaded, setMediaLoaded] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<number>(1);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Cast to access photo properties (this component only receives photo memories)
-  const photoMemory = memory as { url: string; thumbnailUrl?: string | null };
+  // Cast to access media properties
+  const mediaMemory = memory as { url: string; thumbnailUrl?: string | null };
+  const isVideo = memory.type === "video";
 
   // Generate random-ish aspect ratio based on memory id for variety
   useEffect(() => {
@@ -885,20 +990,41 @@ function PinterestCard({
       className="group relative w-full overflow-hidden rounded-2xl bg-white shadow-sm"
       style={{ aspectRatio: aspectRatio }}
     >
-      <Image
-        src={photoMemory.thumbnailUrl ?? photoMemory.url}
-        alt={memory.caption ?? "Foto"}
-        fill
-        className={cn(
-          "object-cover",
-          imageLoaded ? "opacity-100" : "opacity-0"
-        )}
-        sizes="(max-width: 640px) 50vw, 200px"
-        onLoad={() => setImageLoaded(true)}
-      />
+      {isVideo ? (
+        <video
+          src={mediaMemory.url}
+          poster={mediaMemory.thumbnailUrl ?? undefined}
+          className={cn(
+            "h-full w-full object-cover",
+            mediaLoaded ? "opacity-100" : "opacity-0"
+          )}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          onLoadedData={(e) => {
+            setMediaLoaded(true);
+            const video = e.currentTarget;
+            video.play().catch(() => {});
+          }}
+        />
+      ) : (
+        <Image
+          src={mediaMemory.thumbnailUrl ?? mediaMemory.url}
+          alt={memory.caption ?? "Foto"}
+          fill
+          className={cn(
+            "object-cover",
+            mediaLoaded ? "opacity-100" : "opacity-0"
+          )}
+          sizes="(max-width: 640px) 50vw, 200px"
+          onLoad={() => setMediaLoaded(true)}
+        />
+      )}
 
       {/* Loading placeholder */}
-      {!imageLoaded && (
+      {!mediaLoaded && (
         <div className="absolute inset-0 animate-pulse bg-gray-200" />
       )}
 
@@ -1236,12 +1362,20 @@ function LocationChip({
   };
 
   return (
-    <motion.button
+    <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay: index * 0.03 }}
       onClick={handleOpenMaps}
-      className="group relative flex shrink-0 items-center gap-3 rounded-2xl bg-white py-2.5 pl-2.5 pr-4 shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleOpenMaps();
+        }
+      }}
+      className="group relative flex shrink-0 cursor-pointer items-center gap-3 rounded-2xl bg-white py-2.5 pl-2.5 pr-4 shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
     >
       {/* Photo or icon */}
       {locationData?.photoUrl ? (
@@ -1296,7 +1430,7 @@ function LocationChip({
           </div>
         )}
       </div>
-    </motion.button>
+    </motion.div>
   );
 }
 
