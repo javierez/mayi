@@ -10,9 +10,9 @@ interface ParaTiFeedProps {
 }
 
 const FETCH_THRESHOLD = 3; // Fetch more when 3 items from end
-const FETCH_BATCH_SIZE = 10; // Fetch 10 more items at a time
+const FETCH_BATCH_SIZE = 5; // Fetch 5 more items at a time
 const FETCH_DEBOUNCE_MS = 1000; // Minimum time between fetches
-const PRELOAD_AHEAD = 3; // Preload next N items
+const PRELOAD_AHEAD = 5; // Preload next N items (more = smoother scrolling)
 
 export function ParaTiFeed({ initialItems }: ParaTiFeedProps) {
   const containerRef = useRef<HTMLDivElement>(null);

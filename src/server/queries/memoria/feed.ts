@@ -31,8 +31,13 @@ export interface FeedItem {
  * Get random photo/video memories with related day content for the feed
  * @param limit - Number of items to fetch
  * @param excludeIds - Memory IDs to exclude (already shown)
+ * @param requirePhotoFirst - If true, ensures first item is a photo (not video)
  */
-export async function getFeedMemories(limit = 20, excludeIds: string[] = []): Promise<FeedItem[]> {
+export async function getFeedMemories(
+  limit = 20,
+  excludeIds: string[] = [],
+  requirePhotoFirst = false
+): Promise<FeedItem[]> {
   // Build where conditions
   const whereConditions = [
     eq(memories.isActive, true),
@@ -120,9 +125,17 @@ export async function getFeedMemories(limit = 20, excludeIds: string[] = []): Pr
   }
 
   // Map to FeedItem format
-  return mediaMemories.map((row) => {
+  let feedItems = mediaMemories.map((row) => {
     const dayContent = contentByDay.get(row.day.id);
     const song = dayContent?.songs[0];
+
+    // Auto-generate compressed URL for videos if not in database
+    // Lambda saves compressed videos as: original-name-compressed.mp4
+    let compressedUrl = row.memory.compressedUrl;
+    if (!compressedUrl && row.memory.type === "video" && row.memory.url) {
+      // Generate expected compressed URL based on naming convention
+      compressedUrl = row.memory.url.replace(/\.[^.]+$/, "-compressed.mp4");
+    }
 
     const memoryWithUser: MemoryWithUser = {
       id: row.memory.id,
@@ -130,7 +143,7 @@ export async function getFeedMemories(limit = 20, excludeIds: string[] = []): Pr
       userId: row.memory.userId,
       type: row.memory.type as "photo" | "video",
       url: row.memory.url!,
-      compressedUrl: row.memory.compressedUrl,
+      compressedUrl,
       thumbnailUrl: row.memory.thumbnailUrl,
       s3Key: row.memory.s3Key,
       compressedS3Key: row.memory.compressedS3Key,
@@ -171,5 +184,21 @@ export async function getFeedMemories(limit = 20, excludeIds: string[] = []): Pr
       dayTitle: row.day.title ?? null,
     };
   });
+
+  // Ensure first item is a photo if required
+  if (requirePhotoFirst && feedItems.length > 0) {
+    const firstPhotoIndex = feedItems.findIndex(
+      (item) => item.memory.type === "photo"
+    );
+
+    // If first item is not a photo and we found a photo, swap them
+    if (firstPhotoIndex > 0) {
+      const firstPhoto = feedItems[firstPhotoIndex]!;
+      feedItems[firstPhotoIndex] = feedItems[0]!;
+      feedItems[0] = firstPhoto;
+    }
+  }
+
+  return feedItems;
 }
 

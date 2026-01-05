@@ -20,10 +20,11 @@ interface FeedItemProps {
   onToggleMute: () => void;
 }
 
-// Buffer threshold as percentage of video before starting playback
-const MIN_BUFFER_PERCENT = 30;
+// Buffer threshold before starting playback
+const MIN_BUFFER_PERCENT = 10; // Start after 10% buffered
+const MIN_BUFFER_SECONDS = 2; // OR start after 2 seconds buffered (whichever comes first)
 // Maximum time to wait for video to start loading before showing stalled
-const LOAD_TIMEOUT_MS = 10000;
+const LOAD_TIMEOUT_MS = 8000;
 
 export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute }: FeedItemProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -34,6 +35,7 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
   const [isFullyCached, setIsFullyCached] = useState(false); // Video fully loaded - no more buffer checks
   const [hasError, setHasError] = useState(false); // Video failed to load
   const [isStalled, setIsStalled] = useState(false); // Network stalled - tap to retry
+  const [useOriginalUrl, setUseOriginalUrl] = useState(false); // Fallback if compressed not ready
   const isActiveRef = useRef(isActive);
   const hasStartedPlaying = useRef(false);
   const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -43,6 +45,9 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
   const isReadyToPlayRef = useRef(isReadyToPlay);
   const isFullyCachedRef = useRef(isFullyCached);
   const { memory, dayNote, pinnedQuote, song, location, date } = item;
+
+  // Cast for media properties access
+  const mediaMemory = memory as { url?: string; compressedUrl?: string | null; thumbnailUrl?: string | null };
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -197,7 +202,11 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
     }
 
     // Check if we have enough buffer to start playing (first load only)
-    if (progress >= MIN_BUFFER_PERCENT && !isReadyToPlay) {
+    // Use whichever threshold is reached first: percentage OR seconds
+    const hasEnoughPercent = progress >= MIN_BUFFER_PERCENT;
+    const hasEnoughSeconds = lastBufferedEnd >= MIN_BUFFER_SECONDS;
+
+    if ((hasEnoughPercent || hasEnoughSeconds) && !isReadyToPlay) {
       setIsReadyToPlay(true);
       setIsBuffering(false);
       if (isActiveRef.current) {
@@ -245,10 +254,17 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
       loadTimeoutRef.current = null;
     }
 
+    // If compressed URL failed (404), try original URL
+    if (!useOriginalUrl && mediaMemory.compressedUrl && mediaMemory.url) {
+      console.log("Compressed video not ready, falling back to original");
+      setUseOriginalUrl(true);
+      return; // Don't set error, let it retry with original
+    }
+
     // Set error state
     setHasError(true);
     setIsBuffering(false);
-  }, []);
+  }, [useOriginalUrl, mediaMemory.compressedUrl, mediaMemory.url]);
 
   // Handle network stall - user can tap to retry
   const handleStalled = useCallback(() => {
@@ -293,11 +309,10 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
 
   const isVideo = memory.type === "video";
   const isPhoto = memory.type === "photo";
-  // Feed only contains photos and videos, safely cast to access media properties
-  const mediaMemory = memory as { url?: string; compressedUrl?: string | null; thumbnailUrl?: string | null };
-  // Prefer compressed URL for videos when available (Lambda-processed)
+
+  // Prefer compressed URL for videos, fall back to original if compressed fails
   const mediaUrl = isVideo
-    ? (mediaMemory.compressedUrl ?? mediaMemory.url)
+    ? (useOriginalUrl ? mediaMemory.url : (mediaMemory.compressedUrl ?? mediaMemory.url))
     : isPhoto
       ? mediaMemory.url
       : undefined;

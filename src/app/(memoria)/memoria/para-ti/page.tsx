@@ -3,7 +3,7 @@ import { ParaTiNav } from "~/components/memoria/ParaTiNav";
 import { getFeedMemories } from "~/server/queries/memoria/feed";
 
 export default async function ParaTiPage() {
-  const feedItems = await getFeedMemories(20);
+  const feedItems = await getFeedMemories(10, [], true);
 
   return (
     <div className="relative min-h-screen bg-black">
