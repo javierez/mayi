@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback, memo } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import {
@@ -20,44 +20,58 @@ interface FeedItemProps {
   onToggleMute: () => void;
 }
 
-// Buffer threshold before starting playback
-const MIN_BUFFER_PERCENT = 10; // Start after 10% buffered
-const MIN_BUFFER_SECONDS = 2; // OR start after 2 seconds buffered (whichever comes first)
-// Maximum time to wait for video to start loading before showing stalled
+// Video loading states - consolidated state machine
+type VideoState =
+  | "idle"       // Not started loading
+  | "loading"    // Loading, checking buffer
+  | "ready"      // Enough buffer to play
+  | "playing"    // Currently playing
+  | "buffering"  // Playing but waiting for data
+  | "stalled"    // Network stalled - tap to retry
+  | "cached"     // Fully cached - loops smoothly
+  | "error";     // Failed to load
+
+// Buffer thresholds
+const MIN_BUFFER_PERCENT = 10;
+const MIN_BUFFER_SECONDS = 2;
 const LOAD_TIMEOUT_MS = 8000;
 
-export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute }: FeedItemProps) {
+function FeedItemComponent({ item, isActive, shouldPreload, isMuted, onToggleMute }: FeedItemProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isReadyToPlay, setIsReadyToPlay] = useState(false); // Enough buffer to start
-  const [isBuffering, setIsBuffering] = useState(false); // Currently waiting for data
-  const [bufferProgress, setBufferProgress] = useState(0); // 0-100%
-  const [isFullyCached, setIsFullyCached] = useState(false); // Video fully loaded - no more buffer checks
-  const [hasError, setHasError] = useState(false); // Video failed to load
-  const [isStalled, setIsStalled] = useState(false); // Network stalled - tap to retry
-  const [useOriginalUrl, setUseOriginalUrl] = useState(false); // Fallback if compressed not ready
+  const [videoState, setVideoState] = useState<VideoState>("idle");
+  const [bufferProgress, setBufferProgress] = useState(0);
+  const [useOriginalUrl, setUseOriginalUrl] = useState(false);
+
+  // Refs for stable closures
   const isActiveRef = useRef(isActive);
   const hasStartedPlaying = useRef(false);
   const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const playRetryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  // Refs for timeout closure to avoid stale values
   const bufferProgressRef = useRef(bufferProgress);
-  const isReadyToPlayRef = useRef(isReadyToPlay);
-  const isFullyCachedRef = useRef(isFullyCached);
+  const videoStateRef = useRef(videoState);
+
   const { memory, dayNote, pinnedQuote, song, location, date } = item;
 
   // Cast for media properties access
   const mediaMemory = memory as { url?: string; compressedUrl?: string | null; thumbnailUrl?: string | null };
 
+  // Derived state from videoState
+  const isReadyToPlay = videoState === "ready" || videoState === "playing" || videoState === "buffering" || videoState === "cached";
+  const isBuffering = videoState === "buffering";
+  const isFullyCached = videoState === "cached";
+  const hasError = videoState === "error";
+  const isStalled = videoState === "stalled";
+
   // Keep refs in sync with state
   useEffect(() => {
     isActiveRef.current = isActive;
   }, [isActive]);
+
   useEffect(() => {
     bufferProgressRef.current = bufferProgress;
-    isReadyToPlayRef.current = isReadyToPlay;
-    isFullyCachedRef.current = isFullyCached;
-  }, [bufferProgress, isReadyToPlay, isFullyCached]);
+    videoStateRef.current = videoState;
+  }, [bufferProgress, videoState]);
 
   // Format date
   const formattedDate = new Date(date).toLocaleDateString("es-ES", {
@@ -66,13 +80,12 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
     year: "numeric",
   });
 
-  // Play video helper
+  // Play video helper - stable callback using refs
   const playVideo = useCallback(() => {
     if (videoRef.current && isActiveRef.current) {
       const playPromise = videoRef.current.play();
       if (playPromise !== undefined) {
         playPromise.catch(() => {
-          // Retry after a short delay if autoplay fails
           if (playRetryTimeoutRef.current) {
             clearTimeout(playRetryTimeoutRef.current);
           }
@@ -91,13 +104,14 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
     if (videoRef.current) {
       if (isActive && isReadyToPlay) {
         hasStartedPlaying.current = true;
+        setVideoState((prev) => prev === "ready" || prev === "buffering" ? "playing" : prev);
         playVideo();
       } else if (!isActive) {
         videoRef.current.pause();
         hasStartedPlaying.current = false;
         if (!shouldPreload) {
           videoRef.current.currentTime = 0;
-          setIsReadyToPlay(false);
+          setVideoState("idle");
           setBufferProgress(0);
         }
       }
@@ -122,20 +136,24 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
   useEffect(() => {
     if (shouldPreload && memory.type === "video" && videoRef.current) {
       // Skip if already cached
-      if (isFullyCachedRef.current) return;
+      if (videoStateRef.current === "cached") return;
+
+      if (videoStateRef.current === "idle") {
+        setVideoState("loading");
+      }
 
       videoRef.current.preload = "auto";
       videoRef.current.volume = 0.3;
       videoRef.current.load();
 
-      // Set a timeout - if no progress, show stalled state (tap to retry)
+      // Set a timeout - if no progress, show stalled state
       if (loadTimeoutRef.current) {
         clearTimeout(loadTimeoutRef.current);
       }
       loadTimeoutRef.current = setTimeout(() => {
-        // Use refs to get current values, not stale closure
-        if (bufferProgressRef.current === 0 && !isReadyToPlayRef.current && !isFullyCachedRef.current) {
-          setIsStalled(true);
+        const state = videoStateRef.current;
+        if (bufferProgressRef.current === 0 && state !== "ready" && state !== "playing" && state !== "cached") {
+          setVideoState("stalled");
         }
       }, LOAD_TIMEOUT_MS);
     }
@@ -143,8 +161,7 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
 
   // Check if we have enough buffer to play smoothly
   const checkBufferStatus = useCallback(() => {
-    // Once fully cached, skip all buffer checks - video loops smoothly
-    if (isFullyCached) return;
+    if (videoStateRef.current === "cached") return;
 
     const video = videoRef.current;
     if (!video || !video.duration || !isFinite(video.duration)) return;
@@ -155,16 +172,10 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
       loadTimeoutRef.current = null;
     }
 
-    // Clear stalled state when we receive progress
-    if (isStalled) {
-      setIsStalled(false);
-    }
-
     const buffered = video.buffered;
     const duration = video.duration;
-
-    // Safe check for buffered ranges
     const bufferedLength = buffered.length;
+
     if (bufferedLength === 0) {
       setBufferProgress(0);
       return;
@@ -179,130 +190,94 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
           lastBufferedEnd = end;
         }
       }
-    } catch (e) {
-      console.warn("Error accessing buffer ranges:", e);
+    } catch {
       return;
     }
 
-    // Calculate overall progress for display
     const progress = Math.min(100, (lastBufferedEnd / duration) * 100);
     setBufferProgress(progress);
 
-    // Check if video is fully buffered - once cached, never show buffering again
+    // Check if fully buffered
     const isFullyBuffered = lastBufferedEnd >= duration - 0.1;
 
     if (isFullyBuffered) {
-      setIsFullyCached(true);
-      setIsReadyToPlay(true);
-      setIsBuffering(false);
+      setVideoState("cached");
       if (isActiveRef.current) {
         playVideo();
       }
       return;
     }
 
-    // Check if we have enough buffer to start playing (first load only)
-    // Use whichever threshold is reached first: percentage OR seconds
+    // Check if we have enough buffer to start playing
     const hasEnoughPercent = progress >= MIN_BUFFER_PERCENT;
     const hasEnoughSeconds = lastBufferedEnd >= MIN_BUFFER_SECONDS;
+    const currentState = videoStateRef.current;
 
-    if ((hasEnoughPercent || hasEnoughSeconds) && !isReadyToPlay) {
-      setIsReadyToPlay(true);
-      setIsBuffering(false);
+    if ((hasEnoughPercent || hasEnoughSeconds) && (currentState === "loading" || currentState === "stalled")) {
+      setVideoState("ready");
       if (isActiveRef.current) {
         playVideo();
       }
     }
-  }, [playVideo, isReadyToPlay, isStalled, isFullyCached]);
+  }, [playVideo]);
 
-  // Handle buffer progress updates
-  const handleProgress = useCallback(() => {
-    checkBufferStatus();
-  }, [checkBufferStatus]);
-
-  // Handle video metadata loaded - start checking buffer
-  const handleDurationChange = useCallback(() => {
-    checkBufferStatus();
-  }, [checkBufferStatus]);
-
-  // Handle video waiting for data - only relevant during initial load
+  // Handle video waiting for data
   const handleWaiting = useCallback(() => {
-    if (isFullyCached) return; // Cached videos never buffer
+    if (videoStateRef.current === "cached") return;
     if (isActiveRef.current && hasStartedPlaying.current) {
-      setIsBuffering(true);
+      setVideoState("buffering");
     }
-  }, [isFullyCached]);
+  }, []);
 
   // Handle video playing again after buffering
   const handlePlaying = useCallback(() => {
-    if (isFullyCached) return; // No state updates needed for cached videos
-    setIsBuffering(false);
-    setIsStalled(false);
-  }, [isFullyCached]);
+    if (videoStateRef.current === "cached") return;
+    setVideoState("playing");
+  }, []);
 
-  // Handle video error (network error, decode error, etc.)
+  // Handle video error
   const handleError = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    const error = video.error;
-    console.error("Video error:", error?.code, error?.message);
-
-    // Clear any loading timeout
     if (loadTimeoutRef.current) {
       clearTimeout(loadTimeoutRef.current);
       loadTimeoutRef.current = null;
     }
 
-    // If compressed URL failed (404), try original URL
+    // If compressed URL failed, try original
     if (!useOriginalUrl && mediaMemory.compressedUrl && mediaMemory.url) {
-      console.log("Compressed video not ready, falling back to original");
       setUseOriginalUrl(true);
-      return; // Don't set error, let it retry with original
+      return;
     }
 
-    // Set error state
-    setHasError(true);
-    setIsBuffering(false);
+    setVideoState("error");
   }, [useOriginalUrl, mediaMemory.compressedUrl, mediaMemory.url]);
 
-  // Handle network stall - user can tap to retry
+  // Handle network stall
   const handleStalled = useCallback(() => {
-    if (isFullyCached) return; // Cached videos don't stall
-    setIsStalled(true);
-  }, [isFullyCached]);
-
-  // Handle suspend (browser intentionally stopped downloading)
-  const handleSuspend = useCallback(() => {
-    // This is normal browser behavior, only log in dev
-    if (process.env.NODE_ENV === "development") {
-      console.log("Video download suspended by browser");
-    }
+    if (videoStateRef.current === "cached") return;
+    setVideoState("stalled");
   }, []);
 
-  // Retry loading the video - user triggered
+  // Retry loading the video
   const handleRetry = useCallback(() => {
-    setHasError(false);
-    setIsStalled(false);
+    setVideoState("loading");
     setBufferProgress(0);
-    setIsReadyToPlay(false);
-    setIsFullyCached(false); // Reset cached state to allow fresh load
-
-    // Force reload the video
     if (videoRef.current) {
       videoRef.current.load();
     }
   }, []);
 
-  // Handle video metadata loaded (for showing poster/thumbnail)
+  // Handle video metadata loaded
   const handleLoadedData = useCallback(() => {
     setIsLoaded(true);
   }, []);
 
-  // Handle canplaythrough - check buffer and potentially start playing
+  // Handle canplaythrough
   const handleCanPlayThrough = useCallback(() => {
     if (videoRef.current) {
-      videoRef.current.volume = 0.3; // 30% volume
+      videoRef.current.volume = 0.3;
     }
     checkBufferStatus();
   }, [checkBufferStatus]);
@@ -310,7 +285,7 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
   const isVideo = memory.type === "video";
   const isPhoto = memory.type === "photo";
 
-  // Prefer compressed URL for videos, fall back to original if compressed fails
+  // Prefer compressed URL for videos
   const mediaUrl = isVideo
     ? (useOriginalUrl ? mediaMemory.url : (mediaMemory.compressedUrl ?? mediaMemory.url))
     : isPhoto
@@ -319,10 +294,12 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
   const thumbnailUrl = (isVideo || isPhoto) ? mediaMemory.thumbnailUrl : undefined;
 
   return (
-    <div className="relative h-[100dvh] w-full snap-start snap-always">
+    <div
+      className="relative h-[100dvh] w-full snap-start snap-always"
+      style={{ contentVisibility: shouldPreload ? "visible" : "auto" }}
+    >
       {/* Background Media */}
       <div className="absolute inset-0 bg-black">
-        {/* Only render media when shouldPreload is true */}
         {shouldPreload && (
           <>
             {isVideo && mediaUrl && !hasError ? (
@@ -337,15 +314,13 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
                 preload="auto"
                 onLoadedData={handleLoadedData}
                 onError={handleError}
-                // Only attach buffer-related handlers before video is cached
-                onDurationChange={isFullyCached ? undefined : handleDurationChange}
-                onProgress={isFullyCached ? undefined : handleProgress}
+                onDurationChange={isFullyCached ? undefined : checkBufferStatus}
+                onProgress={isFullyCached ? undefined : checkBufferStatus}
                 onCanPlayThrough={isFullyCached ? undefined : handleCanPlayThrough}
                 onWaiting={isFullyCached ? undefined : handleWaiting}
                 onPlaying={isFullyCached ? undefined : handlePlaying}
                 onTimeUpdate={isFullyCached ? undefined : checkBufferStatus}
                 onStalled={isFullyCached ? undefined : handleStalled}
-                onSuspend={isFullyCached ? undefined : handleSuspend}
               />
             ) : isPhoto && mediaUrl ? (
               <Image
@@ -362,7 +337,7 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
           </>
         )}
 
-        {/* Video error state - tap to retry */}
+        {/* Video error state */}
         {shouldPreload && isVideo && hasError && (
           <button
             onClick={handleRetry}
@@ -388,7 +363,7 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
           </button>
         )}
 
-        {/* Initial loading - tap to retry when stalled */}
+        {/* Initial loading */}
         {shouldPreload && isVideo && !isReadyToPlay && !hasError && (
           <button
             onClick={isStalled ? handleRetry : undefined}
@@ -417,8 +392,8 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
           </button>
         )}
 
-        {/* Mid-playback buffering - only during initial load, never for cached */}
-        {isVideo && isReadyToPlay && isBuffering && !isFullyCached && (
+        {/* Mid-playback buffering */}
+        {isVideo && isBuffering && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/30">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/40 border-t-white" />
           </div>
@@ -442,7 +417,7 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
           />
         )}
 
-        {/* Gradient overlays for readability */}
+        {/* Gradient overlays */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70" />
       </div>
 
@@ -522,3 +497,14 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
     </div>
   );
 }
+
+// Memoize to prevent re-renders when parent state changes
+export const FeedItem = memo(FeedItemComponent, (prevProps, nextProps) => {
+  // Only re-render if these props change
+  return (
+    prevProps.isActive === nextProps.isActive &&
+    prevProps.shouldPreload === nextProps.shouldPreload &&
+    prevProps.isMuted === nextProps.isMuted &&
+    prevProps.item.memory.id === nextProps.item.memory.id
+  );
+});
