@@ -12,6 +12,7 @@ interface ParaTiFeedProps {
 const FETCH_THRESHOLD = 3; // Fetch more when 3 items from end
 const FETCH_BATCH_SIZE = 10; // Fetch 10 more items at a time
 const FETCH_DEBOUNCE_MS = 1000; // Minimum time between fetches
+const PRELOAD_AHEAD = 3; // Preload next N items
 
 export function ParaTiFeed({ initialItems }: ParaTiFeedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -23,6 +24,8 @@ export function ParaTiFeed({ initialItems }: ParaTiFeedProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const isFetchingRef = useRef(false);
   const lastFetchTimeRef = useRef(0);
+  // Track items that started loading - never unload them
+  const loadingStartedRef = useRef<Set<string>>(new Set());
 
   // Fetch more items when approaching end of list (debounced)
   const fetchMoreItems = useCallback(() => {
@@ -102,14 +105,38 @@ export function ParaTiFeed({ initialItems }: ParaTiFeedProps) {
       });
       audioRef.current = audio;
     }
+  }, [currentIndex, isMuted, items]);
 
+  // Cleanup audio on unmount
+  useEffect(() => {
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
       }
     };
-  }, [currentIndex, isMuted, items]);
+  }, []);
+
+  // Mark items in preload window as started (effect, not during render)
+  // MUST be before any conditional returns - React hooks order matters
+  useEffect(() => {
+    items.forEach((item, index) => {
+      const inWindow = index >= currentIndex - 1 && index <= currentIndex + PRELOAD_AHEAD;
+      if (inWindow) {
+        loadingStartedRef.current.add(item.memory.id.toString());
+      }
+    });
+  }, [currentIndex, items]);
+
+  // Check if item should preload - pure function, no side effects
+  const shouldPreload = useCallback((index: number, memoryId: string) => {
+    // Already started loading? Keep it loaded
+    if (loadingStartedRef.current.has(memoryId)) {
+      return true;
+    }
+    // Within preload window
+    return index >= currentIndex - 1 && index <= currentIndex + PRELOAD_AHEAD;
+  }, [currentIndex]);
 
   const toggleMute = useCallback(() => {
     setIsMuted((prev) => {
@@ -138,6 +165,7 @@ export function ParaTiFeed({ initialItems }: ParaTiFeedProps) {
     });
   }, [currentIndex, items]);
 
+  // Empty state - after all hooks
   if (items.length === 0) {
     return (
       <div className="flex h-[100dvh] items-center justify-center bg-black">
@@ -151,11 +179,6 @@ export function ParaTiFeed({ initialItems }: ParaTiFeedProps) {
     );
   }
 
-  // Preload -1/+4 items for smoother scrolling
-  const shouldPreload = (index: number) => {
-    return index >= currentIndex - 1 && index <= currentIndex + 4;
-  };
-
   return (
     <div
       ref={containerRef}
@@ -167,7 +190,7 @@ export function ParaTiFeed({ initialItems }: ParaTiFeedProps) {
           key={item.memory.id.toString()}
           item={item}
           isActive={index === currentIndex}
-          shouldPreload={shouldPreload(index)}
+          shouldPreload={shouldPreload(index, item.memory.id.toString())}
           isMuted={isMuted}
           onToggleMute={toggleMute}
         />

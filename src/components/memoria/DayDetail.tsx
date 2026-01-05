@@ -17,6 +17,7 @@ import {
   Camera,
   Loader2,
   ChevronLeft,
+  ChevronRight,
   Star,
   MoreHorizontal,
   ImageIcon,
@@ -870,8 +871,10 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
 
       {/* Fullscreen Media Viewer */}
       <FullscreenMediaViewer
-        memory={fullscreenMedia}
+        memories={mediaMemories}
+        currentMemory={fullscreenMedia}
         onClose={() => setFullscreenMedia(null)}
+        onNavigate={setFullscreenMedia}
       />
     </div>
   );
@@ -957,6 +960,7 @@ function PinterestCard({
   const [aspectRatio, setAspectRatio] = useState<number>(1);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Cast to access media properties
   const mediaMemory = memory as { url: string; thumbnailUrl?: string | null };
@@ -970,6 +974,28 @@ function PinterestCard({
     const ratio = ratios[idNum % ratios.length] ?? 1;
     setAspectRatio(ratio);
   }, [memory.id, index]);
+
+  // Play/pause video based on viewport visibility
+  useEffect(() => {
+    if (!isVideo || !videoRef.current) return;
+
+    const video = videoRef.current;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            video.play().catch(() => {});
+          } else {
+            video.pause();
+          }
+        });
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(video);
+    return () => observer.disconnect();
+  }, [isVideo]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -1008,6 +1034,7 @@ function PinterestCard({
     >
       {isVideo ? (
         <video
+          ref={videoRef}
           src={mediaMemory.url}
           poster={mediaMemory.thumbnailUrl ?? undefined}
           className={cn(
@@ -1018,11 +1045,9 @@ function PinterestCard({
           loop
           muted
           playsInline
-          preload="auto"
-          onLoadedData={(e) => {
+          preload="metadata"
+          onLoadedData={() => {
             setMediaLoaded(true);
-            const video = e.currentTarget;
-            video.play().catch(() => {});
           }}
         />
       ) : (
@@ -1450,40 +1475,66 @@ function LocationChip({
   );
 }
 
-// Fullscreen Media Viewer Component
+// Fullscreen Media Viewer Component with Navigation
 function FullscreenMediaViewer({
-  memory,
+  memories,
+  currentMemory,
   onClose,
+  onNavigate,
 }: {
-  memory: MemoryWithUser | null;
+  memories: MemoryWithUser[];
+  currentMemory: MemoryWithUser | null;
   onClose: () => void;
+  onNavigate: (memory: MemoryWithUser) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Close on escape key
-  useEffect(() => {
-    if (!memory) return;
+  // Find current index
+  const currentIndex = currentMemory
+    ? memories.findIndex((m) => m.id === currentMemory.id)
+    : -1;
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex < memories.length - 1;
 
-    const handleEscape = (e: KeyboardEvent) => {
+  const goToPrev = () => {
+    if (hasPrev) {
+      onNavigate(memories[currentIndex - 1]!);
+    }
+  };
+
+  const goToNext = () => {
+    if (hasNext) {
+      onNavigate(memories[currentIndex + 1]!);
+    }
+  };
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (!currentMemory) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
+      } else if (e.key === "ArrowLeft") {
+        goToPrev();
+      } else if (e.key === "ArrowRight") {
+        goToNext();
       }
     };
 
-    document.addEventListener("keydown", handleEscape);
-    // Prevent body scroll when fullscreen is open
+    document.addEventListener("keydown", handleKeyDown);
     document.body.style.overflow = "hidden";
 
     return () => {
-      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
     };
-  }, [memory, onClose]);
+  }, [currentMemory, currentIndex, onClose]);
 
-  if (!memory) return null;
+  if (!currentMemory) return null;
 
-  const mediaMemory = memory as { url: string; thumbnailUrl?: string | null };
-  const isVideo = memory.type === "video";
+  const mediaMemory = currentMemory as { url: string; thumbnailUrl?: string | null };
+  const isVideo = currentMemory.type === "video";
 
   return (
     <motion.div
@@ -1501,6 +1552,39 @@ function FullscreenMediaViewer({
         <X className="h-6 w-6 text-white" />
       </button>
 
+      {/* Counter */}
+      {memories.length > 1 && (
+        <div className="absolute left-4 top-4 z-10 rounded-full bg-black/50 px-3 py-1 text-sm text-white/80">
+          {currentIndex + 1} / {memories.length}
+        </div>
+      )}
+
+      {/* Previous button */}
+      {hasPrev && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            goToPrev();
+          }}
+          className="absolute left-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20 active:scale-95"
+        >
+          <ChevronLeft className="h-8 w-8 text-white" />
+        </button>
+      )}
+
+      {/* Next button */}
+      {hasNext && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            goToNext();
+          }}
+          className="absolute right-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20 active:scale-95"
+        >
+          <ChevronRight className="h-8 w-8 text-white" />
+        </button>
+      )}
+
       {/* Media content */}
       <div
         className="relative flex h-full w-full items-center justify-center p-4"
@@ -1508,6 +1592,7 @@ function FullscreenMediaViewer({
       >
         {isVideo ? (
           <video
+            key={currentMemory.id.toString()}
             ref={videoRef}
             src={mediaMemory.url}
             className="max-h-full max-w-full rounded-lg"
@@ -1517,8 +1602,9 @@ function FullscreenMediaViewer({
           />
         ) : (
           <Image
+            key={currentMemory.id.toString()}
             src={mediaMemory.url}
-            alt={memory.caption ?? "Foto"}
+            alt={currentMemory.caption ?? "Foto"}
             fill
             className="object-contain"
             sizes="100vw"
@@ -1528,10 +1614,10 @@ function FullscreenMediaViewer({
       </div>
 
       {/* Caption */}
-      {memory.caption && (
+      {currentMemory.caption && (
         <div className="absolute bottom-8 left-0 right-0 text-center">
           <p className="mx-auto max-w-lg rounded-lg bg-black/50 px-4 py-2 text-sm text-white/90">
-            {memory.caption}
+            {currentMemory.caption}
           </p>
         </div>
       )}
