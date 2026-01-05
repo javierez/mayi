@@ -66,10 +66,13 @@ export interface PhotoMemory extends BaseMemory {
 export interface VideoMemory extends BaseMemory {
   type: "video";
   url: string;
+  compressedUrl?: string | null; // Lambda-compressed video URL
   thumbnailUrl?: string | null;
   s3Key?: string | null;
+  compressedS3Key?: string | null; // Lambda-compressed video S3 key
   mimeType?: string | null;
   fileSize?: number | null;
+  compressedFileSize?: number | null; // Compressed video file size
   width?: number | null;
   height?: number | null;
   duration?: number | null;

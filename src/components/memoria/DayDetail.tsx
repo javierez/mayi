@@ -22,6 +22,7 @@ import {
   ImageIcon,
   Check,
   Trash2,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "~/lib/utils";
@@ -73,6 +74,7 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
   }[]>([]);
   const [rating, setRating] = useState<number | null>(day?.rating ?? null);
   const [isUpdatingRating, setIsUpdatingRating] = useState(false);
+  const [fullscreenMedia, setFullscreenMedia] = useState<MemoryWithUser | null>(null);
 
   // Sync memories state when initialMemories prop changes (after router.refresh())
   useEffect(() => {
@@ -540,6 +542,7 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
           coverMemoryId={day?.coverMemoryId}
           onSetCover={handleSetCover}
           onDelete={handleDeleteMemory}
+          onMediaClick={setFullscreenMedia}
         />
       )}
 
@@ -864,6 +867,12 @@ export function DayDetail({ date, displayDate, day, initialMemories }: DayDetail
         initialType={selectedType}
         onSuccess={handleMemoryAdded}
       />
+
+      {/* Fullscreen Media Viewer */}
+      <FullscreenMediaViewer
+        memory={fullscreenMedia}
+        onClose={() => setFullscreenMedia(null)}
+      />
     </div>
   );
 }
@@ -874,11 +883,13 @@ function PinterestGrid({
   coverMemoryId,
   onSetCover,
   onDelete,
+  onMediaClick,
 }: {
   memories: MemoryWithUser[];
   coverMemoryId?: bigint | null;
   onSetCover: (memoryId: string) => void;
   onDelete: (memoryId: string) => void;
+  onMediaClick: (memory: MemoryWithUser) => void;
 }) {
   // Split memories into two columns for masonry effect
   const leftColumn: MemoryWithUser[] = [];
@@ -904,6 +915,7 @@ function PinterestGrid({
             isCover={coverMemoryId?.toString() === memory.id.toString()}
             onSetCover={() => onSetCover(memory.id.toString())}
             onDelete={() => onDelete(memory.id.toString())}
+            onClick={() => onMediaClick(memory)}
           />
         ))}
       </div>
@@ -917,6 +929,7 @@ function PinterestGrid({
             isCover={coverMemoryId?.toString() === memory.id.toString()}
             onSetCover={() => onSetCover(memory.id.toString())}
             onDelete={() => onDelete(memory.id.toString())}
+            onClick={() => onMediaClick(memory)}
           />
         ))}
       </div>
@@ -931,12 +944,14 @@ function PinterestCard({
   isCover,
   onSetCover,
   onDelete,
+  onClick,
 }: {
   memory: MemoryWithUser;
   index: number;
   isCover?: boolean;
   onSetCover: () => void;
   onDelete: () => void;
+  onClick: () => void;
 }) {
   const [mediaLoaded, setMediaLoaded] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<number>(1);
@@ -987,8 +1002,9 @@ function PinterestCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="group relative w-full overflow-hidden rounded-2xl bg-white shadow-sm"
+      className="group relative w-full cursor-pointer overflow-hidden rounded-2xl bg-white shadow-sm active:scale-[0.98]"
       style={{ aspectRatio: aspectRatio }}
+      onClick={onClick}
     >
       {isVideo ? (
         <video
@@ -1434,3 +1450,91 @@ function LocationChip({
   );
 }
 
+// Fullscreen Media Viewer Component
+function FullscreenMediaViewer({
+  memory,
+  onClose,
+}: {
+  memory: MemoryWithUser | null;
+  onClose: () => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Close on escape key
+  useEffect(() => {
+    if (!memory) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    // Prevent body scroll when fullscreen is open
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "";
+    };
+  }, [memory, onClose]);
+
+  if (!memory) return null;
+
+  const mediaMemory = memory as { url: string; thumbnailUrl?: string | null };
+  const isVideo = memory.type === "video";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/95"
+      onClick={onClose}
+    >
+      {/* Close button */}
+      <button
+        onClick={onClose}
+        className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
+      >
+        <X className="h-6 w-6 text-white" />
+      </button>
+
+      {/* Media content */}
+      <div
+        className="relative flex h-full w-full items-center justify-center p-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {isVideo ? (
+          <video
+            ref={videoRef}
+            src={mediaMemory.url}
+            className="max-h-full max-w-full rounded-lg"
+            controls
+            autoPlay
+            playsInline
+          />
+        ) : (
+          <Image
+            src={mediaMemory.url}
+            alt={memory.caption ?? "Foto"}
+            fill
+            className="object-contain"
+            sizes="100vw"
+            priority
+          />
+        )}
+      </div>
+
+      {/* Caption */}
+      {memory.caption && (
+        <div className="absolute bottom-8 left-0 right-0 text-center">
+          <p className="mx-auto max-w-lg rounded-lg bg-black/50 px-4 py-2 text-sm text-white/90">
+            {memory.caption}
+          </p>
+        </div>
+      )}
+    </motion.div>
+  );
+}

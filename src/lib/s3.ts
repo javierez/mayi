@@ -549,3 +549,35 @@ export async function generateMemoriaPresignedReadUrls(
 
   return urlMap;
 }
+
+// =============================================================================
+// VIDEO COMPRESSION HELPERS
+// Utilities for Lambda-based video compression workflow
+// =============================================================================
+
+/**
+ * Get the compressed video URL from an original video URL.
+ * Lambda compression adds "-compressed.mp4" suffix to the original filename.
+ *
+ * @example
+ * // Original: memoria/123/videos/abc.mov
+ * // Compressed: memoria/123/videos/abc-compressed.mp4
+ */
+export function getCompressedVideoUrl(originalUrl: string): string {
+  return originalUrl.replace(/\.[^.]+$/, "-compressed.mp4");
+}
+
+/**
+ * Get the compressed S3 key from an original S3 key.
+ * Lambda compression adds "-compressed.mp4" suffix to the original filename.
+ */
+export function getCompressedS3Key(originalKey: string): string {
+  return originalKey.replace(/\.[^.]+$/, "-compressed.mp4");
+}
+
+/**
+ * Check if a URL is already a compressed video URL.
+ */
+export function isCompressedUrl(url: string): boolean {
+  return url.includes("-compressed.");
+}

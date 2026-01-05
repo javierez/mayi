@@ -27,8 +27,10 @@ const MIN_BUFFER_PERCENT = 30;
 
 // Maximum time to wait for video to start loading before showing error
 const LOAD_TIMEOUT_MS = 15000;
+// Maximum time to wait when stalled before auto-retrying
+const STALL_TIMEOUT_MS = 5000;
 // Maximum retries for failed video loads
-const MAX_RETRIES = 2;
+const MAX_RETRIES = 3;
 
 export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute }: FeedItemProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -42,6 +44,7 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
   const isActiveRef = useRef(isActive);
   const hasStartedPlaying = useRef(false);
   const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const stallTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { memory, dayNote, pinnedQuote, song, location, date } = item;
 
   // Keep ref in sync
@@ -91,12 +94,16 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
     }
   }, [isActive, isReadyToPlay, shouldPreload, playVideo]);
 
-  // Clear load timeout on unmount or when video loads successfully
+  // Clear timeouts on unmount
   useEffect(() => {
     return () => {
       if (loadTimeoutRef.current) {
         clearTimeout(loadTimeoutRef.current);
         loadTimeoutRef.current = null;
+      }
+      if (stallTimeoutRef.current) {
+        clearTimeout(stallTimeoutRef.current);
+        stallTimeoutRef.current = null;
       }
     };
   }, []);
@@ -137,9 +144,13 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
       loadTimeoutRef.current = null;
     }
 
-    // Clear stalled state when we receive progress
+    // Clear stalled state and timeout when we receive progress
     if (isStalled) {
       setIsStalled(false);
+    }
+    if (stallTimeoutRef.current) {
+      clearTimeout(stallTimeoutRef.current);
+      stallTimeoutRef.current = null;
     }
 
     const buffered = video.buffered;
@@ -162,12 +173,14 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
         const start = buffered.start(i);
         const end = buffered.end(i);
 
-        if (start <= currentTime && end >= currentTime) {
+        // Use small tolerance for floating-point comparisons
+        // This handles edge cases when video loops and currentTime resets
+        if (start <= currentTime + 0.1 && end >= currentTime) {
           bufferAhead = end - currentTime;
         }
-        // If we haven't started yet, check from the beginning
-        if (currentTime === 0 && start === 0) {
-          bufferAhead = end;
+        // If we're near the beginning (looping), check from start of buffer
+        if (currentTime < 0.5 && start < 0.5) {
+          bufferAhead = Math.max(bufferAhead, end - currentTime);
         }
         // Track the furthest buffered point
         if (end > lastBufferedEnd) {
@@ -184,12 +197,25 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
     const progress = Math.min(100, (lastBufferedEnd / duration) * 100);
     setBufferProgress(progress);
 
-    // Check if we have enough buffer to start/continue playing
+    // Check if video is fully buffered - if so, never show buffering on replay
     const isFullyBuffered = lastBufferedEnd >= duration - 0.1;
+
+    // If fully buffered, we're always ready to play and never buffering
+    if (isFullyBuffered) {
+      if (!isReadyToPlay) {
+        setIsReadyToPlay(true);
+        if (isActiveRef.current) {
+          playVideo();
+        }
+      }
+      setIsBuffering(false);
+      return;
+    }
+
+    // Check if we have enough buffer to start/continue playing
     const hasEnoughBuffer =
       bufferAhead >= MIN_BUFFER_AHEAD_SECONDS ||
-      progress >= MIN_BUFFER_PERCENT ||
-      isFullyBuffered;
+      progress >= MIN_BUFFER_PERCENT;
 
     if (hasEnoughBuffer && !isReadyToPlay) {
       setIsReadyToPlay(true);
@@ -200,9 +226,9 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
     }
 
     // If playing and buffer runs low, show buffering indicator
-    if (hasStartedPlaying.current && bufferAhead < 1 && !isFullyBuffered) {
+    if (hasStartedPlaying.current && bufferAhead < 1) {
       setIsBuffering(true);
-    } else if (bufferAhead >= 2 || isFullyBuffered) {
+    } else if (bufferAhead >= 2) {
       setIsBuffering(false);
     }
   }, [playVideo, isReadyToPlay, isStalled]);
@@ -228,6 +254,11 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
   const handlePlaying = useCallback(() => {
     setIsBuffering(false);
     setIsStalled(false);
+    // Clear stall timeout since we're playing now
+    if (stallTimeoutRef.current) {
+      clearTimeout(stallTimeoutRef.current);
+      stallTimeoutRef.current = null;
+    }
   }, []);
 
   // Handle video error (network error, decode error, etc.)
@@ -253,7 +284,28 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
   const handleStalled = useCallback(() => {
     console.warn("Video stalled - network issue detected");
     setIsStalled(true);
-  }, []);
+
+    // Clear any existing stall timeout
+    if (stallTimeoutRef.current) {
+      clearTimeout(stallTimeoutRef.current);
+    }
+
+    // Auto-retry after stall timeout if we haven't exceeded max retries
+    stallTimeoutRef.current = setTimeout(() => {
+      if (retryCount < MAX_RETRIES && !hasError) {
+        console.log("Auto-retrying video after stall timeout");
+        setHasError(false);
+        setIsStalled(false);
+        setBufferProgress(0);
+        setIsReadyToPlay(false);
+        setRetryCount((prev) => prev + 1);
+
+        if (videoRef.current) {
+          videoRef.current.load();
+        }
+      }
+    }, STALL_TIMEOUT_MS);
+  }, [retryCount, hasError]);
 
   // Handle suspend (browser intentionally stopped downloading)
   const handleSuspend = useCallback(() => {
@@ -268,6 +320,12 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
     if (retryCount >= MAX_RETRIES) {
       console.error("Max retries reached for video");
       return;
+    }
+
+    // Clear any pending stall timeout
+    if (stallTimeoutRef.current) {
+      clearTimeout(stallTimeoutRef.current);
+      stallTimeoutRef.current = null;
     }
 
     setHasError(false);
@@ -298,8 +356,13 @@ export function FeedItem({ item, isActive, shouldPreload, isMuted, onToggleMute 
   const isVideo = memory.type === "video";
   const isPhoto = memory.type === "photo";
   // Feed only contains photos and videos, safely cast to access media properties
-  const mediaMemory = memory as { url?: string; thumbnailUrl?: string | null };
-  const mediaUrl = (isVideo || isPhoto) ? mediaMemory.url : undefined;
+  const mediaMemory = memory as { url?: string; compressedUrl?: string | null; thumbnailUrl?: string | null };
+  // Prefer compressed URL for videos when available (Lambda-processed)
+  const mediaUrl = isVideo
+    ? (mediaMemory.compressedUrl ?? mediaMemory.url)
+    : isPhoto
+      ? mediaMemory.url
+      : undefined;
   const thumbnailUrl = (isVideo || isPhoto) ? mediaMemory.thumbnailUrl : undefined;
 
   return (

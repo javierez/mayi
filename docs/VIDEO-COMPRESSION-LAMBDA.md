@@ -97,8 +97,12 @@ export const handler = async (event) => {
     console.log("Upload complete");
 
     // Cleanup
-    unlinkSync(inputPath);
-    unlinkSync(outputPath);
+    try {
+      unlinkSync(inputPath);
+      unlinkSync(outputPath);
+    } catch (cleanupError) {
+      console.warn("Cleanup warning:", cleanupError);
+    }
 
     return {
       statusCode: 200,
@@ -108,8 +112,28 @@ export const handler = async (event) => {
       }),
     };
   } catch (error) {
-    console.error("Error:", error);
-    throw error;
+    // Log the error but don't throw - skip this video gracefully
+    console.error("Compression failed, skipping video:", key);
+    console.error("Error details:", error);
+
+    // Cleanup any temp files that may exist
+    try {
+      unlinkSync(inputPath);
+    } catch (e) { /* ignore */ }
+    try {
+      unlinkSync(outputPath);
+    } catch (e) { /* ignore */ }
+
+    // Return success so Lambda doesn't retry - the original video is still usable
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        skipped: true,
+        reason: "compression_failed",
+        original: key,
+        error: error.message,
+      }),
+    };
   }
 };
 
@@ -350,11 +374,36 @@ await client.send(command);
 
 ## Current Status
 
-**Status: NOT IMPLEMENTED**
+**Status: APP-SIDE READY**
+
+The application is now ready to receive compressed videos from Lambda:
+
+### Implemented:
+- ✅ Database schema updated with `compressed_url`, `compressed_s3_key`, `compressed_file_size` columns
+- ✅ TypeScript types updated for `VideoMemory`
+- ✅ FeedItem component prefers compressed URLs when available
+- ✅ API endpoint `/api/video-compression-callback` for Lambda to update records
+- ✅ Utility functions in `src/lib/s3.ts` for URL transformations
+
+### Required Environment Variable:
+```bash
+API_VIDEO_COMPRESSION_SECRET=your-secret-key-here
+```
+
+### Database Migration:
+```sql
+ALTER TABLE memories
+  ADD COLUMN compressed_url VARCHAR(2048),
+  ADD COLUMN compressed_s3_key VARCHAR(2048),
+  ADD COLUMN compressed_file_size INTEGER;
+```
+
+### Pending:
+- ⬜ Deploy Lambda function with FFmpeg layer
+- ⬜ Configure S3 trigger for `memoria/` prefix
+- ⬜ Set up IAM permissions for Lambda
 
 Client-side compression was attempted but failed due to:
 - FFmpeg WASM CORS issues
 - Nested worker security restrictions
 - Turbopack module resolution issues
-
-Videos are currently uploaded without compression. Implement this Lambda solution when needed.

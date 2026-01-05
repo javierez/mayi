@@ -153,10 +153,13 @@ export const memories = pgTable("memories", {
 
   // Media (photo, video, voice)
   url: varchar("url", { length: 2048 }),
+  compressedUrl: varchar("compressed_url", { length: 2048 }), // Lambda-compressed video URL
   thumbnailUrl: varchar("thumbnail_url", { length: 2048 }),
   s3Key: varchar("s3_key", { length: 2048 }),
+  compressedS3Key: varchar("compressed_s3_key", { length: 2048 }), // Lambda-compressed video S3 key
   mimeType: varchar("mime_type", { length: 100 }),
   fileSize: integer("file_size"),
+  compressedFileSize: integer("compressed_file_size"), // Compressed video file size
   duration: integer("duration"), // seconds (video/audio)
   width: integer("width"),
   height: integer("height"),
